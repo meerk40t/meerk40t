@@ -758,7 +758,7 @@ class SimulationPanel(wx.Panel, Job):
         self.parent = args[0]
         self.context = context
         self.SetHelpText("simulate")
-
+        self.retries = 0
         self.plan_name = plan_name
         self.auto_clear = auto_clear
         # Display travel paths?
@@ -799,7 +799,6 @@ class SimulationPanel(wx.Panel, Job):
         self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
-
         # poor mans slide out
         self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
@@ -924,9 +923,12 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
+
         # end wxGlade
+        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
         self.on_checkbox_optimize(None)
+
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
         ##############
         # BUILD SCENE
@@ -955,7 +957,6 @@ class SimulationPanel(wx.Panel, Job):
             BedWidget(self.widget_scene, name="Simulation")
         )
         self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene, self))
-
         self.parent.add_module_delegate(self.options_optimize)
         self.context.setting(int, "simulation_mode", 0)
         default = self.context.simulation_mode
@@ -972,10 +973,14 @@ class SimulationPanel(wx.Panel, Job):
         self.running = False
         self.slided_in = True
         self.start_time = perf_counter()
-        # print(f"Done: {perf_counter()-self.start_time}")
+        self.debug(f"Init done: {perf_counter()-self.start_time}")
+
+    def debug(self, message):
+        # print (message)
+        return
 
     def _startup(self):
-        # print(f"Startup: {perf_counter()-self.start_time}")
+        self.debug(f"Startup: {perf_counter()-self.start_time}")
         self.slided_in = True
         self.fit_scene_to_panel()
 
@@ -1147,7 +1152,6 @@ class SimulationPanel(wx.Panel, Job):
         # sizer_execute.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_execute.Add(self.button_spool, 1, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_execute, 1, wx.EXPAND, 0)
-
         v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_1, 0, wx.EXPAND, 0)
@@ -1157,6 +1161,17 @@ class SimulationPanel(wx.Panel, Job):
         self.slided_in = True  # Hide initially
         self.Layout()
         # end wxGlade
+
+
+    def on_size(self, event):
+        sz = event.GetSize()
+        event.Skip()
+        self.debug (f"Manually forwarding the size: {sz}")
+        self.view_pane.SetSize(wx.Size(sz[0], int(2/3 * sz[1])))
+        self.Layout()
+        sz = self.view_pane.GetSize()
+        self.debug (f"Now pane has: {sz}")
+        self.fit_scene_to_panel()
 
     # Manages the display, non-display of the optimisation-options
     @property
@@ -1236,10 +1251,9 @@ class SimulationPanel(wx.Panel, Job):
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
-        winsize = self.view_pane.Size
-        if winsize[0] == 0:
-            return
-        self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
+        winsize = self.view_pane.GetSize()
+        if winsize[0] != 0 and winsize[1] != 0:
+            self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
         self.widget_scene.request_refresh()
 
     def set_cutcode_entry(self, cutcode):
@@ -1431,7 +1445,7 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-        # print (f"Refresh simulated: {perf_counter()-self.start_time}")
+        self.debug (f"Refresh simulated: {perf_counter()-self.start_time}")
         # Stop animation
         if self.running:
             self._stop()
@@ -1485,15 +1499,35 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
-        winsize = self.view_pane.Size
-        # print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
+        def resend_signal():
+            self.debug (f"Resending signal: {perf_counter()-self.start_time}")
+            self.context.signal("plan", self.plan_name, 1)
+
+        winsize = self.view_pane.GetSize()
+        winsize1 = self.hscene_sizer.GetSize()
+        winsize2 = self.GetSize()
+        self.debug (f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})")
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
-            if winsize[0] == 0: # Still initialising
-                sleep(0.25)
-                self.context.signal("plan", self.plan_name, 1)
+            if (winsize[0] == 0 or winsize[1] == 0) and self.retries > 3: # Still initialising
+                self.Fit()
+                self.hscene_sizer.Layout()
+                self.view_pane.Show()
+                interval = 0.25
+                self.retries += 1
+                self.debug (f"Need to resend signal due to invalid window-size, attempt {self.retries}/10, will wait for {interval:.2f} sec")
+
+                _job = Job(
+                    process=resend_signal,
+                    job_name="resender",
+                    interval=interval,
+                    times=1,
+                    run_main=True,
+                )
+                self.context.schedule(_job)
                 return
-            
+
+            self.retries = 0
             self._refresh_simulated_plan()
 
     @signal_listener("refresh_simulation")
@@ -1661,6 +1695,7 @@ class SimulationPanel(wx.Panel, Job):
         self._refresh_simulated_plan()
 
     def pane_show(self):
+        self.Layout()
         self.context.setting(str, "units_name", "mm")
 
         bbox = self.context.device.view.source_bbox()
@@ -2165,6 +2200,7 @@ class Simulation(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
+        self.Layout()
 
     @staticmethod
     def sub_register(kernel):
