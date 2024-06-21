@@ -1422,7 +1422,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         return listen
 
                     listener = on_enable_listener(c_attr, control, c_obj, c_equals)
-                    self.listeners.append((c_attr, listener))
+                    self.listeners.append((c_attr, listener, c_obj))
                     context.listen(c_attr, listener)
                 except KeyError:
                     pass
@@ -1450,6 +1450,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             except KeyError:
                                 pass
                     if data is None:
+                        # print (f"Invalid data based on {value}, exiting")
                         return
                     # Let's just access the ctrl to see whether it has been already
                     # destroyed (as we are in the midst of a shutdown)
@@ -1499,6 +1500,23 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 ctrl.SetValue(least)
                     elif dtype == int and dstyle == "binary":
                         pass  # not supported...
+                    elif (dtype == str and dstyle == "color") or dtype == Color:
+                        # Color dtype objects are a button with the background set to the color
+                        def set_color(color: Color):
+                            ctrl.SetLabel(str(color.hex))
+                            ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                            if Color.distance(color, Color("black")) > Color.distance(
+                                color, Color("white")
+                            ):
+                                ctrl.SetForegroundColour(wx.BLACK)
+                            else:
+                                ctrl.SetForegroundColour(wx.WHITE)
+                            ctrl.color = color
+                        if isinstance(data, str):
+                            # print ("Needed to change type")
+                            data = Color(data)
+                        # print (f"Will set color to {data}")
+                        set_color(data)
                     elif dtype in (str, int, float):
                         if hasattr(ctrl, "GetValue"):
                             try:
@@ -1516,20 +1534,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     elif dtype == Angle:
                         if ctrl.GetValue() != str(data):
                             ctrl.SetValue(str(data))
-                    elif dtype == Color:
-                        # Color dtype objects are a button with the background set to the color
-                        def set_color(color: Color):
-                            ctrl.SetLabel(str(color.hex))
-                            ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                            if Color.distance(color, Color("black")) > Color.distance(
-                                color, Color("white")
-                            ):
-                                ctrl.SetForegroundColour(wx.BLACK)
-                            else:
-                                ctrl.SetForegroundColour(wx.WHITE)
-                            ctrl.color = color
-
-                        set_color(data)
 
                 return listen_to_myself
 
@@ -1537,7 +1541,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 update_listener = on_update_listener(
                     attr, control, data_type, data_style, choice_list, obj
                 )
-                self.listeners.append((attr, update_listener))
+                self.listeners.append((attr, update_listener, obj))
                 context.listen(attr, update_listener)
             tip = c.get("tip")
             if tip and not context.root.disable_tool_tips:
@@ -1566,12 +1570,22 @@ class ChoicePropertyPanel(ScrolledPanel):
                 result = result[idx + 1 :]
         return result
 
+    def reload(self):
+        if not self._detached:
+            for attr, listener, obj in self.listeners:
+                try:
+                    value = getattr(obj, attr)
+                except AttributeError as e:
+                    print (f"error: {e}")
+                    continue
+                listener("internal", value, obj)
+
     def module_close(self, *args, **kwargs):
         self.pane_hide()
 
     def pane_hide(self):
         if not self._detached:
-            for attr, listener in self.listeners:
+            for attr, listener, obj in self.listeners:
                 self.context.unlisten(attr, listener)
             self._detached = True
 
