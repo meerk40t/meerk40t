@@ -917,9 +917,9 @@ class LaserRender:
                 bbox = node.bbox_group()
             else:
                 bbox = node.bbox()
-            print (f"{node.type}: {bbox}")
+            # print (f"{node.type}: {bbox}")
         except AttributeError:
-            print (f"This node has no bbox: {self.node.type}")
+            # print (f"This node has no bbox: {self.node.type}")
             return
         gc.PushState()
         cx = bbox[0] + 0.5 * (bbox[2] - bbox[0])
