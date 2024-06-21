@@ -324,12 +324,11 @@ class IdPanel(wx.Panel):
         try:
             if hasattr(self.node, "label") and self.showlabel:
                 vis2 = True
-                vis3 = True
-                if self.node.type == "file":
-                    vis3 = False
+                if hasattr(self.node, "label_display"):
+                    vis3 = True
+                    self.check_label.SetValue(bool(self.node.label_display))
                 self.text_label.SetValue(mklabel(node.label))
                 self.text_label.SetToolTip(node.display_label())
-                self.check_label.SetValue(bool(self.node.label_display))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
             self.check_label.Show(vis3)
