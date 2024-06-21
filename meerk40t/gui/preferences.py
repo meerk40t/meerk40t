@@ -609,6 +609,7 @@ class Preferences(MWindow):
             self.context("scene color unset\n")
             self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
+            self.panel_color.reload()
             self.context.signal("restart")
 
     @property
