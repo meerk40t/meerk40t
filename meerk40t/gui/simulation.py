@@ -1691,6 +1691,7 @@ class SimulationPanel(wx.Panel, Job):
         self._refresh_simulated_plan()
 
     def pane_show(self):
+        self.Layout()
         self.context.setting(str, "units_name", "mm")
 
         bbox = self.context.device.view.source_bbox()
@@ -2195,6 +2196,7 @@ class Simulation(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
+        self.Layout()
 
     @staticmethod
     def sub_register(kernel):
