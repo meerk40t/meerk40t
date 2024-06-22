@@ -691,6 +691,8 @@ class GRBLDriver(Parameters):
         """
         self.paused = True
         self(f"!{self.line_end}", real=True)
+        # Let's make sure we reestablish power...
+        self.power_dirty = True
         self.service.signal("pause")
 
     def resume(self, *args):
