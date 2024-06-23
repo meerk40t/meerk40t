@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 from functools import partial
+from math import isinf
 
 import wx
 from PIL import Image
@@ -28,6 +29,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
+from meerk40t.gui.wxutils import wxButton
 from meerk40t.kernel import Job, get_safe_path, lookup_listener, signal_listener
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
@@ -4614,6 +4616,99 @@ class MeerK40t(MWindow):
                 newstring = filename.replace("&", "&&")
             return newstring
 
+        def get_placement_options():
+            dlg = wx.Dialog(
+                None,
+                wx.ID_ANY,
+                title=_("Place elements"),
+                size=wx.DefaultSize,
+                pos=wx.DefaultPosition,
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+            )
+            # contents
+            options_1 = ( _("Default"), _("Left Edge"), _("Center"), _("Right Edge"))
+            options_2 = ( _("Default"), _("Top Edge"), _("Center"), _("Bottom Edge"))
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            label = wx.StaticText(dlg, wx.ID_ANY, _("Where do you want to place the content of the file?"))
+            sizer.Add(label, 0, wx.EXPAND, 0)
+            s1 = wx.BoxSizer(wx.HORIZONTAL)
+            lbl1 = wx.StaticText(dlg, wx.ID_ANY, _("Horizontal:"))
+            combo1 = wx.ComboBox(dlg, wx.ID_ANY, choices=options_1, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            combo1.SetSelection(0)
+            s1.Add(lbl1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            s1.Add(combo1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            s2 = wx.BoxSizer(wx.HORIZONTAL)
+            lbl2 = wx.StaticText(dlg, wx.ID_ANY, _("Vertical:"))
+            combo2 = wx.ComboBox(dlg, wx.ID_ANY, choices=options_2, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            combo2.SetSelection(0)
+            s2.Add(lbl2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            s2.Add(combo2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            # Make the two labels the same size
+            ss1 = lbl1.GetSize()
+            ss2 = lbl2.GetSize()
+            lbl1.SetMinSize(wx.Size(max(ss1[0], ss2[0]), max(ss1[1], ss2[1])))
+            lbl2.SetMinSize(wx.Size(max(ss1[0], ss2[0]), max(ss1[1], ss2[1])))
+            sizer.Add(s1, 0, wx.EXPAND, 0)
+            sizer.Add(s2, 0, wx.EXPAND, 0)
+
+            btnsizer = wx.StdDialogButtonSizer()
+            btn = wxButton(dlg, wx.ID_OK)
+            btn.SetDefault()
+            btnsizer.AddButton(btn)
+            btn = wxButton(dlg, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+            btnsizer.Realize()
+            sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+
+            dlg.SetSizer(sizer)
+            sizer.Fit(dlg)
+            dlg.CenterOnScreen()
+            res1 = ""
+            res2 = ""
+            answer = dlg.ShowModal()
+            if answer == wx.ID_OK:
+                idx = combo1.GetSelection()
+                if idx == 1:
+                    res1 = "left"
+                elif idx == 2:
+                    res1 = "center"
+                elif idx == 3:
+                    res1 = "right"
+                idx = combo2.GetSelection()
+                if idx == 1:
+                    res2 = "top"
+                elif idx == 2:
+                    res2 = "center"
+                elif idx == 3:
+                    res2 = "bottom"
+            else:
+                res1 = "STOP"
+                res2 = "STOP"
+            dlg.Destroy()
+            return res1, res2
+
+        # We will ask the user where to place the content if the shift-key was pressed during the time of the load.
+        # If the ctrl-key was pressed then we will place the content in the center of the scene
+
+        shift_flag = wx.GetKeyState(wx.WXK_SHIFT)
+        ctrl_flag = wx.GetKeyState(wx.WXK_CONTROL)
+        target_location_x = ""
+        target_location_y = ""
+        post_process = shift_flag or ctrl_flag
+        new_elements = list()
+        old_elements = list()
+        if post_process:
+            for e in self.context.elements.elems_nodes():
+                old_elements.append(e)
+            # Ask for target-destination
+            if shift_flag: # has precedence, so ctrl+shift will be treated as shift
+                target_location_x, target_location_y = get_placement_options()
+                if target_location_x == "STOP":
+                    return
+            elif ctrl_flag:
+                target_location_x = "center"
+                target_location_y = "center"
+
         kernel = self.context.kernel
         try:
             # Reset to standard tool
@@ -4628,6 +4723,56 @@ class MeerK40t(MWindow):
                 preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
+            if post_process:
+                min_x = float("inf")
+                min_y = float("inf")
+                max_x = -float("inf")
+                max_y = -float("inf")
+                for e in self.context.elements.elems_nodes():
+                    if e in old_elements:
+                        continue
+                    new_elements.append(e)
+                    try:
+                        bb = e.bbox()
+                        if bb[0] < min_x:
+                            min_x = bb[0]
+                        if bb[1] < min_y:
+                            min_y = bb[1]
+                        if bb[2] > max_x:
+                            max_x = bb[2]
+                        if bb[3] > max_y:
+                            max_y = bb[3]
+                    except AttributeError:
+                        pass
+                device_w = float(self.context.device.view.width)
+                device_h = float(self.context.device.view.height)
+                # print(f"Loaded {len(new_elements)}: {min_x:.2f}, {min_y:.2f} - {max_x:.2f}, {max_y:.2f}")
+                # print(f"Center: {(min_x + max_x)/2:.2f}, {(min_y + max_y)/2:.2f} - {device_w / 2:.2f}, {device_h / 2:.2f}")
+                if len(new_elements) > 0 and not isinf(min_x):
+                    dx = 0
+                    dy = 0
+                    if target_location_x == "center":
+                        dx = device_w / 2 - (max_x + min_x) / 2
+                    if target_location_x == "left":
+                        dx = - min_x
+                    if target_location_x == "right":
+                        dx = device_w - max_x
+                    if target_location_y == "center":
+                        dy = device_h / 2 - (max_y + min_y) / 2
+                    if target_location_y == "top":
+                        dy = - min_y
+                    if target_location_y == "bottom":
+                        dy = device_h - max_y
+                    # print (f"{target_location_x}: {dx:.2f}, {target_location_y}: {dy:.2f}")
+                    if dx != 0 or dy!= 0:
+                        matrix = Matrix.translate(dx, dy)
+                        for e in new_elements:
+                            if e.type in ("file", "group"):
+                                continue
+                            e.matrix *= matrix
+                            e.translated(dx, dy)
+                    # self.context.signal("refresh_scene", "Scene")
+
         except Exception as e:
             dlg = wx.MessageDialog(
                 None,
