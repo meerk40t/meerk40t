@@ -2638,7 +2638,7 @@ class MeerK40t(MWindow):
                 try:
                     context.elements.save(pathname, version=version)
                     gui.validate_save()
-                    gui.working_file = pathname
+                    self.set_working_file_name(pathname)
                     gui.set_file_as_recently_used(gui.working_file)
                 except OSError as e:
                     dlg = wx.MessageDialog(
@@ -4461,6 +4461,11 @@ class MeerK40t(MWindow):
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
 
+    def set_working_file_name(self, fname):
+        if self.working_file is None:
+            self.working_file = fname
+        # We could check for multiple filenodes or whatever to establish the name
+
     def load_or_open(self, filename):
         """
         Loads recent file name given. If the filename cannot be opened attempts open dialog at last known location.
@@ -4468,7 +4473,7 @@ class MeerK40t(MWindow):
         if os.path.exists(filename):
             try:
                 self.load(filename)
-                self.working_file = filename
+                self.set_working_file_name(filename)
             except PermissionError:
                 self.tryopen(filename)
         else:
@@ -4604,7 +4609,7 @@ class MeerK40t(MWindow):
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
                     # or (len(elements) > 0 and "meerK40t" in elements[0].values):
                     # TODO: Disabled uniform_svg, no longer detecting namespace.
-                    self.working_file = pathname
+                    self.set_working_file_name(pathname)
                     self.validate_save()
             except AttributeError:
                 pass
