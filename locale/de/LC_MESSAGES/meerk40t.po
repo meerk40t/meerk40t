@@ -17270,3 +17270,7 @@ msgstr "Zeige reale Abmessungen"
 #: meerk40t/gui/simulation.py:1370
 msgid "Display the physical dimensions in the Simulation pane"
 msgstr "Zeigt die realen Abmessungen (inkl. Rand) im Arbeitsbereich an"
+
+#: meerk40t/gui/wxmain.py:2669
+msgid "Succesfully saved {file}"
+msgstr "Datei '{file}' wurde erfolgreich gesichert"
