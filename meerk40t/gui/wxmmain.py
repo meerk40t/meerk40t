@@ -2666,6 +2666,7 @@ class MeerK40t(MWindow):
                     gui.set_file_as_recently_used(gui.working_file)
                     gui.validate_save()
                     context.elements.save(gui.working_file)
+                    context.signal("statusmsg", _("Succesfully saved {file}").format(file=gui.working_file))
                 except OSError as e:
                     dlg = wx.MessageDialog(
                         None,
@@ -4467,6 +4468,7 @@ class MeerK40t(MWindow):
         if os.path.exists(filename):
             try:
                 self.load(filename)
+                self.working_file = filename
             except PermissionError:
                 self.tryopen(filename)
         else:
