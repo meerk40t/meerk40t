@@ -17194,3 +17194,79 @@ msgstr "Große Bilder verkleinern"
 #: meerk40t/image/imagetools.py:70
 msgid "Set: Will scale down large images so they will fit on the laserbed."
 msgstr "Aktiv: zu große Bilder werden verkleinert, so dass sie auf das Laserbett passen"
+
+#: meerk40t/gui/laserpanel.py:479 meerk40t/gui/spoolerpanel.py:1003
+msgid "Resume"
+msgstr "Weiter"
+
+#: meerk40t/gui/laserpanel.py:527 meerk40t/gui/wxmmain.py:1434
+msgid "Prevent the laser from accidentally executing"
+msgstr "Verhindere, dass der Laser versehentlich gestartet wird"
+
+#: meerk40t/gui/laserpanel.py:605 meerk40t/gui/wxmeerk40t.py:235
+msgid "We intentionally ignored a request to start a job via the keyboard.\nYou need to make your intent clear by a deliberate mouse-click"
+msgstr "Wir haben bewusst den Versuch den Laser per Tastendruck zu starten ignoriert.\nDie Absicht muss mit Maus-Click deutlich gemacht werden."
+
+#: meerk40t/gui/materialtest.py:44
+msgid "Template-Name"
+msgstr "Vorlagen-Name"
+
+#: meerk40t/gui/materialtest.py:1591
+msgid "Templates"
+msgstr "Vorlagen"
+
+#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:262
+msgid "X, Y"
+msgstr ""
+
+#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:281
+msgid "W, H"
+msgstr "B, H"
+
+#: meerk40t/gui/wxmmain.py:1473
+msgid "Activate coolant"
+msgstr "Kühlung einschalten"
+
+#: meerk40t/gui/wxmmain.py:1480
+msgid "Deactivate coolant"
+msgstr "Kühlung ausschalten"
+
+#: meerk40t/gui/wxmmain.py:4623
+msgid "Place elements"
+msgstr "Elemente platzieren"
+
+#: meerk40t/gui/wxmmain.py:4629
+msgid "Left Edge"
+msgstr "Linker Rand"
+
+#: meerk40t/gui/wxmmain.py:4629
+msgid "Right Edge"
+msgstr "Rechter Rand"
+
+#: meerk40t/gui/wxmmain.py:4630
+msgid "Top Edge"
+msgstr "Oberer Rand"
+
+#: meerk40t/gui/wxmmain.py:4630
+msgid "Bottom Edge"
+msgstr "Unterer Rand"
+
+#: meerk40t/gui/wxmmain.py:4632
+msgid "Where do you want to place the content of the file?"
+msgstr "Wo soll der Datei-Inhalt platziert werden?"
+
+#: meerk40t/gui/wxmmain.py:4635
+msgid "Horizontal:"
+msgstr "Horizontal:"
+
+#: meerk40t/gui/wxmmain.py:4641
+msgid "Vertical:"
+msgstr "Vertikal:"
+
+#: meerk40t/gui/simulation.py:1369 meerk40t/gui/wxmscene.py:1191
+msgid "Show physical dimensions"
+msgstr "Zeige reale Abmessungen"
+
+#: meerk40t/gui/simulation.py:1370
+msgid "Display the physical dimensions in the Simulation pane"
+msgstr "Zeigt die realen Abmessungen (inkl. Rand) im Arbeitsbereich an"
