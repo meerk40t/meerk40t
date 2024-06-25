@@ -757,9 +757,11 @@ class Elemental(Service):
                             if op.output:
                                 will_be_burnt = True
                                 break
-                        except AttributeError:
+                        except AttributeError as e:
+                            # print(f"Encountered error {e} for node {node.type}.{node.id}.{node.label}")
                             pass
                 if not will_be_burnt:
+                    # print (f"Node {node.type}.{node.id}.{node.label} has {len(node._references)} references but none is active...")
                     nonburnt = True
             if nonburnt and unassigned:
                 break
@@ -3779,6 +3781,31 @@ class Elemental(Service):
                     return True
         return False
 
+    def remove_invalid_references(self):
+        # If you load a file to an existing set of elements/operations,
+        # references may become invalid as those link to non-existing operation nodes
+        # print ("Will check for invalid references")
+        for node in self.elems():
+            to_be_deleted = []
+            for idx, ref in enumerate(node._references):
+                if ref is None:
+                    # print (f"Empty reference for {node.type}.{node.id}.{node.label}")
+                    to_be_deleted.insert(0, idx) # Last In First Out
+                else:
+                    try:
+                        id = ref.parent # This needs to exist
+                        if id is None:
+                            to_be_deleted.insert(0, idx) # Last In First Out
+                            # print (f"Empty parent reference for {node.type}.{node.id}.{node.label}")
+                    except AttributeError:
+                        to_be_deleted.insert(0, idx) # Last In First Out
+                        # print (f"Invalid reference for {node.type}.{node.id}.{node.label}")
+            if to_be_deleted:
+                # print (f"Will delete {len(to_be_deleted)} invalid references")
+                for idx in to_be_deleted:
+                    node._references.pop(idx)
+
+
     def remove_empty_groups(self):
         def descend_group(gnode):
             gres = 0
@@ -3858,6 +3885,7 @@ class Elemental(Service):
                             )
                             elemcount_now = self.count_elems()
                             opcount_now = self.count_op()
+                            self.remove_invalid_references()
                             self.remove_empty_groups()
                             # self.listen_tree(self)
                             self._filename = pathname
