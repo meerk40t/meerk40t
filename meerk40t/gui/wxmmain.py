@@ -3425,7 +3425,7 @@ class MeerK40t(MWindow):
         self.file_menu.Append(
             wx.ID_OPEN,
             _("&Open Project\tCtrl-O"),
-            _("Clear existing elements and notes and open a new file"),
+            _("Clear existing elements and notes and open a new file") + _(" (keep the Shift-Key pressed to be asked for a target location)"),
         )
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
 
@@ -3437,7 +3437,7 @@ class MeerK40t(MWindow):
         menu_item = self.file_menu.Append(
             wx.ID_ANY,
             _("&Import File"),
-            _("Import another file into the same project"),
+            _("Import another file into the same project") + _(" (keep the Shift-Key pressed to be asked for a target location)"),
         )
         self.Bind(wx.EVT_MENU, self.on_click_import, id=menu_item.GetId())
         self.file_menu.AppendSeparator()
@@ -4553,7 +4553,7 @@ class MeerK40t(MWindow):
 
         for file, shortcode in recents:
             if file is not None and file:
-                shortfile = _("Load {file}...").format(file=os.path.basename(file))
+                shortfile = _("Load {file}...").format(file=os.path.basename(file)) + _(" (keep the Shift-Key pressed to be asked for a target location)")
                 menuitem = self.recent_file_menu.Append(
                     wx.ID_ANY, shortcode + "  " + file.replace("&", "&&"), shortfile
                 )
