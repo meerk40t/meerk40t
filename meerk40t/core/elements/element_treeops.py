@@ -600,7 +600,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Power"))
     @tree_radio(radio_match_power)
-    @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_values("power", (100, 250, 300, 333, 500, 667, 750, 1000))
     @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
@@ -625,7 +625,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("DPI"))
     @tree_radio(radio_match)
-    @tree_values("dpi", (100, 200, 250, 333.3, 500, 666.6, 750, 1000))
+    @tree_values("dpi", (100, 200, 250, 300, 333.3, 500, 666.6, 750, 1000))
     @tree_operation(
         _("DPI {dpi}"),
         node_type=("op raster", "elem image"),
