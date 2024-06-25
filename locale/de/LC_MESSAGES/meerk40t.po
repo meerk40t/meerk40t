@@ -17274,3 +17274,7 @@ msgstr "Zeigt die realen Abmessungen (inkl. Rand) im Arbeitsbereich an"
 #: meerk40t/gui/wxmain.py:2669
 msgid "Succesfully saved {file}"
 msgstr "Datei '{file}' wurde erfolgreich gesichert"
+
+#: meerk40t/gui/wxmain.py:4556
+msgid " (keep the Shift-Key pressed to be asked for a target location)"
+msgstr " (Shift-Taste gedrückt lassen, um nach Platzierung gefragt zu werden)"

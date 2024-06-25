@@ -695,6 +695,15 @@ class SVGProcessor:
         @param pathname:
         @return:
         """
+        # Caveat: we will not delete operations that have already a content,
+        # otherwise existing elements that had been classified before
+        # will become orphaned!
+        # When is this needed: not on a load with an empty set but when
+        # you load elements on top of an existing set!
+        retain_op_list = list()
+        for child in list(self.elements.ops()):
+            if child._children is not None and len(child._children) > 0:
+                retain_op_list.append(child)
         self.pathname = pathname
 
         context_node = self.elements.elem_branch
@@ -704,7 +713,10 @@ class SVGProcessor:
         self.parse(svg, file_node, self.element_list, branch="elements")
 
         if self.load_operations and self.operations_replaced:
+            # print ("Will replace all operations...")
             for child in list(self.elements.op_branch.children):
+                if child in retain_op_list:
+                    continue
                 if not hasattr(child, "_ref_load"):
                     child.remove_all_children(fast=True, destroy=True)
                     child.remove_node(fast=True, destroy=True)

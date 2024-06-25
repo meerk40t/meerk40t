@@ -240,6 +240,7 @@ class MeerK40t(MWindow):
 
         self.needs_saving = False
         self.working_file = None
+        self.files_loaded = 0
 
         self.pipe_state = None
         self.previous_position = None
@@ -2656,7 +2657,7 @@ class MeerK40t(MWindow):
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(quit=False, **kwargs):
-            if gui.working_file is None:
+            if (gui.working_file is None or self.files_loaded > 1) and self.context.elements.count_elems() > 0:
                 if quit:
                     context(".dialog_save_as -q\n")
                 else:
@@ -3424,7 +3425,7 @@ class MeerK40t(MWindow):
         self.file_menu.Append(
             wx.ID_OPEN,
             _("&Open Project\tCtrl-O"),
-            _("Clear existing elements and notes and open a new file"),
+            _("Clear existing elements and notes and open a new file") + _(" (keep the Shift-Key pressed to be asked for a target location)"),
         )
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
 
@@ -3436,7 +3437,7 @@ class MeerK40t(MWindow):
         menu_item = self.file_menu.Append(
             wx.ID_ANY,
             _("&Import File"),
-            _("Import another file into the same project"),
+            _("Import another file into the same project") + _(" (keep the Shift-Key pressed to be asked for a target location)"),
         )
         self.Bind(wx.EVT_MENU, self.on_click_import, id=menu_item.GetId())
         self.file_menu.AppendSeparator()
@@ -4436,7 +4437,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.Reposition(value)
 
     def __set_titlebar(self):
-        label = self.context.elements.filename
+        label = self.working_file
         if label is None:
             label = ""
         else:
@@ -4462,9 +4463,15 @@ class MeerK40t(MWindow):
         self.SetIcon(_icon)
 
     def set_working_file_name(self, fname):
-        if self.working_file is None:
+        if fname is None:
             self.working_file = fname
-        # We could check for multiple filenodes or whatever to establish the name
+            self.files_loaded = 0
+        else:
+            self.files_loaded += 1
+            if self.files_loaded == 1:
+                self.working_file = fname
+            else:
+                self.working_file =_("<Multiple files loaded>")
 
     def load_or_open(self, filename):
         """
@@ -4546,7 +4553,7 @@ class MeerK40t(MWindow):
 
         for file, shortcode in recents:
             if file is not None and file:
-                shortfile = _("Load {file}...").format(file=os.path.basename(file))
+                shortfile = _("Load {file}...").format(file=os.path.basename(file)) + _(" (keep the Shift-Key pressed to be asked for a target location)")
                 menuitem = self.recent_file_menu.Append(
                     wx.ID_ANY, shortcode + "  " + file.replace("&", "&&"), shortfile
                 )
@@ -4593,7 +4600,7 @@ class MeerK40t(MWindow):
         context = self.context
         kernel = context.kernel
         kernel.busyinfo.start(msg=_("Cleaning up..."))
-        self.working_file = None
+        self.set_working_file_name(None)
         context.elements.clear_all(ops_too=ops_too)
         self.context(".laserpath_clear\n")
         self.validate_save()
