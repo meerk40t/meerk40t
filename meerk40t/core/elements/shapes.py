@@ -386,7 +386,7 @@ def init_commands(kernel):
 
         if interval is None and hasattr(self.device, "effect_wobble_default_interval"):
             interval = getattr(self.device, "effect_wobble_default_interval")
-        elif distance is None:
+        elif interval is None:
             interval = "0.5mm"
 
         wtype = wtype.lower()
