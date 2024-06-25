@@ -14,6 +14,7 @@ from ..core.units import Length
 from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class MoshiDevice(Service, Status):
@@ -221,6 +222,8 @@ class MoshiDevice(Service, Status):
             },
         ]
         self.register_choices("coolant", choices)
+
+        self.register_choices("moshi-effects", get_effect_choices(self))
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(

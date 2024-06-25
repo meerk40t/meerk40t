@@ -1301,6 +1301,24 @@ class MeerK40t(MWindow):
             # _("Apply a wobble movement along the path (circular, at the left side of the line)")
 
             eff = (
+                "effect-wobble",
+                "Apply a wobble movement along the path",
+                icon_hatch_diag_bidir,
+                "Wobble",
+                "Path",
+            )
+            kernel.register("registered_effects/SimpleWobble", eff)
+
+            eff = (
+                "effect-hatch",  
+                "Wrap the current node in a hatch",
+                icon_hatch,
+                "Hatch",
+                "Fill (unidirectional)",
+            )
+            kernel.register("registered_effects/SimpleHatch", eff)
+
+            """             eff = (
                 "effect-hatch -e scanline",
                 "Wrap the current node in a hatch",
                 icon_hatch,
@@ -1335,6 +1353,7 @@ class MeerK40t(MWindow):
             kernel.register("registered_effects/DiagonalLineBD", eff)
 
             # Wobbles
+
             eff = (
                 "effect-wobble -w circle",
                 "Apply a wobble movement along the path (circular on top of the line)",
@@ -1361,6 +1380,7 @@ class MeerK40t(MWindow):
                 "Path",
             )
             kernel.register("registered_effects/WobbleCircleR", eff)
+        """
 
         def run_job(*args):
             busy = kernel.busyinfo
@@ -1639,12 +1659,15 @@ class MeerK40t(MWindow):
         for idx, hatch in enumerate(effects):
             if len(hatch) < 4:
                 continue
-            if not hatch[4].lower().startswith("fill"):
-                continue
+            # if not hatch[4].lower().startswith("fill"):
+            #    continue
 
             cmd = hatch[0]
             if first_hatch is None:
                 first_hatch = cmd
+            # cmd = "effect-remove\n" + cmd + "\nwindow open Properties"
+            # cmd = f"element clipboard copy\nelement clipboard paste\n{cmd}\nwindow open Properties"
+
             tip = _(hatch[1]) + rightmsg
             icon = hatch[2]
             if icon is None:
@@ -3087,7 +3110,7 @@ class MeerK40t(MWindow):
             if result.startswith("_"):
                 idx = result.find("_", 1)
                 if idx >= 0:
-                    result = result[idx + 1 :]
+                    result = result[idx + 1:]
             elif result.startswith("~"):
                 result = result[1:]
             return result
@@ -3193,7 +3216,7 @@ class MeerK40t(MWindow):
             if result.startswith("_"):
                 idx = result.find("_", 1)
                 if idx >= 0:
-                    result = result[idx + 1 :]
+                    result = result[idx + 1:]
             return result
 
         label = _("Tools")
@@ -3705,7 +3728,7 @@ class MeerK40t(MWindow):
                 "segment": "Scene Appearance",
                 "subsegment": "Display Options",
             },
-            ## This will confuse the hell out of people, so omitted...
+            # This will confuse the hell out of people, so omitted...
             # {
             #     "label": _("Do Not Refresh"),
             #     "help": _("Don't refresh the scene when requested"),

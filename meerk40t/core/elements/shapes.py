@@ -284,9 +284,9 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
 
     @self.console_option("etype", "e", type=str, default="scanline")
-    @self.console_option("distance", "d", type=Length, default="1mm")
-    @self.console_option("angle", "a", type=Angle, default="0deg")
-    @self.console_option("angle_delta", "b", type=Angle, default="0deg")
+    @self.console_option("distance", "d", type=Length, default=None)
+    @self.console_option("angle", "a", type=Angle, default=None)
+    @self.console_option("angle_delta", "b", type=Angle, default=None)
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
@@ -307,11 +307,28 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
+
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+
+        if distance is None and hasattr(self.device, "effect_hatch_default_distance"):
+            distance = getattr(self.device, "effect_hatch_default_distance")
+        elif distance is None:
+            distance = "1mm"
+
+        if angle is None and hasattr(self.device, "effect_hatch_default_angle"):
+            angle = Angle(getattr(self.device, "effect_hatch_default_angle"))
+        elif angle is None:
+            angle = Angle("0deg")
+
+        if angle_delta is None and hasattr(self.device, "effect_hatch_default_angle_delta"):
+            angle_delta = Angle(getattr(self.device, "effect_hatch_default_angle_delta"))
+        elif angle_delta is None:
+            angle_delta = Angle("0deg")
+
         if etype is None:
             etype = "scanline"
         first_node = data[0]
@@ -334,8 +351,8 @@ def init_commands(kernel):
         node.focus()
 
     @self.console_option("wtype", "w", type=str, default="circle")
-    @self.console_option("radius", "r", type=Length, default="0.5mm")
-    @self.console_option("interval", "i", type=Length, default="0.05mm")
+    @self.console_option("radius", "r", type=Length, default=None)
+    @self.console_option("interval", "i", type=Length, default=None)
     @self.console_command(
         "effect-wobble",
         help=_("adds wobble-effect to selected elements"),
@@ -361,6 +378,17 @@ def init_commands(kernel):
             return
         if wtype is None:
             wtype = "circle"
+
+        if radius is None and hasattr(self.device, "effect_wobble_default_radius"):
+            radius = getattr(self.device, "effect_wobble_default_radius")
+        elif radius is None:
+            radius = "0.5mm"
+
+        if interval is None and hasattr(self.device, "effect_wobble_default_interval"):
+            interval = getattr(self.device, "effect_wobble_default_interval")
+        elif interval is None:
+            interval = "0.5mm"
+
         wtype = wtype.lower()
         allowed = (
             "circle",
@@ -375,10 +403,6 @@ def init_commands(kernel):
         if wtype not in allowed:
             channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
-        if radius is None:
-            radius = "0.5mm"
-        if interval is None:
-            interval = "0.05mm"
         try:
             rlen = Length(radius)
         except ValueError:

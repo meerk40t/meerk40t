@@ -16,6 +16,7 @@ from .mock_connection import MockConnection
 from .serial_connection import SerialConnection
 from .tcp_connection import TCPConnection
 from .udp_connection import UDPConnection
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class RuidaDevice(Service):
@@ -195,6 +196,8 @@ class RuidaDevice(Service):
             },
         ]
         self.register_choices("ruida-global", choices)
+
+        self.register_choices("ruida-effects", get_effect_choices(self))
 
         choices = [
             {
