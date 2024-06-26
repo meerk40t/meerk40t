@@ -3905,7 +3905,7 @@ class Elemental(Service):
                                     )
                                 return True
 
-                        except FileNotFoundError:
+                        except (FileNotFoundError, PermissionError, OSError):
                             return False
                         except BadFileError as e:
                             kernel._console_channel(
