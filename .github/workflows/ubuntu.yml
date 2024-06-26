@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -37,7 +37,7 @@ jobs:
 # because it supports uploading to existing release based on current tag.
     - name: Upload Release Assets
       id: release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |

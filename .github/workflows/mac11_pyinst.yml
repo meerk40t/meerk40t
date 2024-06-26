@@ -7,15 +7,15 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-  
+
 jobs:
   build-macos11:
     runs-on: macos-11
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 ##    - name: Set up Python 3.9
-##      uses: actions/setup-python@v2
+##      uses: actions/setup-python@v5
 ##      with:
 ##        python-version: 3.9
     - name: Alternative Python Install if needed
@@ -58,13 +58,13 @@ jobs:
         python3.8 -m pip install wheel setuptools
         python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
         python3.8 -m pip install --no-use-pep517 pyinstaller==4.3
-        
+
         ## numpy toggle based on 32 bit fix
         python3.8 -m pip install six numpy ezdxf
         ## python3.8 -m pip install wheel six ezdxf
-        
+
         python3.8 -m pip install potracer
-        
+
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython==4.1.1
         if [ -f requirements-nogui.txt ]; then python3.8 -m pip install -r requirements-nogui.txt; fi
         python3.8 -m pip uninstall -y meerk40t[gui]
@@ -125,12 +125,12 @@ jobs:
         ## plutil -replace  -string  dist/meerk40t.app/Contents/Info.plist
         SIG="-"
         plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
-        
+
         ## Fix the numpy 32 bit issue inside the app bundle - or install numpy from source.
         ## lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
         ## rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
         ## mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
-        
+
         echo "Codesign for GITHUB"
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.zip
 
@@ -170,7 +170,7 @@ jobs:
 # because it supports uploading to existing release based on current tag.
     - name: Upload Release Assets
       id: release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
