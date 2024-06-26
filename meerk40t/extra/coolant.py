@@ -5,8 +5,7 @@ Devices can then claim ownership of such a registered device
 and react on device specific coolant commands
 """
 
-import urllib.request
-
+from meerk40t.kernel import Settings
 
 class Coolants:
     """
@@ -350,10 +349,13 @@ class BaseCoolantURL():
 
     def send(self, url):
         import urllib
+        # print (f"Calling '{url}...")
         try:
             urllib.request.urlopen(url, data=None)
+            # print (f"Success")
             return True
-        except Exception:
+        except Exception as e:
+            # print (f"Failed: {e}")
             pass
         return False
 
@@ -382,12 +384,22 @@ class CoolantURL():
     def __init__(self, context, *args, **kwargs):
         self.context = context
         self.methods = dict()
+        self.settings = Settings(
+            self.context.kernel.name, "coolanturl.cfg", create_backup=True
+        )  # keep backup
         self.load_registered()
+        if len(self.methods) == 0:
+            self.add_or_update(
+                id="tasmota1",
+                label="Test-Tasmota",
+                url_on="http://192.168.0.92/cm?cmnd=POWER%20ON",
+                url_off="http://192.168.0.92/cm?cmnd=POWER%20OFF"
+            )
         self.announce()
 
     def handler(self, id):
 
-        def turn_on_off(mode):
+        def turn_on_off(device, mode):
             if id in self.methods:
                 if mode:
                     self.methods[id]["routine"].coolant_on()
@@ -401,22 +413,47 @@ class CoolantURL():
             "id": id,
             "label": label,
             "constraint": constraint,
-            "routine": BaseCoolantURL(self.context, id, url_on, url_off)
+            "url_on": url_on,
+            "url_off": url_off,
+            "routine": BaseCoolantURL(context=self.context, id=id, url_on=url_on, url_off=url_off)
         }
         self.save_registered()
         self.announce()
 
     def load_registered(self):
-        return
+        self.methods.clear()
+        for id in self.settings.section_set():
+            entry = dict()
+            value = self.settings.read_persistent(str, section=id, key="label")
+            if not value:
+                value = f"Webbased: {id}"
+            entry["label"] = value
+            url_on = self.settings.read_persistent(str, section=id, key="url_on")
+            entry["url_on"] = url_on
+            url_off = self.settings.read_persistent(str, section=id, key="url_off")
+            entry["url_off"] = url_off
+            value = self.settings.read_persistent(str, section=id, key="constraint")
+            if value == "":
+                value = None
+            entry["constraint"] = value
+            entry["routine"] = BaseCoolantURL(context=self.context, id=id, url_on=url_on, url_off=url_off)
+            self.methods[id] = entry
 
     def save_registered(self):
-        return
+        self.settings.delete_all_persistent()
+        for id, entry in self.methods.items():
+            self.settings.write_persistent(section=id, key="label", value=entry["label"])
+            self.settings.write_persistent(section=id, key="url_on", value=entry["url_on"])
+            self.settings.write_persistent(section=id, key="url_off", value=entry["url_off"])
+            self.settings.write_persistent(section=id, key="constraint", value=entry["constraint"])
+        self.settings.write_configuration()
 
     def announce(self):
-        for cm in self.methods:
+        for id, cm in self.methods.items():
+            # print (cm)
             self.context.coolant.register_coolant_method(
-            cm["id"],
-            self.handler(cm["id"]),
+            id,
+            self.handler(id),
             config_function=None,
             label=cm["label"],
             constraints=cm["constraint"],
