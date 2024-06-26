@@ -5,6 +5,8 @@ Devices can then claim ownership of such a registered device
 and react on device specific coolant commands
 """
 
+import urllib.request
+
 
 class Coolants:
     """
@@ -287,6 +289,8 @@ def plugin(kernel, lifecycle):
             constraints="grbl",
         )
 
+        context._coolanturl = CoolantURL(context=context)
+
         @context.console_command(
             "coolants", help=_("displays registered coolant methods")
         )
@@ -335,3 +339,110 @@ def plugin(kernel, lifecycle):
 
             coolant = kernel.root.coolant
             coolant.coolant_off(device)
+
+class BaseCoolantURL():
+
+    def __init__(self, id, url_on, url_off, *args, **kwargs):
+        self.id = id
+        self.url_on = url_on
+        self.url_off = url_off
+        self._current_state = False
+
+    def send(self, url):
+        import urllib
+        try:
+            urllib.request.urlopen(url, data=None)
+            return True
+        except Exception:
+            pass
+        return False
+
+    @property
+    def current_state(self):
+        return self._current_state
+
+    @current_state.setter
+    def current_state(self, value):
+        if value:
+            if not self.send(self.url_on):
+                return
+        else:
+            if not self.send(self.url_off):
+                return
+
+        self._current_state = value
+
+    def coolant_on(self):
+        self.current_state = True
+
+    def coolant_off(self):
+        self.current_state = False
+
+class CoolantURL():
+    def __init__(self, context, *args, **kwargs):
+        self.context = context
+        self.methods = dict()
+        self.load_registered()
+        self.announce()
+
+    def handler(self, id):
+
+        def turn_on_off(mode):
+            if id in self.methods:
+                if mode:
+                    self.methods[id]["routine"].coolant_on()
+                else:
+                    self.methods[id]["routine"].coolant_off()
+
+        return turn_on_off
+
+    def add_or_update(self, id, label, url_on, url_off, constraint=None):
+        self.methods[id] = {
+            "id": id,
+            "label": label,
+            "constraint": constraint,
+            "routine": BaseCoolantURL(self.context, id, url_on, url_off)
+        }
+        self.save_registered()
+        self.announce()
+
+    def load_registered(self):
+        return
+
+    def save_registered(self):
+        return
+
+    def announce(self):
+        for cm in self.methods:
+            self.context.coolant.register_coolant_method(
+            cm["id"],
+            self.handler(cm["id"]),
+            config_function=None,
+            label=cm["label"],
+            constraints=cm["constraint"],
+        )
+
+    def config_dialog(self):
+        try:
+            import wx
+        except ImportError:
+            return
+
+        def on_add_button(event):
+            return
+
+        def on_duplicate_button(event):
+            return
+
+        def on_delete_button(event):
+            return
+
+        def on_update_button(event):
+            return
+
+        dialog = wx.Dialog(None, wx.ID_ANY)
+        # We display all possible urls and let the user edit/delete/add the methods
+        dialog.CenterOnScreen()
+        res = dialog.ShowModal()
+        dialog.Destroy()
+
