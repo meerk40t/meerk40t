@@ -359,7 +359,8 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
         def delayed_command(command):
             def handler(*args):
-                self.context(command + "\n")
+                cmd = command.replace("\\n", "\n")
+                self.context(cmd + "\n")
 
             return handler
 
