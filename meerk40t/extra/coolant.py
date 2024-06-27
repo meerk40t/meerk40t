@@ -76,6 +76,24 @@ class Coolants:
         )
         return True
 
+    def coolant_on_by_id(self, identifier):
+        # Caveat, this will be executed independently of devices registered!
+        cool_id = identifier.lower()
+        for cool in self._coolants:
+            if cool_id == cool["id"]:
+                routine = cool["function"]
+                routine(None, True)
+                break
+
+    def coolant_off_by_id(self, identifier):
+        # Caveat, this will be executed independently of devices registered!
+        cool_id = identifier.lower()
+        for cool in self._coolants:
+            if cool_id == cool["id"]:
+                routine = cool["function"]
+                routine(None, False)
+                break
+
     def coolant_on(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
@@ -254,17 +272,21 @@ def plugin(kernel, lifecycle):
                 msg = _("Please switch the airassist for {laser} off").format(
                     laser=lasername
                 )
-            context.kernel.yesno(
+            kernel.yesno(
                 msg, caption=_("Air-Assist"), option_yes=_("OK"), option_no=_("OK")
             )
 
         def base_coolant_grbl_m7(context, mode):
+            if not context:
+                return
             if mode:
                 context("gcode M7\n")
             else:
                 context("gcode M9\n")
 
         def base_coolant_grbl_m8(context, mode):
+            if not context:
+                return
             if mode:
                 context("gcode M8\n")
             else:
@@ -291,7 +313,7 @@ def plugin(kernel, lifecycle):
         context._coolanturl = CoolantURL(context=context)
 
         @context.console_command(
-            "coolants", help=_("displays registered coolant methods")
+            ("coolants", "vents"), help=_("displays registered coolant methods")
         )
         def display_coolant(command, channel, _, **kwargs):
             # elements = context.elements
@@ -314,7 +336,7 @@ def plugin(kernel, lifecycle):
                 channel(_("There are no coolant-interfaces known to MeerK40t"))
 
         @context.console_command(
-            "coolant_on", help=_("Turns on the coolant for the active device")
+            ("coolant_on", "vent_off"), help=_("Turns on the coolant for the active device")
         )
         def turn_coolant_on(command, channel, _, **kwargs):
             try:
@@ -327,7 +349,7 @@ def plugin(kernel, lifecycle):
             coolant.coolant_on(device)
 
         @context.console_command(
-            "coolant_off", help=_("Turns off the coolant for the active device")
+            ("coolant_off", "vent_off"), help=_("Turns off the coolant for the active device")
         )
         def turn_coolant_off(command, channel, _, **kwargs):
             try:
@@ -338,6 +360,30 @@ def plugin(kernel, lifecycle):
 
             coolant = kernel.root.coolant
             coolant.coolant_off(device)
+
+        @context.console_argument("id", type=str)
+        @context.console_command(
+            ("coolant_on_by_id", "vent_on_by_id"), help=_("Turns the coolant on using the given method")
+        )
+        def turn_coolant_on_by_id(command, channel, _, id=None, **kwargs):
+            if id is None:
+                channel("You need to provide an identifier")
+                return
+
+            coolant = kernel.root.coolant
+            coolant.coolant_on_by_id(id)
+
+        @context.console_argument("id", type=str)
+        @context.console_command(
+            ("coolant_off_by_id", "vent_off_by_id"), help=_("Turns the coolant off using the given method")
+        )
+        def turn_coolant_off_by_id(command, channel, _, id=None, **kwargs):
+            if id is None:
+                channel("You need to provide an identifier")
+                return
+
+            coolant = kernel.root.coolant
+            coolant.coolant_off_by_id(id)
 
 class BaseCoolantURL():
 
