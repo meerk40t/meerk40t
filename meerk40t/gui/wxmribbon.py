@@ -952,6 +952,7 @@ class RibbonEditor(wx.Panel):
         self.list_buttons.SetItems(buttons)
         if len(buttons) > 0:
             self.list_buttons.SetSelection(idx)
+            self.on_list_buttons_click(None)
 
     def fill_panels(self, pageid=None, reposition=None):
         if pageid is None:
