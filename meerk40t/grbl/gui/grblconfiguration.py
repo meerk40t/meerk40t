@@ -201,6 +201,18 @@ class GRBLConfiguration(MWindow):
                 "width": 250,
                 "weight": 0,
             },
+            {
+                "attr": "hw_config",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Hardware properties"),
+                "tip": _("Retrieve and change Laser properties"),
+                "section": "_ZZ_Auto-Configuration",
+                "width": 250,
+                "weight": 0,
+            },
         ]
 
         panel_global = ChoicePropertyPanel(
@@ -257,6 +269,25 @@ class GRBLConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "GRBL-Configuration"
+
+    @property
+    def hw_config(self):
+        # Not relevant
+        return False
+
+    @hw_config.setter
+    def hw_config(self, value):
+        if not value:
+            return
+        try:
+            self.context.driver(f"$${self.context.driver.line_end}")
+            self.context("window open GrblHardwareConfig\n")
+        except:
+            wx.MessageBox(
+                _("Could not query laser-data!"),
+                _("Connect failed"),
+                wx.OK | wx.ICON_ERROR,
+            )
 
     @property
     def acquire_properties(self):
