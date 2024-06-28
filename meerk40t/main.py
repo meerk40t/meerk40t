@@ -127,6 +127,8 @@ parser.add_argument(
     default=None,
     help="run meerk40t with profiler file specified",
 )
+parser.add_argument("-u", "--lock-device-config", action="store_true", help="lock device config from editing")
+parser.add_argument("-U", "--lock-general-config", action="store_true", help="lock general config from editing")
 
 
 def run():

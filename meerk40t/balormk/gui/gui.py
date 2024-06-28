@@ -43,16 +43,18 @@ def plugin(service, lifecycle):
                 "action": lambda e: service("window toggle Controller\n"),
             },
         )
-        service.register(
-            "button/device/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support,
-                "tip": _("Opens device-specific configuration window"),
-                "help": "devicebalor",
-                "action": lambda v: service("window toggle Configuration\n"),
-            },
-        )
+        kernel = service.kernel
+        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+            service.register(
+                "button/device/Configuration",
+                {
+                    "label": _("Config"),
+                    "icon": icons8_computer_support,
+                    "tip": _("Opens device-specific configuration window"),
+                    "help": "devicebalor",
+                    "action": lambda v: service("window toggle Configuration\n"),
+                },
+            )
 
         service.register("property/RasterOpNode/Balor", BalorOperationPanel)
         service.register("property/CutOpNode/Balor", BalorOperationPanel)

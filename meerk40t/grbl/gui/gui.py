@@ -51,16 +51,18 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("window toggle GRBLController\n"),
             },
         )
-        service.register(
-            "button/device/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support,
-                "tip": _("Opens device-specific configuration window"),
-                "help": "devicegrbl",
-                "action": lambda v: service("window toggle Configuration\n"),
-            },
-        )
+        kernel = service.kernel
+        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+            service.register(
+                "button/device/Configuration",
+                {
+                    "label": _("Config"),
+                    "icon": icons8_computer_support,
+                    "tip": _("Opens device-specific configuration window"),
+                    "help": "devicegrbl",
+                    "action": lambda v: service("window toggle Configuration\n"),
+                },
+            )
         service.register(
             "button/control/Pause",
             {

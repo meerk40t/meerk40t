@@ -875,7 +875,10 @@ class wxMeerK40t(wx.App, Module):
         )
 
         kernel.register("window/Console", Console)
-        kernel.register("window/Preferences", Preferences)
+        if hasattr(kernel.args, "lock_general_config") and kernel.args.lock_general_config:
+            pass
+        else:
+            kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
@@ -888,7 +891,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        kernel.register("window/DeviceManager", DeviceManager)
+        if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+            pass
+        else:
+            kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)

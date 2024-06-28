@@ -140,7 +140,9 @@ class LaserPanel(wx.Panel):
         self.btn_config_laser.SetToolTip(
             _("Opens device-specific configuration window")
         )
-
+        kernel = self.context.kernel
+        if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+            self.btn_config_laser.Enable(False)
         self.sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
         self.btn_config_laser.SetMinSize(dip_size(self, 20, -1))
         self.sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
