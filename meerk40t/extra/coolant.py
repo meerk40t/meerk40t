@@ -24,6 +24,18 @@ class Coolants:
         #     "constraints": constraints,
         # }
 
+    def remove_coolant_method(self, cool_id):
+        cool_id = cool_id.lower()
+        if cool_id in ("popup", "gcode_m7", "gcode_m8"):
+            # builtin...
+            return
+        to_be_deleted = []
+        for idx, cool in enumerate(self._coolants):
+            if cool_id == cool["id"]:
+                to_be_deleted.insert(0, idx)
+        for idx in to_be_deleted:
+            self._coolants.pop(idx)
+
     def register_coolant_method(
         self, cool_id, cool_function, config_function=None, label=None, constraints=None
     ):
@@ -523,7 +535,7 @@ class CoolantURL():
         def on_update_button(event):
             return
 
-        dialog = wx.Dialog(None, wx.ID_ANY)
+        dialog = wx.Dialog(None, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE)
         # We display all possible urls and let the user edit/delete/add the methods
         dialog.CenterOnScreen()
         res = dialog.ShowModal()
