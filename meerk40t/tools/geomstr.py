@@ -1969,6 +1969,9 @@ class Geomstr:
                     # End segments, flag new start but should not be returned.
                     continue
             end = e[4]
+            # Multiple consecutive ends or an end at start ?
+            if at_start and seg_type == TYPE_END:
+                continue
             if at_start:
                 yield start
             at_start = False
