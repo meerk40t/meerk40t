@@ -601,6 +601,7 @@ class MeerK40t(MWindow):
                 pass
             return res
 
+        kernel = self.context.kernel
         self.edit_menu_choice = [
             {
                 "label": _("&Undo\tCtrl-Z"),
@@ -722,25 +723,30 @@ class MeerK40t(MWindow):
                 "level": 1,
                 "segment": "",
             },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Manager"),
-                "help": _("Manage the Laser devices"),
-                "action": on_click_device_manager,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Configuration"),
-                "help": _("Manage the device settings"),
-                "action": on_click_device_settings,
-                "level": 1,
-                "segment": "",
-            },
+        ]
+        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+            self.edit_menu_choice.extend([
+                {
+                    "label": "",
+                    "level": 1,
+                    "segment": "",
+                },
+                {
+                    "label": _("Device-Manager"),
+                    "help": _("Manage the Laser devices"),
+                    "action": on_click_device_manager,
+                    "level": 1,
+                    "segment": "",
+                },
+                {
+                    "label": _("Device-Configuration"),
+                    "help": _("Manage the device settings"),
+                    "action": on_click_device_settings,
+                    "level": 1,
+                    "segment": "",
+                },
+            ])
+        self.edit_menu_choice.extend([
             {
                 "label": "",
                 "level": 1,
@@ -767,20 +773,24 @@ class MeerK40t(MWindow):
                 "level": 2,
                 "segment": "Settings",
             },
-            {
-                "label": "",
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Preferences\tCtrl-,"),
-                "help": _("Edit the general preferences"),
-                "action": on_click_preferences,
-                "level": 2,
-                "id": wx.ID_PREFERENCES,
-                "segment": "Settings",
-            },
-        ]
+        ])
+        if not (hasattr(kernel.args, "lock_general_config") and kernel.args.lock_general_config):
+            self.edit_menu_choice.extend((
+                {
+                    "label": "",
+                    "level": 2,
+                    "segment": "Settings",
+                },
+
+                {
+                    "label": _("Preferences\tCtrl-,"),
+                    "help": _("Edit the general preferences"),
+                    "action": on_click_preferences,
+                    "level": 2,
+                    "id": wx.ID_PREFERENCES,
+                    "segment": "Settings",
+                },
+            ))
 
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
@@ -3268,6 +3278,11 @@ class MeerK40t(MWindow):
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 suppress = True
+            kernel = self.context.kernel
+            if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+                if submenu_name == "Device-Settings" and caption in ("Device Manager", "Configuration"):
+                    suppress = True
+
             if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])
