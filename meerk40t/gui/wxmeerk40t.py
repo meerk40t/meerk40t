@@ -1284,7 +1284,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         tb = exc_traceback
         while tb:
             frame = tb.tb_frame
-            source = frame.f_code.co_filename
+            code = frame.f_code
+            source = f"{code.co_filename}:{tb.tb_lineno}, in {code.co_name}"
             variable_info += f"[{source}]:\n" + _variable_summary(frame.f_locals)
             tb = tb.tb_next
     except Exception:
