@@ -186,7 +186,6 @@ def _exe(restarted, args):
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
         ignore_settings=args.nuke_settings,
-        language=args.language,
         restarted=restarted,
     )
     kernel.args = args

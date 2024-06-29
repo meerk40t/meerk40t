@@ -815,6 +815,13 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+        # print (f"Language according to settings: {language}")
+        tlang = getattr(kernel.args, "language", "undefined")
+        for idx, content in enumerate(supported_languages):
+            if content[0] == tlang:
+                language = idx
+                break
+        # print (f"Language after cmdline-test: {language}")
 
         # See issue #2103
         # context.setting(str, "i18n", "en")
@@ -1054,6 +1061,9 @@ class wxMeerK40t(wx.App, Module):
         except (IndexError, ValueError):
             return
         context.language = lang
+        # We need to remove the command-line argument now:
+        if hasattr(context.kernel.args, "language"):
+            delattr(context.kernel.args, "language")
 
         if self.locale:
             assert sys.getrefcount(self.locale) <= 2
