@@ -233,7 +233,9 @@ class MeerK40t(MWindow):
         context = self.context
         self.register_options_and_choices(context)
 
+        self.tooltips = True
         if self.context.disable_tool_tips:
+            self.tooltips = False
             wx.ToolTip.Enable(False)
 
         self.root_context = context.root
@@ -795,6 +797,17 @@ class MeerK40t(MWindow):
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
         self.widgets_created = False
+
+
+    @signal_listener("toggle_tooltips")
+    def on_regmark_toooltips(self, origin, *args):
+        self.tooltips = not self.tooltips
+        # print (f"Set Tooltips to {self.tooltips}")
+        try:
+            wx.ToolTip.Enable(self.tooltips)
+        except Exception as e:
+            pass
+
 
     # --- Listen to external events to toggle regmark visibility
     @signal_listener("toggle_regmarks")
