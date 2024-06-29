@@ -17278,3 +17278,91 @@ msgstr "Datei '{file}' wurde erfolgreich gesichert"
 #: meerk40t/gui/wxmain.py:4556
 msgid " (keep the Shift-Key pressed to be asked for a target location)"
 msgstr " (Shift-Taste gedrückt lassen, um nach Platzierung gefragt zu werden)"
+
+#: meerk40t/gui/wxmribbon.py:380 meerk40t/gui/wxmribbon.py:1310
+msgid "This could be your tooltip"
+msgstr "Das könnte Ihr Tooltip sein"
+
+#: meerk40t/gui/wxmribbon.py:701
+msgid "Pages"
+msgstr "Seiten"
+
+#: meerk40t/gui/wxmribbon.py:789
+msgid "User-defined buttons"
+msgstr "Eigene Schaltflächen"
+
+#: meerk40t/gui/wxmribbon.py:848
+msgid "Add an additional user-defined button"
+msgstr "Zusätzliche Schaltfläche hinzufügen"
+
+#: meerk40t/gui/wxmribbon.py:849
+msgid "Remove the selected user-defined button from the list"
+msgstr "Ausgewählte Schaltfläche entfernen"
+
+#: meerk40t/gui/wxmribbon.py:850
+msgid "Decrease the position of the selected button"
+msgstr "Ausgewählte Schaltfläche nach unten verschieben"
+
+#: meerk40t/gui/wxmribbon.py:851
+msgid "Increase the position of the selected button"
+msgstr "Ausgewählte Schaltfläche nach oben verschieben"
+
+#: meerk40t/gui/wxmribbon.py:852
+msgid "Modify the content of the selected button"
+msgstr "Den Inhalt der ausgewählten Schaltfläche bearbeiten"
+
+#: meerk40t/gui/wxmribbon.py:1322
+msgid "Edit Button"
+msgstr "Schaltfläche bearbeiten"
+
+#: meerk40t/gui/wxmribbon.py:1332
+msgid "Tooltip"
+msgstr "Tooltip"
+
+#: meerk40t/gui/wxmribbon.py:1338
+msgid "Action left click"
+msgstr "Aktion bei Links-Click"
+
+#: meerk40t/gui/wxmribbon.py:1344 meerk40t/gui/wxmribbon.py:1387
+msgid "Action right click"
+msgstr "Aktion bei Rechts-Click"
+
+#: meerk40t/gui/wxmribbon.py:1349
+msgid "Always"
+msgstr "Immer"
+
+#: meerk40t/gui/wxmribbon.py:1349
+msgid "When at least one element selected"
+msgstr "Wenn mindestens ein Element ausgewählt ist"
+
+#: meerk40t/gui/wxmribbon.py:1349
+msgid "When at least two elemente selected"
+msgstr "Wenn mindestens zwei Elemente ausgewählt sind"
+
+#: meerk40t/gui/wxmribbon.py:1351
+msgid "Rule to enable"
+msgstr "Aktivieren"
+
+#: meerk40t/gui/wxmribbon.py:1364
+msgid "Rule to display"
+msgstr "Anzeigen"
+
+#: meerk40t/gui/wxmscene.py:449
+msgid "page to use."
+msgstr "zu verwendender Abschnitt"
+
+#: meerk40t/gui/wxmscene.py:451
+msgid "Switches to a particular page in the ribbonbar"
+msgstr "Schaltet zu einem bestimmten Abschnitt in der Toolbar um"
+
+#: meerk40t/gui/wxmscene.py:458
+msgid "Active Page: {page}"
+msgstr "Aktiver Abschnitt {page}"
+
+#: meerk40t/gui/wxmscene.py:1192
+msgid "Display the physical dimensions"
+msgstr "Zeigt die realen Abmessungen (inkl. Rand) im Arbeitsbereich an"
+
+#: meerk40t/gui/propertypanels/attributes.py:273
+msgid "Display label on screen"
+msgstr "Zeigt Label innerhalb Objekt an"
