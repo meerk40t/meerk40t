@@ -34,6 +34,9 @@ class GrblIoButtons(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_write, self.button_write)
 
         self.button_export = wxButton(self, wx.ID_ANY, _("Export"))
+        self.button_export.SetToolTip(_("Export Settings"))
+        self.button_write.SetToolTip(_("This will write settings to hardware."))
+        self.button_refresh.SetToolTip(_("Reread settings from hardware."))
         sizer_2.Add(self.button_export, 0, wx.EXPAND, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
 
