@@ -1725,6 +1725,12 @@ class Geomstr:
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
     @classmethod
+    def wobble_dash(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import dashed_line as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
     def from_float_segments(cls, float_segments):
         sa = np.ndarray((len(float_segments), 5, 2))
         sa[:] = float_segments
