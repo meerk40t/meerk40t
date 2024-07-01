@@ -5973,7 +5973,7 @@ msgid "Send laser to home position"
 msgstr "Laser in Home-Position fahren"
 
 msgid "Send laser to home position (right click: to physical home)"
-msgstr "Laser in Home-Position fahren (Rechts-Click: zu Geräte Home)"
+msgstr "Laser in Home-Position fahren (Rechts-Click: zu Physikalischem Home)"
 
 #: meerk40t/gui/navigationpanels.py:776
 msgid "Unlock the laser rail"
@@ -15040,7 +15040,7 @@ msgstr "Wiederholungen"
 
 #: ./meerk40t\gui\propertypanels\hatchproperty.py:100
 msgid "Angle Delta"
-msgstr "Winkel"
+msgstr "Winkel-Änderung"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:25
 msgid "Crop"
@@ -17366,3 +17366,99 @@ msgstr "Zeigt die realen Abmessungen (inkl. Rand) im Arbeitsbereich an"
 #: meerk40t/gui/propertypanels/attributes.py:273
 msgid "Display label on screen"
 msgstr "Zeigt Label innerhalb Objekt an"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:136
+msgid "Segmentation size, the wobble pattern will be applied at every segment"
+msgstr "Segmentations-Größe, das Wobble-Muster wird an jedem Punkt des Segments gesetzt"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:137
+msgid "Wobble size, does influence the size of the wobble pattern"
+msgstr "Wobble-Größe, beeinflusst die Größe des Wobble-Musters"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:138
+msgid "How quickly does the wobble pattern revolve around the path"
+msgstr "Wie schnell soll das Wobble-Muster um den Pfad wandern"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:139
+msgid "The wobble pattern to be applied"
+msgstr "Das anzuwendende Wobble-Muster"
+
+#: meerk40t/core/elements/branches.py:672 meerk40t/core/elements/element_treeops.py:1835 meerk40t/gui/propertypanels/gotoproperty.py:25
+msgid "X-Coordinate of Goto?"
+msgstr "X-Koordinate der Zielposition"
+
+#: meerk40t/core/elements/branches.py:678 meerk40t/core/elements/element_treeops.py:1834 meerk40t/gui/propertypanels/gotoproperty.py:33
+msgid "Y-Coordinate of Goto?"
+msgstr "Y-Koordinate der Zielposition"
+
+#: meerk40t/grbl/gui/grblconfiguration.py:211
+msgid "Hardware properties"
+msgstr "Hardware-Parameter"
+
+#: meerk40t/grbl/gui/grblconfiguration.py:212
+msgid "Retrieve and change Laser properties"
+msgstr "Abfragen und Setzen der Laser-Parameter"
+
+#: meerk40t/grbl/gui/grblcontroller.py:75
+msgid "Physical Home"
+msgstr "Physikalisches Home"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:32
+msgid "Write"
+msgstr "Schreiben"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:66
+msgid "Reread settings from hardware."
+msgstr "Liest die aktuellen Werte vom Gerät aus"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:66
+msgid "This will write settings to hardware."
+msgstr "Dies wird die veränderten Einstellungen auf das Gerät schreiben"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:69
+msgid "Are you sure?"
+msgstr "Sind Sie sicher?"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:84
+msgid "Export Settings"
+msgstr "Aktuelle Einstellungen exportieren"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:213
+msgid "GRBL Hardware Config"
+msgstr "GRBL Hardware Parameter"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:23
+msgid "Advanced Features:"
+msgstr "Erweiterte Optionen:"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:30
+msgid "Set Z-Axis value"
+msgstr "Setze Z-Achsenwerte"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:32
+msgid "Enables the ability to set a specific z-Value."
+msgstr "Ermöglicht einen bestimmten Z-Achsenwert zu setzen"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:46
+msgid "If enabled this will allow to set a defined z-Axis value for all elements assigned to this operation"
+msgstr "Falls aktiv wird den in diesem Arbeitsablauf enthaltenen Objekten ein definierter Z-Achsenwert zugeordnet."
+
+#: meerk40t/device/devicechoices.py:20
+msgid "Default Hatch Angle"
+msgstr "Standard Schraffur-Winkel"
+
+#: meerk40t/device/devicechoices.py:28
+msgid "Hatch Angle Delta"
+msgstr "Schraffur-Winkeländerung"
+
+#: meerk40t/device/devicechoices.py:29
+msgid "Default Hatch Angle Delta"
+msgstr "Standard Schraffur-Winkeländerung"
+
+#: meerk40t/device/devicechoices.py:38
+msgid "Default Wobble Radius"
+msgstr "Standard Wobble-Radius"
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Interval"
+msgstr "Standard Wobble-Intervall"
