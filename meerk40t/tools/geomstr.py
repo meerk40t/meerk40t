@@ -2193,6 +2193,9 @@ class Geomstr:
         @param settings: Unused settings value for break.
         @return:
         """
+        if self.index and self.segments[self.index][2].real == TYPE_END:
+            # No two consecutive ends
+            return
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
             np.nan,
