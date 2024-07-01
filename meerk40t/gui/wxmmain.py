@@ -1205,7 +1205,7 @@ class MeerK40t(MWindow):
             # },
             {
                 "attr": "button_repeat",
-                "object": self.context.root,
+                "object": context.root,
                 "default": 0.5,
                 "type": float,
                 "label": _("Button repeat-interval"),
@@ -1222,7 +1222,7 @@ class MeerK40t(MWindow):
             },
             {
                 "attr": "button_accelerate",
-                "object": self.context.root,
+                "object": context.root,
                 "default": True,
                 "type": bool,
                 "label": _("Accelerate repeats"),
@@ -1234,6 +1234,25 @@ class MeerK40t(MWindow):
                 "section": "Misc.",
                 "subsection": "Button-Behaviour",
                 "signals": "button-repeat",
+            },
+            {
+                "attr": "just_a_single_element",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Create a single element only"),
+                "tip": _(
+                    "When you design an element, e.g. a line, then MeerK40t will allow you to immediately create the next instance of this type."
+                )
+                + "\n"
+                + _(
+                    "If this option is active then it will create just a single element and return to selection mode."
+                )
+                + "\n"
+                + _("Hint: Escape or a right-click will leave creation mode as well."),
+                "page": "Gui",
+                # "hidden": True,
+                "section": "Misc.",
             },
             {
                 "attr": "process_while_typing",
