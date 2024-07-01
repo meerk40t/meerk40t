@@ -1645,15 +1645,17 @@ class Geomstr:
             last = None
             for pt in segments:
                 if last is not None:
-                    points.extend(
-                        [
-                            complex(wx, wy)
-                            for wx, wy in w(last.real, last.imag, pt.real, pt.imag)
-                        ]
-                    )
+                    for wx, wy in w(last.real, last.imag, pt.real, pt.imag):
+                        if wx is None:
+                            if len(points):
+                                geometry.append(Geomstr.lines(*points))
+                                geometry.end()
+                            points = []
+                        else:
+                            points.append(complex(wx, wy))
                 last = pt
-            if len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5:
-                if abs(points[0] - points[1]) >= 1e-5:
+            if len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
+                if abs(points[0] - points[-1]) >= 1e-5:
                     points.append(points[0])
             geometry.append(Geomstr.lines(*points))
         return geometry
