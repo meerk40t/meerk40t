@@ -390,16 +390,7 @@ def init_commands(kernel):
             interval = "0.5mm"
 
         wtype = wtype.lower()
-        allowed = (
-            "circle",
-            "circle_right",
-            "circle_left",
-            "sinewave",
-            "sawtooth",
-            "jigsaw",
-            "gear",
-            "slowtooth",
-        )
+        allowed = list(self.kernel.root.match("wobble", suffix=True))
         if wtype not in allowed:
             channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
