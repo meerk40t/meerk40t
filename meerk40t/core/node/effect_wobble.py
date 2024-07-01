@@ -325,6 +325,15 @@ class WobbleEffectNode(Node):
                     speed=self.wobble_speed,
                 )
             )
+        elif self.wobble_type == "dash":
+            path.append(
+                Geomstr.wobble_dash(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         return path
 
     def modified(self):

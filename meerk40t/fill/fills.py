@@ -17,6 +17,7 @@ class Wobble:
         self._last_x = None
         self._last_y = None
         self._algorithm = algorithm
+        self.flag = None
 
     def __call__(self, x0, y0, x1, y1):
         yield from self._algorithm(self, x0, y0, x1, y1)
@@ -36,6 +37,8 @@ class Wobble:
             self._total_distance += self.interval
             self._total_count += 1
             yield tx, ty
+            self._last_x = tx
+            self._last_y = ty
             positions += 1
         self._remainder += intervals
         self._remainder %= 1
@@ -485,64 +488,38 @@ def meander_2(wobble, x0, y0, x1, y1):
 
 def meander_3(wobble, x0, y0, x1, y1):
     pattern = (
-        (
-            "u",
-            4,
-        ),
-        (
-            "r",
-            3,
-        ),
-        (
-            "d",
-            3,
-        ),
-        (
-            "l",
-            2,
-        ),
-        (
-            "u",
-            2,
-        ),
-        (
-            "r",
-            1,
-        ),
-        (
-            "d",
-            1,
-        ),
+        ("u", 4),
+        ("r", 3),
+        ("d", 3),
+        ("l", 2),
+        ("u", 2),
+        ("r", 1),
+        ("d", 1),
         # and now backwards...
         # reverse of upper part
-        (
-            "u",
-            1,
-        ),
-        (
-            "l",
-            1,
-        ),
-        (
-            "d",
-            2,
-        ),
-        (
-            "r",
-            2,
-        ),
-        (
-            "u",
-            3,
-        ),
-        (
-            "l",
-            3,
-        ),
-        (
-            "d",
-            4,
-        ),
+        ("u", 1),
+        ("l", 1),
+        ("d", 2),
+        ("r", 2),
+        ("u", 3),
+        ("l", 3),
+        ("d", 4),
+        # other side
+        ("d", 4),
+        ("r", 3),
+        ("u", 3),
+        ("l", 2),
+        ("d", 2),
+        ("r", 1),
+        ("u", 1),
+        # and now backwards...
+        ("d", 1),
+        ("l", 1),
+        ("u", 2),
+        ("r", 2),
+        ("d", 3),
+        ("l", 3),
+        ("u", 4),
         # transition
         ("r", 4),
     )
@@ -553,6 +530,33 @@ def meander_3(wobble, x0, y0, x1, y1):
     max_x += 1
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
+
+def _dashed(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    # wobble has the following parameters:
+    # speed
+    # radius
+    # interval
+    if wobble.flag is None:
+        wobble.flag = True # Visible
+    last_ratio = int(wobble._total_distance / wobble.radius)
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+
+        new_ratio = int(wobble._total_distance / wobble.radius)
+        if new_ratio != last_ratio:
+            wobble.flag = not wobble.flag
+            last_ratio = new_ratio
+        # if wobble.flag and wobble._last_x:
+        #     yield wobble._last_x, wobble._last_y
+        if wobble.flag:
+            yield tx, ty
+        else:
+            yield None, None
+
+def dashed_line(wobble, x0, y0, x1, y1):
+    yield from _dashed(wobble, x0, y0, x1, y1)
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -571,3 +575,4 @@ def plugin(kernel, lifecycle):
         context.register("wobble/meander_1", meander_1)
         context.register("wobble/meander_2", meander_2)
         context.register("wobble/meander_3", meander_3)
+        context.register("wobble/dash", dashed_line)

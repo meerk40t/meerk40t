@@ -133,6 +133,11 @@ class WobblePropertyPanel(ScrolledPanel):
 
         self.SetSizer(main_sizer)
 
+        self.text_interval.SetToolTip(_("Segmentation size, the wobble pattern will be applied at every segment"))
+        self.text_radius.SetToolTip(_("Wobble size, does influence the size of the wobble pattern"))
+        self.text_speed.SetToolTip(_("How quickly does the wobble pattern revolve around the path"))
+        self.combo_fill_style.SetToolTip(_("The wobble pattern to be applied"))
+
         self.text_radius.SetActionRoutine(self.on_text_radius)
         self.text_interval.SetActionRoutine(self.on_text_interval)
         self.text_speed.SetActionRoutine(self.on_text_speed)
