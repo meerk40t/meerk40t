@@ -1638,6 +1638,7 @@ class Geomstr:
         from meerk40t.fill.fills import Wobble
 
         w = Wobble(algorithm, radius=radius, speed=speed, interval=interval)
+        w.total_length = outer.length()
 
         geometry = cls()
         for segments in outer.as_interpolated_segments(interpolate=50):
@@ -1654,7 +1655,7 @@ class Geomstr:
                         else:
                             points.append(complex(wx, wy))
                 last = pt
-            if len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
+            if w.may_close_path and len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
                 if abs(points[0] - points[-1]) >= 1e-5:
                     points.append(points[0])
             geometry.append(Geomstr.lines(*points))
@@ -1729,6 +1730,12 @@ class Geomstr:
     @classmethod
     def wobble_dash(cls, outer, radius, interval, speed):
         from meerk40t.fill.fills import dashed_line as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
+    def wobble_tab(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import tabbed_path as algorithm
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
@@ -2201,7 +2208,7 @@ class Geomstr:
         @param settings: Unused settings value for break.
         @return:
         """
-        if self.index and self.segments[self.index][2].real == TYPE_END:
+        if self.index and self.segments[self.index - 1][2].real == TYPE_END:
             # No two consecutive ends
             return
         self._ensure_capacity(self.index + 1)
