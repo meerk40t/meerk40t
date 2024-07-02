@@ -108,8 +108,18 @@ class FunctionalParameter(ABC):
 
 class LabelDisplay(ABC):
     """
-    Any node heriting this allow the display of the label on the scene
+    Any node inheriting this allow the display of the label on the scene
     """
     def __init__(self, *args, **kwargs):
         self.label_display = False
+        super().__init__()
+
+class Suppressable(ABC):
+    """
+    Any node inheriting this can be suppressed
+    """
+    def __init__(self, *args, **kwargs):
+        self.hidden = False
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         super().__init__()
