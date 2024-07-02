@@ -44,6 +44,11 @@ jobs:
 
     - name: Build meerk40t
       run: |
+        cd meerk40t
+        move external_plugins.py external_plugins.unused
+        move external_plugins_build.py external_plugins.py
+        cd ..
+
         mv meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t mk40t.py
         mv mk40t.py meerk40t.py
