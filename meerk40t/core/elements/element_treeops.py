@@ -1934,6 +1934,26 @@ def init_tree(kernel):
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append Coolant On"), node_type="branch ops", help="")
+    def append_operation_cool_on(node, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util console",
+            pos=pos,
+            command='coolant_on',
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append Coolant Off"), node_type="branch ops", help="")
+    def append_operation_cool_off(node, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util console",
+            pos=pos,
+            command='coolant_off',
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Home/Beep/Interrupt"), node_type="branch ops", help="")
     def append_operation_home_beep_interrupt(node, **kwargs):
         append_operation_home(node, **kwargs)
@@ -2416,6 +2436,16 @@ def init_tree(kernel):
     @tree_operation(_("Add Input"), node_type=op_nodes, help="")
     def add_operation_input(node, **kwargs):
         append_operation_input(node, pos=add_after_index(node), **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(_("Add Coolant on"), node_type=op_nodes, help="")
+    def add_operation_cool_on(node, pos=None, **kwargs):
+        append_operation_cool_on(node, pos=add_after_index(node), **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(_("Add Coolant Off"), node_type=op_nodes, help="")
+    def add_operation_cool_off(node, pos=None, **kwargs):
+        append_operation_cool_off(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
