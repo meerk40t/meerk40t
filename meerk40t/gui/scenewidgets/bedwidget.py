@@ -27,7 +27,29 @@ class BedWidget(Widget):
             self.name = "Standard"
         else:
             self.name = name
-        self.background = None
+        self._background = {}
+
+    @property
+    def background(self):
+        try:
+            devlabel =  self.scene.context.device.label
+            if devlabel in self._background:
+                return self._background[devlabel]
+        except AttributeError:
+            pass
+        return None
+
+    @background.setter
+    def background(self, value):
+        try:
+            devlabel =  self.scene.context.device.label
+        except AttributeError:
+            return
+
+        if value is None:
+            self._background.pop(devlabel, None)
+        else:
+            self._background[devlabel] = value
 
     def hit(self):
         if self.background is None:
