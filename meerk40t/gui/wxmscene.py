@@ -1145,7 +1145,7 @@ class MeerK40tScenePanel(wx.Panel):
             devlabel = self.context.device.label
             to_stop = []
             for job, content in self.context.kernel.jobs.items():
-                if job.startswith("timer.updatebg"):
+                if job is not None and job.startswith("timer.updatebg"):
                     cmd = str(content).strip()
                     if cmd.endswith("background") or cmd.endswith(devlabel):
                         to_stop.append(job)
@@ -1211,7 +1211,7 @@ class MeerK40tScenePanel(wx.Panel):
         devlabel = self.context.device.label
         we_have_a_job = False
         for job, content in self.context.kernel.jobs.items():
-            if job.startswith("timer.updatebg"):
+            if job is not None and job.startswith("timer.updatebg"):
                 cmd = str(content).strip()
                 if cmd.endswith("background") or cmd.endswith(devlabel):
                     we_have_a_job = True
