@@ -3145,6 +3145,14 @@ msgstr "Lade minimalen Satz von Arbeitsabläufen"
 msgid "Load a basic set of operation"
 msgstr "Lade einfachen Satz von Arbeitsabläufen"
 
+#: meerk40t/core/elements/element_treeops.py:1796
+msgid "Update Statusbar on load"
+msgstr "Aktualiere Statusbar-Icons"
+
+#: meerk40t/core/elements/element_treeops.py:1800
+msgid "Loading an entry will update the statusbar icons, too, if checked"
+msgstr "Falls aktiv, aktualisiert das Laden eines Materials auch die Icons in der Statusleiste"
+
 #: meerk40t/core/elements/element_treeops.py:1937
 msgid "Append Coolant On"
 msgstr "Füge 'Kühlung An' hinzu"
