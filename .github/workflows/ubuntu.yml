@@ -4,6 +4,8 @@
 name: Meerk40t (Ubuntu)
 
 on:
+  workflow_dispatch:
+  
   release:
     types: [published]
 
