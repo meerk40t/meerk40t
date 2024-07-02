@@ -252,9 +252,13 @@ class DotsOpNode(Node, Parameters):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
         for point_node in self.children:
+            if point_node.type == "reference":
+                point_node = point_node.node
             if point_node.type != "elem point":
                 continue
             if point_node.point is None:
+                continue
+            if getattr(point_node, "hidden", False):
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),

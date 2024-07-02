@@ -1,7 +1,7 @@
 from copy import copy
 from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +13,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay):
+class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -55,6 +55,8 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay):
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         self.__formatter = "{element_type} {id} {stroke}"
         if self.cx is None:
             self.cx = 0

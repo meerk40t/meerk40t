@@ -265,8 +265,11 @@ class ImageOpNode(Node, Parameters):
         """
         for image_node in self.children:
             # Process each child. All settings are different for each child.
-
+            if image_node.type == "reference":
+                image_node = image_node.node
             if not hasattr(image_node, "as_image"):
+                continue
+            if getattr(image_node, "hidden", False):
                 continue
             settings = self.derive()
 

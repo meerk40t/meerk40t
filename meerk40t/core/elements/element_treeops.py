@@ -277,6 +277,36 @@ def init_tree(kernel):
     def element_label(node, **kwargs):
         return
 
+    def add_node_and_children(node):
+        data = []
+        data.append(node)
+        for e in node.children:
+            if e.type in ("file", "group"):
+                data.extend(add_node_and_children(e))
+            else:
+                data.append(e)
+        return data
+
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Toggle visibility"), node_type=elem_group_nodes, help="",
+    )
+    def element_visibility_toggle(node, **kwargs):
+        raw_data = list(self.elems(selected=True))
+        data = self.condense_elements(raw_data, expand_at_end=False)
+        updated = []
+        for e in data:
+            if hasattr(e, "hidden"):
+                e.hidden = not e.hidden
+                if e.hidden:
+                    e.emphasized = False
+            if e.type in ("file", "group"):
+                updated.extend(add_node_and_children(e))
+            else:
+                updated.append(e)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
     @tree_operation(_("Group elements"), node_type=elem_group_nodes, help="")

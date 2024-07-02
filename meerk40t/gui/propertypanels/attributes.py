@@ -246,11 +246,13 @@ class IdPanel(wx.Panel):
         self.text_id = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.check_label = wxCheckBox(self, wx.ID_ANY)
+        self.check_hidden = wxCheckBox(self, wx.ID_ANY)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        self.sizer_id = StaticBoxSizer(self, wx.ID_ANY, _("Id"), wx.VERTICAL)
+        self.sizer_id = StaticBoxSizer(self, wx.ID_ANY, _("Id"), wx.HORIZONTAL)
         self.sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
+        self.sizer_id.Add(self.check_hidden, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_label = StaticBoxSizer(self, wx.ID_ANY, _("Label"), wx.VERTICAL)
         h_label_sizer = wx.BoxSizer(wx.HORIZONTAL)
         h_label_sizer.Add(self.text_label, 1, wx.EXPAND, 0)
@@ -260,7 +262,12 @@ class IdPanel(wx.Panel):
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
         self.icon_display = wx.StaticBitmap(self, wx.ID_ANY)
         self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
+        self.icon_hidden = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
+        self.icon_hidden.SetBitmap(mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE))
+        self.icon_hidden.SetToolTip(_("Element is hidden, so it will neither be displayed nor burnt"))
         sizer_id_label.Add(self.icon_display, 0, wx.EXPAND, 0)
+        sizer_id_label.Add(self.icon_hidden, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
 
@@ -271,6 +278,9 @@ class IdPanel(wx.Panel):
         self.text_label.SetActionRoutine(self.on_text_label_change)
         self.check_label.Bind(wx.EVT_CHECKBOX, self.on_check_label)
         self.check_label.SetToolTip(_("Display label on screen"))
+        self.check_hidden.Bind(wx.EVT_CHECKBOX, self.on_check_hidden)
+        self.check_hidden.SetToolTip(_("Suppress object for display and burning"))
+        self.icon_hidden.Bind(wx.EVT_LEFT_DOWN, self.on_hidden_click)
 
         self.set_widgets(self.node)
 
@@ -289,9 +299,38 @@ class IdPanel(wx.Panel):
         except AttributeError:
             pass
 
+    def add_node_and_children(self, node):
+        data = []
+        data.append(node)
+        for e in node.children:
+            if e.type in ("file", "group"):
+                data.extend(self.add_node_and_children(e))
+            else:
+                data.append(e)
+        return data
+
     def on_check_label(self, event):
         self.node.label_display = bool(self.check_label.GetValue())
         self.context.signal("element_property_update", self.node)
+        self.context.signal("refresh_scene", "Scene")
+
+    def on_check_hidden(self, event):
+        self.node.hidden = bool(self.check_hidden.GetValue())
+        self.icon_hidden.Show(self.node.hidden)
+        self.Layout()
+        if self.node.type == "group":
+            self.context.signal("refresh_tree")
+        data = self.add_node_and_children(self.node)
+        self.context.signal("element_property_reload", data)
+        self.context.signal("refresh_scene", "Scene")
+
+    def on_hidden_click(self, event):
+        self.node.hidden = False
+        self.check_hidden.SetValue(False)
+        self.icon_hidden.Show(self.node.hidden)
+        self.Layout()
+        data = self.add_node_and_children(self.node)
+        self.context.signal("element_property_reload", data)
         self.context.signal("refresh_scene", "Scene")
 
     def pane_hide(self):
@@ -309,15 +348,27 @@ class IdPanel(wx.Panel):
 
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
+        vis0 = False
         vis1 = False
         vis2 = False
         vis3 = False
+        vis_hidden = False
         try:
             if hasattr(self.node, "id") and self.showid:
                 vis1 = True
                 self.text_id.SetValue(mklabel(node.id))
             self.text_id.Show(vis1)
             self.sizer_id.Show(vis1)
+        except RuntimeError:
+            # Could happen if the propertypanel has been destroyed
+            pass
+        try:
+            if hasattr(self.node, "hidden") and self.showid:
+                vis0 = True
+                self.check_hidden.SetValue(node.hidden)
+                vis_hidden = self.node.hidden
+            self.check_hidden.Show(vis0)
+            self.icon_hidden.Show(vis_hidden)
         except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
@@ -381,6 +432,7 @@ class IdPanel(wx.Panel):
                 pass
 
         if vis1 or vis2:
+            self.Layout()
             self.Show()
         else:
             self.Hide()

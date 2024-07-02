@@ -290,6 +290,8 @@ class EngraveOpNode(Node, Parameters):
         for node in self.children:
             if node.type == "reference":
                 node = node.node
+            if getattr(node, "hidden", False):
+                continue
             if node.type == "elem image":
                 box = node.bbox()
                 path = Path(

@@ -447,6 +447,10 @@ class RasterOpNode(Node, Parameters):
         for image_node in self.children:
             # Process each child. Some core settings are the same for each child.
 
+            if image_node.type == "reference":
+                image_node = image_node.node
+            if getattr(image_node, "hidden", False):
+                continue
             if image_node.type != "elem image":
                 continue
 
