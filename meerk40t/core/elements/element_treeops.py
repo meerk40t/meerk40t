@@ -1779,6 +1779,28 @@ def init_tree(kernel):
     @tree_operation("{material}", node_type="branch ops", help="")
     def load_ops(node, opname, **kwargs):
         self(f"material load {opname}\n")
+        if self.update_statusbar_on_material_load:
+            op_list, op_info = self.load_persistent_op_list(opname)
+            if len(op_list) == 0:
+                return
+            self.default_operations = list(op_list)
+            self.signal("default_operations")
+
+    def load_for_statusbar(node, **kwargs):
+        return self.update_statusbar_on_material_load
+
+    @tree_separator_before()
+    @tree_submenu(_("Materials"))
+    @tree_check(load_for_statusbar)
+    @tree_operation(
+        _("Update Statusbar on load"),
+        node_type="branch ops",
+        help=_(
+            "Loading an entry will update the statusbar icons, too, if checked"
+        ),
+    )
+    def set_mat_load_option(node, **kwargs):
+        self.update_statusbar_on_material_load = not self.update_statusbar_on_material_load
 
     # @tree_separator_before()
     # @tree_submenu(_("Load"))

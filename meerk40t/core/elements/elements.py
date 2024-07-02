@@ -536,6 +536,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
+        self.setting(bool, "update_statusbar_on_material_load", True)
         # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
