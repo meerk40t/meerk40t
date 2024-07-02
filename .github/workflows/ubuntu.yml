@@ -9,7 +9,6 @@ on:
 
 jobs:
   build-ubuntu:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout meerk40t
