@@ -1142,7 +1142,15 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.request_refresh()
 
         def stop_auto_update(event=None):
-            self.context("timer.updatebg --off\n")
+            devlabel = self.context.device.label
+            to_stop = []
+            for job, content in self.context.kernel.jobs.items():
+                if job.startswith("timer.updatebg"):
+                    cmd = str(content).strip()
+                    if cmd.endswith("background") or cmd.endswith(devlabel):
+                        to_stop.append(job)
+            for job in to_stop:
+                self.context(f"{job} --off\n")
 
         gui = self
         menu = wx.Menu()
@@ -1194,23 +1202,21 @@ class MeerK40tScenePanel(wx.Panel):
             )
             self.Bind(wx.EVT_MENU, toggle_grid_o, id=id4b.GetId())
             menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
-        if self.widget_scene.has_background:
-            menu.AppendSeparator()
-            id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
-            self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
 
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
         # Do we have a timer called .updatebg?
+        devlabel = self.context.device.label
         we_have_a_job = False
-        try:
-            obj = self.context.kernel.jobs["timer.updatebg"]
-            if obj is not None:
-                we_have_a_job = True
-        except KeyError:
-            pass
+        for job, content in self.context.kernel.jobs.items():
+            if job.startswith("timer.updatebg"):
+                cmd = str(content).strip()
+                if cmd.endswith("background") or cmd.endswith(devlabel):
+                    we_have_a_job = True
+                    break
+
         if we_have_a_job:
             self.Bind(
                 wx.EVT_MENU,

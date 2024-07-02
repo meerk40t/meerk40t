@@ -468,14 +468,14 @@ class CamInterfaceWidget(Widget):
                     ratio = c_sec / c_frames
                     dev_label = get_device_link()
                     self.cam.context(
-                        f"timer.updatebg 0 {ratio} camera{self.cam.index} background {dev_label}\n"
+                        f"timer.updatebg{self.cam.index} 0 {ratio} .camera{self.cam.index} background {dev_label}\n"
                     )
                     return
 
                 return runcam
 
             def live_stop():
-                self.cam.context("timer.updatebg --off\n")
+                self.cam.context(f"timer.updatebg{self.cam.index} --off\n")
 
             submenu = wx.Menu()
             menu.AppendSubMenu(submenu, _("...refresh"))
@@ -489,13 +489,25 @@ class CamInterfaceWidget(Widget):
                     live_view(rate_frame, rate_sec),
                     id=item.GetId(),
                 )
-            submenu.AppendSeparator()
-            item = submenu.Append(wx.ID_ANY, "Disable")
-            self.cam.Bind(
-                wx.EVT_MENU,
-                lambda e: live_stop(),
-                id=item.GetId(),
-            )
+
+            def has_live_job():
+                we_have_a_job = False
+                try:
+                    obj = self.cam.context.kernel.jobs[f"timer.updatebg{self.cam.index}"]
+                    if obj is not None:
+                        we_have_a_job = True
+                except KeyError:
+                    pass
+                return we_have_a_job
+
+            if has_live_job():
+                submenu.AppendSeparator()
+                item = submenu.Append(wx.ID_ANY, "Disable")
+                self.cam.Bind(
+                    wx.EVT_MENU,
+                    lambda e: live_stop(),
+                    id=item.GetId(),
+                )
             submenu.AppendSeparator()
 
             def set_link(devlabel):
