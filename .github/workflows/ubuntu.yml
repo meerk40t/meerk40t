@@ -4,7 +4,7 @@
 name: Meerk40t (Ubuntu)
 
 on:
-   workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build-ubuntu:
