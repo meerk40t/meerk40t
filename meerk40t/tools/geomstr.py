@@ -1225,7 +1225,7 @@ class Geomstr:
             c2 = seg[3]
             end = seg[4]
             seg_info = self.segment_type(idx)
-            if seg_type not in (TYPE_END, TYPE_NOP):
+            if seg_type not in (TYPE_END, TYPE_NOP, TYPE_VERTEX):
                 seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
             if seg_type == TYPE_QUAD:
                 seg_info += f", C: {cplx_info(c1)}"
@@ -1638,6 +1638,7 @@ class Geomstr:
         from meerk40t.fill.fills import Wobble
 
         w = Wobble(algorithm, radius=radius, speed=speed, interval=interval)
+        w.total_length = outer.length()
 
         geometry = cls()
         for segments in outer.as_interpolated_segments(interpolate=50):
@@ -1654,7 +1655,7 @@ class Geomstr:
                         else:
                             points.append(complex(wx, wy))
                 last = pt
-            if len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
+            if w.may_close_path and len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
                 if abs(points[0] - points[-1]) >= 1e-5:
                     points.append(points[0])
             geometry.append(Geomstr.lines(*points))
@@ -1733,6 +1734,12 @@ class Geomstr:
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
     @classmethod
+    def wobble_tab(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import tabbed_path as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
     def from_float_segments(cls, float_segments):
         sa = np.ndarray((len(float_segments), 5, 2))
         sa[:] = float_segments
@@ -1803,7 +1810,7 @@ class Geomstr:
         for e in self.segments[start_pos:end_pos]:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
-            if seg_type == TYPE_NOP:
+            if seg_type in (TYPE_NOP, TYPE_VERTEX):
                 continue
             start = e[0]
             if not at_start and (set_type != settings or abs(start - end) > 1e-8):
@@ -1865,7 +1872,7 @@ class Geomstr:
         end = None
         for e in self.segments[: self.index]:
             seg_type = int(e[2].real)
-            if seg_type == TYPE_NOP:
+            if seg_type in (TYPE_NOP, TYPE_VERTEX):
                 continue
             start = e[0]
             if end != start and not at_start:
@@ -1966,7 +1973,7 @@ class Geomstr:
         end = None
         for e in self.segments[: self.index]:
             seg_type = int(e[2].real)
-            if seg_type == TYPE_NOP:
+            if seg_type in (TYPE_NOP, TYPE_VERTEX):
                 continue
             start = e[0]
             if end != start and not at_start:
@@ -2201,7 +2208,7 @@ class Geomstr:
         @param settings: Unused settings value for break.
         @return:
         """
-        if self.index and self.segments[self.index][2].real == TYPE_END:
+        if self.index and self.segments[self.index - 1][2].real == TYPE_END:
             # No two consecutive ends
             return
         self._ensure_capacity(self.index + 1)
@@ -3059,6 +3066,23 @@ class Geomstr:
             pen_downs = positions[q]  # values 0-49
             pen_ups = positions[q + 1]  # values 1-50
             return np.sum(np.abs(pen_ups - pen_downs))
+        if info.real in (TYPE_NOP, TYPE_POINT, TYPE_END, TYPE_VERTEX):
+            return 0
+        if info.real == TYPE_ARC:
+            """The length of an elliptical arc segment requires numerical
+            integration, and in that case it's simpler to just do a geometric
+            approximation, as for cubic Bézier curves.
+            """
+            positions = self._arc_position(line, np.linspace(0, 1))
+            q = np.arange(0, len(positions) - 1)
+            pen_downs = positions[q]  # values 0-49
+            pen_ups = positions[q + 1]  # values 1-50
+            res = np.sum(np.abs(pen_ups - pen_downs))
+            # print (f"Calculated for an arc: {res}")
+            return res
+
+        # print (f"And now I have no idea how to deal with type {info.real}")
+        return 0
 
     def area(self, density=None):
         """
@@ -3452,17 +3476,9 @@ class Geomstr:
                 or max(ob) < min(sb)
             ):
                 return  # There can't be any intersections
-        if info.real == TYPE_POINT:
+        if info.real in (TYPE_POINT, TYPE_END, TYPE_NOP, TYPE_VERTEX):
             return
-        if oinfo.real == TYPE_POINT:
-            return
-        if info.real == TYPE_END:
-            return
-        if oinfo.real == TYPE_END:
-            return
-        if info.real == TYPE_NOP:
-            return
-        if oinfo.real == TYPE_NOP:
+        if oinfo.real in (TYPE_POINT, TYPE_END, TYPE_NOP, TYPE_VERTEX):
             return
         if info.real == TYPE_LINE:
             if oinfo.real == TYPE_LINE:
@@ -5066,6 +5082,9 @@ class Geomstr:
                 segment_type = "end"
             elif segment_type == TYPE_NOP:
                 # Nop should be skipped.
+                continue
+            elif segment_type == TYPE_VERTEX:
+                # Vertex should be skipped.
                 continue
             elif (segment_type & 0xFF) == TYPE_FUNCTION:
                 defining_function = segment_type >> 8

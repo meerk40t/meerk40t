@@ -337,6 +337,15 @@ class WobbleEffectNode(Node, Suppressable):
                     speed=self.wobble_speed,
                 )
             )
+        elif self.wobble_type == "tabs":
+            path.append(
+                Geomstr.wobble_tab(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         return path
 
     def modified(self):
