@@ -3,11 +3,15 @@
 
 name: Meerk40t (Ubuntu)
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+
+  release:
+    types: [published]
 
 jobs:
   build-ubuntu:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
@@ -40,6 +44,10 @@ jobs:
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+
+    - name: pip list
+      run: |
+          pip list
 
     - name: Build meerk40t
       run: |
