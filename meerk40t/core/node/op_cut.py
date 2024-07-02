@@ -316,6 +316,8 @@ class CutOpNode(Node, Parameters):
         for node in self.children:
             if node.type == "reference":
                 node = node.node
+            if hasattr(node, "hidden") and node.hidden:
+                continue
             if node.type == "elem image":
                 box = node.bbox()
                 path = Path(
