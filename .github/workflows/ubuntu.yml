@@ -3,9 +3,8 @@
 
 name: Meerk40t (Ubuntu)
 
-on:
-  release:
-    types: [published]
+ on:
+   workflow_dispatch:
 
 jobs:
   build-ubuntu:
@@ -13,10 +12,12 @@ jobs:
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: 3.12
+
     - name: Install dependencies
       run: |
         sudo apt install libgtk-3-dev cmake libeigen3-dev
