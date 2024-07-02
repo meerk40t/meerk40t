@@ -9,7 +9,6 @@ on:
 
 jobs:
   build-ubuntu:
-    if: ${{ false }}
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
@@ -20,7 +19,8 @@ jobs:
         python-version: 3.12
     - name: Install dependencies
       run: |
-        sudo apt-get install libgtk-3-dev
+        sudo apt install libgtk-3-dev cmake libeigen3-dev
+        sudo apt install libagg-dev libpotrace-dev
         python3 -m pip install --upgrade pip
         pip install pyinstaller wheel
         pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
@@ -34,9 +34,14 @@ jobs:
         pip install bitarray
         pip install scipy
         pip install .
+        pip install numba
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+
+    - name: pip list
+      run: |
+          pip list
 
     - name: Build meerk40t
       run: |
