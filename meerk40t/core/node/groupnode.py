@@ -10,11 +10,29 @@ class GroupNode(Node, LabelDisplay):
 
     def __init__(self, **kwargs):
         super().__init__(type="group", **kwargs)
+        self._hidden = False
+        if "hidden" in kwargs:
+            self._hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} ({children} elems)"
         self.set_dirty_bounds()
 
     def __repr__(self):
         return f"GroupNode('{self.type}', {str(self._parent)})"
+
+    @property
+    def hidden(self):
+        return self._hidden
+
+    @hidden.setter
+    def hidden(self, value):
+        self._hidden = value
+        for e in self.children:
+            if hasattr(e, "hidden"):
+                e.hidden = value
+                if not value:
+                    e.emphasized = False
+        if not value:
+            self.emphasized = False
 
     def bbox(self, transformed=True, with_stroke=False):
         """
