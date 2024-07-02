@@ -3082,7 +3082,7 @@ msgstr "Füge 'Einzelpunkt' hinzu"
 #: meerk40t/core/elements.py:7297 meerk40t/core/elements.py:7306
 #: meerk40t/core/elements.py:7315
 msgid "Append special operation(s)"
-msgstr "Hänge speziellen Aktion am Ende der Liste an"
+msgstr "Hänge spezielle Aktion am Ende der Liste an"
 
 #: meerk40t/core/elements.py:7212
 msgid "Append Home"
@@ -3136,6 +3136,30 @@ msgstr "Füge 'Ursprung + Beep + Nachricht' hinzu"
 #: meerk40t/core/elements.py:7307
 msgid "Append Shutdown"
 msgstr "Füge 'Quit' hinzu"
+
+#: meerk40t/core/elements/element_treeops.py:1785
+msgid "Load a minimal set of operations"
+msgstr "Lade minimalen Satz von Arbeitsabläufen"
+
+#: meerk40t/core/elements/element_treeops.py:1790
+msgid "Load a basic set of operation"
+msgstr "Lade einfachen Satz von Arbeitsabläufen"
+
+#: meerk40t/core/elements/element_treeops.py:1937
+msgid "Append Coolant On"
+msgstr "Füge 'Kühlung An' hinzu"
+
+#: meerk40t/core/elements/element_treeops.py:1947
+msgid "Append Coolant Off"
+msgstr "Füge 'Kühlung Aus' hinzu"
+
+#: meerk40t/core/elements/element_treeops.py:2441
+msgid "Add Coolant on"
+msgstr "Füge 'Kühlung An' hinzu"
+
+#: meerk40t/core/elements/element_treeops.py:2446
+msgid "Add Coolant Off"
+msgstr "Füge 'Kühlung Aus' hinzu"
 
 #: meerk40t/core/elements.py:7316
 msgid "Console command to append to operations?"
@@ -17462,3 +17486,71 @@ msgstr "Standard Wobble-Radius"
 #: meerk40t/device/devicechoices.py:47
 msgid "Default Wobble Interval"
 msgstr "Standard Wobble-Intervall"
+
+#: meerk40t/camera/gui/camerapanel.py:524
+msgid "Device independent"
+msgstr "Für alle Geräte"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:28 meerk40t/gui/hersheymanager.py:1010
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+#: meerk40t/gui/gui_mixins.py:440
+msgid "- Elements are hidden and will not be burnt"
+msgstr "- Elemente werden unterdrückt und deswegen nicht gebrannt"
+
+#: meerk40t/gui/wxmmain.py:1243
+msgid "Create a single element only"
+msgstr "Nur ein  Element erzeugen"
+
+#: meerk40t/gui/wxmmain.py:1246
+msgid "When you design an element, e.g. a line, then MeerK40t will allow you to immediately create the next instance of this type."
+msgstr "Wenn ein Element gezeichnet wird, z.B. eine Linie, erlaubt MeerK40t sofort ein weiteres Exemplar dieses Typs zu erzeugen."
+
+#: meerk40t/gui/wxmmain.py:1250
+msgid "If this option is active then it will create just a single element and return to selection mode."
+msgstr "Falls diese Option aktiv ist, wird nur ein einziges Eelemt erzeugt und der Selektionsmodus aktiviert."
+
+#: meerk40t/gui/wxmmain.py:1252
+msgid "Hint: Escape or a right-click will leave creation mode as well."
+msgstr "Tip: Escape bzw. Rechts-Click beenden den Erzeugungs-Modus ebenfalls."
+
+#: meerk40t/gui/wxmmain.py:4545
+msgid "<Multiple files loaded>"
+msgstr "<Mehrere Dateien geladen>"
+
+#: meerk40t/gui/wxmtree.py:2121
+msgid "HIDDEN: "
+msgstr "UNTERDRÜCKT: "
+
+#: meerk40t/gui/propertypanels/attributes.py:268
+msgid "Element is hidden, so it will neither be displayed nor burnt"
+msgstr "Element wird underdrückt, d.h. weder angezeigt noch gebrannt"
+
+#: meerk40t/gui/propertypanels/attributes.py:282
+msgid "Suppress object for display and burning"
+msgstr "Unterdrücke Objekt für Anzeige und Brennvorgang"
+
+#: meerk40t/gui/propertypanels/gotoproperty.py:26
+msgid "Set the X-Coordinate of the goto operation."
+msgstr "Setze X-Wert für Goto-Operation."
+
+#: meerk40t/gui/propertypanels/gotoproperty.py:34
+msgid "Set the Y-Coordinate of the goto operation."
+msgstr "Setze Y-Wert für Goto-Operation."
+
+#: meerk40t/gui/propertypanels/gotoproperty.py:41
+msgid "Goto Absolute Position"
+msgstr "Gehe zu absoluter Position"
+
+#: meerk40t/gui/propertypanels/gotoproperty.py:44
+msgid "This value should give exact goto locations rather than offset from device origin."
+msgstr "Diese Koordinate erwartet den exakten Punkt auf dem Laserbett (kein Offset zum Laser-Startpunkt)."
+
+#: meerk40t/gui/basicops.py:440
+msgid "Suppress non-used operations"
+msgstr "Unterdrücke nicht verwendete Operationen"
+
+#: meerk40t/gui/basicops.py:580
+msgid "Set coolant to on/off or leave unchanged (default)"
+msgstr "Schaltet Kühlung ein/aus"
