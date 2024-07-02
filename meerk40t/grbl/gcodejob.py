@@ -686,6 +686,8 @@ class GcodeJob:
         if matrix is None:
             # Using job for something other than point plotting
             return
+        if power is None:
+            power = 1000
         power = min(1000, power)
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])

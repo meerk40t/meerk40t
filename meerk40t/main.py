@@ -118,7 +118,7 @@ parser.add_argument(
     "--language",
     type=str,
     default=None,
-    help="force default language",
+    help="force default language (en, de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh)",
 )
 parser.add_argument(
     "-f",
@@ -127,6 +127,8 @@ parser.add_argument(
     default=None,
     help="run meerk40t with profiler file specified",
 )
+parser.add_argument("-u", "--lock-device-config", action="store_true", help="lock device config from editing")
+parser.add_argument("-U", "--lock-general-config", action="store_true", help="lock general config from editing")
 
 
 def run():
@@ -184,7 +186,6 @@ def _exe(restarted, args):
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
         ignore_settings=args.nuke_settings,
-        language=args.language,
         restarted=restarted,
     )
     kernel.args = args

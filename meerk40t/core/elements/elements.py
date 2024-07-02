@@ -1978,7 +1978,9 @@ class Elemental(Service):
         """
         Returns whether any element is emphasized
         """
-        for _ in self.elems_nodes(emphasized=True):
+        for e in self.elems_nodes(emphasized=True):
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             return True
         return False
 
@@ -2220,6 +2222,8 @@ class Elemental(Service):
         ):
             if e.bounds is None:
                 continue
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             box = e.bounds
             top_left = [box[0], box[1]]
             top_right = [box[2], box[1]]
@@ -2420,6 +2424,8 @@ class Elemental(Service):
                 bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
+            if hasattr(node, "hidden") and node.hidden:
+                continue
             # Empty group / files may cause problems
             if node.type in ("file", "group"):
                 if not node._children:
@@ -3905,7 +3911,7 @@ class Elemental(Service):
                                     )
                                 return True
 
-                        except FileNotFoundError:
+                        except (FileNotFoundError, PermissionError, OSError):
                             return False
                         except BadFileError as e:
                             kernel._console_channel(

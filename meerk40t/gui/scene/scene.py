@@ -229,7 +229,7 @@ class Scene(Module, Job):
         self.clip = wx.Rect(0, 0, 0, 0)
 
         self.background_brush = wx.Brush(self.colors.color_background)
-        self.has_background = False
+        self._hasbackgrounds = {}
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
 
@@ -246,6 +246,18 @@ class Scene(Module, Job):
         # Snap information
         self.snap_display_points = None
         self.snap_attraction_points = None
+
+    @property
+    def has_background(self):
+        devlabel = self.context.device.label
+        if devlabel not in self._hasbackgrounds:
+            self._hasbackgrounds[devlabel] = False
+        return self._hasbackgrounds[devlabel]
+
+    @has_background.setter
+    def has_background(self, value):
+        devlabel = self.context.device.label
+        self._hasbackgrounds[devlabel] = value
 
     def module_open(self, *args, **kwargs):
         context = self.context

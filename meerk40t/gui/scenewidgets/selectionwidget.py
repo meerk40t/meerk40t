@@ -1374,6 +1374,8 @@ class MoveWidget(Widget):
         to_be_copied = []
         emph_list = list(elements.elems(emphasized=True))
         for e in emph_list:
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             if e.type in ("file", "group"):
                 for f in e.children:
                     if not f.emphasized:
@@ -1628,6 +1630,9 @@ class MoveWidget(Widget):
                 other_points = []
                 selected_points = []
                 for e in self.scene.context.elements.elems():
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
+
                     if e.emphasized:
                         target = selected_points
                     else:

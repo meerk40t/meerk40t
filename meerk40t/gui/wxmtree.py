@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.elements.element_types import op_nodes
+from meerk40t.core.elements.element_types import op_nodes, elem_nodes
 
 from ..core.units import Length
 from ..kernel import signal_listener
@@ -1837,6 +1837,10 @@ class ShadowTree:
                 node.type in op_nodes
                 and hasattr(node, "is_visible")
                 and not node.is_visible
+            ) or (
+                node.type in elem_nodes
+                and hasattr(node, "hidden")
+                and node.hidden
             ):
                 state_num = self.iconstates["ghost"]
         self.wxtree.SetItemState(node._item, state_num)
@@ -1956,6 +1960,7 @@ class ShadowTree:
         if self._last_hover_item is item:
             return
         if item:
+            state = self.wxtree.GetItemState(item)
             node = self.wxtree.GetItemData(item)
             if node is not None:
                 if hasattr(node, "_tooltip"):
@@ -2112,6 +2117,8 @@ class ShadowTree:
                                 )
                         if ps_info:
                             ttip += f"\n{ps_info}"
+            if state == self.iconstates["ghost"]:
+                ttip = _("HIDDEN: ") + ttip
         self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)

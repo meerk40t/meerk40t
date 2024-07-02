@@ -39,6 +39,13 @@ def init_commands(kernel):
         nargs=2,
         help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
     )
+    @self.console_option(
+        "relative",
+        "r",
+        type=bool,
+        action="store_true",
+        help=_("Distance not absolute but as relative gap"),
+    )
     @self.console_command(
         "grid",
         help=_("grid <columns> <rows> <x_distance> <y_distance> <origin>"),
@@ -54,6 +61,7 @@ def init_commands(kernel):
         x: str,
         y: str,
         origin=None,
+        relative=None,
         data=None,
         post=None,
         **kwargs,
@@ -65,6 +73,8 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No item selected."))
             return
+        if relative is None:
+            relative = False
         try:
             bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
@@ -80,6 +90,9 @@ def init_commands(kernel):
             y = float(Length(y, relative_length=Length(amount=height).length_mm))
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
+        if relative:
+            x += width
+            y += height
         if origin is None:
             origin = (1, 1)
         cx, cy = origin

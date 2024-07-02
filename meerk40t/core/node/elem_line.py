@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -12,7 +12,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay):
+class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
@@ -55,6 +55,8 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay):
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem line", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         if self.x1 is None:
             self.x1 = 0
         if self.y1 is None:

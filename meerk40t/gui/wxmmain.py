@@ -233,7 +233,9 @@ class MeerK40t(MWindow):
         context = self.context
         self.register_options_and_choices(context)
 
+        self.tooltips = True
         if self.context.disable_tool_tips:
+            self.tooltips = False
             wx.ToolTip.Enable(False)
 
         self.root_context = context.root
@@ -601,6 +603,7 @@ class MeerK40t(MWindow):
                 pass
             return res
 
+        kernel = self.context.kernel
         self.edit_menu_choice = [
             {
                 "label": _("&Undo\tCtrl-Z"),
@@ -722,25 +725,30 @@ class MeerK40t(MWindow):
                 "level": 1,
                 "segment": "",
             },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Manager"),
-                "help": _("Manage the Laser devices"),
-                "action": on_click_device_manager,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Configuration"),
-                "help": _("Manage the device settings"),
-                "action": on_click_device_settings,
-                "level": 1,
-                "segment": "",
-            },
+        ]
+        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+            self.edit_menu_choice.extend([
+                {
+                    "label": "",
+                    "level": 1,
+                    "segment": "",
+                },
+                {
+                    "label": _("Device-Manager"),
+                    "help": _("Manage the Laser devices"),
+                    "action": on_click_device_manager,
+                    "level": 1,
+                    "segment": "",
+                },
+                {
+                    "label": _("Device-Configuration"),
+                    "help": _("Manage the device settings"),
+                    "action": on_click_device_settings,
+                    "level": 1,
+                    "segment": "",
+                },
+            ])
+        self.edit_menu_choice.extend([
             {
                 "label": "",
                 "level": 1,
@@ -767,24 +775,39 @@ class MeerK40t(MWindow):
                 "level": 2,
                 "segment": "Settings",
             },
-            {
-                "label": "",
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Preferences\tCtrl-,"),
-                "help": _("Edit the general preferences"),
-                "action": on_click_preferences,
-                "level": 2,
-                "id": wx.ID_PREFERENCES,
-                "segment": "Settings",
-            },
-        ]
+        ])
+        if not (hasattr(kernel.args, "lock_general_config") and kernel.args.lock_general_config):
+            self.edit_menu_choice.extend((
+                {
+                    "label": "",
+                    "level": 2,
+                    "segment": "Settings",
+                },
+
+                {
+                    "label": _("Preferences\tCtrl-,"),
+                    "help": _("Edit the general preferences"),
+                    "action": on_click_preferences,
+                    "level": 2,
+                    "id": wx.ID_PREFERENCES,
+                    "segment": "Settings",
+                },
+            ))
 
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
         self.widgets_created = False
+
+
+    @signal_listener("toggle_tooltips")
+    def on_regmark_toooltips(self, origin, *args):
+        self.tooltips = not self.tooltips
+        # print (f"Set Tooltips to {self.tooltips}")
+        try:
+            wx.ToolTip.Enable(self.tooltips)
+        except Exception as e:
+            pass
+
 
     # --- Listen to external events to toggle regmark visibility
     @signal_listener("toggle_regmarks")
@@ -1182,7 +1205,7 @@ class MeerK40t(MWindow):
             # },
             {
                 "attr": "button_repeat",
-                "object": self.context.root,
+                "object": context.root,
                 "default": 0.5,
                 "type": float,
                 "label": _("Button repeat-interval"),
@@ -1199,7 +1222,7 @@ class MeerK40t(MWindow):
             },
             {
                 "attr": "button_accelerate",
-                "object": self.context.root,
+                "object": context.root,
                 "default": True,
                 "type": bool,
                 "label": _("Accelerate repeats"),
@@ -1211,6 +1234,25 @@ class MeerK40t(MWindow):
                 "section": "Misc.",
                 "subsection": "Button-Behaviour",
                 "signals": "button-repeat",
+            },
+            {
+                "attr": "just_a_single_element",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Create a single element only"),
+                "tip": _(
+                    "When you design an element, e.g. a line, then MeerK40t will allow you to immediately create the next instance of this type."
+                )
+                + "\n"
+                + _(
+                    "If this option is active then it will create just a single element and return to selection mode."
+                )
+                + "\n"
+                + _("Hint: Escape or a right-click will leave creation mode as well."),
+                "page": "Gui",
+                # "hidden": True,
+                "section": "Misc.",
             },
             {
                 "attr": "process_while_typing",
@@ -3268,6 +3310,11 @@ class MeerK40t(MWindow):
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 suppress = True
+            kernel = self.context.kernel
+            if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+                if submenu_name == "Device-Settings" and caption in ("Device Manager", "Configuration"):
+                    suppress = True
+
             if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])

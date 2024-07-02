@@ -3,12 +3,13 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class WobbleEffectNode(Node):
+class WobbleEffectNode(Node, Suppressable):
     """
     Effect node performing a wobble. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -26,9 +27,11 @@ class WobbleEffectNode(Node):
         self.wobble_speed = 50
         self.wobble_type = "circle"
 
-        Node.__init__(
+        super().__init__(
             self, type="effect wobble", id=id, label=label, lock=lock, **kwargs
         )
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} - {type} {radius} ({children})"
 
         if label is None:
@@ -319,6 +322,24 @@ class WobbleEffectNode(Node):
         elif self.wobble_type == "meander_3":
             path.append(
                 Geomstr.wobble_meander_3(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
+        elif self.wobble_type == "dash":
+            path.append(
+                Geomstr.wobble_dash(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
+        elif self.wobble_type == "tabs":
+            path.append(
+                Geomstr.wobble_tab(
                     outlines,
                     radius=self._radius,
                     interval=self._interval,

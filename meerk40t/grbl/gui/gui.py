@@ -24,6 +24,7 @@ def plugin(service, lifecycle):
             icons8_flash_on,
             icons8_info,
             icons8_pause,
+            icons8_home_filled,
         )
 
         service.register("window/GRBLController", GRBLController)
@@ -51,16 +52,18 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("window toggle GRBLController\n"),
             },
         )
-        service.register(
-            "button/device/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support,
-                "tip": _("Opens device-specific configuration window"),
-                "help": "devicegrbl",
-                "action": lambda v: service("window toggle Configuration\n"),
-            },
-        )
+        kernel = service.kernel
+        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+            service.register(
+                "button/device/Configuration",
+                {
+                    "label": _("Config"),
+                    "icon": icons8_computer_support,
+                    "tip": _("Opens device-specific configuration window"),
+                    "help": "devicegrbl",
+                    "action": lambda v: service("window toggle Configuration\n"),
+                },
+            )
         service.register(
             "button/control/Pause",
             {
@@ -118,6 +121,17 @@ def plugin(service, lifecycle):
                 "tip": _("Send a GRBL Clear Alarm command"),
                 "help": "devicegrbl",
                 "action": lambda v: service("clear_alarm\n"),
+            },
+        )
+
+        service.register(
+            "button/control/GoHome",
+            {
+                "label": _("Home"),
+                "icon": icons8_home_filled,
+                "tip": _("Send laser to home position"),
+                "help": "devicegrbl",
+                "action": lambda v: service("physical_home\n"),
             },
         )
         service.add_service_delegate(GRBLGui(service))

@@ -231,15 +231,23 @@ def plugin(kernel, lifecycle=None):
             else:
                 raise CommandSyntaxError
 
+        @kernel.console_argument("device", type=str)
         @kernel.console_command(
             "background",
             help="set background image",
             input_type="camera",
             output_type="image-array",
         )
-        def background_camera(data=None, **kwargs):
-            image_array = data.background()
-            return "image-array", image_array
+        def background_camera(data=None, device=None, **kwargs):
+            doit = True
+            if device:
+                if kernel.device.label != device:
+                    doit = False
+            if doit:
+                image_array = data.background()
+                return "image-array", image_array
+            else:
+                return
 
         @kernel.console_command(
             "export",

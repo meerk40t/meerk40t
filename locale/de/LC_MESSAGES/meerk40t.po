@@ -5973,7 +5973,7 @@ msgid "Send laser to home position"
 msgstr "Laser in Home-Position fahren"
 
 msgid "Send laser to home position (right click: to physical home)"
-msgstr "Laser in Home-Position fahren (Rechts-Click: zu Geräte Home)"
+msgstr "Laser in Home-Position fahren (Rechts-Click: zu Physikalischem Home)"
 
 #: meerk40t/gui/navigationpanels.py:776
 msgid "Unlock the laser rail"
@@ -15040,7 +15040,7 @@ msgstr "Wiederholungen"
 
 #: ./meerk40t\gui\propertypanels\hatchproperty.py:100
 msgid "Angle Delta"
-msgstr "Winkel"
+msgstr "Winkel-Änderung"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:25
 msgid "Crop"
@@ -17278,3 +17278,187 @@ msgstr "Datei '{file}' wurde erfolgreich gesichert"
 #: meerk40t/gui/wxmain.py:4556
 msgid " (keep the Shift-Key pressed to be asked for a target location)"
 msgstr " (Shift-Taste gedrückt lassen, um nach Platzierung gefragt zu werden)"
+
+#: meerk40t/gui/wxmribbon.py:380 meerk40t/gui/wxmribbon.py:1310
+msgid "This could be your tooltip"
+msgstr "Das könnte Ihr Tooltip sein"
+
+#: meerk40t/gui/wxmribbon.py:701
+msgid "Pages"
+msgstr "Seiten"
+
+#: meerk40t/gui/wxmribbon.py:789
+msgid "User-defined buttons"
+msgstr "Eigene Schaltflächen"
+
+#: meerk40t/gui/wxmribbon.py:848
+msgid "Add an additional user-defined button"
+msgstr "Zusätzliche Schaltfläche hinzufügen"
+
+#: meerk40t/gui/wxmribbon.py:849
+msgid "Remove the selected user-defined button from the list"
+msgstr "Ausgewählte Schaltfläche entfernen"
+
+#: meerk40t/gui/wxmribbon.py:850
+msgid "Decrease the position of the selected button"
+msgstr "Ausgewählte Schaltfläche nach unten verschieben"
+
+#: meerk40t/gui/wxmribbon.py:851
+msgid "Increase the position of the selected button"
+msgstr "Ausgewählte Schaltfläche nach oben verschieben"
+
+#: meerk40t/gui/wxmribbon.py:852
+msgid "Modify the content of the selected button"
+msgstr "Den Inhalt der ausgewählten Schaltfläche bearbeiten"
+
+#: meerk40t/gui/wxmribbon.py:1322
+msgid "Edit Button"
+msgstr "Schaltfläche bearbeiten"
+
+#: meerk40t/gui/wxmribbon.py:1332
+msgid "Tooltip"
+msgstr "Tooltip"
+
+#: meerk40t/gui/wxmribbon.py:1338
+msgid "Action left click"
+msgstr "Aktion bei Links-Click"
+
+#: meerk40t/gui/wxmribbon.py:1344 meerk40t/gui/wxmribbon.py:1387
+msgid "Action right click"
+msgstr "Aktion bei Rechts-Click"
+
+#: meerk40t/gui/wxmribbon.py:1349
+msgid "Always"
+msgstr "Immer"
+
+#: meerk40t/gui/wxmribbon.py:1349
+msgid "When at least one element selected"
+msgstr "Wenn mindestens ein Element ausgewählt ist"
+
+#: meerk40t/gui/wxmribbon.py:1349
+msgid "When at least two elemente selected"
+msgstr "Wenn mindestens zwei Elemente ausgewählt sind"
+
+#: meerk40t/gui/wxmribbon.py:1351
+msgid "Rule to enable"
+msgstr "Aktivieren"
+
+#: meerk40t/gui/wxmribbon.py:1364
+msgid "Rule to display"
+msgstr "Anzeigen"
+
+#: meerk40t/gui/wxmscene.py:449
+msgid "page to use."
+msgstr "zu verwendender Abschnitt"
+
+#: meerk40t/gui/wxmscene.py:451
+msgid "Switches to a particular page in the ribbonbar"
+msgstr "Schaltet zu einem bestimmten Abschnitt in der Toolbar um"
+
+#: meerk40t/gui/wxmscene.py:458
+msgid "Active Page: {page}"
+msgstr "Aktiver Abschnitt {page}"
+
+#: meerk40t/gui/wxmscene.py:1192
+msgid "Display the physical dimensions"
+msgstr "Zeigt die realen Abmessungen (inkl. Rand) im Arbeitsbereich an"
+
+#: meerk40t/gui/propertypanels/attributes.py:273
+msgid "Display label on screen"
+msgstr "Zeigt Label innerhalb Objekt an"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:136
+msgid "Segmentation size, the wobble pattern will be applied at every segment"
+msgstr "Segmentations-Größe, das Wobble-Muster wird an jedem Punkt des Segments gesetzt"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:137
+msgid "Wobble size, does influence the size of the wobble pattern"
+msgstr "Wobble-Größe, beeinflusst die Größe des Wobble-Musters"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:138
+msgid "How quickly does the wobble pattern revolve around the path"
+msgstr "Wie schnell soll das Wobble-Muster um den Pfad wandern"
+
+#: meerk40t/gui/propertypanels/wobbleproperty.py:139
+msgid "The wobble pattern to be applied"
+msgstr "Das anzuwendende Wobble-Muster"
+
+#: meerk40t/core/elements/branches.py:672 meerk40t/core/elements/element_treeops.py:1835 meerk40t/gui/propertypanels/gotoproperty.py:25
+msgid "X-Coordinate of Goto?"
+msgstr "X-Koordinate der Zielposition"
+
+#: meerk40t/core/elements/branches.py:678 meerk40t/core/elements/element_treeops.py:1834 meerk40t/gui/propertypanels/gotoproperty.py:33
+msgid "Y-Coordinate of Goto?"
+msgstr "Y-Koordinate der Zielposition"
+
+#: meerk40t/grbl/gui/grblconfiguration.py:211
+msgid "Hardware properties"
+msgstr "Hardware-Parameter"
+
+#: meerk40t/grbl/gui/grblconfiguration.py:212
+msgid "Retrieve and change Laser properties"
+msgstr "Abfragen und Setzen der Laser-Parameter"
+
+#: meerk40t/grbl/gui/grblcontroller.py:75
+msgid "Physical Home"
+msgstr "Physikalisches Home"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:32
+msgid "Write"
+msgstr "Schreiben"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:66
+msgid "Reread settings from hardware."
+msgstr "Liest die aktuellen Werte vom Gerät aus"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:66
+msgid "This will write settings to hardware."
+msgstr "Dies wird die veränderten Einstellungen auf das Gerät schreiben"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:69
+msgid "Are you sure?"
+msgstr "Sind Sie sicher?"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:84
+msgid "Export Settings"
+msgstr "Aktuelle Einstellungen exportieren"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:213
+msgid "GRBL Hardware Config"
+msgstr "GRBL Hardware Parameter"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:23
+msgid "Advanced Features:"
+msgstr "Erweiterte Optionen:"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:30
+msgid "Set Z-Axis value"
+msgstr "Setze Z-Achsenwerte"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:32
+msgid "Enables the ability to set a specific z-Value."
+msgstr "Ermöglicht einen bestimmten Z-Achsenwert zu setzen"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:46
+msgid "If enabled this will allow to set a defined z-Axis value for all elements assigned to this operation"
+msgstr "Falls aktiv wird den in diesem Arbeitsablauf enthaltenen Objekten ein definierter Z-Achsenwert zugeordnet."
+
+#: meerk40t/device/devicechoices.py:20
+msgid "Default Hatch Angle"
+msgstr "Standard Schraffur-Winkel"
+
+#: meerk40t/device/devicechoices.py:28
+msgid "Hatch Angle Delta"
+msgstr "Schraffur-Winkeländerung"
+
+#: meerk40t/device/devicechoices.py:29
+msgid "Default Hatch Angle Delta"
+msgstr "Standard Schraffur-Winkeländerung"
+
+#: meerk40t/device/devicechoices.py:38
+msgid "Default Wobble Radius"
+msgstr "Standard Wobble-Radius"
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Interval"
+msgstr "Standard Wobble-Intervall"

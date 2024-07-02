@@ -255,6 +255,9 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
+        if hasattr(node, "hidden"):
+            if node.hidden:
+                return False
         if hasattr(node, "is_visible"):
             if not node.is_visible:
                 return False

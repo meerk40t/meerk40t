@@ -709,6 +709,15 @@ class GrblController:
                     self.validate_stop("$$")
                     self._validation_stage = 3
                 self._process_settings_message(response)
+            elif response.startswith("Alarm|"):
+                # There's no errorcode
+                error_num = 1
+                short, long = grbl_alarm_message(error_num)
+                alarm_desc = f"#{error_num}, {short}\n{long}"
+                self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
+                self.log(f"Alarm {alarm_desc}", type="recv")
+                self._assembled_response = []
+
             elif response.startswith("ALARM"):
                 try:
                     error_num = int(response[6:])

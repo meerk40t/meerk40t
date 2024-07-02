@@ -160,10 +160,11 @@ class BalorConfiguration(MWindow):
     @signal_listener("corfile")
     def on_corfile_changed(self, origin, *args):
         from meerk40t.balormk.controller import GalvoController
-
+        if not self.context.corfile:
+            return
         try:
             scale = GalvoController.get_scale_from_correction_file(self.context.corfile)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError, OSError):
             return
         self.context.lens_size = f"{65536.0 / scale:.03f}mm"
         self.context.signal("lens_size", self.context.lens_size, self.context)

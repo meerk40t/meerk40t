@@ -2,12 +2,13 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class HatchEffectNode(Node):
+class HatchEffectNode(Node, Suppressable):
     """
     Effect node performing a hatch. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -26,9 +27,12 @@ class HatchEffectNode(Node):
         self.hatch_angle_delta = None
         self.hatch_type = None
         self.loops = None
-        Node.__init__(
+        super().__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
+
         self._formatter = "{element_type} - {distance} {angle} ({children})"
 
         if label is None:

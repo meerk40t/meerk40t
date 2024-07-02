@@ -690,7 +690,8 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        self(f"!{self.line_end}", real=True)
+        # self(f"!{self.line_end}", real=True)
+        self(chr(0x21), real=True) # Hex 21 = !
         # Let's make sure we reestablish power...
         self.power_dirty = True
         self.service.signal("pause")
@@ -705,7 +706,8 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        self(f"~{self.line_end}", real=True)
+        # self(f"~{self.line_end}", real=True)
+        self(chr(0x7e), real=True) # hex 7e = ~
         self.service.signal("pause")
 
     def clear_states(self):

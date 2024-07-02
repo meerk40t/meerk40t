@@ -491,9 +491,9 @@ class wxMeerK40t(wx.App, Module):
             return True
         if self.context.single_instance_only and self.instance.IsAnotherRunning():
             dlg = wx.MessageDialog(
-                None, 
-                "Another instance is running!\nDo you want to run another copy of the app?", 
-                "ERROR", 
+                None,
+                "Another instance is running!\nDo you want to run another copy of the app?",
+                "ERROR",
                 wx.YES_NO | wx.ICON_QUESTION | wx.NO_DEFAULT,
             )
             result = dlg.ShowModal() == wx.ID_YES
@@ -815,6 +815,13 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+        # print (f"Language according to settings: {language}")
+        tlang = getattr(kernel.args, "language", "undefined")
+        for idx, content in enumerate(supported_languages):
+            if content[0] == tlang:
+                language = idx
+                break
+        # print (f"Language after cmdline-test: {language}")
 
         # See issue #2103
         # context.setting(str, "i18n", "en")
@@ -875,7 +882,10 @@ class wxMeerK40t(wx.App, Module):
         )
 
         kernel.register("window/Console", Console)
-        kernel.register("window/Preferences", Preferences)
+        if hasattr(kernel.args, "lock_general_config") and kernel.args.lock_general_config:
+            pass
+        else:
+            kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
@@ -888,7 +898,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        kernel.register("window/DeviceManager", DeviceManager)
+        if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+            pass
+        else:
+            kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
@@ -1002,25 +1015,40 @@ class wxMeerK40t(wx.App, Module):
         @context.console_argument("crashtype", type=str)
         @context.console_command("crash_me_if_you_can", hidden=True)
         def crash_mk(command, channel, _, crashtype=None, **kwargs):
+
+            def crash_divide(x, y):
+                return x / y
+
+            def crash_key(variable, index):
+                l = variable
+                return l[index]
+
+            def crash_index(variable, index):
+                l = variable
+                return l[index]
+
+            def crash_value(variable, dtype):
+                return dtype(variable)
+
             if crashtype is None:
                 crashtype = "dividebyzero"
             crashtype = crashtype.lower()
             if crashtype == "dividebyzero":
                 a = 0
                 b = 0
-                c = b / a
+                c = crash_divide(a, b)
                 return
             if crashtype == "key":
                 d = {"a": 0}
-                b = d["b"]
+                b = crash_key(d, "b")
                 return
             if crashtype == "index":
                 a = (0, 1, 2)
-                b = a[5]
+                b = crash_index(a, 5)
                 return
             if crashtype == "value":
                 a = "an invalid number 1"
-                b = float(a)
+                b = crash_value(a, float)
                 return
 
     def update_language(self, lang):
@@ -1033,6 +1061,9 @@ class wxMeerK40t(wx.App, Module):
         except (IndexError, ValueError):
             return
         context.language = lang
+        # We need to remove the command-line argument now:
+        if hasattr(context.kernel.args, "language"):
+            delattr(context.kernel.args, "language")
 
         if self.locale:
             assert sys.getrefcount(self.locale) <= 2
@@ -1259,9 +1290,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     variable_info = ""
     try:
-        frame = exc_traceback.tb_frame
         variable_info = "\nLocal variables:\n"
-        variable_info += _variable_summary(frame.f_locals)
+        tb = exc_traceback
+        while tb:
+            frame = tb.tb_frame
+            code = frame.f_code
+            source = f"{code.co_filename}:{tb.tb_lineno}, in {code.co_name}"
+            variable_info += f"[{source}]:\n" + _variable_summary(frame.f_locals)
+            tb = tb.tb_next
     except Exception:
         pass
     try:

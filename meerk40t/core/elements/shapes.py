@@ -390,16 +390,7 @@ def init_commands(kernel):
             interval = "0.5mm"
 
         wtype = wtype.lower()
-        allowed = (
-            "circle",
-            "circle_right",
-            "circle_left",
-            "sinewave",
-            "sawtooth",
-            "jigsaw",
-            "gear",
-            "slowtooth",
-        )
+        allowed = list(self.kernel.root.match("wobble", suffix=True))
         if wtype not in allowed:
             channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
@@ -733,6 +724,9 @@ def init_commands(kernel):
                     if prop in ("mktext", "mkfont"):
                         for property_op in self.kernel.lookup_all("path_updater/.*"):
                             property_op(self.kernel.root, e)
+                    if prop in ("dpi", "dither", "dither_type", "invert", "red", "green", "blue", "lightness"):
+                        # Images require some recalculation too
+                        e.update(None)
                 else:
                     channel(
                         _("Element {name} has no property {field}").format(
