@@ -323,6 +323,7 @@ class IdPanel(wx.Panel):
         data = self.add_node_and_children(self.node)
         self.context.signal("element_property_reload", data)
         self.context.signal("refresh_scene", "Scene")
+        self.context.signal("warn_state_update")
 
     def on_hidden_click(self, event):
         self.node.hidden = False
@@ -332,6 +333,7 @@ class IdPanel(wx.Panel):
         data = self.add_node_and_children(self.node)
         self.context.signal("element_property_reload", data)
         self.context.signal("refresh_scene", "Scene")
+        self.context.signal("warn_state_update")
 
     def pane_hide(self):
         pass

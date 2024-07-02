@@ -306,6 +306,7 @@ def init_tree(kernel):
                 updated.append(e)
         self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
