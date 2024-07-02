@@ -3,7 +3,7 @@
 
 name: Meerk40t (Ubuntu)
 
- on:
+on:
    workflow_dispatch:
 
 jobs:
