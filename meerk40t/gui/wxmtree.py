@@ -50,6 +50,7 @@ from .wxutils import (
     get_key_name,
     is_navigation_key,
     wxButton,
+    wxTreeCtrl,
 )
 
 _ = wx.GetTranslation
@@ -112,7 +113,7 @@ class TreePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         # Define Tree
-        self.wxtree = wx.TreeCtrl(
+        self.wxtree = wxTreeCtrl(
             self,
             wx.ID_ANY,
             style=wx.TR_MULTIPLE
