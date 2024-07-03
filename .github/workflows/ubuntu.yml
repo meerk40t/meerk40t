@@ -28,10 +28,10 @@ jobs:
         python3 -m pip install --upgrade pip
         pip cache purge
         pip install pyinstaller wheel
-        pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install numpy==1.26.4
         pip install pyusb
         pip install wheel
+        pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install potracer
         pip install pillow==9.5.0
         pip install ezdxf
