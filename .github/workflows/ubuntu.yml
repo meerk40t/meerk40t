@@ -48,9 +48,13 @@ jobs:
     - name: Build meerk40t
       run: |
         mv meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t mk40t.py
-        mv mk40t.py meerk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
+        mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
         mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
+        mv mk40t.py meerk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
+        mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
 
 # Switched to using softprops/action-gh-release@v1
 # because it supports uploading to existing release based on current tag.

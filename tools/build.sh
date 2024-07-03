@@ -1,4 +1,6 @@
 #!/bin/sh
+echo Building Meerk40t executable v.0.1
+echo This script assumes that you have a working python environment where you can run meerk40t from source
 echo Making sure plugins are loaded
 mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
 mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
