@@ -41,7 +41,8 @@ jobs:
         pip install scipy
         pip install .
         pip install numba
-        pip install meerk40t-camera opencv-python-headless==4.5.3.56
+        pip install meerk40t-camera 
+        pip install --no-cache-dir opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
 
