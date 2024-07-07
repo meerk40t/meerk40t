@@ -798,7 +798,7 @@ def init_commands(kernel):
                 except AttributeError:
                     sub_after = 0
                 channel(
-                    f"Simplified {node.type} ({node.label}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
+                    f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
                 )
                 if seg_before:
                     saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
@@ -808,7 +808,7 @@ def init_commands(kernel):
                 channel(f"Segments before: {seg_before} to {seg_after} {saving}")
                 data_changed.append(node)
             else:
-                channel(f"Invalid node for simplify {node.type} ({node.label})")
+                channel(f"Invalid node for simplify {node.type} ({node.display_label()})")
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")

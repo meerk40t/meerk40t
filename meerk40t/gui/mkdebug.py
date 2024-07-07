@@ -285,14 +285,14 @@ class DebugTreePanel(wx.Panel):
         data = self.context.elements.flat(emphasized=True)
         for node in data:
             txt2 += (
-                f"{node.id} - {node.type} {node.label} - {timestr(node._emphasized_time)}"
+                f"{node.id} - {node.type} {node.display_label()} - {timestr(node._emphasized_time)}"
                 + "\n"
             )
         node = self.context.elements.first_emphasized  # (data)
         if node is None:
             txt3 = ""
         else:
-            txt3 = f"{node.id} - {node.type} {node.label} - {timestr(node._emphasized_time)}"
+            txt3 = f"{node.id} - {node.type} {node.display_label()} - {timestr(node._emphasized_time)}"
 
         self.lb_selected.SetValue(txt1)
         self.lb_emphasized.SetValue(txt2)
