@@ -82,7 +82,7 @@ def init_commands(kernel):
             if d.type == "root":
                 channel(_("Tree:"))
             else:
-                channel(f"{d.label}:")
+                channel(f"{d.display_label()}:")
             t_list([], d)
             channel("----------")
 

@@ -1699,7 +1699,7 @@ def plugin(kernel, lifecycle=None):
                         # print(f"Erasing right: {dx}:{rwidth}")
                     newnode = copy(inode)
                     newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                     )
                     # newnode.dither = False
                     # newnode.operations.clear()
@@ -1721,7 +1721,7 @@ def plugin(kernel, lifecycle=None):
                     anyslices += 1
                     newnode = copy(inode)
                     newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                     )
                     # newnode.dither = False
                     # newnode.operations.clear()
@@ -2210,7 +2210,7 @@ class ImageLoader:
             dy = (context.device.space.height - (bb[3] - bb[1])) / 2
 
             n.matrix.post_translate(dx, dy)
-        
+
         if context.create_image_group:
             file_node.focus()
         else:

@@ -759,10 +759,10 @@ class Elemental(Service):
                                 will_be_burnt = True
                                 break
                         except AttributeError as e:
-                            # print(f"Encountered error {e} for node {node.type}.{node.id}.{node.label}")
+                            # print(f"Encountered error {e} for node {node.type}.{node.id}.{node.display_label()}")
                             pass
                 if not will_be_burnt:
-                    # print (f"Node {node.type}.{node.id}.{node.label} has {len(node._references)} references but none is active...")
+                    # print (f"Node {node.type}.{node.id}.{node.display_label()} has {len(node._references)} references but none is active...")
                     nonburnt = True
             if nonburnt and unassigned:
                 break
@@ -990,7 +990,7 @@ class Elemental(Service):
                 # Is this a group? Then we just take this node
                 # and remove all children nodes
                 if node_1.type in ("file", "group"):
-                    # print (f"Group node ({node_1.label}), eliminate children")
+                    # print (f"Group node ({node_1.display_label()}), eliminate children")
                     remove_children_from_list(align_data, node_1)
                     # No continue, as we still need to
                     # assess the parent case
@@ -2563,7 +2563,7 @@ class Elemental(Service):
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
         for node in elements:
-            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.label}"
+            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.display_label()}"
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
@@ -3796,17 +3796,17 @@ class Elemental(Service):
             to_be_deleted = []
             for idx, ref in enumerate(node._references):
                 if ref is None:
-                    # print (f"Empty reference for {node.type}.{node.id}.{node.label}")
+                    # print (f"Empty reference for {node.type}.{node.id}.{node.display_label()}")
                     to_be_deleted.insert(0, idx) # Last In First Out
                 else:
                     try:
                         id = ref.parent # This needs to exist
                         if id is None:
                             to_be_deleted.insert(0, idx) # Last In First Out
-                            # print (f"Empty parent reference for {node.type}.{node.id}.{node.label}")
+                            # print (f"Empty parent reference for {node.type}.{node.id}.{node.display_label()}")
                     except AttributeError:
                         to_be_deleted.insert(0, idx) # Last In First Out
-                        # print (f"Invalid reference for {node.type}.{node.id}.{node.label}")
+                        # print (f"Invalid reference for {node.type}.{node.id}.{node.display_label()}")
             if to_be_deleted:
                 # print (f"Will delete {len(to_be_deleted)} invalid references")
                 for idx in to_be_deleted:

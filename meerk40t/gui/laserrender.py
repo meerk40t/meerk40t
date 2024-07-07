@@ -927,7 +927,7 @@ class LaserRender:
         gc.PushState()
         cx = bbox[0] + 0.5 * (bbox[2] - bbox[0])
         cy = bbox[1] + 0.25 * (bbox[3] - bbox[1])
-        symbol = node.label
+        symbol = node.display_label()
         font_size = 10 * zoomscale
         if font_size < 1.0:
             font_size = 1.0

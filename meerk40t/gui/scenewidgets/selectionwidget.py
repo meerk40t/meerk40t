@@ -1415,7 +1415,7 @@ class MoveWidget(Widget):
                 if oldparent.label is None:
                     newlabel = "Copy"
                 else:
-                    newlabel = f"Copy of {oldparent.label}"
+                    newlabel = f"Copy of {oldparent.display_label()}"
                 if oldparent.id is None:
                     newid = "Copy"
                 else:
