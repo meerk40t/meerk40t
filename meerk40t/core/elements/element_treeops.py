@@ -890,7 +890,11 @@ def init_tree(kernel):
 
     @tree_operation(_("Clear all"), node_type="branch ops", help="")
     def clear_all(node, **kwargs):
-        self("operation* delete\n")
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), 
+            caption=_("Operations")
+        ):
+            self("operation* delete\n")
 
     @tree_operation(
         _("Clear unused"),
@@ -904,8 +908,12 @@ def init_tree(kernel):
             if len(op._children) == 0 and not op.type == "blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
-            with self.static("clear_unused"):
-                self.remove_operations(to_delete)
+            if self.kernel.yesno(
+                _("Do you really want to delete {num} entries?").format(num=len(to_delete)), 
+                caption=_("Operations")
+            ):
+                with self.static("clear_unused"):
+                    self.remove_operations(to_delete)
 
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
@@ -1027,8 +1035,12 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
-        with self.static("clear_elems"):
-            self.elem_branch.remove_all_children()
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), 
+            caption=_("Elements")
+        ):
+            with self.static("clear_elems"):
+                self.elem_branch.remove_all_children()
 
     # ==========
     # General menu-entries for regmark branch
@@ -1036,8 +1048,12 @@ def init_tree(kernel):
 
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
-        with self.static("clear_regmarks"):
-            self.reg_branch.remove_all_children()
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), 
+            caption=_("Regmarks")
+        ):
+            with self.static("clear_regmarks"):
+                self.reg_branch.remove_all_children()
 
     # ==========
     # REMOVE MULTI (Tree Selected)
