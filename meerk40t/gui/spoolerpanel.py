@@ -582,19 +582,23 @@ class SpoolerPanel(wx.Panel):
 
     def on_menu_popup_clear(self, element=None):
         def clear(event=None):
-            spoolers = []
-            for device in self.available_devices:
-                addit = True
-                if (
-                    self.filter_device is not None
-                    and device.label != self.filter_device
-                ):
-                    addit = False
-                if addit:
-                    spoolers.append(device.spooler)
-            for spooler in spoolers:
-                spooler.clear_queue()
-            self.refresh_spooler_list()
+            if self.kernel.yesno(
+                _("Do you really want to delete all entries?"), 
+                caption=_("Spooler")
+            ):
+                spoolers = []
+                for device in self.available_devices:
+                    addit = True
+                    if (
+                        self.filter_device is not None
+                        and device.label != self.filter_device
+                    ):
+                        addit = False
+                    if addit:
+                        spoolers.append(device.spooler)
+                for spooler in spoolers:
+                    spooler.clear_queue()
+                self.refresh_spooler_list()
 
         return clear
 
