@@ -715,6 +715,12 @@ def init_commands(kernel):
                                 "Can't set '{val}' for {field} (invalid value, old={oldval})."
                             ).format(val=new_value, field=prop, oldval=oldval)
                         )
+                    except AttributeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
 
                     if "font" in prop:
                         # We need to force a recalculation of the underlying wxfont property

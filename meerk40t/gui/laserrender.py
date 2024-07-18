@@ -94,6 +94,8 @@ def svgfont_to_wx(textnode):
     """
     if not hasattr(textnode, "wxfont"):
         textnode.wxfont = wx.Font()
+    if textnode.font_weight is not None and textnode.font_weight > 1000:
+        textnode.font_weight = 1000
     wxfont = textnode.wxfont
     # if the font_list is empty, then we do have a not properly initialised textnode,
     # that needs to be resolved...
