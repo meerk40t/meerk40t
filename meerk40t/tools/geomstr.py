@@ -1728,16 +1728,16 @@ class Geomstr:
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
     @classmethod
-    def wobble_dash(cls, outer, radius, interval, speed):
+    def wobble_dash(cls, outer, dashlength, interval, irrelevant):
         from meerk40t.fill.fills import dashed_line as algorithm
 
-        return cls.wobble(algorithm, outer, radius, interval, speed)
+        return cls.wobble(algorithm, outer, dashlength, interval, irrelevant)
 
     @classmethod
-    def wobble_tab(cls, outer, radius, interval, speed):
+    def wobble_tab(cls, outer, tablength, interval, tabpositions):
         from meerk40t.fill.fills import tabbed_path as algorithm
 
-        return cls.wobble(algorithm, outer, radius, interval, speed)
+        return cls.wobble(algorithm, outer, tablength, interval, tabpositions)
 
     @classmethod
     def from_float_segments(cls, float_segments):
