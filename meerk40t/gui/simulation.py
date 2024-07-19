@@ -1173,7 +1173,7 @@ class SimulationPanel(wx.Panel, Job):
         self.debug (f"Now pane has: {sz}")
         self.fit_scene_to_panel()
 
-    # Manages the display, non-display of the optimisation-options
+    # Manages the display / non-display of the optimisation-options
     @property
     def slided_in(self):
         return self._slided_in
@@ -1181,20 +1181,23 @@ class SimulationPanel(wx.Panel, Job):
     @slided_in.setter
     def slided_in(self, newvalue):
         self._slided_in = newvalue
-        if newvalue:
-            # Slided in ->
-            self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
-            self.voption_sizer.Layout()
-            self.btn_slide_options.SetLabel("<")
-            self.hscene_sizer.Layout()
-            self.Layout()
-        else:
-            # Slided out ->
-            self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
-            self.voption_sizer.Layout()
-            self.btn_slide_options.SetLabel(">")
-            self.hscene_sizer.Layout()
-            self.Layout()
+        try:
+            if newvalue:
+                # Slided in ->
+                self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
+                self.voption_sizer.Layout()
+                self.btn_slide_options.SetLabel("<")
+                self.hscene_sizer.Layout()
+                self.Layout()
+            else:
+                # Slided out ->
+                self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
+                self.voption_sizer.Layout()
+                self.btn_slide_options.SetLabel(">")
+                self.hscene_sizer.Layout()
+                self.Layout()
+        except RuntimeError:
+            return
 
     def toggle_background(self, event):
         """
