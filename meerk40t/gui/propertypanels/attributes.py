@@ -617,6 +617,7 @@ class LinePropPanel(wx.Panel):
         vis1 = False
         vis2 = False
         vis3 = False
+        vis4 = False
         vis5 = False
         if hasattr(self.node, "linecap"):
             vis1 = True
