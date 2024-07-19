@@ -108,7 +108,10 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
+        """
+        Delivers the basic shape without any special effects like tabs and / or dashes/dots
+        """
         x = self.x
         y = self.y
         width = self.width
@@ -118,6 +121,36 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
         path.transform(self.matrix)
         return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effektcs like tabs and dashes/dots
+        """
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+        rx = self.rx
+        ry = self.ry
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
+        # Do we have tabs?
+        tablen = 2 * unit_mm
+        numtabs = 4
+        numtabs = 0
+        if numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+        # Is there a dash/dot pattern to apply?
+        dashlen = 2 * unit_mm
+        dashlen = 0
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
+
+        path.transform(self.matrix)
+        return path
+
 
     def scaled(self, sx, sy, ox, oy):
         """

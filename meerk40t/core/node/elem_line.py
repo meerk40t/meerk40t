@@ -120,6 +120,20 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
 
     def as_geometry(self, **kws):
         path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = 2 * unit_mm
+        numtabs = 4
+        numtabs = 0
+        if numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+        # Is there a dash/dot pattern to apply?
+        dashlen = 2 * unit_mm
+        dashlen = 0
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
         path.transform(self.matrix)
         return path
 

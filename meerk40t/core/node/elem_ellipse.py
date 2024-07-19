@@ -142,6 +142,29 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         path.transform(self.matrix)
         return path
 
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effektcs like tabs and dashes/dots
+        """
+        path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = 2 * unit_mm
+        numtabs = 4
+        numtabs = 0
+        if numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+        # Is there a dash/dot pattern to apply?
+        dashlen = 2 * unit_mm
+        dashlen = 0
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
+
+        path.transform(self.matrix)
+        return path
+
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
