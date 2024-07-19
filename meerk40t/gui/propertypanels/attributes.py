@@ -450,6 +450,7 @@ class LinePropPanel(wx.Panel):
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
         fillchoices = (_("Non-Zero"), _("Even-Odd"))
+        linestylechoices = (_("Solid"), _("Dotted"), _("Dashed"))
         self.combo_cap = wx.ComboBox(
             self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -459,9 +460,13 @@ class LinePropPanel(wx.Panel):
         self.combo_fill = wx.ComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
+        self.combo_linestyle = wx.ComboBox(
+            self, wx.ID_ANY, choices=linestylechoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
         self.combo_join.SetMaxSize(dip_size(self, 100, -1))
         self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_linestyle.SetMaxSize(dip_size(self, 100, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -475,11 +480,44 @@ class LinePropPanel(wx.Panel):
         self.sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fillrule"), wx.VERTICAL)
         self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
 
+        self.sizer_linestyle = StaticBoxSizer(self, wx.ID_ANY, _("Linestyle"), wx.VERTICAL)
+        self.sizer_linestyle.Add(self.combo_linestyle, 1, wx.EXPAND, 0)
+
+        self.tab_length = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
+        )
+        self.tab_count = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="int",
+        )
+        self.tab_count.SetMaxSize(dip_size(self, 100, -1))
+        self.tab_length.SetMaxSize(dip_size(self, 100, -1))
+        label1 = wx.StaticText(self, wx.ID_ANY, _("Tab-Length"))
+        label2 = wx.StaticText(self, wx.ID_ANY, _("Tabs"))
+        self.sizer_tabs = StaticBoxSizer(self, wx.ID_ANY, _("Tabs/Bridges"), wx.HORIZONTAL)
+        self.sizer_tabs.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_tabs.Add(self.tab_length, 1, wx.EXPAND, 0)
+        self.sizer_tabs.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_tabs.Add(self.tab_count, 1, wx.EXPAND, 0)
+
         sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
         sizer_attributes.Add(self.sizer_join, 1, wx.EXPAND, 0)
         sizer_attributes.Add(self.sizer_fill, 1, wx.EXPAND, 0)
-
         main_sizer.Add(sizer_attributes, 0, wx.EXPAND, 0)
+
+        sizer_attributes2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_attributes2.Add(self.sizer_linestyle, 1, wx.EXPAND, 0)
+        sizer_attributes2.Add(self.sizer_tabs, 1, wx.EXPAND, 0)
+        main_sizer.Add(sizer_attributes2, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
@@ -487,6 +525,12 @@ class LinePropPanel(wx.Panel):
         self.combo_cap.Bind(wx.EVT_COMBOBOX, self.on_cap)
         self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
         self.combo_fill.Bind(wx.EVT_COMBOBOX, self.on_fill)
+        self.combo_linestyle.Bind(wx.EVT_COMBOBOX, self.on_linestyle)
+        self.tab_count.SetActionRoutine(self.on_tab_count)
+        self.tab_length.SetActionRoutine(self.on_tab_length)
+        self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
+        self.tab_count.SetToolTip(_("How many tabs do you want to place equidistant along the shape (0=None)?"))
+        self.tab_length.SetToolTip(_("How wide should the tab be?"))
         self.set_widgets(self.node)
 
     def on_cap(self, event):
@@ -522,6 +566,45 @@ class LinePropPanel(wx.Panel):
         except AttributeError:
             pass
 
+    def on_linestyle(self, event):
+        if self.node is None or self.node.lock:
+            return
+        _id = self.combo_linestyle.GetSelection()
+        try:
+            self.node.linestyle = _id
+            # We need to recalculate the appearance
+            self.node.empty_cache()
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def on_tab_length(self):
+        if self.node is None or self.node.lock:
+            return
+        try:
+            swidth = float(Length(self.tab_length.GetValue()))
+            if self.node.mktablength != swidth:
+                self.node.mktablength = swidth
+                self.node.empty_cache()
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
+    def on_tab_count(self):
+        if self.node is None or self.node.lock:
+            return
+        try:
+            scount = int(self.tab_count.GetValue())
+            if self.node.mktabpositions != scount:
+                self.node.mktabpositions = scount
+                self.node.empty_cache()
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
     def pane_hide(self):
         pass
 
@@ -534,6 +617,7 @@ class LinePropPanel(wx.Panel):
         vis1 = False
         vis2 = False
         vis3 = False
+        vis5 = False
         if hasattr(self.node, "linecap"):
             vis1 = True
             self.combo_cap.SetSelection(int(node.linecap))
@@ -543,6 +627,17 @@ class LinePropPanel(wx.Panel):
         if hasattr(self.node, "fillrule"):
             vis3 = True
             self.combo_fill.SetSelection(int(node.fillrule))
+        if hasattr(self.node, "linestyle"):
+            vis4 = True
+            self.combo_linestyle.SetSelection(int(node.linestyle))
+        if hasattr(self.node, "mktablength"):
+            vis5 = True
+            x = self.node.mktablength
+            units = self.context.units_name
+            if units in ("inch", "inches"):
+                units = "in"
+            self.tab_length.SetValue(f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}")
+            self.tab_count.SetValue(str(node.mktabpositions))
 
         self.combo_cap.Show(vis1)
         self.sizer_cap.Show(vis1)
@@ -550,12 +645,16 @@ class LinePropPanel(wx.Panel):
         self.sizer_join.Show(vis2)
         self.combo_fill.Show(vis3)
         self.sizer_fill.Show(vis3)
+        self.combo_linestyle.Show(vis4)
+        self.sizer_linestyle.Show(vis4)
+        self.tab_length.Show(vis5)
+        self.tab_count.Show(vis5)
+        self.sizer_tabs.Show(vis5)
 
-        if vis1 or vis2 or vis3:
+        if vis1 or vis2 or vis3 or vis4 or vis5:
             self.Show()
         else:
             self.Hide()
-
 
 class StrokeWidthPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
