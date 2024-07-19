@@ -2678,7 +2678,6 @@ class MeerK40t(MWindow):
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save_as", hidden=True)
         def save_dialog(quit=False, **kwargs):
-            print ("Save Dialog")
             filetypes = []
             types = []
             for saver, save_name, sname in context.find("save"):
