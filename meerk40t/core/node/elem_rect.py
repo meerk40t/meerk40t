@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable, Tabs
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -12,7 +12,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
+class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
     """
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """
@@ -60,6 +60,7 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.linestyle = 0 # 0 Solid, 1 dotted, 2 dashed
         super().__init__(type="elem rect", **kwargs)
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]
@@ -136,14 +137,17 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         resolution = 0.05 * unit_mm
         path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
         # Do we have tabs?
-        tablen = 2 * unit_mm
-        numtabs = 4
-        numtabs = 0
-        if numtabs:
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
             path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
         # Is there a dash/dot pattern to apply?
-        dashlen = 2 * unit_mm
-        dashlen = 0
+        if self.linestyle == 0: # solid
+            dashlen = 0
+        elif self.linestyle == 1: # dotted
+            dashlen = 0.5 * unit_mm
+        elif self.linestyle == 2: # dashed
+            dashlen = 2 * unit_mm
         irrelevant = 50
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)

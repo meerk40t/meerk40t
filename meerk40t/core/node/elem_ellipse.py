@@ -1,7 +1,7 @@
 from copy import copy
 from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable, Tabs
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +13,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
+class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -52,6 +52,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.linestyle = 0 # 0 Solid, 1 dotted, 2 dashed
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
@@ -150,14 +151,18 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         unit_mm = 65535 / 2.54 / 10
         resolution = 0.05 * unit_mm
         # Do we have tabs?
-        tablen = 2 * unit_mm
-        numtabs = 4
-        numtabs = 0
-        if numtabs:
-            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if numtabs and tablen:
+            path = Geomstr.wobble_tab(path, tablen, resolution, self.mktabpositions)
         # Is there a dash/dot pattern to apply?
-        dashlen = 2 * unit_mm
-        dashlen = 0
+        if self.linestyle == 0: # solid
+            dashlen = 0
+        elif self.linestyle == 1: # dotted
+            dashlen = 0.5 * unit_mm
+        elif self.linestyle == 2: # dashed
+            dashlen = 2 * unit_mm
+
         irrelevant = 50
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
