@@ -264,8 +264,12 @@ class IdPanel(wx.Panel):
         self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
         self.icon_hidden = wx.StaticBitmap(self, wx.ID_ANY)
         self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
-        self.icon_hidden.SetBitmap(mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE))
-        self.icon_hidden.SetToolTip(_("Element is hidden, so it will neither be displayed nor burnt"))
+        self.icon_hidden.SetBitmap(
+            mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE)
+        )
+        self.icon_hidden.SetToolTip(
+            _("Element is hidden, so it will neither be displayed nor burnt")
+        )
         sizer_id_label.Add(self.icon_display, 0, wx.EXPAND, 0)
         sizer_id_label.Add(self.icon_hidden, 0, wx.EXPAND, 0)
 
@@ -461,7 +465,10 @@ class LinePropPanel(wx.Panel):
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_linestyle = wx.ComboBox(
-            self, wx.ID_ANY, choices=linestylechoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self,
+            wx.ID_ANY,
+            choices=linestylechoices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
         self.combo_join.SetMaxSize(dip_size(self, 100, -1))
@@ -480,7 +487,9 @@ class LinePropPanel(wx.Panel):
         self.sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fillrule"), wx.VERTICAL)
         self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
 
-        self.sizer_linestyle = StaticBoxSizer(self, wx.ID_ANY, _("Linestyle"), wx.VERTICAL)
+        self.sizer_linestyle = StaticBoxSizer(
+            self, wx.ID_ANY, _("Linestyle"), wx.VERTICAL
+        )
         self.sizer_linestyle.Add(self.combo_linestyle, 1, wx.EXPAND, 0)
 
         self.tab_length = TextCtrl(
@@ -503,7 +512,9 @@ class LinePropPanel(wx.Panel):
         self.tab_length.SetMaxSize(dip_size(self, 100, -1))
         label1 = wx.StaticText(self, wx.ID_ANY, _("Tab-Length"))
         label2 = wx.StaticText(self, wx.ID_ANY, _("Tabs"))
-        self.sizer_tabs = StaticBoxSizer(self, wx.ID_ANY, _("Tabs/Bridges"), wx.HORIZONTAL)
+        self.sizer_tabs = StaticBoxSizer(
+            self, wx.ID_ANY, _("Tabs/Bridges"), wx.HORIZONTAL
+        )
         self.sizer_tabs.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_tabs.Add(self.tab_length, 1, wx.EXPAND, 0)
         self.sizer_tabs.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -529,7 +540,11 @@ class LinePropPanel(wx.Panel):
         self.tab_count.SetActionRoutine(self.on_tab_count)
         self.tab_length.SetActionRoutine(self.on_tab_length)
         self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
-        self.tab_count.SetToolTip(_("How many tabs do you want to place equidistant along the shape (0=None)?"))
+        self.tab_count.SetToolTip(
+            _(
+                "How many tabs do you want to place equidistant along the shape (0=None)?"
+            )
+        )
         self.tab_length.SetToolTip(_("How wide should the tab be?"))
         self.set_widgets(self.node)
 
@@ -637,7 +652,9 @@ class LinePropPanel(wx.Panel):
             units = self.context.units_name
             if units in ("inch", "inches"):
                 units = "in"
-            self.tab_length.SetValue(f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}")
+            self.tab_length.SetValue(
+                f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}"
+            )
             self.tab_count.SetValue(str(node.mktabpositions))
 
         self.combo_cap.Show(vis1)
@@ -656,6 +673,7 @@ class LinePropPanel(wx.Panel):
             self.Show()
         else:
             self.Hide()
+
 
 class StrokeWidthPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):

@@ -324,8 +324,12 @@ def init_commands(kernel):
         elif angle is None:
             angle = Angle("0deg")
 
-        if angle_delta is None and hasattr(self.device, "effect_hatch_default_angle_delta"):
-            angle_delta = Angle(getattr(self.device, "effect_hatch_default_angle_delta"))
+        if angle_delta is None and hasattr(
+            self.device, "effect_hatch_default_angle_delta"
+        ):
+            angle_delta = Angle(
+                getattr(self.device, "effect_hatch_default_angle_delta")
+            )
         elif angle_delta is None:
             angle_delta = Angle("0deg")
 
@@ -730,7 +734,16 @@ def init_commands(kernel):
                     if prop in ("mktext", "mkfont"):
                         for property_op in self.kernel.lookup_all("path_updater/.*"):
                             property_op(self.kernel.root, e)
-                    if prop in ("dpi", "dither", "dither_type", "invert", "red", "green", "blue", "lightness"):
+                    if prop in (
+                        "dpi",
+                        "dither",
+                        "dither_type",
+                        "invert",
+                        "red",
+                        "green",
+                        "blue",
+                        "lightness",
+                    ):
                         # Images require some recalculation too
                         e.update(None)
                 else:
@@ -814,7 +827,9 @@ def init_commands(kernel):
                 channel(f"Segments before: {seg_before} to {seg_after} {saving}")
                 data_changed.append(node)
             else:
-                channel(f"Invalid node for simplify {node.type} ({node.display_label()})")
+                channel(
+                    f"Invalid node for simplify {node.type} ({node.display_label()})"
+                )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")

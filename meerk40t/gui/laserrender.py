@@ -300,7 +300,9 @@ class LaserRender:
         if getattr(node, "label_display", False) and node.label:
             # Display label
             col = self.context.root.setting(str, "label_display_color", "#ff0000ff")
-            self.display_label(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha, color=col)
+            self.display_label(
+                node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha, color=col
+            )
         return True
 
     def make_path(self, gc, path):
@@ -915,7 +917,9 @@ class LaserRender:
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
         gc.PopState()
 
-    def display_label(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255, color="#ff0000ff"):
+    def display_label(
+        self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255, color="#ff0000ff"
+    ):
         if node is None:
             return
         if not node.label:

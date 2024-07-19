@@ -90,6 +90,7 @@ SVG_ATTR_STROKE_CAP = "stroke-linecap"
 SVG_ATTR_FILL_RULE = "fill-rule"
 SVG_ATTR_STROKE_DASH = "stroke-dasharray"
 
+
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
@@ -153,6 +154,7 @@ def joinstr(linejoin):
     else:
         return "miter"
 
+
 def dashstr(linestyle):
     if linestyle == 0:
         return ""
@@ -160,6 +162,7 @@ def dashstr(linestyle):
         return "1,1"
     elif linestyle == 2:
         return "20,20"
+
 
 def rulestr(fillrule):
     """

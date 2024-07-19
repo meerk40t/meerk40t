@@ -2123,9 +2123,17 @@ class Art:
                 button.overflow = True
             elif button.position[3] > panel.position[3]:
                 button.overflow = True
-            elif is_horizontal and panel._overflow_position is not None and button.position[2] > panel._overflow_position[0]:
+            elif (
+                is_horizontal
+                and panel._overflow_position is not None
+                and button.position[2] > panel._overflow_position[0]
+            ):
                 button.overflow = True
-            elif not is_horizontal and panel._overflow_position is not None and button.position[3] > panel._overflow_position[1]:
+            elif (
+                not is_horizontal
+                and panel._overflow_position is not None
+                and button.position[3] > panel._overflow_position[1]
+            ):
                 button.overflow = True
             # if panel.label == "Create":
             #     print (f"{button.label}: {button.overflow}, {button.position}, {panel.position}, {panel._overflow_position}")

@@ -106,28 +106,34 @@ class FunctionalParameter(ABC):
         if isinstance(value, (list, tuple)):
             self.mkparam = value
 
+
 class LabelDisplay(ABC):
     """
     Any node inheriting this allow the display of the label on the scene
     """
+
     def __init__(self, *args, **kwargs):
         self.label_display = False
         super().__init__()
+
 
 class Suppressable(ABC):
     """
     Any node inheriting this can be suppressed
     """
+
     def __init__(self, *args, **kwargs):
         self.hidden = False
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]
         super().__init__()
 
+
 class Tabs(ABC):
     """
     Any node inheriting this may have tabs (ie breaks of the path)
     """
+
     def __init__(self, *args, **kwargs):
         unit_mm = 65535 / 2.54 / 10
         self.mktablength = 2 * unit_mm

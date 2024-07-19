@@ -2,7 +2,12 @@ import re
 from copy import copy
 from math import tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import (

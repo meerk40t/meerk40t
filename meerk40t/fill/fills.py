@@ -533,6 +533,7 @@ def meander_3(wobble, x0, y0, x1, y1):
     max_x += 1
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
+
 def _tabbed(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
@@ -542,7 +543,7 @@ def _tabbed(wobble, x0, y0, x1, y1):
     # radius: Length of tab
     # interval: internal resolution
     if wobble.flag is None:
-        wobble.flag = True # Visible
+        wobble.flag = True  # Visible
     wobble.may_close_path = False
     tabs = wobble.speed
     tab_len = wobble.radius
@@ -579,6 +580,7 @@ def _tabbed(wobble, x0, y0, x1, y1):
         wobble.userdata = dist
         idx += 1
 
+
 def _dashed(wobble, pattern, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
@@ -588,10 +590,9 @@ def _dashed(wobble, pattern, x0, y0, x1, y1):
     # radius
     # interval
     if wobble.flag is None:
-        wobble.flag = True # Visible
+        wobble.flag = True  # Visible
     last_ratio = int(wobble._total_distance / wobble.radius)
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
-
         new_ratio = int(wobble._total_distance / wobble.radius)
         if new_ratio != last_ratio:
             wobble.flag = not wobble.flag
@@ -603,11 +604,14 @@ def _dashed(wobble, pattern, x0, y0, x1, y1):
         else:
             yield None, None
 
+
 def dashed_line(wobble, x0, y0, x1, y1):
     yield from _dashed(wobble, "1, 1", x0, y0, x1, y1)
 
+
 def tabbed_path(wobble, x0, y0, x1, y1):
     yield from _tabbed(wobble, x0, y0, x1, y1)
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":

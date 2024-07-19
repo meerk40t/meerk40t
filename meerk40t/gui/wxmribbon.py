@@ -406,7 +406,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                         userbutton["seq"] = int(value)
                     except ValueError:
                         pass
-            d =  {
+            d = {
                 "label": userbutton["label"],
                 "icon": getattr(mkicons, userbutton["icon"], None),
                 "tip": userbutton["tip"],
@@ -416,13 +416,25 @@ class MKRibbonBarPanel(RibbonBarPanel):
             if userbutton["action_right"]:
                 d["action_right"] = delayed_command(userbutton["action_right"])
             if userbutton["enable"] == "selected":
-                d["rule_enabled"] = lambda cond: len(list(self.context.elements.elems(emphasized=True))) > 0
+                d["rule_enabled"] = (
+                    lambda cond: len(list(self.context.elements.elems(emphasized=True)))
+                    > 0
+                )
             if userbutton["enable"] == "selected2":
-                d["rule_enabled"] = lambda cond: len(list(self.context.elements.elems(emphasized=True))) > 1
+                d["rule_enabled"] = (
+                    lambda cond: len(list(self.context.elements.elems(emphasized=True)))
+                    > 1
+                )
             if userbutton["visible"] == "selected":
-                d["rule_visible"] = lambda cond: len(list(self.context.elements.elems(emphasized=True))) > 0
+                d["rule_visible"] = (
+                    lambda cond: len(list(self.context.elements.elems(emphasized=True)))
+                    > 0
+                )
             if userbutton["visible"] == "selected2":
-                d["rule_visible"] = lambda cond: len(list(self.context.elements.elems(emphasized=True))) > 1
+                d["rule_visible"] = (
+                    lambda cond: len(list(self.context.elements.elems(emphasized=True)))
+                    > 1
+                )
 
             self.context.kernel.register(f"button/user/{userbutton['id']}", d)
             button_config.append(userbutton)
@@ -798,10 +810,16 @@ class RibbonEditor(wx.Panel):
         self.button_down_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
 
         self.button_add_button.SetBitmap(icon_add_new.GetBitmap(resize=iconsize))
-        self.button_del_button.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
-        self.button_edit_button.SetBitmap(icon_edit.GetBitmap(resize=iconsize, buffer=1))
+        self.button_del_button.SetBitmap(
+            icon_trash.GetBitmap(resize=iconsize, buffer=1)
+        )
+        self.button_edit_button.SetBitmap(
+            icon_edit.GetBitmap(resize=iconsize, buffer=1)
+        )
         self.button_up_button.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
-        self.button_down_button.SetBitmap(icons8_down.GetBitmap(resize=iconsize, buffer=1))
+        self.button_down_button.SetBitmap(
+            icons8_down.GetBitmap(resize=iconsize, buffer=1)
+        )
 
         sizer_button_buttons.Add(self.button_add_button, 0, wx.EXPAND, 0)
         sizer_button_buttons.Add(self.button_del_button, 0, wx.EXPAND, 0)
@@ -846,10 +864,18 @@ class RibbonEditor(wx.Panel):
         )
 
         self.button_add_button.SetToolTip(_("Add an additional user-defined button"))
-        self.button_del_button.SetToolTip(_("Remove the selected user-defined button from the list"))
-        self.button_down_button.SetToolTip(_("Decrease the position of the selected button"))
-        self.button_up_button.SetToolTip(_("Increase the position of the selected button"))
-        self.button_edit_button.SetToolTip(_("Modify the content of the selected button"))
+        self.button_del_button.SetToolTip(
+            _("Remove the selected user-defined button from the list")
+        )
+        self.button_down_button.SetToolTip(
+            _("Decrease the position of the selected button")
+        )
+        self.button_up_button.SetToolTip(
+            _("Increase the position of the selected button")
+        )
+        self.button_edit_button.SetToolTip(
+            _("Modify the content of the selected button")
+        )
 
         self.fill_options()
         self.SetSizer(sizer_main)
@@ -946,7 +972,9 @@ class RibbonEditor(wx.Panel):
         for b_idx, button_entry in enumerate(
             sorted(self._config_buttons, key=lambda d: d["seq"])
         ):
-            buttons.append(f"{button_entry['id']} ({button_entry['label']}): {button_entry['action_left']}")
+            buttons.append(
+                f"{button_entry['id']} ({button_entry['label']}): {button_entry['action_left']}"
+            )
             if reposition is not None and button_entry["id"] == reposition:
                 idx = b_idx
         self.list_buttons.SetItems(buttons)
@@ -1319,7 +1347,12 @@ class RibbonEditor(wx.Panel):
 
     def edit_a_button(self, entry):
         # We edit the thing in place if needed...
-        dlg = wx.Dialog(self, wx.ID_ANY, _("Edit Button"), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        dlg = wx.Dialog(
+            self,
+            wx.ID_ANY,
+            _("Edit Button"),
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+        )
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         line1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -1346,10 +1379,16 @@ class RibbonEditor(wx.Panel):
         line4.Add(label4, 0, wx.EXPAND, 0)
         line4.Add(txt_action_right, 1, wx.EXPAND, 0)
 
-        rule_options = (_("Always"), _("When at least one element selected"), _("When at least two elemente selected"))
+        rule_options = (
+            _("Always"),
+            _("When at least one element selected"),
+            _("When at least two elemente selected"),
+        )
         line5 = wx.BoxSizer(wx.HORIZONTAL)
         label5 = wx.StaticText(dlg, wx.ID_ANY, _("Rule to enable"))
-        combo_enable = wx.ComboBox(dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        combo_enable = wx.ComboBox(
+            dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         if entry["enable"] == "selected2":
             idx = 2
         elif entry["enable"] == "selected":
@@ -1362,7 +1401,9 @@ class RibbonEditor(wx.Panel):
 
         line6 = wx.BoxSizer(wx.HORIZONTAL)
         label6 = wx.StaticText(dlg, wx.ID_ANY, _("Rule to display"))
-        combo_visible = wx.ComboBox(dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        combo_visible = wx.ComboBox(
+            dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         if entry["visible"] == "selected2":
             idx = 2
         elif entry["visible"] == "selected":
@@ -1385,7 +1426,9 @@ class RibbonEditor(wx.Panel):
 
         line7 = wx.BoxSizer(wx.HORIZONTAL)
         label7 = wx.StaticText(dlg, wx.ID_ANY, _("Action right click"))
-        combo_icon = wx.ComboBox(dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        combo_icon = wx.ComboBox(
+            dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         preview = wx.StaticBitmap(dlg, wx.ID_ANY, size=dip_size(self, 30, 30))
         if entry["icon"] in icon_list:
             combo_icon.SetValue(entry["icon"])
@@ -1403,7 +1446,7 @@ class RibbonEditor(wx.Panel):
                 icon = getattr(mkicons, icon_name, None)
                 if icon:
                     icon_edit.GetBitmap
-                    preview.SetBitmap(icon.GetBitmap(resize = ps[0]))
+                    preview.SetBitmap(icon.GetBitmap(resize=ps[0]))
 
         combo_icon.Bind(wx.EVT_COMBOBOX, on_icon)
         on_icon(None)
@@ -1444,10 +1487,10 @@ class RibbonEditor(wx.Panel):
             entry["action_right"] = txt_action_right.GetValue()
             ruler = ("always", "selected", "selected2")
             idx = combo_enable.GetSelection()
-            idx = min(2, max(0, idx)) # between 0 and 2
+            idx = min(2, max(0, idx))  # between 0 and 2
             entry["enable"] = ruler[idx]
             idx = combo_visible.GetSelection()
-            idx = min(2, max(0, idx)) # between 0 and 2
+            idx = min(2, max(0, idx))  # between 0 and 2
             entry["visible"] = ruler[idx]
             entry["icon"] = combo_icon.GetValue()
 

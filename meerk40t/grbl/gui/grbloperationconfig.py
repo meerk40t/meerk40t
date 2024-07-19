@@ -28,9 +28,7 @@ class GRBLAdvancedPanel(wx.Panel):
         advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
 
         self.check_zaxis = wxCheckBox(self, wx.ID_ANY, _("Set Z-Axis value"))
-        self.check_zaxis.SetToolTip(
-            _("Enables the ability to set a specific z-Value.")
-        )
+        self.check_zaxis.SetToolTip(_("Enables the ability to set a specific z-Value."))
         sizer_11.Add(self.check_zaxis, 1, 0, 0)
 
         self.text_zaxis = TextCtrl(

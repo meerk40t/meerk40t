@@ -3797,21 +3797,20 @@ class Elemental(Service):
             for idx, ref in enumerate(node._references):
                 if ref is None:
                     # print (f"Empty reference for {node.type}.{node.id}.{node.display_label()}")
-                    to_be_deleted.insert(0, idx) # Last In First Out
+                    to_be_deleted.insert(0, idx)  # Last In First Out
                 else:
                     try:
-                        id = ref.parent # This needs to exist
+                        id = ref.parent  # This needs to exist
                         if id is None:
-                            to_be_deleted.insert(0, idx) # Last In First Out
+                            to_be_deleted.insert(0, idx)  # Last In First Out
                             # print (f"Empty parent reference for {node.type}.{node.id}.{node.display_label()}")
                     except AttributeError:
-                        to_be_deleted.insert(0, idx) # Last In First Out
+                        to_be_deleted.insert(0, idx)  # Last In First Out
                         # print (f"Invalid reference for {node.type}.{node.id}.{node.display_label()}")
             if to_be_deleted:
                 # print (f"Will delete {len(to_be_deleted)} invalid references")
                 for idx in to_be_deleted:
                     node._references.pop(idx)
-
 
     def remove_empty_groups(self):
         def descend_group(gnode):

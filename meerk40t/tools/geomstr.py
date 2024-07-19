@@ -1655,7 +1655,12 @@ class Geomstr:
                         else:
                             points.append(complex(wx, wy))
                 last = pt
-            if w.may_close_path and len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
+            if (
+                w.may_close_path
+                and len(segments) > 1
+                and abs(segments[0] - segments[-1]) < 1e-5
+                and len(points) > 0
+            ):
                 if abs(points[0] - points[-1]) >= 1e-5:
                     points.append(points[0])
             geometry.append(Geomstr.lines(*points))

@@ -1,6 +1,12 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable, Tabs
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+    Tabs,
+)
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +19,9 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PolylineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
+class PolylineNode(
+    Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs
+):
     """
     PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
@@ -65,7 +73,7 @@ class PolylineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressabl
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        self.linestyle = 0 # 0 Solid, 1 dotted, 2 dashed
+        self.linestyle = 0  # 0 Solid, 1 dotted, 2 dashed
 
         super().__init__(type="elem polyline", **kwargs)
         if "hidden" in kwargs:
@@ -135,11 +143,11 @@ class PolylineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressabl
         if tablen and numtabs:
             path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
         # Is there a dash/dot pattern to apply?
-        if self.linestyle == 0: # solid
+        if self.linestyle == 0:  # solid
             dashlen = 0
-        elif self.linestyle == 1: # dotted
+        elif self.linestyle == 1:  # dotted
             dashlen = 0.5 * unit_mm
-        elif self.linestyle == 2: # dashed
+        elif self.linestyle == 2:  # dashed
             dashlen = 2 * unit_mm
         irrelevant = 50
         if dashlen:

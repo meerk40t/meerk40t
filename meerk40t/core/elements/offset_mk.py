@@ -948,7 +948,9 @@ def init_commands(kernel):
             )
             newnode.stroke_width = UNITS_PER_PIXEL
             newnode.linejoin = Linejoin.JOIN_ROUND
-            newnode.label = f"Offset of {node.id if node.label is None else node.display_label()}"
+            newnode.label = (
+                f"Offset of {node.id if node.label is None else node.display_label()}"
+            )
             data_out.append(newnode)
 
         # Newly created! Classification needed?

@@ -22,7 +22,10 @@ class WSOutput:
 
     def connect(self):
         try:
-            self.controller.log(f"Connecting to ws://{self.service.address}:{self.service.port}...", type="connection")
+            self.controller.log(
+                f"Connecting to ws://{self.service.address}:{self.service.port}...",
+                type="connection",
+            )
             self._stream = websocket.WebSocket()
             self._stream.connect(
                 "ws://%s:%d" % (self.service.address, self.service.port)
@@ -40,7 +43,9 @@ class WSOutput:
         except IndexError as e:
             self.disconnect()
             self.service.signal("grbl;status", f"handshake error: {str(e)}")
-            self.controller.log(f"Attempt failed due to handshake-error: {str(e)}", type="connection")
+            self.controller.log(
+                f"Attempt failed due to handshake-error: {str(e)}", type="connection"
+            )
         # except socket.gaierror as e:
         #     self.disconnect()
         #     self.service.signal("grbl;status", "address resolve error")
@@ -50,7 +55,9 @@ class WSOutput:
         except (websocket.WebSocketConnectionClosedException, OSError) as e:
             self.disconnect()
             self.service.signal("grbl;status", f"Host down {str(e)}")
-            self.controller.log(f"Attempt failed: Host down {str(e)}", type="connection")
+            self.controller.log(
+                f"Attempt failed: Host down {str(e)}", type="connection"
+            )
 
     def disconnect(self):
         self.controller.log("Disconnected", type="connection")
