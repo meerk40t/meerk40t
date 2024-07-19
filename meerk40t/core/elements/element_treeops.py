@@ -891,7 +891,7 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch ops", help="")
     def clear_all(node, **kwargs):
         if self.kernel.yesno(
-            _("Do you really want to delete all entries?"), 
+            _("Do you really want to delete all entries?"),
             caption=_("Operations")
         ):
             self("operation* delete\n")
@@ -909,7 +909,7 @@ def init_tree(kernel):
                 to_delete.append(op)
         if len(to_delete) > 0:
             if self.kernel.yesno(
-                _("Do you really want to delete {num} entries?").format(num=len(to_delete)), 
+                _("Do you really want to delete {num} entries?").format(num=len(to_delete)),
                 caption=_("Operations")
             ):
                 with self.static("clear_unused"):
@@ -1036,7 +1036,7 @@ def init_tree(kernel):
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
         if self.kernel.yesno(
-            _("Do you really want to delete all entries?"), 
+            _("Do you really want to delete all entries?"),
             caption=_("Elements")
         ):
             with self.static("clear_elems"):
@@ -1049,7 +1049,7 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
         if self.kernel.yesno(
-            _("Do you really want to delete all entries?"), 
+            _("Do you really want to delete all entries?"),
             caption=_("Regmarks")
         ):
             with self.static("clear_regmarks"):
@@ -3042,7 +3042,10 @@ def init_tree(kernel):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
                     node_attributes.append([attrib, oldval])
-            geometry = node.as_geometry()
+            if hasattr(node, "final_geometry"):
+                geometry = node.final_geometry()
+            else:
+                geometry = node.as_geometry()
             newnode = node.replace_node(geometry=geometry, type="elem path")
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])

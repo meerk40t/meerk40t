@@ -487,7 +487,12 @@ class CutPlan:
 
             if c_type in ("op cut", "op engrave"):
                 for elem in c.children:
-                    if hasattr(elem, "as_geometry"):
+                    if hasattr(elem, "final_geometry"):
+                        start_index = g.index
+                        g.append(elem.final_geometry())
+                        end_index = g.index
+                        g.flag_settings(settings_index, start_index, end_index)
+                    elif hasattr(elem, "as_geometry"):
                         start_index = g.index
                         g.append(elem.as_geometry())
                         end_index = g.index
