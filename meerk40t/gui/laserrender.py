@@ -679,7 +679,10 @@ class LaserRender:
             node._cache_matrix = copy(matrix)
         except AttributeError:
             node._cache_matrix = Matrix()
-        geom = node.as_geometry()
+        if hasattr(node, "final_geometry"):
+            geom = node.final_geometry()
+        else:
+            geom = node.as_geometry()
         cache = self.make_geomstr(gc, geom, node=node)
         node._cache = cache
 

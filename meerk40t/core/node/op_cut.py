@@ -328,6 +328,11 @@ class CutOpNode(Node, Parameters):
                         (box[2], box[1]),
                     )
                 )
+            elif hasattr(node, "final_geometry"):
+                # This will deliver all relevant effects
+                # like tabs, dots/dashes applied to the element
+                path = node.final_geometry().as_path()
+                path.approximate_arcs_with_cubics()
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
