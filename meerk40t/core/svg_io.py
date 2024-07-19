@@ -88,7 +88,7 @@ from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, Length
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
 SVG_ATTR_FILL_RULE = "fill-rule"
-
+SVG_ATTR_STROKE_DASH = "stroke-dasharray"
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -153,6 +153,13 @@ def joinstr(linejoin):
     else:
         return "miter"
 
+def dashstr(linestyle):
+    if linestyle == 0:
+        return ""
+    elif linestyle == 1:
+        return "1,1"
+    elif linestyle == 2:
+        return "20,20"
 
 def rulestr(fillrule):
     """
@@ -439,6 +446,7 @@ class SVGWriter:
                     "linejoin",
                     "fillrule",
                     "stroke_width",
+                    "linestyle",
                 )
                 and value is not None
                 and isinstance(value, (str, int, float, complex, list, tuple, dict))
@@ -461,6 +469,9 @@ class SVGWriter:
             subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
         if hasattr(c, "fillrule"):
             subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
+        if hasattr(c, "linestyle"):
+            if c.linestyle:
+                subelement.set(SVG_ATTR_STROKE_DASH, dashstr(c.linestyle))
 
         ###############
         # SAVE LABEL
@@ -833,6 +844,23 @@ class SVGProcessor:
             elif lj == "round":
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
+        lj = element.values.get(SVG_ATTR_STROKE_DASH)
+        if lj is not None:
+            nld = 0
+            # Split the array
+            dasharray = nld.split(",")
+            if len(dasharray):
+                try:
+                    dlen = int(dasharray[0])
+                    if dlen == 0:
+                        nld = 0
+                    if dlen > 5:
+                        nld = 2
+                    else:
+                        nld = 1
+                except ValueError:
+                    pass
+            node.linestyle = nld
 
     @staticmethod
     def is_dot(element):
