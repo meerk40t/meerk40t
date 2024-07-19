@@ -626,5 +626,5 @@ def plugin(kernel, lifecycle):
         context.register("wobble/meander_1", meander_1)
         context.register("wobble/meander_2", meander_2)
         context.register("wobble/meander_3", meander_3)
-        context.register("wobble/dash", dashed_line)
-        context.register("wobble/tabs", tabbed_path)
+        # context.register("wobble/dash", dashed_line)
+        # context.register("wobble/tabs", tabbed_path)
