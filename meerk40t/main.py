@@ -193,6 +193,11 @@ def _exe(restarted, args):
     kernel.add_plugin(external_plugins)
     auto = hasattr(kernel.args, "auto") and kernel.args.auto
     console = hasattr(kernel.args, "console") and kernel.args.console
+    for idx, attrib in enumerate(
+            ("mktablength", "mktabpositions")
+        ):
+            kernel.register(f"registered_mk_svg_parameters/tabs{idx}", attrib)
+
     if auto and not console:
         kernel(partial=True)
     else:
