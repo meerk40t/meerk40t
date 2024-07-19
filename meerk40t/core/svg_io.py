@@ -848,7 +848,7 @@ class SVGProcessor:
         if lj is not None:
             nld = 0
             # Split the array
-            dasharray = nld.split(",")
+            dasharray = lj.split(",")
             if len(dasharray):
                 try:
                     dlen = int(dasharray[0])
