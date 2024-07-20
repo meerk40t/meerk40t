@@ -17607,13 +17607,29 @@ msgstr "Tabs/Brücken"
 msgid "Choose the linestyle of the shape"
 msgstr "Definiere den Linienstil des Objekts"
 
-#: meerk40t/gui/propertypanels/attributes.py:557
-msgid "Define the linestyle of the shape:\nA list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
-msgstr "Definiere den Linienstil des Objekts:\nEine Liste von durch Kommas/Leerzeichen getrennten Zahlen, die die Länge der Striche und Lücken festlegen"
+#: meerk40t/gui/propertypanels/attributes.py:552
+msgid "Define the linestyle of the shape:"
+msgstr "Definiere den Linienstil des Objekts:"
 
-#: meerk40t/gui/propertypanels/attributes.py:562
-msgid "How many tabs do you want to place equidistant along the shape (0=None)?"
-msgstr "Wieviele Brücken sollen auf dem Umriss im gleichen Abstand verteilt werden (0=Keine)"
+#: meerk40t/gui/propertypanels/attributes.py:553
+msgid "A list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
+msgstr "Eine Liste von durch Kommas/Leerzeichen getrennten Zahlen, die die Länge der Striche und Lücken festlegen"
+
+#: meerk40t/gui/propertypanels/attributes.py:556
+msgid "Where do you want to place tabs:"
+msgstr "Wo sollen die Brücken platziert werden:"
+
+#: meerk40t/gui/propertypanels/attributes.py:557
+msgid "A list of comma and/or white space separated numbers that specify the relative positions, ie percentage of total shape perimeter, of the tab centers."
+msgstr "Eine Liste von durch Kommas/Leerzeichen getrennten Zahlen, die die relative Position, d.h. % des Gesamtumfangs, der Brückenmittelpunkte festlegt."
+
+#: meerk40t/gui/propertypanels/attributes.py:558
+msgid "You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs."
+msgstr "Man kann einen Platzhalter für x gleichmäßig verteilte Brücken angeben: '*x', z.B. '*4' für vier Brücken."
+
+#: meerk40t/gui/propertypanels/attributes.py:559
+msgid "An empty list stands for no tabs."
+msgstr "Eine leere Liste steht für keine Brücken."
 
 #: meerk40t/gui/propertypanels/attributes.py:564
 msgid "How wide should the tab be?"
