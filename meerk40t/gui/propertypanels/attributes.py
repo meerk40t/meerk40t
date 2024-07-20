@@ -454,8 +454,15 @@ class LinePropPanel(wx.Panel):
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
         fillchoices = (_("Non-Zero"), _("Even-Odd"))
-        self.dash_patterns = ["", "1 1", "2 1"]
-        linestylechoices = (_("Solid"), _("Dotted"), _("Dashed"), _("User defined"))
+        self.dash_patterns = {
+            "Solid": "",
+            "Dot": "0.5 0.5",
+            "Short Dash": "2 1",
+            "Long Dash": "4 1",
+            "Dash Dot": "4 1 0.5 1",
+        }
+        linestylechoices = [_(e) for e in self.dash_patterns]
+        linestylechoices.append(_("User defined"))
         self.combo_cap = wx.ComboBox(
             self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -475,7 +482,7 @@ class LinePropPanel(wx.Panel):
         self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
         self.combo_join.SetMaxSize(dip_size(self, 100, -1))
         self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
-        self.combo_linestyle.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_linestyle.SetMaxSize(dip_size(self, 150, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -544,7 +551,11 @@ class LinePropPanel(wx.Panel):
         self.tab_count.SetActionRoutine(self.on_tab_count)
         self.tab_length.SetActionRoutine(self.on_tab_length)
         self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
-        self.text_linestyle.SetToolTip(_("Define the linestyle of the shape:\nA list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"))
+        self.text_linestyle.SetToolTip(
+            _(
+                "Define the linestyle of the shape:\nA list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
+            )
+        )
         self.tab_count.SetToolTip(
             _(
                 "How many tabs do you want to place equidistant along the shape (0=None)?"
@@ -590,20 +601,22 @@ class LinePropPanel(wx.Panel):
         if self.node is None or self.node.lock:
             return
         _id = self.combo_linestyle.GetSelection()
-        if 0 <= _id < len(self.dash_patterns):
-            self.text_linestyle.SetValue(self.dash_patterns[_id])
-            self.on_txt_linestyle()
+        for idx, key in enumerate(self.dash_patterns):
+            if idx == _id:
+                self.text_linestyle.SetValue(self.dash_patterns[key])
+                self.on_txt_linestyle()
+                break
 
     def sync_linestyle_combo(self, value):
         if value is None:
             value = ""
         index = -1
-        for idx, entry in enumerate(self.dash_patterns):
-            if value == entry:
+        for idx, key in enumerate(self.dash_patterns):
+            if value == self.dash_patterns[key]:
                 index = idx
                 break
         if index < 0:
-            index = len(self.dash_patterns) # The following "user defined..."
+            index = len(self.dash_patterns)  # The following "user defined..."
         self.combo_linestyle.SetSelection(index)
 
     def on_txt_linestyle(self):
