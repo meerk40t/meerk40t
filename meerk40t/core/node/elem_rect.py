@@ -142,6 +142,7 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         unit_mm = 65535 / 2.54 / 10
         resolution = 0.05 * unit_mm
         path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
+        path.transform(self.matrix)
         # Do we have tabs?
         tablen = self.mktablength
         numtabs = self.mktabpositions
@@ -153,7 +154,6 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
 
-        path.transform(self.matrix)
         return path
 
     def scaled(self, sx, sy, ox, oy):

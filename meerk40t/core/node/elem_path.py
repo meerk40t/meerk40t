@@ -105,6 +105,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
 
     def final_geometry(self, **kws):
         path = Geomstr(self.geometry)
+        path.transform(self.matrix)
         unit_mm = 65535 / 2.54 / 10
         resolution = 0.05 * unit_mm
         # Do we have tabs?
@@ -117,7 +118,6 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         irrelevant = 50
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
-        path.transform(self.matrix)
         return path
 
     def scaled(self, sx, sy, ox, oy):
