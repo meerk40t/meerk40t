@@ -89,6 +89,10 @@ msgstr "Verbindungsversuch zu {address} erfolglos (Time-Out)."
 msgid "Connection to {address} was closed."
 msgstr "Verbindung zu {address} wurde geschlossen."
 
+#: meerk40t/balormk/gui/balorconfig.py:87 meerk40t/grbl/gui/grblconfiguration.py:254 meerk40t/lihuiyu/gui/lhydrivergui.py:435 meerk40t/moshi/gui/moshidrivergui.py:54 meerk40t/newly/gui/newlyconfig.py:58 meerk40t/ruida/gui/ruidaconfig.py:196
+msgid "Effects"
+msgstr "Effekte"
+
 #: meerk40t/balormk/device.py:616 meerk40t/grbl/device.py:233
 #: meerk40t/gui/propertypanels/attributes.py:229 meerk40t/moshi/device.py:129
 msgid "Label"
@@ -5803,6 +5807,10 @@ msgstr "Schnelle Bewegung"
 #: meerk40t/gui/materialtest.py:471
 msgid "Pulse Width"
 msgstr "Puls-Breite"
+
+#: meerk40t/balormk/gui/balorconfig.py:50
+msgid "Turn red dot on for test purposes"
+msgstr "Roten Indikator-Laser zu Testzwecken einschalten"
 
 #: meerk40t/balormk/gui/baloroperationproperties.py:73
 #: meerk40t/gui/materialtest.py:479
@@ -17562,3 +17570,51 @@ msgstr "Unterdrücke nicht verwendete Operationen"
 #: meerk40t/gui/basicops.py:580
 msgid "Set coolant to on/off or leave unchanged (default)"
 msgstr "Schaltet Kühlung ein/aus"
+
+#: meerk40t/camera/gui/camerapanel.py:1146 meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:1042 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/spoolerpanel.py:586
+msgid "Do you really want to delete all entries?"
+msgstr "Sollen wirklich alle Einträge gelöscht werden?"
+
+#: meerk40t/core/elements/element_treeops.py:913
+msgid "Do you really want to delete {num} entries?"
+msgstr "Sollen wirklich {num} Einträge gelöscht werden?"
+
+#: meerk40t/gui/preferences.py:522
+msgid "Object-Label"
+msgstr "Objekt-Label"
+
+#: meerk40t/gui/propertypanels/attributes.py:465
+msgid "User defined"
+msgstr "Benutzerdefiniert"
+
+#: meerk40t/gui/propertypanels/attributes.py:500
+msgid "Linestyle"
+msgstr "Linientyp"
+
+#: meerk40t/gui/propertypanels/attributes.py:523
+msgid "Tab-Length"
+msgstr "Größe"
+
+#: meerk40t/gui/propertypanels/attributes.py:524
+msgid "Tabs"
+msgstr "Tabs"
+
+#: meerk40t/gui/propertypanels/attributes.py:526
+msgid "Tabs/Bridges"
+msgstr "Tabs/Brücken"
+
+#: meerk40t/gui/propertypanels/attributes.py:553
+msgid "Choose the linestyle of the shape"
+msgstr "Definiere den Linienstil des Objekts"
+
+#: meerk40t/gui/propertypanels/attributes.py:557
+msgid "Define the linestyle of the shape:\nA list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
+msgstr "Definiere den Linienstil des Objekts:\nEine Liste von durch Kommas/Leerzeichen getrennten Zahlen, die die Länge der Striche und Lücken festlegen"
+
+#: meerk40t/gui/propertypanels/attributes.py:562
+msgid "How many tabs do you want to place equidistant along the shape (0=None)?"
+msgstr "Wieviele Brücken sollen auf dem Umriss im gleichen Abstand verteilt werden (0=Keine)"
+
+#: meerk40t/gui/propertypanels/attributes.py:564
+msgid "How wide should the tab be?"
+msgstr "Wie groß soll die Brücke sein?"
