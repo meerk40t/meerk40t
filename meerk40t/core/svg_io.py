@@ -1074,6 +1074,9 @@ class SVGProcessor:
             lock=lock,
         )
         self.check_for_label_display(node, element)
+        self.check_for_line_attributes(node, element)
+        self.check_for_fill_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
         e_list.append(node)
 
     def _parse_rect(self, element, ident, label, lock, context_node, e_list):
@@ -1095,6 +1098,7 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
@@ -1139,6 +1143,8 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
+        self.check_for_fill_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
