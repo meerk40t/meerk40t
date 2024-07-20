@@ -601,9 +601,9 @@ class LinePropPanel(wx.Panel):
         if self.node is None or self.node.lock:
             return
         _id = self.combo_linestyle.GetSelection()
-        for idx, key in enumerate(self.dash_patterns):
+        for idx, (key, entry) in enumerate(self.dash_patterns.items()):
             if idx == _id:
-                self.text_linestyle.SetValue(self.dash_patterns[key])
+                self.text_linestyle.SetValue(entry)
                 self.on_txt_linestyle()
                 break
 
@@ -611,8 +611,8 @@ class LinePropPanel(wx.Panel):
         if value is None:
             value = ""
         index = -1
-        for idx, key in enumerate(self.dash_patterns):
-            if value == self.dash_patterns[key]:
+        for idx, (key, entry) in enumerate(self.dash_patterns.items()):
+            if value == entry:
                 index = idx
                 break
         if index < 0:
