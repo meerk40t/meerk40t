@@ -55,7 +55,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        self.linestyle = 0  # 0 Solid, 1 dotted, 2 dashed
+        self.stroke_dash = None  # None or "" Solid
         super().__init__(type="elem path", **kwargs)
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]
@@ -113,12 +113,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         if tablen and numtabs:
             path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
         # Is there a dash/dot pattern to apply?
-        if self.linestyle == 0:  # solid
-            dashlen = 0
-        elif self.linestyle == 1:  # dotted
-            dashlen = 0.5 * unit_mm
-        elif self.linestyle == 2:  # dashed
-            dashlen = 2 * unit_mm
+        dashlen = self.stroke_dash
         irrelevant = 50
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)

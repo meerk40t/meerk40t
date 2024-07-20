@@ -454,7 +454,8 @@ class LinePropPanel(wx.Panel):
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
         fillchoices = (_("Non-Zero"), _("Even-Odd"))
-        linestylechoices = (_("Solid"), _("Dotted"), _("Dashed"))
+        self.dash_patterns = ["", "1 1", "2 1"]
+        linestylechoices = (_("Solid"), _("Dotted"), _("Dashed"), _("User defined"))
         self.combo_cap = wx.ComboBox(
             self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -470,6 +471,7 @@ class LinePropPanel(wx.Panel):
             choices=linestylechoices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
+        self.text_linestyle = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
         self.combo_join.SetMaxSize(dip_size(self, 100, -1))
         self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
@@ -488,9 +490,10 @@ class LinePropPanel(wx.Panel):
         self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
 
         self.sizer_linestyle = StaticBoxSizer(
-            self, wx.ID_ANY, _("Linestyle"), wx.VERTICAL
+            self, wx.ID_ANY, _("Linestyle"), wx.HORIZONTAL
         )
         self.sizer_linestyle.Add(self.combo_linestyle, 1, wx.EXPAND, 0)
+        self.sizer_linestyle.Add(self.text_linestyle, 1, wx.EXPAND, 0)
 
         self.tab_length = TextCtrl(
             self,
@@ -537,9 +540,11 @@ class LinePropPanel(wx.Panel):
         self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
         self.combo_fill.Bind(wx.EVT_COMBOBOX, self.on_fill)
         self.combo_linestyle.Bind(wx.EVT_COMBOBOX, self.on_linestyle)
+        self.text_linestyle.SetActionRoutine(self.on_txt_linestyle)
         self.tab_count.SetActionRoutine(self.on_tab_count)
         self.tab_length.SetActionRoutine(self.on_tab_length)
         self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
+        self.text_linestyle.SetToolTip(_("Define the linestyle of the shape:\nA list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"))
         self.tab_count.SetToolTip(
             _(
                 "How many tabs do you want to place equidistant along the shape (0=None)?"
@@ -585,8 +590,31 @@ class LinePropPanel(wx.Panel):
         if self.node is None or self.node.lock:
             return
         _id = self.combo_linestyle.GetSelection()
+        if 0 <= _id < len(self.dash_patterns):
+            self.text_linestyle.SetValue(self.dash_patterns[_id])
+            self.on_txt_linestyle()
+
+    def sync_linestyle_combo(self, value):
+        if value is None:
+            value = ""
+        index = -1
+        for idx, entry in enumerate(self.dash_patterns):
+            if value == entry:
+                index = idx
+                break
+        if index < 0:
+            index = len(self.dash_patterns) # The following "user defined..."
+        self.combo_linestyle.SetSelection(index)
+
+    def on_txt_linestyle(self):
+        if self.node is None or self.node.lock:
+            return
+        value = self.text_linestyle.GetValue()
+        self.sync_linestyle_combo(value)
+        if value == "":
+            value = None
         try:
-            self.node.linestyle = _id
+            self.node.stroke_dash = value
             # We need to recalculate the appearance
             self.node.empty_cache()
             self.context.signal("element_property_update", self.node)
@@ -643,9 +671,13 @@ class LinePropPanel(wx.Panel):
         if hasattr(self.node, "fillrule"):
             vis3 = True
             self.combo_fill.SetSelection(int(node.fillrule))
-        if hasattr(self.node, "linestyle"):
+        if hasattr(self.node, "stroke_dash"):
             vis4 = True
-            self.combo_linestyle.SetSelection(int(node.linestyle))
+            value = self.node.stroke_dash
+            if value is None:
+                value = ""
+            self.text_linestyle.SetValue(value)
+            self.sync_linestyle_combo(value)
         if hasattr(self.node, "mktablength"):
             vis5 = True
             x = self.node.mktablength

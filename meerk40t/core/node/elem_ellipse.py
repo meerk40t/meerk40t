@@ -58,7 +58,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
-        self.linestyle = 0  # 0 Solid, 1 dotted, 2 dashed
+        self.stroke_dash = None  # None or "" Solid
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
@@ -162,12 +162,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         if numtabs and tablen:
             path = Geomstr.wobble_tab(path, tablen, resolution, self.mktabpositions)
         # Is there a dash/dot pattern to apply?
-        if self.linestyle == 0:  # solid
-            dashlen = 0
-        elif self.linestyle == 1:  # dotted
-            dashlen = 0.5 * unit_mm
-        elif self.linestyle == 2:  # dashed
-            dashlen = 2 * unit_mm
+        dashlen = self.stroke_dash
 
         irrelevant = 50
         if dashlen:

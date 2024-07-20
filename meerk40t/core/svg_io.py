@@ -155,15 +155,6 @@ def joinstr(linejoin):
         return "miter"
 
 
-def dashstr(linestyle):
-    if linestyle == 0:
-        return ""
-    elif linestyle == 1:
-        return "1,1"
-    elif linestyle == 2:
-        return "20,20"
-
-
 def rulestr(fillrule):
     """
     Given the mk enum value for fillrule, returns the svg string.
@@ -449,7 +440,7 @@ class SVGWriter:
                     "linejoin",
                     "fillrule",
                     "stroke_width",
-                    "linestyle",
+                    "stroke_dash",
                 )
                 and value is not None
                 and isinstance(value, (str, int, float, complex, list, tuple, dict))
@@ -472,9 +463,9 @@ class SVGWriter:
             subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
         if hasattr(c, "fillrule"):
             subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
-        if hasattr(c, "linestyle"):
-            if c.linestyle:
-                subelement.set(SVG_ATTR_STROKE_DASH, dashstr(c.linestyle))
+        if hasattr(c, "stroke_dash"):
+            if c.stroke_dash:
+                subelement.set(SVG_ATTR_STROKE_DASH, c.stroke_dash)
 
         ###############
         # SAVE LABEL
@@ -848,22 +839,7 @@ class SVGProcessor:
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
         lj = element.values.get(SVG_ATTR_STROKE_DASH)
-        if lj is not None:
-            nld = 0
-            # Split the array
-            dasharray = lj.split(",")
-            if len(dasharray):
-                try:
-                    dlen = int(dasharray[0])
-                    if dlen == 0:
-                        nld = 0
-                    if dlen > 5:
-                        nld = 2
-                    else:
-                        nld = 1
-                except ValueError:
-                    pass
-            node.linestyle = nld
+        node.stroke_dash = lj
 
     @staticmethod
     def is_dot(element):

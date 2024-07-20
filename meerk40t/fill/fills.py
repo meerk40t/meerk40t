@@ -1,6 +1,6 @@
 import math
 
-from meerk40t.core.units import Angle, Length
+from meerk40t.core.units import Angle, Length, UNITS_PER_MM
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
@@ -581,7 +581,7 @@ def _tabbed(wobble, x0, y0, x1, y1):
         idx += 1
 
 
-def _dashed(wobble, pattern, x0, y0, x1, y1):
+def _dashed(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
@@ -590,13 +590,45 @@ def _dashed(wobble, pattern, x0, y0, x1, y1):
     # radius
     # interval
     if wobble.flag is None:
-        wobble.flag = True  # Visible
-    last_ratio = int(wobble._total_distance / wobble.radius)
+        wobble.flag = False  # Not visible but will immediately be swapped...
+    if wobble.userdata is None:
+        pattern_idx = 0
+        if isinstance(wobble.radius, str):
+            # This is a string with comma and/or whitespace separated numbers
+            pattern = list()
+            sub_comma = wobble.radius.split(",")
+            for entry in sub_comma:
+                sub_spaces = entry.split()
+                for s in sub_spaces:
+                    try:
+                        value = float(s)
+                    except ValueError:
+                        value = 0.0
+                    pattern.append(value * UNITS_PER_MM )
+        else:
+            pattern = list(wobble.radius * UNITS_PER_MM, )
+        if len(pattern) % 2 == 1:
+            # Needs to be even
+            pattern.extend(pattern)
+        wobble.userdata = [pattern_idx, pattern, -1.0]
+    pattern_idx = wobble.userdata[0]
+    pattern = wobble.userdata[1]
+    next_target = wobble.userdata[2]
+
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
-        new_ratio = int(wobble._total_distance / wobble.radius)
-        if new_ratio != last_ratio:
+        if len(pattern) == 0:
+            yield (tx, ty)
+            continue
+
+        if next_target < wobble._total_distance:
+            gap = pattern[pattern_idx]
+            pattern_idx += 1
+            if pattern_idx >= len(pattern):
+                pattern_idx = 0
+            next_target = wobble._total_distance + gap
             wobble.flag = not wobble.flag
-            last_ratio = new_ratio
+            wobble.userdata[0] = pattern_idx
+            wobble.userdata[2] = next_target
         # if wobble.flag and wobble._last_x:
         #     yield wobble._last_x, wobble._last_y
         if wobble.flag:
@@ -606,8 +638,7 @@ def _dashed(wobble, pattern, x0, y0, x1, y1):
 
 
 def dashed_line(wobble, x0, y0, x1, y1):
-    yield from _dashed(wobble, "1, 1", x0, y0, x1, y1)
-
+    yield from _dashed(wobble, x0, y0, x1, y1)
 
 def tabbed_path(wobble, x0, y0, x1, y1):
     yield from _tabbed(wobble, x0, y0, x1, y1)
