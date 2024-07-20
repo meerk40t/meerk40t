@@ -839,7 +839,8 @@ class SVGProcessor:
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
         lj = element.values.get(SVG_ATTR_STROKE_DASH)
-        node.stroke_dash = lj
+        if lj not in (None, "", "none"):
+            node.stroke_dash = lj
 
     @staticmethod
     def is_dot(element):
