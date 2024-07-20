@@ -103,7 +103,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         path.transform(self.matrix)
         return path
 
-    def final_geometry(self, **kws):
+    def final_geometry(self, **kws) -> Geomstr:
         path = Geomstr(self.geometry)
         path.transform(self.matrix)
         unit_mm = 65535 / 2.54 / 10
