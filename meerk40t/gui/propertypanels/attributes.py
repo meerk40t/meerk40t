@@ -510,15 +510,12 @@ class LinePropPanel(wx.Panel):
             limited=True,
             check="length",
         )
-        self.tab_count = TextCtrl(
+        self.tab_positions = TextCtrl(
             self,
             wx.ID_ANY,
             "",
             style=wx.TE_PROCESS_ENTER,
-            limited=True,
-            check="int",
         )
-        self.tab_count.SetMaxSize(dip_size(self, 100, -1))
         self.tab_length.SetMaxSize(dip_size(self, 100, -1))
         label1 = wx.StaticText(self, wx.ID_ANY, _("Tab-Length"))
         label2 = wx.StaticText(self, wx.ID_ANY, _("Tabs"))
@@ -528,7 +525,7 @@ class LinePropPanel(wx.Panel):
         self.sizer_tabs.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_tabs.Add(self.tab_length, 1, wx.EXPAND, 0)
         self.sizer_tabs.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.sizer_tabs.Add(self.tab_count, 1, wx.EXPAND, 0)
+        self.sizer_tabs.Add(self.tab_positions, 1, wx.EXPAND, 0)
 
         sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
         sizer_attributes.Add(self.sizer_join, 1, wx.EXPAND, 0)
@@ -548,18 +545,18 @@ class LinePropPanel(wx.Panel):
         self.combo_fill.Bind(wx.EVT_COMBOBOX, self.on_fill)
         self.combo_linestyle.Bind(wx.EVT_COMBOBOX, self.on_linestyle)
         self.text_linestyle.SetActionRoutine(self.on_txt_linestyle)
-        self.tab_count.SetActionRoutine(self.on_tab_count)
+        self.tab_positions.SetActionRoutine(self.on_tab_count)
         self.tab_length.SetActionRoutine(self.on_tab_length)
         self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
         self.text_linestyle.SetToolTip(
-            _(
-                "Define the linestyle of the shape:\nA list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
-            )
+            _("Define the linestyle of the shape:") + "\n" +
+            _("A list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps")
         )
-        self.tab_count.SetToolTip(
-            _(
-                "How many tabs do you want to place equidistant along the shape (0=None)?"
-            )
+        self.tab_positions.SetToolTip(
+            _("Where do you want to place tabs:") +  "\n" +
+            _("A list of comma and/or white space separated numbers that specify the relative positions, ie percentage of total shape perimeter, of the tab centers.") + "\n" +
+            _("You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs.") + "\n" +
+            _("An empty list stands for no tabs.")
         )
         self.tab_length.SetToolTip(_("How wide should the tab be?"))
         self.set_widgets(self.node)
@@ -652,9 +649,9 @@ class LinePropPanel(wx.Panel):
         if self.node is None or self.node.lock:
             return
         try:
-            scount = int(self.tab_count.GetValue())
-            if self.node.mktabpositions != scount:
-                self.node.mktabpositions = scount
+            positions = self.tab_positions.GetValue()
+            if self.node.mktabpositions != positions:
+                self.node.mktabpositions = positions
                 self.node.empty_cache()
                 self.context.signal("refresh_scene", "Scene")
                 self.context.signal("element_property_update", self.node)
@@ -700,7 +697,10 @@ class LinePropPanel(wx.Panel):
             self.tab_length.SetValue(
                 f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}"
             )
-            self.tab_count.SetValue(str(node.mktabpositions))
+            val = node.mktabpositions
+            if val is None:
+                val = ""
+            self.tab_positions.SetValue(val)
 
         self.combo_cap.Show(vis1)
         self.sizer_cap.Show(vis1)
@@ -711,7 +711,7 @@ class LinePropPanel(wx.Panel):
         self.combo_linestyle.Show(vis4)
         self.sizer_linestyle.Show(vis4)
         self.tab_length.Show(vis5)
-        self.tab_count.Show(vis5)
+        self.tab_positions.Show(vis5)
         self.sizer_tabs.Show(vis5)
 
         if vis1 or vis2 or vis3 or vis4 or vis5:

@@ -539,47 +539,93 @@ def _tabbed(wobble, x0, y0, x1, y1):
         yield x0, y0
         return
     # wobble has the following parameters:
-    # speed:  How many tabs would we like to have
+    # speed:  Array of tab positions (percentage of overall pathlength)
     # radius: Length of tab
     # interval: internal resolution
-    if wobble.flag is None:
-        wobble.flag = True  # Visible
     wobble.may_close_path = False
-    tabs = wobble.speed
-    tab_len = wobble.radius
-    total_len = wobble.total_length
-    if total_len == 0:
-        total_len = abs(complex(x0, y0) - complex(x1, y1))
-    rem_len = total_len - tabs * tab_len
-    if rem_len <= 0:
-        # print (f"Degenerated tab: {tabs} x {tab_len} -> remaining: {rem_len:.0f} ")
-        rem_len = 0
-
-    gap_len = rem_len / tabs
+    if wobble.flag is None:
+        wobble.flag = False  # Not visible but will immediately be swapped...
     if wobble.userdata is None:
-        dist = gap_len / 2.0 - tab_len / 2.0
-    else:
-        dist = wobble.userdata
-
-    # print (f"Wobble: {tabs} - len={tab_len:.0f} - gap={gap_len:.0f} - Start: {dist:.0f} - flag={wobble.flag}")
-    idx = 0
-    for tx, ty in wobble.wobble(x0, y0, x1, y1):
-        if wobble.flag and dist + wobble.interval >= gap_len:
-            wobble.flag = False
-            dist = wobble.interval
-        elif not wobble.flag and dist + wobble.interval >= tab_len:
-            wobble.flag = True
-            dist = wobble.interval
+        tablen = wobble.radius
+        pattern_idx = 0
+        if isinstance(wobble.speed, str):
+            # This is a string with comma and/or whitespace separated numbers
+            positions = list()
+            sub_comma = wobble.speed.split(",")
+            if wobble.speed.startswith("*"):
+                # Special case:
+                # '*4' means 4 tabs equidistant, all remaining parameters will be ignored
+                sub_spaces = sub_comma[0].split()
+                s = sub_spaces[0][1:]
+                try:
+                    value = int(s)
+                    if value > 0:
+                        for i in range(value):
+                            val = (i + 0.5) * 100 / value
+                            positions.append( val )
+                except ValueError:
+                    pass
+            else:
+                for entry in sub_comma:
+                    sub_spaces = entry.split()
+                    for s in sub_spaces:
+                        try:
+                            value = float(s)
+                            if value < 0:
+                                value = 0
+                            elif value > 100:
+                                value = 100
+                        except ValueError:
+                            continue
+                        positions.append(value)
         else:
-            dist += wobble.interval
+            positions = list(wobble.speed, )
+        # So now that we have the positions we calculate the start and end position
+        positions.sort()
+        pattern = list()
+        if len(positions) * tablen < wobble.total_length:
+            # Do we have a chance
+            to_be_added = None
+            starts_with_tab = False
+            for pos in positions:
+                spos = pos / 100.0 * wobble.total_length - 0.5 * tablen
+                epos = spos + tablen
+                if spos <= 0:
+                    starts_with_tab = True
+                    if spos < 0:
+                        to_be_added = spos + wobble.total_length
+                else:
+                    pattern.append(spos)
+                pattern.append(epos)
+            if to_be_added:
+                pattern.append(to_be_added)
+            wobble.flag = starts_with_tab
+        # print (f"Start with {wobble.flag}: {pattern}")
+        wobble.userdata = [pattern_idx, pattern, -1.0]
+    pattern_idx = wobble.userdata[0]
+    pattern = wobble.userdata[1]
+    next_target = wobble.userdata[2]
+
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        if len(pattern) == 0:
+            yield (tx, ty)
+            continue
+
+        if next_target < wobble._total_distance:
+            if pattern_idx < len(pattern):
+                next_target = pattern[pattern_idx]
+                pattern_idx += 1
+            else:
+                next_target = wobble.total_length * 1.25
+            wobble.flag = not wobble.flag
+            wobble.userdata[0] = pattern_idx
+            wobble.userdata[2] = next_target
+        # if wobble.flag and wobble._last_x:
+        #     yield wobble._last_x, wobble._last_y
         if wobble.flag:
             yield tx, ty
         else:
             yield None, None
-        # print (f"{idx}: {dist:.0f} - {wobble.flag}")
-        wobble.userdata = dist
-        idx += 1
-
 
 def _dashed(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
@@ -603,7 +649,7 @@ def _dashed(wobble, x0, y0, x1, y1):
                     try:
                         value = float(s)
                     except ValueError:
-                        value = 0.0
+                        continue
                     pattern.append(value * UNITS_PER_MM )
         else:
             pattern = list(wobble.radius * UNITS_PER_MM, )

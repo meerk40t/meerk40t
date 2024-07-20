@@ -138,7 +138,7 @@ class Tabs(ABC):
         unit_mm = 65535 / 2.54 / 10
         self.mktablength = 2 * unit_mm
         # tab_positions is a list of relative positions (percentage) of the overall path length
-        self.mktabpositions = 0
+        self.mktabpositions = ""
         if "mktablength" in kwargs:
             self.mktablength = kwargs["mktablength"]
         if "mktabpositions" in kwargs:
