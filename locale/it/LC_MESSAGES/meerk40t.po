@@ -1167,7 +1167,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:260
 msgid ""
-"- provided no elements are assigned to it yet (ie works only for an empty"
+"- provided no elements are assigned to it yet (i.e. works only for an empty"
 " op)!"
 msgstr ""
 " - a condizione che non gli siano ancora stati assegnati elementi (cioè funziona solo per un'opzione vuota)!"
@@ -3589,7 +3589,7 @@ msgstr ""
 "Sebbene questo possa produrre un percorso più lungo, in tal modo si evitano "
 "gli spostamenti verso o dal punto intermedio. Il tempo di percorrenza totale "
 "potrebbe risultare più breve o più lungo. Questa modalità evita anche le piccole "
-"differenze di profondità totale nel punto in cui le incisioni si uniscono sovrapponendosi. " 
+"differenze di profondità totale nel punto in cui le incisioni si uniscono sovrapponendosi. "
 
 #: meerk40t/core/planner.py:100
 msgid "Merge Passes"
@@ -4817,13 +4817,13 @@ msgstr "Riorganizza tutti gli elementi selezionati"
 
 #: meerk40t/gui/alignment.py:1258
 msgid ""
-"Set if all columns need to have the same size (ie maximum width over all "
+"Set if all columns need to have the same size (i.e. maximum width over all "
 "columns)"
 msgstr "Attiva: tutte le colonne hanno la stessa larghezza (= larghezza massima di tutte le colonne)"
 
 #: meerk40t/gui/alignment.py:1263
 msgid ""
-"Set if all rows need to have the same size (ie maximum height over all "
+"Set if all rows need to have the same size (i.e. maximum height over all "
 "row)"
 msgstr "Attiva: tutte le righe hanno la stessa altezza (= altezza massima di tutte le righe)"
 
@@ -6608,7 +6608,7 @@ msgstr "Tempo stimato: durata accensione laser"
 msgid "Time Estimate: Traveling Time"
 msgstr "Tempo stimato: Tempo di percorrenza"
 
-msgid "Time Estimate: Extra Time (ie to swing around)"
+msgid "Time Estimate: Extra Time (i.e. to swing around)"
 msgstr "Tempo stimato: durata extra (ad es. per il movimento di inversione)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
@@ -15139,7 +15139,7 @@ msgid "Increase Wordlist-Reference"
 msgstr "Incrementa il contatore in Variabili di testo"
 
 #: ./meerk40t\core\elements\element_treeops.py:2237
-msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr "Adatta il valore di riferimento nelle Variabili di testo, ad esempio da {name} a {name#+1}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2258
@@ -15147,7 +15147,7 @@ msgid "Decrease Wordlist-Reference"
 msgstr "Ripristina il riferimento nelle Variabili di testo"
 
 #: ./meerk40t\core\elements\element_treeops.py:2263
-msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr "Regola il valore di riferimento in Variabili di testo, ad esempio {name#+3} to {name#+2}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2528
@@ -15797,7 +15797,7 @@ msgstr "Oggetti raster separati"
 #: ./meerk40t\core\planner.py:58
 msgid ""
 "Separate non-overlapping raster objects.\n"
-"Active: this will raster close (ie overlapping) objects as one,\n"
+"Active: this will raster close (i.e. overlapping) objects as one,\n"
 "but will separately process objects lying apart from each other.\n"
 "Inactive: all objects will be lasered as one single unit."
 msgstr ""
@@ -16085,7 +16085,7 @@ msgstr "Velocità massima del vettore"
 #: ./meerk40t\grbl\device.py:355
 msgid ""
 "What is the highest reliable speed your laser is able to perform vector operations, "
-"ie engraving or cutting.\n"
+"i.e. engraving or cutting.\n"
 "You can finetune this in the Warning Sections of this configuration dialog."
 msgstr ""
 "Imposta la massima velocità affidabile a cui il laser può eseguire"

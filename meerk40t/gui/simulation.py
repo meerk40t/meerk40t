@@ -991,7 +991,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         self.text_time_extra.SetToolTip(
-            _("Time Estimate: Extra Time (ie to swing around)")
+            _("Time Estimate: Extra Time (i.e. to swing around)")
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(

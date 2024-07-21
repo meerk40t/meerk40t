@@ -122,7 +122,7 @@ def linearize_segment(segment, interpolation=500, reduce=True):
                 this_slope = atan2(dy, dx)
                 if last_slope is not None:
                     if abs(last_slope - this_slope) < slope_tolerance:
-                        # Combine segments, ie get rid of mid point
+                        # Combine segments, i.e. get rid of mid point
                         this_slope = last_slope
                         appendit = False
                 last_slope = this_slope

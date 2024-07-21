@@ -536,7 +536,7 @@ class GRBLDriver(Parameters):
 
     def physical_home(self):
         """
-        Home the laser physically (ie run into endstops).
+        Home the laser physically (i.e. run into endstops).
 
         @return:
         """
@@ -555,7 +555,7 @@ class GRBLDriver(Parameters):
 
     def home(self):
         """
-        Home the laser (ie goto defined origin)
+        Home the laser (i.e. goto defined origin)
 
         @return:
         """

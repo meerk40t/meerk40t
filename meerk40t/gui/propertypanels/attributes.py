@@ -554,7 +554,7 @@ class LinePropPanel(wx.Panel):
         )
         self.tab_positions.SetToolTip(
             _("Where do you want to place tabs:") +  "\n" +
-            _("A list of comma and/or white space separated numbers that specify the relative positions, ie percentage of total shape perimeter, of the tab centers.") + "\n" +
+            _("A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers.") + "\n" +
             _("You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs.") + "\n" +
             _("An empty list stands for no tabs.")
         )

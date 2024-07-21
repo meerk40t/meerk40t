@@ -1175,7 +1175,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:260
 msgid ""
-"- provided no elements are assigned to it yet (ie works only for an empty"
+"- provided no elements are assigned to it yet (i.e. works only for an empty"
 " op)!"
 msgstr ""
 "Voraussetzung: die Operation ist leer (also es wurden noch keine Elemente"
@@ -4848,13 +4848,13 @@ msgstr "Ordne alle selektierten Elemente neu an"
 
 #: meerk40t/gui/alignment.py:1258
 msgid ""
-"Set if all columns need to have the same size (ie maximum width over all "
+"Set if all columns need to have the same size (i.e. maximum width over all "
 "columns)"
 msgstr "Aktiv: alle Spalten erhalten die gleiche Breite (=maximale Breite aller Spalten)
 
 #: meerk40t/gui/alignment.py:1263
 msgid ""
-"Set if all rows need to have the same size (ie maximum height over all "
+"Set if all rows need to have the same size (i.e. maximum height over all "
 "row)"
 msgstr "Aktiv: alle Zeilen erhalten die gleiche Höhe (=maximale Höhe aller Zeilen)
 
@@ -6646,7 +6646,7 @@ msgstr "Zeitschätzung: Laser-Dauer"
 msgid "Time Estimate: Traveling Time"
 msgstr "Zeitschätzung: Schlitten-Bewegung-Dauer"
 
-msgid "Time Estimate: Extra Time (ie to swing around)"
+msgid "Time Estimate: Extra Time (i.e. to swing around)"
 msgstr "Zeitschätzung: Extra-Dauer (etwa für Bewegungsumkehr)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
@@ -15163,7 +15163,7 @@ msgid "Increase Wordlist-Reference"
 msgstr "Wortlisten-Verweis weiterschalten"
 
 #: ./meerk40t\core\elements\element_treeops.py:2237
-msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr "Passt den Verweis-Wert in der Wortliste an, d.h. {name} to {name#+1}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2258
@@ -15171,7 +15171,7 @@ msgid "Decrease Wordlist-Reference"
 msgstr "Wortlisten-Verweis zurückschalten"
 
 #: ./meerk40t\core\elements\element_treeops.py:2263
-msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr "Passt den Verweis-Wert in der Wortliste an, d.h. {name#+3} to {name#+2}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2528
@@ -15822,7 +15822,7 @@ msgstr "Trenne Raster-Objekte"
 #: ./meerk40t\core\planner.py:58
 msgid ""
 "Separate non-overlapping raster objects.\n"
-"Active: this will raster close (ie overlapping) objects as one,\n"
+"Active: this will raster close (i.e. overlapping) objects as one,\n"
 "but will separately process objects lying apart from each other.\n"
 "Inactive: all objects will be lasered as one single unit."
 msgstr ""
@@ -16110,7 +16110,7 @@ msgstr "Max Vektor-Geschw."
 #: ./meerk40t\grbl\device.py:355
 msgid ""
 "What is the highest reliable speed your laser is able to perform vector operations, "
-"ie engraving or cutting.\n"
+"i.e. engraving or cutting.\n"
 "You can finetune this in the Warning Sections of this configuration dialog."
 msgstr ""
 "Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser "
@@ -17620,7 +17620,7 @@ msgid "Where do you want to place tabs:"
 msgstr "Wo sollen die Brücken platziert werden:"
 
 #: meerk40t/gui/propertypanels/attributes.py:557
-msgid "A list of comma and/or white space separated numbers that specify the relative positions, ie percentage of total shape perimeter, of the tab centers."
+msgid "A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers."
 msgstr "Eine Liste von durch Kommas/Leerzeichen getrennten Zahlen, die die relative Position, d.h. % des Gesamtumfangs, der Brückenmittelpunkte festlegt."
 
 #: meerk40t/gui/propertypanels/attributes.py:558

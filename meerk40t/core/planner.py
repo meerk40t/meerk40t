@@ -53,7 +53,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Cluster raster objects"),
                 "tip": _(
                     "Separate non-overlapping raster objects.\n"
-                    "Active: this will raster close (ie overlapping) objects as one,\n"
+                    "Active: this will raster close (i.e. overlapping) objects as one,\n"
                     "but will separately process objects lying apart from each other.\n"
                     "Inactive: all objects will be lasered as one single unit."
                 ),

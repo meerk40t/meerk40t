@@ -1886,7 +1886,7 @@ class Art:
         1) We calculate the required button dimensions for all
         combinations of tiny/small/regular icons plus with/without labels
         2) We get the minimum amount of columns required to display
-        the buttons (taking the vertical extent ie the amount
+        the buttons (taking the vertical extent i.e. the amount
         of available rows into account).
         This will provide us with a solution that would need
         the least horizontal space.

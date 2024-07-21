@@ -2774,7 +2774,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name} to {name#+1}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"),
     )
     def wlist_plus(singlenode, **kwargs):
         data = list()
@@ -2800,7 +2800,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"),
     )
     def wlist_minus(singlenode, **kwargs):
         data = list()

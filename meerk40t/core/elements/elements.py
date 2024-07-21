@@ -306,7 +306,7 @@ def plugin(kernel, lifecycle=None):
             #     )
             #     + "\n"
             #     + _(
-            #         "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+            #         "- provided no elements are assigned to it yet (i.e. works only for an empty op)!"
             #     ),
             #     "page": "Classification",
             #     "section": "_30_GUI-Behaviour",
@@ -818,7 +818,7 @@ class Elemental(Service):
         # impose:       - if "to_op" will use attrib-color (see below),
         #                 to impose the first evidence of color in data on the targetop
         #               - if "to_elem" will impose the color of the operation and make it the color of the
-        #                 element attrib (ie stroke or fill)
+        #                 element attrib (i.e. stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
         #               ('auto' is an option too, that will pick the color from the
@@ -947,7 +947,7 @@ class Elemental(Service):
         """
         This routine looks at a given dataset and will condense
         it in the sense that if all elements of a given hierarchy
-        (ie group or file) are in this set, then they will be
+        (i.e. group or file) are in this set, then they will be
         replaced and represented by this parent element
         NB: we will set the emphasized_time of the parent element
         to the minimum time of all children
@@ -2676,7 +2676,7 @@ class Elemental(Service):
                 classif_info[1] = True
             if was_classified and debug:
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
-            # Let's make sure we only consider relevant, ie existing attributes...
+            # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
@@ -2770,7 +2770,7 @@ class Elemental(Service):
                             )
                     if should_break:
                         break
-            # Let's make sure we only consider relevant, ie existing attributes...
+            # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True

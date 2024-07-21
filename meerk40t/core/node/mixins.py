@@ -131,7 +131,7 @@ class Suppressable(ABC):
 
 class Tabs(ABC):
     """
-    Any node inheriting this may have tabs (ie breaks of the path)
+    Any node inheriting this may have tabs (i.e. breaks of the path)
     """
 
     def __init__(self, *args, **kwargs):

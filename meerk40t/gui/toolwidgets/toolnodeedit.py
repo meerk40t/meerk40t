@@ -949,7 +949,7 @@ class EditTool(ToolWidget):
                 entry = self.nodes[idx]
                 if entry["selected"] and entry["type"] == "point":
                     # What's the index of the last selected element
-                    # Have we dealt with that before? ie not multiple toggles.
+                    # Have we dealt with that before? i.e. not multiple toggles.
                     segstart = entry["start"]
                     if segstart in dealt_with:
                         continue
@@ -1066,7 +1066,7 @@ class EditTool(ToolWidget):
 
     def smoothen(self):
         """
-        Smoothen a circular bezier segment to adjacent segments, ie adjust
+        Smoothen a circular bezier segment to adjacent segments, i.e. adjust
         the control points so that they are an extension of the previous/next segment
         """
         if self.element is None or self.nodes is None:
@@ -1157,7 +1157,7 @@ class EditTool(ToolWidget):
         """
         Convert all segments of the path that are not cubic Béziers into
         such segments and apply the same smoothen logic as in smoothen(),
-        ie adjust the control points of two neighbouring segments
+        i.e. adjust the control points of two neighbouring segments
         so that the three points
         'prev control2' - 'prev/end=next start' - 'next control1'
         are collinear

@@ -587,7 +587,7 @@ class BalorDriver:
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
         self.home()
 
