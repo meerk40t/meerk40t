@@ -1655,7 +1655,12 @@ class Geomstr:
                         else:
                             points.append(complex(wx, wy))
                 last = pt
-            if w.may_close_path and len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5 and len(points) > 0:
+            if (
+                w.may_close_path
+                and len(segments) > 1
+                and abs(segments[0] - segments[-1]) < 1e-5
+                and len(points) > 0
+            ):
                 if abs(points[0] - points[-1]) >= 1e-5:
                     points.append(points[0])
             geometry.append(Geomstr.lines(*points))
@@ -1728,16 +1733,16 @@ class Geomstr:
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
     @classmethod
-    def wobble_dash(cls, outer, radius, interval, speed):
+    def wobble_dash(cls, outer, dashlength, interval, irrelevant):
         from meerk40t.fill.fills import dashed_line as algorithm
 
-        return cls.wobble(algorithm, outer, radius, interval, speed)
+        return cls.wobble(algorithm, outer, dashlength, interval, irrelevant)
 
     @classmethod
-    def wobble_tab(cls, outer, radius, interval, speed):
+    def wobble_tab(cls, outer, tablength, interval, tabpositions):
         from meerk40t.fill.fills import tabbed_path as algorithm
 
-        return cls.wobble(algorithm, outer, radius, interval, speed)
+        return cls.wobble(algorithm, outer, tablength, interval, tabpositions)
 
     @classmethod
     def from_float_segments(cls, float_segments):

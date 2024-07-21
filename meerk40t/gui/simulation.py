@@ -991,7 +991,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         self.text_time_extra.SetToolTip(
-            _("Time Estimate: Extra Time (ie to swing around)")
+            _("Time Estimate: Extra Time (i.e. to swing around)")
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(
@@ -1162,15 +1162,14 @@ class SimulationPanel(wx.Panel, Job):
         self.Layout()
         # end wxGlade
 
-
     def on_size(self, event):
         sz = event.GetSize()
         event.Skip()
-        self.debug (f"Manually forwarding the size: {sz}")
-        self.view_pane.SetSize(wx.Size(sz[0], int(2/3 * sz[1])))
+        self.debug(f"Manually forwarding the size: {sz}")
+        self.view_pane.SetSize(wx.Size(sz[0], int(2 / 3 * sz[1])))
         self.Layout()
         sz = self.view_pane.GetSize()
-        self.debug (f"Now pane has: {sz}")
+        self.debug(f"Now pane has: {sz}")
         self.fit_scene_to_panel()
 
     # Manages the display / non-display of the optimisation-options
@@ -1448,7 +1447,7 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-        self.debug (f"Refresh simulated: {perf_counter()-self.start_time}")
+        self.debug(f"Refresh simulated: {perf_counter()-self.start_time}")
         # Stop animation
         if self.running:
             self._stop()
@@ -1503,22 +1502,28 @@ class SimulationPanel(wx.Panel, Job):
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         def resend_signal():
-            self.debug (f"Resending signal: {perf_counter()-self.start_time}")
+            self.debug(f"Resending signal: {perf_counter()-self.start_time}")
             self.context.signal("plan", self.plan_name, 1)
 
         winsize = self.view_pane.GetSize()
         winsize1 = self.hscene_sizer.GetSize()
         winsize2 = self.GetSize()
-        self.debug (f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})")
+        self.debug(
+            f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})"
+        )
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
-            if (winsize[0] == 0 or winsize[1] == 0) and self.retries > 3: # Still initialising
+            if (
+                winsize[0] == 0 or winsize[1] == 0
+            ) and self.retries > 3:  # Still initialising
                 self.Fit()
                 self.hscene_sizer.Layout()
                 self.view_pane.Show()
                 interval = 0.25
                 self.retries += 1
-                self.debug (f"Need to resend signal due to invalid window-size, attempt {self.retries}/10, will wait for {interval:.2f} sec")
+                self.debug(
+                    f"Need to resend signal due to invalid window-size, attempt {self.retries}/10, will wait for {interval:.2f} sec"
+                )
 
                 _job = Job(
                     process=resend_signal,
@@ -2214,7 +2219,9 @@ class Simulation(MWindow):
             busy.change(msg=_("Preparing simulation..."))
             busy.start()
 
-            kernel.console(f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n")
+            kernel.console(
+                f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
+            )
             busy.end()
 
         def open_simulator(*args):

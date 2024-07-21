@@ -264,8 +264,12 @@ class IdPanel(wx.Panel):
         self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
         self.icon_hidden = wx.StaticBitmap(self, wx.ID_ANY)
         self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
-        self.icon_hidden.SetBitmap(mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE))
-        self.icon_hidden.SetToolTip(_("Element is hidden, so it will neither be displayed nor burnt"))
+        self.icon_hidden.SetBitmap(
+            mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE)
+        )
+        self.icon_hidden.SetToolTip(
+            _("Element is hidden, so it will neither be displayed nor burnt")
+        )
         sizer_id_label.Add(self.icon_display, 0, wx.EXPAND, 0)
         sizer_id_label.Add(self.icon_hidden, 0, wx.EXPAND, 0)
 
@@ -450,6 +454,15 @@ class LinePropPanel(wx.Panel):
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
         fillchoices = (_("Non-Zero"), _("Even-Odd"))
+        self.dash_patterns = {
+            "Solid": "",
+            "Dot": "0.5 0.5",
+            "Short Dash": "2 1",
+            "Long Dash": "4 1",
+            "Dash Dot": "4 1 0.5 1",
+        }
+        linestylechoices = [_(e) for e in self.dash_patterns]
+        linestylechoices.append(_("User defined"))
         self.combo_cap = wx.ComboBox(
             self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -459,9 +472,17 @@ class LinePropPanel(wx.Panel):
         self.combo_fill = wx.ComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
+        self.combo_linestyle = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=linestylechoices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.text_linestyle = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
         self.combo_join.SetMaxSize(dip_size(self, 100, -1))
         self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_linestyle.SetMaxSize(dip_size(self, 150, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -475,11 +496,46 @@ class LinePropPanel(wx.Panel):
         self.sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fillrule"), wx.VERTICAL)
         self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
 
+        self.sizer_linestyle = StaticBoxSizer(
+            self, wx.ID_ANY, _("Linestyle"), wx.HORIZONTAL
+        )
+        self.sizer_linestyle.Add(self.combo_linestyle, 1, wx.EXPAND, 0)
+        self.sizer_linestyle.Add(self.text_linestyle, 1, wx.EXPAND, 0)
+
+        self.tab_length = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
+        )
+        self.tab_positions = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.tab_length.SetMaxSize(dip_size(self, 100, -1))
+        label1 = wx.StaticText(self, wx.ID_ANY, _("Tab-Length"))
+        label2 = wx.StaticText(self, wx.ID_ANY, _("Tabs"))
+        self.sizer_tabs = StaticBoxSizer(
+            self, wx.ID_ANY, _("Tabs/Bridges"), wx.HORIZONTAL
+        )
+        self.sizer_tabs.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_tabs.Add(self.tab_length, 1, wx.EXPAND, 0)
+        self.sizer_tabs.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_tabs.Add(self.tab_positions, 1, wx.EXPAND, 0)
+
         sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
         sizer_attributes.Add(self.sizer_join, 1, wx.EXPAND, 0)
         sizer_attributes.Add(self.sizer_fill, 1, wx.EXPAND, 0)
-
         main_sizer.Add(sizer_attributes, 0, wx.EXPAND, 0)
+
+        sizer_attributes2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_attributes2.Add(self.sizer_linestyle, 1, wx.EXPAND, 0)
+        sizer_attributes2.Add(self.sizer_tabs, 1, wx.EXPAND, 0)
+        main_sizer.Add(sizer_attributes2, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
@@ -487,6 +543,22 @@ class LinePropPanel(wx.Panel):
         self.combo_cap.Bind(wx.EVT_COMBOBOX, self.on_cap)
         self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
         self.combo_fill.Bind(wx.EVT_COMBOBOX, self.on_fill)
+        self.combo_linestyle.Bind(wx.EVT_COMBOBOX, self.on_linestyle)
+        self.text_linestyle.SetActionRoutine(self.on_txt_linestyle)
+        self.tab_positions.SetActionRoutine(self.on_tab_count)
+        self.tab_length.SetActionRoutine(self.on_tab_length)
+        self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
+        self.text_linestyle.SetToolTip(
+            _("Define the linestyle of the shape:") + "\n" +
+            _("A list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps")
+        )
+        self.tab_positions.SetToolTip(
+            _("Where do you want to place tabs:") +  "\n" +
+            _("A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers.") + "\n" +
+            _("You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs.") + "\n" +
+            _("An empty list stands for no tabs.")
+        )
+        self.tab_length.SetToolTip(_("How wide should the tab be?"))
         self.set_widgets(self.node)
 
     def on_cap(self, event):
@@ -522,6 +594,70 @@ class LinePropPanel(wx.Panel):
         except AttributeError:
             pass
 
+    def on_linestyle(self, event):
+        if self.node is None or self.node.lock:
+            return
+        _id = self.combo_linestyle.GetSelection()
+        for idx, (key, entry) in enumerate(self.dash_patterns.items()):
+            if idx == _id:
+                self.text_linestyle.SetValue(entry)
+                self.on_txt_linestyle()
+                break
+
+    def sync_linestyle_combo(self, value):
+        if value is None:
+            value = ""
+        index = -1
+        for idx, (key, entry) in enumerate(self.dash_patterns.items()):
+            if value == entry:
+                index = idx
+                break
+        if index < 0:
+            index = len(self.dash_patterns)  # The following "user defined..."
+        self.combo_linestyle.SetSelection(index)
+
+    def on_txt_linestyle(self):
+        if self.node is None or self.node.lock:
+            return
+        value = self.text_linestyle.GetValue()
+        self.sync_linestyle_combo(value)
+        if value == "":
+            value = None
+        try:
+            self.node.stroke_dash = value
+            # We need to recalculate the appearance
+            self.node.empty_cache()
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def on_tab_length(self):
+        if self.node is None or self.node.lock:
+            return
+        try:
+            swidth = float(Length(self.tab_length.GetValue()))
+            if self.node.mktablength != swidth:
+                self.node.mktablength = swidth
+                self.node.empty_cache()
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
+    def on_tab_count(self):
+        if self.node is None or self.node.lock:
+            return
+        try:
+            positions = self.tab_positions.GetValue()
+            if self.node.mktabpositions != positions:
+                self.node.mktabpositions = positions
+                self.node.empty_cache()
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
     def pane_hide(self):
         pass
 
@@ -534,6 +670,8 @@ class LinePropPanel(wx.Panel):
         vis1 = False
         vis2 = False
         vis3 = False
+        vis4 = False
+        vis5 = False
         if hasattr(self.node, "linecap"):
             vis1 = True
             self.combo_cap.SetSelection(int(node.linecap))
@@ -543,6 +681,26 @@ class LinePropPanel(wx.Panel):
         if hasattr(self.node, "fillrule"):
             vis3 = True
             self.combo_fill.SetSelection(int(node.fillrule))
+        if hasattr(self.node, "stroke_dash"):
+            vis4 = True
+            value = self.node.stroke_dash
+            if value is None:
+                value = ""
+            self.text_linestyle.SetValue(value)
+            self.sync_linestyle_combo(value)
+        if hasattr(self.node, "mktablength"):
+            vis5 = True
+            x = self.node.mktablength
+            units = self.context.units_name
+            if units in ("inch", "inches"):
+                units = "in"
+            self.tab_length.SetValue(
+                f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}"
+            )
+            val = node.mktabpositions
+            if val is None:
+                val = ""
+            self.tab_positions.SetValue(val)
 
         self.combo_cap.Show(vis1)
         self.sizer_cap.Show(vis1)
@@ -550,8 +708,13 @@ class LinePropPanel(wx.Panel):
         self.sizer_join.Show(vis2)
         self.combo_fill.Show(vis3)
         self.sizer_fill.Show(vis3)
+        self.combo_linestyle.Show(vis4)
+        self.sizer_linestyle.Show(vis4)
+        self.tab_length.Show(vis5)
+        self.tab_positions.Show(vis5)
+        self.sizer_tabs.Show(vis5)
 
-        if vis1 or vis2 or vis3:
+        if vis1 or vis2 or vis3 or vis4 or vis5:
             self.Show()
         else:
             self.Hide()

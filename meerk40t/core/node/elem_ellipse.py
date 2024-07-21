@@ -1,7 +1,13 @@
 from copy import copy
 from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+    Tabs,
+)
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +19,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
+class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -52,6 +58,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.stroke_dash = None  # None or "" Solid
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
@@ -140,6 +147,28 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
     def as_geometry(self, **kws):
         path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
         path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effektcs like tabs and dashes/dots
+        """
+        path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
+        path.transform(self.matrix)
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if numtabs and tablen:
+            path = Geomstr.wobble_tab(path, tablen, resolution, self.mktabpositions)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
+
         return path
 
     def scaled(self, sx, sy, ox, oy):

@@ -882,7 +882,10 @@ class wxMeerK40t(wx.App, Module):
         )
 
         kernel.register("window/Console", Console)
-        if hasattr(kernel.args, "lock_general_config") and kernel.args.lock_general_config:
+        if (
+            hasattr(kernel.args, "lock_general_config")
+            and kernel.args.lock_general_config
+        ):
             pass
         else:
             kernel.register("window/Preferences", Preferences)
@@ -898,7 +901,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+        if (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
             pass
         else:
             kernel.register("window/DeviceManager", DeviceManager)
@@ -1015,7 +1021,6 @@ class wxMeerK40t(wx.App, Module):
         @context.console_argument("crashtype", type=str)
         @context.console_command("crash_me_if_you_can", hidden=True)
         def crash_mk(command, channel, _, crashtype=None, **kwargs):
-
             def crash_divide(x, y):
                 return x / y
 

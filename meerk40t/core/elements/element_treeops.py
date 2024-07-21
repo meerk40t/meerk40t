@@ -289,7 +289,9 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
     @tree_operation(
-        _("Toggle visibility"), node_type=elem_group_nodes, help="",
+        _("Toggle visibility"),
+        node_type=elem_group_nodes,
+        help="",
     )
     def element_visibility_toggle(node, **kwargs):
         raw_data = list(self.elems(selected=True))
@@ -891,8 +893,7 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch ops", help="")
     def clear_all(node, **kwargs):
         if self.kernel.yesno(
-            _("Do you really want to delete all entries?"), 
-            caption=_("Operations")
+            _("Do you really want to delete all entries?"), caption=_("Operations")
         ):
             self("operation* delete\n")
 
@@ -909,8 +910,10 @@ def init_tree(kernel):
                 to_delete.append(op)
         if len(to_delete) > 0:
             if self.kernel.yesno(
-                _("Do you really want to delete {num} entries?").format(num=len(to_delete)), 
-                caption=_("Operations")
+                _("Do you really want to delete {num} entries?").format(
+                    num=len(to_delete)
+                ),
+                caption=_("Operations"),
             ):
                 with self.static("clear_unused"):
                     self.remove_operations(to_delete)
@@ -1036,8 +1039,7 @@ def init_tree(kernel):
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
         if self.kernel.yesno(
-            _("Do you really want to delete all entries?"), 
-            caption=_("Elements")
+            _("Do you really want to delete all entries?"), caption=_("Elements")
         ):
             with self.static("clear_elems"):
                 self.elem_branch.remove_all_children()
@@ -1049,8 +1051,7 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
         if self.kernel.yesno(
-            _("Do you really want to delete all entries?"), 
-            caption=_("Regmarks")
+            _("Do you really want to delete all entries?"), caption=_("Regmarks")
         ):
             with self.static("clear_regmarks"):
                 self.reg_branch.remove_all_children()
@@ -1811,12 +1812,12 @@ def init_tree(kernel):
     @tree_operation(
         _("Update Statusbar on load"),
         node_type="branch ops",
-        help=_(
-            "Loading an entry will update the statusbar icons, too, if checked"
-        ),
+        help=_("Loading an entry will update the statusbar icons, too, if checked"),
     )
     def set_mat_load_option(node, **kwargs):
-        self.update_statusbar_on_material_load = not self.update_statusbar_on_material_load
+        self.update_statusbar_on_material_load = (
+            not self.update_statusbar_on_material_load
+        )
 
     # @tree_separator_before()
     # @tree_submenu(_("Load"))
@@ -1977,7 +1978,7 @@ def init_tree(kernel):
         self.op_branch.add(
             type="util console",
             pos=pos,
-            command='coolant_on',
+            command="coolant_on",
         )
         self.signal("updateop_tree")
 
@@ -1987,7 +1988,7 @@ def init_tree(kernel):
         self.op_branch.add(
             type="util console",
             pos=pos,
-            command='coolant_off',
+            command="coolant_off",
         )
         self.signal("updateop_tree")
 
@@ -2773,7 +2774,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name} to {name#+1}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"),
     )
     def wlist_plus(singlenode, **kwargs):
         data = list()
@@ -2799,7 +2800,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"),
     )
     def wlist_minus(singlenode, **kwargs):
         data = list()
@@ -3042,7 +3043,10 @@ def init_tree(kernel):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
                     node_attributes.append([attrib, oldval])
-            geometry = node.as_geometry()
+            if hasattr(node, "final_geometry"):
+                geometry = node.final_geometry()
+            else:
+                geometry = node.as_geometry()
             newnode = node.replace_node(geometry=geometry, type="elem path")
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])

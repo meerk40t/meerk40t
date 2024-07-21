@@ -1,7 +1,7 @@
 """
     This module displays information about an element
     that is gathered by periodically (every 0.5 seconds)
-    looking at the window ie control under the mouse cursor.
+    looking at the window i.e. control under the mouse cursor.
     It will examine the window if it contains a tooltip text and
     will display this in a textbox in this panel.
     The purpose of this helper window is to allow better
@@ -88,7 +88,7 @@ class HelperPanel(wx.Panel):
     def mouse_query(self, event=None):
         """
         This routine looks periodically (every 0.5 seconds)
-        at the window ie control under the mouse cursor.
+        at the window i.e. control under the mouse cursor.
         It will examine the window if it contains a tooltip text and
         will display this in a textbox in this panel.
         Additionally, it will read the associated HelpText of the control

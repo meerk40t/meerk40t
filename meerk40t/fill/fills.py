@@ -1,6 +1,6 @@
 import math
 
-from meerk40t.core.units import Angle, Length
+from meerk40t.core.units import Angle, Length, UNITS_PER_MM
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
@@ -533,53 +533,104 @@ def meander_3(wobble, x0, y0, x1, y1):
     max_x += 1
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
+
 def _tabbed(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
     # wobble has the following parameters:
-    # speed:  How many tabs would we like to have
+    # speed:  Array of tab positions (percentage of overall pathlength)
     # radius: Length of tab
     # interval: internal resolution
-    if wobble.flag is None:
-        wobble.flag = True # Visible
     wobble.may_close_path = False
-    tabs = wobble.speed
-    tab_len = wobble.radius
-    total_len = wobble.total_length
-    if total_len == 0:
-        total_len = abs(complex(x0, y0) - complex(x1, y1))
-    rem_len = total_len - tabs * tab_len
-    if rem_len <= 0:
-        # print (f"Degenerated tab: {tabs} x {tab_len} -> remaining: {rem_len:.0f} ")
-        rem_len = 0
-
-    gap_len = rem_len / tabs
+    if wobble.flag is None:
+        wobble.flag = True
     if wobble.userdata is None:
-        dist = gap_len / 2.0 - tab_len / 2.0
-    else:
-        dist = wobble.userdata
-
-    # print (f"Wobble: {tabs} - len={tab_len:.0f} - gap={gap_len:.0f} - Start: {dist:.0f} - flag={wobble.flag}")
-    idx = 0
-    for tx, ty in wobble.wobble(x0, y0, x1, y1):
-        if wobble.flag and dist + wobble.interval >= gap_len:
-            wobble.flag = False
-            dist = wobble.interval
-        elif not wobble.flag and dist + wobble.interval >= tab_len:
-            wobble.flag = True
-            dist = wobble.interval
+        tablen = wobble.radius
+        pattern_idx = 0
+        pattern = list()
+        if isinstance(wobble.speed, str):
+            # This is a string with comma and/or whitespace separated numbers
+            positions = list()
+            sub_comma = wobble.speed.split(",")
+            if wobble.speed.startswith("*"):
+                # Special case:
+                # '*4' means 4 tabs equidistant, all remaining parameters will be ignored
+                sub_spaces = sub_comma[0].split()
+                s = sub_spaces[0][1:]
+                try:
+                    value = int(s)
+                    if value > 0:
+                        for i in range(value):
+                            val = (i + 0.5) * 100 / value
+                            positions.append( val )
+                except ValueError:
+                    pass
+            else:
+                for entry in sub_comma:
+                    sub_spaces = entry.split()
+                    for s in sub_spaces:
+                        try:
+                            value = float(s)
+                            if value < 0:
+                                value = 0
+                            elif value > 100:
+                                value = 100
+                        except ValueError:
+                            continue
+                        positions.append(value)
         else:
-            dist += wobble.interval
+            positions = list(wobble.speed, )
+        # So now that we have the positions we calculate the start and end position
+        if len(positions) * tablen < wobble.total_length:
+            # Do we have a chance
+            for pos in positions:
+                spos = pos / 100.0 * wobble.total_length - 0.5 * tablen
+                epos = spos + tablen
+                if spos <= 0:
+                    if spos < 0:
+                        spos = spos + wobble.total_length
+                pattern.append([False, spos])
+                pattern.append([True, epos])
+            pattern.sort(key=lambda x: x[1])
+            if len(pattern):
+                if pattern[0][1] > 0:
+                    # Force a start
+                    pattern.insert(0, [True, 0.0])
+            # Now amend the sequence to indicate the next position
+            for idx, pat in enumerate(pattern):
+                if idx < len(pattern) - 1:
+                    l = pattern[idx + 1][1]
+                else:
+                    l = wobble.total_length + 10 * wobble.interval
+                pat[1] = l
+        # print (f"Start with {wobble.flag}: {pattern}")
+        wobble.userdata = [pattern_idx, pattern, -1.0]
+    pattern_idx = wobble.userdata[0]
+    pattern = wobble.userdata[1]
+    next_target = wobble.userdata[2]
+
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        if len(pattern) == 0:
+            yield (tx, ty)
+            continue
+
+        if next_target < wobble._total_distance:
+            if pattern_idx < len(pattern):
+                wobble.flag, next_target = pattern[pattern_idx]
+                pattern_idx += 1
+            else:
+                next_target = wobble.total_length * 1.25
+                wobble.flag = True
+            wobble.userdata[0] = pattern_idx
+            wobble.userdata[2] = next_target
+            # print (f"Changing state: {wobble.flag} at {wobble._total_distance:.2f} ({tx:.2f}, {ty:.2f}) - next target: {next_target:.2f}")
         if wobble.flag:
             yield tx, ty
         else:
             yield None, None
-        # print (f"{idx}: {dist:.0f} - {wobble.flag}")
-        wobble.userdata = dist
-        idx += 1
 
-def _dashed(wobble, pattern, x0, y0, x1, y1):
+def _dashed(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
@@ -588,14 +639,45 @@ def _dashed(wobble, pattern, x0, y0, x1, y1):
     # radius
     # interval
     if wobble.flag is None:
-        wobble.flag = True # Visible
-    last_ratio = int(wobble._total_distance / wobble.radius)
-    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        wobble.flag = False  # Not visible but will immediately be swapped...
+    if wobble.userdata is None:
+        pattern_idx = 0
+        if isinstance(wobble.radius, str):
+            # This is a string with comma and/or whitespace separated numbers
+            pattern = list()
+            sub_comma = wobble.radius.split(",")
+            for entry in sub_comma:
+                sub_spaces = entry.split()
+                for s in sub_spaces:
+                    try:
+                        value = float(s)
+                    except ValueError:
+                        continue
+                    pattern.append(value * UNITS_PER_MM )
+        else:
+            pattern = list(wobble.radius * UNITS_PER_MM, )
+        if len(pattern) % 2 == 1:
+            # Needs to be even
+            pattern.extend(pattern)
+        wobble.userdata = [pattern_idx, pattern, -1.0]
+    pattern_idx = wobble.userdata[0]
+    pattern = wobble.userdata[1]
+    next_target = wobble.userdata[2]
 
-        new_ratio = int(wobble._total_distance / wobble.radius)
-        if new_ratio != last_ratio:
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        if len(pattern) == 0:
+            yield (tx, ty)
+            continue
+
+        if next_target < wobble._total_distance:
+            gap = pattern[pattern_idx]
+            pattern_idx += 1
+            if pattern_idx >= len(pattern):
+                pattern_idx = 0
+            next_target = wobble._total_distance + gap
             wobble.flag = not wobble.flag
-            last_ratio = new_ratio
+            wobble.userdata[0] = pattern_idx
+            wobble.userdata[2] = next_target
         # if wobble.flag and wobble._last_x:
         #     yield wobble._last_x, wobble._last_y
         if wobble.flag:
@@ -603,11 +685,13 @@ def _dashed(wobble, pattern, x0, y0, x1, y1):
         else:
             yield None, None
 
+
 def dashed_line(wobble, x0, y0, x1, y1):
-    yield from _dashed(wobble, "1, 1", x0, y0, x1, y1)
+    yield from _dashed(wobble, x0, y0, x1, y1)
 
 def tabbed_path(wobble, x0, y0, x1, y1):
     yield from _tabbed(wobble, x0, y0, x1, y1)
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -626,5 +710,5 @@ def plugin(kernel, lifecycle):
         context.register("wobble/meander_1", meander_1)
         context.register("wobble/meander_2", meander_2)
         context.register("wobble/meander_3", meander_3)
-        context.register("wobble/dash", dashed_line)
+        # context.register("wobble/dash", dashed_line)
         # context.register("wobble/tabs", tabbed_path)

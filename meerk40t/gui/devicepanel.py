@@ -601,7 +601,10 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+        if (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
             return
 
         kernel.register("wxpane/Devices", register_panel)

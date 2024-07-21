@@ -1,6 +1,12 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+    Tabs,
+)
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -12,7 +18,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
+class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
     """
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
@@ -54,6 +60,7 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.stroke_dash = None  # None or "" Solid
         super().__init__(type="elem line", **kwargs)
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]
@@ -121,6 +128,24 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     def as_geometry(self, **kws):
         path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
+        path.transform(self.matrix)
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = 2 * unit_mm
+        numtabs = 4
+        numtabs = 0
+        if numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
         return path
 
     def scaled(self, sx, sy, ox, oy):

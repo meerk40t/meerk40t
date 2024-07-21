@@ -536,7 +536,7 @@ class GRBLDriver(Parameters):
 
     def physical_home(self):
         """
-        Home the laser physically (ie run into endstops).
+        Home the laser physically (i.e. run into endstops).
 
         @return:
         """
@@ -555,7 +555,7 @@ class GRBLDriver(Parameters):
 
     def home(self):
         """
-        Home the laser (ie goto defined origin)
+        Home the laser (i.e. goto defined origin)
 
         @return:
         """
@@ -691,7 +691,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = True
         # self(f"!{self.line_end}", real=True)
-        self(chr(0x21), real=True) # Hex 21 = !
+        self(chr(0x21), real=True)  # Hex 21 = !
         # Let's make sure we reestablish power...
         self.power_dirty = True
         self.service.signal("pause")
@@ -707,7 +707,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = False
         # self(f"~{self.line_end}", real=True)
-        self(chr(0x7e), real=True) # hex 7e = ~
+        self(chr(0x7E), real=True)  # hex 7e = ~
         self.service.signal("pause")
 
     def clear_states(self):

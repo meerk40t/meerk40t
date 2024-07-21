@@ -583,8 +583,7 @@ class SpoolerPanel(wx.Panel):
     def on_menu_popup_clear(self, element=None):
         def clear(event=None):
             if self.kernel.yesno(
-                _("Do you really want to delete all entries?"), 
-                caption=_("Spooler")
+                _("Do you really want to delete all entries?"), caption=_("Spooler")
             ):
                 spoolers = []
                 for device in self.available_devices:
@@ -1064,10 +1063,10 @@ class SpoolerPanel(wx.Panel):
             return
 
         # Two things (at least) could go wrong:
-        # 1) You are in the wrong queue, ie there's a job running in the background a
+        # 1) You are in the wrong queue, i.e. there's a job running in the background a
         #    that provides an update but the user has changed the device so a different
         #    queue is selected
-        # 2) As this is a signal it may come later, ie the job has already finished
+        # 2) As this is a signal it may come later, i.e. the job has already finished
         #
         # The checks here are rather basic and need to be revisited
         refresh_needed = False

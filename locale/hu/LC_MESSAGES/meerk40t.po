@@ -2751,13 +2751,13 @@ msgstr ""
 
 #: meerk40t/gui/alignment.py:1258
 msgid ""
-"Set if all columns need to have the same size (ie maximum width over all "
+"Set if all columns need to have the same size (i.e. maximum width over all "
 "columns)"
 msgstr ""
 
 #: meerk40t/gui/alignment.py:1263
 msgid ""
-"Set if all rows need to have the same size (ie maximum height over all "
+"Set if all rows need to have the same size (i.e. maximum height over all "
 "row)"
 msgstr ""
 
@@ -4913,7 +4913,7 @@ msgid "Time Estimate: Traveling Time"
 msgstr ""
 
 #: meerk40t/gui/simulation.py:1067
-msgid "Time Estimate: Extra Time (ie to swing around)"
+msgid "Time Estimate: Extra Time (i.e. to swing around)"
 msgstr ""
 
 #: meerk40t/gui/simulation.py:1069
@@ -11228,7 +11228,7 @@ msgid "Increase Wordlist-Reference"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:2015
-msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:2036
@@ -11236,7 +11236,7 @@ msgid "Decrease Wordlist-Reference"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:2041
-msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:2061

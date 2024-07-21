@@ -895,6 +895,7 @@ class wxCheckBox(wx.CheckBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
 class wxTreeCtrl(wx.TreeCtrl):
     """
     This class wraps around wx.TreeCtrl and creates a series of mouse over tool tips to permit Linux tooltips that

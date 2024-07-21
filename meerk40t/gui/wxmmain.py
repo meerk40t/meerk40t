@@ -726,78 +726,88 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
         ]
-        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
-            self.edit_menu_choice.extend([
+        if not (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
+            self.edit_menu_choice.extend(
+                [
+                    {
+                        "label": "",
+                        "level": 1,
+                        "segment": "",
+                    },
+                    {
+                        "label": _("Device-Manager"),
+                        "help": _("Manage the Laser devices"),
+                        "action": on_click_device_manager,
+                        "level": 1,
+                        "segment": "",
+                    },
+                    {
+                        "label": _("Device-Configuration"),
+                        "help": _("Manage the device settings"),
+                        "action": on_click_device_settings,
+                        "level": 1,
+                        "segment": "",
+                    },
+                ]
+            )
+        self.edit_menu_choice.extend(
+            [
                 {
                     "label": "",
                     "level": 1,
                     "segment": "",
                 },
                 {
-                    "label": _("Device-Manager"),
-                    "help": _("Manage the Laser devices"),
-                    "action": on_click_device_manager,
-                    "level": 1,
-                    "segment": "",
-                },
-                {
-                    "label": _("Device-Configuration"),
-                    "help": _("Manage the device settings"),
-                    "action": on_click_device_settings,
-                    "level": 1,
-                    "segment": "",
-                },
-            ])
-        self.edit_menu_choice.extend([
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Wordlist-Editor"),
-                "help": _("Manages Wordlist-Entries"),
-                "action": on_click_pref_wordlist,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Font-Manager"),
-                "help": _("Open the vector-font management window."),
-                "action": on_click_pref_fonts,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Key-Bindings"),
-                "help": _("Opens Keymap Window"),
-                "action": on_click_pref_keys,
-                "level": 2,
-                "segment": "Settings",
-            },
-        ])
-        if not (hasattr(kernel.args, "lock_general_config") and kernel.args.lock_general_config):
-            self.edit_menu_choice.extend((
-                {
-                    "label": "",
+                    "label": _("Wordlist-Editor"),
+                    "help": _("Manages Wordlist-Entries"),
+                    "action": on_click_pref_wordlist,
                     "level": 2,
                     "segment": "Settings",
                 },
-
                 {
-                    "label": _("Preferences\tCtrl-,"),
-                    "help": _("Edit the general preferences"),
-                    "action": on_click_preferences,
+                    "label": _("Font-Manager"),
+                    "help": _("Open the vector-font management window."),
+                    "action": on_click_pref_fonts,
                     "level": 2,
-                    "id": wx.ID_PREFERENCES,
                     "segment": "Settings",
                 },
-            ))
+                {
+                    "label": _("Key-Bindings"),
+                    "help": _("Opens Keymap Window"),
+                    "action": on_click_pref_keys,
+                    "level": 2,
+                    "segment": "Settings",
+                },
+            ]
+        )
+        if not (
+            hasattr(kernel.args, "lock_general_config")
+            and kernel.args.lock_general_config
+        ):
+            self.edit_menu_choice.extend(
+                (
+                    {
+                        "label": "",
+                        "level": 2,
+                        "segment": "Settings",
+                    },
+                    {
+                        "label": _("Preferences\tCtrl-,"),
+                        "help": _("Edit the general preferences"),
+                        "action": on_click_preferences,
+                        "level": 2,
+                        "id": wx.ID_PREFERENCES,
+                        "segment": "Settings",
+                    },
+                )
+            )
 
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
         self.widgets_created = False
-
 
     @signal_listener("toggle_tooltips")
     def on_regmark_toooltips(self, origin, *args):
@@ -807,7 +817,6 @@ class MeerK40t(MWindow):
             wx.ToolTip.Enable(self.tooltips)
         except Exception as e:
             pass
-
 
     # --- Listen to external events to toggle regmark visibility
     @signal_listener("toggle_regmarks")
@@ -1545,7 +1554,7 @@ class MeerK40t(MWindow):
                     "icon": icon_air_off,
                     "action": coolant_off,
                     "signal": "coolant_set",
-                }
+                },
             },
         )
 
@@ -2723,7 +2732,7 @@ class MeerK40t(MWindow):
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(quit=False, **kwargs):
-            if (gui.working_file is None or self.files_loaded > 1):
+            if gui.working_file is None or self.files_loaded > 1:
                 if quit:
                     context(".dialog_save_as -q\n")
                 else:
@@ -2733,7 +2742,10 @@ class MeerK40t(MWindow):
                     gui.set_file_as_recently_used(gui.working_file)
                     gui.validate_save()
                     context.elements.save(gui.working_file)
-                    context.signal("statusmsg", _("Succesfully saved {file}").format(file=gui.working_file))
+                    context.signal(
+                        "statusmsg",
+                        _("Succesfully saved {file}").format(file=gui.working_file),
+                    )
                 except OSError as e:
                     dlg = wx.MessageDialog(
                         None,
@@ -3153,7 +3165,7 @@ class MeerK40t(MWindow):
             if result.startswith("_"):
                 idx = result.find("_", 1)
                 if idx >= 0:
-                    result = result[idx + 1:]
+                    result = result[idx + 1 :]
             elif result.startswith("~"):
                 result = result[1:]
             return result
@@ -3259,7 +3271,7 @@ class MeerK40t(MWindow):
             if result.startswith("_"):
                 idx = result.find("_", 1)
                 if idx >= 0:
-                    result = result[idx + 1:]
+                    result = result[idx + 1 :]
             return result
 
         label = _("Tools")
@@ -3311,8 +3323,14 @@ class MeerK40t(MWindow):
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 suppress = True
             kernel = self.context.kernel
-            if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
-                if submenu_name == "Device-Settings" and caption in ("Device Manager", "Configuration"):
+            if (
+                hasattr(kernel.args, "lock_device_config")
+                and kernel.args.lock_device_config
+            ):
+                if submenu_name == "Device-Settings" and caption in (
+                    "Device Manager",
+                    "Configuration",
+                ):
                     suppress = True
 
             if suppress:
@@ -3496,7 +3514,8 @@ class MeerK40t(MWindow):
         self.file_menu.Append(
             wx.ID_OPEN,
             _("&Open Project\tCtrl-O"),
-            _("Clear existing elements and notes and open a new file") + _(" (keep the Shift-Key pressed to be asked for a target location)"),
+            _("Clear existing elements and notes and open a new file")
+            + _(" (keep the Shift-Key pressed to be asked for a target location)"),
         )
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
 
@@ -3508,7 +3527,8 @@ class MeerK40t(MWindow):
         menu_item = self.file_menu.Append(
             wx.ID_ANY,
             _("&Import File"),
-            _("Import another file into the same project") + _(" (keep the Shift-Key pressed to be asked for a target location)"),
+            _("Import another file into the same project")
+            + _(" (keep the Shift-Key pressed to be asked for a target location)"),
         )
         self.Bind(wx.EVT_MENU, self.on_click_import, id=menu_item.GetId())
         self.file_menu.AppendSeparator()
@@ -4542,7 +4562,7 @@ class MeerK40t(MWindow):
             if self.files_loaded == 1:
                 self.working_file = fname
             else:
-                self.working_file =_("<Multiple files loaded>")
+                self.working_file = _("<Multiple files loaded>")
 
     def load_or_open(self, filename):
         """
@@ -4624,7 +4644,9 @@ class MeerK40t(MWindow):
 
         for file, shortcode in recents:
             if file is not None and file:
-                shortfile = _("Load {file}...").format(file=os.path.basename(file)) + _(" (keep the Shift-Key pressed to be asked for a target location)")
+                shortfile = _("Load {file}...").format(file=os.path.basename(file)) + _(
+                    " (keep the Shift-Key pressed to be asked for a target location)"
+                )
                 menuitem = self.recent_file_menu.Append(
                     wx.ID_ANY, shortcode + "  " + file.replace("&", "&&"), shortfile
                 )
@@ -4711,20 +4733,26 @@ class MeerK40t(MWindow):
                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
             )
             # contents
-            options_1 = ( _("Default"), _("Left Edge"), _("Center"), _("Right Edge"))
-            options_2 = ( _("Default"), _("Top Edge"), _("Center"), _("Bottom Edge"))
+            options_1 = (_("Default"), _("Left Edge"), _("Center"), _("Right Edge"))
+            options_2 = (_("Default"), _("Top Edge"), _("Center"), _("Bottom Edge"))
             sizer = wx.BoxSizer(wx.VERTICAL)
-            label = wx.StaticText(dlg, wx.ID_ANY, _("Where do you want to place the content of the file?"))
+            label = wx.StaticText(
+                dlg, wx.ID_ANY, _("Where do you want to place the content of the file?")
+            )
             sizer.Add(label, 0, wx.EXPAND, 0)
             s1 = wx.BoxSizer(wx.HORIZONTAL)
             lbl1 = wx.StaticText(dlg, wx.ID_ANY, _("Horizontal:"))
-            combo1 = wx.ComboBox(dlg, wx.ID_ANY, choices=options_1, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            combo1 = wx.ComboBox(
+                dlg, wx.ID_ANY, choices=options_1, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            )
             combo1.SetSelection(0)
             s1.Add(lbl1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
             s1.Add(combo1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             s2 = wx.BoxSizer(wx.HORIZONTAL)
             lbl2 = wx.StaticText(dlg, wx.ID_ANY, _("Vertical:"))
-            combo2 = wx.ComboBox(dlg, wx.ID_ANY, choices=options_2, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            combo2 = wx.ComboBox(
+                dlg, wx.ID_ANY, choices=options_2, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            )
             combo2.SetSelection(0)
             s2.Add(lbl2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
             s2.Add(combo2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -4786,7 +4814,7 @@ class MeerK40t(MWindow):
             for e in self.context.elements.elems_nodes():
                 old_elements.append(e)
             # Ask for target-destination
-            if shift_flag: # has precedence, so ctrl+shift will be treated as shift
+            if shift_flag:  # has precedence, so ctrl+shift will be treated as shift
                 target_location_x, target_location_y = get_placement_options()
                 if target_location_x == "STOP":
                     return
@@ -4839,17 +4867,17 @@ class MeerK40t(MWindow):
                     if target_location_x == "center":
                         dx = device_w / 2 - (max_x + min_x) / 2
                     if target_location_x == "left":
-                        dx = - min_x
+                        dx = -min_x
                     if target_location_x == "right":
                         dx = device_w - max_x
                     if target_location_y == "center":
                         dy = device_h / 2 - (max_y + min_y) / 2
                     if target_location_y == "top":
-                        dy = - min_y
+                        dy = -min_y
                     if target_location_y == "bottom":
                         dy = device_h - max_y
                     # print (f"{target_location_x}: {dx:.2f}, {target_location_y}: {dy:.2f}")
-                    if dx != 0 or dy!= 0:
+                    if dx != 0 or dy != 0:
                         matrix = Matrix.translate(dx, dy)
                         for e in new_elements:
                             if e.type in ("file", "group"):
