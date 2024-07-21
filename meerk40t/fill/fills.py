@@ -544,10 +544,11 @@ def _tabbed(wobble, x0, y0, x1, y1):
     # interval: internal resolution
     wobble.may_close_path = False
     if wobble.flag is None:
-        wobble.flag = False  # Not visible but will immediately be swapped...
+        wobble.flag = True
     if wobble.userdata is None:
         tablen = wobble.radius
         pattern_idx = 0
+        pattern = list()
         if isinstance(wobble.speed, str):
             # This is a string with comma and/or whitespace separated numbers
             positions = list()
@@ -581,25 +582,28 @@ def _tabbed(wobble, x0, y0, x1, y1):
         else:
             positions = list(wobble.speed, )
         # So now that we have the positions we calculate the start and end position
-        positions.sort()
-        pattern = list()
         if len(positions) * tablen < wobble.total_length:
             # Do we have a chance
-            to_be_added = None
-            starts_with_tab = False
             for pos in positions:
                 spos = pos / 100.0 * wobble.total_length - 0.5 * tablen
                 epos = spos + tablen
                 if spos <= 0:
-                    starts_with_tab = True
                     if spos < 0:
-                        to_be_added = spos + wobble.total_length
+                        spos = spos + wobble.total_length
+                pattern.append([False, spos])
+                pattern.append([True, epos])
+            pattern.sort(key=lambda x: x[1])
+            if len(pattern):
+                if pattern[0][1] > 0:
+                    # Force a start
+                    pattern.insert(0, [True, 0.0])
+            # Now amend the sequence to indicate the next position
+            for idx, pat in enumerate(pattern):
+                if idx < len(pattern) - 1:
+                    l = pattern[idx + 1][1]
                 else:
-                    pattern.append(spos)
-                pattern.append(epos)
-            if to_be_added:
-                pattern.append(to_be_added)
-            wobble.flag = starts_with_tab
+                    l = wobble.total_length + 10 * wobble.interval
+                pat[1] = l
         # print (f"Start with {wobble.flag}: {pattern}")
         wobble.userdata = [pattern_idx, pattern, -1.0]
     pattern_idx = wobble.userdata[0]
@@ -613,15 +617,14 @@ def _tabbed(wobble, x0, y0, x1, y1):
 
         if next_target < wobble._total_distance:
             if pattern_idx < len(pattern):
-                next_target = pattern[pattern_idx]
+                wobble.flag, next_target = pattern[pattern_idx]
                 pattern_idx += 1
             else:
                 next_target = wobble.total_length * 1.25
-            wobble.flag = not wobble.flag
+                wobble.flag = True
             wobble.userdata[0] = pattern_idx
             wobble.userdata[2] = next_target
-        # if wobble.flag and wobble._last_x:
-        #     yield wobble._last_x, wobble._last_y
+            # print (f"Changing state: {wobble.flag} at {wobble._total_distance:.2f} ({tx:.2f}, {ty:.2f}) - next target: {next_target:.2f}")
         if wobble.flag:
             yield tx, ty
         else:
