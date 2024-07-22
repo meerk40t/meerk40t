@@ -125,7 +125,7 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
         return path

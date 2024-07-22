@@ -128,7 +128,7 @@ class PolylineNode(
     def shape(self, new_shape):
         self.geometry = Geomstr.svg(Path(new_shape))
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr(self.geometry)
         path.transform(self.matrix)
         return path
