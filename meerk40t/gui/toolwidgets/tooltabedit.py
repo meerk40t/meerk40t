@@ -1,6 +1,9 @@
 import math
-
+import numpy as np
 import wx
+
+from meerk40t.core.units import UNITS_PER_MIL
+from meerk40t.tools.geomstr import Geomstr
 
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
@@ -18,10 +21,193 @@ class TabEditTool(ToolWidget):
     def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.points = list()
+        self.point_len = list()
         self.node = None
+        self.node_length = 0
+        self.node_points = list()
+        self.node_distances = list()
         self.pt_offset = 5
-        self.point_index = []
+        self.point_index = None
         self.current_pos = complex(0, 0)
+
+    def reset(self):
+        self.points.clear()
+        self.point_len.clear()
+        self.node_points.clear()
+        self.node_distances.clear()
+        self.point_index = None
+        self.node_length = 0
+        self.node = None
+
+    def done(self):
+        self.scene.pane.tool_active = False
+        self.scene.pane.modif_active = False
+        self.scene.pane.suppress_selection = False
+        self.reset()
+        self.scene.context("tool none\n")
+
+    def set_node(self, node):
+
+        self.reset()
+        self.node = node
+        self.node_length = 0
+        geom_transformed = node.as_geometry()
+        interval = 50
+        # We need to go through all segments...
+        total_length = 0
+        for segments in geom_transformed.as_interpolated_segments(interpolate=interval):
+            points = []
+            distances = []
+            last = None
+            _remainder = 0
+            for pt in segments:
+                if last is not None:
+                    x0 = last.real
+                    y0 = last.imag
+                    x1 = pt.real
+                    y1 = pt.imag
+                    distance_change = abs(last - pt)
+                    positions = 1 - _remainder
+                    # Circumvent a div by zero error
+                    try:
+                        intervals = distance_change / interval
+                    except ZeroDivisionError:
+                        intervals = 1
+                    # print (f"Will go through {intervals} intervals starting with {positions}")
+                    while positions <= intervals:
+                        amount = positions / intervals
+                        tx = amount * (x1 - x0) + x0
+                        ty = amount * (y1 - y0) + y0
+                        total_length += interval
+                        distances.append(total_length)
+                        points.append(complex(tx, ty))
+                        positions += 1
+                    if len(points):
+                        self.node_points.append(points)
+                        self.node_distances.append(distances)
+                    _remainder += intervals
+                    _remainder %= 1
+                last = pt
+            if len(points):
+                self.node_points.append(points)
+                self.node_distances.append(distances)
+
+        self.node_length = total_length
+        # print (f"{len(self.node_points)} : {self.node_points[0]}")
+
+    def calculate_tabs(self):
+
+        def calculate_from_str(tabpos) -> list:
+            positions = list()
+            sub_comma = tabpos.split(",")
+            if tabpos.startswith("*"):
+                # Special case:
+                # '*4' means 4 tabs equidistant, all remaining parameters will be ignored
+                sub_spaces = sub_comma[0].split()
+                s = sub_spaces[0][1:]
+                try:
+                    value = int(s)
+                    if value > 0:
+                        for i in range(value):
+                            val = (i + 0.5) * 100 / value
+                            positions.append(val)
+                except ValueError:
+                    pass
+            else:
+                for entry in sub_comma:
+                    sub_spaces = entry.split()
+                    for s in sub_spaces:
+                        try:
+                            value = float(s)
+                            if value < 0:
+                                value = 0
+                            elif value > 100:
+                                value = 100
+                        except ValueError:
+                            continue
+                        positions.append(value)
+            return positions
+
+        tabpos = self.node.mktabpositions
+        if tabpos and len(self.node_points):
+            # We do split the points
+            if isinstance(tabpos, str):
+                positions = calculate_from_str(tabpos)
+            else:
+                positions = list(tabpos, )
+            positions.sort()
+            dx = 0
+            index_seg = 0
+            index_pt = 0
+            for index, pos in enumerate(positions):
+                dx = self.node_distances[index_seg][index_pt]
+                pos_length = pos / 100.0 * total_length
+                if dx >= pos_length:
+                    self.points.append((index, self.node_points[index_seg][index_pt]))
+                    self.point_len.append(pos)
+                    # print (f"[{pos:.2f}]: {index_seg}-{index_pt} {self.node_points[index_seg][index_pt]}")
+                    continue
+                while index_seg < len(self.node_points) - 1 and dx < pos_length:
+                    while index_pt < len(self.node_points[index_seg]) - 1 and dx < pos_length:
+                        index_pt += 1
+                        dx = self.node_distances[index_seg][index_pt]
+                    if dx < pos_length:
+                        index_seg += 1
+                        index_pt = 0
+                        dx = self.node_distances[index_seg][index_pt]
+                if dx >= pos_length:
+                    self.points.append((index, self.node_points[index_seg][index_pt]))
+                    self.point_len.append(pos)
+                    # print (f"[{pos:.2f}]: {index_seg}-{index_pt} {self.node_points[index_seg][index_pt]}")
+                    continue
+
+    def find_nearest_point(self, target_point):
+        nearest_tuple = None
+        nearest_index = None
+        nearest_distance = None
+        for index, points in enumerate(self.node_points):
+            # Calculate all the euclidean distances to the target_point
+            distances = [ abs(e - target_point) for e in points]
+            # And now the index of the point with lowest distance
+            _nearest = np.argmin(distances)
+            _distance = distances[_nearest]
+            if nearest_distance is None or nearest_distance > _distance:
+                nearest_distance = _distance
+                nearest_tuple = index
+                nearest_index = _nearest
+        return nearest_tuple, nearest_index, nearest_distance
+
+    def write_node(self):
+        if self.node is None:
+            return
+        posi = ""
+        for p in self.point_len:
+            if posi:
+                posi += " "
+            posi += f"{p:.3f}"
+
+        self.node.mktabpositions = posi
+        self.node.empty_cache()
+        self.scene.context.signal("refresh_scene", "Scene")
+        self.scene.context.signal("element_property_update", self.node)
+
+    def clear_all_tabs(self):
+        if self.node is None:
+            return
+        self.points.clear()
+        self.point_len.clear()
+        self.write_node()
+
+    def delete_current_tab(self):
+        if self.node is None or self.point_index is None:
+            return
+        self.point_len.pop(self.point_index)
+        self.points.pop(self.point_index)
+        self.point_index = None
+        self.write_node()
+
+    def update_tabposition(self, index, point):
+        return
 
     def process_draw(self, gc: wx.GraphicsContext):
         """
@@ -30,45 +216,19 @@ class TabEditTool(ToolWidget):
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
-        gc.SetPen(wx.RED_PEN)
-        gc.SetBrush(wx.RED_BRUSH)
-        for data in self.points:
+        for index, data in enumerate(self.points):
             index_line, g = data
             ptx = g.real
             pty = g.imag
+            if index == self.point_index:
+                gc.SetPen(wx.GREEN_PEN)
+                gc.SetBrush(wx.GREEN_BRUSH)
+            else:
+                gc.SetPen(wx.RED_PEN)
+                gc.SetBrush(wx.RED_BRUSH)
+
             gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
         gc.PopState()
-
-    def clear_all_tabs(self):
-        if self.node is None:
-            return
-        self.node.mktabpositions = ""
-        self.points.clear()
-        self.node.empty_cache()
-        self.scene.signal("refresh_scene", "Scene")
-
-    def add_a_tab_at(self, p_x, py):
-        if self.node is None:
-            return
-        pos_str = "50"
-        if self.node.mktabpositions:
-            self.node.mktabpositions += " " + pos_str
-        else:
-            self.node.mktabpositions = pos_str
-        self.node.empty_cache()
-        self.scene.signal("refresh_scene", "Scene")
-
-
-    def write_tabs(self):
-        if self.node is None:
-            return
-        self.node.mktabpositions = ""
-        self.points.clear()
-        self.node.empty_cache()
-        self.scene.signal("refresh_scene", "Scene")
-
-    def update_tabposition(self, index, point):
-        return
 
     def event(
         self,
@@ -94,18 +254,11 @@ class TabEditTool(ToolWidget):
         Returns:
             Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
-        try:
-            if nearest_snap is None:
-                pos = complex(*space_pos[:2])
-            else:
-                pos = complex(*nearest_snap[:2])
-        except TypeError:
-            return RESPONSE_CONSUME
+        # We don't need nearest snap
+        pos = complex(*space_pos[:2])
         self.current_pos = pos
 
         if event_type == "leftdown":
-            if not self.points:
-                return RESPONSE_DROP
             self.scene.pane.tool_active = True
             self.scene.pane.modif_active = True
             offset = self.pt_offset
@@ -113,51 +266,41 @@ class TabEditTool(ToolWidget):
             offset /= s
             xp = space_pos[0]
             yp = space_pos[1]
-            self.point_index.clear()
+            self.point_index = None
             w = offset * 4
             h = offset * 4
             for idx, data in enumerate(self.points):
-                index_line, index_pos, geom_t, node = data
-                pt = geom_t.segments[index_line][index_pos]
+                index_line, pt = data
                 ptx = pt.real
                 pty = pt.imag
                 x = ptx - 2 * offset
                 y = pty - 2 * offset
                 if x <= xp <= x + w and y <= yp <= y + h:
                     # print("Found point")
-                    self.point_index.append(idx)
+                    self.point_index = index_line
+            if self.point_index is None and self.node_length:
+                # Outside of given points
+                idx_seg, idx_pt, distance = self.find_nearest_point(self.current_pos)
+                if idx_seg is not None:
+                    pt = self.node_points[idx_seg][idx_pt]
+                    seg_len = 100 * self.node_distances[idx_seg][idx_pt] / self.node_length
+                    self.points.append((len(self.points), pt))
+                    self.point_len.append(seg_len)
+                    self.write_node()
+
             return RESPONSE_CONSUME
         if event_type == "move":
             if "m_middle" in modifiers:
                 return RESPONSE_CHAIN
-            for idx in self.point_index:
-                data = self.points[idx]
-                index_line, index_pos, geom_t, node = data
-                if not hasattr(node, "geometry"):
-                    fillrule = None
-                    if hasattr(node, "fillrule"):
-                        fillrule = node.fillrule
-                    new_node = node.replace_node(
-                        keep_children=True,
-                        stroke=node.stroke,
-                        fill=node.fill,
-                        stroke_width=node.stroke_width,
-                        stroke_scale=node.stroke_scale,
-                        fillrule=fillrule,
-                        id=node.id,
-                        label=node.label,
-                        lock=node.lock,
-                        type="elem path",
-                        geometry=geom_t,
-                    )
-                    for p in self.points:
-                        if p[3] is node:
-                            p[3] = new_node
-                    node = new_node
-                geom_t.segments[index_line][index_pos] = pos
-                node.geometry = geom_t
-                node.matrix.reset()
-                node.altered()
+            idx = self.point_index
+            if idx is not None:
+                idx_seg, idx_pt, distance = self.find_nearest_point(self.current_pos)
+                if idx_seg is not None:
+                    pt = self.node_points[idx_seg][idx_pt]
+                    seg_len = 100 * self.node_distances[idx_seg][idx_pt] / self.node_length
+                    self.points[idx] = (idx, pt)
+                    self.point_len[idx] = seg_len
+                    self.write_node()
             return RESPONSE_CONSUME
         if event_type == "leftup":
             return RESPONSE_CONSUME
@@ -174,65 +317,23 @@ class TabEditTool(ToolWidget):
             # We stop
             self.done()
             return RESPONSE_CONSUME
+        if event_type == "key_up" and modifiers=="shift+delete":
+            self.clear_all_tabs()
+            return RESPONSE_CONSUME
+        if event_type == "key_up" and modifiers=="delete":
+            self.delete_current_tab()
+            return RESPONSE_CONSUME
+        if event_type == "key_up":
+            print (f"{event_type}: {modifiers} {keycode}")
+            return RESPONSE_CHAIN
         return RESPONSE_CHAIN
-
-    def reset(self):
-        self.points.clear()
-        self.node = None
-
-    def done(self):
-        self.scene.pane.tool_active = False
-        self.scene.pane.modif_active = False
-        self.scene.pane.suppress_selection = False
-        self.reset()
-        self.scene.context("tool none\n")
 
     def tool_change(self):
         self.reset()
         for node in self.scene.context.elements.flat(emphasized=True):
             if not hasattr(node, "as_geometry") or not hasattr(node, "mktabpositions"):
                 continue
-            self.node = node
-            geom_transformed = node.as_geometry()
-            tabpos = node.mktabpositions
-            if tabpos:
-                # We do split the points
-                if isinstance(tabpos, str):
-                    sub_comma = tabpos.split(",")
-                    if tabpos.startswith("*"):
-                        # Special case:
-                        # '*4' means 4 tabs equidistant, all remaining parameters will be ignored
-                        sub_spaces = sub_comma[0].split()
-                        s = sub_spaces[0][1:]
-                        try:
-                            value = int(s)
-                            if value > 0:
-                                for i in range(value):
-                                    val = (i + 0.5) * 100 / value
-                                    positions.append( val )
-                        except ValueError:
-                            pass
-                    else:
-                        for entry in sub_comma:
-                            sub_spaces = entry.split()
-                            for s in sub_spaces:
-                                try:
-                                    value = float(s)
-                                    if value < 0:
-                                        value = 0
-                                    elif value > 100:
-                                        value = 100
-                                except ValueError:
-                                    continue
-                                positions.append(value)
-                else:
-                    positions = list(tabpos, )
-
-                for index, pos in enumerate(positions):
-                    t = pos / 100.0
-                    pt = geom_transformed.position(0, t)
-                    self.points.append([index, pt])
-            break
+            self.set_node(node)
         # self.scene.pane.suppress_selection = len(self.points) > 0
         self.scene.pane.suppress_selection = True
         self.scene.request_refresh()
@@ -243,7 +344,7 @@ class TabEditTool(ToolWidget):
         does not receive global signals
         """
         if signal == "tool_changed":
-            if len(args[0]) > 1 and args[0][1] == "pointmove":
+            if len(args[0]) > 1 and args[0][1] == "tabedit":
                 self.tool_change()
             else:
                 self.reset()
