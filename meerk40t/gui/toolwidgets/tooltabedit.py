@@ -26,6 +26,7 @@ class TabEditTool(ToolWidget):
         self.node_length = 0
         self.node_points = list()
         self.node_distances = list()
+        self.is_moving = False
         self.pt_offset = 5
         self.point_index = None
         self.current_pos = complex(0, 0)
@@ -38,6 +39,7 @@ class TabEditTool(ToolWidget):
         self.point_index = None
         self.node_length = 0
         self.node = None
+        self.is_moving = False
 
     def done(self):
         self.scene.pane.tool_active = False
@@ -94,6 +96,7 @@ class TabEditTool(ToolWidget):
 
         self.node_length = total_length
         # print (f"{len(self.node_points)} : {self.node_points[0]}")
+        self.calculate_tabs()
 
     def calculate_tabs(self):
 
@@ -141,9 +144,9 @@ class TabEditTool(ToolWidget):
             index_pt = 0
             for index, pos in enumerate(positions):
                 dx = self.node_distances[index_seg][index_pt]
-                pos_length = pos / 100.0 * total_length
+                pos_length = pos / 100.0 * self.node_length
                 if dx >= pos_length:
-                    self.points.append((index, self.node_points[index_seg][index_pt]))
+                    self.points.append(self.node_points[index_seg][index_pt])
                     self.point_len.append(pos)
                     # print (f"[{pos:.2f}]: {index_seg}-{index_pt} {self.node_points[index_seg][index_pt]}")
                     continue
@@ -156,7 +159,7 @@ class TabEditTool(ToolWidget):
                         index_pt = 0
                         dx = self.node_distances[index_seg][index_pt]
                 if dx >= pos_length:
-                    self.points.append((index, self.node_points[index_seg][index_pt]))
+                    self.points.append(self.node_points[index_seg][index_pt])
                     self.point_len.append(pos)
                     # print (f"[{pos:.2f}]: {index_seg}-{index_pt} {self.node_points[index_seg][index_pt]}")
                     continue
@@ -206,9 +209,6 @@ class TabEditTool(ToolWidget):
         self.point_index = None
         self.write_node()
 
-    def update_tabposition(self, index, point):
-        return
-
     def process_draw(self, gc: wx.GraphicsContext):
         """
         Widget-Routine to draw the different elements on the provided GraphicContext
@@ -216,18 +216,16 @@ class TabEditTool(ToolWidget):
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
-        for index, data in enumerate(self.points):
-            index_line, g = data
+        gc.SetPen(wx.RED_PEN)
+        gc.SetBrush(wx.RED_BRUSH)
+        for index, g in enumerate(self.points):
             ptx = g.real
             pty = g.imag
             if index == self.point_index:
-                gc.SetPen(wx.GREEN_PEN)
-                gc.SetBrush(wx.GREEN_BRUSH)
+                fact = 1.5
             else:
-                gc.SetPen(wx.RED_PEN)
-                gc.SetBrush(wx.RED_BRUSH)
-
-            gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
+                fact = 1
+            gc.DrawEllipse(ptx - fact * offset, pty - fact * offset, offset * 2 * fact, offset * 2 * fact)
         gc.PopState()
 
     def event(
@@ -269,22 +267,21 @@ class TabEditTool(ToolWidget):
             self.point_index = None
             w = offset * 4
             h = offset * 4
-            for idx, data in enumerate(self.points):
-                index_line, pt = data
+            for idx, pt in enumerate(self.points):
                 ptx = pt.real
                 pty = pt.imag
                 x = ptx - 2 * offset
                 y = pty - 2 * offset
                 if x <= xp <= x + w and y <= yp <= y + h:
                     # print("Found point")
-                    self.point_index = index_line
+                    self.point_index = idx
             if self.point_index is None and self.node_length:
                 # Outside of given points
                 idx_seg, idx_pt, distance = self.find_nearest_point(self.current_pos)
-                if idx_seg is not None:
+                if idx_seg is not None and distance < 2 * offset:
                     pt = self.node_points[idx_seg][idx_pt]
                     seg_len = 100 * self.node_distances[idx_seg][idx_pt] / self.node_length
-                    self.points.append((len(self.points), pt))
+                    self.points.append(pt)
                     self.point_len.append(seg_len)
                     self.write_node()
 
@@ -292,17 +289,21 @@ class TabEditTool(ToolWidget):
         if event_type == "move":
             if "m_middle" in modifiers:
                 return RESPONSE_CHAIN
+            self.is_moving = True
             idx = self.point_index
             if idx is not None:
                 idx_seg, idx_pt, distance = self.find_nearest_point(self.current_pos)
                 if idx_seg is not None:
                     pt = self.node_points[idx_seg][idx_pt]
                     seg_len = 100 * self.node_distances[idx_seg][idx_pt] / self.node_length
-                    self.points[idx] = (idx, pt)
+                    self.points[idx] = pt
                     self.point_len[idx] = seg_len
-                    self.write_node()
+                    self.scene.request_refresh()
             return RESPONSE_CONSUME
         if event_type == "leftup":
+            if self.is_moving:
+                self.write_node()
+            self.is_moving = False
             return RESPONSE_CONSUME
         if event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
@@ -323,9 +324,9 @@ class TabEditTool(ToolWidget):
         if event_type == "key_up" and modifiers=="delete":
             self.delete_current_tab()
             return RESPONSE_CONSUME
-        if event_type == "key_up":
-            print (f"{event_type}: {modifiers} {keycode}")
-            return RESPONSE_CHAIN
+        # if event_type == "key_up":
+        #     print (f"{event_type}: {modifiers} {keycode}")
+        #     return RESPONSE_CHAIN
         return RESPONSE_CHAIN
 
     def tool_change(self):
