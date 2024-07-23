@@ -81,6 +81,8 @@ class CustomStatusBar(wx.StatusBar):
         self.Signal("statusmsg", message, panel)
         if len(self.widgets) == 0:
             super().SetStatusText(message, panel)
+            if panel == 0:
+                self.SetToolTip(message)
 
     def add_panel_widget(self, widget, panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
