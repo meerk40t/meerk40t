@@ -244,6 +244,7 @@ class TabEditTool(ToolWidget):
                         self.total_points.extend(points)
                         self.total_distances.extend(distances)
                         points = []
+                        distances = []
                     _remainder += intervals
                     _remainder %= 1
                 last = pt
