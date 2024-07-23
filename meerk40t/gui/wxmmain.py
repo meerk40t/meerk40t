@@ -65,6 +65,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_mk_redo,
     icon_mk_undo,
     icon_power_button,
+    icon_tabs,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -1596,6 +1597,16 @@ class MeerK40t(MWindow):
                     break
             return result
 
+        def contains_a_shape():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if hasattr(e, "mktabpositions"):
+                    if e.lock:
+                        continue
+                    result = True
+                    break
+            return result
+
         def contains_an_element():
             from meerk40t.core.elements.element_types import elem_nodes
 
@@ -1693,6 +1704,21 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: contains_a_path(),
             },
         )
+        kernel.register(
+            "button/select/Tabeditor",
+            {
+                "label": _("Tab Edit"),
+                "icon": icon_tabs,
+                "tip": _("Edit tabs/bridges of an object"),
+                "help": "tabedit",
+                "action": lambda v: kernel.elements("tool tabedit\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "tabedit",
+                "rule_enabled": lambda cond: contains_a_shape(),
+            },
+        )
+
         rightmsg = "\n" + _("(Right click removes the hatch)")
         effects = list(kernel.lookup_all("registered_effects"))
         # Sort according to categories....

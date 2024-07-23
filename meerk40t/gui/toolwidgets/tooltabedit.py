@@ -12,6 +12,143 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
+class SimpleSlider:
+    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
+        self.identifier = index
+        self._minimum = min(minimum, maximum)
+        self._maximum = max(minimum, maximum)
+        if self._minimum == self._maximum:
+            # print("min + max were equal")
+            self._maximum += 1
+        self._value = self._minimum
+        self.scene = scene
+        self.x = x
+        self.y = y
+        self.width = width
+        self.ptx = x
+        self.pty = y
+        self.pt_offset = 5
+        if trailer is None:
+            trailer = ""
+        self.trailer = trailer
+
+    @property
+    def value(self):
+        return self._value
+
+    def update_value_pos(self):
+        self.ptx = int(
+            self.x
+            + self.width
+            * (self._value - self._minimum)
+            / (self._maximum - self._minimum)
+        )
+        self.pty = int(self.y)
+
+    @value.setter
+    def value(self, newval):
+        self._value = min(self._maximum, max(self._minimum, newval))
+        self.update_value_pos()
+
+    def set_position(self, x, y, width):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.update_value_pos()
+
+    def update_according_to_pos(self, x, y):
+        if x < self.x:
+            x = self.x
+        if x > self.x + self.width:
+            x = self.x + self.width
+        newvalue = self._minimum + int(
+            round((self._maximum - self._minimum) * (x - self.x) / self.width, 0)
+        )
+        # print(f"Update from {self._value} to {newvalue}")
+        self.value = newvalue
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Widget-Routine to draw the different elements on the provided GraphicContext
+        """
+        gc.PushState()
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+
+        mypen = wx.Pen(wx.LIGHT_GREY)
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        sx = mat_param[0]
+        sy = mat_param[3]
+        sx = max(sx, sy)
+        if sx == 0:
+            sx = 0.01
+        linewidth = 1 / sx
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
+        gc.DrawLines(
+            [(int(self.x), int(self.y)), (int(self.x + self.width), int(self.y))]
+        )
+        gc.DrawLines(
+            [
+                (int(self.x), int(self.y - offset / 2)),
+                (int(self.x), int(self.y + offset / 2)),
+            ]
+        )
+        gc.DrawLines(
+            [
+                (int(self.x + self.width), int(self.y - offset / 2)),
+                (int(self.x + self.width), int(self.y + offset / 2)),
+            ]
+        )
+        gc.SetBrush(wx.RED_BRUSH)
+        mypen.SetColour(wx.RED)
+        gc.SetPen(mypen)
+        gc.DrawEllipse(
+            int(self.ptx - offset),
+            int(self.pty - offset),
+            int(offset * 2),
+            int(offset * 2),
+        )
+        symbol = str(self._value)
+        if self.trailer:
+            if not self.trailer.startswith("%"):
+                symbol += " "
+            symbol += _(self.trailer)
+        font_size = 10 / s
+        if font_size < 1.0:
+            font_size = 1.0
+        try:
+            font = wx.Font(
+                font_size,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        except TypeError:
+            font = wx.Font(
+                int(font_size),
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        gc.SetFont(font, wx.Colour(red=255, green=0, blue=0))
+        (t_width, t_height) = gc.GetTextExtent(symbol)
+        x = self.x + self.width + 1.5 * offset
+        y = self.y - t_height / 2
+        gc.DrawText(symbol, int(x), int(y))
+
+        gc.PopState()
+
+    def hit(self, xpos, ypos):
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        inside = bool(abs(self.ptx - xpos) <= offset and abs(self.pty - ypos) <= offset)
+        return inside
+
 
 class TabEditTool(ToolWidget):
     """
@@ -44,9 +181,11 @@ class TabEditTool(ToolWidget):
     def done(self):
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.ignore_snap = False
         self.scene.pane.suppress_selection = False
         self.reset()
         self.scene.context("tool none\n")
+        self.scene.context.signal("statusmsg", "")
 
     def set_node(self, node):
 
@@ -284,7 +423,9 @@ class TabEditTool(ToolWidget):
                     self.points.append(pt)
                     self.point_len.append(seg_len)
                     self.write_node()
-
+            elif self.point_index is not None and "shift" in modifiers:
+                self.delete_current_tab()
+            self.scene.context.signal("refresh_scene", "Scene")
             return RESPONSE_CONSUME
         if event_type == "move":
             if "m_middle" in modifiers:
@@ -336,8 +477,10 @@ class TabEditTool(ToolWidget):
                 continue
             self.set_node(node)
         # self.scene.pane.suppress_selection = len(self.points) > 0
+        self.scene.pane.ignore_snap = True
         self.scene.pane.suppress_selection = True
         self.scene.request_refresh()
+        self.scene.context.signal("statusmsg", "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all")
 
     def signal(self, signal, *args, **kwargs):
         """
