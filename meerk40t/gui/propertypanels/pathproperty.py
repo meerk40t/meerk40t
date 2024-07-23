@@ -287,6 +287,10 @@ class PathPropertyPanel(ScrolledPanel):
         self.Refresh()
 
     def signal(self, signalstr, myargs):
+        if signalstr == "modified_by_tool":
+            self.set_widgets(self.node)
+            return
+
         for panel in self.panels:
             if hasattr(panel, "signal"):
                 panel.signal(signalstr, myargs)
