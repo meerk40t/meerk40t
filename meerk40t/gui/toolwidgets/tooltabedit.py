@@ -2,7 +2,7 @@ import math
 import numpy as np
 import wx
 
-from meerk40t.core.units import UNITS_PER_MIL
+from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.tools.geomstr import Geomstr
 
 from meerk40t.gui.scene.sceneconst import (
@@ -11,6 +11,8 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+
+_ = wx.GetTranslation
 
 class SimpleSlider:
     def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
@@ -31,6 +33,7 @@ class SimpleSlider:
         if trailer is None:
             trailer = ""
         self.trailer = trailer
+        self.no_value_display = False
 
     @property
     def value(self):
@@ -113,7 +116,10 @@ class SimpleSlider:
             int(offset * 2),
             int(offset * 2),
         )
-        symbol = str(self._value)
+        if self.no_value_display:
+            symbol = ""
+        else:
+            symbol = str(self._value)
         if self.trailer:
             if not self.trailer.startswith("%"):
                 symbol += " "
@@ -161,18 +167,27 @@ class TabEditTool(ToolWidget):
         self.point_len = list()
         self.node = None
         self.node_length = 0
-        self.node_points = list()
-        self.node_distances = list()
+        self.total_points = list()
+        self.total_distances = list()
         self.is_moving = False
         self.pt_offset = 5
         self.point_index = None
         self.current_pos = complex(0, 0)
+        info = ""
+        minval = 0
+        maxval = 50 # 5mm
+        self.slider_size = 200
+        self.active_slider = None
+        self.sliders = []
+        slider = SimpleSlider(0, self.scene, minval, maxval, 0, 0, self.slider_size, info )
+        slider.no_value_display = True
+        self.sliders.append(slider)
 
     def reset(self):
         self.points.clear()
         self.point_len.clear()
-        self.node_points.clear()
-        self.node_distances.clear()
+        self.total_distances.clear()
+        self.total_points.clear()
         self.point_index = None
         self.node_length = 0
         self.node = None
@@ -193,7 +208,9 @@ class TabEditTool(ToolWidget):
         self.node = node
         self.node_length = 0
         geom_transformed = node.as_geometry()
-        interval = 50
+        # 0.1 mm is enough for this purpose...
+        interval = int(UNITS_PER_MM / 10)
+
         # We need to go through all segments...
         total_length = 0
         for segments in geom_transformed.as_interpolated_segments(interpolate=interval):
@@ -224,17 +241,17 @@ class TabEditTool(ToolWidget):
                         points.append(complex(tx, ty))
                         positions += 1
                     if len(points):
-                        self.node_points.append(points)
-                        self.node_distances.append(distances)
+                        self.total_points.extend(points)
+                        self.total_distances.extend(distances)
+                        points = []
                     _remainder += intervals
                     _remainder %= 1
                 last = pt
             if len(points):
-                self.node_points.append(points)
-                self.node_distances.append(distances)
+                self.total_points.extend(points)
+                self.total_distances.extend(distances)
 
         self.node_length = total_length
-        # print (f"{len(self.node_points)} : {self.node_points[0]}")
         self.calculate_tabs()
 
     def calculate_tabs(self):
@@ -271,7 +288,7 @@ class TabEditTool(ToolWidget):
             return positions
 
         tabpos = self.node.mktabpositions
-        if tabpos and len(self.node_points):
+        if tabpos and len(self.total_points):
             # We do split the points
             if isinstance(tabpos, str):
                 positions = calculate_from_str(tabpos)
@@ -279,45 +296,29 @@ class TabEditTool(ToolWidget):
                 positions = list(tabpos, )
             positions.sort()
             dx = 0
-            index_seg = 0
             index_pt = 0
             for index, pos in enumerate(positions):
-                dx = self.node_distances[index_seg][index_pt]
+                dx = self.total_distances[index_pt]
                 pos_length = pos / 100.0 * self.node_length
                 if dx >= pos_length:
-                    self.points.append(self.node_points[index_seg][index_pt])
+                    self.points.append(self.total_points[index_pt])
                     self.point_len.append(pos)
-                    # print (f"[{pos:.2f}]: {index_seg}-{index_pt} {self.node_points[index_seg][index_pt]}")
                     continue
-                while index_seg < len(self.node_points) - 1 and dx < pos_length:
-                    while index_pt < len(self.node_points[index_seg]) - 1 and dx < pos_length:
-                        index_pt += 1
-                        dx = self.node_distances[index_seg][index_pt]
-                    if dx < pos_length:
-                        index_seg += 1
-                        index_pt = 0
-                        dx = self.node_distances[index_seg][index_pt]
+                while index_pt < len(self.total_points) - 1 and dx < pos_length:
+                    index_pt += 1
+                    dx = self.total_distances[index_pt]
                 if dx >= pos_length:
-                    self.points.append(self.node_points[index_seg][index_pt])
+                    self.points.append(self.total_points[index_pt])
                     self.point_len.append(pos)
-                    # print (f"[{pos:.2f}]: {index_seg}-{index_pt} {self.node_points[index_seg][index_pt]}")
                     continue
 
     def find_nearest_point(self, target_point):
-        nearest_tuple = None
-        nearest_index = None
-        nearest_distance = None
-        for index, points in enumerate(self.node_points):
-            # Calculate all the euclidean distances to the target_point
-            distances = [ abs(e - target_point) for e in points]
-            # And now the index of the point with lowest distance
-            _nearest = np.argmin(distances)
-            _distance = distances[_nearest]
-            if nearest_distance is None or nearest_distance > _distance:
-                nearest_distance = _distance
-                nearest_tuple = index
-                nearest_index = _nearest
-        return nearest_tuple, nearest_index, nearest_distance
+        _distances = np.abs(np.array(self.total_points) - target_point)
+        _nearest = np.argmin(_distances)
+        c_point = self.total_points[_nearest]
+        c_len = self.total_distances[_nearest]
+        _distance = _distances[_nearest]
+        return c_point, c_len, _distance
 
     def write_node(self):
         if self.node is None:
@@ -330,8 +331,9 @@ class TabEditTool(ToolWidget):
 
         self.node.mktabpositions = posi
         self.node.empty_cache()
-        self.scene.context.signal("refresh_scene", "Scene")
+        self.scene.request_refresh()
         self.scene.context.signal("element_property_update", self.node)
+        self.scene.context.signal("modified_by_tool")
 
     def clear_all_tabs(self):
         if self.node is None:
@@ -347,6 +349,31 @@ class TabEditTool(ToolWidget):
         self.points.pop(self.point_index)
         self.point_index = None
         self.write_node()
+
+    def update_and_draw_sliders(self, gc):
+        if self.node is None:
+            return
+        value = round(Length(self.node.mktablength).mm * 10, 0)
+        self.sliders[0].value = value
+        self.sliders[0].trailer = Length(self.node.mktablength, digits=1).length_mm
+        bb = self.node.bounds
+        if bb is None:
+            return
+        if len(self.sliders) == 0:
+            return
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        width = self.slider_size / s
+        x = bb[0]
+        y = bb[1]
+        for slider in self.sliders:
+            y -= 3 * offset
+            if not self.is_moving:
+                slider.set_position(x, y, width)
+
+        # Now draw everything
+        for slider in self.sliders:
+            slider.process_draw(gc)
 
     def process_draw(self, gc: wx.GraphicsContext):
         """
@@ -365,6 +392,7 @@ class TabEditTool(ToolWidget):
             else:
                 fact = 1
             gc.DrawEllipse(ptx - fact * offset, pty - fact * offset, offset * 2 * fact, offset * 2 * fact)
+        self.update_and_draw_sliders(gc)
         gc.PopState()
 
     def event(
@@ -396,6 +424,8 @@ class TabEditTool(ToolWidget):
         self.current_pos = pos
 
         if event_type == "leftdown":
+            if self.node is None:
+                return RESPONSE_CHAIN
             self.scene.pane.tool_active = True
             self.scene.pane.modif_active = True
             offset = self.pt_offset
@@ -404,6 +434,7 @@ class TabEditTool(ToolWidget):
             xp = space_pos[0]
             yp = space_pos[1]
             self.point_index = None
+            self.slider_index = -1
             w = offset * 4
             h = offset * 4
             for idx, pt in enumerate(self.points):
@@ -414,32 +445,53 @@ class TabEditTool(ToolWidget):
                 if x <= xp <= x + w and y <= yp <= y + h:
                     # print("Found point")
                     self.point_index = idx
+            if self.point_index is None:
+                for idx, slider in enumerate(self.sliders):
+                    # hh = slider.hit(xp, yp)
+                    # print(f"Check {idx} vs {slider.identifier}: {hh}")
+                    if slider.hit(xp, yp):
+                        # print(f"Found slider: {slider.identifier}")
+                        self.slider_index = idx
+                        self.active_slider = slider
+                        break
+                if self.slider_index >= 0:
+                    return RESPONSE_CONSUME
+
             if self.point_index is None and self.node_length:
                 # Outside of given points
-                idx_seg, idx_pt, distance = self.find_nearest_point(self.current_pos)
-                if idx_seg is not None and distance < 2 * offset:
-                    pt = self.node_points[idx_seg][idx_pt]
-                    seg_len = 100 * self.node_distances[idx_seg][idx_pt] / self.node_length
-                    self.points.append(pt)
+                c_point, c_len, distance = self.find_nearest_point(self.current_pos)
+                if distance < 2 * offset:
+                    seg_len = 100 * c_len / self.node_length
+                    self.points.append(c_point)
                     self.point_len.append(seg_len)
                     self.write_node()
             elif self.point_index is not None and "shift" in modifiers:
                 self.delete_current_tab()
-            self.scene.context.signal("refresh_scene", "Scene")
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         if event_type == "move":
             if "m_middle" in modifiers:
                 return RESPONSE_CHAIN
+            if self.node is None:
+                return RESPONSE_CHAIN
             self.is_moving = True
             idx = self.point_index
             if idx is not None:
-                idx_seg, idx_pt, distance = self.find_nearest_point(self.current_pos)
-                if idx_seg is not None:
-                    pt = self.node_points[idx_seg][idx_pt]
-                    seg_len = 100 * self.node_distances[idx_seg][idx_pt] / self.node_length
-                    self.points[idx] = pt
-                    self.point_len[idx] = seg_len
-                    self.scene.request_refresh()
+                c_point, c_len, distance = self.find_nearest_point(self.current_pos)
+                seg_len = 100 * c_len / self.node_length
+                self.points[idx] = c_point
+                self.point_len[idx] = seg_len
+                self.scene.request_refresh()
+            elif self.slider_index >= 0 and self.active_slider is not None:
+                self.active_slider.update_according_to_pos(
+                    space_pos[0], space_pos[1]
+                )
+                self.node.mktablength = float(Length(f"{self.active_slider.value / 10.0}mm"))
+                # We wait
+                self.node.empty_cache()
+                self.scene.request_refresh()
+                self.scene.context.signal("element_property_update", self.node)
+                self.scene.context.signal("modified_by_tool")
             return RESPONSE_CONSUME
         if event_type == "leftup":
             if self.is_moving:
