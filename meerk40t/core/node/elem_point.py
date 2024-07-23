@@ -43,7 +43,7 @@ class PointNode(Node, FunctionalParameter, LabelDisplay, Suppressable):
         nd["fill"] = copy(self.fill)
         return PointNode(**nd)
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr()
         path.point(complex(self.x, self.y))
         path.transform(self.matrix)

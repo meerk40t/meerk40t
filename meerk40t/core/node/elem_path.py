@@ -98,7 +98,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
     def path(self, new_path):
         self.geometry = Geomstr.svg(new_path)
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr(self.geometry)
         path.transform(self.matrix)
         return path
