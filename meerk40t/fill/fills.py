@@ -582,21 +582,77 @@ def _tabbed(wobble, x0, y0, x1, y1):
         else:
             positions = list(wobble.speed, )
         # So now that we have the positions we calculate the start and end position
+        # Do we have a chance or are all gaps overlapping
+        def repr(info):
+            conc = list()
+            for p in info:
+                conc.append(f"({p[0]}, {p[1]:.2f})")
+            s = ",".join(conc)
+            return "[" + s + "]"
+
         if len(positions) * tablen < wobble.total_length:
-            # Do we have a chance
+            positions.sort()
+            last_end = None
+            last_end_idx = None
+            gap_at_end = None
+            have_gap_at_start = False
             for pos in positions:
                 spos = pos / 100.0 * wobble.total_length - 0.5 * tablen
                 epos = spos + tablen
-                if spos <= 0:
-                    if spos < 0:
-                        spos = spos + wobble.total_length
-                pattern.append([False, spos])
-                pattern.append([True, epos])
+                # print (f"And now: {spos:.2f} - {epos:.2f} adding to {repr(pattern)}")
+                this_start = spos
+                if this_start < 0:
+                    this_start = 0
+                # Is the new start <= previous end, if yes just extend the end
+                if last_end is not None and last_end >= this_start:
+                    # print (f"Updating end {last_end:.2f}, ignoring start {this_start:.2f}")
+                    pattern[last_end_idx][1] = epos
+                    last_end = epos
+                    continue
+
+                if spos < 0 and gap_at_end is None:
+                    spos = spos + wobble.total_length
+                    gap_at_end = spos
+                    pattern.append([False, spos])
+                    # print (f"Adding a gap at the at the end {spos:.2f}")
+                if this_start == 0:
+                    if not have_gap_at_start:
+                        # print("Set a start to zero")
+                        pattern.append([False, 0.0])
+                        have_gap_at_start = True
+                    else:
+                        # print("Ignore start as it was already at zero")
+                        pass
+                else:
+                    if last_end is not None and this_start <= last_end:
+                        # print ("Unexpectedly this is still smaller...")
+                        pattern[last_end_idx][1] = epos
+                        last_end = epos
+                        continue
+                    # print (f"Adding a gap at {this_start:.2f}")
+                    pattern.append([False, this_start])
+                # And finally the end
+                if gap_at_end is None or gap_at_end > epos:
+                    # print (f"Closing the gap at {epos:.2f}")
+                    pattern.append([True, epos])
+                    last_end = epos
+                    last_end_idx = len(pattern) - 1
+                else:
+                    # print (f"Not closing the gap at {epos:.2f} as it would fall into the endgap {gap_at_end:.2f}")
+                    pass
             pattern.sort(key=lambda x: x[1])
+            # print ("Before", repr(pattern))
             if len(pattern):
                 if pattern[0][1] > 0:
                     # Force a start
                     pattern.insert(0, [True, 0.0])
+                # Remove duplicate entries
+                idx = len(pattern) - 1
+                while idx > 0:  # No need to look at the very first as there are no predecessors
+                    if pattern[idx - 1] == pattern[idx]:
+                        pattern.pop(idx)
+                    idx -= 1
+            # print ("at end", repr(pattern))
             # Now amend the sequence to indicate the next position
             for idx, pat in enumerate(pattern):
                 if idx < len(pattern) - 1:
