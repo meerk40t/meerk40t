@@ -533,7 +533,7 @@ class TabEditTool(ToolWidget):
         self.scene.pane.ignore_snap = True
         self.scene.pane.suppress_selection = True
         self.scene.request_refresh()
-        self.scene.context.signal("statusmsg", "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all")
+        self.scene.context.signal("statusmsg", _("Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"))
 
     def signal(self, signal, *args, **kwargs):
         """

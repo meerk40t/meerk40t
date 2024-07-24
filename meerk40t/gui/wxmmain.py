@@ -1355,7 +1355,7 @@ class MeerK40t(MWindow):
 
             eff = (
                 "effect-wobble",
-                "Apply a wobble movement along the path",
+                _("Apply a wobble movement along the path"),
                 icon_effect_wobble,
                 "Wobble",
                 "Path",
