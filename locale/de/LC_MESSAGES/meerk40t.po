@@ -15713,6 +15713,10 @@ msgid "Wobble circular (right)"
 msgstr "Kreisförmiges Nachfahren (rechts)"
 
 #: meerk40t/gui/wxmmain.py:1187
+msgid "Apply a wobble movement along the path"
+msgstr "Fährt den Pfad mit einem (Kreis-)Muster nach"
+
+#: meerk40t/gui/wxmmain.py:1187
 msgid "Apply a wobble movement along the path (circular on top of the line)"
 msgstr "Fährt den Pfad kreisend nach (auf der Linie)"
 
@@ -17634,3 +17638,35 @@ msgstr "Eine leere Liste steht für keine Brücken."
 #: meerk40t/gui/propertypanels/attributes.py:564
 msgid "How wide should the tab be?"
 msgstr "Wie groß soll die Brücke sein?"
+
+#: meerk40t/core/elements/element_treeops.py:292
+msgid "Toggle visibility"
+msgstr "Sichtbarkeit umschalten"
+
+#: meerk40t/core/elements/element_treeops.py:748
+msgid "Horizontal distance between placements?"
+msgstr "Horizontaler Abstand zwischen Startpunkten?"
+
+#: meerk40t/core/elements/element_treeops.py:755
+msgid "Vertical distance between placements?"
+msgstr "Vertikaler Abstand zwischen Startpunkten?"
+
+#: meerk40t/core/elements/element_treeops.py:763
+msgid "Create grid of placements"
+msgstr "Erzeuge ein Raster von Job-Startpunkten"
+
+#: meerk40t/core/elements/element_treeops.py:1683
+msgid "Open the Material Manager"
+msgstr "Öffne den Material-Manager"
+
+#: meerk40t/gui/wxmmain.py:1710
+msgid "Tab Edit"
+msgstr "Brücken"
+
+#: meerk40t/gui/wxmmain.py:1712
+msgid "Edit tabs/bridges of an object"
+msgstr "Bearbeite Tabs/Brücken bei einem Objekt"
+
+#: meerk40t/gui/propertypanels/tooltabedit.py:536
+msgid "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"
+msgstr "Verschiebe bestehende Brücken, oder füge neue durch Klicken hinzu,\nShift-Click/Delete löscht Brücke, Shift-Delete löscht alle"
