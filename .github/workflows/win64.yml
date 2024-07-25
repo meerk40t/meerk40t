@@ -4,6 +4,8 @@
 name: Meerk40t (Win-64)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
@@ -40,7 +42,7 @@ jobs:
         pip install .
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
-        pip install 
+        pip install
 
     - name: pip list
       run: |
