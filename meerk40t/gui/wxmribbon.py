@@ -1425,7 +1425,7 @@ class RibbonEditor(wx.Panel):
                     icon_list.append(icon)
 
         line7 = wx.BoxSizer(wx.HORIZONTAL)
-        label7 = wx.StaticText(dlg, wx.ID_ANY, _("Action right click"))
+        label7 = wx.StaticText(dlg, wx.ID_ANY, _("Icon"))
         combo_icon = wx.ComboBox(
             dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
