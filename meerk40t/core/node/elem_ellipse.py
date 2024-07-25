@@ -152,7 +152,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         path.transform(self.matrix)
         return path
 
-    def afinal_geometry(self, **kws) -> Geomstr:
+    def final_geometry(self, **kws) -> Geomstr:
         """
         This will resolve and apply all effects like tabs and dashes/dots
         """
