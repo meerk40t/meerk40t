@@ -287,6 +287,10 @@ class EngraveOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
+        if "native_mm" in settings:
+            factor = settings["native_mm"] / UNITS_PER_MM
+        else:
+            factor = 1
         for node in self.children:
             if node.type == "reference":
                 node = node.node
@@ -305,7 +309,8 @@ class EngraveOpNode(Node, Parameters):
             elif hasattr(node, "final_geometry"):
                 # This will deliver all relevant effects
                 # like tabs, dots/dashes applied to the element
-                path = node.final_geometry().as_path()
+
+                path = node.final_geometry(unitfactor = factor).as_path()
                 path.approximate_arcs_with_cubics()
             elif node.type == "elem path":
                 path = abs(node.path)

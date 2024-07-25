@@ -5,7 +5,6 @@ from meerk40t.core.node.mixins import (
     Stroked,
     LabelDisplay,
     Suppressable,
-    Tabs,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
@@ -18,7 +17,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
+class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
@@ -61,6 +60,10 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem line", **kwargs)
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]
@@ -131,21 +134,24 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         return path
 
     def final_geometry(self, **kws) -> Geomstr:
+        unit_factor = kws.get("unitfactor", 1)
         path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
+        # This is only true in scene units but will be compensated for devices by unit_factor
         unit_mm = 65535 / 2.54 / 10
         resolution = 0.05 * unit_mm
         # Do we have tabs?
         tablen = 2 * unit_mm
         numtabs = 4
         numtabs = 0
-        if numtabs:
-            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
         # Is there a dash/dot pattern to apply?
         dashlen = self.stroke_dash
         irrelevant = 50
         if dashlen:
-            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        path = path.simplify()
         return path
 
     def scaled(self, sx, sy, ox, oy):

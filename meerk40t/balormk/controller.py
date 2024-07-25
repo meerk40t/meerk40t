@@ -916,7 +916,7 @@ class GalvoController:
         @return:
         """
         # return int(speed / 2)
-        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True)
+        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True, margins=False)
         return abs(int(speed * galvos_per_mm / 1000.0))
 
     def _convert_frequency(self, frequency_khz, base=20000.0):

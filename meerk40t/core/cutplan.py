@@ -143,10 +143,10 @@ class CutPlan:
                 self.outline = None
             else:
                 self.outline = (
-                    device.view.position(min_x, min_y),
-                    device.view.position(max_x, min_y),
-                    device.view.position(max_x, max_y),
-                    device.view.position(min_x, max_y),
+                    device.view.position(min_x, min_y, margins=False),
+                    device.view.position(max_x, min_y, margins=False),
+                    device.view.position(max_x, max_y, margins=False),
+                    device.view.position(min_x, max_y, margins=False),
                 )
 
         # ==========
