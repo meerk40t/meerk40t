@@ -5,7 +5,6 @@ from meerk40t.core.node.mixins import (
     Stroked,
     LabelDisplay,
     Suppressable,
-    Tabs,
 )
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
@@ -18,7 +17,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
+class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """
@@ -67,6 +66,10 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, T
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem rect", **kwargs)
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]

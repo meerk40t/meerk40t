@@ -6,7 +6,6 @@ from meerk40t.core.node.mixins import (
     Stroked,
     LabelDisplay,
     Suppressable,
-    Tabs,
 )
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
@@ -19,7 +18,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable, Tabs):
+class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -60,6 +59,10 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         self._stroke_zero = None
         self.stroke_dash = None  # None or "" Solid
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
 
         super().__init__(type="elem ellipse", **kwargs)
         if "hidden" in kwargs:
