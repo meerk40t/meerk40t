@@ -137,7 +137,7 @@ def init_commands(kernel):
         target = []
         for p in pasted:
             if hasattr(p, "label"):
-                s = "Copy" if p.label is None else f"{p.label} (copy)"
+                s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
                 p.label = s
             group.add_node(p)
             target.append(p)

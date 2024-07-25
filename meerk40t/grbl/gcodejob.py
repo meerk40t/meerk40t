@@ -363,13 +363,19 @@ class GcodeJob:
                     self.program_mode = False
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
-                    self._driver.service.kernel.root.coolant.coolant_on(self._driver.service)
+                    self._driver.service.kernel.root.coolant.coolant_on(
+                        self._driver.service
+                    )
                 elif v == 8:
                     # Coolant Control: Flood coolant On
-                    self._driver.service.kernel.root.coolant.coolant_on(self._driver.service)
+                    self._driver.service.kernel.root.coolant.coolant_on(
+                        self._driver.service
+                    )
                 elif v == 9:
                     # Coolant Control: Flood coolant Off
-                    self._driver.service.kernel.root.coolant.coolant_off(self._driver.service)
+                    self._driver.service.kernel.root.coolant.coolant_off(
+                        self._driver.service
+                    )
                 elif v == 56:
                     # Parking motion override control.
                     pass

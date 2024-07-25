@@ -912,7 +912,7 @@ def plugin(kernel, lifecycle):
             # print(f"Created geometry from {len(pts) / 2} pts: {geom.capacity}")
             return geom
 
-        # Shape (ie star) routine
+        # Shape (i.e. star) routine
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )

@@ -88,6 +88,7 @@ from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, Length
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
 SVG_ATTR_FILL_RULE = "fill-rule"
+SVG_ATTR_STROKE_DASH = "stroke-dasharray"
 
 
 def plugin(kernel, lifecycle=None):
@@ -439,6 +440,7 @@ class SVGWriter:
                     "linejoin",
                     "fillrule",
                     "stroke_width",
+                    "stroke_dash",
                 )
                 and value is not None
                 and isinstance(value, (str, int, float, complex, list, tuple, dict))
@@ -461,6 +463,9 @@ class SVGWriter:
             subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
         if hasattr(c, "fillrule"):
             subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
+        if hasattr(c, "stroke_dash"):
+            if c.stroke_dash:
+                subelement.set(SVG_ATTR_STROKE_DASH, c.stroke_dash)
 
         ###############
         # SAVE LABEL
@@ -833,6 +838,9 @@ class SVGProcessor:
             elif lj == "round":
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
+        lj = element.values.get(SVG_ATTR_STROKE_DASH)
+        if lj not in (None, "", "none"):
+            node.stroke_dash = lj
 
     @staticmethod
     def is_dot(element):
@@ -1043,6 +1051,8 @@ class SVGProcessor:
             lock=lock,
         )
         self.check_for_label_display(node, element)
+        self.check_for_line_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
         e_list.append(node)
 
     def _parse_rect(self, element, ident, label, lock, context_node, e_list):
@@ -1064,6 +1074,7 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
@@ -1108,6 +1119,7 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (

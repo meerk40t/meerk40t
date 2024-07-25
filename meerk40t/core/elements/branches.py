@@ -1462,7 +1462,10 @@ def init_commands(kernel):
         node = self.elem_branch.add(type="elem path")
         for e in data:
             try:
-                path = e.as_geometry()
+                if hasattr(e, "final_geometry"):
+                    path = e.final_geometry()
+                else:
+                    path = e.as_geometry()
             except AttributeError:
                 continue
             try:
@@ -1511,7 +1514,10 @@ def init_commands(kernel):
             group_node = node.replace_node(type="group", label=node.label)
 
             try:
-                geometry = node.as_geometry()
+                if hasattr(node, "final_geometry"):
+                    geometry = node.final_geometry()
+                else:
+                    geometry = node.as_geometry()
                 geometry.ensure_proper_subpaths()
             except AttributeError:
                 continue

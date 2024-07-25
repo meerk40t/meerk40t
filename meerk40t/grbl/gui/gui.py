@@ -53,7 +53,10 @@ def plugin(service, lifecycle):
             },
         )
         kernel = service.kernel
-        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+        if not (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
             service.register(
                 "button/device/Configuration",
                 {

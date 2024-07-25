@@ -50,6 +50,7 @@ from .wxutils import (
     get_key_name,
     is_navigation_key,
     wxButton,
+    wxTreeCtrl,
 )
 
 _ = wx.GetTranslation
@@ -112,7 +113,7 @@ class TreePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         # Define Tree
-        self.wxtree = wx.TreeCtrl(
+        self.wxtree = wxTreeCtrl(
             self,
             wx.ID_ANY,
             style=wx.TR_MULTIPLE
@@ -1837,11 +1838,7 @@ class ShadowTree:
                 node.type in op_nodes
                 and hasattr(node, "is_visible")
                 and not node.is_visible
-            ) or (
-                node.type in elem_nodes
-                and hasattr(node, "hidden")
-                and node.hidden
-            ):
+            ) or (node.type in elem_nodes and hasattr(node, "hidden") and node.hidden):
                 state_num = self.iconstates["ghost"]
         self.wxtree.SetItemState(node._item, state_num)
 

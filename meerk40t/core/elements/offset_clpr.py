@@ -148,7 +148,7 @@ def init_commands(kernel):
 
             geom_list = []
             for node in nodelist:
-                # print (f"Looking at {node.type} - {node.label}")
+                # print (f"Looking at {node.type} - {node.display_label()}")
                 if hasattr(node, "as_geometry"):
                     # Let's get list of points with the
                     # required interpolation density
@@ -226,7 +226,7 @@ def init_commands(kernel):
 
         def result_geometry(self):
             if len(self.newpath) == 0:
-                # print(f"Collapsed clipline for {node.type}:{node.label}\n{np_points}")
+                # print(f"Collapsed clipline for {node.type}:{node.display_label()}\n{np_points}")
                 return None
             if isinstance(self.newpath[0], (tuple, list)):
                 # Can execute directly
@@ -288,7 +288,7 @@ def init_commands(kernel):
                             result_list.append(p1x)
                             result_list.append(p1y)
                     except IndexError:
-                        # channel(f"Invalid clipline for {node.type}:{node.label}")
+                        # channel(f"Invalid clipline for {node.type}:{node.display_label()}")
                         continue
                     geom = Geomstr.lines(*result_list)
                     yield geom
@@ -411,7 +411,7 @@ def init_commands(kernel):
             first = True
             self.first = 0
             for node in nodelist:
-                # print (f"Looking at {node.type} - {node.label}")
+                # print (f"Looking at {node.type} - {node.display_label()}")
                 if hasattr(node, "as_geometry"):
                     # Let's get list of points with the
                     # required interpolation density
@@ -517,7 +517,7 @@ def init_commands(kernel):
 
         def result_geometry(self):
             if len(self.newpath) == 0:
-                # print(f"Collapsed clipline for {node.type}:{node.label}\n{np_points}")
+                # print(f"Collapsed clipline for {node.type}:{node.display_label()}\n{np_points}")
                 return None
             if isinstance(self.newpath[0], (tuple, list)):
                 # Can execute directly
@@ -579,7 +579,7 @@ def init_commands(kernel):
                             result_list.append(p1x)
                             result_list.append(p1y)
                     except IndexError:
-                        # channel(f"Invalid clipline for {node.type}:{node.label}")
+                        # channel(f"Invalid clipline for {node.type}:{node.display_label()}")
                         continue
                     geom = Geomstr.lines(*result_list)
                     if allgeom is None:
@@ -915,7 +915,7 @@ def init_commands(kernel):
                 )
                 newnode.stroke_width = UNITS_PER_PIXEL
                 newnode.linejoin = Linejoin.JOIN_ROUND
-                newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.label}"
+                newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.display_label()}"
                 data_out.append(newnode)
 
         # Newly created! Classification needed?

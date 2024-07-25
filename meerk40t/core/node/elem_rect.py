@@ -1,6 +1,11 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked, LabelDisplay, Suppressable
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -60,6 +65,11 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem rect", **kwargs)
         if "hidden" in kwargs:
             self.hidden = kwargs["hidden"]
@@ -108,7 +118,10 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
+        """
+        Delivers the basic shape without any special effects like tabs and / or dashes/dots
+        """
         x = self.x
         y = self.y
         width = self.width
@@ -117,6 +130,35 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         ry = self.ry
         path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
         path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effektcs like tabs and dashes/dots
+        """
+        unit_factor = kws.get("unitfactor", 1)
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+        rx = self.rx
+        ry = self.ry
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
+        path.transform(self.matrix)
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        path = path.simplify()
         return path
 
     def scaled(self, sx, sy, ox, oy):

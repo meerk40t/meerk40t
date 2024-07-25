@@ -108,7 +108,7 @@ class OpInfoPanel(ScrolledPanel):
                 info = self.opinfo[node.type]
             except KeyError:
                 continue
-            # print(f"{node.type} - {node.label} - {info[0]}, {info[2]}")
+            # print(f"{node.type} - {node.display_label()} - {info[0]}, {info[2]}")
             list_id = self.list_operations.InsertItem(
                 self.list_operations.GetItemCount(), f"#{idx}"
             )

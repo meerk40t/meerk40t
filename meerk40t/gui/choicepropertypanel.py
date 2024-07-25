@@ -1512,6 +1512,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             else:
                                 ctrl.SetForegroundColour(wx.WHITE)
                             ctrl.color = color
+
                         if isinstance(data, str):
                             # print ("Needed to change type")
                             data = Color(data)
@@ -1576,7 +1577,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 try:
                     value = getattr(obj, attr)
                 except AttributeError as e:
-                    print (f"error: {e}")
+                    print(f"error: {e}")
                     continue
                 listener("internal", value, obj)
 

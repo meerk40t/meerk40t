@@ -224,7 +224,9 @@ class Coolants:
                     if multiple:
                         dev_str += ", "
                     multiple = True
-                    dev_str += f"{dev.label} [{'on' if cool['current_state'][idx] else 'off'}]"
+                    dev_str += (
+                        f"{dev.label} [{'on' if cool['current_state'][idx] else 'off'}]"
+                    )
                 break
 
         return dev_str

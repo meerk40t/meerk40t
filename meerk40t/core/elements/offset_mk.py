@@ -122,7 +122,7 @@ def linearize_segment(segment, interpolation=500, reduce=True):
                 this_slope = atan2(dy, dx)
                 if last_slope is not None:
                     if abs(last_slope - this_slope) < slope_tolerance:
-                        # Combine segments, ie get rid of mid point
+                        # Combine segments, i.e. get rid of mid point
                         this_slope = last_slope
                         appendit = False
                 last_slope = this_slope
@@ -948,7 +948,9 @@ def init_commands(kernel):
             )
             newnode.stroke_width = UNITS_PER_PIXEL
             newnode.linejoin = Linejoin.JOIN_ROUND
-            newnode.label = f"Offset of {node.id if node.label is None else node.label}"
+            newnode.label = (
+                f"Offset of {node.id if node.label is None else node.display_label()}"
+            )
             data_out.append(newnode)
 
         # Newly created! Classification needed?

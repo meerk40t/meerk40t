@@ -160,6 +160,7 @@ class BalorConfiguration(MWindow):
     @signal_listener("corfile")
     def on_corfile_changed(self, origin, *args):
         from meerk40t.balormk.controller import GalvoController
+
         if not self.context.corfile:
             return
         try:

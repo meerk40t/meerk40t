@@ -2,7 +2,7 @@ import time
 
 """
 A driver is a class which implements a set of various functions that are expected to be called to control a particular
-laser. 
+laser.
 
 There is no guarantees with regard to what commands should exist other than `hold_work` which is required by the
 spooler. Anything that accesses a driver is expected to call any would-be function as if it may generate an
@@ -184,7 +184,7 @@ class Driver:
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
 
     def lock_rail(self):

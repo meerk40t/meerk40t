@@ -4,29 +4,35 @@
 name: Meerk40t (Ubuntu)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
 jobs:
   build-ubuntu:
-    if: ${{ false }}
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
-    - name: Set up Python 3.12
+    - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
-        python-version: 3.12
+        python-version: '3.10'
     - name: Install dependencies
       run: |
-        sudo apt-get install libgtk-3-dev
+        sudo apt install libgtk-3-dev cmake libeigen3-dev
+        sudo apt install libagg-dev libpotrace-dev
+        sudo apt install python3.10-dev
+        python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
+        pip cache purge
+        pip install setuptools
         pip install pyinstaller wheel
-        pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
-        pip install numpy==1.23.5
+        pip install numpy==1.26.4
         pip install pyusb
         pip install wheel
+        pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install potracer
         pip install pillow==9.5.0
         pip install ezdxf
@@ -34,16 +40,26 @@ jobs:
         pip install bitarray
         pip install scipy
         pip install .
-        pip install meerk40t-camera opencv-python-headless==4.5.3.56
+        pip install numba
+        pip install meerk40t-camera 
+        pip install --no-cache-dir opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+
+    - name: pip list
+      run: |
+          pip list
 
     - name: Build meerk40t
       run: |
         mv meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t mk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
+        mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
+        mv dist/MeerK40t dist/MeerK40t-Ubuntu-Latest
         mv mk40t.py meerk40t.py
-        mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
+        mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
+        mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
 
 # Switched to using softprops/action-gh-release@v1
 # because it supports uploading to existing release based on current tag.

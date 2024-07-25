@@ -5,7 +5,9 @@ block_cipher = None
 
 a = Analysis(['../../../mk40t.py'],
              pathex=['../../../build/meerk40t-import'],
-             binaries = [],
+             binaries = [
+                ('./libusb0.dll', '.'),
+             ],
              datas=[],
              hiddenimports=['usb', 'wx._adv', 'wx._xml', 'barcodes'],
              hookspath=[],
@@ -26,6 +28,7 @@ a.datas += [('locale/pt_PT/LC_MESSAGES/meerk40t.mo', 'locale/pt_PT/LC_MESSAGES/m
 a.datas += [('locale/ja/LC_MESSAGES/meerk40t.mo', 'locale/ja/LC_MESSAGES/meerk40t.mo', 'DATA')]
 a.datas += [('locale/nl/LC_MESSAGES/meerk40t.mo', 'locale/nl/LC_MESSAGES/meerk40t.mo', 'DATA')]
 
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
@@ -41,4 +44,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False, icon='../../../meerk40t.ico')
+          console=False , version='file_version.txt', icon='../../../meerk40t.ico')

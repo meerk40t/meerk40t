@@ -141,7 +141,10 @@ class LaserPanel(wx.Panel):
             _("Opens device-specific configuration window")
         )
         kernel = self.context.kernel
-        if hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config:
+        if (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
             self.btn_config_laser.Enable(False)
         self.sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
         self.btn_config_laser.SetMinSize(dip_size(self, 20, -1))
@@ -502,7 +505,6 @@ class LaserPanel(wx.Panel):
 
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
-
         ctxt = self.context.kernel.root
         ctxt.setting(bool, "_laser_may_run", False)
         if self.context.root.laserpane_arm:
@@ -526,7 +528,9 @@ class LaserPanel(wx.Panel):
                     )
                 )
                 self.arm_toggle.SetLabel(_("Disarm"))
-                self.arm_toggle.SetToolTip(_("Prevent the laser from accidentally executing"))
+                self.arm_toggle.SetToolTip(
+                    _("Prevent the laser from accidentally executing")
+                )
                 self.button_start.Enable(True)
                 ctxt._laser_may_run = True
             else:

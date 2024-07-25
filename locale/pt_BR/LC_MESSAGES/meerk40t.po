@@ -1140,7 +1140,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:260
 msgid ""
-"- provided no elements are assigned to it yet (ie works only for an empty"
+"- provided no elements are assigned to it yet (i.e. works only for an empty"
 " op)!"
 msgstr ""
 "- desde que nenhum elemento ainda esteja atribuído a ele (ou seja, funciona apenas para uma operação vazia)!"
@@ -4661,7 +4661,7 @@ msgstr "Rearranjar todos os elementos selecionados"
 
 #: meerk40t/gui/alignment.py:1258
 msgid ""
-"Set if all columns need to have the same size (ie maximum width over all "
+"Set if all columns need to have the same size (i.e. maximum width over all "
 "columns)"
 msgstr ""
 "Defina se todas as colunas precisam ter o mesmo tamanho (ou seja, largura "
@@ -4669,7 +4669,7 @@ msgstr ""
 
 #: meerk40t/gui/alignment.py:1263
 msgid ""
-"Set if all rows need to have the same size (ie maximum height over all "
+"Set if all rows need to have the same size (i.e. maximum height over all "
 "row)"
 msgstr ""
 "Defina se todas as linhas precisam ter o mesmo tamanho (ou seja, altura "
@@ -6407,7 +6407,7 @@ msgstr "Estimativa de Tempo: Tempo de Gravação a Laser"
 msgid "Time Estimate: Traveling Time"
 msgstr "Estimativa de Tempo: Tempo em Movimento"
 
-msgid "Time Estimate: Extra Time (ie to swing around)"
+msgid "Time Estimate: Extra Time (i.e. to swing around)"
 msgstr "Estimativa de Tempo: Tempo Extra (por exemplo, para girar ao redor)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
@@ -16884,7 +16884,7 @@ msgid "Increase Wordlist-Reference"
 msgstr "Aumentar la referencia de la lista de palabras"
 
 #: ./meerk40t\core\elements\element_treeops.py:2237
-msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr "Ajusta el valor de referencia para una lista de palabras, es decir, {name} a {name#+1}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2258
@@ -16892,7 +16892,7 @@ msgid "Decrease Wordlist-Reference"
 msgstr "Disminuir la referencia de la lista de palabras"
 
 #: ./meerk40t\core\elements\element_treeops.py:2263
-msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr "Ajusta el valor de referencia para una lista de palabras, es decir, {name#+3} a {name#+2}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2528
@@ -17473,7 +17473,7 @@ msgstr "Agrupar objetos de trama"
 #: ./meerk40t\core\planner.py:58
 msgid ""
 "Separate non-overlapping raster objects.\n"
-"Active: this will raster close (ie overlapping) objects as one,\n"
+"Active: this will raster close (i.e. overlapping) objects as one,\n"
 "but will separately process objects lying apart from each other.\n"
 "Inactive: all objects will be lasered as one single unit."
 msgstr ""

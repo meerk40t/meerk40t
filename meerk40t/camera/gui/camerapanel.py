@@ -1142,9 +1142,13 @@ class CameraURIPanel(wx.Panel):
 
     def on_tree_popup_clear(self, index):
         def delete(event):
-            self.context.uris.clear()
-            self.changed = True
-            self.on_list_refresh()
+            if self.context.kernel.yesno(
+                _("Do you really want to delete all entries?"), 
+                caption=_("URI-Manager")
+            ):
+                self.context.uris.clear()
+                self.changed = True
+                self.on_list_refresh()
 
         return delete
 

@@ -4,6 +4,8 @@
 name: Meerk40t (CentOS 7)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
@@ -12,7 +14,7 @@ jobs:
     runs-on: centos7
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v2
 
     - name: Ensure dependencies installed
       run: |

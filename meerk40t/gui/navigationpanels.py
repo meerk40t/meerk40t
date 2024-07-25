@@ -374,7 +374,7 @@ class TimerButtons:
 
     def on_button_click(self, event=None):
         # That could still happen due to a keypress
-        # (ie return, space) while the button has focus
+        # (i.e. return, space) while the button has focus
         if event is None:
             return
         button = event.GetEventObject()

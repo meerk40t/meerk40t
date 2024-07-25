@@ -164,7 +164,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         nodes = right_types(self)
         return nodes
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         """
         Calculates the warp effect geometry.
 
