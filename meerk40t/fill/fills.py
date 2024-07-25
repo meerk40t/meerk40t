@@ -9,6 +9,7 @@ class Wobble:
     def __init__(self, algorithm, radius=50, speed=50, interval=10):
         self._total_count = 0
         self._total_distance = 0
+        self.unit_factor = 1
         self._remainder = 0
         self.previous_angle = None
         self.radius = radius
@@ -709,9 +710,9 @@ def _dashed(wobble, x0, y0, x1, y1):
                         value = float(s)
                     except ValueError:
                         continue
-                    pattern.append(value * UNITS_PER_MM )
+                    pattern.append(value * UNITS_PER_MM * wobble.unit_factor)
         else:
-            pattern = list(wobble.radius * UNITS_PER_MM, )
+            pattern = list(wobble.radius * UNITS_PER_MM * wobble.unit_factor, )
         if len(pattern) % 2 == 1:
             # Needs to be even
             pattern.extend(pattern)
