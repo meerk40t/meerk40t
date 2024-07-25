@@ -158,7 +158,7 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         irrelevant = 50
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
-
+        path = path.simplify()
         return path
 
     def scaled(self, sx, sy, ox, oy):
