@@ -136,6 +136,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(splitterplugin)
 
+        from .extra.outerworld import plugin as owplugin
+
+        plugins.append(owplugin)
+
         return plugins
 
     if lifecycle == "invalidate":
