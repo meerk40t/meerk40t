@@ -82,6 +82,8 @@ jobs:
         ##move external_plugins.py external_plugins_build.py
         ##move external_plugins.unused external_plugins.py
         ##cd ..
+        cd dist
+        move MeerK40t.exe MeerK40t-win64.exe
 
     - name: Upload Release Assets
       id: release
@@ -89,4 +91,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t.exe
+          dist/MeerK40t-win64.exe
