@@ -547,7 +547,7 @@ def _tabbed(wobble, x0, y0, x1, y1):
     if wobble.flag is None:
         wobble.flag = True
     if wobble.userdata is None:
-        tablen = wobble.radius
+        tablen = wobble.radius * wobble.unit_factor
         pattern_idx = 0
         pattern = list()
         if isinstance(wobble.speed, str):

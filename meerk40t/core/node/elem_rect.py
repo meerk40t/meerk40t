@@ -136,12 +136,14 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         """
         This will resolve and apply all effektcs like tabs and dashes/dots
         """
+        unit_factor = kws.get("unitfactor", 1)
         x = self.x
         y = self.y
         width = self.width
         height = self.height
         rx = self.rx
         ry = self.ry
+        # This is only true in scene units but will be compensated for devices by unit_factor
         unit_mm = 65535 / 2.54 / 10
         resolution = 0.05 * unit_mm
         path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
@@ -150,12 +152,12 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         tablen = self.mktablength
         numtabs = self.mktabpositions
         if tablen and numtabs:
-            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs)
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
         # Is there a dash/dot pattern to apply?
         dashlen = self.stroke_dash
         irrelevant = 50
         if dashlen:
-            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant)
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
 
         return path
 
