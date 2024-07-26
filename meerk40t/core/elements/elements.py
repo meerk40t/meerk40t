@@ -545,6 +545,8 @@ class Elemental(Service):
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
+        self.setting(bool, "classify_black_as_raster", True)
+        self.setting(bool, "classify_on_color", True)
 
         self.op_data = Settings(
             self.kernel.name, "operations.cfg", create_backup=True
