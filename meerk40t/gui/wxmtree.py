@@ -2087,31 +2087,38 @@ class ShadowTree:
                             ttip += f"\n{node.id + ': ' if node.id is not None else ''}{node.display_label()}"
                         ps_info = ""
                         if hasattr(node, "power") and node.power is not None:
-                            if self.context.device.use_percent_for_power_display:
-                                ps_info += (
-                                    f"{', ' if ps_info else ''}{node.power / 10:.1f}%"
-                                )
-                            else:
-                                ps_info += (
-                                    f"{', ' if ps_info else ''}{node.power:.0f}ppi"
-                                )
+                            try:
+                                p = float(node.power)
+                                if self.context.device.use_percent_for_power_display:
+                                    ps_info += f"{', ' if ps_info else ''}{p / 10:.1f}%"
+                                else:
+                                    ps_info += f"{', ' if ps_info else ''}{p:.0f}ppi"
+                            except ValueError:
+                                pass
 
                         if hasattr(node, "speed") and node.speed is not None:
-                            if self.context.device.use_mm_min_for_speed_display:
-                                ps_info += f"{', ' if ps_info else ''}{node.speed * 60.0:.0f}mm/min"
-                            else:
-                                ps_info += (
-                                    f"{', ' if ps_info else ''}{node.speed:.0f}mm/s"
-                                )
+                            try:
+                                p = float(node.speed)
+                                if self.context.device.use_mm_min_for_speed_display:
+                                    ps_info += (
+                                        f"{', ' if ps_info else ''}{p * 60.0:.0f}mm/min"
+                                    )
+                                else:
+                                    ps_info += f"{', ' if ps_info else ''}{p:.0f}mm/s"
+                            except ValueError:
+                                pass
 
-                        if hasattr(self.context.device, "default_frequency"):
-                            if (
-                                hasattr(node, "frequency")
-                                and node.frequency is not None
-                            ):
-                                ps_info += (
-                                    f"{', ' if ps_info else ''}{node.frequency:.0f}kHz"
-                                )
+                        if (
+                            hasattr(self.context.device, "default_frequency")
+                            and hasattr(node, "frequency")
+                            and node.frequency is not None
+                        ):
+                            try:
+                                p = float(node.frequency)
+                                ps_info += f"{', ' if ps_info else ''}{p:.0f}kHz"
+                            except ValueError:
+                                pass
+
                         if ps_info:
                             ttip += f"\n{ps_info}"
             if state == self.iconstates["ghost"]:
