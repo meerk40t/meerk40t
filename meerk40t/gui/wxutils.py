@@ -886,6 +886,7 @@ class wxCheckBox(wx.CheckBox):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -914,6 +915,7 @@ class wxTreeCtrl(wx.TreeCtrl):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -942,6 +944,7 @@ class wxButton(wx.Button):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -970,6 +973,7 @@ class wxToggleButton(wx.ToggleButton):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -998,6 +1002,7 @@ class wxRadioBox(wx.RadioBox):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -1026,6 +1031,7 @@ class wxStaticBitmap(wx.StaticBitmap):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
