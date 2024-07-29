@@ -550,9 +550,9 @@ def _tabbed(wobble, x0, y0, x1, y1):
         tablen = wobble.radius * wobble.unit_factor
         pattern_idx = 0
         pattern = list()
+        positions = list()
         if isinstance(wobble.speed, str):
             # This is a string with comma and/or whitespace separated numbers
-            positions = list()
             sub_comma = wobble.speed.split(",")
             if wobble.speed.startswith("*"):
                 # Special case:
@@ -581,7 +581,10 @@ def _tabbed(wobble, x0, y0, x1, y1):
                             continue
                         positions.append(value)
         else:
-            positions = list(wobble.speed, )
+            try:
+                positions.append(float(wobble.speed))
+            except ValueError:
+                pass
         # So now that we have the positions we calculate the start and end position
         # Do we have a chance or are all gaps overlapping
         def repr(info):

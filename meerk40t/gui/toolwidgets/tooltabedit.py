@@ -547,3 +547,5 @@ class TabEditTool(ToolWidget):
                 self.reset()
         elif signal == "emphasized":
             self.tool_change()
+        elif signal == "tabs_updated" and self.node is not None:
+            self.set_node(self.node)            

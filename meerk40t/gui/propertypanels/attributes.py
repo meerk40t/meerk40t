@@ -642,6 +642,7 @@ class LinePropPanel(wx.Panel):
                 self.node.empty_cache()
                 self.context.signal("refresh_scene", "Scene")
                 self.context.signal("element_property_update", self.node)
+                self.context.signal("tabs_updated")
         except (ValueError, AttributeError):
             pass
 
@@ -655,6 +656,7 @@ class LinePropPanel(wx.Panel):
                 self.node.empty_cache()
                 self.context.signal("refresh_scene", "Scene")
                 self.context.signal("element_property_update", self.node)
+                self.context.signal("tabs_updated")
         except (ValueError, AttributeError):
             pass
 
