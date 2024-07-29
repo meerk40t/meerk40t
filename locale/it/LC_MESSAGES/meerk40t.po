@@ -89,6 +89,10 @@ msgstr "Tentativo di connessione a {address} fallito (Time-Out)"
 msgid "Connection to {address} was closed."
 msgstr "La connessione a {address} è stata chiusa"
 
+#: meerk40t/balormk/gui/balorconfig.py:87 meerk40t/grbl/gui/grblconfiguration.py:254 meerk40t/lihuiyu/gui/lhydrivergui.py:435 meerk40t/moshi/gui/moshidrivergui.py:54 meerk40t/newly/gui/newlyconfig.py:58 meerk40t/ruida/gui/ruidaconfig.py:196
+msgid "Effects"
+msgstr "Effetti"
+
 #: meerk40t/balormk/device.py:616 meerk40t/grbl/device.py:233
 #: meerk40t/gui/propertypanels/attributes.py:229 meerk40t/moshi/device.py:129
 msgid "Label"
@@ -5776,6 +5780,10 @@ msgstr "Movimento veloce"
 msgid "Pulse Width"
 msgstr "Durata d'impulso"
 
+#: ./meerk40t\balormk\gui\balorconfig.py:49
+msgid "Turn red dot on for test purposes"
+msgstr "Accende il puntatore laser a scopo di prova"
+
 #: meerk40t/balormk/gui/baloroperationproperties.py:73
 #: meerk40t/gui/materialtest.py:479
 msgid "Laser On Delay"
@@ -5797,7 +5805,7 @@ msgstr "Intervallo di 'wobble'"
 #: meerk40t/balormk/gui/baloroperationproperties.py:126
 #: meerk40t/gui/materialtest.py:519
 msgid "Wobble Speed Multiplier"
-msgstr "Fattore per la velocità di 'wobble'"
+msgstr "Fattore per la velocità di rotazione"
 
 #: meerk40t/gui/materialtest.py:1012
 msgid "This will delete all existing operations and elements"
@@ -9960,7 +9968,7 @@ msgstr "Intervallo per il movimento di 'wobble'"
 
 #: meerk40t/balormk/gui/baloroperationproperties.py:127
 msgid "Wobble rotation speed multiplier"
-msgstr "Fattore per la velocità 'wobble'"
+msgstr "Fattore per la velocità di rotazione"
 
 #: meerk40t/balormk/gui/baloroperationproperties.py:137
 msgid "Wobble Pattern Type"
@@ -9968,7 +9976,7 @@ msgstr "Tipo di modello 'wobble'"
 
 #: meerk40t/balormk/gui/baloroperationproperties.py:138
 msgid "Pattern type for the given wobble."
-msgstr "Tipo di modello per 'wobble' data"
+msgstr "Modello che deve eseguire il movimento di tumbling"
 
 #: meerk40t/balormk/gui/gui.py:38 meerk40t/lihuiyu/gui/gui.py:53
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:185 meerk40t/moshi/gui/gui.py:30
@@ -15688,6 +15696,10 @@ msgid "Wobble circular (right)"
 msgstr "Tracciamento circolare (destra)"
 
 #: meerk40t/gui/wxmmain.py:1187
+msgid "Apply a wobble movement along the path"
+msgstr "Traccia il percorso con uno schema (circolare)"
+
+#: meerk40t/gui/wxmmain.py:1187
 msgid "Apply a wobble movement along the path (circular on top of the line)"
 msgstr "Traccia il percorso in un cerchio (sulla linea)"
 
@@ -17943,10 +17955,6 @@ msgstr "ripetizioni di piazzamento"
 msgid "How many offsetlines (default 1)"
 msgstr "Quante linee di offset (default 1)"
 
-#: ./meerk40t\core\elements\element_treeops.py:1573
-msgid "Open the Material Manager"
-msgstr "Aprire il Gestore materiali"
-
 #: ./meerk40t\core\elements\element_treeops.py:1580
 msgid "<Previous set>"
 msgstr "<Previous set>"
@@ -18047,10 +18055,6 @@ msgstr "Valore di scala X"
 msgid "Scale Y value"
 msgstr "Valore di scala Y"
 
-#: ./meerk40t\core\elements\element_treeops.py:669
-msgid "Create grid of placements"
-msgstr "Creare una griglia di collocamento"
-
 #: ./meerk40t\balormk\galvo_commands.py:647
 msgid "Send laser rotary command info."
 msgstr "Invia informazioni sul comando all'asse ruotante"
@@ -18114,10 +18118,6 @@ msgstr "Laser UV"
 #: ./meerk40t\balormk\gui\balorconfig.py:48
 msgid "Test"
 msgstr "Test"
-
-#: ./meerk40t\balormk\gui\balorconfig.py:49
-msgid "Turn red dot on for test purposes"
-msgstr "Accende il puntatore laser a scopo di prova"
 
 #: ./meerk40t\balormk\gui\balorconfig.py:59
 msgid "Bits"
@@ -18346,14 +18346,6 @@ msgstr "Sblocca le modifiche"
 #: ./meerk40t\core\elements\element_treeops.py:545
 msgid "{power}ppi ({power_10}%)"
 msgstr "{power}ppi ({power_10}%)"
-
-#: ./meerk40t\core\elements\element_treeops.py:654
-msgid "Horizontal distance between placements?"
-msgstr "Distanza orizontale fra i posizionamenti?"
-
-#: ./meerk40t\core\elements\element_treeops.py:661
-msgid "Vertical distance between placements?"
-msgstr "Distanza verticale fra i posizionamenti?"
 
 #: ./translate_check.py:22
 msgid "another test for "
@@ -19088,6 +19080,10 @@ msgstr "Coordinata X per vai a"
 msgid "Y-Coordinate of Goto?"
 msgstr "Coordinata Y per vai a"
 
+#: meerk40t/grbl/gui/grblconfiguration.py:211
+msgid "Hardware properties"
+msgstr "Parametri hardware"
+
 #: meerk40t/grbl/gui/grblconfiguration.py:212
 msgid "Retrieve and change Laser properties"
 msgstr "Recuperare e modificare le proprietà del laser"
@@ -19224,6 +19220,103 @@ msgstr "Sopprime i Processi non utilizzate"
 msgid "Set coolant to on/off or leave unchanged (default)"
 msgstr "Imposta il refrigerante su on/off o lasciare invariato (default)"
 
+#: meerk40t/camera/gui/camerapanel.py:1146 meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:1042 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/spoolerpanel.py:586
+msgid "Do you really want to delete all entries?"
+msgstr "Volete davvero cancellare tutte le voci?"
+
+#: meerk40t/core/elements/element_treeops.py:913
+msgid "Do you really want to delete {num} entries?"
+msgstr "Volete davvero cancellare {num} voci?"
+
+#: meerk40t/gui/preferences.py:522
+msgid "Object-Label"
+msgstr "Etichetta oggetto"
+
+#: meerk40t/gui/propertypanels/attributes.py:465
+msgid "User defined"
+msgstr "Personalizzato"
+
+#: meerk40t/gui/propertypanels/attributes.py:500
+msgid "Linestyle"
+msgstr "Tipo di linea"
+
+#: meerk40t/gui/propertypanels/attributes.py:523
+msgid "Tab-Length"
+msgstr "Dimensione scheda"
+
+#: meerk40t/gui/propertypanels/attributes.py:524
+msgid "Tabs"
+msgstr "Schede"
+
+#: meerk40t/gui/propertypanels/attributes.py:526
+msgid "Tabs/Bridges"
+msgstr "Schede/ponte"
+
+#: meerk40t/gui/propertypanels/attributes.py:553
+msgid "Choose the linestyle of the shape"
+msgstr "Definisce lo stile della linea dell'oggetto"
+
+#: meerk40t/gui/propertypanels/attributes.py:552
+msgid "Define the linestyle of the shape:"
+msgstr "Definisce lo stile delle linee dell'oggetto:"
+
+#: meerk40t/gui/propertypanels/attributes.py:553
+msgid "A list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
+msgstr "Un elenco di numeri separati da virgole/spazi che definiscono la lunghezza dei trattini e degli spazi vuoti"
+
+#: meerk40t/gui/propertypanels/attributes.py:556
+msgid "Where do you want to place tabs:"
+msgstr "Dove si desidera inserire i ponti:"
+
+#: meerk40t/gui/propertypanels/attributes.py:557
+msgid "A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers."
+msgstr "Un elenco di numeri separati da virgole/spazi che definisce la posizione relativa, cioè la % della circonferenza totale, dei centri del ponte"
+
+#: meerk40t/gui/propertypanels/attributes.py:558
+msgid "You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs."
+msgstr "È possibile specificare un segnaposto per x ponti uniformemente distribuiti: '*x', ad esempio '*4' per quattro ponti"
+
+#: meerk40t/gui/propertypanels/attributes.py:559
+msgid "An empty list stands for no tabs."
+msgstr "Un elenco vuoto non rappresenta alcun ponte"
+
+#: meerk40t/gui/propertypanels/attributes.py:564
+msgid "How wide should the tab be?"
+msgstr "Quanto dovrebbe essere grande il ponte?"
+
+#: meerk40t/core/elements/element_treeops.py:292
+msgid "Toggle visibility"
+msgstr "Alterna la visibilità"
+
+#: meerk40t/core/elements/element_treeops.py:748
+msgid "Horizontal distance between placements?"
+msgstr "Distanza orizontale fra i posizionamenti?"
+
+#: meerk40t/core/elements/element_treeops.py:755
+msgid "Vertical distance between placements?"
+msgstr "Distanza verticale fra i posizionamenti?"
+
+#: meerk40t/core/elements/element_treeops.py:763
+msgid "Create grid of placements"
+msgstr "Creare una griglia di punti di inizio lavoro"
+
+#: meerk40t/core/elements/element_treeops.py:1683
+msgid "Open the Material Manager"
+msgstr "Aprire il Gestore materiali"
+
+#: meerk40t/gui/wxmmain.py:1710
+msgid "Tab Edit"
+msgstr "Ponti"
+
+#: meerk40t/gui/wxmmain.py:1712
+msgid "Edit tabs/bridges of an object"
+msgstr "Modifica di schede/ponti per un oggetto"
+
+#: meerk40t/gui/propertypanels/tooltabedit.py:536
+msgid "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"
+msgstr "Spostare i ponti esistenti o aggiungerne di nuovi facendo clic su,\nMaiuscolo-Clicca/Cancella elimina il ponte, Maiuscolo-Cancella elimina tutti i ponti"
+
+
 #: meerk40t/gui/plugin.py:248
 msgid "(Yes={yes})"
 msgstr "(Sì={yes})"
@@ -19251,3 +19344,123 @@ msgstr "piano(-selected)<?> copia"
 #: translate_check.py:22
 msgid "another test for \"
 msgstr "un altro test per \"
+
+#: translate_check.py:22
+msgid "another test for \""
+msgstr ""
+
+#: meerk40t/camera/gui/camerapanel.py:524
+msgid "Device independent"
+msgstr "Indipendente dal dispositivo"
+
+#: meerk40t/camera/gui/camerapanel.py:1147
+msgid "URI-Manager"
+msgstr "Gestore URI"
+
+#: meerk40t/core/elements/grid.py:47
+msgid "Distance not absolute but as relative gap"
+msgstr "Distanza non assoluta ma come divario relativo"
+
+#: meerk40t/core/elements/shapes.py:726
+msgid "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+msgstr "Impossibile impostare '{val}' per {field} (attributo incompatibile, old={oldval})"
+
+#: meerk40t/device/devicechoices.py:11
+msgid "Default Hatch Distance"
+msgstr "Distanza predefinita del tratteggio"
+
+#: meerk40t/extra/outerworld.py:14 meerk40t/extra/outerworld.py:63
+msgid "Web url to call"
+msgstr "URL web da chiamare"
+
+#: meerk40t/extra/outerworld.py:17
+msgid "call_url <url>"
+msgstr ""
+
+#: meerk40t/extra/outerworld.py:19
+msgid "Opens a webpage or REST-Interface page"
+msgstr "Apre una pagina web o una pagina dell'interfaccia REST"
+
+#: meerk40t/extra/outerworld.py:33
+msgid "You need to provide an url to call"
+msgstr "È necessario fornire un url da chiamare"
+
+#: meerk40t/extra/outerworld.py:66
+msgid "gpio_set <port> <value>"
+msgstr "gpio_set <porta> <valore>"
+
+#: meerk40t/extra/outerworld.py:68
+msgid "Sets a GPIO port on the RPI to a given value"
+msgstr "Imposta una porta GPIO su RPI su un determinato valore"
+
+#: meerk40t/extra/outerworld.py:82
+msgid "You need to provide a port between 1 and 16"
+msgstr "È necessario fornire una porta compresa tra 1 e 16"
+
+#: meerk40t/extra/outerworld.py:85
+msgid "You need to provide a value to set (1 / = or True / False"
+msgstr "È necessario fornire un valore da impostare (1 / = o Vero/Falso)"
+
+#: meerk40t/grbl/device.py:308
+msgid "TCP Port of the device (usually 81)"
+msgstr "Porta TCP del dispositivo (di solito 81)"
+
+#: meerk40t/gui/simulation.py:1371 meerk40t/gui/wxmscene.py:1201
+msgid "Show physical dimensions"
+msgstr "Mostra le dimensioni fisiche"
+
+#: meerk40t/gui/simulation.py:1372
+msgid "Display the physical dimensions in the Simulation pane"
+msgstr "Visualizzare le dimensioni fisiche nel riquadro di simulazione"
+
+#: meerk40t/gui/wxmmain.py:1547
+msgid "Activate coolant"
+msgstr "Attivare il liquido refrigerante"
+
+#: meerk40t/gui/wxmmain.py:1554
+msgid "Deactivate coolant"
+msgstr "Disattivare il liquido refrigerante"
+
+#: meerk40t/gui/wxmmain.py:4756
+msgid "Place elements"
+msgstr "Posiziona elementi"
+
+#: meerk40t/gui/wxmmain.py:4762
+msgid "Left Edge"
+msgstr "Bordo sinistro"
+
+#: meerk40t/gui/wxmmain.py:4762
+msgid "Right Edge"
+msgstr "Bordo destro"
+
+#: meerk40t/gui/wxmmain.py:4763
+msgid "Top Edge"
+msgstr "Bordo superiore"
+
+#: meerk40t/gui/wxmmain.py:4763
+msgid "Bottom Edge"
+msgstr "Bordo inferiore"
+
+#: meerk40t/gui/wxmmain.py:4766
+msgid "Where do you want to place the content of the file?"
+msgstr "Dove si vuole collocare il contenuto del file?"
+
+#: meerk40t/gui/wxmmain.py:4770
+msgid "Horizontal:"
+msgstr "Orizzontale"
+
+#: meerk40t/gui/wxmmain.py:4778
+msgid "Vertical:"
+msgstr "Verticale"
+
+#: meerk40t/gui/wxmribbon.py:1428
+msgid "Icon"
+msgstr "Icona"
+
+#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:262
+msgid "X, Y"
+msgstr ""
+
+#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:281
+msgid "W, H"
+msgstr ""
