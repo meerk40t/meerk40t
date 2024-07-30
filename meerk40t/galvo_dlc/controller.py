@@ -1108,11 +1108,11 @@ class GalvoController:
             self._wobble = None
             return
         wobble_radius = settings.get("wobble_radius", "1.5mm")
-        wobble_r = self.service.physical_to_device_length(wobble_radius, 0)[0]
+        wobble_r = self.physical_to_device_length(wobble_radius)
         wobble_interval = settings.get("wobble_interval", "0.3mm")
         wobble_speed = settings.get("wobble_speed", 50.0)
         wobble_type = settings.get("wobble_type", "circle")
-        wobble_interval = self.service.physical_to_device_length(wobble_interval, 0)[0]
+        wobble_interval = self.physical_to_device_length(wobble_interval)
         algorithm = self.service.lookup(f"wobble/{wobble_type}")
         if self._wobble is None:
             self._wobble = Wobble(
@@ -1349,6 +1349,10 @@ class GalvoController:
     #######################
     # UNIT CONVERSIONS
     #######################
+    def pyhsical_to_device_length(self, unit):
+        x1, y1 = self.service.view.position(unit, unit, vector=True)
+        x0, y0 = self.service.view.position(0, 0, vector=True)
+        return x1 -x0
 
     def _convert_speed(self, speed):
         """
@@ -1359,7 +1363,7 @@ class GalvoController:
         @return:
         """
         # return int(speed / 2)
-        galvos_per_mm = abs(self.service.physical_to_device_length("1mm", "1mm")[0])
+        galvos_per_mm = abs(self.physical_to_device_length("1mm"))
         return int(speed * galvos_per_mm / 1000.0)
 
     def _convert_frequency(self, frequency_khz):
