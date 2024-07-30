@@ -9,9 +9,16 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_detective_50, icons8_hinges_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxRadioBox,
+)
+from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
 
 _ = wx.GetTranslation
@@ -27,13 +34,17 @@ class KerfPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-
+        self.SetHelpText("kerf")
         self.text_speed = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_speed.set_range(0, 1000)
+        self.label_speed = wx.StaticText(self, wx.ID_ANY, "")
         self.text_power = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_power.set_range(0, 1000)
+        self.label_power = wx.StaticText(self, wx.ID_ANY, "")
+        self.set_power_info()
+        self.set_speed_info()
 
-        self.radio_pattern = wx.RadioBox(
+        self.radio_pattern = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Pattern"),
@@ -51,8 +62,10 @@ class KerfPanel(wx.Panel):
         self.text_delta = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         # self.text_delta.set_range(0, 50)
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
-        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize=25))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create.SetBitmap(
+            icons8_detective.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
 
         self._set_layout()
         self._set_logic()
@@ -66,8 +79,14 @@ class KerfPanel(wx.Panel):
         self.spin_count.SetValue(5)
         self.text_dim.SetValue("20mm")
         self.text_delta.SetValue("5mm")
-        self.text_speed.SetValue("5")
-        self.text_power.SetValue("1000")
+        sval = 5
+        if self.use_mm_min():
+            sval *= 60
+        self.text_speed.SetValue(str(sval))
+        if self.use_percent():
+            self.text_power.SetValue("100")
+        else:
+            self.text_power.SetValue("1000")
         self.text_min.SetValue("0.05mm")
         self.text_max.SetValue("0.25mm")
 
@@ -85,16 +104,18 @@ class KerfPanel(wx.Panel):
 
     def _set_layout(self):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(int(value), -1))
-            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
-            ctrl.SetSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(dip_size(self, int(value), -1))
+            ctrl.SetMinSize(dip_size(self, int(value * 0.75), -1))
+            ctrl.SetSize(dip_size(self, value, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_cutop = StaticBoxSizer(self, wx.ID_ANY, _("Cut-Operation"), wx.HORIZONTAL)
         sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Speed"), wx.HORIZONTAL)
         sizer_power = StaticBoxSizer(self, wx.ID_ANY, _("Power"), wx.HORIZONTAL)
         sizer_speed.Add(self.text_speed, 1, wx.EXPAND, 0)
+        sizer_speed.Add(self.label_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_power.Add(self.text_power, 1, wx.EXPAND, 0)
+        sizer_power.Add(self.label_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_cutop.Add(sizer_speed, 1, wx.EXPAND, 0)
         sizer_cutop.Add(sizer_power, 1, wx.EXPAND, 0)
 
@@ -141,20 +162,24 @@ class KerfPanel(wx.Panel):
         sizer_param.Add(hline_dim, 0, wx.EXPAND, 0)
         sizer_param.Add(hline_delta, 0, wx.EXPAND, 0)
 
-        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.VERTICAL)
+        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.HORIZONTAL)
         infomsg = _(
             "If you want to produce cut out shapes with *exact* dimensions"
             + " after the burn, then you need to take half the width of the"
             + " laserbeam into consideration (aka Kerf compensation).\n"
-            + "This routine will create a couple of testshapes for you to establish this value.\n"
+            + "This routine will create a couple of test shapes for you to establish this value.\n"
             + "After you cut these shapes out you need to try to fit the shapes with the same"
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."
+        )
+        info_pic = wx.StaticBitmap(
+            self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE)
         )
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())
+        sizer_info.Add(info_pic, 0, 0, 0)
         sizer_info.Add(info_label, 1, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_cutop, 0, wx.EXPAND, 1)
@@ -162,7 +187,6 @@ class KerfPanel(wx.Panel):
         main_sizer.Add(self.button_create, 0, 0, 0)
         main_sizer.Add(sizer_info, 1, wx.EXPAND, 0)
         main_sizer.Layout()
-
         self.text_min.SetToolTip(_("Minimum value for Kerf"))
         self.text_max.SetToolTip(_("Maximum value for Kerf"))
         self.text_dim.SetToolTip(_("Dimension of the to be created pattern"))
@@ -171,6 +195,41 @@ class KerfPanel(wx.Panel):
         self.button_create.SetToolTip(_("Create a test-pattern with your values"))
 
         self.SetSizer(main_sizer)
+
+    def use_percent(self):
+        self.context.device.setting(bool, "use_percent_for_power_display", False)
+        return self.context.device.use_percent_for_power_display
+
+    def use_mm_min(self):
+        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
+        return self.context.device.use_mm_min_for_speed_display
+
+    def set_power_info(self):
+        maxval = 1000
+        lbl = ""
+        ttip = _("Pulses Per Inch - This is software created laser power control.")
+
+        if self.use_percent():
+            maxval /= 10
+            lbl = "%"
+            ttip = _(
+                "% of maximum power - This is a percentage of the maximum power of the laser."
+            )
+        self.text_power.set_range(0, maxval)
+        self.label_power.SetLabel(lbl)
+        self.text_power.SetToolTip(ttip)
+
+    def set_speed_info(self):
+        maxval = 1000
+        lbl = "mm/s"
+
+        if self.use_mm_min():
+            maxval *= 60
+            lbl = "mm/min"
+        ttip = _("Speed at which the head moves in {unit}.").format(unit=lbl)
+        self.text_speed.set_range(0, maxval)
+        self.label_speed.SetLabel(lbl)
+        self.text_speed.SetToolTip(ttip)
 
     def on_method(self, event):
         slider = bool(self.radio_pattern.GetSelection() == 2)
@@ -218,9 +277,16 @@ class KerfPanel(wx.Panel):
             is_valid = False
         if not valid_length(self.text_max):
             is_valid = False
-        if not valid_float(self.text_power, 0, 1000):
+        if self.use_percent():
+            maxval = 100
+        else:
+            maxval = 1000
+        if not valid_float(self.text_power, 0, maxval):
             is_valid = False
-        if not valid_float(self.text_speed, 0, 1000):
+        maxval = 1000
+        if self.use_mm_min():
+            maxval *= 60
+        if not valid_float(self.text_speed, 0, maxval):
             is_valid = False
 
         if is_valid:
@@ -249,7 +315,7 @@ class KerfPanel(wx.Panel):
             b = 0
             if maxidx < 8:
                 colrange = 8
-            if maxidx < 16:
+            elif maxidx < 16:
                 colrange = 16
             elif maxidx < 32:
                 colrange = 32
@@ -274,16 +340,16 @@ class KerfPanel(wx.Panel):
             self.context.elements.clear_elements(fast=True)
 
         def shortened(value, digits):
-            result = str(round(value, digits))
-            if "." in result:
-                while result.endswith("0"):
-                    result = result[:-1]
-            if result.endswith("."):
-                if result == ".":
-                    result = "0"
+            _result = str(round(value, digits))
+            if "." in _result:
+                while _result.endswith("0"):
+                    _result = _result[:-1]
+            if _result.endswith("."):
+                if _result == ".":
+                    _result = "0"
                 else:
-                    result = result[:-1]
-            return result
+                    _result = _result[:-1]
+            return _result
 
         def create_operations():
             kerf = minv
@@ -452,8 +518,20 @@ class KerfPanel(wx.Panel):
                 kerf += delta
                 xx += pattern_size
                 xx += gap_size
+            if self.use_mm_min():
+                speed_fact = 60
+                speed_unit = "mm/min"
+            else:
+                speed_fact = 1
+                speed_unit = "mm/s"
+            info_speed = f"{int(op_speed * speed_fact)}{speed_unit}"
+            if self.use_percent():
+                info_power = f"{op_power/10.0:.0f}%"
+            else:
+                info_power = f"{op_power:.0f}ppi"
+            info = f"Kerf-Test (speed={info_speed}, power={info_power})"
             node = element_branch.add(
-                text=f"Kerf-Test (speed={op_speed}mm/s, power={op_power/10.0:.0f}%)",
+                text=info,
                 matrix=Matrix(
                     f"translate({0 + x_offset}, {2.2 * pattern_size + y_offset})"
                     + f" scale({UNITS_PER_PIXEL})"
@@ -522,7 +600,6 @@ class KerfPanel(wx.Panel):
             x_val = x_offset + inner_border + (num_cuts - 1) * pattern_width
             y_val = y_offset + inner_border + pattern_size
             kerfval = 0
-            idx = 0
             ticklen = float(Length("4mm"))
             tickdist = float(Length("0.02mm"))
             xfactor = tickdist * num_cuts / 2.0
@@ -731,7 +808,11 @@ class KerfPanel(wx.Panel):
             minv = float(Length(self.text_min.GetValue()))
             maxv = float(Length(self.text_max.GetValue()))
             op_speed = float(self.text_speed.GetValue())
+            if self.use_mm_min():
+                op_speed /= 60
             op_power = float(self.text_power.GetValue())
+            if self.use_percent():
+                op_power *= 10.0
             gap_size = float(Length(self.text_delta.GetValue()))
             count = self.spin_count.GetValue()
             if count < 2:
@@ -774,7 +855,7 @@ class KerfPanel(wx.Panel):
         # self.context.signal("optimize", False)
 
     def pane_show(self):
-        return
+        self.set_power_info()
 
 
 class KerfTool(MWindow):
@@ -791,16 +872,25 @@ class KerfTool(MWindow):
         )
         self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_hinges_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_kerf.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Kerf-Test"))
+        self.sizer.Add(self.panel_template, 1, wx.EXPAND, 0)
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel_template.pane_show()
 
     def window_close(self):
         pass
+
+    @signal_listener("power_percent")
+    @signal_listener("speed_min")
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        self.panel_template.set_power_info()
+        self.panel_template.set_speed_info()
 
     @staticmethod
     def submenu():

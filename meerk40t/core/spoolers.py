@@ -7,7 +7,7 @@ from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 
 """
-This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home, 
+This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home,
 unlock rail commands. And it provides the the spooler class which should be provided by each driver.
 
 Spoolers process different jobs in order. A spooler job can be anything, but usually is a LaserJob which is a simple
@@ -38,6 +38,7 @@ def plugin(kernel, lifecycle):
                 data.final()
                 loops = 1
                 elements = kernel.elements
+                elements("wordlist advance\n")
                 e = elements.op_branch
 
                 if e.loop_continuous:
@@ -503,13 +504,30 @@ class Spooler:
         while not self._shutdown:
             if self.context.kernel.is_shutdown:
                 return  # Kernel shutdown spooler threads should die off.
+            is_valid = False
             with self._lock:
-                try:
-                    program = self._queue[0]
-                except IndexError:
-                    # There is no work to do.
-                    self._lock.wait()
-                    continue
+                idx = 0
+                while not is_valid:
+                    try:
+                        program = self._queue[idx]
+                        # Not all type of jobs are regular jobs,
+                        # so that needs to be checked...
+                        if hasattr(program, "enabled"):
+                            if program.enabled:
+                                is_valid = True
+                                break
+                            else:
+                                idx += 1
+                        else:
+                            is_valid = True
+                            break
+                    except IndexError:
+                        # There is no work to do.
+                        self._lock.wait()
+                        break
+            if not is_valid:
+                continue
+
             priority = program.priority
 
             # Check if the driver holds work at this priority level.

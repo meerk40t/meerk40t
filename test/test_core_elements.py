@@ -3,7 +3,6 @@ from test import bootstrap
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_MIL
-from meerk40t.svgelements import Circle, Rect
 
 
 class TestElements(unittest.TestCase):
@@ -24,7 +23,7 @@ class TestElements(unittest.TestCase):
                     "element* " + command.split("/")[-1] + " validate_type\n"
                 )
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_specific(self):
         """
@@ -38,8 +37,10 @@ class TestElements(unittest.TestCase):
             kernel.console("rect 2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("ellipse 2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("line 2cm 2cm 1cm 1cm grid 3 3\n")
+            kernel.console("element* circ_copy 4 10mm 5deg 0.5turn -d 25deg")
+            kernel.console("element* radial 2 5mm 20deg 200deg")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_frame(self):
         """
@@ -57,7 +58,7 @@ class TestElements(unittest.TestCase):
             self.assertAlmostEqual(f[0].rx, f[1].rx)
             self.assertAlmostEqual(f[0].ry, f[1].ry)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_circle(self):
         """
@@ -70,20 +71,13 @@ class TestElements(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             kernel_root("circle 1in 1in 1in\n")
             for node in kernel_root.elements.elems():
-                shape = node.shape
-                self.assertEqual(
-                    shape,
-                    Circle(
-                        center=(1000 * UNITS_PER_MIL, 1000 * UNITS_PER_MIL),
-                        r=1000 * UNITS_PER_MIL,
-                        stroke_width=shape.stroke_width,
-                        fill=shape.fill,
-                        stroke=shape.stroke,
-                    ),
-                )
+                self.assertEqual(node.cx, 1000 * UNITS_PER_MIL)
+                self.assertEqual(node.cy, 1000 * UNITS_PER_MIL)
+                self.assertEqual(node.rx, 1000 * UNITS_PER_MIL)
+                self.assertEqual(node.ry, 1000 * UNITS_PER_MIL)
                 self.assertEqual(node.stroke, "blue")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_rect(self):
         """
@@ -96,23 +90,14 @@ class TestElements(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
             for node in kernel_root.elements.elems():
-                shape = node.shape
-                self.assertEqual(
-                    shape,
-                    Rect(
-                        1000 * UNITS_PER_MIL,
-                        1000 * UNITS_PER_MIL,
-                        1000 * UNITS_PER_MIL,
-                        1000 * UNITS_PER_MIL,
-                        stroke_width=shape.stroke_width,
-                        fill=shape.fill,
-                        stroke=shape.stroke,
-                    ),
-                )
+                self.assertEqual(node.x, 1000 * UNITS_PER_MIL)
+                self.assertEqual(node.y, 1000 * UNITS_PER_MIL)
+                self.assertEqual(node.width, 1000 * UNITS_PER_MIL)
+                self.assertEqual(node.height, 1000 * UNITS_PER_MIL)
                 self.assertEqual(node.stroke, "red")
                 self.assertEqual(node.fill, "blue")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_clipboard(self):
         """
@@ -128,7 +113,7 @@ class TestElements(unittest.TestCase):
             kernel_root("clipboard paste -xy 2in 2in\n")
             kernel_root("grid 2 4\n")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_shapes(self):
         """
@@ -143,7 +128,7 @@ class TestElements(unittest.TestCase):
             # kernel_root("polygon 1in 1in 2in 2in 0in 4cm\n")
 
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_bad_grid(self):
         """
@@ -157,4 +142,4 @@ class TestElements(unittest.TestCase):
             kernel_root("shape 5 2in 2in 1in\n")
             kernel_root("grid 2 2 1in 1foo\n")
         finally:
-            kernel.shutdown()
+            kernel()

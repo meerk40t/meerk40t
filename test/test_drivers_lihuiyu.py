@@ -36,6 +36,16 @@ Creator-Software: MeerK40t v0.0.0-testing
 %0%0%0%0%
 """
 
+egv_rect_y2_rotary = """Document type : LHYMICRO-GL file
+File version: 1.0.01
+Copyright: Unknown
+Creator-Software: MeerK40t v0.0.0-testing
+
+%0%0%0%0%
+IBzzzvRzzzzzz|tS1P
+ICV2490731016000027CNLBS1EDz139RzzzvTz139LzzzvFNSE-
+"""
+
 egv_override_speed_1_rect = """Document type : LHYMICRO-GL file
 File version: 1.0.01
 Copyright: Unknown
@@ -60,6 +70,32 @@ ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
 
 
 class TestDriverLihuiyu(unittest.TestCase):
+    def test_reload_devices_lihuiyu(self):
+        """
+        We start a new bootstrap, delete any services that would have existed previously. Add 1 service and also have
+        the default service added by default.
+        @return:
+        """
+        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY")
+        try:
+            for i in range(10):
+                kernel.console(f"service device destroy {i}\n")
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("service device start -i lhystudios 1\n")
+            kernel.console("service device start -i lhystudios 2\n")
+            kernel.console("service list\n")
+            kernel.console("contexts\n")
+            kernel.console("plugins\n")
+        finally:
+            kernel()
+
+        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY", ignore_settings=False)
+        try:
+            devs = [name for name in kernel.contexts if name.startswith("lhystudios")]
+            self.assertGreater(len(devs), 1)
+        finally:
+            kernel()
+
     def test_driver_basic_rect_engrave(self):
         """
         @return:
@@ -75,7 +111,7 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_rect)
@@ -95,7 +131,7 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_rect)
@@ -117,7 +153,7 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_blank)
@@ -149,10 +185,39 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"element0 imageop -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_image)
+
+
+class TestDriverLihuiyuRotary(unittest.TestCase):
+    def test_driver_rotary_engrave(self):
+        """
+        This test creates a lihuiyu device, with a rotary.
+        @return:
+        """
+        file1 = "test_rotary.egv"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap(profile="MeerK40t_TEST_rotary")
+        try:
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("operation* delete\n")
+            device = kernel.device
+            rotary_path = device.path
+            device(f"set -p {rotary_path} rotary_active True")
+            device(f"set -p {rotary_path} rotary_scale_y 2.0")
+            device.signal("rotary_active", True)
+            kernel.device.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
+            kernel.console(
+                f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
+        finally:
+            kernel()
+        with open(file1) as f:
+            data = f.read()
+        self.assertEqual(egv_rect_y2_rotary, data)
 
 
 class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
@@ -183,8 +248,9 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console(
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
+            device(f"set -p {path} rapid_override False")
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(egv_override_speed_1_rect, data)
@@ -216,7 +282,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
                 f"element* engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
             print(data)
@@ -413,4 +479,4 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             self.assertEqual(data[-3], data[-1])
         finally:
             bootstrap.destroy(kernel)
-            kernel.shutdown()
+            kernel()

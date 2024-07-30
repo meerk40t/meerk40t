@@ -19,7 +19,7 @@ class RectTool(ToolWidget):
     Adds Rectangles with click and drag.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.p1 = None
@@ -87,6 +87,15 @@ class RectTool(ToolWidget):
             s += _(" (Press Alt-Key to draw from center)")
             self.scene.context.signal("statusmsg", s)
 
+    def end_tool(self, force=False):
+        self.p1 = None
+        self.p2 = None
+        self.scene.context.signal("statusmsg", "")
+        self.scene.request_refresh()
+        if force or self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context("tool none\n")
+
     def event(
         self,
         window_pos=None,
@@ -114,7 +123,10 @@ class RectTool(ToolWidget):
         if event_type == "leftdown":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                self.p1 = complex(space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                self.p1 = complex(sx, sy)
             else:
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
@@ -132,7 +144,8 @@ class RectTool(ToolWidget):
             self.p2 = None
             self.scene.pane.tool_active = False
             self.scene.request_refresh()
-            response = RESPONSE_ABORT
+            # Allow other widgets (like the selection widget to take over)
+            response = RESPONSE_CHAIN
         elif event_type == "leftup":
             self.scene.pane.tool_active = False
             try:
@@ -146,10 +159,7 @@ class RectTool(ToolWidget):
                 dy = self.p1.imag - self.p2.imag
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     # Degenerate? Ignore!
-                    self.p1 = None
-                    self.p2 = None
-                    self.scene.request_refresh()
-                    self.scene.context.signal("statusmsg", "")
+                    self.end_tool()
                     response = RESPONSE_ABORT
                     return response
                 if self.creation_mode == 1:
@@ -180,24 +190,19 @@ class RectTool(ToolWidget):
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)
-                self.p1 = None
-                self.p2 = None
             except IndexError:
                 pass
-            self.scene.request_refresh()
-            self.scene.context.signal("statusmsg", "")
+            self.end_tool()
             response = RESPONSE_ABORT
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
             if self.scene.pane.tool_active:
-                self.scene.pane.tool_active = False
-                self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
-            self.p1 = None
-            self.p2 = None
-            self.scene.context.signal("statusmsg", "")
+            self.end_tool(force=True)
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if self.p1 is not None:
+                response = RESPONSE_CONSUME
         return response

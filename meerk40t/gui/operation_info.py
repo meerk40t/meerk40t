@@ -1,16 +1,15 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_computer_support_50,
-    icons8_diagonal_20,
-    icons8_direction_20,
-    icons8_image_20,
-    icons8_laser_beam_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_points,
+    icons8_computer_support,
+    icons8_direction,
+    icons8_image,
+    icons8_laser_beam,
+    icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -21,6 +20,7 @@ class OpInfoPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("operationinfo")
 
         self.list_operations = wx.ListCtrl(
             self,
@@ -50,7 +50,7 @@ class OpInfoPanel(ScrolledPanel):
         self.list_operations.SetToolTip(
             _("Right-Click for more options for ops and unassigned elements")
         )
-        self.cmd_calc = wx.Button(self, wx.ID_ANY, _("Get Time Estimates"))
+        self.cmd_calc = wxButton(self, wx.ID_ANY, _("Get Time Estimates"))
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
         sizer_main.Add(self.cmd_calc, 0, wx.EXPAND, 0)
@@ -62,12 +62,11 @@ class OpInfoPanel(ScrolledPanel):
         self.Layout()
 
         self.opinfo = {
-            "op cut": ("Cut", icons8_laser_beam_20, 0),
-            "op raster": ("Raster", icons8_direction_20, 0),
-            "op image": ("Image", icons8_image_20, 0),
-            "op engrave": ("Engrave", icons8_small_beam_20, 0),
-            "op dots": ("Dots", icons8_scatter_plot_20, 0),
-            "op hatch": ("Hatch", icons8_diagonal_20, 0),
+            "op cut": ("Cut", icons8_laser_beam, 0),
+            "op raster": ("Raster", icons8_direction, 0),
+            "op image": ("Image", icons8_image, 0),
+            "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
+            "op dots": ("Dots", icon_points, 0),
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
@@ -87,13 +86,13 @@ class OpInfoPanel(ScrolledPanel):
         lcount = self.list_operations.GetItemCount()
         for index in range(lcount):
             info = "---"
-            id = self.list_operations.GetItemData(index)
-            if id < 0:
+            _id = self.list_operations.GetItemData(index)
+            if _id < 0:
                 continue
-            myop = self.ops[id]
+            myop = self.ops[_id]
             if hasattr(myop, "time_estimate"):
                 info = myop.time_estimate()
-            self.list_operations.SetItem(id, 4, info)
+            self.list_operations.SetItem(_id, 4, info)
 
     def refresh_data(self):
         def mklabel(value):
@@ -109,12 +108,12 @@ class OpInfoPanel(ScrolledPanel):
                 info = self.opinfo[node.type]
             except KeyError:
                 continue
-            # print(f"{node.type} - {node.label} - {info[0]}, {info[2]}")
+            # print(f"{node.type} - {node.display_label()} - {info[0]}, {info[2]}")
             list_id = self.list_operations.InsertItem(
                 self.list_operations.GetItemCount(), f"#{idx}"
             )
             self.list_operations.SetItem(list_id, 1, info[0])
-            self.list_operations.SetItem(list_id, 2, mklabel(node.label))
+            self.list_operations.SetItem(list_id, 2, mklabel(node.display_label()))
             self.list_operations.SetItem(list_id, 3, str(len(node.children)))
             self.list_operations.SetItem(list_id, 4, "---")
             self.list_operations.SetItemImage(list_id, info[2])
@@ -130,6 +129,7 @@ class OpInfoPanel(ScrolledPanel):
             "elem rect": 0,
             "elem line": 0,
             "elem text": 0,
+            "image raster": 0,
         }
         elems = list(self.context.elements.elems())
         for node in elems:
@@ -238,11 +238,11 @@ class OpInfoPanel(ScrolledPanel):
 
         index = event.Index
         try:
-            id = self.list_operations.GetItemData(index)
+            _id = self.list_operations.GetItemData(index)
         except (KeyError, IndexError):
             return
         menu = wx.Menu()
-        if id < 0:
+        if _id < 0:
             # elem xxx Type:
             listitem = self.list_operations.GetItem(index, 2)
             elemtype = listitem.GetText()
@@ -261,8 +261,8 @@ class OpInfoPanel(ScrolledPanel):
             )
             self.Bind(wx.EVT_MENU, self.on_tree_popup_mark_elem(""), item)
         else:
-            opnode = self.ops[id]
-            s = mklabel(opnode.label)
+            opnode = self.ops[_id]
+            s = mklabel(opnode.display_label())
             if s == "":
                 s = opnode.type
             item = menu.Append(
@@ -283,11 +283,13 @@ class OperationInformation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = OpInfoPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Information"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

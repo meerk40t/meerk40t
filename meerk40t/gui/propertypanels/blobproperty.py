@@ -1,11 +1,11 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.core.node.blobnode import BlobNode
+from meerk40t.gui.icons import icons8_vector
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import ScrolledPanel, wxRadioBox
 
-from ..icons import icons8_vector_50
-from ..mwindow import MWindow
 from .attributes import IdPanel
-from ...core.node.blobnode import BlobNode
 
 _ = wx.GetTranslation
 
@@ -24,8 +24,12 @@ class BlobPropertyPanel(ScrolledPanel):
         self.views = dict(node.views)
         self.views[_("Hexadecimal View")] = BlobNode.hex_view
         self.views[_("Plain-Text")] = BlobNode.ascii_view
-        self.option_view = wx.RadioBox(
-            self, wx.ID_ANY, label="View", choices=list(self.views), style=wx.RA_SPECIFY_COLS
+        self.option_view = wxRadioBox(
+            self,
+            wx.ID_ANY,
+            label=_("View"),
+            choices=list(self.views),
+            style=wx.RA_SPECIFY_COLS,
         )
         self.option_view.SetSelection(0)
         self.text_blob = wx.TextCtrl(
@@ -94,11 +98,13 @@ class BlobProperty(MWindow):
         super().__init__(288, 303, *args, **kwds)
 
         self.panel = BlobPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Blob Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

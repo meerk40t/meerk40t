@@ -16,7 +16,7 @@ class VectorTool(ToolWidget):
     Adds Path with click and drag.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.path = None
@@ -102,7 +102,10 @@ class VectorTool(ToolWidget):
                     self.pen.SetWidth(int(elements.default_strokewidth))
                 self.path = Path()
                 if nearest_snap is None:
-                    self.path.move((space_pos[0], space_pos[1]))
+                    sx, sy = self.scene.get_snap_point(
+                        space_pos[0], space_pos[1], modifiers
+                    )
+                    self.path.move((sx, sy))
                 else:
                     self.path.move((nearest_snap[0], nearest_snap[1]))
             else:
@@ -126,7 +129,10 @@ class VectorTool(ToolWidget):
         elif event_type == "leftdown":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                pos = (space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                pos = (sx, sy)
             else:
                 pos = (nearest_snap[0], nearest_snap[1])
             pos = self.angled(pos)
@@ -155,7 +161,10 @@ class VectorTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "hover":
             if nearest_snap is None:
-                self.mouse_position = space_pos[0], space_pos[1]
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                self.mouse_position = sx, sy
             else:
                 self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.path:
@@ -174,7 +183,9 @@ class VectorTool(ToolWidget):
             self.path = None
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if self.path:
+                response = RESPONSE_CONSUME
         return response
 
     def end_tool(self):
@@ -196,3 +207,5 @@ class VectorTool(ToolWidget):
         self.scene.context.signal("statusmsg", "")
         self.mouse_position = None
         self.scene.request_refresh()
+        if self.scene.context.just_a_single_element:
+            self.scene.context("tool none\n")

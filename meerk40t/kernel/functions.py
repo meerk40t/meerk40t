@@ -6,7 +6,7 @@ import re
 from math import isinf
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
-from meerk40t.kernel import CommandSyntaxError, MalformedCommandRegistration
+from .exceptions import CommandSyntaxError, MalformedCommandRegistration
 
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
@@ -105,6 +105,7 @@ def console_command(
     input_type: Union[str, Tuple[str, ...]] = None,
     output_type: str = None,
     all_arguments_required: bool = False,
+    force: str = None,
 ):
     """
     Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
@@ -123,6 +124,7 @@ def console_command(
     @param input_type: What is the incoming context for the command
     @param output_type: What is the outgoing context for the command
     @param all_arguments_required: Should raise a syntax error if any argument is unfilled
+    @param force: force registration destination.
     @return:
     """
 
@@ -276,7 +278,12 @@ def console_command(
                 remainder = ""  # not chaining
 
             # Call the function.
-            returned = func(command=command, channel=channel, **ik, **kwargs)
+            if inner.object:
+                returned = func(
+                    inner.object, command=command, channel=channel, **ik, **kwargs
+                )
+            else:
+                returned = func(command=command, channel=channel, **ik, **kwargs)
 
             # Process return values.
             if returned is None:
@@ -309,14 +316,50 @@ def console_command(
 
         inner.arguments = list()
         inner.options = list()
+        inner.object = None
 
-        for cmd in cmds:
-            for i in ins:
-                p = f"command/{i}/{cmd}"
-                registration.register(p, inner)
+        # Process registration.
+        def unregister(reg, obj=None):
+            """
+            Unregister into registration.
+            """
+            if force == "kernel" and hasattr(reg, "kernel"):
+                reg = reg.kernel
+            console_command_remove(reg, path, input_type)
+
+        def register(reg, obj=None):
+            """
+            Register in the service or kernel.
+            """
+            if force == "service":
+                if not hasattr(reg, "kernel"):
+                    # Force service reg, but kernel registration given. Abort.
+                    return
+            if force == "kernel" and hasattr(reg, "kernel"):
+                # force kernel reg, and given service. Use kernel.
+                reg = reg.kernel
+            for cmd in cmds:
+                for i in ins:
+                    p = f"command/{i}/{cmd}"
+                    reg.register(p, inner)
+            inner.object = obj
+            inner.unreg = unregister
+
+        inner.reg = register
+        if registration:
+            register(registration)
+
         return inner
 
     return decorator
+
+
+def kernel_console_command(*args, **kwargs):
+    return console_command(None, *args, **kwargs, force="kernel")
+
+
+def service_console_command(*args, **kwargs):
+    return console_command(None, *args, **kwargs, force="service")
 
 
 def console_command_remove(
@@ -346,7 +389,7 @@ def _cmd_cli_parser(
     """
     Parser for console command events.
 
-    @param text:
+    @param argv:
     @return:
     """
     for text in argv:
@@ -360,7 +403,7 @@ def _cmd_cli_parser(
             start = pos
             pos = match.end()
             if kind == "SKIP":
-                continue
+                pass
             elif kind == "PARAM":
                 value = match.group()
                 yield kind, value, start, pos

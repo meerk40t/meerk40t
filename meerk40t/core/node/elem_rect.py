@@ -1,7 +1,11 @@
-import math
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +17,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RectNode(Node, Stroked):
+class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """
@@ -61,7 +65,14 @@ class RectNode(Node, Stroked):
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem rect", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} {stroke}"
         if self.x is None:
             self.x = 0
@@ -80,7 +91,6 @@ class RectNode(Node, Stroked):
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
-
         self.set_dirty_bounds()
 
     def __repr__(self):
@@ -108,7 +118,10 @@ class RectNode(Node, Stroked):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self):
+    def as_geometry(self, **kws) -> Geomstr:
+        """
+        Delivers the basic shape without any special effects like tabs and / or dashes/dots
+        """
         x = self.x
         y = self.y
         width = self.width
@@ -117,6 +130,35 @@ class RectNode(Node, Stroked):
         ry = self.ry
         path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
         path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effektcs like tabs and dashes/dots
+        """
+        unit_factor = kws.get("unitfactor", 1)
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+        rx = self.rx
+        ry = self.ry
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
+        path.transform(self.matrix)
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        path = path.simplify()
         return path
 
     def scaled(self, sx, sy, ox, oy):
@@ -152,7 +194,7 @@ class RectNode(Node, Stroked):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
-        self._points_dirty = True
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
@@ -177,6 +219,9 @@ class RectNode(Node, Stroked):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        return self.width + self.width + self.height + self.height
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
@@ -192,10 +237,16 @@ class RectNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game, but we will take the operations color
+            if hasattr(drag_node, "color") and drag_node.color is not None:
+                self.stroke = drag_node.color
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -203,8 +254,8 @@ class RectNode(Node, Stroked):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
@@ -244,3 +295,62 @@ class RectNode(Node, Stroked):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        dimens = 0.5 * min(self.width, self.height)
+        try:
+            k = min(1.0, self.rx / dimens)
+        except ZeroDivisionError:
+            k = 0.0
+        return (
+            "rect",
+            2,
+            k,
+            0,
+            self.x,
+            self.y,
+            0,
+            self.x + self.width,
+            self.y + self.height,
+            0,
+            self.x + self.width / 2,
+            self.y + self.height / 2,
+        )
+
+    @functional_parameter.setter
+    def functional_parameter(self, param):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if not isinstance(param, (list, tuple)):
+            return
+        if len(param) == 0:
+            return
+        if param[0] != "rect":
+            return
+        nx0 = getit(param, 4, self.x)
+        ny0 = getit(param, 5, self.y)
+        nx1 = getit(param, 7, self.x + self.width)
+        ny1 = getit(param, 8, self.y + self.height)
+        cx = self.x + self.width / 2
+        cy = self.y + self.height / 2
+        ncx = getit(param, 10, cx)
+        ncy = getit(param, 11, cy)
+        if ncx != cx or ncy != cy:
+            self.x += ncx - cx
+            self.y += ncy - cy
+        else:
+            self.x = nx0
+            self.y = ny0
+            self.width = abs(nx1 - nx0)
+            self.height = abs(ny1 - ny0)
+        dimens = 0.5 * min(self.width, self.height)
+        rx = getit(param, 2, 0)
+        self.rx = dimens * rx
+        self.ry = self.rx
+
+        self.altered()

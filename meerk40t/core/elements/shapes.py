@@ -5,12 +5,17 @@ This is a giant list of console commands that deal with and often implement the 
 from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Length
+from meerk40t.core.units import (
+    UNITS_PER_MM,
+    UNITS_PER_PIXEL,
+    UNITS_PER_POINT,
+    Angle,
+    Length,
+)
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
-    Angle,
     Color,
     Matrix,
     Path,
@@ -229,41 +234,196 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_option("distance", "d", type=Length, default="1mm")
-    @self.console_option("angle", "a", type=Angle.parse, default="0deg")
+    @self.console_command(
+        "effect-remove",
+        help=_("remove effects from element"),
+        input_type=(None, "elements"),
+    )
+    def effect_remove(
+        command,
+        channel,
+        _,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        if len(data) == 0:
+            return
+        for node in data:
+            eparent = node.parent
+            nparent = eparent
+            while True:
+                if nparent.type.startswith("effect"):
+                    break
+                if nparent.parent is None:
+                    nparent = None
+                    break
+                if nparent.parent is self.elem_branch:
+                    nparent = None
+                    break
+                nparent = nparent.parent
+            if nparent is None:
+                continue
+            was_emphasized = node.emphasized
+            node._parent = None  # Otherwise add_node will fail below
+            try:
+                idx = eparent._children.index(node)
+                if idx >= 0:
+                    eparent._children.pop(idx)
+            except IndexError:
+                pass
+            nparent.parent.add_node(node)
+            if len(nparent.children) == 0:
+                nparent.remove_node()
+            else:
+                nparent.altered()
+                node.emphasized = was_emphasized
+        self.signal("refresh_scene", "Scene")
+
+    @self.console_option("etype", "e", type=str, default="scanline")
+    @self.console_option("distance", "d", type=Length, default=None)
+    @self.console_option("angle", "a", type=Angle, default=None)
+    @self.console_option("angle_delta", "b", type=Angle, default=None)
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
         input_type=(None, "elements"),
     )
-    def effect_hatch(command, data=None, angle=None, distance=None, **kwargs):
+    def effect_hatch(
+        command,
+        channel,
+        _,
+        data=None,
+        etype=None,
+        angle=None,
+        angle_delta=None,
+        distance=None,
+        post=None,
+        **kwargs,
+    ):
         """
         Add an effect hatch object
         """
-        node = self.elem_branch.add(
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+
+        if distance is None and hasattr(self.device, "effect_hatch_default_distance"):
+            distance = getattr(self.device, "effect_hatch_default_distance")
+        elif distance is None:
+            distance = "1mm"
+
+        if angle is None and hasattr(self.device, "effect_hatch_default_angle"):
+            angle = Angle(getattr(self.device, "effect_hatch_default_angle"))
+        elif angle is None:
+            angle = Angle("0deg")
+
+        if angle_delta is None and hasattr(
+            self.device, "effect_hatch_default_angle_delta"
+        ):
+            angle_delta = Angle(
+                getattr(self.device, "effect_hatch_default_angle_delta")
+            )
+        elif angle_delta is None:
+            angle_delta = Angle("0deg")
+
+        if etype is None:
+            etype = "scanline"
+        first_node = data[0]
+
+        node = first_node.parent.add(
             type="effect hatch",
             label="Hatch Effect",
-            hatch_angle=angle.as_radians,
+            hatch_type=etype,
+            hatch_angle=angle.radians,
+            hatch_angle_delta=angle_delta.radians,
             hatch_distance=distance,
         )
+        for n in data:
+            node.append_child(n)
+
+        # Newly created! Classification needed?
+        post.append(classify_new([node]))
+
         self.set_emphasis([node])
-        if data is not None:
-            for n in data:
-                node.append_child(n)
         node.focus()
 
+    @self.console_option("wtype", "w", type=str, default="circle")
+    @self.console_option("radius", "r", type=Length, default=None)
+    @self.console_option("interval", "i", type=Length, default=None)
     @self.console_command(
-        "toggle",
-        help=_("Toggles effect from being group to an effect."),
-        input_type="elements",
+        "effect-wobble",
+        help=_("adds wobble-effect to selected elements"),
+        input_type=(None, "elements"),
     )
-    def effect_toggle(command, data=None, **kwargs):
+    def effect_wobble(
+        command,
+        channel,
+        _,
+        data=None,
+        wtype=None,
+        radius=None,
+        interval=None,
+        post=None,
+        **kwargs,
+    ):
         """
-        Toggles effect hatch object
+        Add an effect hatch object
         """
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        if wtype is None:
+            wtype = "circle"
+
+        if radius is None and hasattr(self.device, "effect_wobble_default_radius"):
+            radius = getattr(self.device, "effect_wobble_default_radius")
+        elif radius is None:
+            radius = "0.5mm"
+
+        if interval is None and hasattr(self.device, "effect_wobble_default_interval"):
+            interval = getattr(self.device, "effect_wobble_default_interval")
+        elif interval is None:
+            interval = "0.5mm"
+
+        wtype = wtype.lower()
+        allowed = list(self.kernel.root.match("wobble", suffix=True))
+        if wtype not in allowed:
+            channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
+            return
+        try:
+            rlen = Length(radius)
+        except ValueError:
+            channel("Invalid value for radius")
+            return
+        try:
+            ilen = Length(interval)
+        except ValueError:
+            channel("Invalid value for interval")
+            return
+        first_node = data[0]
+        node = first_node.parent.add(
+            type="effect wobble",
+            label="Wobble Effect",
+            wobble_type=wtype,
+            wobble_radius=rlen.length_mm,
+            wobble_interval=ilen.length_mm,
+        )
         for n in data:
-            if n.type.startswith("effect "):
-                n.effect = not n.effect
+            node.append_child(n)
+
+        # Newly created! Classification needed?
+        post.append(classify_new([node]))
+
+        self.set_emphasis([node])
+        node.focus()
 
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
@@ -369,8 +529,12 @@ def init_commands(kernel):
         return "elements", data
 
     def calculate_text_bounds(data):
-        # A render operation will use the LaserRender class
-        # and will re-calculate the element bounds
+        """
+        A render operation will use the LaserRender class
+        and will re-calculate the element bounds
+        @param data:
+        @return:
+        """
         make_raster = self.lookup("render-op/make_raster")
         if not make_raster:
             # No renderer is registered to perform render.
@@ -555,6 +719,12 @@ def init_commands(kernel):
                                 "Can't set '{val}' for {field} (invalid value, old={oldval})."
                             ).format(val=new_value, field=prop, oldval=oldval)
                         )
+                    except AttributeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
 
                     if "font" in prop:
                         # We need to force a recalculation of the underlying wxfont property
@@ -564,6 +734,18 @@ def init_commands(kernel):
                     if prop in ("mktext", "mkfont"):
                         for property_op in self.kernel.lookup_all("path_updater/.*"):
                             property_op(self.kernel.root, e)
+                    if prop in (
+                        "dpi",
+                        "dither",
+                        "dither_type",
+                        "invert",
+                        "red",
+                        "green",
+                        "blue",
+                        "lightness",
+                    ):
+                        # Images require some recalculation too
+                        e.update(None)
                 else:
                     channel(
                         _("Element {name} has no property {field}").format(
@@ -589,47 +771,65 @@ def init_commands(kernel):
         "recalc", input_type=("elements", None), output_type="elements"
     )
     def recalc(command, channel, _, data=None, post=None, **kwargs):
-
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
+            channel(_("No selected elements."))
             return
         for e in data:
             e.set_dirty_bounds()
         self.signal("refresh_scene", "Scene")
         self.validate_selected_area()
 
+    @self.console_option(
+        "tolerance",
+        "t",
+        type=float,
+        help=_("simplification tolerance"),
+    )
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"
     )
-    def simplify_path(command, channel, _, data=None, post=None, **kwargs):
-
+    def simplify_path(
+        command, channel, _, data=None, tolerance=None, post=None, **kwargs
+    ):
         if data is None:
             data = list(self.elems(emphasized=True))
         data_changed = list()
         if len(data) == 0:
             channel("Requires a selected polygon")
             return None
+        if tolerance is None:
+            tolerance = 25  # About 1/1000 mil
         for node in data:
             try:
                 sub_before = len(list(node.as_geometry().as_subpaths()))
             except AttributeError:
                 sub_before = 0
-
-            changed, before, after = self.simplify_node(node)
-            if changed:
+            if hasattr(node, "geometry"):
+                geom = node.geometry
+                seg_before = node.geometry.index
+                node.geometry = geom.simplify(tolerance)
                 node.altered()
+                seg_after = node.geometry.index
                 try:
                     sub_after = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
                     sub_after = 0
                 channel(
-                    f"Simplified {node.type} ({node.label}): from {before} to {after}"
+                    f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
                 )
+                if seg_before:
+                    saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                else:
+                    saving = ""
                 channel(f"Subpaths before: {sub_before} to {sub_after}")
+                channel(f"Segments before: {seg_before} to {seg_after} {saving}")
                 data_changed.append(node)
             else:
-                channel(f"Could not simplify {node.type} ({node.label})")
+                channel(
+                    f"Invalid node for simplify {node.type} ({node.display_label()})"
+                )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
@@ -730,12 +930,10 @@ def init_commands(kernel):
     def element_pathd_info(command, channel, _, data, real=True, **kwargs):
         for node in data:
             try:
-                if node.path.transform.is_identity():
-                    channel(
-                        f"{str(node)} (Identity): {node.path.d(transformed=not real)}"
-                    )
-                else:
-                    channel(f"{str(node)}: {node.path.d(transformed=not real)}")
+                g = node.as_geometry()
+                path = g.as_path()
+                ident = " (Identity)" if node.matrix.is_identity() else ""
+                channel(f"{str(node)}{ident}: {path.d(transformed=not real)}")
             except AttributeError:
                 channel(f"{str(node)}: Invalid")
 
@@ -753,7 +951,7 @@ def init_commands(kernel):
         try:
             path = Path(path_d)
             path *= f"Scale({UNITS_PER_PIXEL})"
-        except ValueError:
+        except (ValueError, AttributeError):
             raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
         node = self.elem_branch.add(path=path, type="elem path")
@@ -1399,7 +1597,7 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
+    @self.console_argument("angle", type=Angle, help=_("angle to rotate by"))
     @self.console_option("cx", "x", type=self.length_x, help=_("center x"))
     @self.console_option("cy", "y", type=self.length_y, help=_("center y"))
     @self.console_option(
@@ -1439,7 +1637,9 @@ def init_commands(kernel):
                     name = name[:50] + "…"
                 channel(
                     _("{index}: rotate({angle}turn) - {name}").format(
-                        index=i, angle=node.matrix.rotation.as_turns, name=name
+                        index=i,
+                        angle=Angle(node.matrix.rotation).angle_turns[:-4],
+                        name=name,
                     )
                 )
                 i += 1
@@ -1593,6 +1793,7 @@ def init_commands(kernel):
         for node in images:
             node.update(None)
         self.signal("refresh_scene", "Scene")
+        self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_option(
@@ -1745,6 +1946,7 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if changes:
             self.signal("refresh_scene", "Scene")
+            self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_argument("tx", type=self.length_x, help=_("New x value"))
@@ -1781,6 +1983,7 @@ def init_commands(kernel):
                 changes = True
         if changes:
             self.signal("refresh_scene", "Scene")
+            self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_command(
@@ -2019,7 +2222,10 @@ def init_commands(kernel):
             except AttributeError:
                 pass
             if e.type == "elem path":
-                e.path.approximate_bezier_with_circular_arcs()
+                g = e.geometry
+                path = g.as_path()
+                path.approximate_bezier_with_circular_arcs()
+                e.geometry = Geomstr.svg(path)
                 e.altered()
 
         return "elements", data

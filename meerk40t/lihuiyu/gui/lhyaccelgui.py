@@ -1,8 +1,8 @@
 import wx
 
-from meerk40t.gui.icons import icons8_administrative_tools_50
+from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -12,17 +12,17 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.device
-        self.checkbox_vector_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_vector_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_vector_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
         self.text_vector_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
         self.text_vector_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
-        self.checkbox_vraster_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_vraster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vraster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_vraster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
         self.text_vraster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
         self.text_vraster_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
-        self.checkbox_raster_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_raster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_raster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_raster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "127")
         self.text_raster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "320")
@@ -102,22 +102,22 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_vector_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for vectors")
         )
-        self.text_vector_accel_1.SetMinSize((55, 23))
+        self.text_vector_accel_1.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_1.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=1)
         )
         self.text_vector_accel_1.Enable(False)
-        self.text_vector_accel_2.SetMinSize((55, 23))
+        self.text_vector_accel_2.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_2.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=2)
         )
         self.text_vector_accel_2.Enable(False)
-        self.text_vector_accel_3.SetMinSize((55, 23))
+        self.text_vector_accel_3.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_3.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=3)
         )
         self.text_vector_accel_3.Enable(False)
-        self.text_vector_accel_4.SetMinSize((55, 23))
+        self.text_vector_accel_4.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_4.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=4)
         )
@@ -125,22 +125,22 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_vraster_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for vertical rasters")
         )
-        self.text_vraster_accel_1.SetMinSize((55, 23))
+        self.text_vraster_accel_1.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_1.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=1)
         )
         self.text_vraster_accel_1.Enable(False)
-        self.text_vraster_accel_2.SetMinSize((55, 23))
+        self.text_vraster_accel_2.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_2.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=2)
         )
         self.text_vraster_accel_2.Enable(False)
-        self.text_vraster_accel_3.SetMinSize((55, 23))
+        self.text_vraster_accel_3.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_3.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=3)
         )
         self.text_vraster_accel_3.Enable(False)
-        self.text_vraster_accel_4.SetMinSize((55, 23))
+        self.text_vraster_accel_4.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_4.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=4)
         )
@@ -148,22 +148,22 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_raster_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for horizontal rasters")
         )
-        self.text_raster_accel_1.SetMinSize((55, 23))
+        self.text_raster_accel_1.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_1.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=1)
         )
         self.text_raster_accel_1.Enable(False)
-        self.text_raster_accel_2.SetMinSize((55, 23))
+        self.text_raster_accel_2.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_2.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=2)
         )
         self.text_raster_accel_2.Enable(False)
-        self.text_raster_accel_3.SetMinSize((55, 23))
+        self.text_raster_accel_3.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_3.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=3)
         )
         self.text_raster_accel_3.Enable(False)
-        self.text_raster_accel_4.SetMinSize((55, 23))
+        self.text_raster_accel_4.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_4.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=4)
         )
@@ -319,7 +319,6 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         pass
 
     def on_check_vector_accel_enable(self, event=None):
-
         self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
     def on_text_vector_accel(self, event):
@@ -347,11 +346,13 @@ class LihuiyuAccelerationChart(MWindow):
         self.panel = LihuiyuAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Acceleration Chart"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

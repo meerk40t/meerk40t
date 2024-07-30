@@ -58,6 +58,12 @@ and a wxpython version <= 4.1.1."""
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
+        # lc = kernel_root.setting(str, "i18n", "en")
+        # kernel.set_language(lc)
+        # from ..kernel import _
+        # import wx
+        # wx.GetTranslation = _
+
         from meerk40t.gui.fonts import wxfont_to_svg
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
@@ -70,7 +76,6 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("render-op/make_raster", renderer.make_raster)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
-
         from meerk40t.gui.guicolors import GuiColors
 
         kernel.add_service("colors", GuiColors(kernel))
@@ -78,6 +83,10 @@ and a wxpython version <= 4.1.1."""
         from meerk40t.gui.scene.scene import Scene
 
         kernel.register("module/Scene", Scene)
+
+        from meerk40t.gui.themes import Themes
+
+        kernel.add_service("themes", Themes(kernel))
 
     elif lifecycle == "boot":
         kernel_root = kernel.root
@@ -172,6 +181,7 @@ and a wxpython version <= 4.1.1."""
                 ),
                 "page": "Gui",
                 "section": "General",
+                "signals": "restart",
             },
             {
                 "attr": "disable_tree_tool_tips",
@@ -222,24 +232,38 @@ and a wxpython version <= 4.1.1."""
                 option_no = _("No")
             if caption is None:
                 caption = _("Question")
-            dlg = wx.MessageDialog(
-                None,
-                message=prompt,
-                caption=caption,
-                style=wx.YES_NO | wx.ICON_QUESTION,
-            )
-            if dlg.SetYesNoLabels(option_yes, option_no):
-                dlg.SetMessage(prompt)
-            else:
-                dlg.SetMessage(
-                    prompt
-                    + "\n"
-                    + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
+            if option_yes == option_no:
+                dlg = wx.MessageDialog(
+                    None,
+                    message=prompt,
+                    caption=caption,
+                    style=wx.OK | wx.ICON_INFORMATION,
                 )
+                if dlg.SetOKLabel(option_yes):
+                    dlg.SetMessage(prompt)
+                else:
+                    dlg.SetMessage(
+                        prompt + "\n" + _("(Yes={yes})").format(yes=option_yes)
+                    )
+            else:
+                dlg = wx.MessageDialog(
+                    None,
+                    message=prompt,
+                    caption=caption,
+                    style=wx.YES_NO | wx.ICON_QUESTION,
+                )
+                if dlg.SetYesNoLabels(option_yes, option_no):
+                    dlg.SetMessage(prompt)
+                else:
+                    dlg.SetMessage(
+                        prompt
+                        + "\n"
+                        + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
+                    )
 
             response = dlg.ShowModal()
             dlg.Destroy()
-            return bool(response == wx.ID_YES)
+            return bool(response in (wx.ID_YES, wx.ID_OK))
 
         kernel.yesno = yesno_popup
 
@@ -303,22 +327,36 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
+
+            @kernel.console_command(
+                ("quit", "shutdown"), help=_("shuts down the gui and exits")
+            )
+            def shutdown(**kwargs):
+                try:
+                    meerk40tgui.TopWindow.Close()
+                except AttributeError:
+                    pass
+
             if kernel.args.simpleui:
                 kernel.console("window open SimpleUI\n")
                 meerk40tgui.MainLoop()
                 return
 
             kernel.console("window open MeerK40t\n")
-            for window in kernel.derivable("window"):
+            windows_to_ignore = ("HersheyFontSelector", "About", "Properties")
+            for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
                 if kernel.read_persistent(bool, window, "open_on_start", False):
+                    win_name = window_name[7:]
+                    if win_name in windows_to_ignore:
+                        continue
                     if window_index is not None:
                         kernel.console(
-                            f"window open -m {window_index} {window_name[7:]} {window_index}\n"
+                            f"window open -m {window_index} {win_name} {window_index}\n"
                         )
                     else:
-                        kernel.console(f"window open {window_name[7:]}\n")
+                        kernel.console(f"window open {win_name}\n")
 
             meerk40tgui.MainLoop()

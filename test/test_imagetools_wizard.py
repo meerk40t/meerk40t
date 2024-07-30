@@ -1,10 +1,11 @@
 import unittest
-from math import floor
-from test import bootstrap
 
-from PIL import Image, ImageDraw
-
-from meerk40t.svgelements import Matrix, SVGImage
+# from math import floor
+# from test import bootstrap
+#
+# from PIL import Image, ImageDraw
+#
+# from meerk40t.svgelements import Matrix, SVGImage
 
 
 class TestRasterWizard(unittest.TestCase):
@@ -35,7 +36,7 @@ class TestRasterWizard(unittest.TestCase):
     #                 self.assertEqual(node.matrix.value_trans_x(), 100)
     #                 self.assertEqual(node.matrix.value_trans_y(), 100)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_rasterwizard_smallcircle_step3(self):
     #     """
@@ -70,7 +71,7 @@ class TestRasterWizard(unittest.TestCase):
     #                 self.assertEqual(node.matrix.value_trans_x(), 100)
     #                 self.assertEqual(node.matrix.value_trans_y(), 100)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_rasterwizard_image_types(self):
     #     """
@@ -114,7 +115,7 @@ class TestRasterWizard(unittest.TestCase):
     #                     self.assertEqual(node.matrix.value_trans_y(), 50)
     #             kernel_root("element* delete\n")
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_rasterwizard_transparent_colorvalue_wb(self):
     #     """
@@ -156,7 +157,7 @@ class TestRasterWizard(unittest.TestCase):
     #                 self.assertEqual(node.matrix.value_trans_x(), 100)
     #                 self.assertEqual(node.matrix.value_trans_y(), 100)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_rasterwizard_transparent_colorvalue_bw(self):
     #     """
@@ -200,7 +201,7 @@ class TestRasterWizard(unittest.TestCase):
     #                 #  Test corner for whiteness.
     #                 self.assertEqual(node.image.getpixel((-1, -1)), 255)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_rasterwizard_purewhite(self):
     #     """
@@ -227,7 +228,7 @@ class TestRasterWizard(unittest.TestCase):
     #                 self.assertEqual(node.matrix.value_trans_x(), 0)
     #                 self.assertEqual(node.matrix.value_trans_y(), 0)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_rasterwizard_pureblack(self):
     # """
@@ -255,4 +256,4 @@ class TestRasterWizard(unittest.TestCase):
     #             self.assertEqual(node.matrix.value_trans_x(), 0)
     #             self.assertEqual(node.matrix.value_trans_y(), 0)
     # finally:
-    #     kernel.shutdown()
+    #     kernel()

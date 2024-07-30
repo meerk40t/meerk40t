@@ -3,18 +3,22 @@ Newly Device
 """
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import UNITS_PER_INCH, ViewPort
+from meerk40t.core.units import Length
+from meerk40t.core.view import View
+from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
+from meerk40t.device.devicechoices import get_effect_choices
 
 
-class NewlyDevice(Service, ViewPort):
+class NewlyDevice(Service, Status):
     """
     Newly Device
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "newly"
         self.extension = "hpgl"
         self.job = None
@@ -87,7 +91,7 @@ class NewlyDevice(Service, ViewPort):
                     },
                     {
                         "attr": "corner_speed",
-                        "type": 120,
+                        "type": int,
                         "label": _("Corner Speed"),
                         "width": 133,
                         "editable": True,
@@ -95,11 +99,15 @@ class NewlyDevice(Service, ViewPort):
                 ],
                 "style": "chart",
                 "primary": "speed",
+                "allow_deletion": True,
+                "allow_duplication": True,
                 "label": _("Speed Chart"),
                 "tip": _("Raster speed to chart."),
             },
         ]
         self.register_choices("newly-speedchart", choices)
+
+        self.register_choices("newly-effects", get_effect_choices(self))
 
         choices = [
             {
@@ -135,24 +143,47 @@ class NewlyDevice(Service, ViewPort):
                 "nonzero": True,
             },
             {
-                "attr": "home_bottom",
+                "attr": "user_margin_x",
                 "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "subsection": "_50_Home position",
-                "signals": "bedsize",
+                "default": 0,
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
             },
             {
-                "attr": "home_right",
+                "attr": "user_margin_y",
                 "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
-                "subsection": "_50_Home position",
-                "signals": "bedsize",
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
+            },
+            {
+                "attr": "home_corner",
+                "object": self,
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
+                "section": "_10_Parameters",
+                "subsection": "_50_" + _("Home position"),
             },
             {
                 "attr": "flip_x",
@@ -163,7 +194,6 @@ class NewlyDevice(Service, ViewPort):
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -174,7 +204,6 @@ class NewlyDevice(Service, ViewPort):
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -187,9 +216,9 @@ class NewlyDevice(Service, ViewPort):
                 "subsection": "_10_Axis corrections",
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "section": "_10_Parameters",
@@ -431,7 +460,7 @@ class NewlyDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Raster Power"),
                 "trailer": "%",
-                "tip": _("How what power level do we raster at?"),
+                "tip": _("At what power level do we raster?"),
                 "subsection": "_30_Raster",
             },
             {
@@ -472,7 +501,7 @@ class NewlyDevice(Service, ViewPort):
                 "trailer": "mm/s",
                 "label": _("Rect Speed"),
                 "tip": _("Speed to perform frame trace?"),
-                "subsection": "_50_Rect",
+                "subsection": "_50_Framing",
             },
             {
                 "attr": "rect_power",
@@ -482,25 +511,62 @@ class NewlyDevice(Service, ViewPort):
                 "trailer": "/1000",
                 "label": _("Rect Power"),
                 "tip": _("Power usage for draw frame operation?"),
-                "subsection": "_50_Rect",
+                "subsection": "_50_Framing",
             },
         ]
         self.register_choices("newly-global", choices)
 
-        self.state = 0
+        choices = [
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed",
+            },
+        ]
+        self.register_choices("coolant", choices)
 
-        ViewPort.__init__(
-            self,
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
+
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
+
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
+
+        self.state = 0
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            native_scale_x=UNITS_PER_INCH / self.h_dpi,
-            native_scale_y=UNITS_PER_INCH / self.v_dpi,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
+            dpi_x=self.h_dpi,
+            dpi_y=self.v_dpi,
         )
+        self.realize()
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
         self.spooler.driver = self.driver
@@ -508,6 +574,9 @@ class NewlyDevice(Service, ViewPort):
         self.add_service_delegate(self.spooler)
 
         self.viewbuffer = ""
+
+        # Sort the entries for the rasterchart
+        self.speedchart.sort(key=lambda x: x["speed"])
 
         @self.console_command(
             "estop",
@@ -553,7 +622,7 @@ class NewlyDevice(Service, ViewPort):
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -590,12 +659,12 @@ class NewlyDevice(Service, ViewPort):
             self.spooler.command("disconnect", priority=1)
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
-        def usb_abort(command, channel, _, **kwargs):
+        def usb_abort(command, channel, _, **kwgs):
             self.spooler.command("abort_retry", priority=1)
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def newly_save(channel, _, filename, data=None, **kwargs):
+        def newly_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -645,8 +714,15 @@ class NewlyDevice(Service, ViewPort):
             help=_("sends the newly move_frame command"),
             all_arguments_required=True,
         )
-        def move_rect(file_index, **kwargs):
-            self.driver.connection.move_frame(file_index)
+        def move_rect(file_index, **kwgs):
+            try:
+                self.driver.connection.move_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -654,8 +730,15 @@ class NewlyDevice(Service, ViewPort):
             help=_("sends the newly draw_frame command"),
             all_arguments_required=True,
         )
-        def draw_rect(file_index, **kwargs):
-            self.driver.connection.draw_frame(file_index)
+        def draw_rect(file_index, **kwgs):
+            try:
+                self.driver.connection.draw_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -663,16 +746,26 @@ class NewlyDevice(Service, ViewPort):
             help=_("sends the file replay command"),
             all_arguments_required=True,
         )
-        def replay(file_index, **kwargs):
-            self.driver.connection.replay(file_index)
+        def replay(file_index, **kwgs):
+            try:
+                self.driver.connection.replay(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update newly flips for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
 
     def service_attach(self, *args, **kwargs):
         self.realize()
@@ -682,23 +775,51 @@ class NewlyDevice(Service, ViewPort):
     @signal_listener("swap_xy")
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
+    @signal_listener("home_corner")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.native_scale_x = UNITS_PER_INCH / self.h_dpi
-        self.native_scale_y = UNITS_PER_INCH / self.v_dpi
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        if origin is not None and origin != self.path:
+            return
+        corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
+        if corner == "auto":
+            pass
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
+        self.view.dpi_x = self.h_dpi
+        self.view.dpi_y = self.v_dpi
+        self.view.transform(
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
+        )
+        self.signal("view;realized")
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -706,3 +827,6 @@ class NewlyDevice(Service, ViewPort):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)

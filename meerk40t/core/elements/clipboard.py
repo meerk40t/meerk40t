@@ -59,14 +59,13 @@ def init_commands(kernel):
             copy_node = copy(e)
             # Need to add stroke and fill, as copy will take the
             # default values for these attributes
-            for optional in ("fill", "stroke"):
+            options = ["fill", "stroke", "wxfont"]
+            for prop in dir(e):
+                if prop.startswith("mk"):
+                    options.append(prop)
+            for optional in options:
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
-            hadoptional = False
-            for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
-                if hasattr(e, optional):
-                    setattr(copy_node, optional, getattr(e, optional))
-                    hadoptional = True
             self._clipboard[destination].append(copy_node)
         # Let the world know we have filled the clipboard
         self.signal("icons")
@@ -88,16 +87,25 @@ def init_commands(kernel):
         try:
             for e in self._clipboard[destination]:
                 copy_node = copy(e)
+                if copy_node is None:
+                    channel(_("Error: clipboard empty node"))
+                    continue
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
-                for optional in ("fill", "stroke"):
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(e, optional))
                 hadoptional = False
-                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                options = []
+                for prop in dir(e):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(e, optional))
                         hadoptional = True
+
                 if hadoptional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
                         property_op(self.kernel.root, copy_node)
@@ -129,7 +137,7 @@ def init_commands(kernel):
         target = []
         for p in pasted:
             if hasattr(p, "label"):
-                s = "Copy" if p.label is None else f"{p.label} (copy)"
+                s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
                 p.label = s
             group.add_node(p)
             target.append(p)
@@ -155,7 +163,11 @@ def init_commands(kernel):
         self._clipboard[destination] = []
         for e in data:
             copy_node = copy(e)
-            for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+            options = ["fill", "stroke", "wxfont"]
+            for prop in dir(e):
+                if prop.startswith("mk"):
+                    options.append(prop)
+            for optional in options:
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)

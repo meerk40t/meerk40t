@@ -31,6 +31,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
+from ..tools.geomstr import Geomstr
 from .builder import MoshiBuilder
 
 
@@ -57,18 +58,29 @@ class MoshiDriver(Parameters):
         self.program = MoshiBuilder()
 
         self.paused = False
-        self.hold = False
-        self.paused = False
+        self.holds = []
+        self.temp_holds = []
 
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
-        name = self.service.label
-        self.pipe_channel = service.channel(f"{name}/events")
+        self.pipe_channel = service.channel(f"{service.safe_label}/events")
         self.program.channel = self.pipe_channel
 
         self.out_pipe = None
         self.out_real = None
+
+        def primary_hold():
+            if self.out_pipe is None:
+                return True
+            if (
+                hasattr(self.service.controller, "is_shutdown")
+                and self.service.controller.is_shutdown
+            ):
+                raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
+            return self.paused
+
+        self.holds.append(primary_hold)
 
     def __repr__(self):
         return f"MoshiDriver({self.name})"
@@ -81,13 +93,32 @@ class MoshiDriver(Parameters):
 
     def hold_work(self, priority):
         """
-        Required.
+        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
+        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
+        as soon as it does not hold the data.
 
-        Spooler check. to see if the work cycle should be held.
-
-        @return: hold?
+        @return: Whether data interpretation should hold.
         """
-        return priority <= 0 and (self.paused or self.hold)
+        if priority > 0:
+            # Don't hold realtime work.
+            return False
+
+        temp_hold = False
+        fail_hold = False
+        for i, hold in enumerate(self.temp_holds):
+            if not hold():
+                self.temp_holds[i] = None
+                fail_hold = True
+            else:
+                temp_hold = True
+        if fail_hold:
+            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
+        if temp_hold:
+            return True
+        for hold in self.holds:
+            if hold():
+                return True
+        return False
 
     def job_start(self, job):
         pass
@@ -177,6 +208,68 @@ class MoshiDriver(Parameters):
         """
         pass
 
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        # TODO: Raster geom strokes need to be run in raster mode for moshi.
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            x = self.native_x
+            y = self.native_y
+            if x != start.real or y != start.imag:
+                self._goto_absolute(start.real, start.imag, 0)
+            self.settings.update(sets)
+
+            if segment_type == "line":
+                self._goto_absolute(end.real, end.imag, 1)
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                interp = self.service.interp
+                g.clear()
+                g.quad(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif segment_type == "cubic":
+                interp = self.service.interp
+                g.clear()
+                g.cubic(start, c1, c2, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif segment_type == "arc":
+                interp = self.service.interp
+                g.clear()
+                g.arc(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    # Moshi cannot fire in place.
+                    pass
+                elif function == "wait":
+                    # Moshi has no forced wait functionality.
+                    pass
+                elif function == "home":
+                    self.home()
+                elif function == "goto":
+                    self._goto_absolute(start.real, start.imag, 0)
+                elif function == "input":
+                    # Moshi has no core GPIO functionality
+                    pass
+                elif function == "output":
+                    # Moshi has no core GPIO functionality
+                    pass
+
     def plot(self, plot):
         """
         Gives the driver a bit of cutcode that should be plotted.
@@ -200,17 +293,27 @@ class MoshiDriver(Parameters):
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
                 self._goto_absolute(*q.end, 1)
-            elif isinstance(q, (QuadCut, CubicCut)):
-                interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+            elif isinstance(q, QuadCut):
+                interp = self.service.interp
+                g = Geomstr()
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.hold_work(0):
                         time.sleep(0.05)
-                    self._goto_absolute(*q.point(t), 1)
-                    t += step_size
-                last_x, last_y = q.end
-                self._goto_absolute(last_x, last_y, 1)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif isinstance(q, CubicCut):
+                interp = self.service.interp
+                g = Geomstr()
+                g.cubic(
+                    complex(*q.start),
+                    complex(*q.c1()),
+                    complex(*q.c2()),
+                    complex(*q.end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
             elif isinstance(q, HomeCut):
                 self.home()
             elif isinstance(q, GotoCut):
@@ -287,9 +390,7 @@ class MoshiDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
@@ -301,12 +402,10 @@ class MoshiDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.rapid_mode()
-        x = self.native_x + dx
-        y = self.native_y + dy
+        x = self.native_x + unit_dx
+        y = self.native_y + unit_dy
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
@@ -315,7 +414,7 @@ class MoshiDriver(Parameters):
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.rapid_mode()
         self.speed = 40
@@ -326,7 +425,7 @@ class MoshiDriver(Parameters):
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
         self.home()
 
@@ -349,7 +448,6 @@ class MoshiDriver(Parameters):
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
         """
@@ -455,8 +553,17 @@ class MoshiDriver(Parameters):
         @param values:
         @return:
         """
-        self.hold = True
-        # self.temp_holds.append(lambda: len(self.output) != 0)
+
+        def temp_hold():
+            try:
+                return (
+                    self.service.controller.state == "wait"
+                    or len(self.service.controller) != 0
+                )
+            except TypeError:
+                return False
+
+        self.temp_holds.append(temp_hold)
 
     def function(self, function):
         """
@@ -503,6 +610,7 @@ class MoshiDriver(Parameters):
         @return:
         """
         self.paused = True
+        self.service.signal("pause")
 
     def resume(self, *args):
         """
@@ -514,6 +622,7 @@ class MoshiDriver(Parameters):
         @return:
         """
         self.paused = False
+        self.service.signal("pause")
 
     def reset(self, *args):
         """
@@ -529,6 +638,8 @@ class MoshiDriver(Parameters):
         self.pipe_channel("Realtime: Stop")
         MoshiBuilder.stop(self.out_real)
         self.pipe_channel("Control Request: Stop")
+        self.paused = False
+        self.service.signal("pause")
 
     ####################
     # Protected Driver Functions
@@ -558,7 +669,6 @@ class MoshiDriver(Parameters):
         self.program.vector_speed(speed, normal_speed)
         self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
         self.program.move_abs(move_x, move_y)
         self.native_x = move_x
@@ -578,7 +688,6 @@ class MoshiDriver(Parameters):
         self.program.raster_speed(speed)
         self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
 
         self.program.move_abs(move_x, move_y)
         self.native_x = move_x

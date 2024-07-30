@@ -6,22 +6,25 @@ import threading
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_connected_50,
-    icons8_disconnected_50,
-    icons8_emergency_stop_button_50,
-    icons8_laser_beam_hazard_50,
-    icons8_pause_50,
-    icons8_play_50,
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
-_simple_width = 500
+_simple_width = 565
 _advanced_width = 952
-_default_height = 584
+_default_height = 570
 
 
 class LihuiyuControllerPanel(ScrolledPanel):
@@ -29,23 +32,30 @@ class LihuiyuControllerPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.device
+        self.SetHelpText("k40controller")
 
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
+        if self.context.mock:
+            connectivity = "Mock-Device"
+        elif self.context.networked:
+            connectivity = f"Network: {self.context.address}:{self.context.port}"
+        else:
+            connectivity = "USB"
         self.text_connection_status = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
+            self, wx.ID_ANY, connectivity, style=wx.TE_READONLY
         )
-        self.button_controller_control = wx.Button(
-            self, wx.ID_ANY, _("Start Controller")
-        )
-        self.button_controller_control.function = lambda: self.context("start\n")
-        self.text_controller_status = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
+        # self.button_controller_control = wxButton(
+        #     self, wx.ID_ANY, _("Start Controller")
+        # )
+        # self.button_controller_control.function = lambda: self.context("start\n")
+        # self.text_controller_status = wx.TextCtrl(
+        #     self, wx.ID_ANY, "", style=wx.TE_READONLY
+        # )
         self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.rejected_packet_count_text = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_packet_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -53,25 +63,29 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.checkbox_show_usb_log = wx.CheckBox(self, wx.ID_ANY, _("Show USB Log"))
+        self.checkbox_show_usb_log = wxCheckBox(self, wx.ID_ANY, _("Show USB Log"))
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.button_clear_stats = wx.Button(self, wx.ID_ANY, _("Reset\nstatistics"))
+        self.button_clear_stats = wxButton(self, wx.ID_ANY, _("Reset\nstatistics"))
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start_usb, self.button_device_connect)
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_stats, self.button_clear_stats)
-        self.Bind(
-            wx.EVT_BUTTON,
-            self.on_button_start_controller,
-            self.button_controller_control,
-        )
+        # self.Bind(
+        #     wx.EVT_BUTTON,
+        #     self.on_button_start_controller,
+        #     self.button_controller_control,
+        # )
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
+        # Test the color combos...
+        # self.Bind(wx.EVT_RIGHT_DOWN, self.debug_colors)
+        # self._debug_counter = 0
+
         self.last_control_state = None
         self.retries = 0
         self._buffer = ""
@@ -79,6 +93,24 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.set_widgets()
         self.SetupScrolling()
         self._channel_watching = None
+
+    # def debug_colors(self, event):
+    #     states = (
+    #         "STATE_CONNECTION_FAILED",
+    #         "STATE_FAILED_RETRYING",
+    #         "STATE_FAILED_SUSPENDED",
+    #         "STATE_DRIVER_NO_BACKEND",
+    #         "STATE_UNINITIALIZED",
+    #         "STATE_USB_DISCONNECTED",
+    #         "STATE_USB_SET_DISCONNECTING",
+    #         "STATE_USB_CONNECTED",
+    #         "STATE_CONNECTED",
+    #         "STATE_CONNECTING",
+    #     )
+    #     if self._debug_counter >= len(states):
+    #         self._debug_counter = 0
+    #     self.context.signal("pipe;state", states[self._debug_counter])
+    #     self._debug_counter += 1
 
     def __set_properties(self):
         self.SetFont(
@@ -91,11 +123,10 @@ class LihuiyuControllerPanel(ScrolledPanel):
                 "Segoe UI",
             )
         )
-        self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_device_connect.SetForegroundColour(wx.BLACK)
+        self.set_color_according_to_state("", self.button_device_connect)
         self.button_device_connect.SetFont(
             wx.Font(
-                12,
+                11,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -108,46 +139,50 @@ class LihuiyuControllerPanel(ScrolledPanel):
         )
         self.text_connection_status.SetToolTip(_("Connection status"))
 
-        self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_controller_control.SetForegroundColour(wx.BLACK)
-        self.button_controller_control.SetFont(
-            wx.Font(
-                12,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-                0,
-                "Segoe UI",
-            )
-        )
-        self.button_controller_control.SetToolTip(
-            _("Change the currently performed operation.")
-        )
-        self.text_controller_status.SetToolTip(
-            _("Displays the controller's current process.")
-        )
-        self.packet_count_text.SetMinSize((77, 23))
+        # self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
+        # self.button_controller_control.SetForegroundColour(wx.BLACK)
+        # self.button_controller_control.SetFont(
+        #     wx.Font(
+        #         11,
+        #         wx.FONTFAMILY_DEFAULT,
+        #         wx.FONTSTYLE_NORMAL,
+        #         wx.FONTWEIGHT_NORMAL,
+        #         0,
+        #         "Segoe UI",
+        #     )
+        # )
+        # self.button_controller_control.SetToolTip(
+        #     _("Change the currently performed operation.")
+        # )
+        # self.text_controller_status.SetToolTip(
+        #     _("Displays the controller's current process.")
+        # )
+        self.packet_count_text.SetMinSize(dip_size(self, 35, -1))
         self.packet_count_text.SetToolTip(_("Total number of packets sent"))
-        self.rejected_packet_count_text.SetMinSize((77, 23))
+        self.rejected_packet_count_text.SetMinSize(dip_size(self, 35, -1))
         self.rejected_packet_count_text.SetToolTip(
             _("Total number of packets rejected")
         )
-        self.packet_text_text.SetToolTip(_("Last packet information sent"))
-        self.text_byte_0.SetMinSize((77, 23))
-        self.text_byte_1.SetMinSize((77, 23))
-        self.text_desc.SetMinSize((75, 23))
+        self.text_packet_info.SetToolTip(_("Last packet information sent"))
+        self.text_byte_0.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_1.SetMinSize(dip_size(self, 35, -1))
+        self.text_desc.SetMinSize(dip_size(self, 35, -1))
         self.text_desc.SetToolTip(_("The meaning of Byte 1"))
-        self.text_byte_2.SetMinSize((77, 23))
-        self.text_byte_3.SetMinSize((77, 23))
-        self.text_byte_4.SetMinSize((77, 23))
-        self.text_byte_5.SetMinSize((77, 23))
+        self.text_byte_2.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_3.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_4.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_5.SetMinSize(dip_size(self, 35, -1))
         self.checkbox_show_usb_log.SetValue(1)
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=0.75 * get_default_icon_size()
+            )
         )
-        self.button_controller_control.SetBitmap(
-            icons8_play_50.GetBitmap(use_theme=False)
-        )
+        # self.button_controller_control.SetBitmap(
+        #     icons8_circled_play.GetBitmap(
+        #         use_theme=False, resize=0.75 * get_default_icon_size()
+        #     )
+        # )
         # end wxGlade
 
     def __do_layout(self):
@@ -172,31 +207,36 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_count_packets = StaticBoxSizer(
             self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL
         )
-        sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
-        sizer_usb_settings = StaticBoxSizer(
-            self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
-        )
-        sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12 = StaticBoxSizer(self, wx.ID_ANY, _("Chip Version"), wx.HORIZONTAL)
-        sizer_11 = StaticBoxSizer(self, wx.ID_ANY, _("Device Bus:"), wx.HORIZONTAL)
-        sizer_10 = StaticBoxSizer(self, wx.ID_ANY, _("Device Address:"), wx.HORIZONTAL)
-        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL)
+        # sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
+        # sizer_usb_settings = StaticBoxSizer(
+        #     self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
+        # )
+        # sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer_12 = StaticBoxSizer(self, wx.ID_ANY, _("Chip Version"), wx.HORIZONTAL)
+        # sizer_11 = StaticBoxSizer(self, wx.ID_ANY, _("Device Bus:"), wx.HORIZONTAL)
+        # sizer_10 = StaticBoxSizer(self, wx.ID_ANY, _("Device Address:"), wx.HORIZONTAL)
+        # sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_usb_connect = StaticBoxSizer(
             self, wx.ID_ANY, _("USB Connection"), wx.VERTICAL
         )
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
-        sizer_main_vertical.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
-        sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
-        sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
-        sizer_main_vertical.Add(sizer_controller, 0, wx.EXPAND, 0)
+        button_sizer.Add(sizer_usb_connect, 1, wx.EXPAND, 0)
+
+        # sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
+        # sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
+        # button_sizer.Add(sizer_controller, 1, wx.EXPAND, 0)
+
+        sizer_main_vertical.Add(button_sizer, 0, wx.EXPAND, 0)
+
         sizer_count_packets.Add(self.packet_count_text, 0, wx.EXPAND, 0)
         sizer_statistics.Add(sizer_count_packets, 1, wx.EXPAND, 0)
         sizer_count_rejected.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
         sizer_statistics.Add(sizer_count_rejected, 1, wx.EXPAND, 0)
-        sizer_statistics.Add(self.button_clear_stats, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_statistics.Add(self.button_clear_stats, 0, wx.EXPAND, 0)
         packet_count.Add(sizer_statistics, 1, wx.EXPAND, 0)
-        packet_info.Add(self.packet_text_text, 11, wx.EXPAND, 0)
+        packet_info.Add(self.text_packet_info, 11, wx.EXPAND, 0)
         packet_count.Add(packet_info, 0, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Byte 0"))
@@ -230,10 +270,52 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
         sizer_main_vertical.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_main_vertical, 1, 0, 0)
-        sizer_main.Add(self.text_usb_log, 2, wx.EXPAND, 0)
+        sizer_main.Add(self.text_usb_log, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def set_color_according_to_state(self, stateval, control):
+        def color_distance(c1, c2):
+            from math import sqrt
+
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
+
+        state_colors = {
+            "STATE_CONNECTION_FAILED": wx.Colour("#dfdf00"),
+            "STATE_FAILED_RETRYING": wx.Colour("#df0000"),
+            "STATE_FAILED_SUSPENDED": wx.Colour("#0000df"),
+            "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
+            "STATE_UNINITIALIZED": wx.Colour("#ffff00"),
+            "STATE_USB_DISCONNECTED": wx.Colour("#ffff00"),
+            "STATE_USB_SET_DISCONNECTING": wx.Colour("#ffff00"),
+            "STATE_USB_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTING": wx.Colour("#ffff00"),
+        }
+        if stateval in state_colors:
+            bgcol = state_colors[stateval]
+        else:
+            bgcol = wx.Colour("#66ff66")
+        d1 = color_distance(bgcol, wx.BLACK)
+        d2 = color_distance(bgcol, wx.WHITE)
+        # print(f"state={stateval}, to black={d1}, to_white={d2}")
+        if d1 <= d2:
+            fgcol = wx.WHITE
+        else:
+            fgcol = wx.BLACK
+        control.SetBackgroundColour(bgcol)
+        control.SetForegroundColour(fgcol)
 
     def module_open(self, *args, **kwargs):
         self.pane_show()
@@ -243,7 +325,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     def pane_show(self):
         # Channel watching is to make sure we unwatch the channel we watched even if label changes.
-        self._channel_watching = f"{self.context.label}/usb"
+        self._channel_watching = f"{self.context.safe_label}/usb"
         self.context.channel(self._channel_watching, buffer_size=500).watch(
             self.update_text
         )
@@ -260,10 +342,13 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
-        if self.context.networked:
-            self.button_device_connect.Enable(False)
-        else:
-            self.button_device_connect.Enable(True)
+        try:
+            if self.context.networked:
+                self.button_device_connect.Enable(False)
+            else:
+                self.button_device_connect.Enable(True)
+        except AttributeError:
+            pass
 
     def restore(self, *args, **kwargs):
         self.set_widgets()
@@ -327,7 +412,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         if origin != self.context._path:
             return
         if string_data is not None and len(string_data) != 0:
-            self.packet_text_text.SetValue(str(string_data))
+            self.text_packet_info.SetValue(str(string_data))
 
     @signal_listener("pipe;usb_status")
     def on_connection_status_change(self, origin, status):
@@ -342,64 +427,69 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def on_connection_state_change(self, origin, state):
         if origin != self.context._path:
             return
+        self.set_color_according_to_state(state, self.button_device_connect)
         if state == "STATE_CONNECTION_FAILED":
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
-            self.button_device_connect.SetLabel(_("Connect Failed"))
+            self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_RETRYING":
-            self.button_device_connect.SetBackgroundColour("#df0000")
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_SUSPENDED":
-            self.button_device_connect.SetBackgroundColour("#0000df")
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_DRIVER_NO_BACKEND":
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
-            self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=0.75 * get_default_icon_size()
+                )
             )
             self.button_device_connect.Disable()
 
@@ -434,83 +524,105 @@ class LihuiyuControllerPanel(ScrolledPanel):
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("usb_disconnect\n")
 
-    @signal_listener("pipe;thread")
-    def on_control_state(self, origin, state):
-        if origin != self.context._path:
-            return
-
-        if self.last_control_state == state:
-            return
-        self.last_control_state = state
-        button = self.button_controller_control
-        if self.text_controller_status is None:
-            return
-        value = self.context.kernel.get_text_thread_state(state)
-        self.text_controller_status.SetValue(str(value))
-        if state in ("init", "end", "idle"):
-
-            def f(event=None):
-                self.context("start\n")
-                self.context("hold\n")
-
-            button.function = f
-            button.SetBackgroundColour("#009900")
-            button.SetLabel(_("Hold Controller"))
-            button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
-            button.Enable(True)
-        elif state == "busy":
-            button.SetBackgroundColour("#00dd00")
-            button.SetLabel(_("LOCKED"))
-            button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
-            button.Enable(False)
-        elif state == "wait":
-
-            def f(event=None):
-                self.context("continue\n")
-
-            button.function = f
-            button.SetBackgroundColour("#dddd00")
-            button.SetLabel(_("Force Continue"))
-            button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap(use_theme=False))
-            button.Enable(True)
-        elif state == "pause":
-
-            def f(event=None):
-                self.context("resume\n")
-
-            button.function = f
-            button.SetBackgroundColour("#00dd00")
-            button.SetLabel(_("Resume Controller"))
-            button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
-            button.Enable(True)
-        elif state == "active":
-
-            def f(event=None):
-                self.context("hold\n")
-
-            button.function = f
-            button.SetBackgroundColour("#00ff00")
-            button.SetLabel(_("Pause Controller"))
-            button.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
-            button.Enable(True)
-        elif state == "terminate":
-
-            def f(event=None):
-                self.context("abort\n")
-
-            button.function = f
-            button.SetBackgroundColour("#00ffff")
-            button.SetLabel(_("Manual Reset"))
-            button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(use_theme=False))
-            button.Enable(True)
+    # @signal_listener("pipe;thread")
+    # def on_control_state(self, origin, state):
+    #     if origin != self.context._path:
+    #         return
+    #
+    #     if self.last_control_state == state:
+    #         return
+    #     self.last_control_state = state
+    #     button = self.button_controller_control
+    #     if self.text_controller_status is None:
+    #         return
+    #     value = self.context.kernel.get_text_thread_state(state)
+    #     self.text_controller_status.SetValue(str(value))
+    #     if state in ("init", "end", "idle"):
+    #
+    #         def f(event=None):
+    #             self.context("start\n")
+    #             self.context("hold\n")
+    #
+    #         button.function = f
+    #         button.SetBackgroundColour("#009900")
+    #         button.SetLabel(_("Hold Controller"))
+    #         button.SetBitmap(
+    #             icons8_circled_play.GetBitmap(
+    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #             )
+    #         )
+    #         button.Enable(True)
+    #     elif state == "busy":
+    #         button.SetBackgroundColour("#00dd00")
+    #         button.SetLabel(_("LOCKED"))
+    #         button.SetBitmap(
+    #             icons8_circled_play.GetBitmap(
+    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #             )
+    #         )
+    #         button.Enable(False)
+    #     elif state == "wait":
+    #
+    #         def f(event=None):
+    #             self.context("continue\n")
+    #
+    #         button.function = f
+    #         button.SetBackgroundColour("#dddd00")
+    #         button.SetLabel(_("Force Continue"))
+    #         button.SetBitmap(
+    #             icons8_laser_beam_hazard.GetBitmap(
+    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #             )
+    #         )
+    #         button.Enable(True)
+    #     elif state == "pause":
+    #
+    #         def f(event=None):
+    #             self.context("resume\n")
+    #
+    #         button.function = f
+    #         button.SetBackgroundColour("#00dd00")
+    #         button.SetLabel(_("Resume Controller"))
+    #         button.SetBitmap(
+    #             icons8_circled_play.GetBitmap(
+    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #             )
+    #         )
+    #         button.Enable(True)
+    #     elif state == "active":
+    #
+    #         def f(event=None):
+    #             self.context("hold\n")
+    #
+    #         button.function = f
+    #         button.SetBackgroundColour("#00ff00")
+    #         button.SetLabel(_("Pause Controller"))
+    #         button.SetBitmap(
+    #             icons8_pause.GetBitmap(use_theme=False, resize=0.75 * get_default_icon_size())
+    #         )
+    #         button.Enable(True)
+    #     elif state == "terminate":
+    #
+    #         def f(event=None):
+    #             self.context("abort\n")
+    #
+    #         button.function = f
+    #         button.SetBackgroundColour("#00ffff")
+    #         button.SetLabel(_("Manual Reset"))
+    #         button.SetBitmap(
+    #             icons8_emergency_stop_button.GetBitmap(
+    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #             )
+    #         )
+    #         button.Enable(True)
 
     @signal_listener("pipe;failing")
     def on_usb_failing(self, origin, count):
         self.retries = count
 
-    def on_button_start_controller(self, event=None):
-        event.Skip()
-        self.button_controller_control.function()
+    # def on_button_start_controller(self, event=None):
+    #     event.Skip()
+    #     self.button_controller_control.function()
 
     def on_check_show_usb_log(self, event=None):
         on = self.checkbox_show_usb_log.GetValue()
@@ -524,7 +636,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
 class LihuiyuControllerGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(_advanced_width, _default_height, *args, **kwds)
+        super().__init__(_simple_width, _default_height, *args, **kwds)
 
         # ==========
         # MENU BAR
@@ -538,13 +650,15 @@ class LihuiyuControllerGui(MWindow):
         # ==========
         # MENUBAR END
         # ==========
-
+        self.restore_aspect(honor_initial_values=True)
         self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lihuiyu-Controller"))
+        self.Layout()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
@@ -562,6 +676,10 @@ class LihuiyuControllerGui(MWindow):
         self.Bind(wx.EVT_MENU, self.on_menu_pause, id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), "")
         self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
+        wxglade_tmp_menu.AppendSeparator()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Configuration"), "")
+        self.Bind(wx.EVT_MENU, self.on_menu_config, id=item.GetId())
+
         append(wxglade_tmp_menu, _("Commands"))
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(
@@ -572,6 +690,9 @@ class LihuiyuControllerGui(MWindow):
 
     def window_preserve(self):
         return False
+
+    def on_menu_config(self, event):
+        self.context("window open Configuration\n")
 
     def on_menu_usb_reset(self, event):
         try:

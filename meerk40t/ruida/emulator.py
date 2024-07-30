@@ -10,17 +10,19 @@ from typing import Tuple, Union
 
 from meerk40t.kernel import get_safe_path
 
-from ..core.units import UNITS_PER_uM, UNITS_PER_MM
+from ..core.units import UNITS_PER_uM
 from .exceptions import RuidaCommandError
 from .rdjob import (
     RDJob,
+    abscoord,
     decode14,
     decodeu35,
     encode32,
+    magic_keys,
     parse_commands,
     parse_filenumber,
     parse_mem,
-    swizzles_lut, abscoord,
+    swizzles_lut,
 )
 
 
@@ -49,7 +51,6 @@ class RuidaEmulator:
         self.realtime = None
 
         self.process_commands = True
-        self.parse_lasercode = True
         self.swizzle_mode = True
 
         self.scale = UNITS_PER_uM
@@ -59,6 +60,7 @@ class RuidaEmulator:
             priority=0,
             channel=self._channel,
             units_to_device_matrix=units_to_device_matrix,
+            magic=self.magic,
         )
         self.z = 0.0
         self.u = 0.0
@@ -67,11 +69,11 @@ class RuidaEmulator:
         self.b = 0.0
         self.c = 0.0
         self.d = 0.0
+        self._magic_keys = magic_keys()
 
     @property
     def x(self):
         return self.device.current[0]
-
 
     @property
     def y(self):
@@ -92,6 +94,7 @@ class RuidaEmulator:
 
     def _set_magic(self, magic):
         self.magic = magic
+        self.job.set_magic(magic)
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
         if self.channel:
             self.channel(f"Setting magic to 0x{self.magic:02x}")
@@ -109,11 +112,10 @@ class RuidaEmulator:
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
-        if len(sent_data) > 3:
-            if self.magic != 0x88 and sent_data[2] == 0xD4:
-                self._set_magic(0x88)
-            if self.magic != 0x11 and sent_data[2] == 0x4B:
-                self._set_magic(0x11)
+        if len(data) == 4:
+            magic = self._magic_keys.get(data)
+            if magic is not None:
+                self._set_magic(magic)
         if checksum_check == checksum_sum:
             response = b"\xCC"
             self.msg_reply(response, desc="Checksum match")
@@ -149,10 +151,11 @@ class RuidaEmulator:
         @return:
         """
         packet = self.unswizzle(data) if unswizzle else data
-        for array in parse_commands(packet):
+        for command in parse_commands(packet):
+            array = list(command)
             try:
                 if not self._process_realtime(array):
-                    self.job.write_command(array)
+                    self.job.write_command(command)
                     self.device.spooler.send(self.job, prevent_duplicate=True)
             except (RuidaCommandError, IndexError):
                 if self.channel:
@@ -571,10 +574,7 @@ class RuidaEmulator:
                 return True
         elif array[0] == 0xD9:
             if len(array) == 1:
-                self._describe(
-                    array,
-                    "Unknown Directional Setting"
-                )
+                self._describe(array, "Unknown Directional Setting")
             else:
                 options = array[2]
                 if options == 0x03:
@@ -587,62 +587,52 @@ class RuidaEmulator:
                     param = "Origin"
 
                 if array[1] == 0x00 or array[1] == 0x50:
-                    coord = abscoord(array[3:8]) * self.scale
+                    coord = abscoord(array[3:8])
                     self._describe(
-                        array,
-                        f"Move {param} X: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} X: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.move_abs(self.x + coord, self.y)
+                        self.device.driver.move_abs(self.x + coord * self.scale, self.y)
                     except AttributeError:
                         pass
                 elif array[1] == 0x01 or array[1] == 0x51:
-                    coord = abscoord(array[3:8]) * self.scale
+                    coord = abscoord(array[3:8])
                     self._describe(
-                        array,
-                        f"Move {param} Y: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} Y: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.move_abs(self.x, self.y + coord)
+                        self.device.driver.move_abs(self.x, self.y + coord * self.scale)
                     except AttributeError:
                         pass
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = abscoord(array[3:8])
                     self._describe(
-                        array,
-                        f"Move {param} Z: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} Z: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.axis("z", coord)
+                        self.device.driver.axis("z", coord * self.scale)
                     except AttributeError:
                         pass
                 elif array[1] == 0x03 or array[1] == 0x53:
                     coord = abscoord(array[3:8])
                     self._describe(
-                        array,
-                        f"Move {param} U: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} U: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.axis("u", self.u)
+                        self.device.driver.axis("u", coord * self.scale)
                     except AttributeError:
                         pass
                 elif array[1] == 0x0F:
-                    self._describe(
-                        array,
-                        "Feed Axis Move"
-                    )
+                    self._describe(array, "Feed Axis Move")
                 elif array[1] == 0x10 or array[1] == 0x60:
-                    x = abscoord(array[3:8]) * self.scale
-                    y = abscoord(array[8:13]) * self.scale
-                    self._describe(
-                        array,
-                        f"Move {param} XY ({x}, {y})"
-                    )
+                    x = abscoord(array[3:8])
+                    y = abscoord(array[8:13])
+                    self._describe(array, f"Move {param} XY ({x}μm, {y}μm)")
                     if "Origin" in param:
                         try:
                             self.device.driver.move_abs(
-                                f"{x / UNITS_PER_MM}mm",
-                                f"{y / UNITS_PER_MM}mm",
+                                f"{x / 1000}mm",
+                                f"{y / 1000}mm",
                             )
                         except AttributeError:
                             pass
@@ -654,16 +644,14 @@ class RuidaEmulator:
                 elif array[1] == 0x30 or array[1] == 0x70:
                     x = abscoord(array[3:8])
                     y = abscoord(array[8:13])
-                    self.u = abscoord(array[13: 13 + 5])
+                    self.u = abscoord(array[13 : 13 + 5])
                     self._describe(
                         array,
-                        f"Move {param} XYU: {x * UNITS_PER_uM} ({y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
+                        f"Move {param} XYU: {x}μm ({y}μm, {self.u}μm)",
                     )
                     try:
-                        self.device.driver.move_abs(
-                            x * UNITS_PER_uM, y * UNITS_PER_uM
-                        )
-                        self.device.driver.axis("u", self.u * UNITS_PER_uM)
+                        self.device.driver.move_abs(x * self.scale, y * self.scale)
+                        self.device.driver.axis("u", self.u * self.scale)
                     except AttributeError:
                         pass
             return True
@@ -1426,7 +1414,7 @@ class RuidaEmulator:
         if mem == 0x0221:
             pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
-            x /= UNITS_PER_uM
+            x /= self.scale
             return "Axis Preferred Position 1, Pos X", int(x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
@@ -1435,7 +1423,7 @@ class RuidaEmulator:
         if mem == 0x0231:
             pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
-            y /= UNITS_PER_uM
+            y /= self.scale
             return "Axis Preferred Position 2, Pos Y", int(y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0

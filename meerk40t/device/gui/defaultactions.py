@@ -1,20 +1,22 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_bell_20,
-    icons8_close_window_20,
-    icons8_down_50,
-    icons8_home_20,
-    icons8_input_20,
-    icons8_output_20,
-    icons8_remove_25,
-    icons8_return_20,
-    icons8_stop_gesture_20,
-    icons8_system_task_20,
-    icons8_timer_20,
-    icons8_up_50,
+    icon_air_off,
+    icon_air_on,
+    icon_bell,
+    icon_close_window,
+    icon_console,
+    icon_external,
+    icon_internal,
+    icon_return,
+    icon_round_stop,
+    icon_timer,
+    icon_trash,
+    icons8_down,
+    icons8_home_filled,
+    icons8_up,
 )
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton
 
 _ = wx.GetTranslation
 
@@ -31,26 +33,32 @@ class DefaultActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.SetHelpText("defaultactions")
 
         self.standards = (
             ("Home", "util home", ""),
             ("Goto Origin", "util goto", "0,0"),
+            ("Goto 0,0", "util goto", "0,0,True"),
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
             ("Console", "util console", ""),
+            ("Coolant on", "util console", "coolant_on"),
+            ("Coolant off", "util console", "coolant_off"),
         )
         self.default_images = [
-            ["console home -f", icons8_home_20],
-            ["console move_abs", icons8_return_20],
-            ["console beep", icons8_bell_20],
-            ["console interrupt", icons8_stop_gesture_20],
-            ["console quit", icons8_close_window_20],
-            ["util wait", icons8_timer_20],
-            ["util home", icons8_home_20],
-            ["util goto", icons8_return_20],  # icons8_visit_20
-            ["util output", icons8_output_20],
-            ["util input", icons8_input_20],
-            ["util console", icons8_system_task_20],
+            ["console home -f", icons8_home_filled],
+            ["console move_abs", icon_return],
+            ["console beep", icon_bell],
+            ["console interrupt", icon_round_stop],
+            ["console quit", icon_close_window],
+            ["util wait", icon_timer],
+            ["util home", icons8_home_filled],
+            ["util goto", icon_return],  # icon_marker
+            ["util output", icon_external],
+            ["util input", icon_internal],
+            ["util console", icon_console],
+            ["console coolant_on", icon_air_on],
+            ["console coolant_off", icon_air_off],
         ]
         self.prepend_ops = []
         self.append_ops = []
@@ -60,6 +68,8 @@ class DefaultActionPanel(wx.Panel):
         sizer_after = StaticBoxSizer(self, wx.ID_ANY, _("At job end"), wx.VERTICAL)
         sizer_middle = wx.BoxSizer(wx.VERTICAL)
 
+        iconsize = dip_size(self, 30, 20)
+        bmpsize = min(iconsize[0], iconsize[1])
         self.option_list = wx.ListCtrl(
             self,
             wx.ID_ANY,
@@ -68,29 +78,37 @@ class DefaultActionPanel(wx.Panel):
 
         self.text_param_option = wx.TextCtrl(self, wx.ID_ANY)
 
-        self.button_add_prepend = wx.Button(self, wx.ID_ANY, _("Add to Job Start"))
-        self.button_add_append = wx.Button(self, wx.ID_ANY, _("Add to Job End"))
+        self.button_add_prepend = wxButton(self, wx.ID_ANY, _("Add to Job Start"))
+        self.button_add_append = wxButton(self, wx.ID_ANY, _("Add to Job End"))
 
-        self.prepend_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
+        self.prepend_list = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL
+        )
         self.text_param_prepend = wx.TextCtrl(self, wx.ID_ANY)
 
-        self.append_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
-        self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
-        self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_prepend = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(30, 20)
+        self.append_list = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL
         )
-        self.button_del_prepend.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_prepend.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_prepend.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
+        self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_down_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_del_prepend.SetBitmap(
+            icon_trash.GetBitmap(resize=bmpsize, buffer=1)
+        )
+        self.button_up_prepend.SetBitmap(icons8_up.GetBitmap(resize=bmpsize, buffer=1))
+        self.button_down_prepend.SetBitmap(
+            icons8_down.GetBitmap(resize=bmpsize, buffer=1)
+        )
 
-        self.button_del_append = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_up_append = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_append = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_del_append.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_append.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_append.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_del_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_up_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_down_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_del_append.SetBitmap(icon_trash.GetBitmap(resize=bmpsize, buffer=1))
+        self.button_up_append.SetBitmap(icons8_up.GetBitmap(resize=bmpsize, buffer=1))
+        self.button_down_append.SetBitmap(
+            icons8_down.GetBitmap(resize=bmpsize, buffer=1)
+        )
 
         sizer_param = StaticBoxSizer(
             self, wx.ID_ANY, _("Operation parameter:"), wx.HORIZONTAL
@@ -220,7 +238,7 @@ class DefaultActionPanel(wx.Panel):
         idx = self.prepend_list.GetFirstSelected()
         if idx < 0 or idx >= len(self.prepend_ops):
             return
-        removed = self.prepend_ops.pop(idx)
+        self.prepend_ops.pop(idx)
         # print("Now", self.prepend_ops)
         # print("Deleted was", removed)
         self.save_data()
@@ -230,7 +248,7 @@ class DefaultActionPanel(wx.Panel):
         idx = self.append_list.GetFirstSelected()
         if idx < 0 or idx >= len(self.append_ops):
             return
-        removed = self.append_ops.pop(idx)
+        self.append_ops.pop(idx)
         self.save_data()
         self.fill_append_list()
 
@@ -252,16 +270,11 @@ class DefaultActionPanel(wx.Panel):
 
     def prepend_move_up(self, event):
         idx2 = self.prepend_list.GetFirstSelected()
-        if idx2 > len(self.prepend_ops):
-            idx1 = -1
-        idx1 = idx2 - 1
-        if (
-            idx1 < 0
-            or idx2 < 0
-            or idx1 >= len(self.prepend_ops)
-            or idx2 >= len(self.prepend_ops)
-        ):
+        # Either invalid or the first, so can't be moved up
+        if idx2 <= 0 or idx2 >= len(self.prepend_ops):
             return
+        # Previous Element
+        idx1 = idx2 - 1
         swap = self.prepend_ops[idx1][0]
         self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
         self.prepend_ops[idx2][0] = swap
@@ -277,16 +290,11 @@ class DefaultActionPanel(wx.Panel):
 
     def prepend_move_down(self, event):
         idx2 = self.prepend_list.GetFirstSelected()
-        if idx2 > len(self.prepend_ops):
-            idx1 = -1
-        idx1 = idx2 + 1
-        if (
-            idx1 < 0
-            or idx2 < 0
-            or idx1 >= len(self.prepend_ops)
-            or idx2 >= len(self.prepend_ops)
-        ):
+        # Either invalid or the last, so can't be moved down
+        if idx2 < 0 or idx2 >= len(self.prepend_ops) - 1:
             return
+        # Next element
+        idx1 = idx2 + 1
         swap = self.prepend_ops[idx1][0]
         self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
         self.prepend_ops[idx2][0] = swap
@@ -302,16 +310,11 @@ class DefaultActionPanel(wx.Panel):
 
     def append_move_up(self, event):
         idx2 = self.append_list.GetFirstSelected()
-        if idx2 > len(self.append_ops):
-            idx1 = -1
-        idx1 = idx2 - 1
-        if (
-            idx1 < 0
-            or idx2 < 0
-            or idx1 >= len(self.append_ops)
-            or idx2 >= len(self.append_ops)
-        ):
+        # Either invalid or the first, so can't be moved up
+        if idx2 <= 0 or idx2 >= len(self.append_ops):
             return
+        # Previous Element
+        idx1 = idx2 - 1
         swap = self.append_ops[idx1][0]
         self.append_ops[idx1][0] = self.append_ops[idx2][0]
         self.append_ops[idx2][0] = swap
@@ -327,8 +330,10 @@ class DefaultActionPanel(wx.Panel):
 
     def append_move_down(self, event):
         idx2 = self.append_list.GetFirstSelected()
-        if idx2 > len(self.append_ops):
-            idx1 = -1
+        # Either invalid or the last, so can't be moved down
+        if idx2 < 0 or idx2 >= len(self.append_ops) - 1:
+            return
+        # Next element
         idx1 = idx2 + 1
         if (
             idx1 < 0
@@ -388,24 +393,40 @@ class DefaultActionPanel(wx.Panel):
 
     ### Routines for addition of new entries
     def add_prepend_option(self, event):
-        idx = self.option_list.GetFirstSelected()
-        if idx < 0 or idx >= len(self.standards):
+        ct = self.option_list.GetSelectedItemCount()
+        if ct <= 0:
             return
-        operation = self.standards[idx][1]
-        content = self.text_param_option.GetValue()
-        entry = [operation, content]
-        self.prepend_ops.append(entry)
+        idx = self.option_list.GetFirstSelected()
+        while 0 <= idx < len(self.standards):
+            operation = self.standards[idx][1]
+            if ct == 1:
+                # Only one, so we take the displayed and potentially changed parameter
+                content = self.text_param_option.GetValue()
+            else:
+                # More than one, so we take the default as parameter
+                content = self.standards[idx][2]
+            entry = [operation, content]
+            self.prepend_ops.append(entry)
+            idx = self.option_list.GetNextSelected(idx)
         self.save_data()
         self.fill_prepend_list()
 
     def add_append_option(self, event):
-        idx = self.option_list.GetFirstSelected()
-        if idx < 0 or idx >= len(self.standards):
+        ct = self.option_list.GetSelectedItemCount()
+        if ct <= 0:
             return
-        operation = self.standards[idx][1]
-        content = self.text_param_option.GetValue()
-        entry = [operation, content]
-        self.append_ops.append(entry)
+        idx = self.option_list.GetFirstSelected()
+        while 0 <= idx < len(self.standards):
+            operation = self.standards[idx][1]
+            if ct == 1:
+                # Only one, so we take the displayed and potentially changed parameter
+                content = self.text_param_option.GetValue()
+            else:
+                # More than one, so we take the default as parameter
+                content = self.standards[idx][2]
+            entry = [operation, content]
+            self.append_ops.append(entry)
+            idx = self.option_list.GetNextSelected(idx)
         self.save_data()
         self.fill_append_list()
 
@@ -456,7 +477,9 @@ class DefaultActionPanel(wx.Panel):
         setattr(self.context, str_count, len(self.append_ops))
 
     def setup_state_images(self):
-        iconsize = 20
+        testsize = dip_size(self, 20, 20)
+        iconsize = testsize[1]
+
         self.options_images = wx.ImageList()
         self.options_images.Create(width=iconsize, height=iconsize)
         self.prepend_images = wx.ImageList()
@@ -464,7 +487,9 @@ class DefaultActionPanel(wx.Panel):
         self.append_images = wx.ImageList()
         self.append_images.Create(width=iconsize, height=iconsize)
         for entry in self.default_images:
-            image = entry[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True)
+            image = entry[1].GetBitmap(
+                resize=(iconsize, iconsize), buffer=2, noadjustment=True
+            )
             image_id1 = self.options_images.Add(bitmap=image)
             image_id2 = self.prepend_images.Add(bitmap=image)
             image_id3 = self.append_images.Add(bitmap=image)

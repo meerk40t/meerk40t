@@ -16,18 +16,17 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
         try:
             import cv2
-        except ImportError as e:
+        except ImportError:
             print("OpenCV is not installed. Disabling Camera. Install with:")
             print("\tpip install opencv-python-headless")
             return True
         try:
             import numpy as np
-        except ImportError as e:
+        except ImportError:
             print("Numpy is not installed. Disabling Camera.")
             return True
 
     elif lifecycle == "register":
-
         from meerk40t.camera.camera import Camera
 
         kernel.register("camera-enabled", True)
@@ -111,10 +110,7 @@ def plugin(kernel, lifecycle=None):
             **kwargs,
         ):
             channel(_("Camera Information:"))
-            camera_context = kernel.get_context("camera")
-            for d in camera_context.derivable():
-                if d == "camera":
-                    continue
+            for d in kernel.section_startswith("camera/"):
                 context = kernel.get_context(d)
                 channel(f"{d}: {getattr(context, 'uri', '---')}")
             return "camera", data
@@ -235,15 +231,23 @@ def plugin(kernel, lifecycle=None):
             else:
                 raise CommandSyntaxError
 
+        @kernel.console_argument("device", type=str)
         @kernel.console_command(
             "background",
             help="set background image",
             input_type="camera",
             output_type="image-array",
         )
-        def background_camera(data=None, **kwargs):
-            image_array = data.background()
-            return "image-array", image_array
+        def background_camera(data=None, device=None, **kwargs):
+            doit = True
+            if device:
+                if kernel.device.label != device:
+                    doit = False
+            if doit:
+                image_array = data.background()
+                return "image-array", image_array
+            else:
+                return
 
         @kernel.console_command(
             "export",

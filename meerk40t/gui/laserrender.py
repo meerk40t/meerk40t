@@ -37,7 +37,7 @@ from ..tools.geomstr import (  # , TYPE_RAMP
     Geomstr,
 )
 from .fonts import wxfont_to_svg
-from .icons import icons8_image_50
+from .icons import icons8_image
 from .zmatrix import ZMatrix
 
 DRAW_MODE_FILLS = 0x000001
@@ -64,6 +64,7 @@ DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
 DRAW_MODE_ORIGIN = 0x4000000
+DRAW_MODE_EDIT = 0x8000000
 
 
 def swizzlecolor(c):
@@ -93,8 +94,21 @@ def svgfont_to_wx(textnode):
     """
     if not hasattr(textnode, "wxfont"):
         textnode.wxfont = wx.Font()
+    if textnode.font_weight is not None:
+        try:
+            fw = float(textnode.font_weight)
+            if fw > 1000:
+                textnode.font_weight = 1000
+        except ValueError:
+            pass
     wxfont = textnode.wxfont
+    # if the font_list is empty, then we do have a not properly initialised textnode,
+    # that needs to be resolved...
+    if textnode.font_family is None:
+        wxfont_to_svg(textnode)
 
+    svg_to_wx_family(textnode, wxfont)
+    svg_to_wx_fontstyle(textnode, wxfont)
     try:
         wxfont.SetNumericWeight(textnode.weight)  # Gets numeric weight.
     except AttributeError:
@@ -103,14 +117,11 @@ def svgfont_to_wx(textnode):
         wxfont.SetWeight(
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
-    # if the font_list is empty, then we do have a not properly initialised textnode,
-    # that needs to be resolved...
-    if textnode.font_family is None:
-        wxfont_to_svg(textnode)
 
-    svg_to_wx_family(textnode, wxfont)
-    svg_to_wx_fontstyle(textnode, wxfont)
-    font_size = textnode.font_size
+    try:
+        font_size = float(textnode.font_size)
+    except ValueError:
+        font_size = 10
     try:
         wxfont.SetFractionalPointSize(font_size)
     except AttributeError:
@@ -214,10 +225,12 @@ class LaserRender:
                     "elem rect",
                     "elem line",
                     "effect hatch",
+                    "effect wobble",
+                    "effect warp",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
-                nodes = [e for e in nodes if e.type != "elem image"]
+                nodes = [e for e in nodes if hasattr(e, "as_image")]
             if draw_mode & DRAW_MODE_TEXT:  # Do not draw text.
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
@@ -249,18 +262,16 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
+        if hasattr(node, "hidden"):
+            if node.hidden:
+                return False
         if hasattr(node, "is_visible"):
             if not node.is_visible:
                 return False
         if hasattr(node, "output"):
             if not node.output:
                 return False
-
-        try:
-            # Try to draw node, assuming it already has a known render method.
-            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            return True
-        except AttributeError:
+        if not hasattr(node, "draw") or not hasattr(node, "_make_cache"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
                 "elem path",
@@ -269,24 +280,35 @@ class LaserRender:
                 "elem line",
                 "elem polyline",
                 "effect hatch",
+                "effect wobble",
+                "effect warp",
             ):
                 node.draw = self.draw_vector
-                node.make_cache = self.cache_geomstr
+                node._make_cache = self.cache_geomstr
             elif node.type == "elem point":
                 node.draw = self.draw_point_node
             elif node.type in place_nodes:
                 node.draw = self.draw_placement_node
-            elif node.type == "elem image":
+            elif hasattr(node, "as_image"):
                 node.draw = self.draw_image_node
             elif node.type == "elem text":
                 node.draw = self.draw_text_node
             elif node.type == "cutcode":
                 node.draw = self.draw_cutcode_node
+            elif node.type == "group":
+                node.draw = self.draw_nothing
             else:
+                # print (f"This node has no method: {node.type}")
                 return False
-            # We have now defined that function, draw it.
-            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            return True
+        # We have now defined that function, draw it.
+        node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+        if getattr(node, "label_display", False) and node.label:
+            # Display label
+            col = self.context.root.setting(str, "label_display_color", "#ff0000ff")
+            self.display_label(
+                node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha, color=col
+            )
+        return True
 
     def make_path(self, gc, path):
         """
@@ -340,17 +362,24 @@ class LaserRender:
                     )
         return p
 
-    def make_geomstr(self, gc, path):
+    def make_geomstr(self, gc, path, node=None, settings=None):
         """
-        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        Takes a Geomstr path and converts it to a GraphicsContext.Graphics path
+
+        This also creates a point list of the relevant nodes and creates a ._cache_edit value to be used by node
+        editing view.
         """
         p = gc.CreatePath()
+        pts = list()
         for subpath in path.as_subpaths():
             if len(subpath) == 0:
                 continue
             end = None
             for e in subpath.segments:
                 seg_type = int(e[2].real)
+                if settings is not None:
+                    if settings != int(e[2].imag):
+                        continue
                 start = e[0]
                 if end != start:
                     # Start point does not equal previous end point.
@@ -361,8 +390,13 @@ class LaserRender:
 
                 if seg_type == TYPE_LINE:
                     p.AddLineToPoint(end.real, end.imag)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_ARC:
                     radius = Geomstr.arc_radius(None, line=e)
                     center = Geomstr.arc_center(None, line=e)
@@ -376,14 +410,26 @@ class LaserRender:
                         end_t,
                         clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
                     )
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
                     )
+                    pts.append(c0)
+                    pts.append(c1)
+                    pts.append(start)
+                    pts.append(end)
                 else:
                     print(f"Unknown seg_type: {seg_type}")
             if subpath.first_point == end:
                 p.CloseSubpath()
+        if node is not None:
+            graphics_path_2 = gc.CreatePath()
+            for pt in pts:
+                graphics_path_2.AddCircle(pt.real, pt.imag, 5000)
+            node._cache_edit = graphics_path_2
 
         return p
 
@@ -392,7 +438,6 @@ class LaserRender:
             self.pen.SetCap(wx.CAP_ROUND)
         else:
             if node.linecap == Linecap.CAP_BUTT:
-
                 self.pen.SetCap(wx.CAP_BUTT)
             elif node.linecap == Linecap.CAP_ROUND:
                 self.pen.SetCap(wx.CAP_ROUND)
@@ -402,7 +447,9 @@ class LaserRender:
                 self.pen.SetCap(wx.CAP_ROUND)
 
     def _set_linejoin_by_node(self, node):
-        if not hasattr(node, "linejoin") or node.linejoin is None:
+        if not hasattr(node, "linejoin"):
+            self.pen.SetJoin(wx.JOIN_BEVEL)
+        elif node.linejoin is None:
             self.pen.SetJoin(wx.JOIN_MITER)
         else:
             if node.linejoin == Linejoin.JOIN_ARCS:
@@ -425,16 +472,20 @@ class LaserRender:
             else:
                 return wx.WINDING_RULE
 
-    def _set_penwidth(self, width):
+    @staticmethod
+    def _penwidth(pen, width):
         try:
             if isnan(width):
                 width = 1.0
             try:
-                self.pen.SetWidth(width)
+                pen.SetWidth(width)
             except TypeError:
-                self.pen.SetWidth(int(width))
+                pen.SetWidth(int(width))
         except OverflowError:
             pass  # Exceeds 32 bit signed integer.
+
+    def _set_penwidth(self, width):
+        self._penwidth(self.pen, width)
 
     def set_pen(self, gc, stroke, alpha=None):
         c = stroke
@@ -459,6 +510,19 @@ class LaserRender:
             gc.SetBrush(self.brush)
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+    def draw_nothing(
+        self,
+        node: Node,
+        gc: wx.GraphicsContext,
+        draw_mode,
+        zoomscale=1.0,
+        alpha=255,
+        x: int = 0,
+        y: int = 0,
+    ):
+        # We don't do anything, just a placeholder
+        return
 
     def draw_cutcode_node(
         self,
@@ -489,9 +553,16 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        gcscale = max(mat_param[0], mat_param[3])
+        if gcscale == 0:
+            gcscale = 0.01
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
-        highlight_pen = wx.Pen(wx_color, width=3, style=wx.PENSTYLE_SHORT_DASH)
+        highlight_pen = wx.Pen(wx_color)
+        highlight_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self._penwidth(highlight_pen, 3 / gcscale)
         p = None
         last_point = None
         color = None
@@ -514,7 +585,7 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self._set_penwidth(7.0)
+                self._penwidth(self.pen, 1 / gcscale)
                 self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
@@ -578,7 +649,7 @@ class LaserRender:
                     gc.SetBrush(wx.RED_BRUSH)
                     gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                     gc.DrawBitmap(
-                        icons8_image_50.GetBitmap(),
+                        icons8_image.GetBitmap(),
                         0,
                         0,
                         cut._cache_width,
@@ -609,34 +680,24 @@ class LaserRender:
             gc.StrokePath(p)
             del p
 
-    def cache_shape(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.shape.transform = matrix
-        cache = self.make_path(gc, node.shape)
-        node._cache = cache
-
-    def cache_path(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.path.transform = matrix
-        cache = self.make_path(gc, node.path)
-        node._cache = cache
-
     def cache_geomstr(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        geom = node.as_geometry()
-        cache = self.make_geomstr(gc, geom)
+        try:
+            matrix = node.matrix
+            node._cache_matrix = copy(matrix)
+        except AttributeError:
+            node._cache_matrix = Matrix()
+        if hasattr(node, "final_geometry"):
+            geom = node.final_geometry()
+        else:
+            geom = node.as_geometry()
+        cache = self.make_geomstr(gc, geom, node=node)
         node._cache = cache
 
     def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """
         Draw routine for vector objects.
 
-        Vector objects are expected to have a make_cache routine which attaches a `_cache_matrix` and a `_cache`
+        Vector objects are expected to have a _make_cache routine which attaches a `_cache_matrix` and a `_cache`
         attribute to them which can be drawn as a GraphicsPath.
         """
         if hasattr(node, "mktext"):
@@ -651,22 +712,27 @@ class LaserRender:
                     property_op(kernel.root, node)
                 if hasattr(node, "_cache"):
                     node._cache = None
-        matrix = node.matrix
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = Matrix()
         gc.PushState()
         try:
             cache = node._cache
         except AttributeError:
             cache = None
         if cache is None:
-            node.make_cache(node, gc)
+            node._make_cache(node, gc)
+
         try:
             cache_matrix = node._cache_matrix
         except AttributeError:
             cache_matrix = None
+
         stroke_factor = 1
-        if matrix != cache_matrix:
+        if matrix != cache_matrix and cache_matrix is not None:
             # Calculate the relative change matrix and apply it to this shape.
-            q = ~node._cache_matrix * matrix
+            q = ~cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
             # Applying the matrix will scale our stroke, so we scale the stroke back down.
             if q.determinant == 0:
@@ -691,6 +757,13 @@ class LaserRender:
             gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node._cache)
+
+        if node.emphasized and draw_mode & DRAW_MODE_EDIT:
+            try:
+                edit = node._cache_edit
+                gc.StrokePath(edit)
+            except AttributeError:
+                pass
         gc.PopState()
 
     def draw_placement_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -739,8 +812,12 @@ class LaserRender:
             y_to = y_from + 2 * dif
             x_sign = 1
             y_sign = 1
+        width = 1.0 * zoomscale
         rpen = wx.Pen(wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+        self._penwidth(rpen, width)
+
         gpen = wx.Pen(wx.Colour(red=0, green=255, blue=0, alpha=alpha))
+        self._penwidth(gpen, width)
         gc.SetPen(rpen)
         dif = 5 * zoomscale
         gc.StrokeLine(x_from, node.y, x_to, node.y)
@@ -754,15 +831,15 @@ class LaserRender:
         loops = 1
         if hasattr(node, "loops") and node.loops is not None:
             # No zero or negative values please
-            loops = max(1, node.loops)
+            try:
+                loops = int(node.loops)
+            except ValueError:
+                loops = 1
+            if loops < 1:
+                loops = 1
         if loops > 1:
             symbol = f"{loops}x"
-            matrix = gc.GetTransform().Get()
-            try:
-                font_size = 10.0 / matrix[0]
-            except ZeroDivisionError:
-                font_size = 5000
-            # print (font_size)
+            font_size = 10 * zoomscale
             if font_size < 1.0:
                 font_size = 1.0
             try:
@@ -788,6 +865,43 @@ class LaserRender:
                 x += 0.25 * (x_to - x_from)
                 y += 0.25 * (y_to - y_from)
             gc.DrawText(symbol, x, y)
+        symbol = ""
+        if hasattr(node, "nx") and hasattr(node, "ny"):
+            nx = node.nx
+            if nx is None:
+                nx = 1
+            ny = node.ny
+            if ny is None:
+                ny = 1
+            if nx != 1 or ny != 1:
+                symbol = f"{nx},{ny}"
+        if symbol:
+            font_size = 10 * zoomscale
+            if font_size < 1.0:
+                font_size = 1.0
+            try:
+                font = wx.Font(
+                    font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            gc.SetFont(font, wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            x = x_from + (x_from - (x_from + x_to) / 2) - t_width / 2
+            y = y_from + (y_from - (y_from + y_to) / 2) - t_height / 2
+            # is corner center then shift it a bit more
+            if node.corner == 4:
+                x += 0.75 * abs(x_to - x_from)
+                y += 0.75 * abs(y_to - y_from)
+            gc.DrawText(symbol, x, y)
 
         gc.PopState()
 
@@ -797,10 +911,61 @@ class LaserRender:
             return
         point = node.point
         gc.PushState()
-        gc.SetPen(wx.BLACK_PEN)
+        mypen = wx.Pen(wx.BLACK)
+        try:
+            mypen.SetWidth(zoomscale)
+        except TypeError:
+            mypen.SetWidth(int(zoomscale))
+        gc.SetPen(mypen)
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
+        gc.PopState()
+
+    def display_label(
+        self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255, color="#ff0000ff"
+    ):
+        if node is None:
+            return
+        if not node.label:
+            return
+        try:
+            if node.type == "group":
+                bbox = node.bbox_group()
+            else:
+                bbox = node.bbox()
+            # print (f"{node.type}: {bbox}")
+        except AttributeError:
+            # print (f"This node has no bbox: {self.node.type}")
+            return
+        gc.PushState()
+        cx = bbox[0] + 0.5 * (bbox[2] - bbox[0])
+        cy = bbox[1] + 0.25 * (bbox[3] - bbox[1])
+        symbol = node.display_label()
+        font_size = 10 * zoomscale
+        if font_size < 1.0:
+            font_size = 1.0
+        try:
+            font = wx.Font(
+                font_size,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        except TypeError:
+            font = wx.Font(
+                int(font_size),
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        c = Color(color)
+        gc.SetFont(font, wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=alpha))
+        (t_width, t_height) = gc.GetTextExtent(symbol)
+        x = cx - t_width / 2
+        y = cy - t_height / 2
+        gc.DrawText(symbol, x, y)
+
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
@@ -866,55 +1031,54 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        image = node.active_image
-        matrix = node.active_matrix
+        image, bounds = node.as_image()
         gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if node._process_image_failed:
-            image_width, image_height = image.size
-            gc.SetBrush(wx.RED_BRUSH)
-            gc.SetPen(wx.RED_PEN)
-            gc.DrawRectangle(0, 0, image_width, image_height)
-            gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, image_width, image_height)
-        else:
-            if draw_mode & DRAW_MODE_CACHE == 0:
-                cache = None
-                try:
-                    cache = node._cache
-                except AttributeError:
-                    pass
-                if cache is None:
-                    try:
-                        max_allowed = node.max_allowed
-                    except AttributeError:
-                        max_allowed = 2048
-                    node._cache_width, node._cache_height = image.size
-                    node._cache = self.make_thumbnail(
-                        image,
-                        maximum=max_allowed,
-                        alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-                    )
-                gc.DrawBitmap(node._cache, 0, 0, node._cache_width, node._cache_height)
-            else:
-                node._cache_width, node._cache_height = image.size
-                try:
-                    cache = self.make_thumbnail(
-                        image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
-                    )
-                    gc.DrawBitmap(cache, 0, 0, node._cache_width, node._cache_height)
-                except MemoryError:
-                    pass
+
+        try:
+            image = node.active_image
+            matrix = node.active_matrix
+            bounds = 0, 0, image.width, image.height
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        except AttributeError:
+            pass
+
+        cache = None
+        try:
+            cache = node._cache
+        except AttributeError:
+            pass
+        if cache is None:
+            try:
+                max_allowed = node.max_allowed
+            except AttributeError:
+                max_allowed = 2048
+            node._cache_width, node._cache_height = image.size
+            node._cache = self.make_thumbnail(
+                image,
+                maximum=max_allowed,
+                alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+            )
+        node._cache_width, node._cache_height = image.size
+        try:
+            cache = self.make_thumbnail(
+                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+            )
+            min_x, min_y, max_x, max_y = bounds
+            gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
+        except MemoryError:
+            pass
         gc.PopState()
-        txt = node._processing_message
-        if txt is not None:
-            gc.PushState()
-            gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
-            font = wx.Font()
-            font.SetPointSize(20)
-            gc.SetFont(font, wx.BLACK)
-            gc.DrawText(txt, 30, 30)
-            gc.PopState()
+        if hasattr(node, "message"):
+            txt = node.message
+            if txt is not None:
+                gc.PushState()
+                gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
+                font = wx.Font()
+                font.SetPointSize(20)
+                gc.SetFont(font, wx.BLACK)
+                gc.DrawText(txt, 30, 30)
+                gc.PopState()
 
     def measure_text(self, node):
         """
@@ -976,10 +1140,8 @@ class LaserRender:
             while True:
                 try:
                     fsize = use_font.GetFractionalPointSize()
-                    fsize_org = node.wxfont.GetFractionalPointSize()
                 except AttributeError:
                     fsize = use_font.GetPointSize()
-                    fsize_org = node.wxfont.GetPointSize()
                 # print (f"Revised bounds: {dimension_x} x {dimension_y}, font_size={fsize} (original={fsize_org}")
                 if fsize < 100 or dimension_x < 2000 or dimension_y < 1000:
                     break
@@ -1100,7 +1262,6 @@ class LaserRender:
         self.validate_text_nodes(nodecopy, variable_translation)
 
         for item in _nodes:
-
             # bb = item.bounds
             bb = item.paint_bounds
             if bb is None:

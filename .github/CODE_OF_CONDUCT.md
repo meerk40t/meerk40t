@@ -37,6 +37,6 @@ complaints about which will always be treated seriously.
 ## Flagging concerns
 
 Instances of abusive, harassing or otherwise unacceptable behaviour may be
-reported in confidence by contacting @Tatarize via Github or Discord.
+reported in confidence by contacting @Tatarize via GitHub or Discord.
 
 

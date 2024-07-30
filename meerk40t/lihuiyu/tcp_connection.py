@@ -24,7 +24,9 @@ class TCPOutput:
     def connect(self):
         try:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._stream.connect((self.service.address, self.service.port))
+            # Make sure port is in a valid range...
+            port = min(65535, max(0, self.service.port))
+            self._stream.connect((self.service.address, port))
             self.service.signal("tcp;status", "connected")
         except TimeoutError:
             self.disconnect()
@@ -32,7 +34,7 @@ class TCPOutput:
         except ConnectionError:
             self.disconnect()
             self.service.signal("tcp;status", "connection error")
-        except socket.gaierror as e:
+        except (socket.gaierror, OverflowError) as e:
             self.disconnect()
             self.service.signal("tcp;status", "address resolve error")
         except socket.herror as e:
@@ -44,7 +46,8 @@ class TCPOutput:
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
-        self._stream.close()
+        if self._stream is not None:
+            self._stream.close()
         self._stream = None
 
     def write(self, data):

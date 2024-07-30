@@ -3,12 +3,13 @@ from copy import copy
 from math import ceil, floor
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import LabelDisplay, Suppressable
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
 
 
-class ImageNode(Node):
+class ImageNode(Node, LabelDisplay, Suppressable):
     """
     ImageNode is the bootstrapped node type for the 'elem image' type.
 
@@ -35,8 +36,10 @@ class ImageNode(Node):
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         # kwargs can actually reset quite a lot of the properties to none
-        # so we need to revert these changes...
+        # so, we need to revert these changes...
         if self.red is None:
             self.red = 1.0
         if self.green is None:
@@ -64,14 +67,19 @@ class ImageNode(Node):
                 self.image = PILImage.open(self.href)
                 if hasattr(self, "x"):
                     self.matrix.post_translate_x(self.x)
+                    delattr(self, "x")
                 if hasattr(self, "y"):
                     self.matrix.post_translate_x(self.y)
+                    delattr(self, "y")
                 real_width, real_height = self.image.size
                 declared_width, declared_height = real_width, real_height
                 if hasattr(self, "width"):
                     declared_width = self.width
+                    delattr(self, "width")
+
                 if hasattr(self, "height"):
                     declared_height = self.height
+                    delattr(self, "height")
                 try:
                     sx = declared_width / real_width
                     sy = declared_height / real_height
@@ -79,10 +87,7 @@ class ImageNode(Node):
                 except ZeroDivisionError:
                     pass
                 delattr(self, "href")
-                delattr(self, "x")
-                delattr(self, "y")
-                delattr(self, "height")
-                delattr(self, "width")
+
             except ImportError:
                 self.image = None
 
@@ -96,7 +101,7 @@ class ImageNode(Node):
         self._processed_image = None
         self._processed_matrix = None
         self._process_image_failed = False
-        self._processing_message = None
+        self.message = None
         if self.operations or self.dither or self.prevent_crop:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
@@ -114,9 +119,7 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
-        if self._processed_image is None and (
-            (self.operations is not None and len(self.operations) > 0) or self.dither
-        ):
+        if self._processed_image is None:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
@@ -138,10 +141,13 @@ class ImageNode(Node):
 
         We require a context to calculate the correct step values relative to the device
         """
-        self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
+        self.step_x, self.step_y = context.device.view.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
         self.process_image(self.step_x, self.step_y, not self.prevent_crop)
+
+    def as_image(self):
+        return self.active_image, self.bbox()
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -168,10 +174,14 @@ class ImageNode(Node):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -210,7 +220,7 @@ class ImageNode(Node):
         """
         self._needs_update = True
         if context is not None:
-            self._processing_message = "Processing..."
+            self.message = "Processing..."
             context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
@@ -219,11 +229,9 @@ class ImageNode(Node):
                 self._update_thread = None
                 if context is not None:
                     if self._process_image_failed:
-                        self._processing_message = (
-                            "Process image could not exist in memory."
-                        )
+                        self.message = "Process image could not exist in memory."
                     else:
-                        self._processing_message = None
+                        self.message = None
                     context.signal("refresh_scene", "Scene")
                     context.signal("image_updated", self)
 
@@ -291,10 +299,16 @@ class ImageNode(Node):
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (MemoryError, Image.DecompressionBombError, ValueError):
+        except (
+            MemoryError,
+            Image.DecompressionBombError,
+            ValueError,
+            ZeroDivisionError,
+        ):
             # Memory error if creating requires too much memory.
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
+            # ZeroDivide if inverting the processed matrix cannot happen because image is a line
             self._process_image_failed = True
         self.updated()
 
@@ -558,7 +572,8 @@ class ImageNode(Node):
         if self.dither and self.dither_type is not None:
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
-            image = image.convert("1")
+            if image.mode != "1":
+                image = image.convert("1")
         return image
 
     def _process_image(self, step_x, step_y, crop=True):
@@ -571,6 +586,20 @@ class ImageNode(Node):
         @return:
         """
         from PIL import Image, ImageOps
+
+        try:
+            from PIL.Image import Transform
+
+            AFFINE = Transform.AFFINE
+        except ImportError:
+            AFFINE = Image.AFFINE
+
+        try:
+            from PIL.Image import Resampling
+
+            BICUBIC = Resampling.BICUBIC
+        except ImportError:
+            BICUBIC = Image.BICUBIC
 
         image = self.image
 
@@ -587,6 +616,7 @@ class ImageNode(Node):
         if box is None:
             # If box is entirely white, bbox caused value error, or crop not set.
             box = (0, 0, image.width, image.height)
+        orgbox = (box[0], box[1], box[2], box[3])
 
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
@@ -610,6 +640,8 @@ class ImageNode(Node):
         image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
         tx = bbox[0]
         ty = bbox[1]
+        # Caveat: we move the picture backward, so that the non-white
+        # image content aligns at 0 , 0 - but we don't crop the image
         transform_matrix.post_translate(-tx, -ty)
         transform_matrix.post_scale(step_scale_x, step_scale_y)
         if step_y < 0:
@@ -638,7 +670,7 @@ class ImageNode(Node):
                 image_width = 1
             image = image.transform(
                 (image_width, image_height),
-                Image.AFFINE,
+                AFFINE,
                 (
                     transform_matrix.a,
                     transform_matrix.c,
@@ -647,20 +679,10 @@ class ImageNode(Node):
                     transform_matrix.d,
                     transform_matrix.f,
                 ),
-                resample=Image.BICUBIC,
+                resample=BICUBIC,
                 fillcolor="black" if self.invert else "white",
             )
         actualized_matrix = Matrix()
-
-        # If crop applies, apply crop.
-        if crop:
-            box = self._get_crop_box(image)
-            if box is not None:
-                width = box[2] - box[0]
-                height = box[3] - box[1]
-                if width != image.width or height != image.height:
-                    image = image.crop(box)
-                    actualized_matrix.post_translate(box[0], box[1])
 
         if step_y < 0:
             # if step_y is negative, translate.
@@ -668,6 +690,22 @@ class ImageNode(Node):
         if step_x < 0:
             # if step_x is negative, translate.
             actualized_matrix.post_translate(-image_width, 0)
+
+        # If crop applies, apply crop.
+        if crop:
+            cbox = self._get_crop_box(image)
+            if cbox is not None:
+                width = cbox[2] - cbox[0]
+                height = cbox[3] - cbox[1]
+                if width != image.width or height != image.height:
+                    image = image.crop(cbox)
+                    # TODO:
+                    # We did not crop the image so far, but we already applied
+                    # the cropped transformation! That may be faulty, and needs to
+                    # be corrected at a later stage, but this logic, even if clumsy
+                    # is good enough: don't shift things twice!
+                    if orgbox[0] == 0 and orgbox[1] == 0:
+                        actualized_matrix.post_translate(cbox[0], cbox[1])
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)

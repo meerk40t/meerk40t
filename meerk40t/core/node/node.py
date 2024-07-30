@@ -18,6 +18,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+
 import ast
 from copy import copy
 from enum import IntEnum
@@ -92,16 +93,20 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
-
+        self._default_map = dict()
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
-            if isinstance(v, str):
+            if isinstance(v, str) and k not in ("text", "id", "label"):
                 try:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
                     pass
-            self.__dict__[k] = v
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                # If this is already an attribute, just add it to the node dict.
+                self.__dict__[k] = v
 
         self._children = list()
         self._root = None
@@ -128,6 +133,7 @@ class Node:
 
         self._item = None
         self._cache = None
+        super().__init__()
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -376,6 +382,10 @@ class Node:
         self._bounds_dirty = True
         self._points_dirty = True
 
+    def set_dirty(self):
+        self.points_dirty = True
+        self.empty_cache()
+
     @property
     def formatter(self):
         return self._formatter
@@ -383,6 +393,33 @@ class Node:
     @formatter.setter
     def formatter(self, formatter):
         self._formatter = formatter
+
+    def display_label(self):
+        x = self.label
+        if x is None:
+            return None
+        start = 0
+        default_map = self._default_map
+        while True:
+            i1 = x.find("{", start)
+            if i1 < 0:
+                break
+            i2 = x.find("}", i1)
+            if i2 < 0:
+                break
+            nd = x[i1 + 1 : i2]
+            nd_val = ""
+            if nd in default_map:
+                n_val = default_map[nd]
+                if n_val is not None:
+                    nd_val = str(n_val)
+            elif hasattr(self, nd):
+                n_val = getattr(self, nd, "")
+                if n_val is not None:
+                    nd_val = str(n_val)
+            x = x[:i1] + nd_val + x[i2 + 1 :]
+            start = i1 + len(nd_val)
+        return x
 
     @property
     def points(self):
@@ -465,7 +502,7 @@ class Node:
         if text is None:
             text = "{element_type}:{id}"
         # Just for the optical impression (who understands what a "Rect: None" means),
-        # lets replace some of the more obvious ones...
+        # let's replace some of the more obvious ones...
         mymap = self.default_map()
         for key in mymap:
             if hasattr(self, key) and mymap[key] == "None":
@@ -489,24 +526,54 @@ class Node:
             result = "<invalid pattern>"
         return result
 
-    def default_map(self, default_map=None):
+    def default_map(self, default_map=None, skip_label=False):
         if default_map is None:
-            default_map = dict()
+            default_map = self._default_map
         default_map["id"] = str(self.id) if self.id is not None else "-"
-        default_map["label"] = self.label if self.label is not None else ""
-        default_map["desc"] = (
-            self.label
-            if self.label is not None
-            else str(self.id)
-            if self.id is not None
-            else "-"
-        )
+        if not skip_label:
+            lbl = self.display_label()
+            default_map["label"] = lbl if lbl is not None else ""
+            default_map["desc"] = (
+                lbl if lbl is not None else str(self.id) if self.id is not None else "-"
+            )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
 
     def valid_node_for_reference(self, node):
         return True
+
+    def copy_children_as_references(self, obj):
+        """
+        Copy the children of the given object as direct references to those children.
+        @param obj:
+        @return:
+        """
+        for element in obj.children:
+            self.add_reference(element)
+
+    def copy_with_reified_tree(self):
+        """
+        Make a copy of the current node, and a copy of the sub-nodes dereferencing any reference nodes
+        @return:
+        """
+        copy_c = copy(self)
+        copy_c.copy_children_as_real(self)
+        return copy_c
+
+    def copy_children_as_real(self, copy_node):
+        """
+        Copy the children of copy_node to the current node, dereferencing any reference nodes.
+        @param copy_node:
+        @return:
+        """
+        for child in copy_node.children:
+            child = child
+            if child.type == "reference":
+                child = child.node
+            copy_child = copy(child)
+            self.add_node(copy_child)
+            copy_child.copy_children_as_real(child)
 
     def is_draggable(self):
         return True
@@ -623,52 +690,52 @@ class Node:
         return True
 
     def notify_created(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_created(node=node, **kwargs)
+            self._parent.notify_created(node=node, **kwargs)
 
     def notify_destroyed(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_destroyed(node=node, **kwargs)
+            self._parent.notify_destroyed(node=node, **kwargs)
 
     def notify_attached(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_attached(node=node, **kwargs)
+            self._parent.notify_attached(node=node, **kwargs)
 
     def notify_detached(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_detached(node=node, **kwargs)
+            self._parent.notify_detached(node=node, **kwargs)
 
     def notify_changed(self, node, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=node, **kwargs)
+            self._parent.notify_changed(node=node, **kwargs)
 
     def notify_selected(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_selected(node=node, **kwargs)
+            self._parent.notify_selected(node=node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_emphasized(node=node, **kwargs)
+            self._parent.notify_emphasized(node=node, **kwargs)
 
     def notify_targeted(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_targeted(node=node, **kwargs)
+            self._parent.notify_targeted(node=node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
         if self._root is not None:
@@ -677,58 +744,70 @@ class Node:
             self._root.notify_highlighted(node=node, **kwargs)
 
     def notify_modified(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_modified(node=node, **kwargs)
+            self._parent.notify_modified(node=node, **kwargs)
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        if self._root is not None:
+    def notify_translated(self, node=None, dx=0, dy=0, invalidate=False, **kwargs):
+        if invalidate:
+            self.set_dirty_bounds()
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+            # Any change to position / size needs a recalculation of the bounds
+            self._parent.notify_translated(
+                node=node, dx=dx, dy=dy, invalidate=True, **kwargs
+            )
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        if self._root is not None:
+    def notify_scaled(
+        self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, **kwargs
+    ):
+        if invalidate:
+            self.set_dirty_bounds()
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
+            # Any change to position / size needs a recalculation of the bounds
+            self._parent.notify_scaled(
+                node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate=True, **kwargs
+            )
 
     def notify_altered(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_altered(node=node, **kwargs)
+            self._parent.notify_altered(node=node, **kwargs)
 
     def notify_expand(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_expand(node=node, **kwargs)
+            self._parent.notify_expand(node=node, **kwargs)
 
     def notify_collapse(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_collapse(node=node, **kwargs)
+            self._parent.notify_collapse(node=node, **kwargs)
 
     def notify_reorder(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_reorder(node=node, **kwargs)
+            self._parent.notify_reorder(node=node, **kwargs)
 
     def notify_update(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_update(node=node, **kwargs)
+            self._parent.notify_update(node=node, **kwargs)
 
     def notify_focus(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_focus(node=node, **kwargs)
+            self._parent.notify_focus(node=node, **kwargs)
 
     def focus(self):
         self.notify_focus(self)
@@ -789,14 +868,16 @@ class Node:
                 self._paint_bounds[2] + dx,
                 self._paint_bounds[3] + dy,
             ]
-        self._points_dirty = True
+        self.set_dirty()
+        # No need to translate it as we will apply the matrix later
+        # self.translate_functional_parameter(dx, dy)
+
         # if self._points_dirty:
         #     self.revalidate_points()
         # else:
         #     for pt in self._points:
         #         pt[0] += dx
         #         pt[1] += dy
-
         self.notify_translated(self, dx=dx, dy=dy)
 
     def scaled(self, sx, sy, ox, oy):
@@ -824,18 +905,17 @@ class Node:
             self.modified()
             return
         self._bounds = apply_it(self._bounds)
+        # self.scale_functional_parameter(sx, sy, ox, oy)
         # This may not really correct, we need the
         # implied stroke_width to add, so the inherited
         # element classes will need to overload it
         if self._paint_bounds is not None:
             self._paint_bounds = apply_it(self._paint_bounds)
-        self._points_dirty = True
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
-    def altered(self):
-        """
-        The data structure was changed. Any assumptions about what this object is/was are void.
-        """
+    def empty_cache(self):
+        # Remove cached artifacts
         try:
             self._cache.UnGetNativePath(self._cache.NativePath)
         except AttributeError:
@@ -846,19 +926,17 @@ class Node:
         except AttributeError:
             pass
         self._cache = None
+
+    def altered(self):
+        """
+        The data structure was changed. Any assumptions about what this object is/was are void.
+        """
+        self.empty_cache()
         self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
-        try:
-            self._cache.UngetNativePath(self._cache.NativePath)
-        except AttributeError:
-            pass
-        try:
-            del self._cache
-            del self._cache_matrix
-        except AttributeError:
-            pass
+        self.empty_cache()
 
     def unregister(self):
         self.unregister_object()
@@ -896,10 +974,15 @@ class Node:
         @param pos:
         @return:
         """
+        if node is None:
+            # This should not happen and is a sign that something is amiss,
+            # so we inform at least abount it
+            print("Tried to add an invalid node...")
+            return
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
         node._parent = self
-        node._root = self._root
+        node.set_root(self._root)
         if pos is None:
             self._children.append(node)
         else:
@@ -938,8 +1021,22 @@ class Node:
         @return:
         """
         node = self.create(type=type, **kwargs)
-        self.add_node(node, pos=pos)
+        if node is not None:
+            self.add_node(node, pos=pos)
+        else:
+            print(f"Did not produce a valid node for type '{type}'")
         return node
+
+    def set_root(self, root):
+        """
+        Set the root for this and all descendant to the provided root
+
+        @param root:
+        @return:
+        """
+        self._root = root
+        for c in self._children:
+            c.set_root(root)
 
     def _flatten(self, node):
         """
@@ -985,6 +1082,7 @@ class Node:
         @param emphasized: match only emphasized nodes.
         @param targeted: match only targeted nodes
         @param highlighted: match only highlighted nodes
+        @param lock: match locked nodes
         @return:
         """
         node = self
@@ -1026,11 +1124,14 @@ class Node:
         If the node exists elsewhere in the tree it will be removed from that location.
 
         """
+        if new_child is None:
+            return
         new_parent = self
-        source_siblings = new_child.parent.children
+        if new_child.parent is not None:
+            source_siblings = new_child.parent.children
+            source_siblings.remove(new_child)  # Remove child
         destination_siblings = new_parent.children
 
-        source_siblings.remove(new_child)  # Remove child
         new_child.notify_detached(new_child)
 
         destination_siblings.append(new_child)  # Add child.
@@ -1081,6 +1182,63 @@ class Node:
         self.unregister()
         return node
 
+    def swap_node(self, node):
+        """
+        Swap nodes swaps the current node with the provided node in the other position in the same tree. All children
+        during a swap are kept in place structurally. This permits swapping nodes between two positions that may be
+        nested, without creating a loop.
+
+        Special care is taken for both swaps being children of the same parent.
+
+        @param node: Node already in the tree that should be swapped with the current node.
+        @return:
+        """
+        # Remove self from tree.
+        parent = self._parent
+        n_parent = node._parent
+
+        index = parent._children.index(self)
+        n_index = n_parent._children.index(node)
+
+        if index < n_index:
+            # N_index is greater.
+            del n_parent._children[n_index]
+            del parent._children[index]
+
+            parent._children.insert(index, node)
+            n_parent._children.insert(n_index, self)
+        else:
+            # N_index is lesser, equal
+            del parent._children[index]
+            del n_parent._children[n_index]
+
+            n_parent._children.insert(n_index, self)
+            parent._children.insert(index, node)
+
+        node._parent = parent
+        self._parent = n_parent
+
+        # Make a copy of children
+        n_children = list(node._children)
+        children = list(self._children)
+
+        # Delete children.
+        node._children.clear()
+        self._children.clear()
+
+        # Move children without call attach / detach.
+        node._children.extend(children)
+        self._children.extend(n_children)
+
+        # Correct parent for all children.
+        for n in list(n_children):
+            n._parent = self
+        for n in list(children):
+            n._parent = node
+
+        # self._root._validate_tree()
+        self._root.notify_reorder()
+
     def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
         Remove the current node from the tree.
@@ -1115,6 +1273,25 @@ class Node:
         for child in list(self.children):
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
+
+    def has_ancestor(self, type):
+        """
+        Return whether this node has an ancestor node that matches the given type, or matches the major type.
+
+        @param type:
+        @return:
+        """
+        if self.parent is None:
+            return False
+
+        if self.parent.type == type:
+            return True
+
+        if " " not in type:
+            if self.parent.type.startswith(type):
+                return True
+
+        return self.parent.has_ancestor(type=type)
 
     def get(self, type=None):
         """

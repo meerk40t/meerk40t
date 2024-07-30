@@ -1,8 +1,20 @@
 import wx
 
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_keyhole_50, icons8_split_table_50
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    get_default_icon_size,
+    icon_keyhole,
+    icon_split_image,
+)
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -20,13 +32,13 @@ class InfoPanel(wx.Panel):
         self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
         self.image_default = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         self.image_first = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         self.image_last = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -48,7 +60,7 @@ class InfoPanel(wx.Panel):
         sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
         self.make_raster = None
         self.SetSizer(sizer_main)
-        self.Layout
+        self.Layout()
 
     def show_stuff(self, has_emph):
         def create_image_from_node(node, iconsize):
@@ -81,7 +93,6 @@ class InfoPanel(wx.Panel):
             self.make_raster = self.context.elements.lookup("render-op/make_raster")
 
         count = 0
-        msg = ""
         if has_emph:
             data = list(self.context.elements.flat(emphasized=True))
             count = len(data)
@@ -132,6 +143,7 @@ class SplitterPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("imagesplit")
         self.scene = scene
         # Amount of currently selected
         self.count = 0
@@ -149,7 +161,7 @@ class SplitterPanel(wx.Panel):
         self.split_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
         self.split_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -161,8 +173,10 @@ class SplitterPanel(wx.Panel):
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
-        self.btn_align.SetBitmap(icons8_split_table_50.GetBitmap(resize=25))
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
+        self.btn_align.SetBitmap(
+            icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
+        )
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
@@ -213,12 +227,12 @@ class SplitterPanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            num_cols = self.split_x.GetValue()
-            num_rows = self.split_y.GetValue()
+            # num_cols = self.split_x.GetValue()
+            # num_rows = self.split_y.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            esort = self.selectparam[idx]
+            # esort = self.selectparam[idx]
             try:
                 dpi = int(self.text_dpi.GetValue())
             except ValueError:
@@ -274,6 +288,7 @@ class KeyholePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("keyhole")
         self.scene = scene
         # Amount of currently selected
         self.count = 0
@@ -287,7 +302,7 @@ class KeyholePanel(wx.Panel):
         )
         self.selectparam = ("first", "last")
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Keyhole Object:"),
@@ -300,8 +315,10 @@ class KeyholePanel(wx.Panel):
         self.text_dpi.SetValue("500")
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
-        self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=25))
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create keyhole image"))
+        self.btn_align.SetBitmap(
+            icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size())
+        )
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
@@ -317,8 +334,8 @@ class KeyholePanel(wx.Panel):
         sizer_check_outline = StaticBoxSizer(
             self, wx.ID_ANY, _("Trace Keyhole:"), wx.HORIZONTAL
         )
-        self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert")
-        self.check_outline = wx.CheckBox(self, wx.ID_ANY, "Trace")
+        self.check_invert = wxCheckBox(self, wx.ID_ANY, "Invert")
+        self.check_outline = wxCheckBox(self, wx.ID_ANY, "Trace")
 
         sizer_check_invert.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_check_outline.Add(self.check_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -354,12 +371,12 @@ class KeyholePanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            invert = self.check_invert.GetValue()
-            outline = self.check_outline.GetValue()
+            # invert = self.check_invert.GetValue()
+            # outline = self.check_outline.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            esort = self.selectparam[idx]
+            # esort = self.selectparam[idx]
             try:
                 dpi = int(self.text_dpi.GetValue())
             except ValueError:
@@ -383,11 +400,11 @@ class KeyholePanel(wx.Panel):
         except ValueError:
             mydpi = 500
         if self.check_invert.GetValue():
-            invert = " --invert 1"
+            invert = " --invert"
         else:
             invert = ""
         if self.check_outline.GetValue():
-            outline = " --outline 1"
+            outline = " --outline"
         else:
             outline = ""
         cmdstr = f"render_keyhole {mydpi} --order {esort}{invert}{outline}\n"
@@ -439,6 +456,7 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
         self.panel_split = SplitterPanel(
@@ -451,9 +469,10 @@ class RenderSplit(MWindow):
         self.notebook_main.AddPage(self.panel_keyhole, _("Keyhole operation"))
 
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_split_table_50.GetBitmap(resize=25))
+        _icon.CopyFromBitmap(icon_split_image.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Create split images"))
 
@@ -471,14 +490,15 @@ class RenderSplit(MWindow):
     @staticmethod
     def sub_register(kernel):
         bsize_normal = STD_ICON_SIZE
-        bsize_small = int(STD_ICON_SIZE / 2)
+        # bsize_small = int(STD_ICON_SIZE / 2)
 
         kernel.register(
             "button/align/SplitImage",
             {
                 "label": _("Image ops"),
-                "icon": icons8_split_table_50,
+                "icon": icon_split_image,
                 "tip": _("Open create split image dialog / keyhole generation"),
+                "help": "imagesplit",
                 "action": lambda v: kernel.console("window toggle SplitImage\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: len(

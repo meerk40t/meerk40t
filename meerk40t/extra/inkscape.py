@@ -11,7 +11,6 @@ from meerk40t.kernel.kernel import get_safe_path
 def get_inkscape(context, manual_candidate=None):
     root_context = context
     root_context.setting(str, "inkscape_path", "inkscape.exe")
-    inkscape = ""
     try:
         inkscape = root_context.inkscape_path
     except AttributeError:
@@ -53,7 +52,6 @@ def get_inkscape(context, manual_candidate=None):
 
 
 def run_command_and_log(command_array, logfile):
-    f = None
     timeout_value = None
     try:
         f = open(logfile, "w")
@@ -80,10 +78,16 @@ def run_command_and_log(command_array, logfile):
             f.write("Output:\n")
             try:
                 f.write(c.stdout.decode("utf-8", errors="surrogateescape"))
-            except UnicodeDecodeError:
+            except (UnicodeEncodeError, UnicodeDecodeError):
                 pass
         result = True
-    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError) as e:
+    except (
+        FileNotFoundError,
+        TimeoutExpired,
+        UnicodeDecodeError,
+        UnicodeEncodeError,
+        OSError,
+    ) as e:
         if f:
             f.write(f"Execution failed: {str(e)}\n")
     if f:
@@ -129,7 +133,6 @@ class MultiLoader:
         else:
             kernel = kernel_service
         _ = kernel.translation
-        safe_dir = os.path.realpath(get_safe_path(kernel.name))
 
         # Establish the standard svg-handler first
         handler = None
@@ -142,7 +145,6 @@ class MultiLoader:
         context_root = kernel.root
         safe_dir = os.path.realpath(get_safe_path(kernel.name))
         logfile = os.path.join(safe_dir, "inkscape.log")
-        timeout_value = None
 
         inkscape = get_inkscape(context_root)
         if not inkscape:
@@ -157,6 +159,11 @@ class MultiLoader:
             version = "inkscape 1.x"
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
+        if os.path.exists(svg_temp_file):
+            try:
+                os.remove(svg_temp_file)
+            except (OSError, FileNotFoundError):
+                raise BadFileError("Couldn't delete temporary inkscape file")
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         # Check Version of Inkscape
@@ -182,8 +189,22 @@ class MultiLoader:
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
             return False
+        # Has an output file been created?
+        if not os.path.exists(svg_temp_file):
+            return False
+
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         if was_shown:
-            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + svg_temp_file)
+            kernel.busyinfo.change(
+                msg=_("Loading File...") + "\n" + unescaped(svg_temp_file)
+            )
             kernel.busyinfo.show()
         filename_to_process = svg_temp_file
         preproc = elements_service.lookup("preprocessor/.svg")
@@ -382,7 +403,6 @@ def plugin(kernel, lifecycle):
             return "inkscape", (root_context.inkscape_path, None)
 
         def check_for_features(pathname, **kwargs):
-
             # We try to establish if a file contains certain features...
 
             source = pathname
@@ -420,7 +440,6 @@ def plugin(kernel, lifecycle):
                                     needs_conversion = entry[2]
             context = kernel.root
             inkscape = get_inkscape(context)
-            timeout_value = None
             if needs_conversion == 0:
                 return pathname
             if len(inkscape) == 0:
@@ -480,7 +499,6 @@ def plugin(kernel, lifecycle):
             result, c = run_command_and_log([inkscape, "-V"], log_file)
             if not result:
                 return pathname
-            version = None
             try:
                 version = c.stdout.decode(encoding="utf-8", errors="surrogateescape")
             except UnicodeDecodeError:

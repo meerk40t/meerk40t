@@ -6,12 +6,16 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-so
 * Provide developers with a highly extensible platform to help further their own ideas, and provide novel work to the laser community at large.
 
 ## Running
-MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi. Due note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed).
+MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi (more infos below). Do note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed).
+
+### Source
 
 Alternatively you can run MeerK40t directly from Python. `pip install meerk40t[all]` with python installed will usually be sufficient. Then merely run `meerk40t` at the command line.
 
+See [Install: Source wiki page](https://github.com/meerk40t/meerk40t/wiki/Install:-Source)
+
 ### GUI
-![meerk40t8](https://user-images.githubusercontent.com/3302478/196283699-745d0616-5e74-49b3-ba95-f4902061584b.png)
+![grafik](https://github.com/user-attachments/assets/e56135a2-7b1f-44be-9761-b92931e300f6)
 
 The wxMeerK40t is the GUI and is written in wxPython. We use AUI to allow to have a very highly configurable UI. We can easily add panes and tools and there are quite a few available already.
 
@@ -25,26 +29,31 @@ Meerk40t provides a variety of drivers with an extensible framework to provide s
 
 
 ### Supported devices
-*   M2-Nano
-*   Moshiboard
+*   Lihuiyu M2/M3-Nano
 *   GRBL
-*   Fibre Lasers based on the JCZ controllers (still experimental)
+*   Ezcad2-compatible JCZ controllers galvo lasers
+*   Moshiboard
+*   NewlyDraw System 8.1 Lasers
 *   Ruida-Emulation (Middleman between Lightburn and K40)
 
-### Lihuiyu M2-Nano
+### Lihuiyu M2-Nano/M3-Nano
 For the Lihuiyu (stock driver), Meerk40t supports both the windows and libusb connection methods, making it compatible with Whisperer and with the original Chinese software. So MeerK40t can usually run alongside these other pieces of software interchangeably.
 
-### Galvo LMC
+### GRBL
+
+GRBL is itself open source and the various interfaces with the board should be quite well understood.
+
+### EZCAD2-Compatible Galvo LMC
 
 Meerk40t supports controlling galvo as well as gantry lasers with open source support.
 
 ### Moshiboard
 
-The support for old moshiboards makes meerk40t the only known software opensource software that controls moshiboards.
+The support for old moshiboards makes meerk40t the only known opensource software that controls moshiboards.
 
-### GRBL
+### System 8.1 Lasers (NewlyDraw)
 
-GRBL is itself open source and the various interfaces with the board should be quite well understood.
+HPGL-modified laser systems produced under many different company names
 
 ## Support
 The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
@@ -69,6 +78,21 @@ Open source projects live and die with their support. There are a lots of ways t
 *   Compile/Testers
 *   Beta testers
 *   Make helpful support content
-*   Make guides ("How to setup cameras?", etc)
+*   Make guides ("How to set up cameras?", etc.)
 *   Bounce ideas around
 
+## Download
+You can find and download all current and historical versions in the [Releases](https://github.com/meerk40t/meerk40t/releases) section.
+
+Currently, primary branches:
+* 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.4](https://github.com/meerk40t/meerk40t/releases#latest)
+* 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
+* 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
+* 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)
+
+Just download one of the files for Windows, Mac OSX, Linux and Raspberry Pi.
+
+## Lightburn integration
+Meerk40t allows to act as an intermediary between your K40 laser and software that supports Ruida-controlled laser equipment - [Lightburn](https://lightburnsoftware.com/) is a relevant example of such a software product. You just need to issue the command ``ruidacontrol`` in MeerK40ts console window, and you will then be able to add an emulated Ruida Laser inside Lightburn™. Laser jobs that are created inside Lightburn™ and sent to this laser will be picked up by MeerK40t and sent to your K40. See some more detailed instructions in this [video](https://www.youtube.com/watch?v=LUUfLf5Agu0). Please note `ruidacontrol` will require the DSP version of Lightburn™. (Present in all versions since 0.7)
+
+With 0.9 another way of interacting with Lightburn was introduced, which will work as well with the standard version of LB: You just need to issue the command ``grblcontrol`` in MeerK40ts console window, and you will then be able to add an emulated remote GBRL-LPC laser inside Lightburn or any TCP GRBL control software.

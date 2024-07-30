@@ -1,6 +1,11 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -10,7 +15,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PathNode(Node, Stroked):
+class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
@@ -49,7 +54,14 @@ class PathNode(Node, Stroked):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem path", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         if self.geometry is None:
             self.geometry = Geomstr()
         self._formatter = "{element_type} {id} {stroke}"
@@ -89,10 +101,30 @@ class PathNode(Node, Stroked):
     def path(self, new_path):
         self.geometry = Geomstr.svg(new_path)
 
-    def as_geometry(self):
-        g = Geomstr(self.geometry)
-        g.transform(self.matrix)
-        return g
+    def as_geometry(self, **kws) -> Geomstr:
+        path = Geomstr(self.geometry)
+        path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        unit_factor = kws.get("unitfactor", 1)
+        path = Geomstr(self.geometry)
+        path.transform(self.matrix)
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        path = path.simplify()
+        return path
 
     def scaled(self, sx, sy, ox, oy):
         """
@@ -127,7 +159,7 @@ class PathNode(Node, Stroked):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
-        self._points_dirty = True
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
@@ -147,6 +179,10 @@ class PathNode(Node, Stroked):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        g = self.as_geometry()
+        return g.length()
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
@@ -162,10 +198,16 @@ class PathNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game, but we will take the operations color
+            if hasattr(drag_node, "color") and drag_node.color is not None:
+                self.stroke = drag_node.color
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -173,8 +215,8 @@ class PathNode(Node, Stroked):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])

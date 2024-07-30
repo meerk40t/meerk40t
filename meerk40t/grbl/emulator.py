@@ -83,7 +83,9 @@ lookup = {
 
 
 class GRBLEmulator:
-    def __init__(self, device=None, units_to_device_matrix=None):
+    def __init__(
+        self, device=None, units_to_device_matrix=None, reply=None, channel=None
+    ):
         self.device = device
         self.units_to_device_matrix = units_to_device_matrix
         self.settings = {
@@ -126,24 +128,41 @@ class GRBLEmulator:
         self.speed_scale = 1.0
         self.rapid_scale = 1.0
         self.power_scale = 1.0
+        self._reply = None
 
-        self.reply = None
-        self.channel = None
+        self.channel = channel
 
         self._grbl_specific = False
 
         self._buffer = list()
+        try:
+            driver = device.driver
+        except AttributeError:
+            driver = None
         self.job = GcodeJob(
-            driver=device.driver,
+            driver=driver,
             priority=0,
             channel=self.channel,
             units_to_device_matrix=units_to_device_matrix,
         )
+        self.reply = reply
+
+    @property
+    def reply(self):
+        return self._reply
+
+    @reply.setter
+    def reply(self, value):
+        self._reply = value
+        self.job.reply = value
 
     def __repr__(self):
         return "GRBLInterpreter()"
 
     def reply_code(self, cmd):
+        if cmd == -1:
+            # Do not reply.
+            return
         if cmd == 0:  # Execute GCode.
             if self.reply:
                 self.reply("ok\r\n")
@@ -154,19 +173,27 @@ class GRBLEmulator:
     def status_update(self):
         # TODO: This should reference only the driver.status.
         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-        pos, state, minor = self.device.driver.status()
-        x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+        try:
+            pos, state, minor = self.device.driver.status()
+            x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            z = 0.0
+            if state == "busy":
+                state = "Run"
+            elif state == "hold":
+                state = "Hold"
+            else:
+                state = "Idle"
+            f = self.device.driver.speed
+            s = self.device.driver.power
+        except AttributeError:
+            state = "Idle"
+            x = self.job.x
+            y = self.job.y
+            z = self.job.z
+            f = 0
+            s = 0
         x /= self.job.scale
         y /= self.job.scale
-        z = 0.0
-        if state == "busy":
-            state = "Run"
-        elif state == "hold":
-            state = "Hold"
-        else:
-            state = "Idle"
-        f = self.device.driver.speed
-        s = self.device.driver.power
         return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
 
     def write(self, data):
@@ -177,8 +204,17 @@ class GRBLEmulator:
         @param data:
         @return:
         """
+        # import time
+        # if not hasattr(self, "ignore"):
+        #     self.ignore = time.time()
+        #     return
+        # else:
+        #     if self.ignore + 5 > time.time():
+        #         return
+
         if isinstance(data, str):
             data = data.encode()
+        # print (f"Write received: {data}")
         for c in data:
             # Process and extract any realtime grbl commands.
             if c == ord("?"):
@@ -194,16 +230,24 @@ class GRBLEmulator:
                     self.device.driver.pause()
                 except AttributeError:
                     pass
-            elif c in (ord("\r"), ord("\n")):
+            elif c in (13, 10):  # "\r","\n"
                 # Process CRLF endlines
                 line = "".join(self._buffer)
+                # GRBL Specific commands, will not be passed to the GCodeJob
+                # and need hence to provide their own reply_code, any command
+                # passed to the GCodeJob will send the reply within the
+                # job execution.
                 if self._grbl_specific:
                     self._grbl_specific = False
                     self.reply_code(self._grbl_special(line))
                 else:
-                    self.device.spooler.send(self.job, prevent_duplicate=True)
-                    self.job.reply = self.reply
                     self.job.write(line)
+                    try:
+                        self.device.spooler.send(self.job, prevent_duplicate=True)
+                    except AttributeError as e:
+                        # print (f"Execute encountered error: {e}")
+                        self.job.execute(None)
+                    # self.reply_code(0)
                 self._buffer.clear()
             elif c == 0x08:
                 # Process Backspaces.
@@ -214,6 +258,11 @@ class GRBLEmulator:
                     self.device.driver.reset()
                 except AttributeError:
                     pass
+                self._buffer.clear()
+                if self.reply:
+                    self.reply(
+                        "Grbl 1.1f ['$' for help]\r\n" "[MSG:’$H’|’$X’ to unlock]\r\n"
+                    )
             elif c > 0x80:
                 if c == 0x84:
                     # Safety Door
@@ -309,7 +358,8 @@ class GRBLEmulator:
                     pass
                 elif c == 0xA1:
                     # Toggle Mist Coolant
-                    pass
+                    # So let's see what we can do:
+                    self.device.kernel.root.coolant.coolant_toggle(self.device)
             elif c == ord("$"):
                 if not self._buffer:
                     # First character is "$" this is special grbl.
@@ -340,6 +390,9 @@ class GRBLEmulator:
                 elif isinstance(v, float):
                     if self.reply:
                         self.reply("$%d=%.3f\r\n" % (s, v))
+            # if self.reply:
+            #     self.reply("$298=donut\r\n")
+            #     self.reply("$299=\r\n")
             return 0
         if GRBL_SET_RE.match(data):
             settings = list(GRBL_SET_RE.findall(data))[0]
@@ -358,9 +411,47 @@ class GRBLEmulator:
         elif data == "$I":
             # View Build Info
             return 0
+        elif data == "$#":
+            if self.reply:
+                data = [
+                    "[G54:0.000,0.000,0.000]",
+                    "[G55:0.000,0.000,0.000]",
+                    "[G56:0.000,0.000,0.000]",
+                    "[G57:0.000,0.000,0.000]",
+                    "[G58:0.000,0.000,0.000]",
+                    "[G59:0.000,0.000,0.000]",
+                    "[G28:0.000,0.000,0.000]",
+                    "[G30:0.000,0.000,0.000]",
+                    "[G92:0.000,0.000,0.000]",
+                    "[TLO:0.000]",
+                    "[PRB:0.000,0.000,0.000:0]",
+                    "",
+                ]
+                self.reply("\r\n".join(data))
+            return 0
         elif data == "$G":
             # View GCode Parser state
-            return 3
+            if self.reply:
+                job = self.job
+                modals = list()
+                # G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0
+                modals.append(f"G{job.move_mode}")
+                modals.append("G54")  # default coord system.
+                modals.append("G17")  # XY plane
+                modals.append("G21" if job.units == "mm" else "G20")  # MM data.
+                modals.append("G91" if job.relative else "G90")
+                modals.append(
+                    "G94" if job.feed_desc in ("inch/min", "mm/min") else "G93"
+                )
+                modals.append("M5")  # Not currently in a program job.
+                modals.append("M9")  # Mist cooling.
+                modals.append("T0")  # Tool 0
+                modals.append(f"F{int(job.get_feed_rate())}")
+                modals.append(f"S{int(job.get_power_rate())}")
+
+                modes = " ".join(modals)
+                self.reply(f"[GC:{modes}]\r\n")
+            return 0
         elif data == "$N":
             # View saved start up code.
             return 3
@@ -433,5 +524,9 @@ class GRBLEmulator:
             data = data[3:]
             # self._process_gcode(data, jog=True)
             return 3  # not yet supported
+        elif data == "$X":
+            if self.reply:
+                self.reply("Alarm status was cleared\r\n")
+            return 0
         else:
             return 3  # GRBL '$' system command was not recognized or supported.

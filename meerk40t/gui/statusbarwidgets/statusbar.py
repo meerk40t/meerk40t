@@ -1,6 +1,8 @@
 import wx
 
-from meerk40t.gui.icons import icons8_next_page_20
+from meerk40t.gui.icons import icons8_circled_right
+
+_ = wx.GetTranslation
 
 
 class CustomStatusBar(wx.StatusBar):
@@ -13,7 +15,6 @@ class CustomStatusBar(wx.StatusBar):
         self.startup = True
         self.panelct = panelct
         self.context = parent.context
-
         wx.StatusBar.__init__(self, parent, -1)
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
@@ -24,6 +25,7 @@ class CustomStatusBar(wx.StatusBar):
         self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
+        btn_size = 22
         for __ in range(self.panelct):
             # Linux wxPython has a fundamental flaw in the treatment of
             # small bitmap buttons. It reserves an extent around the
@@ -32,12 +34,15 @@ class CustomStatusBar(wx.StatusBar):
             btn = wx.StaticBitmap(
                 self,
                 id=wx.ID_ANY,
-                bitmap=icons8_next_page_20.GetBitmap(noadjustment=True),
-                size=wx.Size(20, self.MinHeight),
+                bitmap=icons8_circled_right.GetBitmap(resize=btn_size, buffer=1),
+                size=wx.Size(btn_size, btn_size),
                 # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)
-            # btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True, color=Color("red")))
+            # btn.SetBitmap(icons8_circled_right.GetBitmap(noadjustment=True, color=Color("red")))
+            btn.SetToolTip(
+                _("Left Click: Move to next panel\nRight Click: Move to previous panel")
+            )
             btn.Show(False)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
@@ -48,6 +53,11 @@ class CustomStatusBar(wx.StatusBar):
         # set the initial position of the checkboxes
         self.Reposition()
         self.startup = False
+
+    @property
+    def available_height(self):
+        sb_size = self.GetSize()
+        return sb_size[1]
 
     def Clear(self):
         """
@@ -71,6 +81,8 @@ class CustomStatusBar(wx.StatusBar):
         self.Signal("statusmsg", message, panel)
         if len(self.widgets) == 0:
             super().SetStatusText(message, panel)
+            if panel == 0:
+                self.SetToolTip(message)
 
     def add_panel_widget(self, widget, panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
@@ -81,7 +93,7 @@ class CustomStatusBar(wx.StatusBar):
         widget.active = visible
         self.widgets[identifier] = widget
 
-    def activate_panel(self, identifier, newflag):
+    def activate_panel(self, identifier, newflag, force=False):
         # Activate Panel will make the indicated panel become choosable
         # print ("Activate Panel: %s -> %s" % (identifier, newflag))
         try:
@@ -93,7 +105,7 @@ class CustomStatusBar(wx.StatusBar):
 
             # Choosable
             self.widgets[identifier].active = newflag
-            if newflag and self.activesizer[panelidx] is None:
+            if newflag and (self.activesizer[panelidx] is None or force):
                 self.activesizer[panelidx] = identifier
             elif not newflag and self.activesizer[panelidx] == identifier:
                 # Was the active one, so look for an alternative
@@ -203,7 +215,6 @@ class CustomStatusBar(wx.StatusBar):
             panelrect = self.GetFieldRect(pidx)
             # Establish the amount of 'choosable' sizers
             ct = 0
-            sizer = None
             for key in self.widgets:
                 entry = self.widgets[key]
                 # print ("%s = %s" %(key, entry) )
@@ -222,7 +233,11 @@ class CustomStatusBar(wx.StatusBar):
                 # Show Button and reduce available width for sizer
                 myrect = self.nextbuttons[pidx].GetRect()
                 myrect.x = panelrect.x + panelrect.width - myrect.width
-                myrect.y = panelrect.y
+                # Center the rect...
+                myrect.y = max(
+                    panelrect.y,
+                    int(panelrect.y + panelrect.height / 2 - myrect.height / 2),
+                )
                 self.nextbuttons[pidx].SetRect(myrect)
                 panelrect.width -= myrect.width
                 self.nextbuttons[pidx].Show(True)

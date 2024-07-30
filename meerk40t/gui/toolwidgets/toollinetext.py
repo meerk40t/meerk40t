@@ -3,7 +3,6 @@ from time import time
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.extra.hershey import create_linetext_node, update_linetext
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
@@ -19,7 +18,7 @@ class LineTextTool(ToolWidget):
     Adds a linetext, first point click then Text-Entry
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.p1 = None
@@ -29,6 +28,7 @@ class LineTextTool(ToolWidget):
         self.vtext = ""
         self.anim_count = 0
         self.last_anim = 0
+        self.scene.context.setting(float, "last_font_size", float(Length("20px")))
 
     def process_draw(self, gc: wx.GraphicsContext):
         # We just draw a cursor rectangle...
@@ -58,15 +58,40 @@ class LineTextTool(ToolWidget):
                     self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             else:
                 self.color = self.node.stroke
-                offsetx = self.node.bounds[2] - self.node.bounds[0]
-                cursorheight = self.node.bounds[3] - self.node.bounds[1]
+                if (
+                    hasattr(self.node, "_line_information")
+                    and len(self.node._line_information) > 0
+                ):
+                    # This is a list of tuples with (startx, starty, length, height per line)
+                    (
+                        line_x,
+                        line_y,
+                        unscaled_w,
+                        line_w,
+                        line_h,
+                    ) = self.node._line_information[-1]
+                    # print (line_x, line_y, line_w, line_h)
+                    line_x_end = line_x + line_w
+                    line_y_end = line_y + line_h
+                    p_start = self.node.matrix.point_in_matrix_space((line_x, -line_y))
+                    p_end = self.node.matrix.point_in_matrix_space(
+                        (line_x_end, -line_y_end)
+                    )
+                    # print (f"x0={p_start.x:.0f}, y0={p_start.y:.0f}, b0.x={self.node.bounds[0]:.0f}, b0.y={self.node.bounds[1]:.0f}")
+                    # print (f"x1={p_end.x:.0f}, y1={p_end.y:.0f}, b1.x={self.node.bounds[2]:.0f}, b1.y={self.node.bounds[3]:.0f}")
+                    x0 = p_end.x
+                    y0 = p_start.y
+                    cursorheight = (p_end.y - p_start.y) * 0.75
+                else:
+                    # offsetx = self.node.bounds[2] - self.node.bounds[0]
+                    cursorheight = self.node.bounds[3] - self.node.bounds[1]
+                    x0 = self.node.bounds[2]
+                    y0 = self.node.bounds[1]
                 # if hasattr(self.node, "mkfont"):
                 #     fname = self.node.mkfont
                 #     if fname.lower().endswith(".jhf"):
                 #         offsety = 0.5 * cursorheight
                 self.pen.SetColour(wx.Colour(swizzlecolor(self.node.stroke)))
-                x0 = self.node.bounds[2]
-                y0 = self.node.bounds[1]
 
             mycol = wx.Colour(swizzlecolor(self.color))
             self.pen.SetColour(mycol)
@@ -98,6 +123,8 @@ class LineTextTool(ToolWidget):
                 self.scene.pane.tool_active = False
                 self.scene.context.signal("element_property_update", [self.node])
                 self.scene.request_refresh()
+                self.scene.context.setting(float, "last_font_size")
+                self.scene.context.last_font_size = self.node.mkfontsize
             self.node = None
             self.scene.context("tool none\n")
             self.scene.context("window close HersheyFontSelector\n")
@@ -105,7 +132,7 @@ class LineTextTool(ToolWidget):
 
         response = RESPONSE_CHAIN
         # if event_type == "key_up":
-        #     print (f"Event {event_type}, Key: {keycode}, Modifiers: {modifiers}")
+        #     print (f"Event {event_type}, Key: {keycode}, Modifiers: {modifiers}, text so far: {self.vtext}")
         if event_type == "leftdown":
             if self.p1 is None:
                 self.scene.pane.tool_active = True
@@ -116,16 +143,21 @@ class LineTextTool(ToolWidget):
                 else:
                     self.color = elements.default_stroke
                 if nearest_snap is None:
-                    self.p1 = complex(space_pos[0], space_pos[1])
+                    sx, sy = self.scene.get_snap_point(
+                        space_pos[0], space_pos[1], modifiers
+                    )
+                    self.p1 = complex(sx, sy)
                 else:
                     self.p1 = complex(nearest_snap[0], nearest_snap[1])
                 x = self.p1.real
                 y = self.p1.imag
                 self.vtext = "Text"
-                self.node = create_linetext_node(self.scene.context, x, y, self.vtext)
+                fsize = self.scene.context.last_font_size
+                self.node = self.scene.context.fonts.create_linetext_node(
+                    x, y, self.vtext, font_size=fsize
+                )
                 if self.node is not None:
                     self.node.stroke = self.color
-                    self.node.stroke_width = elements.default_strokewidth
                     elements.elem_branch.add_node(self.node)
                     self.scene.context.signal("element_added", self.node)
                     self.scene.context.signal(
@@ -168,13 +200,23 @@ class LineTextTool(ToolWidget):
                 to_add = ""
                 if keycode is not None:
                     to_add = keycode
-                # if modifiers.startswith("shift+") and modifiers != "shift+":
-                #     to_add = modifiers[-1].upper()
-                # elif len(modifiers) == 1:
-                #     to_add = modifiers
-                # elif modifiers == "space":
-                #     to_add = " "
-                # elif modifiers == "back":
+                if modifiers == "ctrl+alt+l":
+                    self.node.mkalign = "start"
+                    to_add = ""
+                if modifiers == "ctrl+alt+r":
+                    self.node.mkalign = "end"
+                    to_add = ""
+                if modifiers == "ctrl+alt+c":
+                    self.node.mkalign = "middle"
+                    to_add = ""
+                if modifiers == "ctrl+alt+b":
+                    self.node.mkfontsize *= 1.2
+                    to_add = ""
+                if modifiers == "ctrl+alt+s":
+                    self.node.mkfontsize /= 1.2
+                    to_add = ""
+                if modifiers == "ctrl+return":
+                    to_add = "\n"
                 if modifiers == "back":
                     to_add = ""
                     if len(self.vtext) > 0:
@@ -185,17 +227,22 @@ class LineTextTool(ToolWidget):
                 if self.node is None:
                     x = self.p1.real
                     y = self.p1.imag
-                    self.node = create_linetext_node(
-                        self.scene.context, x, y, self.vtext
+                    fsize = self.scene.context.last_font_size
+                    self.node = self.scene.context.fonts.create_linetext_node(
+                        x,
+                        y,
+                        self.vtext,
+                        font_size=fsize,
                     )
+                    if self.node is not None:
+                        self.node.emphasized = False
+
+                    self.scene.request_refresh()
                 else:
-                    update_linetext(self.scene.context, self.node, self.vtext)
+                    self.node.mktext = self.vtext
+                    self.scene.context.signal("linetext", "text")
                 # self.node.stroke = self.color
                 # self.node.modified()
-                if self.node is not None:
-                    self.node.emphasized = False
-
-                self.scene.request_refresh()
             else:
                 response = RESPONSE_CHAIN
         return response
@@ -212,22 +259,32 @@ class LineTextTool(ToolWidget):
         return True
 
     def signal(self, signal, *args, **kwargs):
+        def update_node():
+            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
+            self.node.emphasized = False
+            self.scene.request_refresh()
+            self.scene.gui.scene_panel.SetFocus()
+
         if self.node is None:
             return
         if signal == "linetext" and args[0] == "bigger":
             self.node.mkfontsize *= 1.2
-            update_linetext(self.scene.context, self.node, self.node.mktext)
-            self.node.emphasized = False
-            self.scene.request_refresh()
+            update_node()
         elif signal == "linetext" and args[0] == "smaller":
             self.node.mkfontsize /= 1.2
-            update_linetext(self.scene.context, self.node, self.node.mktext)
-            self.node.emphasized = False
-            self.scene.request_refresh()
+            update_node()
+        elif signal == "linetext" and args[0] == "align":
+            if len(args) > 1:
+                align = args[1]
+                self.node.mkalign = align
+            update_node()
         elif signal == "linetext" and args[0] == "font":
             if len(args) > 1:
                 font = args[1]
-                self.node.mkfont = font
-                update_linetext(self.scene.context, self.node, self.node.mktext)
-                self.node.emphasized = False
-                self.scene.request_refresh()
+                from os.path import basename
+
+                self.node.mkfont = basename(font)
+            update_node()
+        elif signal == "linetext" and args[0] == "text":
+            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
+            update_node()

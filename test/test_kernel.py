@@ -1,8 +1,57 @@
 import unittest
 from test import bootstrap
 
+from meerk40t.kernel import kernel_console_command, service_console_command
+
+
+def test_plugin_service(kernel, lifecycle):
+    if lifecycle == "register":
+        service = kernel.elements
+        service.add_service_delegate(TestObject())
+
+
+def test_plugin_kernel(kernel, lifecycle):
+    if lifecycle == "register":
+        kernel.add_delegate(TestObject(), kernel)
+
+
+class TestObject:
+    """
+    Object flagged with service and kernel console commands.
+    """
+
+    @service_console_command("hello")
+    def service_console_command(self, command, channel, **kwargs):
+        return "elements", "hello"
+
+    @kernel_console_command("hello")
+    def kernel_console_command2(self, command, channel, **kwargs):
+        return "elements", 1
+
 
 class TestKernel(unittest.TestCase):
+    def test_object_service_commands(self):
+        """
+        Test registration of service command via classbased decorator
+        """
+        kernel = bootstrap.bootstrap(plugins=[test_plugin_service])
+        try:
+            n = kernel.root("hello")
+            self.assertEqual(n, "hello")
+        finally:
+            kernel()
+
+    def test_object_kernel_commands(self):
+        """
+        Test registration of kernel command via classbased decorator
+        """
+        kernel = bootstrap.bootstrap(plugins=[test_plugin_kernel])
+        try:
+            n = kernel.root("hello")
+            self.assertEqual(n, 1)
+        finally:
+            kernel()
+
     def test_kernel_commands(self):
         """
         Tests all commands with no arguments to test for crashes...
@@ -21,6 +70,7 @@ class TestKernel(unittest.TestCase):
                 if command in (
                     "quit",
                     "shutdown",
+                    "restart",
                     "interrupt",
                     "+laser",
                     "-laser",
@@ -43,7 +93,78 @@ class TestKernel(unittest.TestCase):
                     # changing yet
                     kernel.console(command.split("/")[-1] + "\n")
         finally:
-            kernel.shutdown()
+            kernel()
+
+    def test_tree_menu(self):
+        """
+        Tests all commands with no arguments to test for crashes...
+        """
+        from PIL import Image
+
+        from meerk40t.core.treeop import tree_operations_for_node
+
+        image = Image.new("RGBA", (256, 256))
+        from PIL import ImageDraw
+
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((0, 0, 255, 255), "black")
+        image = image.convert("L")
+
+        kwargs_nodes = (
+            {"type": "elem ellipse", "center": 0j, "r": 10000},
+            {"type": "elem image", "image": image, "dpi": 500},
+            {"type": "elem path", "d": "M0,0L10000,10000"},
+            {"type": "elem point", "x": 0, "y": 0},
+            {
+                "type": "elem polyline",
+                "points": (
+                    0j,
+                    10000j,
+                ),
+            },
+            {"type": "elem rect", "x": 0, "y": 0, "width": 10000, "height": 20000},
+            {"type": "elem line", "x1": 0, "y1": 0, "x2": 20000, "y2": 20000},
+            {"type": "elem text", "text": "Hello World."},
+        )
+        kernel = bootstrap.bootstrap()
+        try:
+            for kws in kwargs_nodes:
+                print(f"Creating: {kws.get('type')}")
+                n = kernel.elements.elem_branch.add(**kws)
+                print(n)
+
+                nodes = tree_operations_for_node(kernel.elements, n)
+                for func in nodes:
+                    func_dict = dict(func.func_dict)
+                    print(f"Executing: {func.name}")
+                    func(n, **func_dict)
+                    if n.parent is None:
+                        # This function removed the element. Put it back in the tree.
+                        kernel.elements.elem_branch.add_node(n)
+        finally:
+            kernel.console("elements\n")
+            kernel()
+
+    def test_external_plugins(self):
+        """
+        This tests the functionality of external plugins which typically ran pkg_resources but was switched to
+        importlib on the release of python 3.12. This code functions if and only if no crash happens.
+
+        @return:
+        """
+
+        class Args:
+            no_plugins = False
+
+        kernel = bootstrap.bootstrap()
+        kernel.args = Args()
+        try:
+            from meerk40t.external_plugins import plugin
+
+            q = plugin(kernel=kernel, lifecycle="plugins")
+            print(q)
+        finally:
+            kernel()
 
 
 class TestGetSafePath(unittest.TestCase):
@@ -125,4 +246,4 @@ class TestEchoCommand(unittest.TestCase):
                 print(f"Testing echo command: {echo}")
                 kernel.console(echo + "\n")
         finally:
-            kernel.shutdown()
+            kernel()

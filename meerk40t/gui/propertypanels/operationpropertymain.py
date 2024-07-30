@@ -1,12 +1,20 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.kernel import signal_listener
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    set_ctrl_value,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+)
+from meerk40t.kernel import lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
-from ...svgelements import Angle, Color, Matrix
+from ...svgelements import Color
 from ..laserrender import swizzlecolor
-from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import IdPanel
 
 _ = wx.GetTranslation
@@ -30,7 +38,7 @@ class LayerSettingPanel(wx.Panel):
 
         layer_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Layer:"), wx.HORIZONTAL)
 
-        self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
+        self.button_layer_color = wxButton(self, wx.ID_ANY, "")
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         COLOR_TOOLTIP = _(
             "Change/View color of this layer. When Meerk40t classifies elements to operations,"
@@ -39,7 +47,7 @@ class LayerSettingPanel(wx.Panel):
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, wx.EXPAND, 0)
         h_classify_sizer = StaticBoxSizer(
-            self, wx.ID_ANY, _("Classification"), wx.HORIZONTAL
+            self, wx.ID_ANY, _("Restrict classification"), wx.HORIZONTAL
         )
         h_property_sizer = StaticBoxSizer(
             self, wx.ID_ANY, _("Properties"), wx.HORIZONTAL
@@ -56,7 +64,7 @@ class LayerSettingPanel(wx.Panel):
             )
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
-            self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))
+            self.checkbox_stroke = wxCheckBox(self, wx.ID_ANY, _("Stroke"))
             self.checkbox_stroke.SetToolTip(
                 _("Look at the stroke color to restrict classification.")
                 + rastertooltip
@@ -69,10 +77,9 @@ class LayerSettingPanel(wx.Panel):
 
         try:
             self.has_fill = self.operation.has_color_attribute("fill")
-            self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
+            self.checkbox_fill = wxCheckBox(self, wx.ID_ANY, _("Fill"))
             self.checkbox_fill.SetToolTip(
-                _("Look at the stroke color to restrict classification.")
-                + rastertooltip
+                _("Look at the fill color to restrict classification.") + rastertooltip
             )
             self.checkbox_fill.SetValue(1 if self.has_fill else 0)
             h_classify_sizer.Add(self.checkbox_fill, 1, 0, 0)
@@ -80,7 +87,7 @@ class LayerSettingPanel(wx.Panel):
         except AttributeError:
             self.has_fill = None
 
-        self.checkbox_stop = wx.CheckBox(self, wx.ID_ANY, _("Stop"))
+        self.checkbox_stop = wxCheckBox(self, wx.ID_ANY, _("Stop"))
         self.checkbox_stop.SetToolTip(
             _("If active, then this op will prevent further classification")
             + "\n"
@@ -113,14 +120,14 @@ class LayerSettingPanel(wx.Panel):
         # self.combo_type.SetSelection(0)
         # layer_sizer.Add(self.combo_type, 1, 0, 0)
 
-        self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_output = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.checkbox_output.SetToolTip(
             _("Enable this operation for inclusion in Execute Job.")
         )
         self.checkbox_output.SetValue(1)
         h_property_sizer.Add(self.checkbox_output, 1, 0, 0)
 
-        self.checkbox_visible = wx.CheckBox(self, wx.ID_ANY, _("Visible"))
+        self.checkbox_visible = wxCheckBox(self, wx.ID_ANY, _("Visible"))
         self.checkbox_visible.SetToolTip(
             _("Hide all contained elements on scene if not set.")
         )
@@ -128,7 +135,7 @@ class LayerSettingPanel(wx.Panel):
         self.checkbox_visible.Enable(False)
         h_property_sizer.Add(self.checkbox_visible, 1, 0, 0)
 
-        self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, _("Default"))
+        self.checkbox_default = wxCheckBox(self, wx.ID_ANY, _("Default"))
         OPERATION_DEFAULT_TOOLTIP = (
             _(
                 "When classifying elements, Default operations gain all appropriate elements "
@@ -167,7 +174,6 @@ class LayerSettingPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -175,23 +181,6 @@ class LayerSettingPanel(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
-        op = self.operation.type
-        # if op == "op engrave":
-        #     self.combo_type.SetSelection(0)
-        # elif op == "op cut":
-        #     self.combo_type.SetSelection(1)
-        # elif op == "op raster":
-        #     self.combo_type.SetSelection(2)
-        # elif op == "op image":
-        #     self.combo_type.SetSelection(3)
-        # elif op == "op hatch":
-        #     self.combo_type.SetSelection(4)
-        # elif op == "op dots":
-        #     self.combo_type.SetSelection(5)
-        #     for m in self.GetParent().Children:
-        #         if isinstance(m, wx.Window):
-        #             m.Hide()
-        #     return
         self.button_layer_color.SetBackgroundColour(
             wx.Colour(swizzlecolor(self.operation.color))
         )
@@ -259,7 +248,7 @@ class LayerSettingPanel(wx.Panel):
             except AttributeError:
                 candidate_fill = False
             if (
-                self.operation.type in ("op engrave", "op cut", "op hatch")
+                self.operation.type in ("op engrave", "op cut")
                 and len(self.operation.children) > 0
                 and (candidate_fill or candidate_stroke)
             ):
@@ -276,7 +265,10 @@ class LayerSettingPanel(wx.Panel):
                 if response == wx.ID_YES:
                     changed = []
                     for refnode in self.operation.children:
-                        cnode = refnode.node
+                        if hasattr(refnode, "node"):
+                            cnode = refnode.node
+                        else:
+                            cnode = refnode
                         add_to_change = False
                         if candidate_stroke and hasattr(cnode, "stroke"):
                             cnode.stroke = self.operation.color
@@ -295,25 +287,7 @@ class LayerSettingPanel(wx.Panel):
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"
         )
-
-    # def on_combo_operation(
-    #     self, event=None
-    # ):  # wxGlade: OperationProperty.<event_handler>
-    #
-    #     select = self.combo_type.GetSelection()
-    #     if select == 0:
-    #         self.operation.replace_node(self.operation.settings, type="op engrave")
-    #     elif select == 1:
-    #         self.operation.replace_node(self.operation.settings, type="op cut")
-    #     elif select == 2:
-    #         self.operation.replace_node(self.operation.settings, type="op raster")
-    #     elif select == 3:
-    #         self.operation.replace_node(self.operation.settings, type="op image")
-    #     elif select == 4:
-    #         self.operation.replace_node(self.operation.settings, type="op hatch")
-    #     elif select == 5:
-    #         self.operation.replace_node(self.operation.settings, type="op dots")
-    #     self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("updateop_tree")
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.output != bool(self.checkbox_output.GetValue()):
@@ -321,6 +295,7 @@ class LayerSettingPanel(wx.Panel):
             self.context.elements.signal(
                 "element_property_reload", self.operation, "check_output"
             )
+        self.context.elements.signal("updateop_tree")
         self.checkbox_visible.Enable(not bool(self.checkbox_output.GetValue()))
 
     def on_check_visible(self, event=None):
@@ -378,62 +353,33 @@ class SpeedPpiPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
-        speed_min = None
-        speed_max = None
-        power_min = None
-        power_max = None
 
-        op = node.type
-        if op.startswith("op "):  # Should, shouldn't it?
-            op = op[3:]
-        else:
-            op = ""
-        if op != "":
-            label = "dangerlevel_op_" + op
-            warning = [False, 0, False, 0, False, 0, False, 0]
-            if hasattr(self.context.device, label):
-                dummy = getattr(self.context.device, label)
-                if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
-                    warning = dummy
-            if warning[0]:
-                power_min = warning[1]
-            if warning[2]:
-                power_max = warning[3]
-            if warning[4]:
-                speed_min = warning[5]
-            if warning[6]:
-                speed_max = warning[7]
-        # print (f"op='{op}', power={power_min}-{power_max}, speed={speed_min}-{speed_max}")
+        self.context.device.setting(bool, "use_percent_for_power_display", False)
+        self.use_percent = self.context.device.use_percent_for_power_display
+        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
+        self.use_mm_min = self.context.device.use_mm_min_for_speed_display
+
         speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        if self.use_mm_min:
+            speed_fact = 60
+        else:
+            speed_fact = 1
 
-        speed_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Speed (mm/s)"), wx.HORIZONTAL)
+        speed_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Speed"), wx.HORIZONTAL)
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
         self.text_speed = TextCtrl(
             self,
             wx.ID_ANY,
-            "20.0",
+            f"{20 * speed_fact:.0f}",
             limited=True,
             check="float",
             style=wx.TE_PROCESS_ENTER,
             nonzero=True,
         )
-        self.text_speed.set_error_level(0, None)
-        self.text_speed.set_warn_level(speed_min, speed_max)
-        OPERATION_SPEED_TOOLTIP = (
-            _("Speed at which the head moves in mm/s.")
-            + "\n"
-            + _(
-                "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
-            )
-            + "\n"
-            + _(
-                "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
-            )
-        )
-
-        self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
+        self.trailer_speed = wx.StaticText(self, id=wx.ID_ANY)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
+        speed_sizer.Add(self.trailer_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.power_sizer = StaticBoxSizer(
             self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL
@@ -448,22 +394,11 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_power.set_range(0, 1000)
-        self.text_power.set_warn_level(power_min, power_max)
-        OPERATION_POWER_TOOLTIP = _(
-            _("Pulses Per Inch - This is software created laser power control.")
-            + "\n"
-            + _("1000 is always on, 500 is half power (fire every other step).")
-            + "\n"
-            + _(
-                'Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.'
-            )
-        )
-        self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
+        self.trailer_power = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
+        self.power_sizer.Add(self.trailer_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
-        self.power_sizer.Add(trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.update_power_speed_properties()
 
         freq = self.context.device.lookup("frequency")
         if freq:
@@ -507,7 +442,97 @@ class SpeedPpiPanel(wx.Panel):
         pass
 
     def pane_show(self):
-        pass
+        self.update_power_speed_properties()
+
+    def on_device_update(self):
+        try:
+            self.update_power_speed_properties()
+        except RuntimeError:
+            # Pane was already destroyed
+            pass
+        self.set_widgets(self.operation)
+
+    def update_power_speed_properties(self):
+        speed_min = None
+        speed_max = None
+        power_min = None
+        power_max = None
+
+        op = self.operation.type
+        if op.startswith("op "):  # Should, shouldn't it?
+            op = op[3:]
+        else:
+            op = ""
+        if op != "":
+            label = "dangerlevel_op_" + op
+            warning = [False, 0, False, 0, False, 0, False, 0]
+            if hasattr(self.context.device, label):
+                dummy = getattr(self.context.device, label)
+                if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
+                    warning = dummy
+            if warning[0]:
+                power_min = warning[1]
+            if warning[2]:
+                power_max = warning[3]
+            if warning[4]:
+                speed_min = warning[5]
+            if warning[6]:
+                speed_max = warning[7]
+        self.use_mm_min = self.context.device.use_mm_min_for_speed_display
+        if self.use_mm_min:
+            if speed_min is not None:
+                speed_min *= 60
+            if speed_max is not None:
+                speed_max *= 60
+            speed_unit = "mm/min"
+        else:
+            speed_unit = "mm/s"
+        self.trailer_speed.SetLabel(speed_unit)
+        OPERATION_SPEED_TOOLTIP = (
+            _("Speed at which the head moves in {unit}.").format(unit=speed_unit)
+            + "\n"
+            + _(
+                "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
+            )
+            + "\n"
+            + _(
+                "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
+            )
+        )
+        self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
+        self.text_speed.set_error_level(0, None)
+        self.text_speed.set_warn_level(speed_min, speed_max)
+
+        self.use_percent = self.context.device.use_percent_for_power_display
+        if self.use_percent:
+            self.trailer_power.SetLabel("%")
+            self.text_power._check = "percent"
+            if power_min is not None:
+                power_min /= 10
+            if power_max is not None:
+                power_max /= 10
+            self.text_power.set_range(0, 100)
+            self.text_power.set_warn_level(power_min, power_max)
+            OPERATION_POWER_TOOLTIP = _(
+                "% of maximum power - This is a percentage of the maximum power of the laser."
+            )
+            self.power_sizer.SetLabel(_("Power"))
+        else:
+            self.trailer_power.SetLabel(_("/1000"))
+            self.text_power._check = "float"
+            self.text_power.set_range(0, 1000)
+            self.text_power.set_warn_level(power_min, power_max)
+            OPERATION_POWER_TOOLTIP = _(
+                _("Pulses Per Inch - This is software created laser power control.")
+                + "\n"
+                + _("1000 is always on, 500 is half power (fire every other step).")
+                + "\n"
+                + _(
+                    'Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.'
+                )
+            )
+            self.power_sizer.SetLabel(_("Power (ppi)"))
+        self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
 
     def accepts(self, node):
         return node.type in (
@@ -516,7 +541,6 @@ class SpeedPpiPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -525,9 +549,15 @@ class SpeedPpiPanel(wx.Panel):
             self.Hide()
             return
         if self.operation.speed is not None:
-            set_ctrl_value(self.text_speed, str(self.operation.speed))
+            if self.use_mm_min:
+                set_ctrl_value(self.text_speed, str(self.operation.speed * 60))
+            else:
+                set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
-            set_ctrl_value(self.text_power, str(self.operation.power))
+            if self.use_percent:
+                set_ctrl_value(self.text_power, f"{self.operation.power / 10.0:.0f}")
+            else:
+                set_ctrl_value(self.text_power, f"{self.operation.power:.0f}")
             self.update_power_label()
         if self.operation.frequency is not None and self.text_frequency:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
@@ -536,11 +566,14 @@ class SpeedPpiPanel(wx.Panel):
     def on_text_speed(self):  # wxGlade: OperationProperty.<event_handler>
         try:
             value = float(self.text_speed.GetValue())
+            if self.use_mm_min:
+                value /= 60
             if self.operation.speed != value:
                 self.operation.speed = value
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_speed"
                 )
+                self.context.elements.signal("updateop_tree")
         except ValueError:
             pass
 
@@ -560,6 +593,8 @@ class SpeedPpiPanel(wx.Panel):
         #     self.power_label.SetLabel(_("Power (ppi):") + "⚠️")
         # else:
         #     self.power_label.SetLabel(_("Power (ppi):"))
+        if self.use_percent:
+            return
         try:
             value = float(self.text_power.GetValue())
             self.power_sizer.SetLabel(_("Power (ppi)") + f" ({value/10:.1f}%)")
@@ -569,12 +604,15 @@ class SpeedPpiPanel(wx.Panel):
     def on_text_power(self):
         try:
             value = float(self.text_power.GetValue())
+            if self.use_percent:
+                value *= 10
             if self.operation.power != value:
                 self.operation.power = value
                 self.update_power_label()
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_power"
                 )
+                self.context.elements.signal("updateop_tree")
         except ValueError:
             return
 
@@ -616,9 +654,26 @@ class PassesPanel(wx.Panel):
         self.sizer_kerf.Add(self.text_kerf, 1, wx.EXPAND, 0)
         self.sizer_kerf.Add(self.kerf_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        self.sizer_coolant = StaticBoxSizer(
+            self, wx.ID_ANY, _("Coolant:"), wx.HORIZONTAL
+        )
+        cool_choices = [_("No changes"), _("Turn on"), _("Turn off")]
+        self.combo_coolant = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=cool_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_coolant.SetToolTip(
+            _(
+                "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
+            )
+        )
+        self.sizer_coolant.Add(self.combo_coolant, 1, wx.EXPAND, 0)
+
         sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes:"), wx.HORIZONTAL)
 
-        self.check_passes = wx.CheckBox(self, wx.ID_ANY, _("Passes"))
+        self.check_passes = wxCheckBox(self, wx.ID_ANY, _("Passes"))
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
         sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
@@ -650,12 +705,14 @@ class PassesPanel(wx.Panel):
 
         sizer_main.Add(sizer_passes, 1, wx.EXPAND, 0)
         sizer_main.Add(self.sizer_kerf, 1, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_coolant, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
 
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_coolant, self.combo_coolant)
 
         self.text_passes.SetActionRoutine(self.on_text_passes)
         self.text_kerf.SetActionRoutine(self.on_text_kerf)
@@ -674,7 +731,6 @@ class PassesPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -709,8 +765,35 @@ class PassesPanel(wx.Panel):
         self.text_passes.Enable(on)
         self.sizer_kerf.ShowItems(self.has_kerf)
         self.sizer_kerf.Show(self.has_kerf)
+        if hasattr(self.operation, "coolant"):
+            show_cool = True
+            value = self.operation.coolant
+            if value is None:
+                value = 0
+            self.combo_coolant.SetSelection(value)
+        else:
+            show_cool = False
+        if hasattr(self.context.device, "device_coolant"):
+            enable_cool = True
+            if self.context.device.device_coolant is None:
+                enable_cool = False
+        else:
+            enable_cool = False
+        self.combo_coolant.Enable(enable_cool)
+        self.sizer_coolant.ShowItems(show_cool)
+        self.sizer_coolant.Show(show_cool)
         self.Layout()
         self.Show()
+
+    def on_combo_coolant(self, event=None):
+        value = self.combo_coolant.GetSelection()
+        if value < 0:
+            value = 0
+        self.operation.coolant = value
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "coolant"
+        )
+        event.Skip()
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
@@ -763,19 +846,19 @@ class InfoPanel(wx.Panel):
         )
 
         self.text_children = wx.TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
-        self.text_children.SetMinSize((25, -1))
-        self.text_children.SetMaxSize((55, -1))
+        self.text_children.SetMinSize(dip_size(self, 25, -1))
+        self.text_children.SetMaxSize(dip_size(self, 55, -1))
         self.text_time = wx.TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
-        self.text_time.SetMinSize((55, -1))
-        self.text_time.SetMaxSize((100, -1))
+        self.text_time.SetMinSize(dip_size(self, 55, -1))
+        self.text_time.SetMaxSize(dip_size(self, 100, -1))
         self.text_children.SetToolTip(
             _("How many elements does this operation contain")
         )
         self.text_time.SetToolTip(_("Estimated time for execution (hh:mm:ss)"))
-        self.btn_update = wx.Button(self, wx.ID_ANY, _("Calculate"))
+        self.btn_update = wxButton(self, wx.ID_ANY, _("Calculate"))
         self.btn_update.Bind(wx.EVT_BUTTON, self.on_button_calculate)
 
-        self.btn_recalc = wx.Button(self, wx.ID_ANY, _("Re-Classify"))
+        self.btn_recalc = wxButton(self, wx.ID_ANY, _("Re-Classify"))
         self.btn_recalc.Bind(wx.EVT_BUTTON, self.on_button_refresh)
 
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
@@ -850,7 +933,6 @@ class InfoPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -1288,7 +1370,7 @@ class RasterSettingsPanel(wx.Panel):
                 "Left To Right",
                 "Crosshatch",
             ],
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         OPERATION_RASTERDIRECTION_TOOLTIP = (
             _("Direction to perform a raster")
@@ -1320,7 +1402,7 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.radio_raster_swing = wx.RadioBox(
+        self.radio_raster_swing = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Directional Raster:"),
@@ -1399,7 +1481,6 @@ class RasterSettingsPanel(wx.Panel):
             pass
 
     def on_text_overscan(self):
-        start_text = self.text_overscan.GetValue()
         try:
             v = Length(
                 self.text_overscan.GetValue(),
@@ -1411,7 +1492,7 @@ class RasterSettingsPanel(wx.Panel):
             return
         # print ("Start overscan=%s - target=%s" % (start_text, str(v.preferred_length)))
         value = v.preferred_length
-        if v._amount < 0.0000000001:
+        if v._amount < 1e-10:
             value = 0
         if self.operation.overscan != value:
             self.operation.overscan = value
@@ -1440,306 +1521,6 @@ class RasterSettingsPanel(wx.Panel):
 
 
 # end of class RasterSettingsPanel
-
-
-class HatchSettingsPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, **kwds):
-        # begin wxGlade: RasterSettingsPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.operation = node
-        self._Buffer = None
-
-        raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Hatch:"), wx.VERTICAL)
-
-        sizer_distance = StaticBoxSizer(
-            self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
-        )
-        raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
-
-        self.text_distance = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "1mm",
-            limited=True,
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
-
-        sizer_angle = StaticBoxSizer(self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL)
-        raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
-
-        self.text_angle = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0deg",
-            limited=True,
-            check="angle",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_angle.Add(self.text_angle, 1, wx.EXPAND, 0)
-
-        self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
-        sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
-
-        sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fill Style"), wx.VERTICAL)
-        raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
-
-        self.fills = list(self.context.match("hatch", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
-            self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN
-        )
-        sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
-
-        self.display_panel = wx.Panel(self, wx.ID_ANY)
-        sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
-
-        self.SetSizer(raster_sizer)
-
-        self.Layout()
-
-        self.text_distance.SetActionRoutine(self.on_text_distance)
-        self.text_angle.SetActionRoutine(self.on_text_angle)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
-        # end wxGlade
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
-        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
-
-        self.raster_pen = wx.Pen()
-        self.raster_pen.SetColour(wx.Colour(0, 0, 0, 180))
-        self.raster_pen.SetWidth(1)
-
-        self.travel_pen = wx.Pen()
-        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
-        self.travel_pen.SetWidth(1)
-
-        self.outline_pen = wx.Pen()
-        self.outline_pen.SetColour(wx.Colour(0, 127, 255, 127))
-        self.outline_pen.SetWidth(1)
-
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.outline_lines = None
-
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
-    def accepts(self, node):
-        return node.type in ("op hatch",)
-
-    def set_widgets(self, node):
-        self.operation = node
-        if self.operation is None or not self.accepts(node):
-            self.Hide()
-            return
-        i = 0
-        for ht in self.fills:
-            if ht == self.operation.hatch_type:
-                break
-            i += 1
-        if i == len(self.fills):
-            i = 0
-        self.combo_fill_style.SetSelection(i)
-        set_ctrl_value(self.text_angle, self.operation.hatch_angle)
-        set_ctrl_value(self.text_distance, str(self.operation.hatch_distance))
-        try:
-            h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
-            self.slider_angle.SetValue(int(h_angle))
-        except ValueError:
-            pass
-        self.Show()
-
-    def on_text_distance(self):
-        try:
-            self.operation.hatch_distance = Length(
-                self.text_distance.GetValue()
-            ).length_mm
-            self.hatch_lines = None
-            self.travel_lines = None
-            self.refresh_display()
-        except ValueError:
-            pass
-
-    def on_text_angle(self):
-        try:
-            angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
-            if angle == self.operation.hatch_angle:
-                return
-            self.operation.hatch_angle = angle
-            self.hatch_lines = None
-            self.travel_lines = None
-            self.refresh_display()
-        except ValueError:
-            return
-        try:
-            h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
-            while h_angle > self.slider_angle.GetMax():
-                h_angle -= 360
-            while h_angle < self.slider_angle.GetMin():
-                h_angle += 360
-            self.slider_angle.SetValue(int(h_angle))
-        except ValueError:
-            pass
-
-    def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        value = self.slider_angle.GetValue()
-        self.text_angle.SetValue(f"{value}deg")
-        self.on_text_angle()
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]
-        self.operation.hatch_type = hatch_type
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def on_display_paint(self, event=None):
-        if self._Buffer is None:
-            return
-        try:
-            wx.BufferedPaintDC(self.display_panel, self._Buffer)
-        except RuntimeError:
-            pass
-
-    def on_display_erase(self, event=None):
-        pass
-
-    def set_buffer(self):
-        width, height = self.display_panel.ClientSize
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        self._Buffer = wx.Bitmap(width, height)
-
-    def on_size(self, event=None):
-        self.Layout()
-        self.set_buffer()
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def refresh_display(self):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.refresh_in_ui)
-        else:
-            self.refresh_in_ui()
-
-    def calculate_hatch_lines(self):
-        w, h = self._Buffer.Size
-        hatch_type = self.operation.hatch_type
-        hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
-        if hatch_algorithm is None:
-            return
-        paths = (
-            complex(w * 0.05, h * 0.05),
-            complex(w * 0.95, h * 0.05),
-            complex(w * 0.95, h * 0.95),
-            complex(w * 0.05, h * 0.95),
-            complex(w * 0.05, h * 0.05),
-            None,
-            complex(w * 0.25, h * 0.25),
-            complex(w * 0.75, h * 0.25),
-            complex(w * 0.75, h * 0.75),
-            complex(w * 0.25, h * 0.75),
-            complex(w * 0.25, h * 0.25),
-        )
-        matrix = Matrix.scale(0.018)
-        hatch = list(
-            hatch_algorithm(
-                settings=self.operation.settings,
-                outlines=paths,
-                matrix=matrix,
-                limit=1000,
-            )
-        )
-        o_start = []
-        o_end = []
-        last = None
-        for c in paths:
-            if last is not None and c is not None:
-                o_start.append((c.real, c.imag))
-                o_end.append((last.real, last.imag))
-            last = c
-        self.outline_lines = o_start, o_end
-        h_start = []
-        h_end = []
-        t_start = []
-        t_end = []
-        last_x = None
-        last_y = None
-        travel = True
-        for p in hatch:
-            if p is None:
-                travel = True
-                continue
-            x, y = p
-            if last_x is None:
-                last_x = x
-                last_y = y
-                travel = False
-                continue
-            if travel:
-                t_start.append((last_x, last_y))
-                t_end.append((x, y))
-            else:
-                h_start.append((last_x, last_y))
-                h_end.append((x, y))
-            travel = False
-            last_x = x
-            last_y = y
-        self.hatch_lines = h_start, h_end
-        self.travel_lines = t_start, t_end
-
-    def refresh_in_ui(self):
-        """Performs redrawing of the data in the UI thread."""
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        dc.SetBackground(wx.WHITE_BRUSH)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-        if self.Shown:
-            if self.hatch_lines is None:
-                self.calculate_hatch_lines()
-            if self.hatch_lines is not None:
-                starts, ends = self.hatch_lines
-                if len(starts):
-                    gc.SetPen(self.raster_pen)
-                    gc.StrokeLineSegments(starts, ends)
-                else:
-                    font = wx.Font(
-                        14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
-                    )
-                    gc.SetFont(font, wx.BLACK)
-                    gc.DrawText(_("No hatch preview..."), 0, 0)
-            if self.travel_lines is not None:
-                starts, ends = self.travel_lines
-                if len(starts):
-                    gc.SetPen(self.travel_pen)
-                    gc.StrokeLineSegments(starts, ends)
-            if self.outline_lines is not None:
-                starts, ends = self.outline_lines
-                if len(starts):
-                    gc.SetPen(self.outline_pen)
-                    gc.StrokeLineSegments(starts, ends)
-        gc.Destroy()
-        dc.SelectObject(wx.NullBitmap)
-        del dc
-        self.display_panel.Refresh()
-        self.display_panel.Update()
-
-
-# end of class HatchSettingsPanel
 
 
 class DwellSettingsPanel(wx.Panel):
@@ -1817,6 +1598,7 @@ class ParameterPanel(ScrolledPanel):
         self.context = context
         self.operation = node
         self.panels = []
+        self.SetHelpText("operationproperty")
 
         param_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -1825,7 +1607,7 @@ class ParameterPanel(ScrolledPanel):
             wx.ID_ANY,
             context=context,
             node=node,
-            showid=False,
+            showid=True,
         )
         param_sizer.Add(self.id_panel, 0, wx.EXPAND, 0)
         self.panels.append(self.id_panel)
@@ -1850,12 +1632,6 @@ class ParameterPanel(ScrolledPanel):
         param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
         self.panels.append(self.raster_panel)
 
-        self.hatch_panel = HatchSettingsPanel(
-            self, wx.ID_ANY, context=context, node=node
-        )
-        param_sizer.Add(self.hatch_panel, 0, wx.EXPAND, 0)
-        self.panels.append(self.hatch_panel)
-
         self.dwell_panel = DwellSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
@@ -1870,6 +1646,12 @@ class ParameterPanel(ScrolledPanel):
 
         self.Layout()
         # end wxGlade
+
+    @signal_listener("power_percent")
+    @signal_listener("speed_min")
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        self.speedppi_panel.on_device_update()
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
@@ -1897,24 +1679,6 @@ class ParameterPanel(ScrolledPanel):
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
-        # if self.operation.type != "op hatch":
-        #     if self.hatch_panel.Shown:
-        #         self.hatch_panel.Hide()
-        # else:
-        #     if not self.hatch_panel.Shown:
-        #         self.hatch_panel.Show()
-        # if self.operation.type not in ("op raster", "op image"):
-        #     if self.raster_panel.Shown:
-        #         self.raster_panel.Hide()
-        # else:
-        #     if not self.raster_panel.Shown:
-        #         self.raster_panel.Show()
-        # if self.operation.type != "op dots":
-        #     if self.dwell_panel.Shown:
-        #         self.dwell_panel.Hide()
-        # else:
-        #     if not self.dwell_panel.Shown:
-        #         self.dwell_panel.Show()
         self.set_widgets(self.operation)
         self.Layout()
 

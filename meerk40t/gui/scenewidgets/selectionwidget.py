@@ -1,5 +1,22 @@
+"""
+The selection widget deals with the manipulated of emphasized elements. It provides a series of related subwidgets:
+
+BorderWidget: Draws the border of the selected object.
+RotationWidget: Little arrow in the corner allowing the object to be rotated.
+CornerWidget: Square in corner that typically governs uniform or x/y scaling.
+SideWidget: Square at different sides that typically does x-scaling or y-scaling.
+SkewWidget: Tiny squares along the side that deal with X-skew or y-skew.
+MoveWidget: Center widget that moves the entire selected object.
+MoveRotationOriginWidget: Function of rotating around an arbitrary center point.
+ReferenceWidget: Yellow-R widget that that makes this object the reference object.
+LockWidget: Widget to lock and unlock the given object.
+
+"""
+
+
 import math
 
+import numpy as np
 import wx
 
 from meerk40t.core.elements.element_types import *
@@ -13,8 +30,18 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    create_menu_for_node,
+    matrix_scale,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.svgelements import Point
+from meerk40t.tools.geomstr import TYPE_END
+
+# from time import perf_counter
+
 
 NEARLY_ZERO = 1.0e-6
 
@@ -30,7 +57,6 @@ def process_event(
     helptext="",
     optimize_drawing=True,
 ):
-
     if widget_identifier is None:
         widget_identifier = "none"
     try:
@@ -40,10 +66,6 @@ def process_event(
         return RESPONSE_CHAIN
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
-
-    # Not during an edit !
-    if widget.scene.pane.active_tool.startswith("edit"):
-        return RESPONSE_CHAIN
 
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
@@ -201,15 +223,47 @@ class BorderWidget(Widget):
 
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
-        gc.SetPen(self.master.selection_pen)
-        # Won't be display when rotating...
+
+        # Won't be displayed when rotating...
         if self.master.show_border:
-            gc.StrokeLine(center_x, 0, center_x, self.top)
-            gc.StrokeLine(0, center_y, self.left, center_y)
-            gc.StrokeLine(self.left, self.top, self.right, self.top)
-            gc.StrokeLine(self.right, self.top, self.right, self.bottom)
-            gc.StrokeLine(self.right, self.bottom, self.left, self.bottom)
-            gc.StrokeLine(self.left, self.bottom, self.left, self.top)
+            # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+            # when drawing dashed/dotted lines, so they always appear to be solid
+            # (even if they are dotted on a microscopic level)
+            # To circumvent this issue, we scale the gc back
+            gc.PushState()
+            gcmat = gc.GetTransform()
+            mat_param = gcmat.Get()
+            sx = mat_param[0]
+            sy = mat_param[3]
+            if sx == 0:
+                sx = 0.01
+            if sy == 0:
+                sy = 0.01
+            gc.Scale(1 / sx, 1 / sy)
+
+            # Create a copy of the pen
+            mypen = wx.Pen(self.master.selection_pen)
+            mypen.SetWidth(1)
+            mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
+            gc.SetPen(mypen)
+            gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
+            gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            mypen.SetStyle(wx.PENSTYLE_DOT)
+            gc.SetPen(mypen)
+            gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
+            gc.StrokeLine(
+                sx * self.right, sy * self.top, sx * self.right, sy * self.bottom
+            )
+            gc.StrokeLine(
+                sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom
+            )
+            gc.StrokeLine(
+                sx * self.left, sy * self.bottom, sx * self.left, sy * self.top
+            )
+            # And back...
+            gc.PopState()
+            gc.SetPen(self.master.selection_pen)
+
             # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
             # if draw_mode & DRAW_MODE_SELECTION == 0:
             units = context.units_name
@@ -326,8 +380,8 @@ class RotationWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left) / 2
-        mid_y = (self.master.bottom + self.master.top) / 2
+        # mid_x = (self.master.right + self.master.left) / 2
+        # mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -373,6 +427,8 @@ class RotationWidget(Widget):
         elif self.index == 3:  # bl
             signx = -1
             signy = +1
+        else:
+            raise ValueError("Selection location was not valid.")
 
         # Well, I would have liked to draw a proper arc via dc.DrawArc but the DeviceContext is not available here(?)
         segment = []
@@ -425,10 +481,9 @@ class RotationWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
-        rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
             images = []
@@ -437,11 +492,12 @@ class RotationWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-            self.scene.context.signal("tool_modified")
+            self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -450,7 +506,6 @@ class RotationWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
             if self.rotate_cy is None:
@@ -653,8 +708,8 @@ class CornerWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left) / 2
-        mid_y = (self.master.bottom + self.master.top) / 2
+        # mid_x = (self.master.right + self.master.left) / 2
+        # mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -708,8 +763,8 @@ class CornerWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
         if event == 1:
             images = []
@@ -722,9 +777,9 @@ class CornerWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -733,17 +788,6 @@ class CornerWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-            # Establish origin
-            if "n" in self.method:
-                orgy = self.master.bottom
-            else:
-                orgy = self.master.top
-
-            if "e" in self.method:
-                orgx = self.master.right
-            else:
-                orgx = self.master.left
-
             # Establish scales
             scalex = 1
             scaley = 1
@@ -779,6 +823,8 @@ class CornerWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 return
+
+            # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -957,8 +1003,8 @@ class SideWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
         if event == 1:
             images = []
@@ -971,9 +1017,9 @@ class SideWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -982,22 +1028,11 @@ class SideWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-            # Establish origin
-            if "n" in self.method:
-                orgy = self.master.bottom
-            else:
-                orgy = self.master.top
-
-            if "e" in self.method:
-                orgx = self.master.right
-            else:
-                orgx = self.master.left
-
             # Establish scales
             scalex = 1
             scaley = 1
-            deltax = 0
-            deltay = 0
+            # deltax = 0
+            # deltay = 0
             if "n" in self.method:
                 try:
                     scaley = (self.master.bottom - position[1]) / self.save_height
@@ -1031,6 +1066,7 @@ class SideWidget(Widget):
                 b = elements.selected_area()
                 if b is None:
                     return
+            # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -1200,8 +1236,9 @@ class SkewWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
-            self.scene.context.signal("tool_modified")
+                e.update(self.scene.context)
+            self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1211,11 +1248,9 @@ class SkewWidget(Widget):
             return
         elif event == 0:  # move
             if self.is_x:
-                dd = dx
                 this_side = self.master.total_delta_x
                 other_side = self.master.height
             else:
-                dd = dy
                 this_side = self.master.total_delta_y
                 other_side = self.master.width
 
@@ -1339,6 +1374,8 @@ class MoveWidget(Widget):
         to_be_copied = []
         emph_list = list(elements.elems(emphasized=True))
         for e in emph_list:
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             if e.type in ("file", "group"):
                 for f in e.children:
                     if not f.emphasized:
@@ -1378,7 +1415,7 @@ class MoveWidget(Widget):
                 if oldparent.label is None:
                     newlabel = "Copy"
                 else:
-                    newlabel = f"Copy of {oldparent.label}"
+                    newlabel = f"Copy of {oldparent.display_label()}"
                 if oldparent.id is None:
                     newid = "Copy"
                 else:
@@ -1399,14 +1436,19 @@ class MoveWidget(Widget):
             had_optional = False
             # Need to add stroke and fill, as copy will take the
             # default values for these attributes
-            for optional in ("fill", "stroke"):
+            options = ["fill", "stroke", "wxfont"]
+            for optional in options:
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
-
-            for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+            options = []
+            for prop in dir(e):
+                if prop.startswith("mk"):
+                    options.append(prop)
+            for optional in options:
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
                     had_optional = True
+
             newparent.add_node(copy_node)
             copy_nodes.append(copy_node)
             # The copy remains at the same place, we are moving the originals,
@@ -1541,11 +1583,159 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            if nearest_snap is None:
-                move_to(lastdx, lastdy)
-            else:
-                move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
-            self.check_for_magnets()
+            # Cleanup - we check for:
+            # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
+            # b) Use the distance of the 4 corners and the center to a grid point -> take the smallest distance
+            # c) Regular snap-check
+            # d) Use magnet lines
+
+            def shortest_distance(p1, p2, tuplemode):
+                """
+                Calculates the shortest distance between two arrays of 2-dimensional points.
+                """
+                # Calculate the Euclidean distance between each point in p1 and p2
+                if tuplemode:
+                    # For an array of tuples:
+                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                else:
+                    # For an array of complex numbers
+                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+                # Find the minimum distance and its corresponding indices
+                min_dist = np.min(dist)
+                min_indices = np.argwhere(dist == min_dist)
+
+                # Return the coordinates of the two points
+                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+
+            b = elements._emphasized_bounds
+            if b is None:
+                b = elements.selected_area()
+            matrix = self.scene.widget_root.scene_widget.matrix
+            did_snap_to_point = False
+            if (
+                self.scene.context.snap_points
+                and not "shift" in modifiers
+                and b is not None
+            ):
+                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                # We gather all points of non-selected elements,
+                # but only those that lie within the boundaries
+                # of the selected area
+                # We compare every point of the selected elements
+                # with the points of the non-selected elements (provided they
+                # lie within the selection area plus boundary) and look for
+                # the closest distance.
+
+                # t1 = perf_counter()
+                other_points = []
+                selected_points = []
+                for e in self.scene.context.elements.elems():
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
+
+                    if e.emphasized:
+                        target = selected_points
+                    else:
+                        target = other_points
+                    if not hasattr(e, "as_geometry"):
+                        continue
+                    geom = e.as_geometry()
+                    last = None
+                    for seg in geom.segments[: geom.index]:
+                        start = seg[0]
+                        seg_type = int(seg[2].real)
+                        end = seg[4]
+                        if seg_type != TYPE_END:
+                            if start != last:
+                                xx = start.real
+                                yy = start.imag
+                                ignore = (
+                                    xx < b[0] - gap
+                                    or xx > b[2] + gap
+                                    or yy < b[1] - gap
+                                    or yy > b[3] + gap
+                                )
+                                if not ignore:
+                                    target.append(start)
+                            xx = end.real
+                            yy = end.imag
+                            ignore = (
+                                xx < b[0] - gap
+                                or xx > b[2] + gap
+                                or yy < b[1] - gap
+                                or yy > b[3] + gap
+                            )
+                            if not ignore:
+                                target.append(end)
+                            last = end
+                # t2 = perf_counter()
+                if (
+                    other_points is not None
+                    and selected_points is not None
+                    and len(other_points) > 0
+                    and len(selected_points) > 0
+                ):
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+
+                    if dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1.real - pt2.real
+                        dy = pt1.imag - pt2.imag
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(dx, dy)
+                # t3 = perf_counter()
+                # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+            if (
+                self.scene.context.snap_grid
+                and not "shift" in modifiers
+                and b is not None
+                and not did_snap_to_point
+            ):
+                # t1 = perf_counter()
+                gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
+                # Check for corner points + center:
+                selected_points = (
+                    (b[0], b[1]),
+                    (b[2], b[1]),
+                    (b[0], b[3]),
+                    (b[2], b[3]),
+                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                )
+                other_points = self.scene.pane.grid.grid_points
+                if (
+                    other_points is not None
+                    and selected_points is not None
+                    and len(other_points) > 0
+                    and len(selected_points) > 0
+                ):
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                    if dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1[0] - pt2[0]
+                        dy = pt1[1] - pt2[1]
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(dx, dy)
+
+                # t2 = perf_counter()
+                # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
+                if did_snap_to_point:
+                    # Even then magnets win!
+                    self.check_for_magnets()
+
+            if not did_snap_to_point:
+                if nearest_snap is None:
+                    move_to(lastdx, lastdy)
+                else:
+                    move_to(
+                        lastdx - self.master.offset_x, lastdy - self.master.offset_y
+                    )
+                self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
             #     # Did we actually move?
             #     # Remember this, it is still okay
@@ -1559,8 +1749,8 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
 
-            self.scene.context.signal("tool_modified")
             self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
@@ -1638,8 +1828,6 @@ class MoveRotationOriginWidget(Widget):
         # This one gets painted always.
 
         self.update()  # make sure coords are valid
-        pen = wx.Pen()
-        # pen.SetColour(wx.RED)
         gc.SetPen(self.master.handle_pen)
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.StrokeLine(
@@ -1665,7 +1853,6 @@ class MoveRotationOriginWidget(Widget):
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.pane.last_snap
-        elements = self.scene.context.elements
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
@@ -1754,10 +1941,10 @@ class ReferenceWidget(Widget):
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
-            offset_y = self.half
+            # offset_y = self.half
         else:
             offset_x = 0
-            offset_y = 0
+            # offset_y = 0
         pos_x = self.master.left - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
@@ -1890,10 +2077,10 @@ class LockWidget(Widget):
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
-            offset_y = self.half
+            # offset_y = self.half
         else:
             offset_x = 0
-            offset_y = 0
+            # offset_y = 0
         pos_x = self.master.right - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
@@ -2005,7 +2192,7 @@ class RefAlign(wx.Dialog):
         # begin wxGlade: RefAlign.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
-        self.SetTitle("Align Selection")
+        self.SetTitle(_("Align Selection"))
 
         sizer_ref_align = wx.BoxSizer(wx.VERTICAL)
 
@@ -2100,7 +2287,7 @@ class RefAlign(wx.Dialog):
         )
         sizer_scale.Add(self.radio_btn_12, 0, 0, 0)
 
-        self.chk_auto_rotate = wx.CheckBox(self, wx.ID_ANY, _("Autorotate"))
+        self.chk_auto_rotate = wxCheckBox(self, wx.ID_ANY, _("Autorotate"))
         self.chk_auto_rotate.SetToolTip(
             _("Rotate the object(s) if they would fit better")
         )
@@ -2109,12 +2296,12 @@ class RefAlign(wx.Dialog):
         sizer_buttons = wx.StdDialogButtonSizer()
         sizer_ref_align.Add(sizer_buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
 
-        self.button_OK = wx.Button(self, wx.ID_OK, "")
+        self.button_OK = wxButton(self, wx.ID_OK, "")
         self.button_OK.SetToolTip(_("Align and scale the elements"))
         self.button_OK.SetDefault()
         sizer_buttons.AddButton(self.button_OK)
 
-        self.button_CANCEL = wx.Button(self, wx.ID_CANCEL, "")
+        self.button_CANCEL = wxButton(self, wx.ID_CANCEL, "")
         self.button_CANCEL.SetToolTip(_("Close without applying any changes"))
         sizer_buttons.AddButton(self.button_CANCEL)
 
@@ -2168,7 +2355,8 @@ class SelectionWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
-        self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        # self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.selection_pen.SetStyle(wx.PENSTYLE_LONG_DASH)
         # want to have sharp edges
         self.selection_pen.SetJoin(wx.JOIN_MITER)
 
@@ -2265,8 +2453,6 @@ class SelectionWidget(Widget):
         if refob is None:
             return
         alignbounds = refob.bounds
-        posx = ""
-        posy = ""
         if "l" in pos:
             posx = "min"
         elif "r" in pos:
@@ -2369,7 +2555,6 @@ class SelectionWidget(Widget):
             # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
         dlgRefAlign.Destroy()
         if opt_pos is not None:
-            elements = self.scene.context.elements
             self.rotate_elements_if_needed(opt_rotate)
             self.scale_selection_to_ref(opt_scale)
             self.move_selection_to_ref(opt_pos)
@@ -2404,7 +2589,7 @@ class SelectionWidget(Widget):
         # Now check whether we have a reference object
         reference_object = self.scene.pane.reference_object
         if reference_object is not None:
-            # Okay, just lets make sure we are not doing this on the refobject itself...
+            # Okay, just let's make sure we are not doing this on the refobject itself...
             for e in self.scene.context.elements.flat(
                 types=elem_nodes, emphasized=True
             ):
@@ -2448,6 +2633,8 @@ class SelectionWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if self.scene.pane.suppress_selection:
+            return RESPONSE_CHAIN
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
@@ -2487,7 +2674,7 @@ class SelectionWidget(Widget):
                         self.scene.context.signal("statusmsg", "")
 
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
-            # self.scene.tool_active = False
+            # self.scene.pane.tool_active = False
             pass
         elif event_type == "rightdown":
             self.scene.pane.tool_active = False
@@ -2558,11 +2745,10 @@ class SelectionWidget(Widget):
         Draw routine for drawing the selection box.
         """
         self.gc = gc
+        self.clear()  # Clearing children as we are generating them in a bit...
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
-        self.clear()  # Clearing children as we are generating them in a bit...
-        # Don't interfere during node editing
-        if self.scene.pane.active_tool.startswith("edit"):
+        if self.scene.pane.suppress_selection:
             return
         context = self.scene.context
         try:
@@ -2577,10 +2763,9 @@ class SelectionWidget(Widget):
             self.use_handle_size = True
             self.use_handle_move = True
 
-        draw_mode = context.draw_mode
         elements = self.scene.context.elements
         bounds = elements.selected_area()
-        matrix = self.parent.matrix
+        matrix = self.scene.widget_root.scene_widget.matrix
         if bounds is not None:
             try:
                 factor = math.sqrt(abs(matrix.determinant))
@@ -2606,7 +2791,7 @@ class SelectionWidget(Widget):
                     wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_BOLD,
                 )
-            except TypeError:
+            except (TypeError, AssertionError):
                 font = wx.Font(
                     int(self.font_size),
                     wx.FONTFAMILY_SWISS,

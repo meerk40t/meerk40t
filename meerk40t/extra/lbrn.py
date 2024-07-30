@@ -8,20 +8,23 @@ Lightburn files are xml files denoting simple types with a narrowly nested style
 import base64
 import re
 from io import BytesIO
-from xml.etree.ElementTree import iterparse
+from xml.etree.ElementTree import ParseError, iterparse
 
 import PIL.Image
-from meerk40t.core.units import UNITS_PER_MM
-
-from meerk40t.tools.geomstr import Geomstr
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.svgelements import Matrix, Color
+from meerk40t.core.units import UNITS_PER_MM
+from meerk40t.svgelements import Color, Matrix
+from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("load/LbrnLoader", LbrnLoader)
+
+
+DEFAULT_SPEED = 30
+DEFAULT_POWER = 30
 
 
 _prim_parse = [
@@ -77,7 +80,7 @@ def prim_parser(text: str):
         yield _kind, _value, _start, p
 
 
-def geomstry_from_vert_list(vertlist, plist):
+def geomstr_from_vert_list(vertlist, plist):
     geomstr = Geomstr()
 
     vmap = None
@@ -119,6 +122,8 @@ def geomstry_from_vert_list(vertlist, plist):
         return geomstr
     elif plist == "":
         size = len(vert_lookup)
+        if size == 0:
+            return geomstr
         for i in range(size + 1):
             v0 = vert_lookup[i % size]
             v1 = vert_lookup[(i + 1) % size]
@@ -186,10 +191,21 @@ class LbrnLoader:
                 siblings.append(node)
                 if elem.tag == "LightBurnProject":
                     app_version = elem.attrib.get("AppVersion")
-                    format = elem.attrib.get("FormatVersion")
+                    _format = elem.attrib.get("FormatVersion")
                     material_height = elem.attrib.get("MaterialHeight")
+                    try:
+                        cx = elements.space.width / 2
+                        cy = elements.space.height / 2
+                    except AttributeError:
+                        cx = 0
+                        cy = 0
                     mirror_x = elem.attrib.get("MirrorX")
                     mirror_y = elem.attrib.get("MirrorY")
+                    if mirror_x == "True":
+                        matrix.post_scale_x(-1, cx, cy)
+                    if mirror_y == "True":
+                        matrix.post_scale_y(-1, cx, cy)
+
                 elif elem.tag in ("Shape", "BackupPath"):
                     stack.append((context, matrix))
                     matrix = Matrix(matrix)
@@ -228,8 +244,8 @@ class LbrnLoader:
                         values["op"] = values["op"] = op_branch.add(
                             type="op image",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                 elif elem.tag == "CutSetting":
                     values = {"tag": elem.tag}
@@ -243,15 +259,22 @@ class LbrnLoader:
                         values["op"] = op_branch.add(
                             type="op cut",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                     elif op_type == "Scan":
                         values["op"] = op_branch.add(
                             type="op raster",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
+                        )
+                    else:
+                        values["op"] = op_branch.add(
+                            type="op engrave",
+                            label=values.get("name"),
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" "))) * matrix
@@ -281,7 +304,7 @@ class LbrnLoader:
                             )
                             _cut_settings.get("op").add_reference(node)
                     elif _type == "Path":
-                        geometry = geomstry_from_vert_list(vertlist, primlist)
+                        geometry = geomstr_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
                         node = context.add(
                             type="elem path", geometry=geometry, stroke=color
@@ -329,7 +352,10 @@ class LbrnLoader:
                         # Needs image specific settings.
                         _cut_settings = cut_settings_img.get(_cut_index, None)
 
-                        thumb_source_data = base64.b64decode(elem.attrib.get("Data"))
+                        data = elem.attrib.get("Data")
+                        if data is None:
+                            continue
+                        thumb_source_data = base64.b64decode(data)
                         stream = BytesIO(thumb_source_data)
                         image = PIL.Image.open(stream)
                         width = float(values.get("W"))
@@ -386,7 +412,13 @@ class LbrnLoader:
     def load(context, elements_service, pathname, **kwargs):
         try:
             with open(pathname, "r") as source:
-                LbrnLoader.parse(pathname, source, elements_service)
+                try:
+                    LbrnLoader.parse(pathname, source, elements_service)
+                except ParseError:
+                    # This is likely `Junk after Document` which is already parsed. Unsure if this is because the
+                    # format will sometimes have some extra information or because of a malformed xml.
+                    pass
         except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
+        elements_service._loading_cleared = True
         return True

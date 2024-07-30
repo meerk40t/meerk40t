@@ -29,16 +29,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019, macos-11]
-        python-version: [3.9]
+        os: [ubuntu-latest, windows-2019, macos-latest]
+        python-version: [3.8, 3.12]
 
     steps:
 
     - name: Checkout ${{ github.ref }}
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -48,7 +48,7 @@ jobs:
       run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
     - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.pythonLocation }}
         key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-nogui.txt') }}

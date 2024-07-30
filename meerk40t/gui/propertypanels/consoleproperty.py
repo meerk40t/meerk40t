@@ -1,6 +1,6 @@
 import wx
 
-from ..icons import icons8_comments_50
+from ..icons import icons8_comments
 from ..mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -13,10 +13,12 @@ class ConsoleProperty(MWindow):
         self.panel = ConsolePropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_comments.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console Properties"))
+        self.restore_aspect()
         self.Children[0].SetFocus()
 
     def window_preserve(self):

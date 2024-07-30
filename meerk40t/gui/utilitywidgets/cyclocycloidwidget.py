@@ -34,9 +34,8 @@ class CyclocycloidWidget(Widget):
         self.r_minor = None
         self.r_major = None
         self.offset = None
-        bed_width, bed_height = scene.context.device.physical_to_scene_position(
-            "100%", "100%"
-        )
+        bed_width = scene.context.space.display.unit_width
+        bed_height = scene.context.space.display.unit_height
         self.x, self.y = bed_width / 2, bed_height / 2
         size = 100000
 
@@ -209,7 +208,7 @@ class MajorHandleWidget(Widget):
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
         self.widget = cyclowidget
-        self.bitmap = icons.icons8_point_50.GetBitmap(use_theme=False)
+        self.bitmap = icons.icon_mk_point.GetBitmap(use_theme=False)
         self._start_x = None
         self._start_y = None
         self._current_x = None
@@ -284,7 +283,7 @@ class MinorHandleWidget(Widget):
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
         self.widget = cyclowidget
-        self.bitmap = icons.icons8_point_50.GetBitmap(use_theme=False)
+        self.bitmap = icons.icon_mk_point.GetBitmap(use_theme=False)
         self._start_x = None
         self._start_y = None
         self._current_x = None

@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ...kernel import signal_listener
-from ..icons import icons8_computer_support_50
+from ..icons import icons8_computer_support
 from ..mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -10,10 +10,10 @@ _ = wx.GetTranslation
 
 class PropertyWindow(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(598, 429, *args, **kwds)
+        super().__init__(600, 650, *args, **kwds)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Properties"))
@@ -27,8 +27,10 @@ class PropertyWindow(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
     def on_page_changed(self, event):
         event.Skip()
@@ -43,6 +45,21 @@ class PropertyWindow(MWindow):
                     panel.pane_deactive()
             except AttributeError:
                 pass
+
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, *args):
+        myargs = [i for i in args]
+        if len(args) > 0 and args[0] == "Scene":
+            for p in self.panel_instances:
+                if hasattr(p, "signal"):
+                    p.signal("refresh_scene", myargs)
+
+    @signal_listener("modified_by_tool")
+    def on_tool_modified(self, origin, *args):
+        myargs = [i for i in args]
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("modified_by_tool", myargs)
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
@@ -136,7 +153,7 @@ class PropertyWindow(MWindow):
             "button/preparation/Properties",
             {
                 "label": _("Property Window"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens Properties Window"),
                 "action": lambda v: kernel.console("window toggle Properties\n"),
                 "priority": 2,
@@ -146,7 +163,7 @@ class PropertyWindow(MWindow):
             "button/properties/Properties",
             {
                 "label": _("Property Window"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens Properties Window"),
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },

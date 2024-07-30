@@ -6,6 +6,7 @@ for a GRBL import / blob conversion
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.gui.wxutils import wxButton
 
 _ = wx.GetTranslation
 
@@ -70,8 +71,8 @@ class DialogOptions:
             sizer_main.Add(intro_label, 0, wx.EXPAND, 0)
         sizer_main.Add(cpanel, 1, wx.EXPAND, 0)
         sizer_button = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_apply = wx.Button(parent_win, wx.ID_OK, _("OK"))
-        self.button_cancel = wx.Button(parent_win, wx.ID_CANCEL, _("Cancel"))
+        self.button_apply = wxButton(parent_win, wx.ID_OK, _("OK"))
+        self.button_cancel = wxButton(parent_win, wx.ID_CANCEL, _("Cancel"))
         sizer_button.Add(self.button_apply, 0, wx.EXPAND, 0)
         sizer_button.Add(self.button_cancel, 0, wx.EXPAND, 0)
 
@@ -95,7 +96,7 @@ class DialogOptions:
                     value = entry[3]
                     try:
                         if waspresent:
-                            value = setattr(e_object, e_attr, value)
+                            setattr(e_object, e_attr, value)
                         else:
                             # Was not there, so remove it
                             delattr(e_object, e_attr)

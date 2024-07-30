@@ -13,7 +13,7 @@ class RelocateTool(ToolWidget):
     Adds Circle with click and drag.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.p1 = None
@@ -40,8 +40,8 @@ class RelocateTool(ToolWidget):
             if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
         elif event_type in ("leftup", "leftclick"):
-            bed_width = self.scene.context.device.unit_width
-            bed_height = self.scene.context.device.unit_height
+            bed_width = self.scene.context.device.view.unit_width
+            bed_height = self.scene.context.device.view.unit_height
             if nearest_snap is None:
                 x = space_pos[0]
                 y = space_pos[1]

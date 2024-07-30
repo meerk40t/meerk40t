@@ -1,8 +1,14 @@
 from meerk40t.kernel import Kernel
 
 
-def bootstrap():
-    kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t_TEST", ansi=False)
+def bootstrap(profile="MeerK40t_TEST", ignore_settings=True, plugins=None):
+    kernel = Kernel(
+        "MeerK40t",
+        "0.0.0-testing",
+        profile,
+        ansi=False,
+        ignore_settings=ignore_settings,
+    )
 
     from meerk40t.network import kernelserver
 
@@ -24,6 +30,10 @@ def bootstrap():
 
     kernel.add_plugin(fills.plugin)
 
+    from meerk40t.extra.coolant import plugin as coolantplugin
+
+    kernel.add_plugin(coolantplugin)
+
     from meerk40t.lihuiyu import plugin as lhystudiosdevice
 
     kernel.add_plugin(lhystudiosdevice.plugin)
@@ -40,6 +50,14 @@ def bootstrap():
 
     kernel.add_plugin(ruidadevice.plugin)
 
+    from meerk40t.newly import plugin as newlydevice
+
+    kernel.add_plugin(newlydevice.plugin)
+
+    from meerk40t.balormk import plugin as balormkdevice
+
+    kernel.add_plugin(balormkdevice.plugin)
+
     from meerk40t.core import svg_io
 
     kernel.add_plugin(svg_io.plugin)
@@ -48,7 +66,15 @@ def bootstrap():
 
     kernel.add_plugin(dxf_io_plugin)
 
-    kernel()
+    from meerk40t.rotary import rotary
+
+    kernel.add_plugin(rotary.plugin)
+
+    if plugins:
+        for plugin in plugins:
+            kernel.add_plugin(plugin)
+
+    kernel(partial=True)
     kernel.console("channel print console\n")
     kernel.console("service device start dummy 0\n")
     return kernel

@@ -9,21 +9,25 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
+from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
+from meerk40t.device.devicechoices import get_effect_choices
 
 
-class LihuiyuDevice(Service, ViewPort):
+class LihuiyuDevice(Service, Status):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
@@ -43,8 +47,8 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _("Width of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
-                "signals": "bedsize",
+                # _("Bed Dimensions")
+                "subsection": "_10_Bed Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -55,8 +59,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _("Height of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
-                "signals": "bedsize",
+                "subsection": "_10_Bed Dimensions",
             },
             {
                 "attr": "user_scale_x",
@@ -68,7 +71,8 @@ class LihuiyuDevice(Service, ViewPort):
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                # _("User Scale Factor")
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
             },
             {
@@ -81,8 +85,33 @@ class LihuiyuDevice(Service, ViewPort):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                # _("User Offset")
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                "subsection": "_30_User Offset",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -108,11 +137,10 @@ class LihuiyuDevice(Service, ViewPort):
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
                 "tip": _(
-                    "Select the board to use. This has an effects the speedcodes used."
+                    "Select the board to use. This affects the speedcodes used."
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_x",
@@ -120,21 +148,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Flip X"),
-                "tip": _("Flip the Right and Left commands sent to the controller"),
+                "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("X Axis"),
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is on the right"),
-                "section": "_10_" + _("Configuration"),
-                "subsection": _("X Axis"),
-                "signals": "bedsize",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "flip_y",
@@ -142,21 +158,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Flip Y"),
-                "tip": _("Flip the Y axis for the Balor device"),
+                "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("Y Axis"),
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_bottom",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "section": "_10_" + _("Configuration"),
-                "subsection": _("Y Axis"),
-                "signals": "bedsize",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "swap_xy",
@@ -169,10 +173,45 @@ class LihuiyuDevice(Service, ViewPort):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_10_" + _("Axis corrections"),
-                "signals": "bedsize",
+            },
+            {
+                "attr": "home_corner",
+                "object": self,
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_50_" + _("Home position"),
             },
         ]
         self.register_choices("bed_orientation", choices)
+        choices = [
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed",
+            },
+        ]
+        self.register_choices("coolant", choices)
 
         choices = [
             {
@@ -183,6 +222,46 @@ class LihuiyuDevice(Service, ViewPort):
                 "label": _("Automatically lock rail"),
                 "tip": _("Lock rail after operations are finished."),
                 "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "plot_phase_type",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Phase Type"),
+                "style": "option",
+                "display": [
+                    _("Sequential"),
+                    _("Random"),
+                    _("Progressive"),
+                    _("Static"),
+                ],
+                "choices": (0, 1, 2, 3),
+                "tip": "\n".join(
+                    [
+                        _(
+                            "The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, typically it just maintained the count. However, in some rare cases this may artifact if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
+                        ),
+                        "",
+                        _("Sequential: maintain phase between cuts"),
+                        _("Random: set the phase to a random value between cuts"),
+                        _("Progressive: linearly progress the phase between cuts"),
+                        _(
+                            "Static: always set the phase to the exact value between cuts"
+                        ),
+                    ]
+                ),
+                "section": "_01_" + _("Plot Planner"),
+            },
+            {
+                "attr": "plot_phase_value",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Phase Value"),
+                "tip": _("Value for progressive or static phase type"),
+                "section": "_01_" + _("Plot Planner"),
+                "trailer": _("/1000"),
             },
             {
                 "attr": "plot_shift",
@@ -208,7 +287,7 @@ class LihuiyuDevice(Service, ViewPort):
                         ),
                     ]
                 ),
-                "section": "_00_" + _("General Options"),
+                "section": "_01_" + _("Plot Planner"),
             },
             {
                 "attr": "strict",
@@ -235,8 +314,38 @@ class LihuiyuDevice(Service, ViewPort):
                 ),
                 "section": "_00_" + _("General Options"),
             },
+            {
+                "attr": "max_vector_speed",
+                "object": self,
+                "default": 140,
+                "type": float,
+                "label": _("Max vector speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "max_raster_speed",
+                "object": self,
+                "default": 750,
+                "type": float,
+                "label": _("Max raster speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_10_",
+            },
         ]
         self.register_choices("lhy-general", choices)
+
+        self.register_choices("lhy-effects", get_effect_choices(self))
 
         choices = [
             {
@@ -295,6 +404,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "trailer": "mm/s",
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
+                "subsection": "_10_",
             },
             {
                 "attr": "rapid_override_speed_y",
@@ -306,6 +416,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "trailer": "mm/s",
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
+                "subsection": "_10_",
             },
         ]
         self.register_choices("lhy-rapid-override", choices)
@@ -325,66 +436,8 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("lhy-speed", choices)
 
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            # {
-            #     "attr": "rotary_mirror_x",
-            #     "object": self,
-            #     "default": False,
-            #     "type": bool,
-            #     "label": _("Mirror X"),
-            #     "tip": _("Mirror the elements on the X-Axis"),
-            #     "conditional": (self, "rotary_active"),
-            #     "subsection": _("Mirror Output"),
-            # },
-            # {
-            #     "attr": "rotary_mirror_y",
-            #     "object": self,
-            #     "default": False,
-            #     "type": bool,
-            #     "label": _("Mirror Y"),
-            #     "tip": _("Mirror the elements on the Y-Axis"),
-            #     "conditional": (self, "rotary_active"),
-            #     "subsection": _("Mirror Output"),
-            # },
-        ]
-        self.register_choices("rotary", choices)
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -405,20 +458,8 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
-            user_scale_x=self.user_scale_x,
-            user_scale_y=self.user_scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
+        self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
+        self.realize()
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -452,6 +493,8 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
+
         _ = self.kernel.translation
 
         @self.console_option(
@@ -465,7 +508,7 @@ class LihuiyuDevice(Service, ViewPort):
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -520,7 +563,7 @@ class LihuiyuDevice(Service, ViewPort):
                     list(move_at_speed()),
                     label=f"move {dx} {dy} at {speed}",
                     helper=True,
-                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil),
+                    outline=self.outline_move_relative(dx.mil, dy.mil),
                 )
             else:
                 channel(_("Busy"))
@@ -534,46 +577,41 @@ class LihuiyuDevice(Service, ViewPort):
             help=_("Change speed by this amount."),
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @self.console_command(
-            "speed", input_type="lihuiyu", help=_("Set current speed of driver.")
-        )
-        def speed(
-            command, channel, _, data=None, speed=None, difference=False, **kwargs
-        ):
-            spooler, driver, output = data
+        @self.console_command("device_speed", help=_("Set current speed of driver."))
+        def speed(command, channel, _, data=None, speed=None, difference=False, **kwgs):
+            driver = self.device.driver
+
             if speed is None:
                 current_speed = driver.speed
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
-                    channel(
-                        _("Speed set at: {speed} mm/s").format(
-                            speed=driver.settings.speed
-                        )
-                    )
+                    channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
                 percent = True
             else:
                 percent = False
+
             try:
                 s = float(speed)
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
+
             if percent and difference:
                 s = driver.speed + driver.speed * (s / 100.0)
             elif difference:
                 s += driver.speed
             elif percent:
                 s = driver.speed * (s / 100.0)
-            driver.set("speed", s)
+            driver._set_speed(s)
             channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @self.console_command("power", help=_("Set Driver Power"))
-        def power(command, channel, _, ppi=None, **kwargs):
+        def power(command, channel, _, ppi=None, **kwgs):
             original_power = self.driver.power
             if ppi is None:
                 if original_power is None:
@@ -592,7 +630,7 @@ class LihuiyuDevice(Service, ViewPort):
             "acceleration",
             help=_("Set Driver Acceleration [1-4]"),
         )
-        def acceleration(channel, _, accel=None, **kwargs):
+        def acceleration(channel, _, accel=None, **kwgs):
             """
             Lhymicro-gl speedcodes have a single character of either 1,2,3,4 which indicates
             the acceleration value of the laser. This is typically 1 below 25.4, 2 below 60,
@@ -627,26 +665,18 @@ class LihuiyuDevice(Service, ViewPort):
                     return
 
         @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update m2nano codes for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
-        @self.console_command(
             "network_update",
             hidden=True,
             help=_("Updates network state for m2nano networked."),
         )
-        def network_update(**kwargs):
+        def network_update(**kwgs):
             self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
         @self.console_command(
             "status",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_status(channel, _, **kwargs):
+        def realtime_status(channel, _, **kwgs):
             try:
                 self.controller.update_status()
                 channel(str(self.controller._status))
@@ -657,14 +687,14 @@ class LihuiyuDevice(Service, ViewPort):
             "continue",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_continue(**kwargs):
+        def realtime_continue(**kwgs):
             self.controller.abort_waiting = True
 
         @self.console_command(
             "pause",
             help=_("realtime pause/resume of the machine"),
         )
-        def realtime_pause(**kwargs):
+        def realtime_pause(**kwgs):
             if self.driver.paused:
                 self.driver.resume()
             else:
@@ -672,7 +702,7 @@ class LihuiyuDevice(Service, ViewPort):
             self.signal("pause")
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
-        def pipe_abort(channel, _, **kwargs):
+        def pipe_abort(channel, _, **kwgs):
             self.driver.reset()
             channel(_("Lihuiyu Channel Aborted."))
             self.signal("pipe;running", False)
@@ -687,7 +717,7 @@ class LihuiyuDevice(Service, ViewPort):
             "rapid_override",
             help=_("limit speed of typical rapid moves."),
         )
-        def rapid_override(channel, _, rapid_x=None, rapid_y=None, **kwargs):
+        def rapid_override(channel, _, rapid_x=None, rapid_y=None, **kwgs):
             if rapid_x is not None:
                 if rapid_y is None:
                     rapid_y = rapid_x
@@ -706,7 +736,7 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def egv_save(channel, _, filename, data=None, **kwargs):
+        def egv_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -735,7 +765,7 @@ class LihuiyuDevice(Service, ViewPort):
             "egv_import",
             help=_("Lihuiyu Engrave Buffer Import. egv_import <egv_file>"),
         )
-        def egv_import(channel, _, filename, **kwargs):
+        def egv_import(channel, _, filename, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
 
@@ -773,7 +803,7 @@ class LihuiyuDevice(Service, ViewPort):
             "egv_export",
             help=_("Lihuiyu Engrave Buffer Export. egv_export <egv_file>"),
         )
-        def egv_export(channel, _, filename, **kwargs):
+        def egv_export(channel, _, filename, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -796,7 +826,7 @@ class LihuiyuDevice(Service, ViewPort):
             "egv",
             help=_("Lihuiyu Engrave Code Sender. egv <lhymicro-gl>"),
         )
-        def egv(command, channel, _, remainder=None, **kwargs):
+        def egv(command, channel, _, remainder=None, **kwgs):
             if not remainder:
                 channel("Lihuiyu Engrave Code Sender. egv <lhymicro-gl>")
             else:
@@ -808,7 +838,7 @@ class LihuiyuDevice(Service, ViewPort):
             "challenge",
             help=_("Challenge code, challenge <serial number>"),
         )
-        def challenge_egv(command, channel, _, remainder=None, **kwargs):
+        def challenge_egv(command, channel, _, remainder=None, **kwgs):
             if not remainder:
                 raise CommandSyntaxError
             else:
@@ -819,25 +849,25 @@ class LihuiyuDevice(Service, ViewPort):
                 self.output.write(code)
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
-        def pipe_start(command, channel, _, **kwargs):
+        def pipe_start(command, channel, _, **kwgs):
             self.controller.update_state("active")
             self.controller.start()
             channel(_("Lihuiyu Channel Started."))
 
         @self.console_command("hold", help=_("Hold Controller"))
-        def pipe_pause(command, channel, _, **kwargs):
+        def pipe_pause(command, channel, _, **kwgs):
             self.controller.update_state("pause")
             self.controller.pause()
             channel("Lihuiyu Channel Paused.")
 
         @self.console_command("resume", help=_("Resume Controller"))
-        def pipe_resume(command, channel, _, **kwargs):
+        def pipe_resume(command, channel, _, **kwgs):
             self.controller.update_state("active")
             self.controller.start()
             channel(_("Lihuiyu Channel Resumed."))
 
         @self.console_command("usb_connect", help=_("Connects USB"))
-        def usb_connect(command, channel, _, **kwargs):
+        def usb_connect(command, channel, _, **kwgs):
             try:
                 self.controller.open()
                 channel(_("Usb Connection Opened."))
@@ -846,7 +876,7 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Usb Connection Refused"))
 
         @self.console_command("usb_disconnect", help=_("Disconnects USB"))
-        def usb_disconnect(command, channel, _, **kwargs):
+        def usb_disconnect(command, channel, _, **kwgs):
             try:
                 self.controller.close()
                 channel(_("CH341 Closed."))
@@ -854,7 +884,7 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Usb Connection Error"))
 
         @self.console_command("usb_reset", help=_("Reset USB device"))
-        def usb_reset(command, channel, _, **kwargs):
+        def usb_reset(command, channel, _, **kwgs):
             try:
                 self.controller.usb_reset()
                 channel(_("Usb Connection Reset"))
@@ -862,7 +892,7 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Usb Connection Error"))
 
         @self.console_command("usb_release", help=_("Release USB device"))
-        def usb_release(command, channel, _, **kwargs):
+        def usb_release(command, channel, _, **kwgs):
             try:
                 self.controller.usb_release()
                 channel(_("Usb Connection Released"))
@@ -870,11 +900,11 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Usb Connection Error"))
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
-        def usb_abort(command, channel, _, **kwargs):
+        def usb_abort(command, channel, _, **kwgs):
             self.controller.abort_retry()
 
         @self.console_command("usb_continue", help=_("Continues USB retries"))
-        def usb_continue(command, channel, _, **kwargs):
+        def usb_continue(command, channel, _, **kwgs):
             self.controller.continue_retry()
 
         @self.console_option(
@@ -899,7 +929,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         @self.console_command("lhyserver", help=_("activate the lhyserver."))
         def lhyserver(
-            channel, _, port=23, verbose=False, watch=False, quit=False, **kwargs
+            channel, _, port=23, verbose=False, watch=False, quit=False, **kwgs
         ):
             """
             The lhyserver provides for an open TCP on a specific port. Any data sent to this port will be sent directly
@@ -934,7 +964,7 @@ class LihuiyuDevice(Service, ViewPort):
             @self.console_command(
                 "lhyinterpreter", help=_("activate the lhyinterpreter.")
             )
-            def lhyinterpreter(channel, _, **kwargs):
+            def lhyinterpreter(channel, _, **kwgs):
                 try:
                     self.open_as("interpreter/lihuiyu", "lhyinterpreter")
                     channel(
@@ -946,23 +976,71 @@ class LihuiyuDevice(Service, ViewPort):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
     def service_attach(self, *args, **kwargs):
         self.realize()
 
-    @signal_listener("rotary_scale_x")
-    @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_active")
+    @signal_listener("plot_shift")
+    @signal_listener("plot_phase_type")
+    @signal_listener("plot_phase_value")
+    def plot_attributes_update(self, origin=None, *args):
+        self.driver.plot_attribute_update()
+
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
-    @signal_listener("bedsize")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
     @signal_listener("flip_x")
     @signal_listener("flip_y")
+    @signal_listener("home_corner")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        if origin is not None and origin != self.path:
+            return
+        corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
+        if corner == "auto":
+            pass
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
+        )
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
+        self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native
@@ -981,9 +1059,9 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known position.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def speed(self):
@@ -1014,3 +1092,44 @@ class LihuiyuDevice(Service, ViewPort):
             return self.tcp
         else:
             return self.controller
+
+    def acceleration_overrun(self, is_raster, op_speed):
+        """
+        https://github.com/meerk40t/meerk40t/wiki/Tech:-Lhymicro-Control-Protocols
+        Non - Raster:
+        1: [0 - 25.4]
+        2: (25.4 - 60]
+        3: (60 - 127)
+        4: [127 - max)
+        Raster:
+        1: [0 - 25.4]
+        2: (25.4 - 127]
+        3: [127 - 320)
+        4: [320 - max)
+        Four step ticks will move 1 mil distance.
+        Acceleration and deceleration (braking) happen
+        in the same amount of distance, so Accel 1-2 would be
+        512 steps / 4 = 128 * 2 (for both acceleration and braking)
+        for a total of 256 mil distance for ramping up to speed and slowing down after.
+        """
+        if is_raster:
+            limits = (320.0, 127.0, 25.4)
+        else:
+            limits = (127.0, 60.0, 25.4)
+
+        if op_speed >= limits[0]:
+            accel = 4
+            steps = 256
+        elif op_speed >= limits[1]:
+            accel = 3
+            steps = 256
+        elif op_speed >= limits[2]:
+            accel = 2
+            steps = 128
+        else:
+            accel = 1
+            steps = 128
+        return UNITS_PER_MIL * steps
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)

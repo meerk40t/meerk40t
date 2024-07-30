@@ -15,6 +15,7 @@ def plugin(kernel, lifecycle=None):
 
     if lifecycle == "register":
         kernel.register("provider/device/moshi", MoshiDevice)
+        kernel.register("provider/friendly/moshi", ("Older CO2-Laser (Moshi)", 4))
         _ = kernel.translation
         kernel.register(
             "dev_info/moshi-co2",
@@ -38,6 +39,6 @@ def plugin(kernel, lifecycle=None):
             },
         )
     if lifecycle == "preboot":
-        suffix = "moshi"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "moshi"
+        for d in kernel.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

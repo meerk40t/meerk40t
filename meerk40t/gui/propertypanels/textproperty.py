@@ -4,10 +4,18 @@ import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    wxToggleButton,
+)
 
 from ...svgelements import Color
-from ..icons import icons8_choose_font_50, icons8_text_50
+from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
@@ -85,7 +93,7 @@ class FontHistory(wx.Panel):
                     | wx.ST_NO_AUTORESIZE,
                 )
             )
-            self.last_font[i].SetMinSize((120, 90))
+            self.last_font[i].SetMinSize(dip_size(self, 120, 90))
             self.last_font[i].SetFont(self.default_font)
             self.last_font[i].SetToolTip(_("Choose last used font-settings"))
             self.textbox.Bind(wx.EVT_TEXT, self.on_text_change)
@@ -173,13 +181,14 @@ class TextPropertyPanel(ScrolledPanel):
         super().__init__(parent, *args, **kwds)
         self.context = context
         self.renderer = LaserRender(self.context)
+        self.SetHelpText("textproperty")
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
         self.label_fonttest = wx.StaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
         )
-        self.label_fonttest.SetMinSize((-1, 90))
+        self.label_fonttest.SetMinSize(dip_size(self, -1, 90))
         self.label_fonttest.SetFont(
             wx.Font(
                 16,
@@ -191,7 +200,7 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=25)
+            self, wx.ID_ANY, icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -247,26 +256,26 @@ class TextPropertyPanel(ScrolledPanel):
             mysize = 40
         else:
             mysize = 23
-        self.button_attrib_larger = wx.Button(
-            self, id=wx.ID_ANY, label="A", size=wx.Size(mysize, mysize)
+        self.button_attrib_larger = wxButton(
+            self, id=wx.ID_ANY, label="A", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_smaller = wx.Button(
-            self, id=wx.ID_ANY, label="a", size=wx.Size(mysize, mysize)
+        self.button_attrib_smaller = wxButton(
+            self, id=wx.ID_ANY, label="a", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_bold = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="b", size=wx.Size(mysize, mysize)
+        self.button_attrib_bold = wxToggleButton(
+            self, id=wx.ID_ANY, label="b", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_italic = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="i", size=wx.Size(mysize, mysize)
+        self.button_attrib_italic = wxToggleButton(
+            self, id=wx.ID_ANY, label="i", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_underline = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="u", size=wx.Size(mysize, mysize)
+        self.button_attrib_underline = wxToggleButton(
+            self, id=wx.ID_ANY, label="u", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_strikethrough = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="s", size=wx.Size(mysize, mysize)
+        self.button_attrib_strikethrough = wxToggleButton(
+            self, id=wx.ID_ANY, label="s", size=dip_size(self, mysize, mysize)
         )
 
-        self.check_variable = wx.CheckBox(self, wx.ID_ANY, _(" Translate Variables"))
+        self.check_variable = wxCheckBox(self, wx.ID_ANY, _(" Translate Variables"))
         self.check_variable.SetToolTip(_("If active, preview will translate variables"))
         self.check_variable.SetValue(True)
         self.__set_properties()
@@ -336,7 +345,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.text_text.SelectAll()
 
     def __set_properties(self):
-
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
 
         self.button_attrib_bold.SetFont(
@@ -375,7 +383,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
 
         align_options = [_("Left"), _("Center"), _("Right")]
-        self.rb_align = wx.RadioBox(
+        self.rb_align = wxRadioBox(
             self,
             wx.ID_ANY,
             "",
@@ -498,15 +506,8 @@ class TextPropertyPanel(ScrolledPanel):
         except AttributeError:
             pass
         mystyle = self.label_fonttest.GetWindowStyle()
-        mystyle1 = wx.ALIGN_LEFT
-        mystyle2 = wx.ST_ELLIPSIZE_END
         if self.node.anchor is None:
             self.node.anchor = "start"
-        # try:
-        #     size = self.node.wxfont.GetFractionalPointSize()
-        # except AttributeError:
-        #     size = self.node.wxfont.GetPointSize()
-        # print (f"Anchor: {self.node.anchor}, fontsize={size}")
         new_anchor = 0
         # Align the text to the left.
         mystyle1 = wx.ALIGN_LEFT
@@ -733,12 +734,14 @@ class TextProperty(MWindow):
         super().__init__(317, 360, *args, **kwds)
 
         self.panel = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_text.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: TextProperty.__set_properties
         self.SetTitle(_("Text Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

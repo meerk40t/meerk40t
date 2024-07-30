@@ -1,8 +1,12 @@
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import (
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
+)
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -10,19 +14,26 @@ _ = wx.GetTranslation
 
 class TCPController(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(499, 170, *args, **kwds)
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        super().__init__(500, 200, *args, **kwds)
+        self.SetHelpText("k40tcp")
+
+        self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_ip_host = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="empty"
         )
+        self.text_ip_host.SetMinSize(dip_size(self, 125, -1))
         self.text_port = TextCtrl(
-            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", check="int", limited=True, style=wx.TE_PROCESS_ENTER
         )
+        self.text_port.lower_limit = 0
+        self.text_port.upper_limit = 65535
+        self.text_port.lower_limit_err = 0
+        self.text_port.upper_limit_err = 65535
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
-        self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -35,10 +46,12 @@ class TCPController(MWindow):
         # end wxGlade
         self.max = 0
         self.state = None
+        # self.on_tcp_buffer(None, 20)
+        self.restore_aspect()
 
     def on_port_change(self):
         try:
-            self.service.port = int(self.text_port.GetValue())
+            self.service.port = max(0, min(65535, int(self.text_port.GetValue())))
         except ValueError:
             pass
 
@@ -49,8 +62,12 @@ class TCPController(MWindow):
         # begin wxGlade: Controller.__set_properties
         self.SetTitle(_("TCP-Controller"))
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
+        # For whatever reason the windows backgroundcolor is a dark grey,
+        # not sure why but, we just set it back to standard value
+        col = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        self.SetBackgroundColour(col)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
@@ -67,56 +84,73 @@ class TCPController(MWindow):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         self.text_status.SetToolTip(_("Connection status"))
-        self.text_ip_host.SetToolTip(_("IP/Host if the server computer"))
+        self.text_ip_host.SetToolTip(_("IP/hostname of the server computer"))
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
-        self.text_buffer_length.SetMinSize((165, 23))
+        self.text_buffer_length.SetMinSize(dip_size(self, 45, -1))
+        self.text_buffer_length.SetMaxSize(dip_size(self, 75, -1))
         self.text_buffer_length.SetToolTip(
             _("Current number of bytes in the write buffer.")
         )
-        self.text_buffer_max.SetMinSize((165, 23))
+        self.text_buffer_max.SetMinSize(dip_size(self, 45, -1))
+        self.text_buffer_max.SetMaxSize(dip_size(self, 75, -1))
         self.text_buffer_max.SetToolTip(
-            _("Current number of bytes in the write buffer.")
+            _("Highest number of bytes in the write buffer.")
         )
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Controller.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        write_buffer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main = self.sizer
         connection_controller = wx.BoxSizer(wx.VERTICAL)
-        sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         connection_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
-        label_7 = wx.StaticText(self, wx.ID_ANY, _("Status"))
+
+        sizer_connection = wx.BoxSizer(wx.HORIZONTAL)
+        info_left = StaticBoxSizer(
+            self, wx.ID_ANY, label=_("Status"), orientation=wx.HORIZONTAL
+        )
+        info_left.Add(self.text_status, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_connection.Add(info_left, 1, wx.EXPAND, 0)
+
+        info_right = StaticBoxSizer(
+            self, wx.ID_ANY, label=_("Connection"), orientation=wx.HORIZONTAL
+        )
         label_8 = wx.StaticText(self, wx.ID_ANY, _("Address"))
+        info_right.Add(label_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        info_right.Add(self.text_ip_host, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        info_right.AddSpacer(20)
         label_9 = wx.StaticText(self, wx.ID_ANY, _("Port"))
+        info_right.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        info_right.Add(self.text_port, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_15.Add(label_7, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_15.Add(self.text_status, 11, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_15.Add(label_8, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_15.Add(self.text_ip_host, 11, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_15.Add((20, 20), 0, 0, 0)
-        sizer_15.Add(label_9, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_15.Add(self.text_port, 11, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_connection.Add(info_right, 2, wx.EXPAND, 0)
+        connection_controller.Add(sizer_connection, 0, wx.EXPAND, 0)
 
-        connection_controller.Add(sizer_15, 0, 0, 0)
+        sizer_main.Add(connection_controller, 0, wx.EXPAND, 0)
+        buffer_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, label=_("Buffer"), orientation=wx.VERTICAL
+        )
+        buffer_sizer.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
 
-        sizer_1.Add(connection_controller, 0, wx.EXPAND, 0)
-        static_line_2 = wx.StaticLine(self, wx.ID_ANY)
-        static_line_2.SetMinSize((483, 5))
-        sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
-        sizer_1.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
         label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))
-        write_buffer.Add(label_12, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        write_buffer.Add(self.text_buffer_length, 10, wx.ALIGN_CENTER_VERTICAL, 0)
-        write_buffer.Add((20, 20), 0, 0, 0)
+        total_write_buffer = wx.BoxSizer(wx.HORIZONTAL)
+        left_buffer = wx.BoxSizer(wx.HORIZONTAL)
+        right_buffer = wx.BoxSizer(wx.HORIZONTAL)
+        left_buffer.Add(label_12, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        left_buffer.Add(self.text_buffer_length, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        total_write_buffer.Add(left_buffer, 1, wx.EXPAND, 0)
+
         label_13 = wx.StaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
-        write_buffer.Add(label_13, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        write_buffer.Add(self.text_buffer_max, 10, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_1.Add(write_buffer, 0, 0, 0)
-        self.SetSizer(sizer_1)
+        right_buffer.Add(label_13, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        right_buffer.Add(self.text_buffer_max, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        total_write_buffer.Add(right_buffer, 1, wx.EXPAND, 0)
+        buffer_sizer.Add(total_write_buffer, 0, wx.EXPAND, 0)
+
+        sizer_main.Add(buffer_sizer, 0, wx.EXPAND, 0)
         self.Layout()
         # end wxGlade
 
@@ -129,10 +163,13 @@ class TCPController(MWindow):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
-        if not self.service.networked:
-            self.button_device_connect.Enable(False)
-        else:
-            self.button_device_connect.Enable(True)
+        try:
+            if not self.service.networked:
+                self.button_device_connect.Enable(False)
+            else:
+                self.button_device_connect.Enable(True)
+        except AttributeError:
+            pass
 
     @signal_listener("tcp;status")
     def on_tcp_status(self, origin, state):
@@ -142,14 +179,18 @@ class TCPController(MWindow):
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
 

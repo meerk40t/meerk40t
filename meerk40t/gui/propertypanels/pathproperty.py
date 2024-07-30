@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.gui.icons import icons8_vector_50
+from meerk40t.gui.icons import icons8_vector
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import (
     ColorPanel,
@@ -15,7 +15,7 @@ from meerk40t.gui.propertypanels.attributes import (
     RoundedRectPanel,
     StrokeWidthPanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -29,6 +29,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
+        self.SetHelpText("pathproperty")
         self.node = node
         self.panels = []
         # `Id` at top in all cases...
@@ -92,8 +93,8 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.btn_info_get = wx.Button(self, wx.ID_ANY, _("Retrieve"))
-        self.check_classify = wx.CheckBox(
+        self.btn_info_get = wxButton(self, wx.ID_ANY, _("Retrieve"))
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)
@@ -119,7 +120,6 @@ class PathPropertyPanel(ScrolledPanel):
         make_raster = self.context.root.lookup("render-op/make_raster")
         if nodes is None or len(nodes) == 0 or not make_raster:
             return 0, 0
-        ratio = 0
         dpi = 300
         dots_per_units = dpi / UNITS_PER_INCH
         _mm = float(Length("1mm"))
@@ -146,13 +146,15 @@ class PathPropertyPanel(ScrolledPanel):
                 bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
-            new_width = int(width * dots_per_units)
-            new_height = int(height * dots_per_units)
+
+            try:
+                new_width = int(width * dots_per_units)
+                new_height = int(height * dots_per_units)
+            except OverflowError:
+                new_width = 0
+                new_height = 0
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
-            keep_ratio = True
-            ratio = 0
-
             all_pixel = new_height * new_width
             if all_pixel > 0:
                 image = make_raster(
@@ -160,7 +162,7 @@ class PathPropertyPanel(ScrolledPanel):
                     bounds=bounds,
                     width=new_width,
                     height=new_height,
-                    keep_ratio=keep_ratio,
+                    keep_ratio=True,
                 )
                 white_pixel = sum(
                     image.point(lambda x: 255 if x else 0)
@@ -193,12 +195,12 @@ class PathPropertyPanel(ScrolledPanel):
         return area_with_stroke, area_without_stroke
 
     def on_btn_get_infos(self, event):
-        def closed_path(path):
-            p1 = path.first_point
-            p2 = path.current_point
-            # print (p1, p2)
-            # print (type(p1).__name__, type(p2).__name__)
-            return p1 == p2
+        # def closed_path(path):
+        #     p1 = path.first_point
+        #     p2 = path.current_point
+        #     # print (p1, p2)
+        #     # print (type(p1).__name__, type(p2).__name__)
+        #     return p1 == p2
 
         def calc_points(node):
             from meerk40t.svgelements import (
@@ -256,11 +258,9 @@ class PathPropertyPanel(ScrolledPanel):
 
         elements = self.context.elements
         _mm = float(Length("1mm"))
-        total_area = 0
-        total_length = 0
         if hasattr(self.node, "as_path"):
             path = self.node.as_path()
-            total_length = path.length()
+            total_length = path.length(error=1e-2)
         else:
             total_length = 0
         total_area, second_area = self.covered_area([self.node])
@@ -285,6 +285,15 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_segments.SetValue("")
 
         self.Refresh()
+
+    def signal(self, signalstr, myargs):
+        if signalstr == "modified_by_tool":
+            self.set_widgets(self.node)
+            return
+
+        for panel in self.panels:
+            if hasattr(panel, "signal"):
+                panel.signal(signalstr, myargs)
 
     def __set_properties(self):
         return
@@ -353,12 +362,14 @@ class PathProperty(MWindow):
         super().__init__(288, 303, *args, **kwds)
 
         self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties
         self.SetTitle(_("Path Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

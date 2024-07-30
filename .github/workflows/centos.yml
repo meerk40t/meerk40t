@@ -4,6 +4,8 @@
 name: Meerk40t (CentOS 7)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
@@ -13,7 +15,7 @@ jobs:
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
-    
+
     - name: Ensure dependencies installed
       run: |
         pip3 install ezdxf pyserial
@@ -29,7 +31,7 @@ jobs:
 
     - name: Upload Release Assets
       id: release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |

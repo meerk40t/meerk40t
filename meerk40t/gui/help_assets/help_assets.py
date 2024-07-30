@@ -103,6 +103,80 @@ Die Platzhalter {date} und {time} können mit einem Format angegeben werden, so 
 Für eine komplette Liste der Format-Codes: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 """
 
+italian_wordlist_howto = """
+Variabili di testo consente di inserire elementi di testo in un progetto sostituendoli a dei “segnaposto”. Il testo viene sostituito al momento della lavorazione. È quindi possibile produrre più elementi con testi diversi senza dover modificare ogni volta il progetto.
+
+Un segnaposto consiste in una parola all'interno di parentesi graffe, ad esempio '{FIRSTNAME}'. La parola viene associato al segnaposto presente in Gestione variabili di testo e il segnaposto viene sostituito dal testo inserito nel contenuto della variabile di testo associata.
+
+Come esempio di utilizzo di questa funzionalità, immaginiamo di voler creare una serie di etichette per la prenotazione di posti a sedere ad una cena, ognuna con il nome di una persona diversa. Dopo aver creato il percorso di taglio per il contorno dell'etichetta, ad esempio un rettangolo, si utilizza lo strumento di disegno Testo per creare un elemento testo contenente quanto segue:
+
+Questo posto è riservato a {INVITATO}.
+Quindi si utilizza Gestione variabili di testo per creare una o più voci come segue:
+
+	|-----------|------|-------|
+	| Nome      | Tipo | Indice|
+	|-----------|------|-------|
+	| invitato  | Text | 0     |
+	|-----------|------|-------|
+
+Quindi selezionare la riga "invitato" e aggiungere i dati necessari nel pannello Contenuto, ad es:
+
+	Paolo
+	Davide
+	Andy
+
+Eseguendo la lavorazione si otterranno segnaposto individuali con nomi diversi, ad esempio 'Questo posto è riservato a Andy'.
+
+È possibile utilizzare tutti i nomi di segnaposto che si desidera nei campi di testo del progetto.
+
+Il valore Indice di partenza per il campo nella tabella Variabili di testo indica quale voce dell'elenco dei contenuti verrà utilizzata successivamente; zero significa la prima voce. L'indice viene automaticamente aumentato di uno alla fine di ogni singolo elemento processato.
+
+Ma supponiamo, per motivi di efficienza, di voler masterizzare contemporaneamente due tag di prenotazione di posti, ciascuno con un nome diverso dallo stesso elenco. In questo caso, se il primo tag usa '{NAME#+0}' e il secondo '{NAME#+1}' (notare il segno più). '{NAME}' o '{NAME#+0}' utilizza la voce corrente (indicata dal valore dell'indice), '{NAME#+1}' utilizza la voce successiva a quella corrente, ecc.
+
+Con questo sistema, è possibile utilizzare questi valori tutte le volte che si desidera nel proprio progetto.
+Per far avanzare l'indice è necessario fare clic sui pulsanti Prev / Next della barra degli strumenti.
+
+In alternativa all'inserimento manuale dei valori in Variabili di testo tramite il Gestione variabili di testo, è possibile utilizzare un file CSV standard separato da virgole. I nomi dei segnaposto sono definiti nella riga di intestazione standard del file CSV (la prima riga del file CSV) e i contenuti sono presi da tutte le righe successive. Il modo più semplice per creare un file CSV è utilizzare un foglio di calcolo, ad esempio Excel.
+
+Le voci caricate da un file CSV vengono visualizzate come Tipo CSV ed è possibile impostare i valori dell'indice per tutte le voci CSV contemporaneamente.
+
+Nota: se il CSV non ha una riga di intestazione, le colonne saranno denominate "colonna_1", "colonna_2" ecc.
+
+L'elenco di parole contiene anche alcune voci speciali (che potrebbero essere particolarmente utili per i progetti di calibrazione):
+
+	* 'version' - Versione di Meerk40t
+	* 'date' - Data di inizio dell’incisione
+	* 'time' - Ora di inizio dell’incisione
+	* 'op_device' - Dispositivo su cui si sta effettuando l’incisione
+	* 'op_speed' - Velocità dell'operazione corrente
+	* 'op_power' - PPI dell'operazione corrente
+	* 'op_dpi' - DPI dell'operazione corrente (raster)
+	* 'op_passes' - Passaggi dell'operazione corrente
+
+I segnaposto per "data" e "ora" possono anche contenere istruzioni di formattazione che consentono di formattarli secondo le convenzioni locali, ad esempio
+	{date@%d.%m.%Y} - 31.12.2022
+	{time@%H:%M} - 23:59
+
+Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+"""
+
+english_material_howto = """
+The Material Library Manager allows to create, maintain, use and manage operations that are customized to provide a desired effect with a given material (hence the name Material Library).
+The parameters you want to use e.g. for cutting acrylic are very different from the ones you want to use to engrave a picture on slate.
+You can share such a material setting with the MeerK40t community and you can benefit from the contributions of others by loading and using their settings.
+"""
+
+german_material_howto = """
+Die Material-Bibliothek erlaubt es Arbeitsgangs-Einstellungen für spezifische Materialien anzulegen und zu verwalten.
+Die Parameter, die man z.B. für das Schneiden von Acryl benötigt unterscheiden sich deutlich von denen, die man etwa zum Gravieren eine Fotos auf Schiefer braucht.
+Diese Daten können im Übrigen mit der Meerk40t Commnity geteilt werden, un man im Gegenzug von den Beiträgen anderer profitieren.
+"""
+italian_material_howto = """
+Il Gestore della libreria di materiali consente di creare, gestire, memorizzare e utilizzare i parametri di lavorazione per ottenere l'effetto desiderato con un determinato materiale.
+I parametri da utilizzare, ad esempio, per tagliare l'acrilico sono molto diversi da quelli da utilizzare per incidere un'immagine sull'ardesia.
+È possibile condividere tali impostazioni di lavorazione dei materiali con la comunità MeerK40t e beneficiare dei contributi degli altri caricando e utilizzando le loro impostazioni.
+"""
+
 
 def asset(context, asset):
     language = context.language
@@ -136,8 +210,8 @@ def asset(context, asset):
         text = globals()[f"{lang}_{asset}"]
     except KeyError:
         try:
-            text = globals()["english" + asset]
-        except KeyError as e:
+            text = globals()["english_" + asset]
+        except KeyError:
             pass
     if text and text[0] == "\n":
         return text[1:]

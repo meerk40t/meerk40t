@@ -27,8 +27,7 @@ class NewlyController:
         self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
-        name = self.service.label
-        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
+        self.usb_log = service.channel(f"{service.safe_label}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
         # Load Primary Pens
@@ -147,7 +146,7 @@ class NewlyController:
         if self.connection is None:
             if self.service.setting(bool, "mock", False) or self.force_mock:
                 self.connection = MockConnection(self.usb_log)
-                name = self.service.label
+                name = self.service.safe_label
                 self.connection.send = self.service.channel(f"{name}/send")
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
@@ -186,10 +185,10 @@ class NewlyController:
         self._last_updated_x, self._last_updated_y = self._last_x, self._last_y
 
     def update(self):
-        last_x, last_y = self.service.device.device_to_scene_position(
+        last_x, last_y = self.service.view.iposition(
             self._last_updated_x, self._last_updated_y
         )
-        x, y = self.service.device.device_to_scene_position(self._last_x, self._last_y)
+        x, y = self.service.view.iposition(self._last_x, self._last_y)
         self.sync()
         self.service.signal("driver;position", (last_x, last_y, x, y))
 
@@ -242,7 +241,7 @@ class NewlyController:
         """
         Move mode is done for any major movements usually starting out an execution.
 
-        eg.
+        e.g.
         VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
         @return:
         """
@@ -266,7 +265,7 @@ class NewlyController:
         Goto mode is done for minor between movements, where we don't need to set the power to 0, since we will be
         using PU; commands.
 
-        eg.
+        e.g.
         SP2;SP2;VQ15;VJ24;VS10;PR;PU2083,-5494;
 
         @return:
@@ -279,7 +278,7 @@ class NewlyController:
     def _set_frame_mode(self):
         """
         Frame mode is the standard framing operation settings.
-        eg.
+        e.g.
         SP0;VS20;PR;PD9891,0;PD0,-19704;PD-9891,0;PD0,19704;ZED;
 
         @return:
@@ -299,7 +298,7 @@ class NewlyController:
         """
         Vector mode typically is just the PD commands for a vector.
 
-        eg.
+        e.g.
         PR;SP1;DA65;VS187;PD0,-2534;PD1099,0;PD0,2534;PD-1099,0;
         @return:
         """
@@ -347,17 +346,22 @@ class NewlyController:
             for pt in outline:
                 self.frame(*pt)
             self.frame(*outline[0])
-            self.goto(x, y)  # Return to initial x, y if different than outline.
+            self.goto(x, y)  # Return to initial x, y if different from outline.
             self._clear_settings()
             self("ZED")
 
     def _execute_job(self):
+        self.service.laser_status = "active"
         self("ZED")
         cmd = b";".join(self._command_buffer) + b";"
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=cmd)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=cmd)
+        except ConnectionError:
+            pass
         self._command_buffer.clear()
         self._clear_settings()
+        self.service.laser_status = "idle"
 
     def open_job(self, job=None):
         """
@@ -568,8 +572,11 @@ class NewlyController:
 
     def raw(self, data):
         data = bytes(data, "latin1")
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=data)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=data)
+        except ConnectionError:
+            return
 
     def frame(self, x, y):
         self._set_frame_mode()

@@ -41,10 +41,6 @@ class GRBLControl:
         )
 
         channel = root.channel("console")
-        channel(
-            "[red]WARNING: [blue]This is currently in beta. Some parts do not work.[normal]",
-            ansi=True,
-        )
         _ = channel._
         try:
             server = root.open_as("module/TCPServer", "grbl", port=port)
@@ -58,7 +54,7 @@ class GRBLControl:
                 root.channel("grbl").watch(console)
                 server.events_channel.watch(console)
 
-            emulator = GRBLEmulator(root.device, root.device.scene_to_device_matrix())
+            emulator = GRBLEmulator(root.device, root.device.view.matrix)
             self.emulator = emulator
 
             # Link emulator and server.
@@ -68,6 +64,11 @@ class GRBLControl:
             emulator.reply = tcp_send_channel
 
             channel(_("TCP Server for GRBL Emulator on port: {port}").format(port=port))
+            channel(
+                _("Will translate incoming to device: {dev}").format(
+                    dev=root.device.name
+                )
+            )
         except OSError as e:
             channel(_("Server failed on port: {port}").format(port=port))
             channel(str(e.strerror))

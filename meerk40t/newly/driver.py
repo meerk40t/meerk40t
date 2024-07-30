@@ -16,6 +16,7 @@ from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.newly.controller import NewlyController
+from meerk40t.tools.geomstr import Geomstr
 
 
 class NewlyDriver:
@@ -115,6 +116,112 @@ class NewlyDriver:
         """
         self.laser = True
 
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        con = self.connection
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            con.program_mode()
+            # LOOP CHECKS
+            if self._aborting:
+                con.abort()
+                self._aborting = False
+                return
+
+            if segment_type == "line":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                con.mark(end.real, end.imag, settings=sets)
+                con.update()
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interp
+                g.clear()
+                g.quad(start, c1, end)
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag, settings=sets)
+                con.update()
+            elif segment_type == "cubic":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interp
+                g.clear()
+                g.cubic(start, c1, c2, end)
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag, settings=sets)
+                con.update()
+            elif segment_type == "arc":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interp
+                g.clear()
+                g.arc(start, c1, end)
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag, settings=sets)
+                con.update()
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    last_x, last_y = con.get_last_xy()
+                    if last_x != start.real or last_y != start.imag:
+                        con.goto(start.real, start.imag)
+                    con.dwell(sets.get("dwell_time"), settings=sets)
+                elif function == "wait":
+                    con.wait(sets.get("dwell_time"))
+                elif function == "home":
+                    con.goto(0, 0)
+                elif function == "goto":
+                    con.goto(start.real, start.imag)
+                elif function == "input":
+                    pass
+                elif function == "output":
+                    # Moshi has no core GPIO functionality
+                    pass
+            # elif segment_type == "raster":
+            #     con.sync()
+            #     con.raster(q)
+            #     con.update()
+        con.rapid_mode()
+
     def plot(self, plot):
         """
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
@@ -131,7 +238,6 @@ class NewlyDriver:
 
         @return:
         """
-        last_on = None
         con = self.connection
         queue = self.queue
         self.queue = list()
@@ -156,10 +262,19 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                interp = self.service.interp
+                g = Geomstr()
+                if isinstance(q, CubicCut):
+                    g.cubic(
+                        complex(*q.start),
+                        complex(*q.c1()),
+                        complex(*q.c2()),
+                        complex(*q.end),
+                    )
+                else:
+                    g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -167,10 +282,7 @@ class NewlyDriver:
                         return
                     while self.paused:
                         time.sleep(0.05)
-
-                    p = q.point(t)
-                    con.mark(*p, settings=q.settings)
-                    t += step_size
+                    con.mark(p.real, p.imag, settings=q.settings)
                 con.update()
             elif isinstance(q, PlotCut):
                 con.sync()
@@ -226,12 +338,9 @@ class NewlyDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-
         self.connection.sync()
         try:
-            self.connection.set_xy(*self.service.physical_to_device_position(x, y))
+            self.connection.set_xy(*self.service.view.position(x, y))
         except ConnectionError:
             # If this triggered the laser movement it might have been force aborted, and crash here in error.
             pass
@@ -245,9 +354,7 @@ class NewlyDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
 
         self.connection.sync()
         try:
@@ -274,7 +381,7 @@ class NewlyDriver:
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
         self.connection.sync()
         self.connection.home()
@@ -370,6 +477,7 @@ class NewlyDriver:
             return
         self.paused = True
         self.connection.pause()
+        self.service.signal("pause")
 
     def resume(self):
         """
@@ -382,6 +490,7 @@ class NewlyDriver:
         """
         self.paused = False
         self.connection.resume()
+        self.service.signal("pause")
 
     def reset(self):
         """
@@ -389,7 +498,9 @@ class NewlyDriver:
 
         @return:
         """
+        self.paused = False
         self.connection.abort()
+        self.service.signal("pause")
 
     def status(self):
         """

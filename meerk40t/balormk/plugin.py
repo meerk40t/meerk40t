@@ -7,9 +7,10 @@ This registers the relevant files for using an LMC Galvo Device.
 
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
+        from meerk40t.balormk import galvo_commands
         from meerk40t.balormk.gui import gui
 
-        return [gui.plugin]
+        return [gui.plugin, galvo_commands.plugin]
     elif lifecycle == "invalidate":
         try:
             import usb.core  # pylint: disable=unused-import
@@ -21,6 +22,7 @@ def plugin(kernel, lifecycle):
         from meerk40t.balormk.device import BalorDevice
 
         kernel.register("provider/device/balor", BalorDevice)
+        kernel.register("provider/friendly/balor", ("Fibre-Laser", 3))
         _ = kernel.translation
         kernel.register(
             "dev_info/balor-fiber",
@@ -130,6 +132,6 @@ def plugin(kernel, lifecycle):
         )
 
     elif lifecycle == "preboot":
-        suffix = "balor"
-        for d in kernel.settings.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "balor"
+        for d in kernel.settings.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

@@ -1,3 +1,9 @@
+"""
+Affinemover is a replacement for SelectionWidget. It performs the selected widget manipulations toggling itself in
+place of the selectionwidget when `affinemover` console command is called. It's generally unusable but performs all
+affine transformations on selected objects by moving three points either locked, mirrored, or anchored.
+"""
+
 import wx
 
 from meerk40t.gui.scene.sceneconst import (

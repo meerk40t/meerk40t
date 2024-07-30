@@ -7,7 +7,6 @@ from .cutplan import CutPlan, CutPlanningFailedError
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
-from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.util_console import ConsoleOperation
@@ -46,6 +45,36 @@ def plugin(kernel, lifecycle=None):
         kernel.register_choices("planner", choices)
 
         choices = [
+            {
+                "attr": "opt_raster_optimisation",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Cluster raster objects"),
+                "tip": _(
+                    "Separate non-overlapping raster objects.\n"
+                    "Active: this will raster close (i.e. overlapping) objects as one,\n"
+                    "but will separately process objects lying apart from each other.\n"
+                    "Inactive: all objects will be lasered as one single unit."
+                ),
+                "page": "Optimisations",
+                "section": "_20_Reducing Movements",
+                "subsection": "Splitting rasters",
+            },
+            {
+                "attr": "opt_raster_opt_margin",
+                "object": context,
+                "default": "1mm",
+                "type": Length,
+                "label": _("Margin:"),
+                "tip": _(
+                    "Allowed gap between rasterable objects, to still be counted as one."
+                ),
+                "page": "Optimisations",
+                "section": "_20_Reducing Movements",
+                "subsection": "Splitting rasters",
+                "conditional": (context, "opt_raster_optimisation"),
+            },
             {
                 "attr": "opt_reduce_travel",
                 "object": context,
@@ -191,7 +220,7 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Group Inner Burns"),
                 "tip": _(
-                    "Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
+                    "Try to complete a set of inner burns and the associated outer cut before moving onto other elements.\n"
                     + "This option only does something if Burn Inner First is also selected. "
                     + "If your design has multiple separate pieces on it, "
                     + "this should mostly cause each piece to be burned in entirety "
@@ -226,9 +255,47 @@ def plugin(kernel, lifecycle=None):
                 "section": "_20_Reducing Movements",
                 "hidden": True,
             },
+            {
+                "attr": "opt_reduce_details",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Reduce polyline details"),
+                "tip": _(
+                    "Active: reduce the details of polyline elements,\n"
+                    + "so that less information needs to be sent to the laser."
+                )
+                + "\n"
+                + _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
+                ),
+                "page": "Optimisations",
+                "section": "_30_Details",
+                "subsection": "_10_",
+            },
+            {
+                "attr": "opt_reduce_tolerance",
+                "object": context,
+                "default": 10,
+                "type": int,
+                "label": _("Level"),
+                "style": "option",
+                "choices": (1, 10, 50, 100),
+                "display": (_("Minimal"), _("Fine"), _("Medium"), _("Coarse")),
+                "tip": _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
+                ),
+                "page": "Optimisations",
+                "section": "_30_Details",
+                "subsection": "_10_",
+                "conditional": (context, "opt_reduce_details"),
+            },
         ]
+        for c in choices:
+            c["help"] = "optimisation"
         kernel.register_choices("optimize", choices)
-
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)
         context.setting(bool, "opt_reduce_directions", False)
@@ -243,9 +310,11 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "poststart":
         planner = kernel.planner
         auto = hasattr(kernel.args, "auto") and kernel.args.auto
+        console = hasattr(kernel.args, "console") and kernel.args.console
+        quit = hasattr(kernel.args, "quit") and kernel.args.quit
         if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-            if hasattr(kernel.args, "quit") and kernel.args.quit:
+            if quit or not console:
                 planner("plan console quit\n")
             planner("plan spool\n")
 
@@ -260,15 +329,16 @@ class Planner(Service):
         Service.__init__(self, kernel, "planner")
         self._plan = dict()
         self._default_plan = "0"
+        self.do_optimization = True
 
     def length(self, v):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.width))
+        return float(Length(v, relative_length=self.device.view.width))
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.height))
+        return float(Length(v, relative_length=self.device.view.height))
 
     def get_or_make_plan(self, plan_name):
         """
@@ -350,8 +420,10 @@ class Planner(Service):
             operations = data  # unused.
             if command == "copy-selected":
                 operations = list(self.elements.ops(emphasized=True))
+                copy_selected = True
             else:
                 operations = list(self.elements.ops())
+                copy_selected = False
 
             def init_settings():
                 for prefix in ("prepend", "append"):
@@ -407,7 +479,9 @@ class Planner(Service):
                                         except ValueError:
                                             setvalue = 0
                                     if mask != 0 or setvalue != 0:
-                                        addop = OutputOperation(mask, setvalue)
+                                        addop = OutputOperation(
+                                            output_mask=mask, output_value=setvalue
+                                        )
                             elif optype == "util goto":
                                 if opparam is not None:
                                     params = opparam.split(",")
@@ -423,7 +497,10 @@ class Planner(Service):
                                             y = float(Length(params[1]))
                                         except ValueError:
                                             y = 0
-                                    addop = GotoOperation(x=x, y=y)
+                                    absolute = False
+                                    if len(params) > 2:
+                                        absolute = params[2] not in ("False", "0")
+                                    addop = GotoOperation(x=x, y=y, absolute=absolute)
                             elif optype == "util wait":
                                 if opparam is not None:
                                     try:
@@ -465,7 +542,6 @@ class Planner(Service):
             #     "op image",
             #     "op engrave",
             #     "op dots",
-            #     "op hatch",
             #     "cutcode",
             #     "util console",
             #     "util wait",
@@ -474,15 +550,20 @@ class Planner(Service):
             #     "util input",
             #     "util output",
             #     "place point"
-            #     "lasercode",
             #     "blob",
             # )
             for c in operations:
+                isactive = True
                 try:
                     if not c.output:
-                        continue
+                        isactive = False
                 except AttributeError:
                     pass
+                if not isactive and copy_selected and len(operations) == 1:
+                    # If it's the only one we make an exception
+                    isactive = True
+                if not isactive:
+                    continue
                 if not hasattr(c, "type") or c.type is None:
                     # Node must be a type of node.
                     continue
@@ -587,6 +668,23 @@ class Planner(Service):
             return data_type, data
 
         @self.console_command(
+            "geometry",
+            help=_("plan<?> geometry"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_geometry(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Converting data"), keep=1)
+                busy.show()
+
+            data.geometry()
+            self.signal("plan", data.name, 4)
+            return data_type, data
+
+        @self.console_command(
             "blob",
             help=_("plan<?> blob"),
             input_type="plan",
@@ -596,7 +694,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                busy.change(msg=_("Generating lasercode"), keep=1)
+                busy.change(msg=_("Converting data"), keep=1)
                 busy.show()
 
             data.blob()
@@ -666,7 +764,7 @@ class Planner(Service):
 
             for c in data.plan:
                 if isinstance(c, CutCode):
-                    operations.add(c, type="cutcode")
+                    operations.add(type="cutcode", cutcode=c)
                 if isinstance(
                     c,
                     (
@@ -675,7 +773,6 @@ class Planner(Service):
                         CutOpNode,
                         EngraveOpNode,
                         DotsOpNode,
-                        HatchOpNode,
                     ),
                 ):
                     copy_c = copy(c)

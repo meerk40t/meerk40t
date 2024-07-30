@@ -1,19 +1,32 @@
+import platform
+
 import wx
 from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
-    icons8_delete_50,
-    icons8_emergency_stop_button_50,
-    icons8_gas_industry_50,
-    icons8_goal_50,
-    icons8_laser_beam_hazard2_50,
-    icons8_pause_50,
-    icons8_pentagon_50,
-    icons8_save_50,
+    get_default_icon_size,
+    icon_closed_door,
+    icon_open_door,
+    icon_update_plan,
+    icons8_delete,
+    icons8_emergency_stop_button,
+    icons8_gas_industry,
+    icons8_laser_beam_hazard,
+    icons8_pause,
+    icons8_pentagon,
+    icons8_save,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
-from meerk40t.gui.wxutils import StaticBoxSizer, disable_window
+from meerk40t.gui.wxutils import (
+    HoverButton,
+    ScrolledPanel,
+    StaticBoxSizer,
+    dip_size,
+    disable_window,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -24,15 +37,16 @@ def register_panel_laser(window, context):
     plan_panel = JobPanel(window, wx.ID_ANY, context=context)
 
     optimize_panel = OptimizePanel(window, wx.ID_ANY, context=context)
-    jog_drag = wx.Panel(window, wx.ID_ANY)
-    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=25)
-    drag_panel = Drag(jog_drag, wx.ID_ANY, context=context, icon_size=25)
+    # jog_drag = wx.Panel(window, wx.ID_ANY)
+    jog_drag = ScrolledPanel(window, wx.ID_ANY)
+    jog_drag.SetupScrolling()
+    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
+    drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)
     main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-    main_sizer.AddStretchSpacer()
-    main_sizer.Add(jog_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.AddSpacer(25)
-    main_sizer.Add(drag_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.AddStretchSpacer()
+    # main_sizer.AddStretchSpacer()
+    main_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    # main_sizer.AddStretchSpacer()
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
     move_panel = MovePanel(window, wx.ID_ANY, context=context)
@@ -47,7 +61,7 @@ def register_panel_laser(window, context):
     )
     pane = (
         aui.AuiPaneInfo()
-        .Left()
+        .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
         .FloatingSize(300, 270)
@@ -59,9 +73,9 @@ def register_panel_laser(window, context):
     pane.control = notebook
     pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))
+    notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
-    notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(move_panel, _("Move"))
 
     window.on_pane_create(pane)
@@ -80,6 +94,19 @@ def register_panel_laser(window, context):
     ]
     context.kernel.register_choices("preferences", choices)
 
+    def on_resize(event):
+        wb_size = jog_drag.ClientSize
+        if platform.system() == "Linux":
+            # They don't resize well
+            panel_size = (max(20, wb_size[0] / 2 - 40), wb_size[1])
+        else:
+            panel_size = (wb_size[0] / 2, wb_size[1])
+
+        jog_panel.set_icons(dimension=panel_size)
+        drag_panel.set_icons(dimension=panel_size)
+
+    jog_drag.Bind(wx.EVT_SIZE, on_resize)
+
 
 class LaserPanel(wx.Panel):
     """
@@ -91,89 +118,154 @@ class LaserPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("laserpanel")
+        self.context.root.setting(bool, "laserpane_arm", True)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.icon_size = 0.5 * get_default_icon_size()
 
-        sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
-        sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
+        self.sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
+        sizer_main.Add(self.sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
 
-        self.selected_device = self.context.device
-        index = -1
-        for i, s in enumerate(self.available_devices):
-            if s is self.selected_device:
-                index = i
-                break
-        spools = [s.label for s in self.available_devices]
-
         self.combo_devices = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self, wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
         )
-        self.combo_devices.SetSelection(index)
-
-        sizer_devices.Add(self.combo_devices, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.btn_config_laser = wxButton(self, wx.ID_ANY, "*")
+        self.btn_config_laser.SetToolTip(
+            _("Opens device-specific configuration window")
+        )
+        kernel = self.context.kernel
+        if (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
+            self.btn_config_laser.Enable(False)
+        self.sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
+        self.btn_config_laser.SetMinSize(dip_size(self, 20, -1))
+        self.sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control, 0, wx.EXPAND, 0)
 
-        self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
+        self.button_start = HoverButton(self, wx.ID_ANY, _("Start"))
         self.button_start.SetToolTip(_("Execute the Job"))
-        self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap(resize=25))
-        self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
-        sizer_control.Add(self.button_start, 1, 0, 0)
+        self.button_start.SetBitmap(
+            icons8_gas_industry.GetBitmap(
+                resize=self.icon_size,
+                color=wx.WHITE,
+                keepalpha=True,
+                force_darkmode=True,
+            )
+        )
+        self.button_start.SetBitmapFocus(
+            icons8_gas_industry.GetBitmap(
+                resize=self.icon_size,
+            )
+        )
+        self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
+        self.button_start.SetForegroundColour(self.context.themes.get("start_fg"))
+        self.button_start.SetFocusColour(self.context.themes.get("start_fg_focus"))
+        # self.button_start.SetDisabledBackgroundColour(wx.Colour("FOREST GREEN"))
 
-        self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
-        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
+        sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
+
+        self.button_pause = HoverButton(self, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
-            icons8_pause_50.GetBitmap(resize=25, use_theme=False)
+            icons8_pause.GetBitmap(
+                resize=self.icon_size,
+            )
         )
-        self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
-        sizer_control.Add(self.button_pause, 1, 0, 0)
+        sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
 
-        self.button_stop = wx.Button(self, wx.ID_ANY, _("Stop"))
+        self.button_stop = HoverButton(self, wx.ID_ANY, _("Stop"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
-        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        sizer_control.Add(self.button_stop, 1, 0, 0)
+        self.button_stop.SetBitmap(
+            icons8_emergency_stop_button.GetBitmap(
+                resize=self.icon_size,
+                color=self.context.themes.get("stop_fg"),
+                keepalpha=True,
+                force_darkmode=True,
+            )
+        )
+        self.button_stop.SetBitmapFocus(
+            icons8_emergency_stop_button.GetBitmap(
+                resize=self.icon_size,
+            )
+        )
+        self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
+        self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
+        self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
+        sizer_control.Add(self.button_stop, 1, wx.EXPAND, 0)
 
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_misc, 0, wx.EXPAND, 0)
 
-        self.arm_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Arm"))
+        self.arm_toggle = HoverButton(self, wx.ID_ANY, _("Arm"))
         self.arm_toggle.SetToolTip(_("Arm the job for execution"))
-        sizer_control_misc.Add(self.arm_toggle, 1, wx.ALIGN_CENTER, 0)
+        self.arm_toggle.SetBitmap(
+            icon_closed_door.GetBitmap(
+                resize=self.icon_size,
+                color=self.context.themes.get("arm_fg"),
+            )
+        )
+        self.arm_toggle.SetBitmapFocus(
+            icon_closed_door.GetBitmap(
+                resize=self.icon_size,
+            )
+        )
+        self.arm_toggle.SetForegroundColour(self.context.themes.get("arm_fg"))
+        self.arm_toggle.SetFocusColour(self.context.themes.get("stop_fg_focus"))
+        self.armed = False
+        sizer_control_misc.Add(self.arm_toggle, 1, wx.EXPAND, 0)
 
         self.check_laser_arm()
 
-        self.button_outline = wx.Button(self, wx.ID_ANY, _("Outline"))
+        self.button_outline = wxButton(self, wx.ID_ANY, _("Outline"))
         self.button_outline.SetToolTip(_("Trace the outline the job"))
-        self.button_outline.SetBitmap(icons8_pentagon_50.GetBitmap(resize=25))
-        sizer_control_misc.Add(self.button_outline, 1, 0, 0)
+        self.button_outline.SetBitmap(
+            icons8_pentagon.GetBitmap(
+                resize=self.icon_size,
+            )
+        )
+        sizer_control_misc.Add(self.button_outline, 1, wx.EXPAND, 0)
 
-        self.button_simulate = wx.Button(self, wx.ID_ANY, _("Simulate"))
+        self.button_simulate = wxButton(self, wx.ID_ANY, _("Simulate"))
         self.button_simulate.SetToolTip(_("Simulate the Design"))
         self.button_simulate.SetBitmap(
-            icons8_laser_beam_hazard2_50.GetBitmap(resize=25)
+            icons8_laser_beam_hazard.GetBitmap(
+                resize=self.icon_size,
+            )
         )
-        sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
+        sizer_control_misc.Add(self.button_simulate, 1, wx.EXPAND, 0)
 
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.rotary_indicator = wx.StaticText(
+            self, wx.ID_ANY, _("Rotary active"), style=wx.ALIGN_CENTRE_HORIZONTAL
+        )
+        bg_color = self.context.themes.get("pause_bg")
+        fg_color = self.context.themes.get("pause_fg")
+        self.rotary_indicator.SetBackgroundColour(bg_color)
+        self.rotary_indicator.SetForegroundColour(fg_color)
+        box.Add(self.rotary_indicator, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(box, 0, wx.EXPAND, 0)
+
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self._optimize = True
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(self._optimize)
-        self.checkbox_adjust = wx.CheckBox(self, wx.ID_ANY, _("Override"))
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
+        self.checkbox_adjust = wxCheckBox(self, wx.ID_ANY, _("Override"))
         self.checkbox_adjust.SetToolTip(
             _("Allow ad-hoc adjustment of speed and power.")
             + "\n"
@@ -225,8 +317,11 @@ class LaserPanel(wx.Panel):
         self.button_start.Bind(wx.EVT_LEFT_DOWN, self.on_start_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
+        self.Bind(wx.EVT_BUTTON, self.on_check_arm, self.arm_toggle)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self.button_start)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self.button_outline)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self.button_simulate)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
@@ -235,12 +330,15 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
         self.Bind(wx.EVT_SLIDER, self.on_slider_power, self.slider_power)
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
+        self.Bind(wx.EVT_BUTTON, self.on_config_button, self.btn_config_laser)
         # end wxGlade
-        if index == -1:
-            disable_window(self)
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
         self.update_override_controls()
+        self.on_device_changes()
+        index = self.combo_devices.GetSelection()
+        if index == -1:
+            disable_window(self)
         # Check for a real click of the execute button
         self.button_start_was_clicked = False
 
@@ -327,7 +425,8 @@ class LaserPanel(wx.Panel):
 
     def on_optimize(self, event):
         newval = bool(self.checkbox_optimize.GetValue())
-        if newval != self._optimize:
+        if newval != self.context.planner.do_optimization:
+            self.context.planner.do_optimization = newval
             self.context.signal("optimize", newval)
 
     @signal_listener("optimize")
@@ -337,27 +436,37 @@ class LaserPanel(wx.Panel):
         except ValueError:
             # You never know
             return
-        if self._optimize != newvalue:
-            self._optimize = newvalue
+        if self.context.planner.do_optimization != newvalue:
+            self.context.planner.do_optimization = newvalue
+        if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
 
     @signal_listener("device;modified")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
-    def spooler_lookup(self, *args):
+    def on_device_changes(self, *args):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
         index = -1
+        count = 0
         self.combo_devices.Clear()
         for i, spool in enumerate(self.available_devices):
             if index < 0 and spool is self.selected_device:
                 index = i
             self.combo_devices.Append(spool.label)
+            count += 1
         self.combo_devices.SetSelection(index)
         self.set_pause_color()
         self.update_override_controls()
+        showit = count > 1
+        self.sizer_devices.ShowItems(showit)
+        flag = False
+        if hasattr(self.context.device, "rotary"):
+            flag = self.context.device.rotary.active
+        self.rotary_indicator.Show(flag)
+        self.Layout()
 
     @signal_listener("device;connected")
     def on_connectivity(self, *args):
@@ -365,54 +474,112 @@ class LaserPanel(wx.Panel):
         self.update_override_controls()
 
     def set_pause_color(self):
-        new_color = None
+        new_bg_color = None
+        new_fg_color = None
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.YELLOW
+                new_bg_color = self.context.themes.get("pause_bg")
+                new_fg_color = self.context.themes.get("pause_fg")
                 new_caption = _("Resume")
         except AttributeError:
             pass
-        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetBackgroundColour(new_bg_color)
+        self.button_pause.SetForegroundColour(new_fg_color)
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
     def on_device_pause_toggle(self, origin, *args):
         self.set_pause_color()
 
+    @signal_listener("laser_armed")
+    def signal_laser_arm(self, origin, *message):
+        try:
+            newval = bool(message[0])
+        except ValueError:
+            # You never know
+            newval = False
+        if self.armed != newval:
+            self.armed = newval
+            self.check_laser_arm()
+
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
-        self.context.setting(bool, "laserpane_arm", True)
-        if self.context.laserpane_arm:
+        ctxt = self.context.kernel.root
+        ctxt.setting(bool, "_laser_may_run", False)
+        if self.context.root.laserpane_arm:
             if not self.arm_toggle.Shown:
                 self.arm_toggle.Show(True)
                 self.Layout()
-            if self.arm_toggle.GetValue():
-                self.arm_toggle.SetBackgroundColour(wx.RED)
+            if self.armed:
+                self.arm_toggle.SetBackgroundColour(self.context.themes.get("arm_bg"))
+                self.button_start.SetBackgroundColour(
+                    self.context.themes.get("start_bg")
+                )
+                self.arm_toggle.SetBitmap(
+                    icon_open_door.GetBitmap(
+                        resize=self.icon_size,
+                        color=self.context.themes.get("arm_fg"),
+                    )
+                )
+                self.arm_toggle.SetBitmapFocus(
+                    icon_open_door.GetBitmap(
+                        resize=self.icon_size,
+                    )
+                )
+                self.arm_toggle.SetLabel(_("Disarm"))
+                self.arm_toggle.SetToolTip(
+                    _("Prevent the laser from accidentally executing")
+                )
                 self.button_start.Enable(True)
+                ctxt._laser_may_run = True
             else:
-                self.arm_toggle.SetBackgroundColour(wx.GREEN)
+                self.arm_toggle.SetBackgroundColour(
+                    self.context.themes.get("arm_bg_inactive")
+                )
+                self.button_start.SetBackgroundColour(
+                    self.context.themes.get("start_bg_inactive")
+                )
                 self.button_start.Enable(False)
+                self.arm_toggle.SetBitmap(
+                    icon_closed_door.GetBitmap(
+                        resize=self.icon_size,
+                        color=self.context.themes.get("arm_fg"),
+                    )
+                )
+                self.arm_toggle.SetBitmapFocus(
+                    icon_closed_door.GetBitmap(
+                        resize=self.icon_size,
+                    )
+                )
+                self.arm_toggle.SetLabel(_("Arm"))
+                self.arm_toggle.SetToolTip(_("Arm the job for execution"))
+                ctxt._laser_may_run = False
         else:
             if self.arm_toggle.Shown:
                 self.arm_toggle.Show(False)
                 self.Layout()
+            self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
             self.button_start.Enable(True)
+            ctxt._laser_may_run = True
+        self.context.signal("laser_armed", self.armed)
+        self.context.signal("icons")
 
     def on_check_arm(self, event):
+        self.armed = not self.armed
         self.check_laser_arm()
 
     def on_menu_arm_enable(self, event):
-        self.context.laserpane_arm = True
+        self.context.root.laserpane_arm = True
         self.check_laser_arm()
 
     def on_menu_arm_disable(self, event):
-        self.context.laserpane_arm = False
+        self.context.root.laserpane_arm = False
         self.check_laser_arm()
 
     def on_menu_arm(self, event):
         menu = wx.Menu()
-        if not self.context.laserpane_arm:
+        if not self.context.root.laserpane_arm:
             self.Bind(
                 wx.EVT_MENU,
                 self.on_menu_arm_enable,
@@ -458,7 +625,7 @@ class LaserPanel(wx.Panel):
                 )
             else:
                 self.context("planz clear copy preprocess validate blob spool\n")
-        self.arm_toggle.SetValue(False)
+        self.armed = False
         self.check_laser_arm()
         if self.context.auto_spooler:
             self.context("window open JobSpooler\n")
@@ -472,7 +639,10 @@ class LaserPanel(wx.Panel):
         self.context("estop\n")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("element* trace hull\n")
+        try:
+            self.context.device.outline()
+        except AttributeError:
+            self.context("element* trace hull\n")
 
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("element* trace complex\n")
@@ -495,7 +665,10 @@ class LaserPanel(wx.Panel):
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
-        self.selected_device = self.available_devices[index]
+        try:
+            self.selected_device = self.available_devices[index]
+        except IndexError:
+            return
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
@@ -503,6 +676,9 @@ class LaserPanel(wx.Panel):
         zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
         self.set_pause_color()
+
+    def on_config_button(self, event):
+        self.context.device("window toggle Configuration\n")
 
 
 class JobPanel(wx.Panel):
@@ -518,23 +694,23 @@ class JobPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
-
+        self.icon_size = 0.5 * get_default_icon_size()
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
-        self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
-        self.button_clear.SetBitmap(icons8_delete_50.GetBitmap(resize=25))
+        self.button_clear.SetBitmap(icons8_delete.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
-        self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
+        self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
-        self.button_update.SetBitmap(icons8_goal_50.GetBitmap(resize=25))
+        self.button_update.SetBitmap(icon_update_plan.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_update, 1, 0, 0)
 
-        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save_file = wxButton(self, wx.ID_ANY, _("Save"))
         self.button_save_file.SetToolTip(_("Save the job"))
-        self.button_save_file.SetBitmap(icons8_save_50.GetBitmap(resize=25))
+        self.button_save_file.SetBitmap(icons8_save.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_save_file, 1, 0, 0)
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
@@ -546,7 +722,7 @@ class JobPanel(wx.Panel):
         sizer_source.Add(self.text_plan, 2, 0, 0)
 
         self.context.setting(bool, "laserpane_hold", False)
-        self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
+        self.checkbox_hold = wxCheckBox(self, wx.ID_ANY, _("Hold"))
         self.checkbox_hold.SetToolTip(
             _("Preserve the job between running, rerunning, and execution")
         )
@@ -572,15 +748,6 @@ class JobPanel(wx.Panel):
             else:
                 self.text_plan.SetValue(f"{str(stage)}: {str(plan)}")
 
-    @signal_listener("optimize")
-    def optimize_update(self, origin, *message):
-        try:
-            newvalue = bool(message[0])
-        except ValueError:
-            # You never know
-            return
-        self._optimize = newvalue
-
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         gui = self.context.gui
         extension = "txt"
@@ -599,8 +766,12 @@ class JobPanel(wx.Panel):
 
             if not pathname.lower().endswith(f".{extension}"):
                 pathname += f".{extension}"
+            if self.context.planner.do_optimization:
+                optpart = "preopt optimize "
+            else:
+                optpart = ""
             self.context(
-                f'planz clear copy preprocess validate blob preopt optimize save_job "{pathname}"\n'
+                f'planz clear copy preprocess validate blob {optpart}save_job "{pathname}"\n'
             )
 
     def on_button_load(self, event):  # wxGlade: LaserPanel.<event_handler>
@@ -611,7 +782,7 @@ class JobPanel(wx.Panel):
 
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
-        if self._optimize:
+        if self.context.planner.do_optimization:
             self.context("planz clear copy preprocess validate blob preopt optimize\n")
         else:
             self.context("planz clear copy preprocess validate blob\n")
@@ -641,12 +812,10 @@ class OptimizePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self._optimize = True
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(self._optimize)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         prechoices = context.lookup("choices/optimize")
         choices = list(map(copy, prechoices))
         # Clear the page-entry
@@ -671,15 +840,16 @@ class OptimizePanel(wx.Panel):
         except ValueError:
             # You never know
             return
-        if self._optimize != newvalue:
-            self._optimize = newvalue
+        if self.context.planner.do_optimization != newvalue:
+            self.context.planner.do_optimization = newvalue
+        if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
 
     def on_optimize(self, event):
         newvalue = bool(self.checkbox_optimize.GetValue())
-        if newvalue != self._optimize:
-            self._optimize = newvalue
+        if newvalue != self.context.planner.do_optimization:
+            self.context.planner.do_optimization = newvalue
             self.context.signal("optimize", newvalue)
             self.optimize_panel.Enable(newvalue)
 

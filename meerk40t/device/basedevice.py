@@ -34,12 +34,37 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
 
         @kernel.console_command(
+            "viewport_update",
+            hidden=True,
+            help=_("Update Coordinate System"),
+        )
+        def viewport_update(**kwargs):
+            try:
+                kernel.device.realize()
+            except AttributeError:
+                pass
+
+        @kernel.console_command(
+            "devinfo",
+            help=_("Show current device info."),
+            input_type=None,
+            output_type=None,
+        )
+        def devinfo(channel, _, remainder=None, **kwargs):
+            """
+            Display device status info.
+            """
+            x, y = kernel.device.current
+            nx, ny = kernel.device.native
+            channel(_(f"{x},{y};{nx},{ny};"))
+
+        @kernel.console_command(
             "device",
             help=_("show device providers"),
             input_type=None,
             output_type="device",
         )
-        def device_info(channel, _, remainder=None, **kwargs):
+        def device_info_cmd(channel, _, remainder=None, **kwargs):
             """
             Display device info.
             """

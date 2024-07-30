@@ -12,11 +12,18 @@ class PointTool(ToolWidget):
     Adds points with clicks.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
 
     def process_draw(self, gc: wx.GraphicsContext):
         pass
+
+    def end_tool(self, force=False):
+        self.scene.context.signal("statusmsg", "")
+        self.scene.request_refresh()
+        if force or self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context("tool none\n")
 
     def event(
         self,
@@ -30,7 +37,10 @@ class PointTool(ToolWidget):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
             if nearest_snap is None:
-                point = Point(space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                point = Point(sx, sy)
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])
             elements = self.scene.context.elements
@@ -45,12 +55,12 @@ class PointTool(ToolWidget):
             if elements.classify_new:
                 elements.classify([node])
             self.notify_created(node)
+            self.end_tool()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or event_type == "rightdown":
             if self.scene.pane.tool_active:
-                self.scene.pane.tool_active = False
-                self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
+            self.end_tool(force=True)
         return response

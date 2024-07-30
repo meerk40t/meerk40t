@@ -1,14 +1,15 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_diagonal_20,
-    icons8_direction_20,
-    icons8_image_20,
-    icons8_laser_beam_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_effect_hatch,
+    icon_points,
+    icons8_direction,
+    icons8_image,
+    icons8_laser_beam,
+    icons8_laserbeam_weak,
 )
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxCheckBox
+from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -24,16 +25,18 @@ class WarningPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("warning")
+
         self.op_id = ("cut", "engrave", "raster", "image", "dots", "hatch")
         self.data = {}
 
         self.images = {
-            "cut": icons8_laser_beam_20,
-            "engrave": icons8_small_beam_20,
-            "raster": icons8_direction_20,
-            "image": icons8_image_20,
-            "dots": icons8_scatter_plot_20,
-            "hatch": icons8_diagonal_20,
+            "cut": icons8_laser_beam,
+            "engrave": icons8_laserbeam_weak,
+            "raster": icons8_direction,
+            "image": icons8_image,
+            "dots": icon_points,
+            "hatch": icon_effect_hatch,
         }
         self.checkboxes = []
         self.limits = []
@@ -56,11 +59,30 @@ class WarningPanel(wx.Panel):
                 }
                 self.data[opatt_id] = xdata
 
-        hsizer = wx.FlexGridSizer(cols=9, gap=wx.Size(2, 0))
+        hsizer = wx.FlexGridSizer(cols=10, gap=dip_size(self, 2, 0))
         # hsizer.SetCols(9)
         idx = -1
+        self.power_as_percent = self.context.setting(
+            bool, "use_percent_for_power_display", False
+        )
+        self.speed_as_mm_min = self.context.setting(
+            bool, "use_mm_min_for_speed_display", False
+        )
         for key in self.data:
             entry = self.data[key]
+
+            min1 = None
+            max1 = None
+            if entry["attr"] == "power":
+                if self.power_as_percent:
+                    unit1 = "%"
+                else:
+                    unit1 = "ppi"
+            else:
+                if self.speed_as_mm_min:
+                    unit1 = "mm/min"
+                else:
+                    unit1 = "mm/s"
             idx += 1
             image = wx.StaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=20))
@@ -74,7 +96,7 @@ class WarningPanel(wx.Panel):
             )
 
             label3 = wx.StaticText(self, id=wx.ID_ANY, label="<")
-            chk1 = wx.CheckBox(self, id=wx.ID_ANY, label="")
+            chk1 = wxCheckBox(self, id=wx.ID_ANY, label="")
             chk1.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_min"] = chk1
 
@@ -85,7 +107,7 @@ class WarningPanel(wx.Panel):
                 limited=True,
                 check="float",
             )
-            ctrl1.SetMinSize(wx.Size(60, -1))
+            ctrl1.SetMinSize(dip_size(self, 60, -1))
             ctrl1.SetToolTip(
                 _("Warn level for minimum {unit}").format(unit=_(entry["attr"]))
             )
@@ -95,7 +117,7 @@ class WarningPanel(wx.Panel):
             ctrl1.SetActionRoutine(self.on_text_limit(ctrl1, entry, False))
 
             label4 = wx.StaticText(self, id=wx.ID_ANY, label=">")
-            chk2 = wx.CheckBox(self, id=wx.ID_ANY, label="")
+            chk2 = wxCheckBox(self, id=wx.ID_ANY, label="")
             chk2.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_max"] = chk2
 
@@ -106,7 +128,7 @@ class WarningPanel(wx.Panel):
                 limited=True,
                 check="float",
             )
-            ctrl2.SetMinSize(wx.Size(60, -1))
+            ctrl2.SetMinSize(dip_size(self, 60, -1))
             ctrl2.SetToolTip(
                 _("Warn level for maximum {unit}").format(unit=_(entry["attr"]))
             )
@@ -114,6 +136,11 @@ class WarningPanel(wx.Panel):
             entry["textcontrol_max"] = ctrl2
             chk2.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, True))
             ctrl2.SetActionRoutine(self.on_text_limit(ctrl2, entry, True))
+
+            label5 = wx.StaticText(self, id=wx.ID_ANY, label=unit1)
+
+            # Store the corresponding attribute for later updates
+            label5.attribute = entry["attr"]
 
             hsizer.Add(image, 0, wx.ALIGN_CENTER_VERTICAL, 0)
             hsizer.Add(label1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -126,20 +153,19 @@ class WarningPanel(wx.Panel):
             hsizer.Add(chk2, 1, wx.EXPAND, 0)
             hsizer.Add(label4, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             hsizer.Add(ctrl2, 1, wx.EXPAND, 0)
+            hsizer.Add(label5, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer.Layout()
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         infolabel = wx.StaticText(
             self,
             id=wx.ID_ANY,
-            label=_("Meerk40t can warn you if it believes the values for")
-            + "\n"
-            + _("power and speed are too ambitious for your machine.")
-            + "\n"
-            + _("It will display a warning indicator:")
-            + " '❌'"
-            + "\n"
-            + _("in the label of the associated operation-node"),
+            label=_(
+                "Meerk40t can warn you if it believes the values for\n"
+                + "power and speed are too ambitious for your machine.\n"
+                + "It will display a warning indicator: '❌'\n"
+                + "in the label of the associated operation-node"
+            ),
         )
 
         sizer_main.Add(infolabel, 0, 0, 0)
@@ -201,6 +227,12 @@ class WarningPanel(wx.Panel):
                 index = 2
             else:
                 index = 6
+        if attribute == "power" and self.power_as_percent:
+            # Change to ppi
+            value = value * 10.0
+        if attribute == "speed" and self.speed_as_mm_min:
+            # Change to mm/s
+            value = value / 60.0
         label = "dangerlevel_op_" + operation
         warning = [False, 0, False, 0, False, 0, False, 0]
         if hasattr(self.context, label):
@@ -221,6 +253,38 @@ class WarningPanel(wx.Panel):
             self.context.signal("updateop_tree")
 
     def update_widgets(self):
+        # We intentionally reset the unit labels as a device change or setting change might have happened...
+        self.power_as_percent = self.context.setting(
+            bool, "use_percent_for_power_display", False
+        )
+        self.speed_as_mm_min = self.context.setting(
+            bool, "use_mm_min_for_speed_display", False
+        )
+        if self.power_as_percent:
+            unit1 = "%"
+        else:
+            unit1 = "ppi"
+        if self.speed_as_mm_min:
+            unit2 = "mm/min"
+        else:
+            unit2 = "mm/s"
+        for ctrl in self.GetChildren():
+            if hasattr(ctrl, "attribute"):
+                if ctrl.attribute == "power":
+                    if isinstance(ctrl, wx.StaticText):
+                        ctrl.SetLabel(unit1)
+                if ctrl.attribute == "speed":
+                    if isinstance(ctrl, wx.StaticText):
+                        ctrl.SetLabel(unit2)
+
+        if self.speed_as_mm_min:
+            s_factor = 60.0
+        else:
+            s_factor = 1.0
+        if self.power_as_percent:
+            p_factor = 0.1
+        else:
+            p_factor = 1.0
         for op in self.op_id:
             label = "dangerlevel_op_" + op
             warning = [False, 0, False, 0, False, 0, False, 0]
@@ -232,11 +296,11 @@ class WarningPanel(wx.Panel):
             try:
                 entry = self.data[ident]
                 entry["checkbox_min"].SetValue(warning[0])
-                entry["textcontrol_min"].SetValue(str(warning[1]))
+                entry["textcontrol_min"].SetValue(str(warning[1] * p_factor))
                 entry["textcontrol_min"].Enable(warning[0])
 
                 entry["checkbox_max"].SetValue(warning[2])
-                entry["textcontrol_max"].SetValue(str(warning[3]))
+                entry["textcontrol_max"].SetValue(str(warning[3] * p_factor))
                 entry["textcontrol_max"].Enable(warning[2])
             except KeyError:
                 pass
@@ -244,11 +308,11 @@ class WarningPanel(wx.Panel):
             try:
                 entry = self.data[ident]
                 entry["checkbox_min"].SetValue(warning[4])
-                entry["textcontrol_min"].SetValue(str(warning[5]))
+                entry["textcontrol_min"].SetValue(str(warning[5] * s_factor))
                 entry["textcontrol_min"].Enable(warning[4])
 
                 entry["checkbox_max"].SetValue(warning[6])
-                entry["textcontrol_max"].SetValue(str(warning[7]))
+                entry["textcontrol_max"].SetValue(str(warning[7] * s_factor))
                 entry["textcontrol_max"].Enable(warning[6])
             except KeyError:
                 pass
@@ -257,4 +321,9 @@ class WarningPanel(wx.Panel):
         pass
 
     def pane_show(self):
+        self.update_widgets()
+
+    @signal_listener("power_percent")
+    @signal_listener("speed_min")
+    def signal_units(self, *args):
         self.update_widgets()

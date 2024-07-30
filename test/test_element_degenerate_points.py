@@ -40,4 +40,4 @@ class TestShapePoints(unittest.TestCase):
                 self.assertEqual(n.type, "elem point")
                 self.assertEqual(type(n), PointNode)
         finally:
-            kernel.shutdown()
+            kernel()

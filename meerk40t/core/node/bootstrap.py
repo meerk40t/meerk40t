@@ -4,6 +4,8 @@ from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.effect_hatch import HatchEffectNode
+from meerk40t.core.node.effect_warp import WarpEffectNode
+from meerk40t.core.node.effect_wobble import WobbleEffectNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_line import LineNode
@@ -14,12 +16,11 @@ from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
-from meerk40t.core.node.lasercodenode import LaserCodeNode
+from meerk40t.core.node.image_raster import ImageRasterNode
 from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.place_current import PlaceCurrentNode
@@ -40,14 +41,12 @@ defaults = {
     "op raster": {"speed": 150.0, "dpi": 500, "color": "black", "frequency": 30.0},
     "op image": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
     "op dots": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
-    "op hatch": {"speed": 35.0, "color": "lime", "frequency": 30.0},
     "util console": {},
     "util wait": {},
     "util home": {},
     "util goto": {},
     "util input": {},
     "util output": {},
-    "lasercode": {},
     "blob": {},
     "group": {},
     "layer": {},
@@ -74,8 +73,9 @@ bootstrap = {
     "op raster": RasterOpNode,
     "op image": ImageOpNode,
     "op dots": DotsOpNode,
-    "op hatch": HatchOpNode,
     "effect hatch": HatchEffectNode,
+    "effect wobble": WobbleEffectNode,
+    "effect warp": WarpEffectNode,
     "util console": ConsoleOperation,
     "util wait": WaitOperation,
     "util home": HomeOperation,
@@ -84,7 +84,6 @@ bootstrap = {
     "util output": OutputOperation,
     "place point": PlacePointNode,
     "place current": PlaceCurrentNode,
-    "lasercode": LaserCodeNode,
     "blob": BlobNode,
     "group": GroupNode,
     "layer": LayerNode,
@@ -96,6 +95,7 @@ bootstrap = {
     "elem polyline": PolylineNode,
     "elem image": ImageNode,
     "elem text": TextNode,
+    "image raster": ImageRasterNode,
     "reference": ReferenceNode,
     "cutcode": CutNode,
     "branch ops": BranchOperationsNode,

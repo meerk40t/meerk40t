@@ -1,11 +1,12 @@
 import wx
 
+from ..wxutils import wxCheckBox
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
 
-class SelectionWidget(StatusBarWidget):
+class SelectionOptionWidget(StatusBarWidget):
     """
     Panel to set some of the options for the selection rectangle
     around an emphasized element
@@ -20,10 +21,10 @@ class SelectionWidget(StatusBarWidget):
         FONT_SIZE = 7
 
         # These will fall into the last field
-        self.cb_move = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Move"))
-        self.cb_handle = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Resize"))
-        self.cb_rotate = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Rotate"))
-        self.cb_skew = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Skew"))
+        self.cb_move = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Move"))
+        self.cb_handle = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Resize"))
+        self.cb_rotate = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Rotate"))
+        self.cb_skew = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Skew"))
         self.cb_move.SetFont(
             wx.Font(
                 FONT_SIZE,
@@ -101,3 +102,71 @@ class SelectionWidget(StatusBarWidget):
             value = self.cb_skew.GetValue()
             self.context.enable_sel_skew = value
             self.context.signal("refresh_scene", "Scene")
+
+
+class SnapOptionsWidget(StatusBarWidget):
+    """
+    Panel to set some of the options for mouse snapping
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+
+        FONT_SIZE = 7
+
+        # These will fall into the last field
+        self.cb_grid = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Snap to Grid"))
+        self.cb_points = wxCheckBox(
+            self.parent, id=wx.ID_ANY, label=_("Snap to Element")
+        )
+        self.cb_grid.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
+        self.cb_points.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
+
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_grid, self.cb_grid)
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_points, self.cb_points)
+        self.StartPopulation()
+        self.cb_grid.SetValue(self.context.snap_grid)
+        self.cb_points.SetValue(self.context.snap_points)
+        self.EndPopulation()
+        self.cb_grid.SetToolTip(
+            _("Shall the cursor snap to the next grid intersection?")
+        )
+        self.cb_points.SetToolTip(_("Shall the cursor snap to the next element point?"))
+        self.PrependSpacer(5)
+        self.Add(self.cb_grid, 1, 0, 0)
+        self.Add(self.cb_points, 1, 0, 0)
+
+    # the checkbox was clicked
+    def on_toggle_grid(self, event):
+        if not self.startup:
+            state = self.cb_grid.GetValue()
+            self.context.snap_grid = state
+            self.context.signal("snap_grid", state)
+
+    def on_toggle_points(self, event):
+        if not self.startup:
+            state = self.cb_points.GetValue()
+            self.context.snap_points = state
+            self.context.signal("snap_points", state)
+
+    def Signal(self, signal, *args):
+        if signal in ("snap_grid", "snap_points"):
+            self.cb_grid.SetValue(self.context.snap_grid)
+            self.cb_points.SetValue(self.context.snap_points)

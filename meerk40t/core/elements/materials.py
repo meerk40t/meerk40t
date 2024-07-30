@@ -36,6 +36,12 @@ def init_commands(kernel):
             channel("----------")
         return "materials", data
 
+    @self.console_option(
+        "author", "a", type=str, help=_("Name of the user for the library entry")
+    )
+    @self.console_option(
+        "description", "d", type=str, help=_("Description of the library entry")
+    )
     @self.console_argument("name", help=_("Name to save the materials under"))
     @self.console_command(
         "save",
@@ -43,10 +49,26 @@ def init_commands(kernel):
         input_type="materials",
         output_type="materials",
     )
-    def save_materials(command, channel, _, data=None, name=None, **kwargs):
+    def save_materials(
+        command,
+        channel,
+        _,
+        data=None,
+        name=None,
+        author=None,
+        description=None,
+        **kwargs,
+    ):
         if name is None:
             raise CommandSyntaxError
-        self.save_persistent_operations(name)
+        # Load old information just to maintain old infos...
+        oplist, opinfo = self.load_persistent_op_list(name)
+        opinfo["name"] = name
+        if author is not None:
+            opinfo["author"] = author
+        if description is not None:
+            opinfo["description"] = description
+        self.save_persistent_operations(name, opinfo=opinfo)
         return "materials", data
 
     @self.console_argument("name", help=_("Name to load the materials from"))
@@ -86,6 +108,8 @@ def init_commands(kernel):
         channel("----------")
         channel(_("Materials Current:"))
         for section in self.op_data.section_set():
+            if section.endswith("info"):
+                continue
             for subsect in self.op_data.derivable(section):
                 label = self.op_data.read_persistent(str, subsect, "label", "-")
                 channel(f"{subsect}: {label}")

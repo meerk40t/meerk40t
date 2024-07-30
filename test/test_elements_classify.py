@@ -94,4 +94,4 @@ class TestElementClassification(unittest.TestCase):
             results = list(root.elements.elem_branch.flat(types=elem_nodes))
             self.assertEqual(len(results), 100)
         finally:
-            kernel.shutdown()
+            kernel()

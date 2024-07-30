@@ -5,10 +5,13 @@ import platform
 
 import wx
 
+from meerk40t.kernel.kernel import signal_listener
+
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import icons8_administrative_tools_50
+from .icons import icons8_administrative_tools
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, TextCtrl
+from .wxmribbon import RibbonEditor
+from .wxutils import StaticBoxSizer, TextCtrl, wxButton, wxRadioBox
 
 _ = wx.GetTranslation
 
@@ -22,7 +25,7 @@ class PreferencesUnitsPanel(wx.Panel):
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.radio_units = wx.RadioBox(
+        self.radio_units = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Units"),
@@ -124,6 +127,7 @@ class PreferencesLanguagePanel(wx.Panel):
         lang = self.combo_language.GetSelection()
         if lang != -1 and self.context.app is not None:
             self.context.app.update_language(lang)
+            self.context.signal("restart")
 
 
 # end of class PreferencesLanguagePanel
@@ -137,13 +141,13 @@ class PreferencesSavingPanel(wx.Panel):
         self.context = context
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Management"), wx.HORIZONTAL)
-        self.button_save = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save = wxButton(self, wx.ID_ANY, _("Save"))
         self.button_save.SetToolTip(_("Immediately save the settings to disk"))
-        self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        self.button_export = wxButton(self, wx.ID_ANY, _("Export"))
         self.button_export.SetToolTip(
-            _("Export the the current settings to a different location")
+            _("Export the current settings to a different location")
         )
-        self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.button_import = wxButton(self, wx.ID_ANY, _("Import"))
         self.button_import.SetToolTip(_("Import a previously saved setting file"))
         main_sizer.Add(self.button_save, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save)
@@ -174,14 +178,14 @@ class PreferencesSavingPanel(wx.Panel):
         dlg.Destroy()
 
     def on_button_import(self, event=None):
-        message = _("This will import a previosuly saved configuration file!") + "\n"
+        message = _("This will import a previously saved configuration file!") + "\n"
         message += (
             _(
                 "This may make MeerK40t unworkable if the file does not have the right format!"
             )
             + "\n"
         )
-        message += _("You do this at you own risk - are you realy sure?")
+        message += _("You do this at you own risk - are you really sure?")
         caption = _("Warning")
         dlg = wx.MessageDialog(
             self,
@@ -243,7 +247,6 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.text_svg_ppi = TextCtrl(
             self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER, limited=True
         )
-        # self.text_svg_ppi.SetMinSize((60, 23))
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
         )
@@ -304,7 +307,7 @@ class PreferencesMain(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = None
-
+        self.SetHelpText("preferences")
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
         self.panel_units = PreferencesUnitsPanel(self, wx.ID_ANY, context=context)
@@ -369,7 +372,7 @@ class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
             525,
-            605,
+            750,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
@@ -386,6 +389,7 @@ class Preferences(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
@@ -398,6 +402,7 @@ class Preferences(MWindow):
                 "style": "button",
                 "label": _("Automatic"),
                 "tip": _("Set options for a good automatic experience"),
+                "help": "classification",
                 "page": "Classification",
                 "section": "_AA_Presets",
                 "subsection": "_0_",
@@ -410,6 +415,7 @@ class Preferences(MWindow):
                 "style": "button",
                 "label": _("Manual"),
                 "tip": _("Set options for complete manual control"),
+                "help": "classification",
                 "page": "Classification",
                 "section": "_AA_Presets",
                 "subsection": "_0_",
@@ -425,6 +431,7 @@ class Preferences(MWindow):
                 )
                 + "\n"
                 + _("That link between element and operation is called an assignment."),
+                "help": "classification",
                 "page": "Classification",
                 # "section": "_000_Information",
             },
@@ -504,7 +511,19 @@ class Preferences(MWindow):
                     "signals": ("refresh_scene", "theme"),
                 }
             )
-
+        col = self.context.root.setting(str, "label_display_color", "#ff0000ff")
+        color_choices.append(
+            {
+                "attr": "color_label",
+                "object": self,
+                "default": self.color_label,
+                "type": str,
+                "style": "color",  # hexa representation
+                "label": _("Object-Label"),
+                "section": "Scene",
+                "signals": ("refresh_scene", "theme"),
+            }
+        )
         color_choices.append(
             {
                 "attr": "color_reset",
@@ -525,11 +544,14 @@ class Preferences(MWindow):
         )
         self.panel_color.SetupScrolling()
 
+        self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
+
         self.notebook_main.AddPage(self.panel_main, _("General"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
+        self.notebook_main.AddPage(self.panel_ribbon, _("Ribbon"))
 
         self.panels = [
             self.panel_main,
@@ -537,7 +559,9 @@ class Preferences(MWindow):
             self.panel_gui,
             self.panel_scene,
             self.panel_color,
+            self.panel_ribbon,
         ]
+        self.panel_ids = ["main", "classification", "gui", "scene", "color", "ribbon"]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(
@@ -545,12 +569,33 @@ class Preferences(MWindow):
             )
             self.notebook_main.AddPage(panel_space, _("Coordinate Space"))
             self.panels.append(panel_space)
+            self.panel_ids.append("space")
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    @signal_listener("preferences")
+    def on_pref_signal(self, origin, *args):
+        if not args:
+            return
+        panel = args[0]
+        if panel and panel in self.panel_ids:
+            self.Show()
+            self.notebook_main.SetSelection(self.panel_ids.index(panel))
+
+    @property
+    def color_label(self):
+        col = self.context.root.setting(str, "label_display_color", "#ff0000ff")
+        return col
+
+    @color_label.setter
+    def color_label(self, value):
+        if value:
+            self.context.root.label_display_color = value
 
     @property
     def color_reset(self):
@@ -562,7 +607,10 @@ class Preferences(MWindow):
         if value:
             # We are resetting all GUI.colors
             self.context("scene color unset\n")
+            self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
+            self.panel_color.reload()
+            self.context.signal("restart")
 
     @property
     def preset_classify_manual(self):
@@ -592,11 +640,6 @@ class Preferences(MWindow):
 
     def delegates(self):
         yield from self.panels
-        # yield self.panel_main
-        # yield self.panel_classification
-        # yield self.panel_gui
-        # yield self.panel_scene
-        # yield self.panel_color
 
     @staticmethod
     def sub_register(kernel):
@@ -607,7 +650,7 @@ class Preferences(MWindow):
                 "button/config/Preferences",
                 {
                     "label": _("Preferences"),
-                    "icon": icons8_administrative_tools_50,
+                    "icon": icons8_administrative_tools,
                     "tip": _("Opens Preferences Window"),
                     "action": lambda v: kernel.console("window toggle Preferences\n"),
                 },

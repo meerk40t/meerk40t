@@ -7,26 +7,21 @@ from datetime import datetime
 import wx
 from wx import aui
 
-from .propertypanels.hatchproperty import HatchPropertyPanel
-from .propertypanels.inputproperty import InputPropertyPanel
-from .propertypanels.opbranchproperties import OpBranchPanel
-from .propertypanels.outputproperty import OutputPropertyPanel
-from .propertypanels.waitproperty import WaitPropertyPanel
-from .simpleui import SimpleUI
-
-try:
-    # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
-    # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-    # so, we are doing it here even though we do not refer to it in this file
-    # richtext is used for the Console panel.
-    from wx import richtext
-except ImportError:
-    pass
+# try:
+#     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+#     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+#     # so, we are doing it here even though we do not refer to it in this file
+#     # richtext is used for the Console panel.
+#     from wx import richtext
+# except ImportError:
+#     pass
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from meerk40t.gui.wxutils import wxButton
+from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
+from meerk40t.kernel.kernel import Job
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -42,27 +37,33 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
-    icons8_emergency_stop_button_50,
-    icons8_gas_industry_50,
-    icons8_home_filled_50,
-    icons8_pause_50,
+    icons8_emergency_stop_button,
+    icons8_gas_industry,
+    icons8_home_filled,
+    icons8_pause,
 )
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.blobproperty import BlobPropertyPanel
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
+from .propertypanels.gotoproperty import GotoPropertyPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
+from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
     ImageVectorisationPanel,
 )
+from .propertypanels.inputproperty import InputPropertyPanel
+from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.operationpropertymain import ParameterPanel
+from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.placementproperty import PlacementParameterPanel
 from .propertypanels.pointproperty import PointPropertyPanel
@@ -77,8 +78,11 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
+from .propertypanels.waitproperty import WaitPropertyPanel
+from .propertypanels.wobbleproperty import WobblePropertyPanel
+from .simpleui import SimpleUI
 from .simulation import Simulation
-from .toolwidgets.toolnodeedit import NodeEditToolbar
+from .tips import Tips
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -97,15 +101,133 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 _ = wx.GetTranslation
 
 
-def register_panel_go(window, context):
-    # Define Go
-    go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
-    button_start_was_clicked = False
+class ActionPanel(wx.Panel):
+    def __init__(
+        self,
+        *args,
+        context=None,
+        action=None,
+        action_right=None,
+        fgcolor=None,
+        bgcolor=None,
+        icon=None,
+        tooltip="",
+        **kwds,
+    ):
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
 
-    def busy_go_plan(event, *args):
-        global button_start_was_clicked
-        if not button_start_was_clicked:
-            channel = context.kernel.channel("console")
+        self.context = context
+        self.button_go = wxButton(self, wx.ID_ANY)
+        self.icon = icon
+        self.fgcolor = fgcolor
+        self.resize_job = Job(
+            process=self.resize_button,
+            job_name=f"_resize_actionpanel_{self.Id}",
+            interval=0.1,
+            times=1,
+            run_main=True,
+        )
+        if bgcolor is not None:
+            self.button_go.SetBackgroundColour(bgcolor)
+        self.button_go.SetToolTip(tooltip)
+        # self.button_go.SetBitmapMargins(0, 0)
+        self.action = action
+        self.action_right = action_right
+
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer.Add(self.button_go, 1, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
+        self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        if self.action_right is not None:
+            self.button_go.Bind(wx.EVT_RIGHT_DOWN, self.on_button_go_click_right)
+
+        self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
+        # Initial resize
+        self.resize_button()
+
+    def on_button_go_click(self, event):
+        if self.action is not None:
+            self.action()
+
+    def on_button_go_click_right(self, event):
+        if self.action_right is not None:
+            self.action_right()
+
+    def resize_button(self):
+        size = self.button_go.Size
+        minsize = min(size[0], size[1])
+        # Leave some room at the edges,
+        # for every 25 pixel 1 pixel at each side
+        room = int(minsize / 25) * 2
+        best_size = minsize - room
+        # At least 20 px high
+        best_size = max(best_size, 20)
+        border = 2
+        bmp = self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
+        s = bmp.Size
+        self.button_go.SetBitmap(bmp)
+        bmp = self.icon.GetBitmap(resize=best_size, buffer=border)
+        self.button_go.SetBitmapFocus(bmp)
+
+        t = self.button_go.GetBitmap().Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        if abs(1 - scale_x) > 1e-2 or abs(1 - scale_y) > 1e-2:
+            # print(f"Scale factors: {scale_x:.2f}, {scale_y:.2f}")
+            # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+            bmp = self.icon.GetBitmap(
+                color=self.fgcolor,
+                resize=(best_size * scale_x, best_size * scale_y),
+                buffer=border,
+            )
+            self.button_go.SetBitmap(bmp)
+            bmp = self.icon.GetBitmap(
+                resize=(best_size * scale_x, best_size * scale_y), buffer=border
+            )
+            self.button_go.SetBitmapFocus(bmp)
+
+    def on_button_resize(self, event):
+        event.Skip()
+        self.context.schedule(self.resize_job)
+
+
+class GoPanel(ActionPanel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PassesPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        fgcol = context.themes.get("start_fg")
+        bgcol = context.themes.get("start_bg")
+        ActionPanel.__init__(
+            self,
+            context=context,
+            action=None,
+            fgcolor=fgcol,
+            bgcolor=bgcol,
+            icon=icons8_gas_industry,
+            tooltip=_("One Touch: Send Job To Laser "),
+            *args,
+            **kwds,
+        )
+        self.click_time = 0
+        self.was_mouse = False
+        self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        self.button_go.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
+
+    def on_mouse_down(self, event):
+        self.was_mouse = True
+        event.Skip()
+
+    def on_button_go_click(self, event):
+        from time import perf_counter
+
+        this_time = perf_counter()
+        if this_time - self.click_time < 0.5:
+            return
+        if not self.was_mouse:
+            channel = self.context.kernel.channel("console")
             channel(
                 _(
                     "We intentionally ignored a request to start a job via the keyboard.\n"
@@ -113,27 +235,23 @@ def register_panel_go(window, context):
                 )
             )
             return
-        context.kernel.busyinfo.start(msg=_("Processing and sending..."))
-        context(
+        if not self.button_go.Enabled:
+            return
+
+        self.button_go.Enable(False)
+        self.context.kernel.busyinfo.start(msg=_("Processing and sending..."))
+        self.context(
             "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
         )
-        context.kernel.busyinfo.end()
-        button_start_was_clicked = False
+        self.context.kernel.busyinfo.end()
+        self.button_go.Enable(True)
+        # Reset...
+        # Deliberately at the end, as clicks queue...
+        self.click_time = perf_counter()
+        self.was_mouse = False
 
-    def mouse_down(event, *args):
-        global button_start_was_clicked
-        button_start_was_clicked = True
-        event.Skip()
 
-    window.Bind(
-        wx.EVT_BUTTON,
-        busy_go_plan,
-        go,
-    )
-    go.Bind(wx.EVT_LEFT_DOWN, mouse_down)
-    go.SetBackgroundColour(wx.Colour(0, 127, 0))
-    go.SetToolTip(_("One Touch: Send Job To Laser "))
-    go.SetSize(go.GetBestSize())
+def register_panel_go(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -146,7 +264,8 @@ def register_panel_go(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = go
+    panel = GoPanel(window, wx.ID_ANY, context=context)
+    pane.control = panel
 
     window.on_pane_create(pane)
     context.register("pane/go", pane)
@@ -154,17 +273,9 @@ def register_panel_go(window, context):
 
 def register_panel_stop(window, context):
     # Define Stop.
-    stop = wx.BitmapButton(
-        window, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
-    )
-    window.Bind(
-        wx.EVT_BUTTON,
-        ConsoleFunction(context, "estop\n"),
-        stop,
-    )
-    stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-    stop.SetToolTip(_("Emergency stop/reset the controller."))
-    stop.SetSize(stop.GetBestSize())
+    def action():
+        context("estop\n")
+
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -177,17 +288,31 @@ def register_panel_stop(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = stop
-
+    fgcol = context.themes.get("stop_fg")
+    bgcol = context.themes.get("stop_bg")
+    panel = ActionPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        action=action,
+        fgcolor=fgcol,
+        bgcolor=bgcol,
+        icon=icons8_emergency_stop_button,
+        tooltip=_("Emergency stop/reset the controller."),
+    )
+    pane.control = panel
     window.on_pane_create(pane)
     context.register("pane/stop", pane)
 
 
 def register_panel_home(window, context):
     # Define Home.
-    home = wx.BitmapButton(window, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-    # home.SetBackgroundColour((200, 225, 250))
-    window.Bind(wx.EVT_BUTTON, lambda e: context("home\n"), home)
+    def action():
+        context("home\n")
+
+    def action_right():
+        context("physical_home\n")
+
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -200,35 +325,30 @@ def register_panel_home(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = home
+
+    fgcol = None
+    bgcol = None
+    panel = ActionPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        action=action,
+        action_right=action_right,
+        fgcolor=fgcol,
+        bgcolor=bgcol,
+        icon=icons8_home_filled,
+        tooltip=_("Send laser to home position"),
+    )
+    pane.control = panel
     window.on_pane_create(pane)
     context.register("pane/home", pane)
 
 
 def register_panel_pause(window, context):
     # Define Pause.
-    pause = wx.BitmapButton(
-        window, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False)
-    )
+    def action():
+        context("pause\n")
 
-    def on_pause_button(event=None):
-        try:
-            context("pause\n")
-            # if self.pipe_state != 3:
-            #     pause.SetBitmap(icons8_play_50.GetBitmap())
-            # else:
-            # pause.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
-        except AttributeError:
-            pass
-
-    window.Bind(
-        wx.EVT_BUTTON,
-        on_pause_button,
-        pause,
-    )
-    pause.SetBackgroundColour(wx.Colour(255, 255, 0))
-    pause.SetToolTip(_("Pause/Resume the controller"))
-    pause.SetSize(pause.GetBestSize())
     pane = (
         aui.AuiPaneInfo()
         .Caption(_("Pause"))
@@ -241,8 +361,20 @@ def register_panel_pause(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = pause
 
+    bgcol = context.themes.get("pause_bg")
+    fgcol = None
+    panel = ActionPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        action=action,
+        fgcolor=fgcol,
+        bgcolor=bgcol,
+        icon=icons8_pause,
+        tooltip=_("Pause/Resume the controller"),
+    )
+    pane.control = panel
     window.on_pane_create(pane)
     context.register("pane/pause", pane)
 
@@ -276,7 +408,25 @@ class wxMeerK40t(wx.App, Module):
     """
 
     def __init__(self, context, path):
+        self.context = context
         wx.App.__init__(self, 0)
+        # Is this a Windows machine? If yes:
+        # Turn on high-DPI awareness to make sure rendering is sharp on big
+        # monitors with font scaling enabled.
+
+        high_dpi = context.setting(bool, "high_dpi", True)
+        if platform.system() == "Windows" and high_dpi:
+            try:
+                # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
+                from ctypes import OleDLL
+
+                OleDLL("shcore").SetProcessDpiAwareness(1)
+            except (AttributeError, ImportError):
+                # We're on a non-Windows box.
+                pass
+            except OSError:
+                # Potential access denied.
+                pass
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
 
@@ -284,8 +434,12 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
         context._kernel.scheduler_handles_main_thread_jobs = False
         self.timer.Start(50)
-
-        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # try:
+        #     res = wx.SystemSettings().GetAppearance().IsDark()
+        # except AttributeError:
+        #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        icons.DARKMODE = res
         icons.icon_r = 230
         icons.icon_g = 230
         icons.icon_b = 230
@@ -297,9 +451,21 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
-
+        provider = wx.SimpleHelpProvider()
+        wx.HelpProvider.Set(provider)
         # App started add the except hook
         sys.excepthook = handleGUIException
+
+        # Monkey patch for pycharm excepthook override issue. https://youtrack.jetbrains.com/issue/PY-39723
+        try:
+            import importlib
+
+            pydevd = importlib.import_module("_pydevd_bundle.pydevd_breakpoints")
+        except ImportError:
+            pass
+        else:
+            pydevd._fallback_excepthook = sys.excepthook
+
         # Set the delay after which the tooltip disappears or how long a tooltip remains visible.
         self.context.setting(int, "tooltip_autopop", 10000)
         # Set the delay after which the tooltip appears.
@@ -318,12 +484,33 @@ class wxMeerK40t(wx.App, Module):
             pass
 
     def OnInit(self):
+        self.name = f"MeerK40t-{wx.GetUserId()}"
+        self.instance = wx.SingleInstanceChecker(self.name)
+        self.context.setting(bool, "single_instance_only", True)
+        if self.context.kernel._was_restarted:
+            return True
+        if self.context.single_instance_only and self.instance.IsAnotherRunning():
+            dlg = wx.MessageDialog(
+                None,
+                "Another instance is running!\nDo you want to run another copy of the app?",
+                "ERROR",
+                wx.YES_NO | wx.ICON_QUESTION | wx.NO_DEFAULT,
+            )
+            result = dlg.ShowModal() == wx.ID_YES
+            dlg.Destroy()
+            if not result:
+                return False
         return True
 
     def InitLocale(self):
         import sys
 
         if sys.platform.startswith("win") and sys.version_info > (3, 8):
+            # This hack is needed to deal with  a new Python 3.8 behaviour to
+            # set the locale at runtime. wxpython assumes it can do with the
+            # locale objects whatever it wants, so we need to bring it back to
+            # a defined default
+
             import locale
 
             locale.setlocale(locale.LC_ALL, "C")
@@ -371,7 +558,6 @@ class wxMeerK40t(wx.App, Module):
 
     @staticmethod
     def sub_register(kernel):
-
         #################
         # WINDOW COMMANDS
         #################
@@ -392,7 +578,7 @@ class wxMeerK40t(wx.App, Module):
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. Windows often cannot open multiple copies of the same window at the same context
-            The default root path is "/". Eg. "window -p / open Preferences"
+            The default root path is "/". E.g. "window -p / open Preferences"
             """
             context = kernel.root
             if path is None:
@@ -571,13 +757,12 @@ class wxMeerK40t(wx.App, Module):
             help=_("reset the supplied window, or '*' for all windows"),
         )
         def window_reset(channel, _, data, window=None, **kwargs):
-            for section in list(kernel.derivable("")):
-                if section.startswith("window"):
-                    kernel.clear_persistent(section)
-                    try:
-                        del kernel.contexts[section]
-                    except KeyError:
-                        pass  # No open context for that window, nothing will save out.
+            for section in list(kernel.section_startswith("window/")):
+                kernel.clear_persistent(section)
+                try:
+                    del kernel.contexts[section]
+                except KeyError:
+                    pass  # No open context for that window, nothing will save out.
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
@@ -630,6 +815,19 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+        # print (f"Language according to settings: {language}")
+        tlang = getattr(kernel.args, "language", "undefined")
+        for idx, content in enumerate(supported_languages):
+            if content[0] == tlang:
+                language = idx
+                break
+        # print (f"Language after cmdline-test: {language}")
+
+        # See issue #2103
+        # context.setting(str, "i18n", "en")
+        # language = context.i18n
+        # self.update_language_kernel(language)
+
         from meerk40t.gui.help_assets.help_assets import asset
 
         def get_asset(asset_name):
@@ -647,7 +845,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
         kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
         kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
-        kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
         kernel.register("property/PlaceCurrentNode/OpMain", PlacementParameterPanel)
         kernel.register("property/PlacePointNode/OpMain", PlacementParameterPanel)
 
@@ -660,10 +857,12 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/HatchEffectNode/HatchProperty", HatchPropertyPanel)
+        kernel.register("property/WobbleEffectNode/WobbleProperty", WobblePropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
+        kernel.register("property/GotoOperation/GotoProperty", GotoPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
@@ -683,32 +882,48 @@ class wxMeerK40t(wx.App, Module):
         )
 
         kernel.register("window/Console", Console)
-        kernel.register("window/Preferences", Preferences)
+        if (
+            hasattr(kernel.args, "lock_general_config")
+            and kernel.args.lock_general_config
+        ):
+            pass
+        else:
+            kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
+        kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)
         kernel.register("window/Simulation", Simulation)
+        kernel.register("window/Tips", Tips)
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        kernel.register("window/DeviceManager", DeviceManager)
+        if (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
+            pass
+        else:
+            kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
-        kernel.register("window/NodeEditIcons", NodeEditToolbar)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
-        kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         kernel.register("window/Kerftest", KerfTool)
         kernel.register("window/SimpleUI", SimpleUI)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
+
+        from meerk40t.gui.helper import register_panel_helper
+
+        kernel.register("wxpane/helper", register_panel_helper)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
@@ -758,10 +973,38 @@ class wxMeerK40t(wx.App, Module):
         context = kernel.root
 
         context.setting(bool, "developer_mode", False)
-        # if context.developer_mode:
-        #     from meerk40t.gui.mkdebug import register_panel_debugger
+        context.setting(bool, "debug_mode", False)
+        if context.debug_mode:
+            from meerk40t.gui.mkdebug import (
+                register_panel_color,
+                register_panel_crash,
+                register_panel_debugger,
+                register_panel_icon,
+                register_panel_window,
+            )
 
-        #     kernel.register("wxpane/debug_tree", register_panel_debugger)
+            kernel.register("wxpane/debug_tree", register_panel_debugger)
+            kernel.register("wxpane/debug_color", register_panel_color)
+            kernel.register("wxpane/debug_icons", register_panel_icon)
+            kernel.register("wxpane/debug_shutdown", register_panel_crash)
+            kernel.register("wxpane/debug_window", register_panel_window)
+
+            from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
+
+            register_widget_icon(kernel.root)
+
+        choices = [
+            {
+                "attr": "single_instance_only",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Single Instance"),
+                "tip": _("Allow only a single instance of MeerK40t."),
+                "page": "Start",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)
@@ -775,6 +1018,44 @@ class wxMeerK40t(wx.App, Module):
                     'Argument "sure" is required. Requires typing: "nuke_settings yes"'
                 )
 
+        @context.console_argument("crashtype", type=str)
+        @context.console_command("crash_me_if_you_can", hidden=True)
+        def crash_mk(command, channel, _, crashtype=None, **kwargs):
+            def crash_divide(x, y):
+                return x / y
+
+            def crash_key(variable, index):
+                l = variable
+                return l[index]
+
+            def crash_index(variable, index):
+                l = variable
+                return l[index]
+
+            def crash_value(variable, dtype):
+                return dtype(variable)
+
+            if crashtype is None:
+                crashtype = "dividebyzero"
+            crashtype = crashtype.lower()
+            if crashtype == "dividebyzero":
+                a = 0
+                b = 0
+                c = crash_divide(a, b)
+                return
+            if crashtype == "key":
+                d = {"a": 0}
+                b = crash_key(d, "b")
+                return
+            if crashtype == "index":
+                a = (0, 1, 2)
+                b = crash_index(a, 5)
+                return
+            if crashtype == "value":
+                a = "an invalid number 1"
+                b = crash_value(a, float)
+                return
+
     def update_language(self, lang):
         """
         Update language to the requested language.
@@ -785,6 +1066,9 @@ class wxMeerK40t(wx.App, Module):
         except (IndexError, ValueError):
             return
         context.language = lang
+        # We need to remove the command-line argument now:
+        if hasattr(context.kernel.args, "language"):
+            delattr(context.kernel.args, "language")
 
         if self.locale:
             assert sys.getrefcount(self.locale) <= 2
@@ -797,8 +1081,33 @@ class wxMeerK40t(wx.App, Module):
             self.locale = None
         context.signal("language", (lang, language_code, language_name, language_index))
 
+    def update_language_kernel(self, lang_code):
+        context = self.context
+        for i, suplang in enumerate(supported_languages):
+            language_code, language_name, language_index = suplang
+            if language_code != lang_code:
+                continue
+            context.i18n = language_code
+            self.context.kernel.set_language(language_code)
+            if self.locale:
+                assert sys.getrefcount(self.locale) <= 2
+                del self.locale
+            self.locale = wx.Locale(language_index)
+            # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
+            if self.locale.IsOk() or platform.system() == "Linux":
+                self.locale.AddCatalog("meerk40t")
+            else:
+                self.locale = None
+            context.signal(
+                "language", (i, language_code, language_name, language_index)
+            )
+
 
 # end of class MeerK40tGui
+
+MEERK40T_HOST = "dev.meerk40t.com"
+
+
 def send_file_to_developers(filename):
     """
     Loads a file to send data to the developers.
@@ -825,53 +1134,61 @@ def send_data_to_developers(filename, data):
     """
     import socket
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ipaddr = socket.gethostbyname("api.anonfiles.com")
-    s.connect((ipaddr, 80))
-    boundary = "----------------meerk40t-boundary"
-    file_head = list()
-    file_head.append("--" + boundary)
-    file_head.append(
-        f'Content-Disposition: form-data; name="file"; filename="{filename}"'
-    )
-    file_head.append("Content-Type: text/plain")
-    file_head.append("")
-    part = "\x0D\x0A".join(file_head)
-    terminal = "--" + boundary + "--"
-    payload = "\x0D\x0A".join((part, data, terminal, ""))
-    http_req = list()
-    http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
-    http_req.append("Host: api.anonfiles.com")
-    http_req.append("User-Agent: meerk40t/0.0.1")
-    http_req.append("Accept: */*")
-    http_req.append(f"Content-Length: {len(payload)}")
-    http_req.append(f"Content-Type: multipart/form-data; boundary={boundary}")
-    http_req.append("")
-    header = "\x0D\x0A".join(http_req)
-    request = "\x0D\x0A".join((header, payload))
-    s.send(bytes(request, "utf-8"))
-    response = s.recv(4096)
-    response = response.decode("utf-8")
-    s.close()
+    host = MEERK40T_HOST  # Replace with the actual host
+    port = 80  # Replace with the actual port
 
-    if response is None or len(response) == 0:
-        http_code = "No Response."
-    else:
-        http_code = response.split("\n")[0]
+    # Construct the HTTP request
+    boundary = "----------------meerk40t-boundary"
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+        f"Content-Type: text/plain\r\n"
+        "\r\n"
+        f"{data}\r\n"
+        f"--{boundary}--\r\n"
+    )
+
+    headers = (
+        f"POST /upload HTTP/1.1\r\n"
+        f"Host: {host}\r\n"
+        "User-Agent: meerk40t/1.0.0\r\n"
+        f"Content-Type: multipart/form-data; boundary={boundary}\r\n"
+        f"Content-Length: {len(body)}\r\n"
+        "\r\n"
+    )
+
+    try:
+        # Create a socket connection
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+            client_socket.connect((host, port))
+
+            # Send the request
+            request = f"{headers}{body}"
+            client_socket.sendall(request.encode())
+
+            # Receive and print the response
+            response = client_socket.recv(4096)
+            response = response.decode("utf-8", errors="ignore")
+    except Exception:
+        response = ""
+
+    response_lines = response.split("\n")
+    http_code = response_lines[0]
+
+    print(response)
 
     if http_code.startswith("HTTP/1.1 200 OK"):
-        print(http_code)
-        http_code = response.split("\n")[0]
+        message = response_lines[-1]
         dlg = wx.MessageDialog(
             None,
-            _("We got your message. Thank you for helping\n\n") + str(http_code),
+            _("We got your message. Thank you for helping\n\n") + message,
             _("Thanks"),
             wx.OK,
         )
         dlg.ShowModal()
         dlg.Destroy()
     else:
-        print(response)
+        # print(response)
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
@@ -889,6 +1206,9 @@ def send_data_to_developers(filename, data):
         dlg.Destroy()
 
 
+in_error_dialog = False
+
+
 def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
@@ -898,6 +1218,70 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     @param exc_traceback:
     @return:
     """
+
+    def _extended_dialog(caption, header, body):
+        dlg = wx.Dialog(
+            None,
+            wx.ID_ANY,
+            title=caption,
+            size=wx.DefaultSize,
+            pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE,
+        )
+        # contents
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        label = wx.StaticText(dlg, wx.ID_ANY, header)
+        sizer.Add(label, 1, wx.EXPAND, 0)
+        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        info.SetValue(body)
+        sizer.Add(info, 5, wx.EXPAND, 0)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn_yes = wxButton(dlg, wx.ID_YES)
+        btn_yes.SetDefault()
+        btnsizer.AddButton(btn_yes)
+        btn_no = wxButton(dlg, wx.ID_NO)
+        btnsizer.AddButton(btn_no)
+        btn_cancel = wxButton(dlg, wx.ID_CANCEL, _("Quit"))
+        btnsizer.AddButton(btn_cancel)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+        btnsizer.SetAffirmativeButton(btn_yes)
+        btnsizer.SetNegativeButton(btn_no)
+        btnsizer.SetCancelButton(btn_cancel)
+
+        def close_yes(event):
+            dlg.EndModal(wx.ID_YES)
+
+        def close_no(event):
+            dlg.EndModal(wx.ID_NO)
+
+        def close_cancel(event):
+            wx.Abort()
+
+        dlg.Bind(wx.EVT_BUTTON, close_yes, btn_yes)
+        dlg.Bind(wx.EVT_BUTTON, close_no, btn_no)
+        dlg.Bind(wx.EVT_BUTTON, close_cancel, btn_cancel)
+        dlg.SetSizer(sizer)
+        sizer.Fit(dlg)
+        dlg.CenterOnScreen()
+        return dlg
+
+    def _variable_summary(vars, indent: int = 0):
+        info = ""
+        for name, value in vars.items():
+            label = f'{" " * indent}{name} : '
+            total_indent = len(label)
+            formatted = str(value)
+            formatted = formatted.replace("\n", "\n" + " " * total_indent)
+            info += f"{label}{formatted}\n"
+        return info
+
+    global in_error_dialog
+    if in_error_dialog:
+        return
+    in_error_dialog = True
+
     wxversion = "wx"
     try:
         wxversion = wx.version()
@@ -909,8 +1293,18 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         f"Python {platform.python_version()}: {platform.machine()} - wxPython: {wxversion}\n"
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    print("\n")
-    print(error_log)
+    variable_info = ""
+    try:
+        variable_info = "\nLocal variables:\n"
+        tb = exc_traceback
+        while tb:
+            frame = tb.tb_frame
+            code = frame.f_code
+            source = f"{code.co_filename}:{tb.tb_lineno}, in {code.co_name}"
+            variable_info += f"[{source}]:\n" + _variable_summary(frame.f_locals)
+            tb = tb.tb_next
+    except Exception:
+        pass
     try:
         filename = f"MeerK40t-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
     except Exception:  # I already crashed once, if there's another here just ignore it.
@@ -920,97 +1314,44 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         try:
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
-                print(file)
+                if variable_info:
+                    file.write(variable_info)
+                print(error_log)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
-                print(file)
+                if variable_info:
+                    file.write(variable_info)
+                print(error_log)
     except Exception:
         # I already crashed once, if there's another here just ignore it.
         pass
 
     # Ask to send file.
-    git = branch = False
-    if " " in APPLICATION_VERSION:
-        ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
-        git = exec_type == "git"
-
-    if git:
-        head_file = os.path.join(sys.path[0], ".git", "HEAD")
-        if os.path.isfile(head_file):
-            ref_prefix = "ref: refs/heads/"
-            ref = ""
-            try:
-                with open(head_file) as f:
-                    ref = f.readline()
-            except Exception:
-                pass
-            if ref.startswith(ref_prefix):
-                branch = ref[len(ref_prefix) :].strip("\n")
-
-    if git and branch and branch not in ("main", "legacy6", "legacy7"):
-        message = _("Meerk40t has encountered a crash.")
-        ext_msg = _(
-            """It appears that you are running Meerk40t from source managed by Git,
-from a branch '{branch}' which is not 'main',
-and that you are therefore running a development version of Meerk40t.
-
-To avoid reporting crashes during development, automated submission of this crash has
-been disabled. If this is a crash which is unrelated to any development work that you are
-undertaking, please recreate this crash under main or if you are certain that this is not
-caused by any code changes you have made, then you can manually create a new Github
-issue indicating the branch you are runing from and using the traceback below which can
-be found in "{filename}".
-
-"""
-        ).format(
-            filename=filename,
-            branch=branch,
-        )
-        caption = _("Crash Detected!")
-        style = wx.OK | wx.ICON_WARNING
-    else:
-        message = _(
-            """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+    message = _(
+        """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
-        )
-        ext_msg = _(
-            """Only the crash details below are sent. No data from your MeerK40t project is sent. No
-personal information is sent either.
-
-Send the following data to the MeerK40t team?
-------
-"""
-        )
-        caption = _("Crash Detected! Send Log?")
-        style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
-    error_log_short = error_log
-    # Usually that gets quite messy with a lot of information
-    # So we try to split this:
-    error_log_list = error_log.split("\n")
-    max_error_lines = 15
-    header_lines = 4
-    if len(error_log_list) > max_error_lines:
-        error_log_short = ""
-        for idx in range(header_lines):
-            error_log_short += error_log_list[idx]
-            if idx > 0:
-                error_log_short += "\n"
-        error_log_short += "[...]"
-        for idx in range(header_lines - max_error_lines, 0):
-            error_log_short += "\n"
-            error_log_short += error_log_list[idx]
-
-    ext_msg += error_log_short
-    dlg = wx.MessageDialog(
-        None,
-        message,
-        caption=caption,
-        style=style,
     )
-    dlg.SetExtendedMessage(ext_msg)
-    answer = dlg.ShowModal()
-    if answer in (wx.YES, wx.ID_YES):
-        send_data_to_developers(filename, error_log)
+    message += "\n" + _(
+        "Only the crash details below are sent. No data from your MeerK40t project is sent. No "
+        + "personal information is sent either.\n"
+        + "Send the following data to the MeerK40t team?"
+    )
+    caption = _("Crash Detected! Send Log?")
+    data = error_log
+    if variable_info:
+        data += "\n" + variable_info
+    try:
+        dlg = _extended_dialog(caption, message, data)
+        answer = dlg.ShowModal()
+        dlg.Destroy()
+    except Exception as e:
+        answer = wx.ID_NO
+    # print (answer)
+    in_error_dialog = False
+    if answer in (wx.ID_YES, wx.ID_OK):
+        send_data_to_developers(filename, data)
+    if answer == wx.ID_CANCEL:
+        wx.Abort()

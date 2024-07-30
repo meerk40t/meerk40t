@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.gui.wxutils import wxCheckBox
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -32,6 +33,7 @@ class SnapOptionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("snap")
         # Main Sizer
         sizer_snap = wx.BoxSizer(wx.VERTICAL)
         maxpoints = 75
@@ -40,10 +42,12 @@ class SnapOptionPanel(wx.Panel):
             self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL
         )
         self.slider_visibility.SetToolTip(
-            _("Defines until which distance snap points will be highlighted")
+            _(
+                "The screen distance in pixels inside which snap points will be highlighted"
+            )
         )
 
-        self.check_snap_points = wx.CheckBox(self, wx.ID_ANY, _("Snap to element"))
+        self.check_snap_points = wxCheckBox(self, wx.ID_ANY, _("Snap to Element"))
         self.check_snap_points.SetToolTip(
             _("Shall the cursor snap to the next element point?")
         )
@@ -52,11 +56,11 @@ class SnapOptionPanel(wx.Panel):
         )
         self.slider_distance_points.SetToolTip(
             _(
-                "Set the distance inside which the cursor will snap to the next element point"
+                "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
             )
         )
 
-        self.check_snap_grid = wx.CheckBox(self, wx.ID_ANY, _("Snap to Grid"))
+        self.check_snap_grid = wxCheckBox(self, wx.ID_ANY, _("Snap to Grid"))
         self.check_snap_grid.SetToolTip(
             _("Shall the cursor snap to the next grid intersection?")
         )
@@ -65,7 +69,7 @@ class SnapOptionPanel(wx.Panel):
         )
         self.slider_distance_grid.SetToolTip(
             _(
-                "Set the distance inside which the cursor will snap to the next grid intersection"
+                "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
             )
         )
 

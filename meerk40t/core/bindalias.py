@@ -51,6 +51,22 @@ DEFAULT_KEYMAP = {
     "left": ("translate -1mm 0",),
     "up": ("translate 0 -1mm",),
     "down": ("translate 0 1mm",),
+    "shift+right": ("translate 10mm 0",),
+    "shift+left": ("translate -10mm 0",),
+    "shift+up": ("translate 0 -10mm",),
+    "shift+down": ("translate 0 10mm",),
+    "alt+shift+right": ("translate 10spx 0",),
+    "alt+shift+left": ("translate -10spx 0",),
+    "alt+shift+up": ("translate 0 -10spx",),
+    "alt+shift+down": ("translate 0 10spx",),
+    "alt+right": ("translate 1spx 0",),
+    "alt+left": ("translate -1spx 0",),
+    "alt+up": ("translate 0 -1spx",),
+    "alt+down": ("translate 0 1spx",),
+    "ctrl+shift+right": ("translate 0.1mm 0",),
+    "ctrl+shift+left": ("translate -0.1mm 0",),
+    "ctrl+shift+up": ("translate 0 -0.1mm",),
+    "ctrl+shift+down": ("translate 0 0.1mm",),
     "a": ("+left",),
     "d": ("+right",),
     "w": ("+up",),
@@ -160,7 +176,10 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_fill",
     ),
-    "ctrl+i": ("element* select^",),
+    "ctrl+i": (
+        "",
+        "element* select^",
+    ),
     "ctrl+d": ("element copy",),
     "ctrl+g": (
         "",
@@ -229,6 +248,11 @@ DEFAULT_KEYMAP = {
         "reset_bind_alias",
     ),
     "ctrl+alt+shift+home": ("bind default;alias default",),
+    # That's not working, so we delete it...
+    "ctrl+shift+l": (
+        "",
+        "signal lock_helper",
+    ),
 }
 DEFAULT_ALIAS = {
     "+scale_up": (".timerscale_up 0 0.1 .scale 1.02",),
@@ -339,6 +363,7 @@ class Bind(Service):
         return value, keyvalue
 
     def trigger(self, keyvalue):
+        # print (f"trigger for {keyvalue} started with {self.triggered}")
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
             fnd, keyvalue = self.is_found(keyvalue, self.triggered)
@@ -348,10 +373,11 @@ class Bind(Service):
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
                     self(f"{cmd}\n")
-                return True
+            return True
         return False
 
     def untrigger(self, keyvalue):
+        # print (f"untrigger for {keyvalue} started with {self.triggered}")
         keymap = self.keymap
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
@@ -363,7 +389,7 @@ class Bind(Service):
                 # Keyup commands only trigger if the down command started with +
                 action = "-" + action[1:]
                 self(action + "\n")
-                return True
+            return True
         return False
 
     def shutdown(self, *args, **kwargs):
@@ -414,7 +440,7 @@ class Alias(Service):
         @self.console_command(
             "alias", help=_("alias <alias> <console commands[;console command]*>")
         )
-        def alias(command, channel, _, alias=None, remainder=None, **kwgs):
+        def alias_command(command, channel, _, alias=None, remainder=None, **kwgs):
             _ = self._
             if alias is None:
                 reverse_keymap = {v: k for k, v in self.bind.keymap.items()}

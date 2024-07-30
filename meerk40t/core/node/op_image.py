@@ -1,11 +1,10 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, Length, UNITS_PER_MM
+from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -16,49 +15,28 @@ class ImageOpNode(Node, Parameters):
     This is a Node of type "op image".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op image", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
-
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
-        # Which elements can be added to an operation (manually via DND)?
-        self._allowed_elements_dnd = ("elem image",)
-        # Which elements do we consider for automatic classification?
-        self._allowed_elements = ("elem image",)
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
 
         # Is this op out of useful bounds?
         self.dangerous = False
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
+        self.label = "Image"
+
         self.allowed_attributes = []
-        if label is None:
-            self.label = "Image"
-        else:
-            self.label = label
+        super().__init__(type="op image", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
 
     def __repr__(self):
         return "ImageOpNode()"
 
-    def __copy__(self):
-        return ImageOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Image"
-        default_map["dpi"] = str(self.dpi)
+        default_map["dpi"] = str(int(self.dpi))
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -95,15 +73,21 @@ class ImageOpNode(Node, Parameters):
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
         # print(self.dangerous, self.stopop, self.raster_direction)
+        default_map["percent"] = "100%"
+        default_map["ppi"] = "default"
+        if self.power is not None:
+            default_map["percent"] = f"{self.power / 10.0:.0f}%"
+            default_map["ppi"] = f"{self.power:.0f}"
+        default_map["speed_mm_min"] = (
+            "" if self.speed is None else f"{self.speed * 60:.0f}"
+        )
         return default_map
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
-            if (
-                drag_node.type not in self._allowed_elements_dnd
-                or drag_node._parent.type == "branch reg"
-            ):
+        if hasattr(drag_node, "as_image"):
+            if drag_node.has_ancestor("branch reg"):
+                # We do not accept reg nodes.
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -111,7 +95,7 @@ class ImageOpNode(Node, Parameters):
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
-            if not drag_node.node.type in self._allowed_elements_dnd:
+            if not hasattr(drag_node.node, "as_image"):
                 return False
             # Move a refelem to end of op.
             if modify:
@@ -122,26 +106,40 @@ class ImageOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
-                if e.type in self._allowed_elements_dnd:
+                if hasattr(e, "as_image"):
                     if modify:
                         self.add_reference(e)
                     some_nodes = True
             return some_nodes
         return False
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
-        if node.type in self._allowed_elements_dnd:
+        if hasattr(node, "as_image"):
             return True
         else:
             return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
+
         feedback = []
-        if node.type in self._allowed_elements:
+        if hasattr(node, "as_image"):
             self.add_reference(node)
             # Have classified and no more classification are needed
             feedback.append("stroke")
@@ -151,26 +149,22 @@ class ImageOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
+        # Sync certain properties with self.settings
+        for attr in ("label", "lock", "id"):
+            if hasattr(self, attr) and attr in self.settings:
+                self.settings[attr] = getattr(self, attr)
+        if "hex_color" in self.settings:
+            self.settings["hex_color"] = self.color.hexa
+
         settings.write_persistent_attributes(section, self)
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
-
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add_reference(element)
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
 
     def time_estimate(self):
         """
@@ -251,6 +245,18 @@ class ImageOpNode(Node, Parameters):
 
             commands = plan.commands
             commands.append(actual(node))
+        if matrix.value_scale_y() < 0:
+            # Y is negative scale, flip raster_direction if needed
+            if self.raster_direction == 0:
+                self.raster_direction = 1
+            elif self.raster_direction == 1:
+                self.raster_direction = 0
+        if matrix.value_scale_x() < 0:
+            # X is negative scale, flip raster_direction if needed
+            if self.raster_direction == 2:
+                self.raster_direction = 3
+            elif self.raster_direction == 3:
+                self.raster_direction = 2
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -259,8 +265,11 @@ class ImageOpNode(Node, Parameters):
         """
         for image_node in self.children:
             # Process each child. All settings are different for each child.
-
-            if image_node.type != "elem image":
+            if image_node.type == "reference":
+                image_node = image_node.node
+            if not hasattr(image_node, "as_image"):
+                continue
+            if getattr(image_node, "hidden", False):
                 continue
             settings = self.derive()
 
@@ -270,7 +279,7 @@ class ImageOpNode(Node, Parameters):
                 overscan = float(Length(overscan))
 
             # Set variables by direction
-            if image_node.direction is not None:
+            if hasattr(image_node, "direction") and image_node.direction is not None:
                 direction = image_node.direction
             else:
                 direction = self.raster_direction
@@ -291,9 +300,17 @@ class ImageOpNode(Node, Parameters):
                 start_on_left = True
             bidirectional = self.bidirectional
 
+            # Set variables
+            pil_image, bounds = image_node.as_image()
+            offset_x = bounds[0]
+            offset_y = bounds[1]
+
             # Get steps from individual images
-            step_x = image_node.step_x
-            step_y = image_node.step_y
+            image_width, image_height = pil_image.size
+            expected_width = bounds[2] - bounds[0]
+            expected_height = bounds[3] - bounds[1]
+            step_x = expected_width / image_width
+            step_y = expected_height / image_height
 
             if horizontal:
                 # Raster step is only along y for horizontal raster
@@ -303,12 +320,6 @@ class ImageOpNode(Node, Parameters):
                 # Raster step is only along x for vertical raster
                 settings["raster_step_x"] = step_x
                 settings["raster_step_y"] = 0
-
-            # Set variables
-            matrix = image_node.active_matrix
-            pil_image = image_node.active_image
-            offset_x = matrix.value_trans_x()
-            offset_y = matrix.value_trans_y()
 
             # Establish path
             min_x = offset_x
@@ -334,8 +345,8 @@ class ImageOpNode(Node, Parameters):
                 inverted=False,
                 bidirectional=bidirectional,
                 horizontal=horizontal,
-                start_on_top=start_on_top,
-                start_on_left=start_on_left,
+                start_minimum_y=start_on_top,
+                start_minimum_x=start_on_left,
                 overscan=overscan,
                 settings=settings,
                 passes=passes,
@@ -364,8 +375,8 @@ class ImageOpNode(Node, Parameters):
                     inverted=False,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
-                    start_on_top=start_on_top,
-                    start_on_left=start_on_left,
+                    start_minimum_y=start_on_top,
+                    start_minimum_x=start_on_left,
                     overscan=overscan,
                     settings=settings,
                     passes=passes,

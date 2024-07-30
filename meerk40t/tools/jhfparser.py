@@ -40,6 +40,9 @@ class JhfPath:
         """
         self.path.append((x0, y0, x1, y1))
 
+    def character_end(self):
+        pass
+
 
 class JhfFont:
     """
@@ -50,16 +53,22 @@ class JhfFont:
     """
 
     def __init__(self, filename):
+        self.STROKE_BASED = True
         self.type = "Hershey"
         self.glyphs = dict()  # Glyph dictionary
         tempstr = os.path.basename(filename)
         fname, fext = os.path.splitext(tempstr)
         self.valid = False
+        self.active = True
         self.font_name = fname
+        self._line_information = []
         self._parse(filename)
 
     def __str__(self):
         return f'{self.type}("{self.font_name}", glyphs: {len(self.glyphs)})'
+
+    def line_information(self):
+        return self._line_information
 
     @staticmethod
     def hershey_val(character):
@@ -170,7 +179,16 @@ class JhfFont:
                     self.bottom = struct["bottom"]
             cidx += 1
 
-    def render(self, path, text, horizontal=True, font_size=12.0):
+    def render(
+        self,
+        path,
+        vtext,
+        horizontal=True,
+        font_size=12.0,
+        h_spacing=1.0,
+        v_spacing=1.1,
+        align="start",
+    ):
         """
         From https://emergent.unpythonic.net/software/hershey
         The structure is basically as follows: each character consists of a number 1->4000 (not all used) in column 0:4,
@@ -203,7 +221,7 @@ class JhfFont:
         Basic Glyph (symbol) data:
             Mathematical (227-229,232,727-779,732,737-740,1227-1270,2227-2270,
                             1294-1412,2294-2295,2401-2412)
-            Daggers (for footnotes, etc) (1276-1279, 2276-2279)
+            Daggers (for footnotes, etc.) (1276-1279, 2276-2279)
             Astronomical (1281-1293,2281-2293)
             Astrological (2301-2312)
             Musical (2317-2382)
@@ -220,73 +238,120 @@ class JhfFont:
                     - Highways
                     - Etc...
         """
-        offsetx = 0
-        offsety = 0
-        cidx = 0
-        if text is None or text == "":
-            return
-        scale = font_size / 21.0
-        replacer = []
-        for tchar in text:
-            to_replace = None
-            # Yes, I am German :-)
-            if tchar not in self.glyphs:
-                if tchar == "ä":
-                    to_replace = (tchar, "ae")
-                elif tchar == "ö":
-                    to_replace = (tchar, "ue")
-                elif tchar == "ü":
-                    to_replace = (tchar, "ue")
-                elif tchar == "Ä":
-                    to_replace = (tchar, "Ae")
-                elif tchar == "Ö":
-                    to_replace = (tchar, "Oe")
-                elif tchar == "Ü":
-                    to_replace = (tchar, "Ue")
-                elif tchar == "ß":
-                    to_replace = (tchar, "ss")
-            if to_replace is not None and to_replace not in replacer:
-                replacer.append(to_replace)
-        for to_replace in replacer:
-            # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
-            text = text.replace(to_replace[0], to_replace[1])
-        # print (f"Top: {self.top}, bottom={self.bottom}")
-        offsety = -1 * self.top  # Negative !
-        for tchar in text:
-            if tchar in self.glyphs:
-                # print(f"Char '{tchar}' (ord={ord(tchar)}), offsetx={offsetx}")
-                # if cidx > 0:
-                #     path.new_path()
-                struct = self.glyphs[tchar]
-                nverts = struct["nverts"]
-                vertices = struct["vertices"]
-                offsetx += abs(struct["left"])
-                # offsetx += abs(struct["realleft"] - 1)
-                idx = 0
-                penup = True
-                lastx = 0
-                lasty = 0
-                while idx < nverts:
-                    leftchar = vertices[2 * idx]
-                    rightchar = vertices[2 * idx + 1]
-                    if leftchar == " " and rightchar == "R":
-                        # pen up
+
+        def _do_render(to_render, offsets):
+            cidx = 0
+            scale = font_size / 21.0
+            replacer = []
+            for tchar in to_render:
+                to_replace = None
+                # Yes, I am German :-)
+                if tchar == "\n":
+                    continue
+                if tchar not in self.glyphs:
+                    if tchar == "ä":
+                        to_replace = (tchar, "ae")
+                    elif tchar == "ö":
+                        to_replace = (tchar, "ue")
+                    elif tchar == "ü":
+                        to_replace = (tchar, "ue")
+                    elif tchar == "Ä":
+                        to_replace = (tchar, "Ae")
+                    elif tchar == "Ö":
+                        to_replace = (tchar, "Oe")
+                    elif tchar == "Ü":
+                        to_replace = (tchar, "Ue")
+                    elif tchar == "ß":
+                        to_replace = (tchar, "ss")
+                if to_replace is not None and to_replace not in replacer:
+                    replacer.append(to_replace)
+            for to_replace in replacer:
+                # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
+                to_render = to_render.replace(to_replace[0], to_replace[1])
+            # print (f"Top: {self.top}, bottom={self.bottom}")
+            lines = to_render.split("\n")
+            if offsets is None:
+                offsets = [0] * len(lines)
+            self._line_information.clear()
+
+            offsety = -1 * self.top  # Negative !
+            for text, offs in zip(lines, offsets):
+                line_start_x = offs * scale
+                line_start_y = offsety * scale
+                offsetx = offs
+                for tchar in text:
+                    if tchar in self.glyphs:
+                        # print(f"Char '{tchar}' (ord={ord(tchar)}), offsetx={offsetx}")
+                        # if cidx > 0:
+                        #     path.new_path()
+                        struct = self.glyphs[tchar]
+                        nverts = struct["nverts"]
+                        vertices = struct["vertices"]
+                        offsetx += abs(struct["left"]) * h_spacing
+                        # offsetx += abs(struct["realleft"] - 1)
+                        idx = 0
                         penup = True
+                        lastx = 0
+                        lasty = 0
+                        while idx < nverts:
+                            leftchar = vertices[2 * idx]
+                            rightchar = vertices[2 * idx + 1]
+                            if leftchar == " " and rightchar == "R":
+                                # pen up
+                                penup = True
+                            else:
+                                leftval = scale * (offsetx + self.hershey_val(leftchar))
+                                rightval = scale * (
+                                    offsety - self.hershey_val(rightchar)
+                                )
+                                if penup:
+                                    if self.active:
+                                        path.move(leftval, rightval)
+                                    penup = False
+                                else:
+                                    if self.active:
+                                        path.line(lastx, lasty, leftval, rightval)
+                                lastx = leftval
+                                lasty = rightval
+                            idx += 1
+                        cidx += 1
+                        offsetx += struct["right"] * h_spacing
+                        if self.active:
+                            path.character_end()
+                        # offsetx += struct["realright"] + 1
                     else:
-                        leftval = scale * (offsetx + self.hershey_val(leftchar))
-                        rightval = scale * (offsety - self.hershey_val(rightchar))
-                        if penup:
-                            path.move(leftval, rightval)
-                            penup = False
-                        else:
-                            path.line(lastx, lasty, leftval, rightval)
-                        lastx = leftval
-                        lasty = rightval
-                    idx += 1
-                cidx += 1
-                offsetx += struct["right"]
-                # offsetx += struct["realright"] + 1
+                        # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
+                        pass
+                # Store start point, nonscaled width plus scaled width and height of line
+                self._line_information.append(
+                    (
+                        line_start_x,
+                        line_start_y - 0.5 * scale * (self.top - self.bottom),
+                        offsetx,
+                        scale * offsetx - line_start_x,
+                        scale * (self.top - self.bottom),
+                    )
+                )
+                offsety += v_spacing * (self.top - self.bottom)
+            line_lens = [e[2] for e in self._line_information]
+            return line_lens
+
+        if vtext is None or vtext == "":
+            return
+        self.active = False
+        line_lengths = _do_render(vtext, None)
+        max_len = max(line_lengths)
+        offsets = []
+        for ll in line_lengths:
+            # NB anchor not only defines the alignment of the individual
+            # lines to another but as well of the whole block relative
+            # to the origin
+            if align == "middle":
+                offs = -max_len / 2 + (max_len - ll) / 2
+            elif align == "end":
+                offs = -ll
             else:
-                # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
-                pass
-        return
+                offs = 0
+            offsets.append(offs)
+        self.active = True
+        _do_render(vtext, offsets)

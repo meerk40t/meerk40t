@@ -32,6 +32,7 @@ class LaserJob:
         self.item_index = 0
 
         self._stopped = True
+        self.enabled = True
 
         self._estimate = 0
 
@@ -43,7 +44,7 @@ class LaserJob:
         self.outline = outline
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
+        return f"{self.__class__.__name__}({self.label}{'' if self.enabled else '[x]'}: {self.loops_executed}/{self.loops})"
 
     def bounds(self):
         if self.outline is None:
@@ -71,7 +72,10 @@ class LaserJob:
             else:
                 return "Queued"
         else:
-            return "Disabled"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
 
     def is_running(self):
         return not self._stopped
@@ -179,6 +183,13 @@ class LaserJob:
             self.runtime += time.time() - self.time_started
         self._stopped = True
 
+    def stop_after_loop(self):
+        self.loops = self.loops_executed + 1
+
+    def add_another_loop(self):
+        if not isinf(self.loops):
+            self.loops += 1
+
     def elapsed_time(self):
         """
         How long is this job already running...
@@ -200,6 +211,10 @@ class LaserJob:
         """
         if isinf(self.loops):
             return float("inf")
-        if self.is_running() and self.time_started is not None and self.avg_time_per_pass:
+        if (
+            self.is_running()
+            and self.time_started is not None
+            and self.avg_time_per_pass
+        ):
             return self.avg_time_per_pass * self.loops
         return self.loops * self._estimate

@@ -5,22 +5,36 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
 open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 """
+
 import argparse
 import os.path
 import sys
 
-from meerk40t.external_plugins import plugin as external_plugins
-from meerk40t.internal_plugins import plugin as internal_plugins
-from meerk40t.kernel import Kernel
-
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.0003"
+APPLICATION_VERSION = "0.9.4050"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
     # Otherwise we are running from source
     if os.path.isdir(sys.path[0] + "/.git"):
         APPLICATION_VERSION += " git"
+        try:
+            head_file = os.path.join(sys.path[0], ".git", "HEAD")
+            if os.path.isfile(head_file):
+                ref_prefix = "ref: refs/heads/"
+                ref = ""
+                with open(head_file) as f:
+                    ref = f.readline()
+                if ref.startswith(ref_prefix):
+                    branch = ref[len(ref_prefix) :].strip("\n")
+                    APPLICATION_VERSION += " " + branch
+                else:
+                    branch = ref.strip("\n")
+                    APPLICATION_VERSION += " " + branch
+        except Exception:
+            # Entirely optional, also this code segment may run in python2
+            pass
+
     elif os.path.isdir(sys.path[0] + "/.github"):
         APPLICATION_VERSION += " src"
     else:
@@ -99,6 +113,32 @@ parser.add_argument(
     default=False,
     help="Don't load config file at startup",
 )
+parser.add_argument(
+    "-L",
+    "--language",
+    type=str,
+    default=None,
+    help="force default language (en, de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh)",
+)
+parser.add_argument(
+    "-f",
+    "--profiler",
+    type=str,
+    default=None,
+    help="run meerk40t with profiler file specified",
+)
+parser.add_argument(
+    "-u",
+    "--lock-device-config",
+    action="store_true",
+    help="lock device config from editing",
+)
+parser.add_argument(
+    "-U",
+    "--lock-general-config",
+    action="store_true",
+    help="lock general config from editing",
+)
 
 
 def run():
@@ -129,6 +169,26 @@ def run():
     ###################
     # END Old Python Code.
     ###################
+    if args.profiler:
+        import cProfile
+
+        profiler = cProfile.Profile()
+        profiler.enable()
+        _run = _exe(False, args)
+        while _run:
+            _run = _exe(True, args)
+        profiler.disable()
+        profiler.dump_stats(args.profiler)
+        return
+    _run = _exe(False, args)
+    while _run:
+        _run = _exe(True, args)
+
+
+def _exe(restarted, args):
+    from meerk40t.external_plugins import plugin as external_plugins
+    from meerk40t.internal_plugins import plugin as internal_plugins
+    from meerk40t.kernel import Kernel
 
     kernel = Kernel(
         APPLICATION_NAME,
@@ -136,8 +196,18 @@ def run():
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
         ignore_settings=args.nuke_settings,
+        restarted=restarted,
     )
     kernel.args = args
     kernel.add_plugin(internal_plugins)
     kernel.add_plugin(external_plugins)
-    kernel()
+    auto = hasattr(kernel.args, "auto") and kernel.args.auto
+    console = hasattr(kernel.args, "console") and kernel.args.console
+    for idx, attrib in enumerate(("mktablength", "mktabpositions")):
+        kernel.register(f"registered_mk_svg_parameters/tabs{idx}", attrib)
+
+    if auto and not console:
+        kernel(partial=True)
+    else:
+        kernel()
+    return hasattr(kernel, "restart") and kernel.restart

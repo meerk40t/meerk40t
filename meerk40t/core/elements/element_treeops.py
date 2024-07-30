@@ -1,5 +1,5 @@
 """
-This is a large number of flagged tree operations. The details of how these are registered is availible in the treeop.py
+This is a large number of flagged tree operations. The details of how these are registered is available in the treeop.py
 file. These define the right-click node menu operations. That menu is dynamically created based on various context
 cues.
 """
@@ -9,9 +9,8 @@ import math
 import os.path
 from copy import copy
 
-from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
@@ -24,11 +23,13 @@ from meerk40t.core.treeop import (
     tree_separator_after,
     tree_separator_before,
     tree_submenu,
+    tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point, Polygon
+from meerk40t.svgelements import Matrix, Point
+from meerk40t.tools.geomstr import Geomstr
 
 from .element_types import *
 
@@ -49,13 +50,15 @@ def init_tree(kernel):
     # --------------------------- TREE OPERATIONS ---------------------------
 
     def is_regmark(node):
-        result = False
-        try:
-            if node._parent.type == "branch reg":
-                result = True
-        except AttributeError:
-            pass
-        return result
+        return node.has_ancestor("branch reg")
+
+    def is_hatched(node):
+        e = node
+        while e is not None and not e.type.startswith("branch"):
+            if e.type.startswith("effect"):
+                return True
+            e = e.parent
+        return False
 
     def has_changes(node):
         result = False
@@ -66,6 +69,10 @@ def init_tree(kernel):
             # There was an error during check for matrix.is_identity
             pass
         return result
+
+    def is_developer_mode():
+        flag = getattr(self.kernel.root, "developer_mode", False)
+        return flag
 
     @tree_separator_after()
     @tree_conditional(lambda node: len(list(self.ops(selected=True))) == 1)
@@ -120,6 +127,90 @@ def init_tree(kernel):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(node)
+
+    # @tree_operation(_("Debug group"), node_type=("group", "file"), help="")
+    # def debug_group(node, **kwargs):
+    #     if node is None:
+    #         return
+    #     info = ""
+    #     for idx, e in enumerate(list(node.children)):
+    #         if info:
+    #             info += "\n"
+    #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
+    #     print (info)
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_submenu(_("Passthrough"))
+    @tree_operation(_("From Original"), node_type="elem image", help="")
+    def image_convert_unmodified(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_submenu(_("Passthrough"))
+    @tree_operation(_("From Modified"), node_type="elem image", help="")
+    def image_convert_unmodified_2(node, **kwargs):
+        node.replace_node(
+            image=node.active_image,
+            matrix=node.active_matrix,
+            type="image raster",
+        )
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_operation(_("Unlock Modifications"), node_type="image raster", help="")
+    def image_convert_modifier(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="elem image",
+        )
+
+    @tree_operation(_("Remove effect"), node_type=effect_nodes, help="")
+    def remove_effect(node, **kwargs):
+        childs = [e for e in node._children]
+        for e in childs:
+            e._parent = None  # Otherwise add_node will fail below
+            node.parent.add_node(e)
+        node._children.clear()
+        node.remove_node()
+        self.signal("rebuild_tree")
+
+    @tree_conditional(lambda node: is_hatched(node))
+    @tree_operation(_("Remove effect"), node_type=elem_nodes, help="")
+    def unhatch_elements(node, **kwargs):
+        for e in list(self.elems(emphasized=True)):
+            # eparent is the nodes immediate parent
+            # nparent is the containing hatch
+            eparent = e.parent
+            nparent = eparent
+            while True:
+                if nparent.type.startswith("effect"):
+                    break
+                if nparent.parent is None:
+                    nparent = None
+                    break
+                if nparent.parent is self.elem_branch:
+                    nparent = None
+                    break
+                nparent = nparent.parent
+            if nparent is None:
+                continue
+            e._parent = None  # Otherwise add_node will fail below
+            try:
+                idx = eparent._children.index(e)
+                if idx >= 0:
+                    eparent._children.pop(idx)
+            except IndexError:
+                pass
+            nparent.parent.add_node(e)
+            if len(nparent.children) == 0:
+                nparent.remove_node()
+            else:
+                nparent.altered()
+        self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
@@ -186,12 +277,68 @@ def init_tree(kernel):
     def element_label(node, **kwargs):
         return
 
+    def add_node_and_children(node):
+        data = []
+        data.append(node)
+        for e in node.children:
+            if e.type in ("file", "group"):
+                data.extend(add_node_and_children(e))
+            else:
+                data.append(e)
+        return data
+
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Toggle visibility"),
+        node_type=elem_group_nodes,
+        help="",
+    )
+    def element_visibility_toggle(node, **kwargs):
+        raw_data = list(self.elems(selected=True))
+        data = self.condense_elements(raw_data, expand_at_end=False)
+        updated = []
+        for e in data:
+            if hasattr(e, "hidden"):
+                e.hidden = not e.hidden
+                if e.hidden:
+                    e.emphasized = False
+            if e.type in ("file", "group"):
+                updated.extend(add_node_and_children(e))
+            else:
+                updated.append(e)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
+
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
-    @tree_operation(_("Group elements"), node_type=elem_nodes, help="")
+    @tree_operation(_("Group elements"), node_type=elem_group_nodes, help="")
     def group_elements(node, **kwargs):
-        group_node = node.parent.add(type="group", label="Group")
-        for e in list(self.elems(emphasized=True)):
+        def minimal_parent(data):
+            result = None
+            root = self.elem_branch
+            curr_level = None
+            for node in data:
+                plevel = 0
+                candidate = node.parent
+                while candidate is not None and candidate.parent is not root:
+                    candidate = candidate.parent
+                    plevel += 1
+                if curr_level is None or plevel < curr_level:
+                    curr_level = plevel
+                    result = node.parent
+                if plevel == 0:
+                    # No need to continue
+                    break
+            if result is None:
+                result = root
+            return result
+
+        raw_data = list(self.elems(emphasized=True))
+        data = self.condense_elements(raw_data, expand_at_end=False)
+        parent_node = minimal_parent(data)
+        group_node = parent_node.add(type="group", label="Group")
+        for e in data:
             group_node.append_child(e)
 
     @tree_conditional(
@@ -204,11 +351,9 @@ def init_tree(kernel):
     def clear_all_op_entries(node, **kwargs):
         with self.static("clear_all_op"):
             data = list()
-            removed = False
             for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
                 data.append(item)
             for item in data:
-                removed = True
                 item.remove_all_children()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
@@ -227,6 +372,7 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("element_property_update", changes)
             self.signal("refresh_scene", "Scene")
+            self.signal("warn_state_update", "")
 
     @tree_conditional(
         lambda node: hasattr(node, "output")
@@ -277,6 +423,67 @@ def init_tree(kernel):
                 oplist.append(n)
         set_op_output(oplist, False)
 
+    def move_op(node, relative: str):
+        try:
+            idx = self.op_branch._children.index(node)
+        except IndexError as e:
+            # print (f"threw an error: {e}")
+            return
+        # print (f"Index was {idx}")
+        if relative == "top":
+            # to the top
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(0, node)
+        elif relative == "up":
+            # one up
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(idx - 1, node)
+        elif relative == "down":
+            # one down
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(idx + 1, node)
+        elif relative == "bottom":
+            # to the end
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.append(node)
+        # try:
+        #     idx = self.op_branch._children.index(node)
+        # except IndexError as e:
+        #     print (f"threw an error: {e}")
+        #     return
+        # print (f"Index is now {idx}")
+        self.signal("rebuild_tree")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(
+        _("Dragging works as well..."),
+        node_type=op_parent_nodes,
+        help="You can as well just rearrange the operations by dragging them to a new place",
+        enable=False,
+    )
+    def burn_label(node, **kwargs):
+        return
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn first"), node_type=op_parent_nodes, help="")
+    def burn_first(node, **kwargs):
+        move_op(node, "top")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn earlier"), node_type=op_parent_nodes, help="")
+    def burn_earlier(node, **kwargs):
+        move_op(node, "up")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn later"), node_type=op_parent_nodes, help="")
+    def burn_later(node, **kwargs):
+        move_op(node, "down")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn last"), node_type=op_parent_nodes, help="")
+    def burn_last(node, **kwargs):
+        move_op(node, "bottom")
+
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
@@ -310,15 +517,6 @@ def init_tree(kernel):
         for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op cut"
-            n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
-
-    @tree_submenu(_("Convert operation"))
-    @tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
-    def convert_operation_hatch(node, **kwargs):
-        for n in list(self.ops(selected=True)):
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op hatch"
             n.replace_node(keep_children=True, **new_settings)
         self.signal("rebuild_tree")
 
@@ -367,6 +565,36 @@ def init_tree(kernel):
             activate(node)
             self.signal("propupdate", node)
 
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(_("Horizontal"), node_type="elem image", help="")
+    def image_convert_to_path_horizontal(node, **kwargs):
+        image, box = node.as_image()
+        m = Matrix(node.active_matrix)
+        n = node.replace_node(
+            type="elem path",
+            geometry=Geomstr.image(image, vertical=False),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            matrix=m,
+        )
+        if self.classify_new:
+            self.classify([n])
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(_("Vertical"), node_type="elem image", help="")
+    def image_convert_to_path_vertical(node, **kwargs):
+        image, box = node.as_image()
+        m = Matrix(node.active_matrix)
+        n = node.replace_node(
+            type="elem path",
+            geometry=Geomstr.image(image, vertical=True),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            matrix=m,
+        )
+        if self.classify_new:
+            self.classify([n])
+
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
 
@@ -388,13 +616,13 @@ def init_tree(kernel):
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op cut", "op engrave", "op hatch"),
+        node_type=("op cut", "op engrave"),
         help="",
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type not in ("op cut", "op engrave", "op hatch"):
+            if n.type not in ("op cut", "op engrave"):
                 continue
             n.speed = float(speed)
             data.append(n)
@@ -405,11 +633,11 @@ def init_tree(kernel):
 
     @tree_submenu(_("Power"))
     @tree_radio(radio_match_power)
-    @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_values("power", (100, 250, 300, 333, 500, 667, 750, 1000))
     @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
-        node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
+        node_type=("op cut", "op raster", "op image", "op engrave"),
         help="",
     )
     def set_power(node, power=1000, **kwargs):
@@ -430,7 +658,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("DPI"))
     @tree_radio(radio_match)
-    @tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_values("dpi", (100, 200, 250, 300, 333.3, 500, 666.6, 750, 1000))
     @tree_operation(
         _("DPI {dpi}"),
         node_type=("op raster", "elem image"),
@@ -478,7 +706,7 @@ def init_tree(kernel):
     @tree_submenu(_("Set placement loops"))
     @tree_radio(radio_match_loops)
     @tree_iterate("loopvalue", 1, 10)
-    @tree_operation(_("Loops {loopvalue}"), node_type=place_nodes, help="")
+    @tree_operation(_("Loops {loopvalue}"), node_type="place point", help="")
     def set_n_loops(node, loopvalue=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
@@ -490,137 +718,52 @@ def init_tree(kernel):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dx", _("Distance between placements?"))
-    @tree_prompt(
-        "nx",
-        _(
-            "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(
-        _("Create placements horizontally"), node_type="place point", help=""
-    )
-    def copies_horizontally(node, dx, nx, pos=None, **kwargs):
-        #
-        if dx is None or dx == "":
-            return
-        try:
-            len_dx = Length(dx)
-            dx_val = float(len_dx)
-        except ValueError:
-            return
-        if nx is None or nx == "":
-            return
-        try:
-            nx = int(nx)
-        except ValueError:
-            return
-        if nx < 0:
-            # Nothing to do
-            return
-        data = []
-        max_x = self.device.width
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x + dx_val
-            starty = pnode.y
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if nx == 0:
-                while startx < max_x:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-            else:
-                for idx in range(nx):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create placements horizontally"), node_type="place point", help=""
+    # )
+    # def copies_horizontally(node, dx, nx, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} 1 0\n")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dy", _("Distance between placements?"))
-    @tree_prompt(
-        "ny",
-        _(
-            "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(_("Create placements vertically"), node_type="place point", help="")
-    def copies_vertically(node, dy, ny, pos=None, **kwargs):
-        #
-        if dy is None or dy == "":
-            return
-        try:
-            len_dy = Length(dy)
-            dy_val = float(len_dy)
-        except ValueError:
-            return
-        if ny is None or ny == "":
-            return
-        try:
-            ny = int(ny)
-        except ValueError:
-            return
-        if ny < 0:
-            # Nothing to do
-            return
-        data = []
-        max_y = self.device.height
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x
-            starty = pnode.y + dy_val
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if ny == 0:
-                while starty < max_y:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-            else:
-                for idx in range(ny):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dy", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(_("Create placements vertically"), node_type="place point", help="")
+    # def copies_vertically(node, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid 1 0 {ny} {dy}\n")
+
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Horizontal distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_prompt("dy", _("Vertical distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create grid of placements"), node_type="place point", help=""
+    # )
+    # def copies_grid(node, dx, nx, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} {ny} {dy}\n")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -694,18 +837,39 @@ def init_tree(kernel):
                 self.signal("element_property_reload", data)
                 break
 
-    # @tree_separator_before()
-    # @tree_operation(
-    #     _("Execute operation(s)"),
-    #     node_type=op_nodes,
-    #     help=_("Execute Job for the selected operation(s)."),
-    # )
-    # def execute_job(node, **kwargs):
-    #     self.set_node_emphasis(node, True)
-    #     self("plan0 clear copy-selected\n")
-    #     self("window open ExecuteJob 0\n")
+    def selected_active_ops():
+        result = 0
+        selected = 0
+        contained = 0
+        for op in self.ops():
+            try:
+                if op.selected:
+                    selected += 1
+                    contained += len(op.children)
+                    if op.output:
+                        result += 1
+            except AttributeError:
+                pass
+        if contained == 0:
+            result = 0
+        elif selected == 1:
+            result = 1
+        return result
+
+    @tree_separator_before()
+    @tree_conditional(lambda cond: selected_active_ops() > 0)
+    @tree_operation(
+        _("Execute operation(s)"),
+        node_type=op_nodes,
+        help=_("Execute Job for the selected operation(s)."),
+    )
+    def execute_job(node, **kwargs):
+        self.set_node_emphasis(node, True)
+        self("plan0 clear copy-selected\n")
+        self("window open ExecuteJob 0\n")
 
     @tree_separator_after()
+    @tree_conditional(lambda cond: selected_active_ops() > 0)
     @tree_operation(
         _("Simulate operation(s)"),
         node_type=op_nodes,
@@ -728,7 +892,10 @@ def init_tree(kernel):
 
     @tree_operation(_("Clear all"), node_type="branch ops", help="")
     def clear_all(node, **kwargs):
-        self("operation* delete\n")
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), caption=_("Operations")
+        ):
+            self("operation* delete\n")
 
     @tree_operation(
         _("Clear unused"),
@@ -742,8 +909,14 @@ def init_tree(kernel):
             if len(op._children) == 0 and not op.type == "blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
-            with self.static("clear_unused"):
-                self.remove_operations(to_delete)
+            if self.kernel.yesno(
+                _("Do you really want to delete {num} entries?").format(
+                    num=len(to_delete)
+                ),
+                caption=_("Operations"),
+            ):
+                with self.static("clear_unused"):
+                    self.remove_operations(to_delete)
 
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
@@ -830,6 +1003,7 @@ def init_tree(kernel):
             except AttributeError:
                 pass
         self.signal("element_property_update", ops)
+        self.signal("warn_state_update", "")
 
     @tree_separator_before()
     @tree_operation(
@@ -864,8 +1038,11 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
-        with self.static("clear_elems"):
-            self.elem_branch.remove_all_children()
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), caption=_("Elements")
+        ):
+            with self.static("clear_elems"):
+                self.elem_branch.remove_all_children()
 
     # ==========
     # General menu-entries for regmark branch
@@ -873,8 +1050,11 @@ def init_tree(kernel):
 
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
-        with self.static("clear_regmarks"):
-            self.reg_branch.remove_all_children()
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), caption=_("Regmarks")
+        ):
+            with self.static("clear_regmarks"):
+                self.reg_branch.remove_all_children()
 
     # ==========
     # REMOVE MULTI (Tree Selected)
@@ -969,42 +1149,24 @@ def init_tree(kernel):
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
 
-    @tree_conditional(lambda node: hasattr(node, "effect") and not node.effect)
-    @tree_operation(
-        _("Effect: On"),
-        node_type=effect_nodes,
-        help="",
-    )
-    def effect_on(node, **kwargs):
-        node.effect = not node.effect
-
-    @tree_conditional(lambda node: hasattr(node, "effect") and node.effect)
-    @tree_operation(
-        _("Effect: Off"),
-        node_type=effect_nodes,
-        help="",
-    )
-    def effect_off(node, **kwargs):
-        node.effect = not node.effect
-
-    @tree_conditional(lambda node: node.can_remove)
-    @tree_conditional(
-        lambda cond: len(
-            list(self.flat(selected=True, cascade=False, types=elem_nodes))
-        )
-        == 1
-    )
-    @tree_operation(
-        _("Delete element '{name}' fully"),
-        node_type=elem_nodes,
-        help="",
-    )
-    def remove_type_elem(node, **kwargs):
-        if hasattr(node, "can_remove") and not node.can_remove:
-            pass
-        else:
-            node.remove_node()
-            self.set_emphasis(None)
+    # @tree_conditional(lambda node: node.can_remove)
+    # @tree_conditional(
+    #     lambda cond: len(
+    #         list(self.flat(selected=True, cascade=False, types=elem_nodes))
+    #     )
+    #     == 1
+    # )
+    # @tree_operation(
+    #     _("Delete element '{name}' fully"),
+    #     node_type=elem_nodes,
+    #     help="",
+    # )
+    # def remove_type_elem(node, **kwargs):
+    #     if hasattr(node, "can_remove") and not node.can_remove:
+    #         pass
+    #     else:
+    #         self.set_emphasis(None)
+    #         node.remove_node()
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
@@ -1016,9 +1178,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_op(node, **kwargs):
-
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
         self.signal("operation_removed")
 
     @tree_conditional(
@@ -1031,8 +1192,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_blob(node, **kwargs):
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
         self.signal("operation_removed")
 
     @tree_conditional(
@@ -1075,8 +1236,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_grp(node, **kwargs):
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
 
     @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
@@ -1091,8 +1252,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_file(node, **kwargs):
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -1102,7 +1263,6 @@ def init_tree(kernel):
     )
     def remove_transparent(node, **kwargs):
         res = 0
-        to_remove = []
         for enode in self.flat(
             selected=True,
             cascade=True,
@@ -1155,14 +1315,12 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "util console",
             "util wait",
             "util home",
             "util goto",
             "util output",
             "util input",
-            "lasercode",
             "cutcode",
             "blob",
         ),
@@ -1192,7 +1350,7 @@ def init_tree(kernel):
     # REMOVE ELEMENTS
     # ==========
     # More than one, special case == 1 already dealt with
-    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
+    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) >= 1)
     @tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
     @tree_operation(
         _("Delete {ecount} elements, as selected in scene"),
@@ -1211,7 +1369,7 @@ def init_tree(kernel):
         self.signal("make_reference", node)
 
     @tree_conditional(
-        lambda node: isinstance(node.shape, Polygon) and len(node.shape.points) >= 3
+        lambda node: node.closed and len(list(node.geometry.as_points())) >= 3
     )
     @tree_operation(
         _("Make Polygon regular"),
@@ -1219,87 +1377,51 @@ def init_tree(kernel):
         help="",
     )
     def make_polygon_regular(node, **kwargs):
-        # from .units import Length
-        # from ..svgelements import Color
-
-        # def mk_debug_point(x, y, col):
-        #     circ = Ellipse(cx=x, cy=y, r=float(Length("1mm")))
-        #     circ.transform = copy(node.shape.transform)
-        #     self.elem_branch.add(
-        #         shape=circ,
-        #         type="elem ellipse",
-        #         stroke=Color(col),
-        #         fill=Color(col),
-        #         matrix=copy(node.matrix),
-        #     )
+        def norm_angle(angle):
+            while angle < 0:
+                angle += math.tau
+            while angle >= math.tau:
+                angle -= math.tau
+            return angle
 
         if node is None or node.type != "elem polyline":
             return
-        number_points = len(node.shape.points)
-        # print (f"Number of points: {number_points}")
-        # for prop in dir(node):
-        #     print (f"{prop} - {getattr(node, 'prop', '')}")
-        # for idx, pt in enumerate(node.shape.points):
-        #     print (f"{idx}: {pt.x:.1f}, {pt.y:.1f}")
-        if number_points < 3 or not isinstance(node.shape, Polygon):
-            return
-        pts = node.shape.points
-        dx = pts[1].x - pts[0].x
-        dy = pts[1].y - pts[0].y
-        baseline = math.sqrt(dx * dx + dy * dy)
-        apothem = baseline / (2 * math.tan(math.tau / (2 * number_points)))
-        circumradius = baseline / (2 * math.sin(math.tau / (2 * number_points)))
-        midpoint = Point(pts[0].x + 0.5 * dx, pts[0].y + 0.5 * dy)
-        #  mk_debug_point(midpoint.x, midpoint.y, "black")
-        ax = 0
-        ay = 0
-        for idx, pt in enumerate(pts):
-            ax += pt.x
-            ay += pt.y
-        ax /= number_points
-        ay /= number_points
+        pts = list(node.geometry.as_points())
+        vertex_count = len(pts) - 1
+        baseline = abs(pts[1] - pts[0])
+        circumradius = baseline / (2 * math.sin(math.tau / (2 * vertex_count)))
+        apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
+        midpoint = (pts[0] + pts[1]) / 2
+        angle0 = Geomstr.angle(None, pts[0], pts[1])
+        angle1 = norm_angle(angle0 + math.tau / 4)
+        angle2 = norm_angle(angle0 - math.tau / 4)
+        pt1 = Geomstr.polar(None, midpoint, angle1, apothem)
+        pt2 = Geomstr.polar(None, midpoint, angle2, apothem)
         # The arithmetic center (ax, ay) indicates to which
         # 'side' of the baseline the polygon needs to be constructed
-        arithmetic_center = Point(ax, ay)
-        # mk_debug_point(ax, ay, "green")
-        angle = pts[0].angle_to(pts[1])
-        midangle = midpoint.angle_to(arithmetic_center)
-        angle += math.tau / 4
-        first_point = Point.polar(midpoint, angle, apothem)
-        second_point = Point.polar(midpoint, angle + math.tau / 2, apothem)
-        # mk_debug_point(first_point.x, first_point.y, "yellow")
-        # mk_debug_point(second_point.x, second_point.y, "cyan")
-        deltaangle = math.tau / number_points
-        d1 = arithmetic_center.distance_to(first_point)
-        d2 = arithmetic_center.distance_to(second_point)
-        if d1 < d2:
-            center_point = copy(first_point)
+        arithmetic_center = sum(pts[:-1]) / vertex_count
+        if Geomstr.distance(None, pt1, arithmetic_center) < Geomstr.distance(
+            None, pt2, arithmetic_center
+        ):
+            center_point = pt1
         else:
-            center_point = copy(second_point)
-        # mk_debug_point(center_point.x, center_point.y, "red")
+            center_point = pt2
 
-        if center_point.angle_to(pts[0]) > center_point.angle_to(pts[1]):
-            deltaangle *= -1
-        angle = center_point.angle_to(pts[0])
-        for idx in range(number_points):
-            # if idx > 1:
-            pt = Point.polar(center_point, angle, circumradius)
-            pts[idx].x = pt.x
-            pts[idx].y = pt.y
-            angle += deltaangle
+        start_angle = Geomstr.angle(None, center_point, pts[0])
+
+        node.geometry = Geomstr.regular_polygon(
+            vertex_count,
+            center_point,
+            radius=circumradius,
+            radius_inner=circumradius,
+            start_angle=start_angle,
+        )
         node.altered()
         self.signal("refresh_scene", "Scene")
 
     # ==========
     # CONVERT TREE OPERATIONS
     # ==========
-    @tree_operation(
-        _("Convert to Cutcode"),
-        node_type="lasercode",
-        help="",
-    )
-    def lasercode2cut(node, **kwargs):
-        node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
     @tree_conditional_try(
         lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
@@ -1328,7 +1450,7 @@ def init_tree(kernel):
                         for dentry in entry["display"]:
                             newdisplay.append(_(dentry))
                         entry["display"] = newdisplay
-                dialog = dialog_class(self.kernel, choices=choices)
+                dialog = dialog_class(self.kernel.root, choices=choices)
                 res = dialog.dialog_options(
                     title=_("Blob-Conversion"),
                     intro=_(
@@ -1351,7 +1473,7 @@ def init_tree(kernel):
     )
     def blob_execute(node, **kwargs):
         spooler_job = self.lookup(f"spoolerjob/{node.data_type}")
-        matrix = self.device.scene_to_device_matrix()
+        matrix = self.device.view.matrix
         job_object = spooler_job(self.device.driver, matrix)
         job_object.write_blob(node.data)
         self.device.spooler.send(job_object)
@@ -1408,7 +1530,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "group",
             "branch elems",
             "file",
@@ -1420,37 +1541,23 @@ def init_tree(kernel):
         node.reverse()
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
-    @tree_separator_after()
-    @tree_conditional(lambda node: self.classify_autogenerate)
+    @tree_submenu(_("Classification"))
     @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
+        _("Generate operations if needed"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_1(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
         help=_("Reclassify elements and create operations if necessary"),
     )
-    def refresh_clasifications_1(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
-        help=_("Reclassify elements and use only existing operations"),
-    )
-    def refresh_clasifications_2(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_separator_after()
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh ... (incl autogeneration)"),
-        node_type="branch ops",
-        help=_("Reclassify elements and create operations if necessary"),
-    )
-    def refresh_clasifications_3(node, **kwargs):
+    def refresh_classification_for_all_std(node, **kwargs):
         previous = self.classify_autogenerate
         self.classify_autogenerate = True
         self.remove_elements_from_operations(list(self.elems()))
@@ -1458,10 +1565,76 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and create operations if necessary"),
+    )
+    def do_classification_for_unassigned_std(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = True
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Use only existing operations"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_2(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Reclassify all elements and use only existing operations"),
+    )
+    def refresh_classification_for_all_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        self.remove_elements_from_operations(list(self.elems()))
+        self.classify(list(self.elems()))
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and use only existing operations"),
+    )
+    def do_classification_for_unassigned_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Clear all assignments"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+    )
+    def do_classification_clear(node, **kwargs):
+        self.remove_elements_from_operations(list(self.elems()))
+        self.signal("refresh_tree")
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
-        node_type="branch ops",
+        node_type=("branch ops", "branch elems"),
         help=_("Select all elements that won't be burned"),
     )
     def select_unassigned(node, **kwargs):
@@ -1475,70 +1648,207 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("refresh_scene", "Scene")
 
-    materials = [
-        _("Wood"),
-        _("Acrylic"),
-        _("Foam"),
-        _("Leather"),
-        _("Cardboard"),
-        _("Cork"),
-        _("Textiles"),
-        _("Paper"),
-        _("Save-1"),
-        _("Save-2"),
-        _("Save-3"),
-    ]
+    # materials = [
+    #     _("Wood"),
+    #     _("Acrylic"),
+    #     _("Foam"),
+    #     _("Leather"),
+    #     _("Cardboard"),
+    #     _("Cork"),
+    #     _("Textiles"),
+    #     _("Paper"),
+    #     _("Save-1"),
+    #     _("Save-2"),
+    #     _("Save-3"),
+    # ]
 
-    def union_materials_saved():
-        union = [
-            d
-            for d in self.op_data.section_set()
-            if d not in materials and d != "previous"
-        ]
-        union.extend(materials)
-        return union
+    # def union_materials_saved():
+    #     union = [
+    #         d
+    #         for d in self.op_data.section_set()
+    #         if d not in materials and d != "previous"
+    #     ]
+    #     union.extend(materials)
+    #     return union
 
-    def difference_materials_saved():
-        secs = self.op_data.section_set()
-        difference = [m for m in materials if m not in secs]
-        return difference
+    # def difference_materials_saved():
+    #     secs = self.op_data.section_set()
+    #     difference = [m for m in materials if m not in secs]
+    #     return difference
 
+    @tree_separator_before()
+    @tree_operation(
+        _("Material Manager"),
+        node_type="branch ops",
+        help=_("Open the Material Manager"),
+    )
+    def load_matman(node, **kwargs):
+        self("window open MatManager\n")
+
+    def material_name(material):
+        if material == "previous":
+            return _("<Previous set>")
+        oplist, opinfo = self.load_persistent_op_list(material)
+        mat_name = opinfo.get("material", "")
+        mat_title = opinfo.get("title", "")
+        # material_thickness = opinfo.get("thickness", "")
+        if mat_title == "":
+            if mat_name:
+                mat_title = mat_name
+            else:
+                if material == "_default":
+                    mat_title = "Generic Defaults"
+                elif material.startswith("_default_"):
+                    mat_title = f"Default for {material[9:]}"
+                else:
+                    mat_title = material.replace("_", " ")
+        name = ""
+        # if material_name:
+        #     name += f"[{material_name}] "
+        name += mat_title
+        # if material_thickness:
+        #     name += f" {material_thickness}"
+        return name
+
+    def material_menus():
+        was_previous = False
+        entries = list()
+        self.op_data.read_configuration()
+        for material in self.op_data.section_set():
+            if material == "previous":
+                was_previous = True
+                continue
+            opinfo = self.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            submenu = _("Materials")
+            if material_name:
+                submenu += f"{'|' if submenu else ''}{material_name}"
+            if material_thickness:
+                submenu += f"{'|' if submenu else ''}{material_thickness}"
+            entries.append((material_name, material_thickness, material_title, submenu))
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
+        submenus = [e[3] for e in entries]
+        if was_previous:
+            submenus.insert(0, _("Materials"))
+        return submenus
+
+    def material_ids():
+        was_previous = False
+        entries = list()
+        for material in self.op_data.section_set():
+            if material == "previous":
+                was_previous = True
+                continue
+            opinfo = self.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            entries.append(
+                (material_name, material_thickness, material_title, material)
+            )
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
+        res = [e[3] for e in entries]
+        if was_previous:
+            res.insert(0, "previous")
+        return res
+
+    @tree_separator_after()
     @tree_submenu(_("Load"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
+    @tree_values("opname", values=material_ids)
+    @tree_submenu_list(material_menus)
+    @tree_calc("material", lambda opname: material_name(opname))
+    @tree_operation("{material}", node_type="branch ops", help="")
     def load_ops(node, opname, **kwargs):
         self(f"material load {opname}\n")
+        if self.update_statusbar_on_material_load:
+            op_list, op_info = self.load_persistent_op_list(opname)
+            if len(op_list) == 0:
+                return
+            self.default_operations = list(op_list)
+            self.signal("default_operations")
+
+    def load_for_statusbar(node, **kwargs):
+        return self.update_statusbar_on_material_load
 
     @tree_separator_before()
-    @tree_submenu(_("Load"))
-    @tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
-    def default_classifications(node, **kwargs):
-        self.load_default(performclassify=True)
+    @tree_submenu(_("Materials"))
+    @tree_check(load_for_statusbar)
+    @tree_operation(
+        _("Update Statusbar on load"),
+        node_type="branch ops",
+        help=_("Loading an entry will update the statusbar icons, too, if checked"),
+    )
+    def set_mat_load_option(node, **kwargs):
+        self.update_statusbar_on_material_load = (
+            not self.update_statusbar_on_material_load
+        )
 
-    @tree_submenu(_("Load"))
-    @tree_separator_after()
-    @tree_operation(_("Basic"), node_type="branch ops", help="")
-    def basic_classifications(node, **kwargs):
-        self.load_default2(performclassify=True)
+    # @tree_separator_before()
+    # @tree_submenu(_("Load"))
+    # @tree_operation(_("Minimal"), node_type="branch ops", help=_("Load a minimal set of operations"))
+    # def default_classifications(node, **kwargs):
+    #     self.load_default(performclassify=True)
 
-    @tree_submenu(_("Save"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def save_materials(node, opname="saved", **kwargs):
-        self(f"material save {opname}\n")
+    # @tree_submenu(_("Load"))
+    # @tree_operation(_("Basic"), node_type="branch ops", help=_("Load a basic set of operation"))
+    # def basic_classifications(node, **kwargs):
+    #     self.load_default2(performclassify=True)
 
-    @tree_separator_before()
-    @tree_submenu(_("Save"))
-    @tree_prompt("opname", _("Name to store current operations under?"))
-    @tree_operation(_("New"), node_type="branch ops", help="")
-    def save_material_custom(node, opname, **kwargs):
-        self(f"material save {opname.replace(' ', '_')}\n")
+    # @tree_submenu(_("Save"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_calc("material", lambda opname: material_name(opname) )
+    # @tree_operation("{material}", node_type="branch ops", help="")
+    # def save_materials(node, opname="saved", **kwargs):
+    #     self(f"material save {opname}\n")
 
-    @tree_submenu(_("Delete"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def remove_ops(node, opname="saved", **kwargs):
-        self(f"material delete {opname}\n")
+    # @tree_separator_before()
+    # @tree_submenu(_("Save"))
+    # @tree_prompt("opname", _("Name to store current operations under?"))
+    # @tree_operation(_("New"), node_type="branch ops", help="")
+    # def save_material_custom(node, opname, **kwargs):
+    #     self(f"material save {opname.replace(' ', '_')}\n")
+
+    # @tree_submenu(_("Delete"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_operation("{opname}", node_type="branch ops", help="")
+    # def remove_ops(node, opname="saved", **kwargs):
+    #     self(f"material delete {opname}\n")
 
     @tree_separator_before()
     @tree_submenu(_("Append operation"))
@@ -1568,7 +1878,8 @@ def init_tree(kernel):
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Hatch"), node_type="branch ops", help="")
     def append_operation_hatch(node, pos=None, **kwargs):
-        self.op_branch.add("op hatch", pos=pos)
+        b = self.op_branch.add("op engrave", pos=pos)
+        b.add("effect hatch")
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -1587,6 +1898,23 @@ def init_tree(kernel):
     @tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
     def append_operation_goto(node, pos=None, **kwargs):
         self.op_branch.add(type="util goto", pos=pos, x=0, y=0)
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_prompt("y", _("Y-Coordinate of Goto?"))
+    @tree_prompt("x", _("X-Coordinate of Goto?"))
+    @tree_operation(
+        _("Append Goto Location"),
+        node_type="branch ops",
+        help=_("Send laser to specific location."),
+    )
+    def append_operation_goto_location(node, y, x, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util goto",
+            pos=pos,
+            x=x,
+            y=y,
+        )
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
@@ -1645,6 +1973,26 @@ def init_tree(kernel):
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append Coolant On"), node_type="branch ops", help="")
+    def append_operation_cool_on(node, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util console",
+            pos=pos,
+            command="coolant_on",
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append Coolant Off"), node_type="branch ops", help="")
+    def append_operation_cool_off(node, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util console",
+            pos=pos,
+            command="coolant_off",
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Home/Beep/Interrupt"), node_type="branch ops", help="")
     def append_operation_home_beep_interrupt(node, **kwargs):
         append_operation_home(node, **kwargs)
@@ -1684,8 +2032,12 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("y", _("Y-Coordinate for placement to append?"))
     @tree_prompt("x", _("X-Coordinate for placement to append?"))
-    @tree_operation(_("Append Placement"), node_type="branch ops", help="")
-    def append_operation_placement(node, y, x, pos=None, **kwargs):
+    @tree_operation(
+        _("Append absolute placement"),
+        node_type="branch ops",
+        help=_("Start job at specicic location"),
+    )
+    def append_absolute_placement(node, y, x, pos=None, **kwargs):
         self.op_branch.add(
             type="place point",
             pos=pos,
@@ -1696,12 +2048,17 @@ def init_tree(kernel):
         )
         self.signal("updateop_tree")
 
-    @tree_operation(_("Reclassify operations"), node_type="branch elems", help="")
-    def reclassify_operations(node, **kwargs):
-        elems = list(self.elems())
-        self.remove_elements_from_operations(elems)
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree")
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append relative placement"),
+        node_type="branch ops",
+        help=_("Start job at current laserposition"),
+    )
+    def append_relative_placement(node, **kwargs):
+        self.op_branch.add(
+            type="place current",
+        )
+        self.signal("updateop_tree")
 
     @tree_operation(
         _("Remove all assignments from operations"),
@@ -1714,6 +2071,206 @@ def init_tree(kernel):
                 for ref in list(node.references):
                     ref.remove_node()
         self.signal("refresh_tree")
+
+    hatchable_elems = (
+        "elem path",
+        "elem rect",
+        "elem circle",
+        "elem ellipse",
+        "elem polyline",
+    )
+
+    wobbleable_elems = (
+        "elem path",
+        "elem rect",
+        "elem circle",
+        "elem ellipse",
+        "elem polyline",
+        "elem line",
+    )
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
+    def append_element_effect_eulerian(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect hatch",
+            hatch_type="scanline",
+            hatch_distance="0.1mm",
+            hatch_angle="0deg",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help=""
+    )
+    def append_element_effect_eulerian_45(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect hatch",
+            hatch_type="scanline",  # scanline / eulerian
+            hatch_distance="0.1mm",
+            hatch_angle="45deg",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append Line-Fill 1mm"), node_type=hatchable_elems, help="")
+    def append_element_effect_line(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect hatch",
+            hatch_type="scanline",
+            hatch_distance="1mm",
+            hatch_angle="0deg",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help=""
+    )
+    def append_element_effect_line_45(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect hatch",
+            hatch_type="scanline",
+            hatch_distance="1mm",
+            hatch_angle="45deg",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_conditional(lambda node: is_developer_mode())
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append Warp").format(),
+        node_type=hatchable_elems,
+        help="",
+    )
+    def append_element_effect_warp(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect warp",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type=_("Circle"), radius="0.5mm", interval="0.05mm"
+        ),
+        node_type=wobbleable_elems,
+        help="",
+    )
+    def append_element_effect_wobble_c05(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect wobble",
+            wobble_type="circle",
+            wobble_radius="0.5mm",
+            wobble_interval="0.05mm",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type=_("Circle"), radius="1mm", interval="0.1mm"
+        ),
+        node_type=wobbleable_elems,
+        help="",
+    )
+    def append_element_effect_wobble_c1(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect wobble",
+            wobble_type="circle",
+            wobble_radius="1mm",
+            wobble_interval="0.1mm",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type=_("Circle"), radius="3mm", interval="0.1mm"
+        ),
+        node_type=wobbleable_elems,
+        help="",
+    )
+    def append_element_effect_wobble_c3(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect wobble",
+            wobble_type="circle_right",
+            wobble_radius="3mm",
+            wobble_interval="0.1mm",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type=_("Meander"), radius="1mm", interval="1.25mm"
+        ),
+        node_type=wobbleable_elems,
+        help="",
+    )
+    def append_element_effect_wobble_m1(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect wobble",
+            wobble_type="meander_1",
+            wobble_radius="1mm",
+            wobble_interval="1.25mm",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
 
     @tree_operation(
         _("Duplicate operation(s)"),
@@ -1740,7 +2297,7 @@ def init_tree(kernel):
     @tree_submenu(_("Passes"))
     @tree_operation(
         _("Add 1 pass"),
-        node_type=("op image", "op engrave", "op cut", "op hatch"),
+        node_type=("op image", "op engrave", "op cut"),
         help="",
     )
     def add_1_pass(node, **kwargs):
@@ -1751,7 +2308,7 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(
         _("Add {copies} passes"),
-        node_type=("op image", "op engrave", "op cut", "op hatch"),
+        node_type=("op image", "op engrave", "op cut"),
         help="",
     )
     def add_n_passes(node, copies=1, **kwargs):
@@ -1920,6 +2477,16 @@ def init_tree(kernel):
         append_operation_input(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(_("Add Coolant on"), node_type=op_nodes, help="")
+    def add_operation_cool_on(node, pos=None, **kwargs):
+        append_operation_cool_on(node, pos=add_after_index(node), **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(_("Add Coolant Off"), node_type=op_nodes, help="")
+    def add_operation_cool_off(node, pos=None, **kwargs):
+        append_operation_cool_off(node, pos=add_after_index(node), **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
     def add_operation_home_beep_interrupt(node, **kwargs):
         pos = add_after_index(node)
@@ -1946,8 +2513,43 @@ def init_tree(kernel):
     @tree_operation(_("Reload '{name}'"), node_type="file", help="")
     def reload_file(node, **kwargs):
         filepath = node.filepath
+        if not os.path.exists(filepath):
+            self.signal(
+                "warning",
+                _("The file no longer exists!"),
+                _("File does not exist."),
+            )
+            return
         node.remove_node()
         self.load(filepath)
+
+    @tree_operation(
+        _("Open containing folder: '{name}'"),
+        node_type="file",
+        help=_("Open this file working directory in the system's file manager"),
+    )
+    def open_file_in_explorer(node, **kwargs):
+        file_path = node.filepath
+
+        import platform
+        import subprocess
+
+        system_platform = platform.system()
+
+        if system_platform == "Windows":
+            # Use the "start" command to open the file explorer in Windows
+            # subprocess.run(["start", "explorer", "/select,", os.path.normpath(file_path)], shell=True)
+            subprocess.run(["explorer", "/select,", os.path.normpath(file_path)])
+
+        elif system_platform == "Darwin":
+            # Use the "open" command to open Finder on macOS
+            subprocess.run(["open", "-R", os.path.normpath(file_path)])
+
+        elif system_platform == "Linux":
+            # Use the "xdg-open" command to open the file explorer on Linux
+            normalized = os.path.normpath(file_path)
+            directory = os.path.dirname(normalized)
+            subprocess.run(["xdg-open", directory])
 
     @tree_operation(
         _("Open in System: '{name}'"),
@@ -1958,6 +2560,14 @@ def init_tree(kernel):
     )
     def open_system_file(node, **kwargs):
         filepath = node.filepath
+        if not os.path.exists(filepath):
+            self.signal(
+                "warning",
+                _("The file no longer exists!"),
+                _("File does not exist."),
+            )
+            return
+
         normalized = os.path.realpath(filepath)
 
         import platform
@@ -2097,16 +2707,22 @@ def init_tree(kernel):
                 copy_node = copy(orgnode)
                 if hasattr(copy_node, "matrix"):
                     copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
-                had_optional = False
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
-                for optional in ("fill", "stroke"):
-                    if hasattr(orgnode, optional):
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
+                    if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
-                    if hasattr(orgnode, optional):
+                had_optional = False
+                options = []
+                for prop in dir(e):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(orgnode, optional))
                         had_optional = True
-                        setattr(copy_node, optional, getattr(orgnode, optional))
+
                 if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
                     copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
@@ -2126,13 +2742,13 @@ def init_tree(kernel):
                         )
 
         copy_nodes = list()
-        dx = self.length_x("3mm")
-        dy = self.length_y("3mm")
+        _dx = self.length_x("3mm")
+        _dy = self.length_y("3mm")
         alldata = list(self.elems(emphasized=True))
         minimaldata = self.condense_elements(alldata, expand_at_end=False)
         for e in minimaldata:
             parent = e.parent
-            copy_single_node(e, parent, copies, dx, dy)
+            copy_single_node(e, parent, copies, _dx, _dy)
 
         if self.classify_new:
             self.classify(copy_nodes)
@@ -2158,7 +2774,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name} to {name#+1}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"),
     )
     def wlist_plus(singlenode, **kwargs):
         data = list()
@@ -2184,7 +2800,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"),
     )
     def wlist_minus(singlenode, **kwargs):
         data = list()
@@ -2215,6 +2831,103 @@ def init_tree(kernel):
         self(f"outline {offset}mm\n")
         self.signal("refresh_tree")
 
+    def mergeable(node):
+        elems = list(self.elems(emphasized=True))
+        if len(elems) < 2:
+            return False
+        result = True
+        for e in elems:
+            if e.type not in (
+                "elem ellipse",
+                "elem path",
+                "elem polyline",
+                "elem rect",
+                "elem line",
+            ):
+                result = False
+            break
+        return result
+
+    @tree_conditional(lambda node: mergeable(node))
+    @tree_operation(
+        _("Merge elements"),
+        node_type=(
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+        ),
+        help=_("Merge two or more elements together into a single path"),
+    )
+    def elem_merge(singlenode, **kwargs):
+        def get_common_parent_node(data):
+            def _get_common_parent(node1, node2):
+                top = self.elem_branch
+                list1 = [node1]
+                list2 = [node2]
+                n = node1
+                while n is not top:
+                    n = n.parent
+                    list1.append(n)
+                n = node2
+                while n is not top:
+                    n = n.parent
+                    list2.append(n)
+                # Both lists contain the node itself and the top node
+                for n in list1:
+                    if n in list2:
+                        return n
+                # That should not be the case...
+                return top
+
+            root = self.elem_branch
+            par = None
+            for e in data:
+                if par is None:
+                    par = e
+                else:
+                    par = _get_common_parent(par, e)
+                if par is root:
+                    break
+            return par
+
+        data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        parent = get_common_parent_node(data)
+        node = parent.add(type="elem path")
+        for e in data:
+            try:
+                path = e.as_geometry()
+            except AttributeError:
+                continue
+            try:
+                if node.stroke is None:
+                    node.stroke = e.stroke
+            except AttributeError:
+                pass
+            try:
+                if node.fill is None:
+                    node.fill = e.fill
+            except AttributeError:
+                pass
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+            node.geometry.append(path)
+        self.remove_elements(data)
+        # Newly created! Classification needed?
+        data = [node]
+        if self.classify_new:
+            self.classify(data)
+        self.set_node_emphasis(node, True)
+        self.signal("refresh_scene", "Scene")
+        self.signal("rebuild_tree")
+        node.focus()
+
     def has_vectorize(node):
         result = False
         make_vector = self.lookup("render-op/make_vector")
@@ -2233,6 +2946,83 @@ def init_tree(kernel):
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
+
+    @tree_operation(
+        _("Convert to vector text"),
+        node_type="elem text",
+        help=_("Convert bitmap text to vector text"),
+    )
+    def convert_to_vectext(node, **kwargs):
+        data = []
+        nodelist = list(self.flat(emphasized=True, types=("elem text",)))
+        for e in nodelist:
+            if e is None or not hasattr(e, "wxfont"):
+                # print (f"Invalid node: {e.type}")
+                continue
+            text = e.text
+            facename = e.wxfont.GetFaceName()
+            # print (f"Facename: {facename}, svg: {getattr(e, 'font_family', '')}")
+            fontfile = self.kernel.root.fonts.face_to_full_name(facename)
+            if fontfile is None:
+                # print (f"could not find a font for {facename}")
+                return
+            fontname = self.kernel.root.fonts.short_name(fontfile)
+            # print (f"{facename} -> {fontname}, {fontfile}")
+            node_args = dict()
+            node_args["type"] = "elem path"
+            node_args["stroke"] = e.stroke
+            node_args["fill"] = e.fill
+            node_args["stroke_width"] = 500
+            node_args["fillrule"] = Fillrule.FILLRULE_NONZERO
+            node_args["mktext"] = text
+            fsize = e.font_size
+            if fsize is None:
+                fsize = 12
+            fsize *= 4 / 3
+            node_args["mkfontsize"] = fsize
+            node_args["mkfont"] = fontname
+            anchor = e.anchor
+            if anchor is None:
+                anchor = "start"
+            node_args["mkalign"] = anchor
+            # print (f"{text} aligns in the {anchor}")
+
+            old_matrix = Matrix(e.matrix)
+            cc = e.bounds
+            p0 = old_matrix.point_in_inverse_space((cc[0], cc[1]))
+            p1 = old_matrix.point_in_inverse_space((cc[2], cc[3]))
+
+            # node_args["mkcoordx"] = p0.x
+            # node_args["mkcoordy"] = p1.y
+
+            node_args["geometry"] = Geomstr.rect(
+                x=p0.x, y=p1.y, width=p1.x - p0.x, height=p1.y - p0.y
+            )
+            if e.label is None:
+                x = text.split("\n")
+                node_args["label"] = f"Text: {x[0]}"
+            newnode = e.replace_node(**node_args)
+            newnode.matrix = old_matrix
+            newnode.matrix.pre_translate_y(p1.y - p0.y)
+
+            # Now we need to render it...
+            # newnode.set_dirty_bounds()
+            # newtext = self.wordlist_translate(text, elemnode=newnode, increment=False)
+            # newnode._translated_text = newtext
+
+            kernel = self.kernel
+            for property_op in kernel.lookup_all("path_updater/.*"):
+                property_op(kernel.root, newnode)
+
+            if hasattr(newnode, "_cache"):
+                newnode._cache = None
+
+            data.append(newnode)
+        if len(data):
+            if self.classify_new:
+                self.classify(data)
+            self.signal("rebuild_tree")
+            self.signal("refresh_scene", "Scene")
 
     @tree_conditional(
         lambda node: not is_regmark(node)
@@ -2253,7 +3043,37 @@ def init_tree(kernel):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
                     node_attributes.append([attrib, oldval])
+            if hasattr(node, "final_geometry"):
+                geometry = node.final_geometry()
+            else:
+                geometry = node.as_geometry()
+            newnode = node.replace_node(geometry=geometry, type="elem path")
+            for item in node_attributes:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
+
+    @tree_conditional(
+        lambda node: hasattr(node, "as_geometry") and node.has_ancestor("branch elems")
+    )
+    @tree_operation(
+        _("Convert to path"),
+        node_type=effect_nodes,
+        help="Convert effect to path",
+    )
+    def convert_to_path_effect(singlenode, **kwargs):
+        elements = self.elem_branch
+        for node in list(elements.flat(types=effect_nodes, emphasized=True)):
+            if not hasattr(node, "as_geometry"):
+                continue
+            node_attributes = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    node_attributes.append([attrib, oldval])
             geometry = node.as_geometry()
+            node.remove_all_children()
+            if not len(geometry):
+                return
             newnode = node.replace_node(geometry=geometry, type="elem path")
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])
@@ -2420,15 +3240,15 @@ def init_tree(kernel):
     def move_back(node, **kwargs):
         # Drag and Drop
         with self.static("move_back"):
-            signal_needed = False
             drop_node = self.elem_branch
             data = list()
-            for item in list(self.regmarks()):
-                if item.selected:
+            for item in list(self.regmarks_nodes()):
+                # print (item.type, item.emphasized, item.selected, item.highlighted)
+                if item.emphasized:
                     data.append(item)
-            for item in data:
-                drop_node.drop(item)
-                signal_needed = True
+            if len(data) == 0:
+                data.append(node)
+            self.drag_and_drop(data, drop_node)
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()
@@ -2451,8 +3271,6 @@ def init_tree(kernel):
     @tree_separator_before()
     @tree_operation(_("Create placement"), node_type=elem_nodes, help="")
     def regmark_as_placement(node, **kwargs):
-        if node is None:
-            return
         if hasattr(node, "path"):
             bb = node.path.bbox(transformed=False)
         elif hasattr(node, "shape"):
@@ -2461,8 +3279,6 @@ def init_tree(kernel):
             return
         if bb is None:
             return
-        x = bb[0]
-        y = bb[1]
         corner = 0
         try:
             rotation = node.matrix.rotation.as_radians
@@ -2471,7 +3287,7 @@ def init_tree(kernel):
         pt = node.matrix.point_in_matrix_space(Point(bb[0], bb[1]))
         x = pt.x
         y = pt.y
-        place_node = self.op_branch.add(
+        self.op_branch.add(
             type="place point", x=x, y=y, corner=corner, rotation=rotation
         )
         self.signal("refresh_scene", "Scene")
@@ -2480,8 +3296,6 @@ def init_tree(kernel):
     @tree_submenu(_("Toggle Magnet-Lines"))
     @tree_operation(_("Around border"), node_type=elem_group_nodes, help="")
     def regmark_to_magnet_1(node, **kwargs):
-        if node is None:
-            return
         if not hasattr(node, "bounds"):
             return
         self.signal("magnet_gen", ("outer", node))
@@ -2490,17 +3304,9 @@ def init_tree(kernel):
     @tree_submenu(_("Toggle Magnet-Lines"))
     @tree_operation(_("At center"), node_type=elem_group_nodes, help="")
     def regmark_to_magnet_2(node, **kwargs):
-        if node is None:
-            return
         if not hasattr(node, "bounds"):
             return
         self.signal("magnet_gen", ("center", node))
-
-    # @tree_conditional(lambda node: not node.lock)
-    # @tree_conditional_try(lambda node: not node.lock)
-    # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
-    # def image_actualize_pixels(node, **kwargs):
-    #     self("image resample\n")
 
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Z-depth divide"))
@@ -2563,7 +3369,21 @@ def init_tree(kernel):
     def image_ccw(node, **kwargs):
         self("image ccw\n")
 
+    @tree_conditional(lambda node: not node.lock)
+    @tree_separator_before()
     @tree_submenu(_("Image"))
+    @tree_operation(_("Identify inner white areas"), node_type="elem image", help="")
+    def image_white_area(node, **kwargs):
+        self("image innerwhite -l -o -m 2\n")
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Image"))
+    @tree_operation(_("Split image along white areas"), node_type="elem image", help="")
+    def image_white_area_split(node, **kwargs):
+        self("image innerwhite -w -o -m 2\n")
+
+    @tree_submenu(_("Image"))
+    @tree_separator_before()
     @tree_operation(
         _("Save original image to output.png"), node_type="elem image", help=""
     )
@@ -2587,7 +3407,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "branch elems",
             "branch ops",
             "branch reg",
@@ -2609,7 +3428,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "branch elems",
             "branch ops",
             "branch reg",
