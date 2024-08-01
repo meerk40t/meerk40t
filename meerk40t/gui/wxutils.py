@@ -870,7 +870,7 @@ class TextCtrl(wx.TextCtrl):
 
 class wxCheckBox(wx.CheckBox):
     """
-    This calss wraps around  wx.CheckBox and creates a series of mouse over tool tips to permit Linux tooltips that
+    This class wraps around  wx.CheckBox and creates a series of mouse over tool tips to permit Linux tooltips that
     otherwise do not show.
     """
 
@@ -886,6 +886,36 @@ class wxCheckBox(wx.CheckBox):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxTreeCtrl(wx.TreeCtrl):
+    """
+    This class wraps around wx.TreeCtrl and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -914,6 +944,7 @@ class wxButton(wx.Button):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -942,6 +973,7 @@ class wxToggleButton(wx.ToggleButton):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -970,6 +1002,7 @@ class wxRadioBox(wx.RadioBox):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
@@ -998,6 +1031,7 @@ class wxStaticBitmap(wx.StaticBitmap):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 

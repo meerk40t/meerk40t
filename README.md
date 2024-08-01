@@ -15,7 +15,7 @@ Alternatively you can run MeerK40t directly from Python. `pip install meerk40t[a
 See [Install: Source wiki page](https://github.com/meerk40t/meerk40t/wiki/Install:-Source)
 
 ### GUI
-![meerk40t8](https://user-images.githubusercontent.com/3302478/196283699-745d0616-5e74-49b3-ba95-f4902061584b.png)
+![grafik](https://github.com/user-attachments/assets/e56135a2-7b1f-44be-9761-b92931e300f6)
 
 The wxMeerK40t is the GUI and is written in wxPython. We use AUI to allow to have a very highly configurable UI. We can easily add panes and tools and there are quite a few available already.
 
@@ -36,7 +36,7 @@ Meerk40t provides a variety of drivers with an extensible framework to provide s
 *   NewlyDraw System 8.1 Lasers
 *   Ruida-Emulation (Middleman between Lightburn and K40)
 
-### Lihuiyu M2-Nano
+### Lihuiyu M2-Nano/M3-Nano
 For the Lihuiyu (stock driver), Meerk40t supports both the windows and libusb connection methods, making it compatible with Whisperer and with the original Chinese software. So MeerK40t can usually run alongside these other pieces of software interchangeably.
 
 ### GRBL
@@ -85,7 +85,7 @@ Open source projects live and die with their support. There are a lots of ways t
 You can find and download all current and historical versions in the [Releases](https://github.com/meerk40t/meerk40t/releases) section.
 
 Currently, primary branches:
-* 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.2](https://github.com/meerk40t/meerk40t/releases#latest)
+* 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.4](https://github.com/meerk40t/meerk40t/releases#latest)
 * 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
 * 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
 * 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)

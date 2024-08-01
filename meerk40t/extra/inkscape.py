@@ -159,6 +159,11 @@ class MultiLoader:
             version = "inkscape 1.x"
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
+        if os.path.exists(svg_temp_file):
+            try:
+                os.remove(svg_temp_file)
+            except (OSError, FileNotFoundError):
+                raise BadFileError("Couldn't delete temporary inkscape file")
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         # Check Version of Inkscape
@@ -183,6 +188,9 @@ class MultiLoader:
 
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
+            return False
+        # Has an output file been created?
+        if not os.path.exists(svg_temp_file):
             return False
 
         def unescaped(filename):

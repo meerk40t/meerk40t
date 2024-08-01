@@ -1,12 +1,12 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter
+from meerk40t.core.node.mixins import FunctionalParameter, LabelDisplay, Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PointNode(Node, FunctionalParameter):
+class PointNode(Node, FunctionalParameter, LabelDisplay, Suppressable):
     """
     PointNode is the bootstrapped node type for the 'elem point' type.
     """
@@ -26,6 +26,8 @@ class PointNode(Node, FunctionalParameter):
         self.stroke = None
         self.stroke_width = 1000.0
         super().__init__(type="elem point", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} {stroke}"
         if self.x is None:
             self.x = 0
@@ -41,7 +43,7 @@ class PointNode(Node, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         return PointNode(**nd)
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr()
         path.point(complex(self.x, self.y))
         path.transform(self.matrix)

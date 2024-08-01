@@ -277,9 +277,42 @@ def init_tree(kernel):
     def element_label(node, **kwargs):
         return
 
+    def add_node_and_children(node):
+        data = []
+        data.append(node)
+        for e in node.children:
+            if e.type in ("file", "group"):
+                data.extend(add_node_and_children(e))
+            else:
+                data.append(e)
+        return data
+
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Toggle visibility"),
+        node_type=elem_group_nodes,
+        help="",
+    )
+    def element_visibility_toggle(node, **kwargs):
+        raw_data = list(self.elems(selected=True))
+        data = self.condense_elements(raw_data, expand_at_end=False)
+        updated = []
+        for e in data:
+            if hasattr(e, "hidden"):
+                e.hidden = not e.hidden
+                if e.hidden:
+                    e.emphasized = False
+            if e.type in ("file", "group"):
+                updated.extend(add_node_and_children(e))
+            else:
+                updated.append(e)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
+
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
-    @tree_operation(_("Group elements"), node_type=elem_nodes, help="")
+    @tree_operation(_("Group elements"), node_type=elem_group_nodes, help="")
     def group_elements(node, **kwargs):
         def minimal_parent(data):
             result = None
@@ -600,7 +633,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Power"))
     @tree_radio(radio_match_power)
-    @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_values("power", (100, 250, 300, 333, 500, 667, 750, 1000))
     @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
@@ -625,7 +658,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("DPI"))
     @tree_radio(radio_match)
-    @tree_values("dpi", (100, 200, 250, 333.3, 500, 666.6, 750, 1000))
+    @tree_values("dpi", (100, 200, 250, 300, 333.3, 500, 666.6, 750, 1000))
     @tree_operation(
         _("DPI {dpi}"),
         node_type=("op raster", "elem image"),
@@ -859,7 +892,10 @@ def init_tree(kernel):
 
     @tree_operation(_("Clear all"), node_type="branch ops", help="")
     def clear_all(node, **kwargs):
-        self("operation* delete\n")
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), caption=_("Operations")
+        ):
+            self("operation* delete\n")
 
     @tree_operation(
         _("Clear unused"),
@@ -873,8 +909,14 @@ def init_tree(kernel):
             if len(op._children) == 0 and not op.type == "blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
-            with self.static("clear_unused"):
-                self.remove_operations(to_delete)
+            if self.kernel.yesno(
+                _("Do you really want to delete {num} entries?").format(
+                    num=len(to_delete)
+                ),
+                caption=_("Operations"),
+            ):
+                with self.static("clear_unused"):
+                    self.remove_operations(to_delete)
 
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
@@ -996,8 +1038,11 @@ def init_tree(kernel):
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
-        with self.static("clear_elems"):
-            self.elem_branch.remove_all_children()
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), caption=_("Elements")
+        ):
+            with self.static("clear_elems"):
+                self.elem_branch.remove_all_children()
 
     # ==========
     # General menu-entries for regmark branch
@@ -1005,8 +1050,11 @@ def init_tree(kernel):
 
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
-        with self.static("clear_regmarks"):
-            self.reg_branch.remove_all_children()
+        if self.kernel.yesno(
+            _("Do you really want to delete all entries?"), caption=_("Regmarks")
+        ):
+            with self.static("clear_regmarks"):
+                self.reg_branch.remove_all_children()
 
     # ==========
     # REMOVE MULTI (Tree Selected)
@@ -1748,6 +1796,28 @@ def init_tree(kernel):
     @tree_operation("{material}", node_type="branch ops", help="")
     def load_ops(node, opname, **kwargs):
         self(f"material load {opname}\n")
+        if self.update_statusbar_on_material_load:
+            op_list, op_info = self.load_persistent_op_list(opname)
+            if len(op_list) == 0:
+                return
+            self.default_operations = list(op_list)
+            self.signal("default_operations")
+
+    def load_for_statusbar(node, **kwargs):
+        return self.update_statusbar_on_material_load
+
+    @tree_separator_before()
+    @tree_submenu(_("Materials"))
+    @tree_check(load_for_statusbar)
+    @tree_operation(
+        _("Update Statusbar on load"),
+        node_type="branch ops",
+        help=_("Loading an entry will update the statusbar icons, too, if checked"),
+    )
+    def set_mat_load_option(node, **kwargs):
+        self.update_statusbar_on_material_load = (
+            not self.update_statusbar_on_material_load
+        )
 
     # @tree_separator_before()
     # @tree_submenu(_("Load"))
@@ -1899,6 +1969,26 @@ def init_tree(kernel):
             input_mask=0,
             input_value=0,
             input_message=None,
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append Coolant On"), node_type="branch ops", help="")
+    def append_operation_cool_on(node, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util console",
+            pos=pos,
+            command="coolant_on",
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append Coolant Off"), node_type="branch ops", help="")
+    def append_operation_cool_off(node, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util console",
+            pos=pos,
+            command="coolant_off",
         )
         self.signal("updateop_tree")
 
@@ -2387,6 +2477,16 @@ def init_tree(kernel):
         append_operation_input(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(_("Add Coolant on"), node_type=op_nodes, help="")
+    def add_operation_cool_on(node, pos=None, **kwargs):
+        append_operation_cool_on(node, pos=add_after_index(node), **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(_("Add Coolant Off"), node_type=op_nodes, help="")
+    def add_operation_cool_off(node, pos=None, **kwargs):
+        append_operation_cool_off(node, pos=add_after_index(node), **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
     def add_operation_home_beep_interrupt(node, **kwargs):
         pos = add_after_index(node)
@@ -2674,7 +2774,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name} to {name#+1}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"),
     )
     def wlist_plus(singlenode, **kwargs):
         data = list()
@@ -2700,7 +2800,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help=_("Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"),
+        help=_("Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"),
     )
     def wlist_minus(singlenode, **kwargs):
         data = list()
@@ -2943,7 +3043,10 @@ def init_tree(kernel):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
                     node_attributes.append([attrib, oldval])
-            geometry = node.as_geometry()
+            if hasattr(node, "final_geometry"):
+                geometry = node.final_geometry()
+            else:
+                geometry = node.as_geometry()
             newnode = node.replace_node(geometry=geometry, type="elem path")
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])
@@ -2957,7 +3060,7 @@ def init_tree(kernel):
         node_type=effect_nodes,
         help="Convert effect to path",
     )
-    def convert_to_path(singlenode, **kwargs):
+    def convert_to_path_effect(singlenode, **kwargs):
         elements = self.elem_branch
         for node in list(elements.flat(types=effect_nodes, emphasized=True)):
             if not hasattr(node, "as_geometry"):

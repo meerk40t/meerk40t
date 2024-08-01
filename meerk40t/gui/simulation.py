@@ -3,6 +3,7 @@ import platform
 
 import wx
 
+from time import perf_counter, sleep
 from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode.cubiccut import CubicCut
@@ -757,7 +758,7 @@ class SimulationPanel(wx.Panel, Job):
         self.parent = args[0]
         self.context = context
         self.SetHelpText("simulate")
-
+        self.retries = 0
         self.plan_name = plan_name
         self.auto_clear = auto_clear
         # Display travel paths?
@@ -798,7 +799,6 @@ class SimulationPanel(wx.Panel, Job):
         self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
-
         # poor mans slide out
         self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
@@ -923,9 +923,12 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
+
         # end wxGlade
+        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
         self.on_checkbox_optimize(None)
+
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
         ##############
         # BUILD SCENE
@@ -954,7 +957,6 @@ class SimulationPanel(wx.Panel, Job):
             BedWidget(self.widget_scene, name="Simulation")
         )
         self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene, self))
-
         self.parent.add_module_delegate(self.options_optimize)
         self.context.setting(int, "simulation_mode", 0)
         default = self.context.simulation_mode
@@ -967,25 +969,20 @@ class SimulationPanel(wx.Panel, Job):
         self.on_radio_playback_mode(None)
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
+        # self.Show()
         self.running = False
+        self.slided_in = True
+        self.start_time = perf_counter()
+        self.debug(f"Init done: {perf_counter()-self.start_time}")
+
+    def debug(self, message):
+        # print (message)
+        return
 
     def _startup(self):
+        self.debug(f"Startup: {perf_counter()-self.start_time}")
         self.slided_in = True
         self.fit_scene_to_panel()
-
-    def startup_panel(self):
-        # Under Linux the SimulationPanel starts with the wrong zoom factor,
-        # as the panel size has not been established during init,
-        # so we do a delayed startup.
-        # No platform check, as this isn't hurting generally
-        _signal_job = Job(
-            process=self._startup,
-            job_name="simulation-helper",
-            interval=0.5,
-            times=1,
-            run_main=True,
-        )
-        self.context.schedule(_signal_job)
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -994,7 +991,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
         self.text_time_extra.SetToolTip(
-            _("Time Estimate: Extra Time (ie to swing around)")
+            _("Time Estimate: Extra Time (i.e. to swing around)")
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(
@@ -1155,7 +1152,6 @@ class SimulationPanel(wx.Panel, Job):
         # sizer_execute.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_execute.Add(self.button_spool, 1, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_execute, 1, wx.EXPAND, 0)
-
         v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_1, 0, wx.EXPAND, 0)
@@ -1166,7 +1162,17 @@ class SimulationPanel(wx.Panel, Job):
         self.Layout()
         # end wxGlade
 
-    # Manages the display, non-display of the optimisation-options
+    def on_size(self, event):
+        sz = event.GetSize()
+        event.Skip()
+        self.debug(f"Manually forwarding the size: {sz}")
+        self.view_pane.SetSize(wx.Size(sz[0], int(2 / 3 * sz[1])))
+        self.Layout()
+        sz = self.view_pane.GetSize()
+        self.debug(f"Now pane has: {sz}")
+        self.fit_scene_to_panel()
+
+    # Manages the display / non-display of the optimisation-options
     @property
     def slided_in(self):
         return self._slided_in
@@ -1174,20 +1180,23 @@ class SimulationPanel(wx.Panel, Job):
     @slided_in.setter
     def slided_in(self, newvalue):
         self._slided_in = newvalue
-        if newvalue:
-            # Slided in ->
-            self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
-            self.voption_sizer.Layout()
-            self.btn_slide_options.SetLabel("<")
-            self.hscene_sizer.Layout()
-            self.Layout()
-        else:
-            # Slided out ->
-            self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
-            self.voption_sizer.Layout()
-            self.btn_slide_options.SetLabel(">")
-            self.hscene_sizer.Layout()
-            self.Layout()
+        try:
+            if newvalue:
+                # Slided in ->
+                self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
+                self.voption_sizer.Layout()
+                self.btn_slide_options.SetLabel("<")
+                self.hscene_sizer.Layout()
+                self.Layout()
+            else:
+                # Slided out ->
+                self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
+                self.voption_sizer.Layout()
+                self.btn_slide_options.SetLabel(">")
+                self.hscene_sizer.Layout()
+                self.Layout()
+        except RuntimeError:
+            return
 
     def toggle_background(self, event):
         """
@@ -1203,6 +1212,8 @@ class SimulationPanel(wx.Panel, Job):
             self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
         elif gridtype == "circular":
             self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+        elif gridtype == "offset":
+            self.grid.draw_offset_lines = not self.grid.draw_offset_lines
         self.widget_scene.request_refresh()
 
     def toggle_grid_p(self, event):
@@ -1213,6 +1224,9 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_grid_c(self, event):
         self.toggle_grid("circular")
+
+    def toggle_grid_o(self, event):
+        self.toggle_grid("offset")
 
     def toggle_travel_display(self, event):
         self.display_travel = not self.display_travel
@@ -1239,10 +1253,9 @@ class SimulationPanel(wx.Panel, Job):
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
-        winsize = self.view_pane.Size
-        if winsize[0] == 0:
-            return
-        self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
+        winsize = self.view_pane.GetSize()
+        if winsize[0] != 0 and winsize[1] != 0:
+            self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
         self.widget_scene.request_refresh()
 
     def set_cutcode_entry(self, cutcode):
@@ -1348,6 +1361,19 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
+        mx = float(Length(self.context.device.view.margin_x))
+        my = float(Length(self.context.device.view.margin_y))
+        # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
+        if mx != 0.0 or my != 0.0:
+            menu.AppendSeparator()
+            id4b = menu.Append(
+                wx.ID_ANY,
+                _("Show physical dimensions"),
+                _("Display the physical dimensions in the Simulation pane"),
+                wx.ITEM_CHECK,
+            )
+            self.Bind(wx.EVT_MENU, self.toggle_grid_o, id=id4b.GetId())
+            menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
@@ -1421,6 +1447,7 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
+        self.debug(f"Refresh simulated: {perf_counter()-self.start_time}")
         # Stop animation
         if self.running:
             self._stop()
@@ -1469,12 +1496,46 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
-        self.startup_panel()
+        self._startup()
         self.request_refresh()
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
+        def resend_signal():
+            self.debug(f"Resending signal: {perf_counter()-self.start_time}")
+            self.context.signal("plan", self.plan_name, 1)
+
+        winsize = self.view_pane.GetSize()
+        winsize1 = self.hscene_sizer.GetSize()
+        winsize2 = self.GetSize()
+        self.debug(
+            f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})"
+        )
         if plan_name == self.plan_name:
+            # This may come too early before all things have been done
+            if (
+                winsize[0] == 0 or winsize[1] == 0
+            ) and self.retries > 3:  # Still initialising
+                self.Fit()
+                self.hscene_sizer.Layout()
+                self.view_pane.Show()
+                interval = 0.25
+                self.retries += 1
+                self.debug(
+                    f"Need to resend signal due to invalid window-size, attempt {self.retries}/10, will wait for {interval:.2f} sec"
+                )
+
+                _job = Job(
+                    process=resend_signal,
+                    job_name="resender",
+                    interval=interval,
+                    times=1,
+                    run_main=True,
+                )
+                self.context.schedule(_job)
+                return
+
+            self.retries = 0
             self._refresh_simulated_plan()
 
     @signal_listener("refresh_simulation")
@@ -1642,6 +1703,7 @@ class SimulationPanel(wx.Panel, Job):
         self._refresh_simulated_plan()
 
     def pane_show(self):
+        self.Layout()
         self.context.setting(str, "units_name", "mm")
 
         bbox = self.context.device.view.source_bbox()
@@ -2146,6 +2208,7 @@ class Simulation(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
+        self.Layout()
 
     @staticmethod
     def sub_register(kernel):

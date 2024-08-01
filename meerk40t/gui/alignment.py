@@ -1238,12 +1238,12 @@ class ArrangementPanel(wx.Panel):
         # self.rbox_align_y.SetToolTip(_(""))
         self.check_same_x.SetToolTip(
             _(
-                "Set if all columns need to have the same size (ie maximum width over all columns)"
+                "Set if all columns need to have the same size (i.e. maximum width over all columns)"
             )
         )
         self.check_same_y.SetToolTip(
             _(
-                "Set if all rows need to have the same size (ie maximum height over all row)"
+                "Set if all rows need to have the same size (i.e. maximum height over all row)"
             )
         )
         # self.rbox_relation.SetToolTip(_(""))

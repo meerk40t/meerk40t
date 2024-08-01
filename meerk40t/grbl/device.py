@@ -16,6 +16,7 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -172,6 +173,9 @@ class GRBLDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
+
+        self.register_choices("grbl-effects", get_effect_choices(self))
+
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
         # This device prefers to display speed in mm/min
@@ -267,6 +271,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Address"),
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
+                "signals": "update_interface",
             },
             {
                 "attr": "port",
@@ -277,6 +282,7 @@ class GRBLDevice(Service, Status):
                 "tip": _("TCP Port of the GRBL device"),
                 "lower": 0,
                 "upper": 65535,
+                "signals": "update_interface",
             },
         ]
         if self.permit_tcp:
@@ -291,6 +297,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Address"),
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
+                "signals": "update_interface",
             },
             {
                 "attr": "port",
@@ -298,7 +305,10 @@ class GRBLDevice(Service, Status):
                 "default": 81,
                 "type": int,
                 "label": _("Port"),
-                "tip": _("TCP Port of the device"),
+                "tip": _("TCP Port of the device (usually 81)"),
+                "lower": 0,
+                "upper": 65535,
+                "signals": "update_interface",
             },
         ]
         if self.permit_ws:
@@ -404,7 +414,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Max vector speed"),
                 "trailer": "mm/s",
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_20_" + _("Maximum speeds"),

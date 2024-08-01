@@ -639,8 +639,8 @@ class Meerk40tFonts:
                                         face_name = short
                                     self._available_fonts.append(
                                         (
-                                            full_name,
-                                            face_name,
+                                            str(full_name),
+                                            str(face_name),
                                             font_family,
                                             font_subfamily,
                                             systemfont,

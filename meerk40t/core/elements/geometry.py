@@ -205,7 +205,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def geometry_two_opt(channel, _, data: Geomstr, no_flips=False, **kwargs):
+    def geometry_greedy(channel, _, data: Geomstr, no_flips=False, **kwargs):
         """
         Provides a two-opt optimized version of the current data.
         """

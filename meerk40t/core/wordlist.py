@@ -11,6 +11,7 @@ from copy import copy
 from datetime import datetime
 from ..extra.encode_detect import EncodingDetectFile
 
+
 class Wordlist:
     """
     The Wordlist class provides some logic to hold, update and maintain a set of
@@ -400,7 +401,6 @@ class Wordlist:
             encoding, bom_marker, file_content = result
 
             try:
-
                 with open(filename, newline="", encoding=encoding) as csvfile:
                     buffer = csvfile.read(1024)
                     if force_header is None:

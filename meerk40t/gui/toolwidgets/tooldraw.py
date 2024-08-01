@@ -33,6 +33,14 @@ class DrawTool(ToolWidget):
                 return
         self.series.append(point)
 
+    def end_tool(self, force=False):
+        self.series = None
+        self.scene.context.signal("statusmsg", "")
+        self.scene.request_refresh()
+        if force or self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context("tool none\n")
+
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
@@ -57,14 +65,12 @@ class DrawTool(ToolWidget):
             self.add_point(space_pos[:2])
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            self.series = None
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or event_type == "rightdown":
             if self.scene.pane.tool_active:
-                self.scene.pane.tool_active = False
-                self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
+            self.end_tool(force=True)
         elif event_type == "leftup":
             try:
                 t = Path()
@@ -84,7 +90,6 @@ class DrawTool(ToolWidget):
                 self.notify_created(node)
             except IndexError:
                 pass
-            self.series = None
-            self.scene.request_refresh()
+            self.end_tool()
             response = RESPONSE_CONSUME
         return response

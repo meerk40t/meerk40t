@@ -363,22 +363,19 @@ class GcodeJob:
                     self.program_mode = False
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
-                    try:
-                        self._driver.signal("coolant", True)
-                    except AttributeError:
-                        pass
+                    self._driver.service.kernel.root.coolant.coolant_on(
+                        self._driver.service
+                    )
                 elif v == 8:
                     # Coolant Control: Flood coolant On
-                    try:
-                        self._driver.signal("coolant", True)
-                    except AttributeError:
-                        pass
+                    self._driver.service.kernel.root.coolant.coolant_on(
+                        self._driver.service
+                    )
                 elif v == 9:
                     # Coolant Control: Flood coolant Off
-                    try:
-                        self._driver.signal("coolant", False)
-                    except AttributeError:
-                        pass
+                    self._driver.service.kernel.root.coolant.coolant_off(
+                        self._driver.service
+                    )
                 elif v == 56:
                     # Parking motion override control.
                     pass
@@ -695,6 +692,8 @@ class GcodeJob:
         if matrix is None:
             # Using job for something other than point plotting
             return
+        if power is None:
+            power = 1000
         power = min(1000, power)
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])

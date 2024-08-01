@@ -459,6 +459,9 @@ class DevicePanel(wx.Panel):
 
     def on_tree_device_right_click(self, event):
         index = self.current_item
+        if index < 0:
+            event.Skip()
+            return
         dev_index = self.devices_list.GetItemData(index)
         if 0 <= dev_index < len(self.devices):
             data = self.devices[dev_index]
@@ -598,6 +601,12 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        if (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
+            return
+
         kernel.register("wxpane/Devices", register_panel)
         kernel.register(
             "button/device/DeviceManager",

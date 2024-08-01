@@ -3,6 +3,7 @@ import wx
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -80,6 +81,11 @@ class BalorConfiguration(MWindow):
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
+
+        newpanel = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Effects"))
+
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Warning"))
@@ -155,9 +161,11 @@ class BalorConfiguration(MWindow):
     def on_corfile_changed(self, origin, *args):
         from meerk40t.balormk.controller import GalvoController
 
+        if not self.context.corfile:
+            return
         try:
             scale = GalvoController.get_scale_from_correction_file(self.context.corfile)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError, OSError):
             return
         self.context.lens_size = f"{65536.0 / scale:.03f}mm"
         self.context.signal("lens_size", self.context.lens_size, self.context)

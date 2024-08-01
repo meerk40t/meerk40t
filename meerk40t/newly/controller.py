@@ -354,8 +354,11 @@ class NewlyController:
         self.service.laser_status = "active"
         self("ZED")
         cmd = b";".join(self._command_buffer) + b";"
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=cmd)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=cmd)
+        except ConnectionError:
+            pass
         self._command_buffer.clear()
         self._clear_settings()
         self.service.laser_status = "idle"
@@ -569,8 +572,11 @@ class NewlyController:
 
     def raw(self, data):
         data = bytes(data, "latin1")
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=data)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=data)
+        except ConnectionError:
+            return
 
     def frame(self, x, y):
         self._set_frame_mode()

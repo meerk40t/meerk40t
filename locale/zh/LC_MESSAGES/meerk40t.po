@@ -4848,7 +4848,7 @@ msgid "Time Estimate: Traveling Time"
 msgstr "时间估计：行进时间"
 
 #: meerk40t/gui/simulation.py:1067
-msgid "Time Estimate: Extra Time (ie to swing around)"
+msgid "Time Estimate: Extra Time (i.e. to swing around)"
 msgstr "时间估计：额外时间（如旋转）"
 
 #: meerk40t/gui/simulation.py:1069
@@ -8140,7 +8140,7 @@ msgid "Board"
 msgstr "板"
 
 #: meerk40t/lihuiyu/device.py:116
-msgid "Select the board to use. This has an effects the speedcodes used."
+msgid "Select the board to use. This affects the speedcodes used."
 msgstr "选择要使用的板。这会影响使用的速度代码。"
 
 #: meerk40t/lihuiyu/device.py:120
@@ -11141,7 +11141,7 @@ msgid "Increase Wordlist-Reference"
 msgstr "增加词表引用"
 
 #: meerk40t/core/elements/element_treeops.py:2015
-msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr "调整词表的引用值，例如从{name}到{name#+1}"
 
 #: meerk40t/core/elements/element_treeops.py:2036
@@ -11149,7 +11149,7 @@ msgid "Decrease Wordlist-Reference"
 msgstr "减少词表引用"
 
 #: meerk40t/core/elements/element_treeops.py:2041
-msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr "调整词表的引用值，例如从{name#+3}到{name#+2}"
 
 #: meerk40t/core/elements/element_treeops.py:2061
@@ -12454,20 +12454,16 @@ msgid "Warn level for maximum {unit}"
 msgstr "最大 {unit} 的警告级别"
 
 #: meerk40t/device/gui/warningpanel.py:135
-msgid "Meerk40t can warn you if it believes the values for"
-msgstr "如果设备认为功率和速度的值过于高，它会发出警告："
-
-#: meerk40t/device/gui/warningpanel.py:137
-msgid "power and speed are too ambitious for your machine."
-msgstr "对于您的机器来说，功率和速度过于雄心勃勃。"
-
-#: meerk40t/device/gui/warningpanel.py:139
-msgid "It will display a warning indicator:"
-msgstr "它会显示一个警告指示器："
-
-#: meerk40t/device/gui/warningpanel.py:142
-msgid "in the label of the associated operation-node"
-msgstr "在关联操作节点的标签中"
+msgid ""
+"Meerk40t can warn you if it believes the values for\n"
+"power and speed are too ambitious for your machine.\n"
+"It will display a warning indicator: '❌'\n"
+"in the label of the associated operation-node"
+msgstr ""
+"如果设备认为功率和速度的值过于高，它会发出警告：\n"
+"对于您的机器来说，功率和速度过于雄心勃勃。"
+"它会显示一个警告指示器：'❌'\n"
+"在关联操作节点的标签中"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:25
 msgid "GRBL-Configuration"

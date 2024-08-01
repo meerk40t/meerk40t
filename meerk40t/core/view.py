@@ -272,7 +272,7 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
-    def position(self, x, y, vector=False):
+    def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
         @param x:
@@ -280,8 +280,12 @@ class View:
         @param vector:
         @return:
         """
-        off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
-        off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        if margins:
+            off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
+            off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        else:
+            off_x = 0
+            off_y = 0
         # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units

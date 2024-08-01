@@ -306,7 +306,7 @@ def plugin(kernel, lifecycle=None):
             #     )
             #     + "\n"
             #     + _(
-            #         "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+            #         "- provided no elements are assigned to it yet (i.e. works only for an empty op)!"
             #     ),
             #     "page": "Classification",
             #     "section": "_30_GUI-Behaviour",
@@ -536,6 +536,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
+        self.setting(bool, "update_statusbar_on_material_load", True)
         # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
@@ -544,6 +545,8 @@ class Elemental(Service):
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
+        self.setting(bool, "classify_black_as_raster", True)
+        self.setting(bool, "classify_on_color", True)
 
         self.op_data = Settings(
             self.kernel.name, "operations.cfg", create_backup=True
@@ -757,9 +760,11 @@ class Elemental(Service):
                             if op.output:
                                 will_be_burnt = True
                                 break
-                        except AttributeError:
+                        except AttributeError as e:
+                            # print(f"Encountered error {e} for node {node.type}.{node.id}.{node.display_label()}")
                             pass
                 if not will_be_burnt:
+                    # print (f"Node {node.type}.{node.id}.{node.display_label()} has {len(node._references)} references but none is active...")
                     nonburnt = True
             if nonburnt and unassigned:
                 break
@@ -815,7 +820,7 @@ class Elemental(Service):
         # impose:       - if "to_op" will use attrib-color (see below),
         #                 to impose the first evidence of color in data on the targetop
         #               - if "to_elem" will impose the color of the operation and make it the color of the
-        #                 element attrib (ie stroke or fill)
+        #                 element attrib (i.e. stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
         #               ('auto' is an option too, that will pick the color from the
@@ -944,7 +949,7 @@ class Elemental(Service):
         """
         This routine looks at a given dataset and will condense
         it in the sense that if all elements of a given hierarchy
-        (ie group or file) are in this set, then they will be
+        (i.e. group or file) are in this set, then they will be
         replaced and represented by this parent element
         NB: we will set the emphasized_time of the parent element
         to the minimum time of all children
@@ -987,7 +992,7 @@ class Elemental(Service):
                 # Is this a group? Then we just take this node
                 # and remove all children nodes
                 if node_1.type in ("file", "group"):
-                    # print (f"Group node ({node_1.label}), eliminate children")
+                    # print (f"Group node ({node_1.display_label()}), eliminate children")
                     remove_children_from_list(align_data, node_1)
                     # No continue, as we still need to
                     # assess the parent case
@@ -1976,7 +1981,9 @@ class Elemental(Service):
         """
         Returns whether any element is emphasized
         """
-        for _ in self.elems_nodes(emphasized=True):
+        for e in self.elems_nodes(emphasized=True):
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             return True
         return False
 
@@ -2218,6 +2225,8 @@ class Elemental(Service):
         ):
             if e.bounds is None:
                 continue
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             box = e.bounds
             top_left = [box[0], box[1]]
             top_right = [box[2], box[1]]
@@ -2418,6 +2427,8 @@ class Elemental(Service):
                 bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
+            if hasattr(node, "hidden") and node.hidden:
+                continue
             # Empty group / files may cause problems
             if node.type in ("file", "group"):
                 if not node._children:
@@ -2554,7 +2565,7 @@ class Elemental(Service):
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
         for node in elements:
-            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.label}"
+            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.display_label()}"
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
@@ -2667,7 +2678,7 @@ class Elemental(Service):
                 classif_info[1] = True
             if was_classified and debug:
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
-            # Let's make sure we only consider relevant, ie existing attributes...
+            # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
@@ -2761,7 +2772,7 @@ class Elemental(Service):
                             )
                     if should_break:
                         break
-            # Let's make sure we only consider relevant, ie existing attributes...
+            # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
@@ -3779,6 +3790,30 @@ class Elemental(Service):
                     return True
         return False
 
+    def remove_invalid_references(self):
+        # If you load a file to an existing set of elements/operations,
+        # references may become invalid as those link to non-existing operation nodes
+        # print ("Will check for invalid references")
+        for node in self.elems():
+            to_be_deleted = []
+            for idx, ref in enumerate(node._references):
+                if ref is None:
+                    # print (f"Empty reference for {node.type}.{node.id}.{node.display_label()}")
+                    to_be_deleted.insert(0, idx)  # Last In First Out
+                else:
+                    try:
+                        id = ref.parent  # This needs to exist
+                        if id is None:
+                            to_be_deleted.insert(0, idx)  # Last In First Out
+                            # print (f"Empty parent reference for {node.type}.{node.id}.{node.display_label()}")
+                    except AttributeError:
+                        to_be_deleted.insert(0, idx)  # Last In First Out
+                        # print (f"Invalid reference for {node.type}.{node.id}.{node.display_label()}")
+            if to_be_deleted:
+                # print (f"Will delete {len(to_be_deleted)} invalid references")
+                for idx in to_be_deleted:
+                    node._references.pop(idx)
+
     def remove_empty_groups(self):
         def descend_group(gnode):
             gres = 0
@@ -3858,6 +3893,7 @@ class Elemental(Service):
                             )
                             elemcount_now = self.count_elems()
                             opcount_now = self.count_op()
+                            self.remove_invalid_references()
                             self.remove_empty_groups()
                             # self.listen_tree(self)
                             self._filename = pathname
@@ -3877,7 +3913,7 @@ class Elemental(Service):
                                     )
                                 return True
 
-                        except FileNotFoundError:
+                        except (FileNotFoundError, PermissionError, OSError):
                             return False
                         except BadFileError as e:
                             kernel._console_channel(

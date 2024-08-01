@@ -47,6 +47,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.toolwidgets.tooltabedit import TabEditTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
@@ -100,6 +101,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         self.tool_active = False
         self.modif_active = False
+        self.ignore_snap = False
         self.suppress_selection = False
         self._reference = None  # Reference Object
 
@@ -221,6 +223,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/pointmove", PointMoveTool)
         context.register("tool/parameter", ParameterTool)
         context.register("tool/imagecut", ImageCutTool)
+        context.register("tool/tabedit", TabEditTool)
 
         bsize_normal = STD_ICON_SIZE
 
@@ -1115,6 +1118,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            elif gridtype == "offset":
+                self.grid.draw_offset_lines = not self.grid.draw_offset_lines
             self.scene.signal("guide")
             self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
@@ -1129,6 +1134,9 @@ class MeerK40tScenePanel(wx.Panel):
         def toggle_grid_c(event=None):
             toggle_grid("circular")
 
+        def toggle_grid_o(event=None):
+            toggle_grid("offset")
+
         def remove_background(event=None):
             self.widget_scene._signal_widget(
                 self.widget_scene.widget_root, "background", None
@@ -1136,7 +1144,15 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.request_refresh()
 
         def stop_auto_update(event=None):
-            self.context("timer.updatebg --off\n")
+            devlabel = self.context.device.label
+            to_stop = []
+            for job, content in self.context.kernel.jobs.items():
+                if job is not None and job.startswith("timer.updatebg"):
+                    cmd = str(content).strip()
+                    if cmd.endswith("background") or cmd.endswith(devlabel):
+                        to_stop.append(job)
+            for job in to_stop:
+                self.context(f"{job} --off\n")
 
         gui = self
         menu = wx.Menu()
@@ -1175,18 +1191,34 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
+        mx = float(Length(self.context.device.view.margin_x))
+        my = float(Length(self.context.device.view.margin_y))
+        # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
+        if mx != 0.0 or my != 0.0:
+            menu.AppendSeparator()
+            id4b = menu.Append(
+                wx.ID_ANY,
+                _("Show physical dimensions"),
+                _("Display the physical dimensions"),
+                wx.ITEM_CHECK,
+            )
+            self.Bind(wx.EVT_MENU, toggle_grid_o, id=id4b.GetId())
+            menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
+
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
         # Do we have a timer called .updatebg?
+        devlabel = self.context.device.label
         we_have_a_job = False
-        try:
-            obj = self.context.kernel.jobs["timer.updatebg"]
-            if obj is not None:
-                we_have_a_job = True
-        except KeyError:
-            pass
+        for job, content in self.context.kernel.jobs.items():
+            if job is not None and job.startswith("timer.updatebg"):
+                cmd = str(content).strip()
+                if cmd.endswith("background") or cmd.endswith(devlabel):
+                    we_have_a_job = True
+                    break
+
         if we_have_a_job:
             self.Bind(
                 wx.EVT_MENU,
@@ -1355,6 +1387,11 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
         self.scene.signal("modified_by_tool")
+
+    @signal_listener("tabs_updated")
+    def on_tabs_update(self, origin, *args):
+        # Pass on to scene widgets
+        self.scene.signal("tabs_updated")
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):

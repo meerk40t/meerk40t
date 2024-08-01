@@ -382,6 +382,10 @@ class Node:
         self._bounds_dirty = True
         self._points_dirty = True
 
+    def set_dirty(self):
+        self.points_dirty = True
+        self.empty_cache()
+
     @property
     def formatter(self):
         return self._formatter
@@ -864,7 +868,7 @@ class Node:
                 self._paint_bounds[2] + dx,
                 self._paint_bounds[3] + dy,
             ]
-        self._points_dirty = True
+        self.set_dirty()
         # No need to translate it as we will apply the matrix later
         # self.translate_functional_parameter(dx, dy)
 
@@ -907,13 +911,11 @@ class Node:
         # element classes will need to overload it
         if self._paint_bounds is not None:
             self._paint_bounds = apply_it(self._paint_bounds)
-        self._points_dirty = True
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
-    def altered(self):
-        """
-        The data structure was changed. Any assumptions about what this object is/was are void.
-        """
+    def empty_cache(self):
+        # Remove cached artifacts
         try:
             self._cache.UnGetNativePath(self._cache.NativePath)
         except AttributeError:
@@ -924,19 +926,17 @@ class Node:
         except AttributeError:
             pass
         self._cache = None
+
+    def altered(self):
+        """
+        The data structure was changed. Any assumptions about what this object is/was are void.
+        """
+        self.empty_cache()
         self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
-        try:
-            self._cache.UngetNativePath(self._cache.NativePath)
-        except AttributeError:
-            pass
-        try:
-            del self._cache
-            del self._cache_matrix
-        except AttributeError:
-            pass
+        self.empty_cache()
 
     def unregister(self):
         self.unregister_object()

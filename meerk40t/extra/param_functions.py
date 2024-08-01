@@ -253,7 +253,7 @@ def plugin(kernel, lifecycle):
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, turtle, n, iterations, base=None, **kwargs):
+        def fractal_t(command, channel, turtle, n, iterations, base=None, **kwargs):
             """
             Add a turtle fractal to the scene. All fractals are geometry outputs.
             F - Forward
@@ -333,7 +333,7 @@ def plugin(kernel, lifecycle):
         @self.console_command(
             "quad_corners", input_type="geometry", output_type="geometry"
         )
-        def round_corners(command, channel, data, amount=0.2, **kwargs):
+        def quad_corners(command, channel, data, amount=0.2, **kwargs):
             data.bezier_corners(amount)
             if hasattr(data, "parameter_store"):
                 param = list(data.parameter_store)  # make it editable
@@ -439,7 +439,7 @@ def plugin(kernel, lifecycle):
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, svg_path, iterations, inversions, **kwargs):
+        def fractal_f(command, channel, svg_path, iterations, inversions, **kwargs):
             seed = Geomstr.svg(svg_path)
             segments = seed.segments
             for i, q in enumerate(inversions):
@@ -912,7 +912,7 @@ def plugin(kernel, lifecycle):
             # print(f"Created geometry from {len(pts) / 2} pts: {geom.capacity}")
             return geom
 
-        # Shape (ie star) routine
+        # Shape (i.e. star) routine
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )

@@ -272,6 +272,8 @@ class Button:
             "help": self.help,
             "icon": self.icon,
             "client_data": self.client_data,
+            "rule_enabled": self.rule_enabled,
+            "rule_visible": self.rule_visible,
         }
         self._update_button_aspect(key, **kwargs)
 
@@ -1884,7 +1886,7 @@ class Art:
         1) We calculate the required button dimensions for all
         combinations of tiny/small/regular icons plus with/without labels
         2) We get the minimum amount of columns required to display
-        the buttons (taking the vertical extent ie the amount
+        the buttons (taking the vertical extent i.e. the amount
         of available rows into account).
         This will provide us with a solution that would need
         the least horizontal space.
@@ -2121,9 +2123,17 @@ class Art:
                 button.overflow = True
             elif button.position[3] > panel.position[3]:
                 button.overflow = True
-            elif is_horizontal and panel._overflow_position is not None and button.position[2] > panel._overflow_position[0]:
+            elif (
+                is_horizontal
+                and panel._overflow_position is not None
+                and button.position[2] > panel._overflow_position[0]
+            ):
                 button.overflow = True
-            elif not is_horizontal and panel._overflow_position is not None and button.position[3] > panel._overflow_position[1]:
+            elif (
+                not is_horizontal
+                and panel._overflow_position is not None
+                and button.position[3] > panel._overflow_position[1]
+            ):
                 button.overflow = True
             # if panel.label == "Create":
             #     print (f"{button.label}: {button.overflow}, {button.position}, {panel.position}, {panel._overflow_position}")

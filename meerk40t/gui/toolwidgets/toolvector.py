@@ -207,3 +207,5 @@ class VectorTool(ToolWidget):
         self.scene.context.signal("statusmsg", "")
         self.mouse_position = None
         self.scene.request_refresh()
+        if self.scene.context.just_a_single_element:
+            self.scene.context("tool none\n")

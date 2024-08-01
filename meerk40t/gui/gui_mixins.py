@@ -382,6 +382,15 @@ class Warnings:
 
             return False, ""
 
+        def has_hidden_elements():
+            flag = False
+            count = 0
+            for node in self.context.elements.elems():
+                if hasattr(node, "hidden") and node.hidden:
+                    flag = True
+                    count += 1
+            return flag, count
+
         self._concerns.clear()
         max_speed = getattr(self.context.device, "max_vector_speed", None)
         if has_ambitious_operations(max_speed, ("op cut", "op engrave")):
@@ -424,4 +433,11 @@ class Warnings:
                     "- Some operations containing elements aren't active, so some elements will not be burnt"
                 )
             )
+
+        non_visible, info = has_hidden_elements()
+        if non_visible:
+            self._concerns.append(
+                _("- Elements are hidden and will not be burnt") + f" ({info})\n"
+            )
+
         self.context.signal("icons")

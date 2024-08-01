@@ -1,7 +1,12 @@
 from copy import copy
 from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +18,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked, FunctionalParameter):
+class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -52,9 +57,16 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.stroke_dash = None  # None or "" Solid
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
 
         super().__init__(type="elem ellipse", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         self.__formatter = "{element_type} {id} {stroke}"
         if self.cx is None:
             self.cx = 0
@@ -135,9 +147,33 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         """
         return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
         path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effects like tabs and dashes/dots
+        """
+        unit_factor = kws.get("unitfactor", 1)
+        path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
+        path.transform(self.matrix)
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        path = path.simplify()
+
         return path
 
     def scaled(self, sx, sy, ox, oy):
@@ -173,6 +209,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):

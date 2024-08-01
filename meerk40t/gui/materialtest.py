@@ -224,7 +224,7 @@ class TemplatePanel(wx.Panel):
                 w, h = imagenode.active_image.size
                 label = f"{w} x {h} Pixel"
                 if node.label:
-                    label += "(" + node.label + ")"
+                    label += "(" + node.display_label() + ")"
                 self.image_labels.append(label)
 
         self.combo_images = wx.ComboBox(

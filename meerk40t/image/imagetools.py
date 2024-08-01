@@ -44,7 +44,7 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
         },
         {
             "attr": "create_image_group",
@@ -59,7 +59,32 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
+        },
+        {
+            "attr": "scale_oversized_images",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Scale oversized images"),
+            "tip": _("Set: Will scale down large images so they will fit on the laserbed."),
+            "page": "Input/Output",
+            "section": "Images",
+        },
+        {
+            "attr": "center_image_on_load",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Center image on import"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Places the image at the left upper corner."),
+                    _("Set: Places the image at the center."),
+                )
+            ),
+            "page": "Input/Output",
+            "section": "Images",
         },
     ]
     kernel.register_choices("preferences", choices)
@@ -1674,7 +1699,7 @@ def plugin(kernel, lifecycle=None):
                         # print(f"Erasing right: {dx}:{rwidth}")
                     newnode = copy(inode)
                     newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                     )
                     # newnode.dither = False
                     # newnode.operations.clear()
@@ -1696,7 +1721,7 @@ def plugin(kernel, lifecycle=None):
                     anyslices += 1
                     newnode = copy(inode)
                     newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                     )
                     # newnode.dither = False
                     # newnode.operations.clear()
@@ -2168,6 +2193,24 @@ class ImageLoader:
             type="elem image",
             dpi=_dpi,
         )
+
+        context.setting(bool, "scale_oversized_images", True)
+        if context.scale_oversized_images:
+            bb = n.bbox()
+            sx = (bb[2] - bb[0]) / context.device.space.width
+            sy = (bb[3] - bb[1]) / context.device.space.height
+            if sx > 1 or sy > 1:
+                sx = max(sx, sy)
+                n.matrix.post_scale(1 / sx, 1 / sx)
+
+        context.setting(bool, "center_image_on_load", True)
+        if context.center_image_on_load:
+            bb = n.bbox()
+            dx = (context.device.space.width - (bb[2] - bb[0])) / 2
+            dy = (context.device.space.height - (bb[3] - bb[1])) / 2
+
+            n.matrix.post_translate(dx, dy)
+
         if context.create_image_group:
             file_node.focus()
         else:

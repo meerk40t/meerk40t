@@ -1,6 +1,11 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -12,7 +17,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class LineNode(Node, Stroked, FunctionalParameter):
+class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
@@ -54,7 +59,14 @@ class LineNode(Node, Stroked, FunctionalParameter):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem line", **kwargs)
+        if "hidden" in kwargs:
+            self.hidden = kwargs["hidden"]
         if self.x1 is None:
             self.x1 = 0
         if self.y1 is None:
@@ -116,9 +128,30 @@ class LineNode(Node, Stroked, FunctionalParameter):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
+        return path
+
+    def final_geometry(self, **kws) -> Geomstr:
+        unit_factor = kws.get("unitfactor", 1)
+        path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
+        path.transform(self.matrix)
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = 2 * unit_mm
+        numtabs = 4
+        numtabs = 0
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        path = path.simplify()
         return path
 
     def scaled(self, sx, sy, ox, oy):
@@ -155,7 +188,7 @@ class LineNode(Node, Stroked, FunctionalParameter):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
-        self._points_dirty = True
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):

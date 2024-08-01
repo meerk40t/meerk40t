@@ -284,9 +284,9 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
 
     @self.console_option("etype", "e", type=str, default="scanline")
-    @self.console_option("distance", "d", type=Length, default="1mm")
-    @self.console_option("angle", "a", type=Angle, default="0deg")
-    @self.console_option("angle_delta", "b", type=Angle, default="0deg")
+    @self.console_option("distance", "d", type=Length, default=None)
+    @self.console_option("angle", "a", type=Angle, default=None)
+    @self.console_option("angle_delta", "b", type=Angle, default=None)
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
@@ -307,11 +307,32 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
+
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+
+        if distance is None and hasattr(self.device, "effect_hatch_default_distance"):
+            distance = getattr(self.device, "effect_hatch_default_distance")
+        elif distance is None:
+            distance = "1mm"
+
+        if angle is None and hasattr(self.device, "effect_hatch_default_angle"):
+            angle = Angle(getattr(self.device, "effect_hatch_default_angle"))
+        elif angle is None:
+            angle = Angle("0deg")
+
+        if angle_delta is None and hasattr(
+            self.device, "effect_hatch_default_angle_delta"
+        ):
+            angle_delta = Angle(
+                getattr(self.device, "effect_hatch_default_angle_delta")
+            )
+        elif angle_delta is None:
+            angle_delta = Angle("0deg")
+
         if etype is None:
             etype = "scanline"
         first_node = data[0]
@@ -334,8 +355,8 @@ def init_commands(kernel):
         node.focus()
 
     @self.console_option("wtype", "w", type=str, default="circle")
-    @self.console_option("radius", "r", type=Length, default="0.5mm")
-    @self.console_option("interval", "i", type=Length, default="0.05mm")
+    @self.console_option("radius", "r", type=Length, default=None)
+    @self.console_option("interval", "i", type=Length, default=None)
     @self.console_command(
         "effect-wobble",
         help=_("adds wobble-effect to selected elements"),
@@ -361,24 +382,22 @@ def init_commands(kernel):
             return
         if wtype is None:
             wtype = "circle"
+
+        if radius is None and hasattr(self.device, "effect_wobble_default_radius"):
+            radius = getattr(self.device, "effect_wobble_default_radius")
+        elif radius is None:
+            radius = "0.5mm"
+
+        if interval is None and hasattr(self.device, "effect_wobble_default_interval"):
+            interval = getattr(self.device, "effect_wobble_default_interval")
+        elif interval is None:
+            interval = "0.5mm"
+
         wtype = wtype.lower()
-        allowed = (
-            "circle",
-            "circle_right",
-            "circle_left",
-            "sinewave",
-            "sawtooth",
-            "jigsaw",
-            "gear",
-            "slowtooth",
-        )
+        allowed = list(self.kernel.root.match("wobble", suffix=True))
         if wtype not in allowed:
             channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
-        if radius is None:
-            radius = "0.5mm"
-        if interval is None:
-            interval = "0.05mm"
         try:
             rlen = Length(radius)
         except ValueError:
@@ -700,6 +719,12 @@ def init_commands(kernel):
                                 "Can't set '{val}' for {field} (invalid value, old={oldval})."
                             ).format(val=new_value, field=prop, oldval=oldval)
                         )
+                    except AttributeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
 
                     if "font" in prop:
                         # We need to force a recalculation of the underlying wxfont property
@@ -709,6 +734,18 @@ def init_commands(kernel):
                     if prop in ("mktext", "mkfont"):
                         for property_op in self.kernel.lookup_all("path_updater/.*"):
                             property_op(self.kernel.root, e)
+                    if prop in (
+                        "dpi",
+                        "dither",
+                        "dither_type",
+                        "invert",
+                        "red",
+                        "green",
+                        "blue",
+                        "lightness",
+                    ):
+                        # Images require some recalculation too
+                        e.update(None)
                 else:
                     channel(
                         _("Element {name} has no property {field}").format(
@@ -780,7 +817,7 @@ def init_commands(kernel):
                 except AttributeError:
                     sub_after = 0
                 channel(
-                    f"Simplified {node.type} ({node.label}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
+                    f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
                 )
                 if seg_before:
                     saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
@@ -790,7 +827,9 @@ def init_commands(kernel):
                 channel(f"Segments before: {seg_before} to {seg_after} {saving}")
                 data_changed.append(node)
             else:
-                channel(f"Invalid node for simplify {node.type} ({node.label})")
+                channel(
+                    f"Invalid node for simplify {node.type} ({node.display_label()})"
+                )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")

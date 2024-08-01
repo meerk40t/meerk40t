@@ -17,6 +17,7 @@ from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class LihuiyuDevice(Service, Status):
@@ -136,7 +137,7 @@ class LihuiyuDevice(Service, Status):
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
                 "tip": _(
-                    "Select the board to use. This has an effects the speedcodes used."
+                    "Select the board to use. This affects the speedcodes used."
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
@@ -321,7 +322,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Max vector speed"),
                 "trailer": "mm/s",
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_00_" + _("General Options"),
@@ -343,6 +344,8 @@ class LihuiyuDevice(Service, Status):
             },
         ]
         self.register_choices("lhy-general", choices)
+
+        self.register_choices("lhy-effects", get_effect_choices(self))
 
         choices = [
             {
