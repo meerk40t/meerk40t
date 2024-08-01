@@ -143,6 +143,19 @@ class LihuiyuDevice(Service, Status):
                 "subsection": _("Board Setup"),
             },
             {
+                "attr": "supports_pwm",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Hardware-PWM"),
+                "tip": _(
+                    "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Board Setup"),
+                "conditional": (self, "board", "M3"),
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
