@@ -2570,7 +2570,6 @@ class Elemental(Service):
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
         fuzzydistance = self.classify_fuzzydistance
-        redblue_logic = self.classify_redblue
         usedefault = self.classify_default
         autogen = self.classify_autogenerate
         if reverse:
@@ -2602,13 +2601,12 @@ class Elemental(Service):
                 was_classified = False
                 should_break = False
                 check_redblue = False
-                if self.classify_redblue and hasattr(node, "stroke"):
+                if self.classify_redblue and hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
+                    emptyfill = hasattr(node, "fill") and (node.fill is not None or node.fill.argb is not None)
                     check_redblue = (
                         Color.distance("red", node.stroke) <= fuzzydistance or
                         Color.distance("blue", node.stroke) <= fuzzydistance
-                    ) and (
-                        node.fill is None or node.fill.argb is None
-                    )
+                    ) and emptyfill
                 if check_redblue:
                     isred = Color.distance("red", node.stroke) <= fuzzydistance
                     for op in operations:
