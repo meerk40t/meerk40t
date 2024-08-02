@@ -1093,8 +1093,8 @@ msgstr "Distanza di colore"
 
 #: meerk40t/core/elements.py:187
 msgid ""
-"The color distance of an element to an operations that will still allow "
-"classifiation"
+"The color distance of an element to an operation that will still allow "
+"classification"
 msgstr ""
 "La tolleranza di colore a cui un elemento ancora assegnato a un'operazione "
 "viene classificato."

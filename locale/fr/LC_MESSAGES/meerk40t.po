@@ -10287,8 +10287,8 @@ msgstr ""
 
 #: meerk40t/core/elements/elements.py:208
 msgid ""
-"The color distance of an element to an operations that will still allow "
-"classifiation"
+"The color distance of an element to an operation that will still allow "
+"classification"
 msgstr ""
 
 #: meerk40t/core/elements/elements.py:212

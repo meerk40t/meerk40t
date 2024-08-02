@@ -1095,11 +1095,22 @@ msgstr "Farbtoleranz"
 
 #: meerk40t/core/elements.py:187
 msgid ""
-"The color distance of an element to an operations that will still allow "
-"classifiation"
+"The color distance of an element to an operation that will still allow classification"
 msgstr ""
 "Die Farbtoleranz bei der ein Element noch zu einer Operation zugeordnet "
 "wird"
+
+#: meerk40t/core/elements/elements.py:208
+msgid "Simple red/blue"
+msgstr "Vereinfachte Rot/BLau-Logik"
+
+#: meerk40t/core/elements/elements.py:211
+msgid "Unticked: Classify red/blue elements into rasters too"
+msgstr "Inaktiv: Zuordnung in Rastern auch bei roten/blauen Elementen"
+
+#: meerk40t/core/elements/elements.py:213
+msgid "Ticked: Prefer a single cut/engrave operation (needs transparent fill)"
+msgstr "Aktiv: Bevorzuge einzelnen Schneide/Gravier-Arbeitsvorgang (nur bei transparenter Füllung)"
 
 #: meerk40t/core/elements.py:191
 msgid "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
