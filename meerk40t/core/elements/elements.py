@@ -201,6 +201,20 @@ def plugin(kernel, lifecycle=None):
                 "section": "_30_GUI-Behaviour",
             },
             {
+                "attr": "classify_redblue",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Simple red/blue"),
+                "tip": _(
+                    "Unticked: Classify red/blue elements into rasters too"
+                )
+                + "\n"
+                + _("Ticked: Prefer a single cut/engrave operation (needs transparent fill)"),
+                "page": "Classification",
+                "section": "_10_Assignment-Logic",
+            },
+            {
                 "attr": "classify_fuzzy",
                 "object": elements,
                 "default": False,
@@ -229,7 +243,7 @@ def plugin(kernel, lifecycle=None):
                 ],
                 "conditional": (elements, "classify_fuzzy"),
                 "tip": _(
-                    "The color distance of an element to an operations that will still allow classifiation"
+                    "The color distance of an element to an operation that will still allow classification"
                 )
                 + "\n"
                 + _(
@@ -530,6 +544,7 @@ class Elemental(Service):
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
         self.setting(bool, "classify_fuzzy", False)
+        self.setting(bool, "classify_redblue", True)
         self.setting(float, "classify_fuzzydistance", 100.0)
         self.setting(bool, "classify_autogenerate", True)
         self.setting(bool, "classify_autogenerate_both", True)
@@ -2555,6 +2570,7 @@ class Elemental(Service):
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
         fuzzydistance = self.classify_fuzzydistance
+        redblue_logic = self.classify_redblue
         usedefault = self.classify_default
         autogen = self.classify_autogenerate
         if reverse:
@@ -2585,78 +2601,123 @@ class Elemental(Service):
                     )
                 was_classified = False
                 should_break = False
+                check_redblue = False
+                if self.classify_redblue and hasattr(node, "stroke"):
+                    check_redblue = (
+                        Color.distance("red", node.stroke) <= fuzzydistance or
+                        Color.distance("blue", node.stroke) <= fuzzydistance
+                    ) and (
+                        node.fill is None or node.fill.argb is None
+                    )
+                if check_redblue:
+                    isred = Color.distance("red", node.stroke) <= fuzzydistance
+                    for op in operations:
+                        if (
+                            (isinstance(op, CutOpNode) and isred) or
+                            (isinstance(op, EngraveOpNode) and not isred)
+                        ):
+                            classified, should_break, feedback = op.classify(
+                                node,
+                                fuzzy=tempfuzzy,
+                                fuzzydistance=fuzzydistance,
+                                usedefault=False,
+                            )
+                            if classified:
+                                if feedback is not None and "stroke" in feedback:
+                                    classif_info[0] = True
+                                if feedback is not None and "fill" in feedback:
+                                    classif_info[1] = True
+                                if hasattr(node, "stroke"):
+                                    sstroke = f"s={getattr(node, 'stroke')},"
+                                else:
+                                    sstroke = ""
+                                if hasattr(node, "fill"):
+                                    sfill = f"s={getattr(node, 'fill')},"
+                                else:
+                                    sfill = ""
+                                if debug:
+                                    debug(
+                                        f"{node_desc} was classified in red_blue: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                    )
+                                was_classified = True
+                                should_break = True
+                                break
+                    if was_classified:
+                        break
+                if not was_classified:
+                    for op in operations:
+                        # One special case: is this a rasterop and the stroke
+                        # color is black and the option 'classify_black_as_raster'
+                        # is not set? Then skip...
+                        if not do_stroke and op.type in ("op engrave", "op cut", "op dots"):
+                            continue
+                        if not do_fill and op.type in ("op raster", "op image"):
+                            continue
+                        is_black = False
+                        whisperer = True
+                        if (
+                            hasattr(node, "stroke")
+                            and node.stroke is not None
+                            and node.stroke.argb is not None
+                            and node.type != "elem text"
+                        ):
+                            # Regular object
 
-                for op in operations:
-                    # One special case: is this a rasterop and the stroke
-                    # color is black and the option 'classify_black_as_raster'
-                    # is not set? Then skip...
-                    if not do_stroke and op.type in ("op engrave", "op cut", "op dots"):
-                        continue
-                    if not do_fill and op.type in ("op raster", "op image"):
-                        continue
-                    is_black = False
-                    whisperer = True
-                    if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and node.stroke.argb is not None
-                        and node.type != "elem text"
-                    ):
-                        if fuzzy:  # No need to distinguish tempfuzzy here
-                            is_black = (
-                                Color.distance("black", node.stroke) <= fuzzydistance
-                                or Color.distance("white", node.stroke) <= fuzzydistance
-                            )
-                        else:
-                            is_black = (
-                                Color("black") == node.stroke
-                                or Color("white") == node.stroke
-                            )
-                    if (
-                        not self.classify_black_as_raster
-                        and is_black
-                        and isinstance(op, RasterOpNode)
-                    ):
-                        whisperer = False
-                    elif (
-                        self.classify_black_as_raster
-                        and is_black
-                        and isinstance(op, EngraveOpNode)
-                    ):
-                        whisperer = False
-                    if debug:
-                        debug(
-                            f"For {op.type}.{op.id}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
-                        )
-                    if hasattr(op, "classify") and whisperer:
-                        classified, should_break, feedback = op.classify(
-                            node,
-                            fuzzy=tempfuzzy,
-                            fuzzydistance=fuzzydistance,
-                            usedefault=False,
-                        )
-                    else:
-                        continue
-                    if classified:
-                        if feedback is not None and "stroke" in feedback:
-                            classif_info[0] = True
-                        if feedback is not None and "fill" in feedback:
-                            classif_info[1] = True
-                        was_classified = True
-                        if hasattr(node, "stroke"):
-                            sstroke = f"s={getattr(node, 'stroke')},"
-                        else:
-                            sstroke = ""
-                        if hasattr(node, "fill"):
-                            sfill = f"s={getattr(node, 'fill')},"
-                        else:
-                            sfill = ""
+                            if fuzzy:  # No need to distinguish tempfuzzy here
+                                is_black = (
+                                    Color.distance("black", node.stroke) <= fuzzydistance
+                                    or Color.distance("white", node.stroke) <= fuzzydistance
+                                )
+                            else:
+                                is_black = (
+                                    Color("black") == node.stroke
+                                    or Color("white") == node.stroke
+                                )
+                        if (
+                            not self.classify_black_as_raster
+                            and is_black
+                            and isinstance(op, RasterOpNode)
+                        ):
+                            whisperer = False
+                        elif (
+                            self.classify_black_as_raster
+                            and is_black
+                            and isinstance(op, EngraveOpNode)
+                        ):
+                            whisperer = False
                         if debug:
                             debug(
-                                f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                f"For {op.type}.{op.id}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                             )
-                    if should_break:
-                        break
+                        if hasattr(op, "classify") and whisperer:
+                            classified, should_break, feedback = op.classify(
+                                node,
+                                fuzzy=tempfuzzy,
+                                fuzzydistance=fuzzydistance,
+                                usedefault=False,
+                            )
+                        else:
+                            continue
+                        if classified:
+                            if feedback is not None and "stroke" in feedback:
+                                classif_info[0] = True
+                            if feedback is not None and "fill" in feedback:
+                                classif_info[1] = True
+                            was_classified = True
+                            if hasattr(node, "stroke"):
+                                sstroke = f"s={getattr(node, 'stroke')},"
+                            else:
+                                sstroke = ""
+                            if hasattr(node, "fill"):
+                                sfill = f"s={getattr(node, 'fill')},"
+                            else:
+                                sfill = ""
+                            if debug:
+                                debug(
+                                    f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                )
+                        if should_break:
+                            break
                 # end of operation loop, let's make sure we don't do stuff again if we were successful
                 if classif_info[0]:
                     do_stroke = False
