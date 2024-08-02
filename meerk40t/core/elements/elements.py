@@ -2602,7 +2602,10 @@ class Elemental(Service):
                 should_break = False
                 check_redblue = False
                 if self.classify_redblue and hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
-                    emptyfill = hasattr(node, "fill") and (node.fill is not None or node.fill.argb is not None)
+                    if hasattr(node, "fill"):
+                        emptyfill = bool(node.fill is None or node.fill.argb is None)
+                    else:
+                        emptyfill = True
                     check_redblue = (
                         Color.distance("red", node.stroke) <= fuzzydistance or
                         Color.distance("blue", node.stroke) <= fuzzydistance
