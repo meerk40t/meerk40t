@@ -777,6 +777,9 @@ class LihuiyuDriver(Parameters):
         except AttributeError:
             pass
 
+    def get_m3_hardware_info(self):
+        self(b"AT01")
+
     def wait(self, time_in_ms):
         """
         Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is

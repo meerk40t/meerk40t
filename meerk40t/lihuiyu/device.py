@@ -1032,6 +1032,8 @@ class LihuiyuDevice(Service, Status):
         )
         def get_board_info(command, channel, _, remainder=None, **kwgs):
             self.driver.get_board_info()
+            if self.board == "M3":
+                self.driver.get_m3_hardware_info()
 
         @self.console_command(
             "get_param_info",
