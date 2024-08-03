@@ -210,14 +210,10 @@ def get_code_from_speed(
         # produced a negative speed value, go ahead and set that to 0
         speed_value = 0
     encoded_speed = encode_16bit(speed_value)
-    try:
-        if power_value is None or power_value >= 1000:
-            power_suffix = ""
-        else:
-            power_suffix = f"W{power_value:03d}"
-        print (power_value, power_suffix)
-    except Exception as e:
-        print(f"Crashed with {e}")
+    if power_value is None or power_value >= 1000:
+        power_suffix = ""
+    else:
+        power_suffix = f"W{power_value:03d}"
     if raster_step != 0:
         # There is no C suffix notation for raster step.
         if isinstance(raster_step, tuple):
