@@ -94,7 +94,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_argument("name", type=str)
         @kernel.console_command(
             "add",
-            help=_("start a particular device entry"),
+            help=_("Add a new device and start it"),
             input_type="device",
             all_arguments_required=True,
         )
@@ -129,6 +129,42 @@ def plugin(kernel, lifecycle=None):
                 kernel.activate("device", service, assigned=True)
             except IndexError:
                 raise CommandSyntaxError("Index is not valid.")
+
+        @kernel.console_argument("name", type=str)
+        @kernel.console_command(
+            "activate",
+            help=_("Activate a particular device entry"),
+            input_type="device",
+        )
+        def device_activate(channel, _, data, name=None, **kwargs):
+            """
+            Activate a given device.
+            """
+            from ..kernel.exceptions import CommandSyntaxError
+            available_devices = kernel.services("device")
+            if not name:
+                channel(_("----------"))
+                channel(_("Defined Devices:"))
+                for i, spool in enumerate(available_devices):
+                    suffix = ""
+                    if spool.path == kernel.device.path:
+                        suffix = " (*)"
+                    channel(f"{i}: {spool.label}{suffix}")
+                return
+            found = False
+            index = -1
+            try:
+                index = int(name)
+            except ValueError:
+                index = -1
+            for i, spool in enumerate(available_devices):
+                if spool.label == name or i == index:
+                    kernel.activate_service_path("device", spool.path)
+                    found = True
+                    channel(f"Device '{spool.label}' is now the active device")
+                    break
+            if not found:
+                channel(f"Did not find a device with that name '{name}'")
 
     if lifecycle == "preshutdown":
         setattr(kernel.root, "activated_device", kernel.device.path)
