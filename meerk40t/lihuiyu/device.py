@@ -1188,6 +1188,7 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("plot_shift")
     @signal_listener("plot_phase_type")
     @signal_listener("plot_phase_value")
+    @signal_listener("supports_pwm")
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 
