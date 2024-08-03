@@ -79,7 +79,6 @@ class PlotPlanner(Parameters):
         self.settings_then_jog = False
 
     def set_ppi(self, ppi):
-        print(f"Was set to {ppi}")
         self.ppi = None
         if ppi:
             self.ppi = PPI(self)
