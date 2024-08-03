@@ -135,7 +135,6 @@ class LihuiyuDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
-        self.power_value = None
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_attribute_update()
@@ -195,12 +194,7 @@ class LihuiyuDriver(Parameters):
         self.plot_planner.force_shift = self.service.plot_shift
         self.plot_planner.phase_type = self.service.plot_phase_type
         self.plot_planner.phase_value = self.service.plot_phase_value
-        # If the board supports hardware pwm then we don't ask the plotplanner
-        # to do software pulses per inch
-        if self.service.supports_pwm:
-            self.plot_planner.set_ppi(False)
-        else:
-            self.plot_planner.set_ppi(True)
+        self.plot_planner.set_ppi(not self.service.supports_pwm)
 
     def hold_work(self, priority):
         """
@@ -534,6 +528,10 @@ class LihuiyuDriver(Parameters):
         else:
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
+        if self.service.supports_pwm:
+            power_val = self.power
+        else:
+            power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -545,7 +543,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=False,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=horizontal,
-            power_value=self.power_value,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -591,6 +589,10 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
+        if self.service.supports_pwm:
+            power_val = self.power
+        else:
+            power_val = None
 
         speed_code = LaserSpeed(
             self.service.board,
@@ -603,7 +605,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=suffix_c,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=self._horizontal_major,
-            power_value=self.power_value,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -772,9 +774,6 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         if self.plot_data is None:
-            self.plot_data = self.plot_planner.gen()
-            for x, y, on in self.plot_data:
-                print (x, y, on)
             self.plot_data = self.plot_planner.gen()
         self._plotplanner_process()
 
@@ -1038,10 +1037,6 @@ class LihuiyuDriver(Parameters):
             self.power = 1000.0
         if self.power <= 0:
             self.power = 0.0
-        if self.service.supports_pwm:
-            self.power_value = self.power
-        else:
-            self.power_value = None
 
     def _set_ppi(self, power=1000.0):
         self.power = power
@@ -1049,10 +1044,6 @@ class LihuiyuDriver(Parameters):
             self.power = 1000.0
         if self.power <= 0:
             self.power = 0.0
-        if self.service.supports_pwm:
-            self.power_value = self.power
-        else:
-            self.power_value = None
 
     def _set_pwm(self, power=1000.0):
         self.power = power
@@ -1060,10 +1051,6 @@ class LihuiyuDriver(Parameters):
             self.power = 1000.0
         if self.power <= 0:
             self.power = 0.0
-        if self.service.supports_pwm:
-            self.power_value = self.power
-        else:
-            self.power_value = None
 
     def _set_overscan(self, overscan=None):
         self.overscan = overscan
