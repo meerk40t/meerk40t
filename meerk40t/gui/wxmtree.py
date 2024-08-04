@@ -1153,6 +1153,7 @@ class ShadowTree:
         """
         # print (f"Rebuild called from {source}")
         # let's try to remember which branches were expanded:
+        busy = wx.BusyCursor()
         self.context.elements.set_start_time("rebuild_tree")
         self.freeze_tree(True)
 
@@ -1241,6 +1242,7 @@ class ShadowTree:
         self.freeze_tree(False)
         self.context.elements.set_end_time("rebuild_tree", display=True)
         # print(f"Rebuild done for {source}")
+        del busy
 
     def register_children(self, node):
         """

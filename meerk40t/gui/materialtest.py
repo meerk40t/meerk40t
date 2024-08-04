@@ -640,6 +640,7 @@ class TemplatePanel(wx.Panel):
             return
         self.current_op = opidx
 
+        busy = wx.BusyInfo()
         self.Freeze()
         if opidx < 0:
             opnode = None
@@ -813,6 +814,7 @@ class TemplatePanel(wx.Panel):
         self.on_combo_2(None)
         self.Layout()
         self.Thaw()
+        del busy
 
     def on_combo_1(self, input):
         s_unit = ""
@@ -1634,6 +1636,7 @@ class TemplateTool(MWindow):
 
         if node is None:
             return
+        busy = wx.BusyInfo()
         self.Freeze()
         pages_to_instance = []
         pages_in_node = []
@@ -1701,6 +1704,7 @@ class TemplateTool(MWindow):
 
         self.Layout()
         self.Thaw()
+        del busy
 
     def window_open(self):
         pass

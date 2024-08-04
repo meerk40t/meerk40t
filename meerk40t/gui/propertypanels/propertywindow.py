@@ -63,6 +63,7 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
+        busy = wx.BusyCursor()
         self.Freeze()
         for p in self.panel_instances:
             try:
@@ -144,6 +145,7 @@ class PropertyWindow(MWindow):
 
         self.Layout()
         self.Thaw()
+        del busy
         # self.Refresh()
 
     @staticmethod

@@ -702,7 +702,8 @@ class wxMeerK40t(wx.App, Module):
             if command == "open":
                 if path.lookup(window_uri) is not None:
                     if wx.IsMainThread():
-                        window_open(None)
+                        with wx.BusyCursor():
+                            window_open(None)
                     else:
                         wx.CallAfter(window_open, None)
                     # kernel.run_later(window_open, None)
@@ -719,7 +720,8 @@ class wxMeerK40t(wx.App, Module):
                         # kernel.run_later(window_close, None)
                     else:
                         if wx.IsMainThread():
-                            window_open(None)
+                            with wx.BusyCursor():
+                                window_open(None)
                         else:
                             wx.CallAfter(window_open, None)
                         # kernel.run_later(window_open, None)

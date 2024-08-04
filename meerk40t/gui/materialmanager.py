@@ -765,6 +765,7 @@ class MaterialPanel(ScrolledPanel):
             )
         )
 
+        busy = wx.BusyInfo()
         tree = self.tree_library
         tree.Freeze()
         tree.DeleteAllItems()
@@ -867,6 +868,7 @@ class MaterialPanel(ScrolledPanel):
             self.tree_library.SelectItem(selected)
         tree.Thaw()
         tree.Refresh()
+        del busy
 
     @staticmethod
     def get_nth_dict_entry(dictionary: dict, n=0):
