@@ -582,7 +582,7 @@ class SpoolerPanel(wx.Panel):
 
     def on_menu_popup_clear(self, element=None):
         def clear(event=None):
-            if self.kernel.yesno(
+            if self.context.kernel.yesno(
                 _("Do you really want to delete all entries?"), caption=_("Spooler")
             ):
                 spoolers = []
