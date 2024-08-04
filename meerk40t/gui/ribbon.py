@@ -1369,103 +1369,106 @@ class Art:
             dc.DrawRoundedRectangle(
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
             )
+            self.look_at_button_font_sizes(dc, page)
             for panel in page.panels:
                 # We suppress empty panels
                 if panel is None or panel.visible_button_count == 0:
                     continue
                 self._paint_panel(dc, panel)
-                self.look_at_button_font_sizes(dc, panel)
                 for button in panel.visible_buttons():
                     self._paint_button(dc, button)
 
-    def look_at_button_font_sizes(self, dc, panel):
+    def look_at_button_font_sizes(self, dc, page):
         self.font_sizes = {}
-        for button in panel.visible_buttons():
-            x, y, x1, y1 = button.position
-            start_y = y
-            w = int(round(x1 - x, 2))
-            h = int(round(y1 - y, 2))
-            img_h = h
-            # do we have text? if yes let's reduce the available space in y
-            if self.show_labels:  # Regardless whether we have a label or not...
-                img_h -= self.bitmap_text_buffer
-                ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
-                img_h -= int(ptsize * 1.35)
+        for panel in page.panels:
+            # We suppress empty panels
+            if panel is None or panel.visible_button_count == 0:
+                continue
+            for button in panel.visible_buttons():
+                x, y, x1, y1 = button.position
+                start_y = y
+                w = int(round(x1 - x, 2))
+                h = int(round(y1 - y, 2))
+                img_h = h
+                # do we have text? if yes let's reduce the available space in y
+                if self.show_labels:  # Regardless whether we have a label or not...
+                    img_h -= self.bitmap_text_buffer
+                    ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
+                    img_h -= int(ptsize * 1.35)
 
-            button.get_bitmaps(min(w, img_h))
-            if button.enabled:
-                bitmap = button.bitmap
-            else:
-                bitmap = button.bitmap_disabled
+                button.get_bitmaps(min(w, img_h))
+                if button.enabled:
+                    bitmap = button.bitmap
+                else:
+                    bitmap = button.bitmap_disabled
 
-            bitmap_width, bitmap_height = bitmap.Size
-            # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
-            #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
-            bs = min(bitmap_width, bitmap_height)
-            ptsize = self.get_font_size(bs)
-            y += bitmap_height
+                bitmap_width, bitmap_height = bitmap.Size
+                # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
+                #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
+                bs = min(bitmap_width, bitmap_height)
+                ptsize = self.get_font_size(bs)
+                y += bitmap_height
 
-            text_edge = self.bitmap_text_buffer
-            if button.label and self.show_labels:
-                show_text = True
-                label_text = list(button.label.split(" "))
-                # We try to establish whether this would fit properly.
-                # We allow a small oversize of 25% to the button,
-                # before we try to reduce the fontsize
-                wouldfit = False
-                while not wouldfit:
-                    total_text_height = 0
-                    testfont = wx.Font(
-                        ptsize,
-                        wx.FONTFAMILY_SWISS,
-                        wx.FONTSTYLE_NORMAL,
-                        wx.FONTWEIGHT_NORMAL,
-                    )
-                    test_y = y + text_edge
-                    dc.SetFont(testfont)
-                    wouldfit = True
-                    i = 0
-                    while i < len(label_text):
-                        # We know by definition that all single words
-                        # are okay for drawing, now we check whether
-                        # we can draw multiple in one line
-                        word = label_text[i]
-                        cont = True
-                        while cont:
-                            cont = False
-                            if i < len(label_text) - 1:
-                                nextword = label_text[i + 1]
-                                test = word + " " + nextword
-                                tw, th = dc.GetTextExtent(test)
-                                if tw < w:
-                                    word = test
-                                    i += 1
-                                    cont = True
+                text_edge = self.bitmap_text_buffer
+                if button.label and self.show_labels:
+                    show_text = True
+                    label_text = list(button.label.split(" "))
+                    # We try to establish whether this would fit properly.
+                    # We allow a small oversize of 25% to the button,
+                    # before we try to reduce the fontsize
+                    wouldfit = False
+                    while not wouldfit:
+                        total_text_height = 0
+                        testfont = wx.Font(
+                            ptsize,
+                            wx.FONTFAMILY_SWISS,
+                            wx.FONTSTYLE_NORMAL,
+                            wx.FONTWEIGHT_NORMAL,
+                        )
+                        test_y = y + text_edge
+                        dc.SetFont(testfont)
+                        wouldfit = True
+                        i = 0
+                        while i < len(label_text):
+                            # We know by definition that all single words
+                            # are okay for drawing, now we check whether
+                            # we can draw multiple in one line
+                            word = label_text[i]
+                            cont = True
+                            while cont:
+                                cont = False
+                                if i < len(label_text) - 1:
+                                    nextword = label_text[i + 1]
+                                    test = word + " " + nextword
+                                    tw, th = dc.GetTextExtent(test)
+                                    if tw < w:
+                                        word = test
+                                        i += 1
+                                        cont = True
 
-                        text_width, text_height = dc.GetTextExtent(word)
-                        if text_width > w:
-                            wouldfit = False
+                            text_width, text_height = dc.GetTextExtent(word)
+                            if text_width > w:
+                                wouldfit = False
+                                break
+                            test_y += text_height
+                            total_text_height += text_height
+                            if test_y > y1:
+                                wouldfit = False
+                                text_edge = 0
+                                break
+                            i += 1
+
+                        if wouldfit:
+                            # Let's see how much we have...
+                            if ptsize in self.font_sizes:
+                                self.font_sizes[ptsize] += 1
+                            else:
+                                self.font_sizes[ptsize] = 1
                             break
-                        test_y += text_height
-                        total_text_height += text_height
-                        if test_y > y1:
-                            wouldfit = False
-                            text_edge = 0
+
+                        ptsize -= 2
+                        if ptsize < 6:  # too small
                             break
-                        i += 1
-
-                    if wouldfit:
-                        # Let's see how much we have...
-                        if ptsize in self.font_sizes:
-                            self.font_sizes[ptsize] += 1
-                        else:
-                            self.font_sizes[ptsize] = 1
-                        break
-
-                    ptsize -= 2
-                    if ptsize < 6:  # too small
-                        break
-
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         """
