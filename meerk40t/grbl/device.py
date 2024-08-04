@@ -288,6 +288,10 @@ class GRBLDevice(Service, Status):
         if self.permit_tcp:
             self.register_choices("tcp", choices)
 
+        try:
+            import websocket
+        except ImportError:
+            self.permit_ws = False
         choices = [
             {
                 "attr": "address",
@@ -313,20 +317,27 @@ class GRBLDevice(Service, Status):
         ]
         if self.permit_ws:
             self.register_choices("ws", choices)
-
+        list_interfaces = []
+        list_display = []
+        if self.permit_serial:
+            list_interfaces.append("serial")
+            list_display.append(_("Serial"))
+        if self.permit_tcp:
+            list_interfaces.append("tcp")
+            list_display.append(_("TCP-Network"))
+        if self.permit_ws:
+            list_interfaces.append("ws")
+            list_display.append(_("WebSocket-Network"))
+        list_interfaces.append("mock")
+        list_display.append(_("Mock"))
         choices = [
             {
                 "attr": "interface",
                 "object": self,
                 "default": "serial",
                 "style": "combosmall",
-                "choices": ["serial", "tcp", "ws", "mock"],
-                "display": [
-                    _("Serial"),
-                    _("TCP-Network"),
-                    _("WebSocket-Network"),
-                    _("mock"),
-                ],
+                "choices": list_interfaces,
+                "display": list_display,
                 "type": str,
                 "label": _("Interface Type"),
                 "tip": _("Select the interface type for the grbl device"),
