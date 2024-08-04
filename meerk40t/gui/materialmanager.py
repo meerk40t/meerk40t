@@ -10,10 +10,8 @@ import xml.etree.ElementTree as ET
 import wx
 import wx.lib.mixins.listctrl as listmix
 
-from ..core.node.node import Node
-from ..kernel.kernel import get_safe_path
-from ..kernel.settings import Settings
-from .icons import (
+from meerk40t.core.node.node import Node
+from meerk40t.gui.icons import (
     icon_hatch,
     icon_library,
     icon_points,
@@ -25,8 +23,8 @@ from .icons import (
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
-from .mwindow import MWindow
-from .wxutils import (
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
@@ -34,6 +32,9 @@ from .wxutils import (
     wxButton,
     wxCheckBox,
 )
+from meerk40t.kernel.kernel import get_safe_path
+from meerk40t.kernel.settings import Settings
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -1945,6 +1946,11 @@ class MaterialPanel(ScrolledPanel):
                 optype = self.op_data.read_persistent(str, subsection, "type", "")
                 if optype is None or optype == "":
                     continue
+                opcolor = self.op_data.read_persistent(str, subsection, "color", "")
+                if opcolor:
+                    opc = Color(opcolor)
+                else:
+                    opc = None
                 idx += 1
                 opid = self.op_data.read_persistent(str, subsection, "id", "")
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
@@ -1973,6 +1979,14 @@ class MaterialPanel(ScrolledPanel):
                         oplabel = ""
                     oplabel += f"({command})"
                 self.list_preview.SetItem(list_id, 1, info[0])
+                if opc:
+                    bgcol = wx.Colour(opc.red, opc.green, opc.blue)
+                    if Color.distance(opc, "black") > Color.distance(opc, "white"):
+                        fgcol = wx.BLACK
+                    else:
+                        fgcol = wx.WHITE
+                    self.list_preview.SetItemBackgroundColour(list_id, bgcol)
+                    self.list_preview.SetItemTextColour(list_id, fgcol)
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
                 self.list_preview.SetItem(list_id, 4, power)
@@ -2165,6 +2179,76 @@ class MaterialPanel(ScrolledPanel):
             pass
 
         menu = wx.Menu()
+
+        def on_menu_popup_recolor(coloroption, op_section):
+            def color_handler(*args):
+                def next_color(primary, secondary, tertiary, delta=32):
+                    r = primary
+                    b = secondary
+                    g = tertiary
+
+                    b += delta
+                    if b > 255:
+                        b = 0
+                        r -= delta
+                    if r < 0:
+                        r = 255
+                        g += delta
+                    if g > 255:
+                        g = 0
+                    return r, b, g
+
+                colors = [0, 0, 0]
+                primary = 0
+                secondary = 1
+                tertiary = 2
+                if coloropt == "red":
+                    colors[0] = 255
+                    primary = 0
+                    secondary = 1
+                    tertiary = 2
+                if coloropt == "blue":
+                    colors[1] = 255
+                    primary = 1
+                    secondary = 2
+                    tertiary = 0
+                if coloropt == "green":
+                    colors[2] = 255
+                    primary = 2
+                    secondary = 1
+                    tertiary = 0
+                if coloropt == "black":
+                    colors = [0, 0, 0]
+                    primary = 0
+                    secondary = 1
+                    tertiary = 2
+                settings = self.op_data
+                target_type = settings.read_persistent(str, key, "type", "")
+                idx = 0
+                for subsection in settings.derivable(self.active_material):
+                    if subsection.endswith(" info"):
+                        continue
+                    optype = settings.read_persistent(str, subsection, "type", "")
+                    if optype is None or optype != target_type:
+                        continue
+                    idx += 1
+                    opcolor = Color(red=colors[0], green=colors[2], blue=colors[1])
+                    settings.write_persistent(subsection, "color", str(opcolor))
+                    if coloropt=="black":
+                        colors[primary] += 32
+                        if colors[primary] > 255:
+                            colors[primary] = 0
+                        colors[secondary] = colors[primary]
+                        colors[tertiary] = colors[primary]
+                    else:
+                        colors[primary], colors[secondary], colors[tertiary] = next_color(colors[primary], colors[secondary], colors[tertiary], delta=64)
+
+                settings.write_configuration()
+                self.fill_preview()
+
+            coloropt = coloroption.lower()
+            key = op_section
+            return color_handler
 
         def on_menu_popup_delete(op_section):
             def remove_handler(*args):
@@ -2440,6 +2524,16 @@ class MaterialPanel(ScrolledPanel):
                 )
                 menu.Enable(item.GetId(), bool(self.active_material is not None))
                 self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
+                try:
+                    info = self.opinfo[op_type]
+                except KeyError:
+                    info = self.opinfo["generic"]
+                submenu = wx.Menu()
+                for coloroption in ("Red", "Blue", "Green", "Black"):
+                    sitem = submenu.Append(wx.ID_ANY, _(coloroption), "", wx.ITEM_NORMAL)
+                    self.Bind(wx.EVT_MENU, on_menu_popup_recolor(coloroption, key), sitem)
+                menu.AppendSubMenu(submenu, _("Color all {type}").format(type=info[0]))
+
 
         if self.list_preview.GetItemCount() > 0:
             menu.AppendSeparator()
