@@ -318,8 +318,10 @@ class GrblController:
             self.connection = TCPOutput(self.service, self)
         elif self.service.permit_ws and self.service.interface == "ws":
             from meerk40t.grbl.ws_connection import WSOutput
-
-            self.connection = WSOutput(self.service, self)
+            try:
+                self.connection = WSOutput(self.service, self)
+            except ModuleNotFoundError:
+                response = self.service.kernel.prompt(str, "Could not open websocket-connection (websocket installed?)")
         else:
             # Mock
             from .mock_connection import MockConnection
