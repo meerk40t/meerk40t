@@ -640,7 +640,7 @@ class TemplatePanel(wx.Panel):
             return
         self.current_op = opidx
 
-        busy = wx.BusyInfo()
+        busy = wx.BusyCursor()
         self.Freeze()
         if opidx < 0:
             opnode = None
@@ -1636,7 +1636,7 @@ class TemplateTool(MWindow):
 
         if node is None:
             return
-        busy = wx.BusyInfo()
+        busy = wx.BusyCursor()
         self.Freeze()
         pages_to_instance = []
         pages_in_node = []

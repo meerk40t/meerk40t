@@ -765,7 +765,7 @@ class MaterialPanel(ScrolledPanel):
             )
         )
 
-        busy = wx.BusyInfo()
+        busy = wx.BusyCursor()
         tree = self.tree_library
         tree.Freeze()
         tree.DeleteAllItems()
