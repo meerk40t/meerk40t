@@ -678,7 +678,8 @@ class LaserPanel(wx.Panel):
         self.set_pause_color()
 
     def on_config_button(self, event):
-        self.context.device("window toggle Configuration\n")
+        with wx.BusyCursor() as busy:
+            self.context.device("window toggle Configuration\n")
 
 
 class JobPanel(wx.Panel):
