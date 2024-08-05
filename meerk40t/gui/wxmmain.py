@@ -2319,7 +2319,32 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: part_of_group(),
             },
         )
-
+        choices= [    
+            {
+                "attr": "align_first",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Alignment to first element"),
+                "tip": 
+                    _("When aligning several elements to each other, they will be aligned to the element...") 
+                    + "\n"
+                    + _("Ticked: ...that was selected first") 
+                    + "\n"
+                    + _("Unticked: ...that was selected last")
+                    + "\n"
+                    + _("(Requires a restart to take effect)"),
+                "page": "Scene",
+                "section": "Alignment",
+                "signals": "restart",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
+        align_first = kernel.root.setting(bool, "align_first", True)
+        if align_first:
+            align_mode = "first"
+        else:
+            align_mode = "last" 
         kernel.register(
             "button/align/AlignLeft",
             {
@@ -2330,7 +2355,7 @@ class MeerK40t(MWindow):
                 ),
                 "help": "alignment",
                 "action": lambda v: kernel.elements(
-                    "align push first individual left pop\n"
+                    f"align push {align_mode} individual left pop\n"
                 ),
                 "action_right": lambda v: kernel.elements(
                     "align push bed group left pop\n"
@@ -2403,7 +2428,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align first right\n"),
+                "action": lambda v: kernel.elements(f"align {align_mode} right\n"),
                 "action_right": lambda v: kernel.elements("align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -2421,7 +2446,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align first top\n"),
+                "action": lambda v: kernel.elements(f"align {align_mode} top\n"),
                 "action_right": lambda v: kernel.elements("align bed group top\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -2439,7 +2464,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align first bottom\n"),
+                "action": lambda v: kernel.elements(f"align {align_mode} bottom\n"),
                 "action_right": lambda v: kernel.elements("align bed group bottom\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -2457,7 +2482,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align first centerh\n"),
+                "action": lambda v: kernel.elements(f"align {align_mode} centerh\n"),
                 "action_right": lambda v: kernel.elements("align bed group centerh\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -2475,7 +2500,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align first centerv\n"),
+                "action": lambda v: kernel.elements(f"align {align_mode} centerv\n"),
                 "action_right": lambda v: kernel.elements("align bed group centerv\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
