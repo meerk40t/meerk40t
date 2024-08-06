@@ -2057,50 +2057,57 @@ def init_commands(kernel):
     ):
         if height is None:
             raise CommandSyntaxError
-        try:
-            area = self.selected_area()
-            if area is None:
-                channel(_("resize: nothing selected"))
-                return
-            x, y, x1, y1 = area
-            w, h = x1 - x, y1 - y
-            if w == 0 or h == 0:  # dot
-                channel(_("resize: cannot resize a dot"))
-                return
-            sx = width / w
-            sy = height / h
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        area = Node.union_bounds(data)
+        if area is None:
+            channel(_("resize: nothing selected"))
+            return
+        x, y, x1, y1 = area
+        w, h = x1 - x, y1 - y
+        if w == 0 or h == 0:  # dot
+            channel(_("resize: cannot resize a dot"))
+            return
+        sx = width / w
+        sy = height / h
+        if sx == 0 or sy == 0:
+            channel(_("Invalid width/height"))
+            return
+        px = area[0]
+        py = area[2]
+        matrix = Matrix(f"scale({sx},{sy},{px},{py})")
+        images = []
+        if sx != 1.0 or sy != 1.0:
             # Don't do anything if scale is 1
-            if sx == 1.0 and sy == 1.0:
-                scale_str = ""
-            else:
-                scale_str = f"scale({sx},{sy})"
-            if x_pos == x and y_pos == y and scale_str == "":
-                return
-            #     trans1_str = ""
-            #     trans2_str = ""
-            # else:
-            trans1_str = f"translate({round(x_pos, 7)},{round(y_pos, 7)})"
-            trans2_str = f"translate({round(-x, 7)},{round(-y, 7)})"
-            matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
-            # channel(f"{matrixstr}")
-            matrix = Matrix(matrixstr)
-            if data is None:
-                data = list(self.elems(emphasized=True))
-            images = []
             for node in data:
                 if hasattr(node, "lock") and node.lock:
-                    channel(_("resize: cannot resize a locked element"))
                     continue
                 node.matrix *= matrix
                 node.modified()
                 if hasattr(node, "update"):
-                    images.append(node)
-            for node in images:
-                node.update(None)
-            self.signal("refresh_scene", "Scene")
-            return "elements", data
-        except (ValueError, ZeroDivisionError, TypeError):
-            raise CommandSyntaxError
+                    if node not in images:
+                        images.append(node)
+            
+        # Calculate again
+        area = Node.union_bounds(data)
+        dx = x_pos - area[0]
+        dy = y_pos - area[1]
+        if dx != 0.0 or dy != 0.0:
+            # Don't do anything if scale is 1
+            for node in data:
+                node.matrix.post_translate(dx, dy)
+                node.modified()
+                if hasattr(node, "update"):
+                    if node not in images:
+                        images.append(node)
+
+        for node in images:
+            node.update(None)
+        self.signal("refresh_scene", "Scene")
+        return "elements", data
 
     @self.console_argument("sx", type=float, help=_("scale_x value"))
     @self.console_argument("kx", type=float, help=_("skew_x value"))
