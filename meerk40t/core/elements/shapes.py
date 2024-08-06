@@ -632,6 +632,17 @@ def init_commands(kernel):
                     changed.append(e)
         else:
             for e in data:
+                # dbg = ""
+                # if hasattr(e, "bounds"):
+                #     bb = e.bounds
+                #     dbg += (
+                #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                #     )
+                # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                # print (f"Before: {dbg}")
                 if prop in ("x", "y"):
                     if not e.can_move(self.lock_allows_move):
                         channel(
@@ -639,15 +650,14 @@ def init_commands(kernel):
                         )
                         continue
                     # We need to adjust the matrix
-                    if hasattr(e, "matrix"):
+                    if hasattr(e, "bounds") and hasattr(e, "matrix"):
                         dx = 0
                         dy = 0
-                        otx = e.matrix.value_trans_x()
-                        oty = e.matrix.value_trans_y()
+                        bb = e.bounds
                         if prop == "x":
-                            dx = new_value - otx
+                            dx = new_value - bb[0]
                         else:
-                            dy = new_value - oty
+                            dy = new_value - bb[1]
                         e.matrix.post_translate(dx, dy)
                     else:
                         channel(
@@ -754,6 +764,17 @@ def init_commands(kernel):
                     )
                     continue
                 e.altered()
+                # dbg = ""
+                # if hasattr(e, "bounds"):
+                #     bb = e.bounds
+                #     dbg += (
+                #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                #     )
+                # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                # print (f"After: {dbg}")
                 changed.append(e)
         if len(changed) > 0:
             if len(text_elems) > 0:
