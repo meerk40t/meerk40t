@@ -2083,6 +2083,8 @@ def init_commands(kernel):
         if sx != 1.0 or sy != 1.0:
             # Don't do anything if scale is 1
             for node in data:
+                if not hasattr(node, "matrix"):
+                    continue
                 if hasattr(node, "lock") and node.lock:
                     continue
                 node.matrix *= matrix
@@ -2098,6 +2100,8 @@ def init_commands(kernel):
         if dx != 0.0 or dy != 0.0:
             # Don't do anything if scale is 1
             for node in data:
+                if not hasattr(node, "matrix"):
+                    continue
                 node.matrix.post_translate(dx, dy)
                 node.modified()
                 if hasattr(node, "update"):
