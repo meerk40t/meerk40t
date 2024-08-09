@@ -2317,9 +2317,9 @@ class Art:
             exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
-            gap = 5
+            gap = 15
             if bitmap_height < 30:
-                gap = 1
+                gap = 3
 
             # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
             button.dropdown.position = (
