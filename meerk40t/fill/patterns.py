@@ -17,6 +17,7 @@ class LivingHinges:
         self.start_y = ypos
         self.width = width
         self.height = height
+        self.rotated = False
         # We set it off somewhat...
         self.gap = 0
         self.x0 = width * self.gap
@@ -56,6 +57,9 @@ class LivingHinges:
             )
         )
         self.cutpattern = None
+
+    def set_rotation(self, rotated):
+        self.rotated = rotated
 
     def set_hinge_shape(self, shapenode):
         # reset cache
@@ -141,6 +145,7 @@ class LivingHinges:
         from meerk40t.tools.geomstr import Clip, Pattern
 
         p = Pattern()
+        p.set_rotated_flag(self.rotated)
         p.create_from_pattern(
             self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape
         )
