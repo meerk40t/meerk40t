@@ -185,12 +185,21 @@ class Meerk40tFonts:
     def face_to_full_name(self, short):
         s_lower = short.lower()
         p = self.available_fonts()
+        options = ("regular", "bold", "italic")
+        candidates = []
         for info in p:
             # We don't care about capitalisation
             f_lower = info[1].lower()
             # print (f"Comparing {s_lower} to {f_lower} ({info[1]}, {info[2]}, {info[3]})")
             if f_lower == s_lower:
                 return info[0]
+            for idx, opt in enumerate(options):
+                if f"{s_lower} {opt}" == f_lower:
+                    # print (f"Appending {idx} {f_lower}")
+                    candidates.append((idx, info[0]))
+        if len(candidates):
+            candidates.sort(key=lambda e: e[0])
+            return candidates[0][1]
         return None
 
     def full_name(self, short):
