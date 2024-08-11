@@ -323,8 +323,12 @@ class Camera(Service):
             channel(f"Connecting {str(uri)}")
             self.signal("camera_state", 1)
             self.capture = cv2.VideoCapture(uri)
-            channel(f"Capture: {str(self.capture)}")
-
+            self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            channel (
+                f"Capture: {str(self.capture)}\n" + 
+                f"Frame resolution set to: ({self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)}x{self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT)})"
+            )
             self._thread_looper(uri)
 
             if self.capture is not None:

@@ -163,6 +163,8 @@ def plugin(kernel, lifecycle=None):
                     cam.height = height
                 return "camera", cam
 
+        @kernel.console_argument("width", type=int, help="force the camera width")
+        @kernel.console_argument("height", type=int, help="force the camera height")
         @kernel.console_option(
             "tries", "t", type=int, default=10, help="Attempts to recover connection"
         )
@@ -172,7 +174,11 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             "start", help="Start Camera.", input_type="camera", output_type="camera"
         )
-        def start_camera(data=None, tries=None, frame_tries=None, **kwargs):
+        def start_camera(data=None, width=None, height=None, tries=None, frame_tries=None, **kwargs):
+            if width is not None:
+                data.width = width
+            if height is not None:
+                data.height = height
             if tries is not None:
                 data.max_tries_connect = tries
             if frame_tries is not None:
