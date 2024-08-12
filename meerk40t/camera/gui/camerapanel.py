@@ -74,6 +74,8 @@ class CameraPanel(wx.Panel, Job):
         self.context(f"camera{self.index}\n")  # command activates Camera service
         self.camera = self.context.get_context(f"camera/{self.index}")
         self.camera.setting(int, "frames_per_second", 30)
+        self._remembered = -1
+        self.available_resolutions = []
         # camera service location.
         self.last_frame_index = -1
 
@@ -203,6 +205,11 @@ class CameraPanel(wx.Panel, Job):
         self.widget_scene.suppress_changes = False
 
     def pane_show(self, *args):
+        if self.index != self._remembered:
+            self._remembered = self.index
+            self.available_resolutions = []
+            if self.camera.is_physical:
+                self.available_resolutions = self.camera.guess_supported_resolutions()
         if platform.system() == "Darwin" and not hasattr(self.camera, "_first"):
             self.camera(f"camera{self.index} start -t 1\n")
             self.camera._first = False
@@ -384,9 +391,19 @@ class CameraPanel(wx.Panel, Job):
         def swap(event=None):
             self.camera(f"camera{self.index} --uri {str(uri)} stop start\n")
             self.frame_bitmap = None
+            self._remembered = uri
+            self.available_resolutions = []
+            if self.camera.is_physical:
+                self.available_resolutions = self.camera.guess_supported_resolutions()
 
         return swap
 
+    def set_resolution(self, w, h):
+        self.camera.set_resolution(w, h)
+        # restart camera
+        uri = self.camera.uri
+        self.camera(f"camera{self.index} --uri {str(uri)} stop start\n")
+        self.frame_bitmap = None
 
 class CamInterfaceWidget(Widget):
     def __init__(self, scene, camera):
@@ -417,7 +434,14 @@ class CamInterfaceWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "rightdown":
+            def set_resolution(width, height):
+                def handler(*args):
+                    self.cam.set_resolution(this_w, this_h)
 
+                this_w = width
+                this_h = height
+                return handler
+            
             def enable_aspect(*args):
                 self.cam.camera.aspect = not self.cam.camera.aspect
                 self.scene.widget_root.set_aspect(self.cam.camera.aspect)
@@ -557,6 +581,20 @@ class CamInterfaceWidget(Widget):
                 lambda e: self.cam.context(f"camera{self.cam.index} stop\n"),
                 id=item.GetId(),
             )
+            if len(self.cam.available_resolutions):
+                cam_w, cam_h = self.cam.camera.get_resolution()
+                resmen = wx.Menu()
+                for res_w, res_h, res_desc in self.cam.available_resolutions:
+                    item = resmen.Append(wx.ID_ANY, f"{res_w}x{res_h} - {res_desc}", kind=wx.ITEM_RADIO)
+                    if res_h == cam_h and res_w == cam_w:
+                        item.Check(True)
+                    self.cam.Bind(
+                        wx.EVT_MENU,
+                        set_resolution(res_w, res_h),
+                        id=item.GetId(),
+                     )
+                menu.AppendSubMenu(resmen, _("Set camera resolution..."))
+                
 
             item = menu.Append(wx.ID_ANY, _("Open CameraInterface"), "")
             self.cam.Bind(
@@ -802,9 +840,10 @@ class CameraInterface(MWindow):
                 pass
         if index is None:
             index = 0
+        self.index = index
         super().__init__(640, 480, context, path, parent, **kwds)
-        self.camera = self.context.get_context(f"camera/{index}")
-        self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=index)
+        self.camera = self.context.get_context(f"camera/{self.index}")
+        self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=self.index)
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
 
@@ -822,14 +861,14 @@ class CameraInterface(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("CameraInterface {index}").format(index=index))
+        self.SetTitle(_("CameraInterface {index}").format(index=self.index))
         self.Layout()
         self.restore_aspect()
 
     def create_menu(self, append):
         def identify_cameras(event=None):
             self.context("camdetect\n")
-
+        
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
         self.Bind(wx.EVT_MENU, self.panel.reset_fisheye, id=item.GetId())
