@@ -206,7 +206,7 @@ class Camera(Service):
             self.logger("Try something for Darwin")
             cap = cv2.VideoCapture(self.uri)
             # For MAC please refer to link below for I/O
-            cap.set(cv2.CAP_FFMPEG, cv2.CAP_FFMPEG_VIDEOTOOLBOX) # not sure!
+            cap.set(cv2.CAP_FFMPEG, cv2.CAP_AVFOUNDATION) # not sure!
             #please refer to reference link at bottom of page for more I/O
         if set_resolution:
             self.logger (f"Try to start camera with {self.width}x{self.height}")
