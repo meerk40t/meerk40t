@@ -228,7 +228,6 @@ class Pattern:
         self.cell_height = y1 - y0
         self.padding_x = 0
         self.padding_y = 0
-        self.rotated = False
 
     def create_from_pattern(self, pattern, a=None, b=None, *args, **kwargs):
         """
@@ -253,66 +252,38 @@ class Pattern:
         for entry in pattern(a, b, *args, **kwargs):
             key = entry[0].lower()
             if key == "m":
-                if self.rotated:
-                    current = complex(entry[2], entry[1])
-                else:
-                    current = complex(entry[1], entry[2])
+                current = complex(entry[1], entry[2])
             elif key == "h":
-                if self.rotated:
-                    endpoint = complex(current.real, current.imag + entry[1])
-                else:
-                    endpoint = complex(current.real + entry[1], current.imag)
+                endpoint = complex(current.real + entry[1], current.imag)
                 path.line(current, endpoint)
                 current = endpoint
             elif key == "v":
-                if self.rotated:
-                    endpoint = complex(current.real + entry[1], current.imag)
-                else:
-                    endpoint = complex(current.real, current.imag + entry[1])
+                endpoint = complex(current.real, current.imag + entry[1])
                 path.line(current, endpoint)
                 current = endpoint
             elif key == "l":
                 # Line to...
-                if self.rotated:
-                    endpoint = complex(entry[2], entry[1])
-                else:
-                    endpoint = complex(entry[1], entry[2])
+                endpoint = complex(entry[1], entry[2])
                 path.line(current, endpoint)
                 current = endpoint
             elif key == "a":
-                if self.rotated:
-                    control = complex(entry[2], entry[1])
-                    endpoint = complex(entry[4], entry[3])
-                else:
-                    control = complex(entry[1], entry[2])
-                    endpoint = complex(entry[3], entry[4])
+                control = complex(entry[1], entry[2])
+                endpoint = complex(entry[3], entry[4])
                 path.arc(current, control, endpoint)
                 current = endpoint
             elif key == "c":
-                if self.rotated:
-                    control1 = complex(entry[2], entry[1])
-                    control2 = complex(entry[4], entry[3])
-                    endpoint = complex(entry[6], entry[5])
-                else:
-                    control1 = complex(entry[1], entry[2])
-                    control2 = complex(entry[3], entry[4])
-                    endpoint = complex(entry[5], entry[6])
+                control1 = complex(entry[1], entry[2])
+                control2 = complex(entry[3], entry[4])
+                endpoint = complex(entry[5], entry[6])
                 path.cubic(current, control1, control2, endpoint)
                 current = endpoint
             elif key == "q":
-                if self.rotated:
-                    control1 = complex(entry[2], entry[1])
-                    endpoint = complex(entry[4], entry[3])
-                else:
-                    control1 = complex(entry[1], entry[2])
-                    endpoint = complex(entry[3], entry[4])
+                control1 = complex(entry[1], entry[2])
+                endpoint = complex(entry[3], entry[4])
                 path.quad(current, control1, endpoint)
                 current = endpoint
             else:
                 raise ValueError("Unrecognized Pattern Element")
-
-    def set_rotated_flag(self, rotated):
-        self.rotated = rotated
 
     def set_cell_dims_percent(self, percent_x, percent_y):
         # I dunno
