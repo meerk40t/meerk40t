@@ -49,6 +49,7 @@ class HingePanel(wx.Panel):
         self.hinge_padding_y = 100
         self.hinge_param_a = 0.7
         self.hinge_param_b = 0.7
+        self.hinge_rotate = False
 
         self.renderer = LaserRender(context)
         self.in_draw_event = False
@@ -64,6 +65,9 @@ class HingePanel(wx.Panel):
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
         self.button_default = wxButton(self, wx.ID_ANY, "D")
+        self.check_rotate = wxCheckBox(self, wx.ID_ANY, _("Rotate"))
+        self.check_rotate.SetToolTip(_("Rotate pattern by 90°"))
+
         _default = 200
         self.slider_width = wx.Slider(
             self,
@@ -200,6 +204,7 @@ class HingePanel(wx.Panel):
         self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_pattern_update)
         self.button_default.Bind(wx.EVT_BUTTON, self.on_default_button)
+        self.check_rotate.Bind(wx.EVT_CHECKBOX, self.on_option_update)
         self.check_preview_show_pattern.Bind(wx.EVT_CHECKBOX, self.on_preview_options)
         self.check_preview_show_shape.Bind(wx.EVT_CHECKBOX, self.on_preview_options)
         self.panel_preview.Bind(wx.EVT_PAINT, self.on_display_paint)
@@ -295,6 +300,8 @@ class HingePanel(wx.Panel):
         self.button_default.SetToolTip(_("Default Values"))
         self.button_default.SetMinSize(dip_size(self, 30, -1))
         hsizer_pattern.Add(self.button_default, 0, wx.EXPAND, 0)
+
+        hsizer_pattern.Add(self.check_rotate, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellwidth, 1, wx.EXPAND, 0)
@@ -793,6 +800,7 @@ class HingePanel(wx.Panel):
         self.hinge_padding_y = offset_y
         self.slider_offx_label.SetLabel(f"{self.hinge_padding_x/_FACTOR:.1%}")
         self.slider_offy_label.SetLabel(f"{self.hinge_padding_y/_FACTOR:.1%}")
+        self.hinge_rotate = self.check_rotate.GetValue()
 
         self.sync_controls(to_text=sync_direction)
 
@@ -834,6 +842,7 @@ class HingePanel(wx.Panel):
             self.hinge_padding_y,
             self.hinge_param_a,
             self.hinge_param_b,
+            self.hinge_rotate,
         )
         setattr(self.context, f"hinge_{pattern}", default)
         # print (f"Stored defaults for {pattern}: {default}")
@@ -857,6 +866,8 @@ class HingePanel(wx.Panel):
             self.hinge_padding_y = default[4]
             self.hinge_param_a = default[5]
             self.hinge_param_b = default[6]
+            if len(default) > 7:
+                self.hinge_rotate = bool(default[7])
 
         entry = self.context.lookup(f"pattern/{pattern}")
         flag, info1, info2 = self.hinge_generator.set_predefined_pattern(entry)
@@ -884,6 +895,7 @@ class HingePanel(wx.Panel):
         self.hinge_generator.set_additional_parameters(
             self.hinge_param_a, self.hinge_param_b
         )
+        self.hinge_generator.set_rotation(self.hinge_rotate)
         self.slider_param_a.Enable(flag)
         self.slider_param_b.Enable(flag)
         self.slider_param_a.Show(flag)
@@ -898,6 +910,7 @@ class HingePanel(wx.Panel):
             self.context.hinge_type
         ):
             self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
+        self.check_rotate.SetValue(self.hinge_rotate)
         # if self.text_origin_x.GetValue() != self.hinge_origin_x:
         #     self.text_origin_x.ChangeValue(self.hinge_origin_x)
         # if self.text_origin_y.GetValue() != self.hinge_origin_y:

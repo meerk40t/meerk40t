@@ -1,6 +1,6 @@
 from copy import copy
-
-from meerk40t.svgelements import Path, Polyline
+from math import tau
+from meerk40t.svgelements import Matrix, Path, Polyline
 from meerk40t.tools.geomstr import Geomstr
 
 _FACTOR = 1000
@@ -17,6 +17,7 @@ class LivingHinges:
         self.start_y = ypos
         self.width = width
         self.height = height
+        self.rotated = False
         # We set it off somewhat...
         self.gap = 0
         self.x0 = width * self.gap
@@ -56,6 +57,9 @@ class LivingHinges:
             )
         )
         self.cutpattern = None
+
+    def set_rotation(self, rotated):
+        self.rotated = rotated
 
     def set_hinge_shape(self, shapenode):
         # reset cache
@@ -159,8 +163,24 @@ class LivingHinges:
 
         q = Clip(clip)
         subject = Geomstr()
-        for s in list(p.generate(*q.bounds)):
+        qx1, qy1, qx2, qy2 = q.bounds
+        if self.rotated:
+            # Let's make it quadratic to deal with a possibly rotated rectangle
+            maxd = max(qx2 - qx1, qy2 - qy1)
+            qx2 = qx1 + maxd
+            qy2 = qy1 + maxd
+        for s in list(p.generate(qx1, qy1, qx2, qy2)):
             subject.append(s)
+        if self.rotated:
+            bb_before = subject.bbox()
+            mx = Matrix.rotate(tau / 4)
+            subject = subject.as_transformed(mx)
+            bb_after = subject.bbox()
+            subject.translate(
+                (bb_before[0] + bb_before[2]) / 2 - (bb_after[0] + bb_after[2]) / 2,
+                (bb_before[1] + bb_before[3]) / 2 - (bb_after[1] + bb_after[3]) / 2
+            )
+
 
         if clip_bounds:
             self.path.append(q.clip(subject))
