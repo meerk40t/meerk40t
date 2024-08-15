@@ -80,6 +80,7 @@ Open source projects live and die with their support. There are a lots of ways t
 *   Make helpful support content
 *   Make guides ("How to set up cameras?", etc.)
 *   Bounce ideas around
+if you want to get into contact and help, then the [Discord Channel](https://discord.gg/vkDD3HdQq6) is the easiest and fastest way to reach out to us - we are looking forward to hear from you.
 
 ## Download
 You can find and download all current and historical versions in the [Releases](https://github.com/meerk40t/meerk40t/releases) section.
