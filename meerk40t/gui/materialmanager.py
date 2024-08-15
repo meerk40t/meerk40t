@@ -687,6 +687,13 @@ class MaterialPanel(ScrolledPanel):
         # Will be updated in fill_preview
         return self._balor
 
+    def _add_deletion_method(self, level=0, keyprimary=None, primaryvalue=None, keysecondary=None, secondaryvalue=None)->int:
+        index = -1
+        while index in self.deletion_methods:
+            index -= 1
+        self.deletion_methods[index] = (level, keyprimary, primaryvalue, keysecondary, secondaryvalue)
+        return index
+
     def retrieve_material_list(
         self,
         filtername=None,
@@ -697,6 +704,7 @@ class MaterialPanel(ScrolledPanel):
     ):
         if reload:
             self.material_list.clear()
+            self.deletion_methods = dict()
             for section in self.op_data.section_set():
                 if section == "previous":
                     continue
@@ -772,7 +780,10 @@ class MaterialPanel(ScrolledPanel):
         tree.Freeze()
         tree.DeleteAllItems()
         tree_root = tree.AddRoot(_("Materials"))
-        tree.SetItemData(tree_root, -1)
+        # Save a delete all...
+        data_idx = self._add_deletion_method(0, None, None, None, None)
+
+        tree.SetItemData(tree_root, data_idx)
         idx_primary = 0
         idx_secondary = 0
         newvalue = None
@@ -828,12 +839,15 @@ class MaterialPanel(ScrolledPanel):
                 idx_primary += 1
                 idx_secondary = 0
                 tree_primary = tree.AppendItem(tree_root, this_category_primary)
-                tree.SetItemData(tree_primary, -1)
+                data_idx = self._add_deletion_method(1, sort_key_primary, this_category_primary, sort_key_secondary, "")
+                tree.SetItemData(tree_primary, data_idx)
+
                 tree_secondary = tree_primary
             if last_category_secondary != this_category_secondary:
                 # new subitem
                 tree_secondary = tree.AppendItem(tree_primary, this_category_secondary)
-                tree.SetItemData(tree_secondary, -2)
+                data_idx = self._add_deletion_method(2, sort_key_primary, this_category_primary, sort_key_secondary, this_category_secondary)
+                tree.SetItemData(tree_secondary, data_idx)
                 visible_count[1] += 1
             idx_secondary += 1
 
@@ -1092,64 +1106,74 @@ class MaterialPanel(ScrolledPanel):
             self.op_data.write_configuration()
             self.retrieve_material_list(reload=True)
 
-    def _delete_all_entries(self):
-        busy = self.context.kernel.busyinfo
-        busy.start(msg=_("Deleting data"))
-        for idx, entry in enumerate(self.display_list):
-            busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
-            material = entry["section"]
-            self.context.elements.clear_persistent_operations(
-                material, use_settings=self.op_data, flush=False
-            )
-        self.op_data.write_configuration()
-        busy.end()
-        self.on_reset(None)
-
     def on_delete_all(self, event):
-        self._delete_according_to_key(keytype=0, primary=None)
+        self._delete_according_to_key(keytype=0, primary="", secondary="")
 
-    def on_delete_category(self, keytype, primary):
+    def on_delete_category(self, keytype:int, primary:any, secondary:any):
         def handler(event):
-            self._delete_according_to_key(keytype=keytype, primary=primary)
+            self._delete_according_to_key(keytype=keytype, primary=primary, secondary=secondary)
         return handler
 
-    def _delete_according_to_key(self, keytype: int, primary:any):
+    def _delete_according_to_key(self, keytype: int, primary:str, secondary:str):
         if self.categorisation == 1:
             # lasertype
             sort_key_primary = "laser"  # 3
             sort_key_secondary = "material"  # 1
-            sort_key_tertiary = "thickness"  # 4
         elif self.categorisation == 2:
             # thickness
             sort_key_primary = "thickness"  # 4
             sort_key_secondary = "material"
-            sort_key_tertiary = "laser"  # 3
         else:
             # material
             sort_key_primary = "material"
             sort_key_secondary = "thickness"  # 4
-            sort_key_tertiary = "laser"  # 3
-        if keytype == 1:
-            key = sort_key_primary
-        elif keytype == 2:
-            key = sort_key_secondary
-        elif keytype == 3:
-            key = sort_key_tertiary
+        # Establish the amount of to be deleted entries
+        amount = 0
+        for entry in self.display_list:
+            to_delete = False
+            if keytype == 0:
+                to_delete = True
+            elif (
+                keytype == 1 and
+                entry[sort_key_primary].replace("_", " ") == primary
+            ):
+                to_delete = True
+            elif (
+                keytype == 2 and
+                entry[sort_key_primary].replace("_", " ") == primary and
+                entry[sort_key_secondary].replace("_", " ") == secondary
+            ):
+                to_delete = True
+            if to_delete:
+                amount += 1
+
+        if keytype == 0:
+            question = _("Do you really want to delete all {num} visible entries? This can't be undone.").format(num=str(amount))
         else:
-            key = None
-        if key is None:
-            question = _("Do you really want to delete all visible entries? This can't be undone.")
-        else:
-            question = _("Do you really want to delete all entries with {data}? This can't be undone.").format(data=f"{key}='{primary}'")
+            criteria = f"{sort_key_primary}={'<empty>' if primary is None else primary}"
+            if secondary is not None:
+                criteria = criteria + f" & {sort_key_secondary}='{secondary}'"
+            question = _("Do you really want to delete all {num} entries with {data}? This can't be undone.").format(data=criteria, num=str(amount))
         if self.context.kernel.yesno(question):
             busy = self.context.kernel.busyinfo
             busy.start(msg=_("Deleting data"))
             for idx, entry in enumerate(self.display_list):
                 busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
-                if key is None:
+
+                to_delete = False
+                if keytype == 0:
                     to_delete = True
-                else:
-                    to_delete = bool(entry[key].replace("_", " ") == primary)
+                elif (
+                    keytype == 1 and
+                    entry[sort_key_primary].replace("_", " ") == primary
+                ):
+                    to_delete = True
+                elif (
+                    keytype == 2 and
+                    entry[sort_key_primary].replace("_", " ") == primary and
+                    entry[sort_key_secondary].replace("_", " ") == secondary
+                ):
+                    to_delete = True
 
                 if to_delete:
                     material = entry["section"]
@@ -1941,9 +1965,8 @@ class MaterialPanel(ScrolledPanel):
     def on_list_selection(self, event):
         try:
             item = event.GetItem()
-            if item:
+            if item and item.IsOk():
                 listidx = self.tree_library.GetItemData(item)
-                print (f"Listidx= {listidx}")
                 if listidx >= 0:
                     info = self.get_nth_material(listidx)
                     self.active_material = info
@@ -2104,10 +2127,6 @@ class MaterialPanel(ScrolledPanel):
         menu.Enable(item.GetId(), bool(self.active_material is not None))
         self.Bind(wx.EVT_MENU, self.on_duplicate, item)
 
-        item = menu.Append(wx.ID_ANY, _("Delete"), "", wx.ITEM_NORMAL)
-        menu.Enable(item.GetId(), bool(self.active_material is not None))
-        self.Bind(wx.EVT_MENU, self.on_delete, item)
-
         # We delete all entries of the same kind.
         # mat_list_entry = self.tree_library.GetSelection()
 
@@ -2151,8 +2170,27 @@ class MaterialPanel(ScrolledPanel):
         item = menu.Append(wx.ID_ANY, _("Create basic"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, create_basic, item)
         menu.AppendSeparator()
+        tree_item = self.tree_library.GetSelection()
+        if tree_item.IsOk():
+            listidx = self.tree_library.GetItemData(tree_item)
+            if listidx >= 0:
+                item = menu.Append(wx.ID_ANY, _("Delete"), "", wx.ITEM_NORMAL)
+                menu.Enable(item.GetId(), bool(self.active_material is not None))
+                self.Bind(wx.EVT_MENU, self.on_delete, item)
+            else:
+                deletion_info = self.deletion_methods[listidx]
+                deletion_level, key1, value1, key2, value2 = deletion_info
+                if deletion_level > 0:  # First or second category
+                    criteria = f"{key1}='{value1}'"
+                    if deletion_level == 2:
+                        criteria += f" + {key2}='{value2}'"
+                    info = _("Delete all with {data}").format(data=criteria)
+                    item = menu.Append(wx.ID_ANY, info, "", wx.ITEM_NORMAL)
+                    self.Bind(wx.EVT_MENU, self.on_delete_category(deletion_level, value1, value2), item)
+
         item = menu.Append(wx.ID_ANY, _("Delete all"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_delete_all, item)
+
         menu.AppendSeparator()
         item = menu.Append(wx.ID_ANY, _("Sort by..."), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), False)
