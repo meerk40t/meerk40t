@@ -213,7 +213,7 @@ def get_code_from_speed(
     if power_value is None or power_value >= 1000:
         power_suffix = ""
     else:
-        power_suffix = f"W{power_value:03d}"
+        power_suffix = f"W{int(power_value):03d}"
     if raster_step != 0:
         # There is no C suffix notation for raster step.
         if isinstance(raster_step, tuple):
