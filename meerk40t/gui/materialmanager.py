@@ -311,6 +311,7 @@ class MaterialPanel(ScrolledPanel):
         self.material_list = dict()
         self.operation_list = dict()
         self.display_list = list()
+        self.deletion_methods = dict()
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         filter_box = StaticBoxSizer(
             self, wx.ID_ANY, _("Filter Materials"), wx.HORIZONTAL
@@ -832,7 +833,7 @@ class MaterialPanel(ScrolledPanel):
             if last_category_secondary != this_category_secondary:
                 # new subitem
                 tree_secondary = tree.AppendItem(tree_primary, this_category_secondary)
-                tree.SetItemData(tree_secondary, -1)
+                tree.SetItemData(tree_secondary, -2)
                 visible_count[1] += 1
             idx_secondary += 1
 
@@ -1091,21 +1092,74 @@ class MaterialPanel(ScrolledPanel):
             self.op_data.write_configuration()
             self.retrieve_material_list(reload=True)
 
+    def _delete_all_entries(self):
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Deleting data"))
+        for idx, entry in enumerate(self.display_list):
+            busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
+            material = entry["section"]
+            self.context.elements.clear_persistent_operations(
+                material, use_settings=self.op_data, flush=False
+            )
+        self.op_data.write_configuration()
+        busy.end()
+        self.on_reset(None)
+
     def on_delete_all(self, event):
-        if self.context.kernel.yesno(
-            _("Do you really want to delete all visible entries? This can't be undone.")
-        ):
+        self._delete_according_to_key(keytype=0, primary=None)
+
+    def on_delete_category(self, keytype, primary):
+        def handler(event):
+            self._delete_according_to_key(keytype=keytype, primary=primary)
+        return handler
+
+    def _delete_according_to_key(self, keytype: int, primary:any):
+        if self.categorisation == 1:
+            # lasertype
+            sort_key_primary = "laser"  # 3
+            sort_key_secondary = "material"  # 1
+            sort_key_tertiary = "thickness"  # 4
+        elif self.categorisation == 2:
+            # thickness
+            sort_key_primary = "thickness"  # 4
+            sort_key_secondary = "material"
+            sort_key_tertiary = "laser"  # 3
+        else:
+            # material
+            sort_key_primary = "material"
+            sort_key_secondary = "thickness"  # 4
+            sort_key_tertiary = "laser"  # 3
+        if keytype == 1:
+            key = sort_key_primary
+        elif keytype == 2:
+            key = sort_key_secondary
+        elif keytype == 3:
+            key = sort_key_tertiary
+        else:
+            key = None
+        if key is None:
+            question = _("Do you really want to delete all visible entries? This can't be undone.")
+        else:
+            question = _("Do you really want to delete all entries with {data}? This can't be undone.").format(data=f"{key}='{primary}'")
+        if self.context.kernel.yesno(question):
             busy = self.context.kernel.busyinfo
             busy.start(msg=_("Deleting data"))
             for idx, entry in enumerate(self.display_list):
                 busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
-                material = entry["section"]
-                self.context.elements.clear_persistent_operations(
-                    material, use_settings=self.op_data, flush=False
-                )
+                if key is None:
+                    to_delete = True
+                else:
+                    to_delete = bool(entry[key].replace("_", " ") == primary)
+
+                if to_delete:
+                    material = entry["section"]
+                    self.context.elements.clear_persistent_operations(
+                        material, use_settings=self.op_data, flush=False
+                    )
             self.op_data.write_configuration()
             busy.end()
             self.on_reset(None)
+
 
     def invalid_file(self, filename):
         dlg = wx.MessageDialog(
@@ -1889,6 +1943,7 @@ class MaterialPanel(ScrolledPanel):
             item = event.GetItem()
             if item:
                 listidx = self.tree_library.GetItemData(item)
+                print (f"Listidx= {listidx}")
                 if listidx >= 0:
                     info = self.get_nth_material(listidx)
                     self.active_material = info
@@ -2052,6 +2107,9 @@ class MaterialPanel(ScrolledPanel):
         item = menu.Append(wx.ID_ANY, _("Delete"), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), bool(self.active_material is not None))
         self.Bind(wx.EVT_MENU, self.on_delete, item)
+
+        # We delete all entries of the same kind.
+        # mat_list_entry = self.tree_library.GetSelection()
 
         if self.share_ready:
             menu.AppendSeparator()
