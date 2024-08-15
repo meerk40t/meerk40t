@@ -17688,3 +17688,63 @@ msgstr ""
 
 msgid "In Memory of David Olsen"
 msgstr "In Memoriam David Olsen"
+
+#: meerk40t/camera/gui/camerapanel.py:596
+msgid "Set camera resolution..."
+msgstr "Kamera-Auflösung festlegen..."
+
+#: meerk40t/gui/wxmmain.py:2328
+msgid "Alignment to first element"
+msgstr "Ausrichten an erstem Element"
+
+#: meerk40t/gui/wxmmain.py:2330
+msgid "When aligning several elements to each other, they will be aligned to the element..."
+msgstr "Wenn mehrere Elemente aneinander ausgerichtet werden sollen, dann werden sie ausgerichtet am..."
+
+#: meerk40t/gui/wxmmain.py:2332
+msgid "Ticked: ...that was selected first"
+msgstr "Aktiv: ...ersten Element, das selektiert wurde"
+
+#: meerk40t/gui/wxmmain.py:2334
+msgid "Unticked: ...that was selected last"
+msgstr "Inaktiv: ...letzten Element, das selektiert wurde"
+
+#: meerk40t/gui/wxmmain.py:2336
+msgid "(Requires a restart to take effect)"
+msgstr "(Benötigt Neustart um wirksam zu werden)"
+
+#: meerk40t/gui/wxmribbon.py:1428
+msgid "Icon"
+msgstr "Icon"
+
+#: meerk40t/rotary/gui/rotarysettings.py:44
+msgid "Uses Roller"
+msgstr "Verwendet Rollachsen"
+
+#: meerk40t/rotary/gui/rotarysettings.py:110
+msgid "Steps required for a full rotation"
+msgstr "Wieviele Schritte benötigt der Stepper-Motor für eine volle Umdrehung"
+
+#: meerk40t/rotary/gui/rotarysettings.py:113
+msgid "Circumference of roller"
+msgstr "Umfang der Roll-Achse"
+
+#: meerk40t/rotary/gui/rotarysettings.py:117
+msgid "Circumference of object in rotary"
+msgstr "Umfang des Objektes in der Rotationseinheit"
+
+#: meerk40t/rotary/gui/rotarysettings.py:125
+msgid "Object Circumference:"
+msgstr "Umfang des Objektes:"
+
+#: meerk40t/rotary/gui/rotarysettings.py:126
+msgid "Roller Circumference:"
+msgstr "Umfang Rollachse:"
+
+#: meerk40t/rotary/gui/rotarysettings.py:127
+msgid "Rotation Steps:"
+msgstr "Rotations-Schritte:"
+
+#: meerk40t/tools/livinghinges.py:338 meerk40t/tools/livinghinges.py:339
+msgid "Set a rotation value for the pattern"
+msgstr "Legt den Rotations-Winkel des Musters fest"
