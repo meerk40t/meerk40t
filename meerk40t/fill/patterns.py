@@ -1,5 +1,5 @@
 from copy import copy
-from math import tau
+import math
 from meerk40t.svgelements import Matrix, Path, Polyline
 from meerk40t.tools.geomstr import Geomstr
 
@@ -17,7 +17,7 @@ class LivingHinges:
         self.start_y = ypos
         self.width = width
         self.height = height
-        self.rotated = False
+        self.rotated = 0.0
         # We set it off somewhat...
         self.gap = 0
         self.x0 = width * self.gap
@@ -164,16 +164,19 @@ class LivingHinges:
         q = Clip(clip)
         subject = Geomstr()
         qx1, qy1, qx2, qy2 = q.bounds
-        if self.rotated:
+        if self.rotated != 0.0:
             # Let's make it quadratic to deal with a possibly rotated rectangle
-            maxd = max(qx2 - qx1, qy2 - qy1)
+            maxd = max(qx2 - qx1, qy2 - qy1) * math.sqrt(2.0)
+            qx1 = (qx1 + qx2) / 2 - maxd / 2
+            qy1 = (qy1 + qy2) / 2 - maxd / 2
             qx2 = qx1 + maxd
             qy2 = qy1 + maxd
         for s in list(p.generate(qx1, qy1, qx2, qy2)):
             subject.append(s)
-        if self.rotated:
+        if self.rotated != 0.0:
+            # rotated == angle in degrees
             bb_before = subject.bbox()
-            mx = Matrix.rotate(tau / 4)
+            mx = Matrix.rotate(math.tau * self.rotated / 360.0)
             subject = subject.as_transformed(mx)
             bb_after = subject.bbox()
             subject.translate(
