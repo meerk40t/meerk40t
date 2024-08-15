@@ -143,7 +143,7 @@ parser.add_argument(
     "-m",
     "--minimized",
     action="store_true",
-    help="start window minized",
+    help="start window minimized",
 )
 parser.add_argument(
     "-M",
