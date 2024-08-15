@@ -139,6 +139,18 @@ parser.add_argument(
     action="store_true",
     help="lock general config from editing",
 )
+parser.add_argument(
+    "-m",
+    "--minimized",
+    action="store_true",
+    help="start window minized",
+)
+parser.add_argument(
+    "-M",
+    "--maximized",
+    action="store_true",
+    help="start window maximized",
+)
 
 
 def run():
