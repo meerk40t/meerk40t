@@ -323,6 +323,12 @@ class MeerK40t(MWindow):
         self.tips_at_startup()
         self.parametric_info = None
         self.autosave = Autosaver(self.context)
+        kernel = self.context.kernel
+        if hasattr(kernel.args, "maximized") and kernel.args.maximized:
+            self.Maximize()
+        if hasattr(kernel.args, "minimized") and kernel.args.minimized:
+            self.Iconize()
+
 
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
@@ -2319,17 +2325,17 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: part_of_group(),
             },
         )
-        choices= [    
+        choices= [
             {
                 "attr": "align_first",
                 "object": kernel.root,
                 "default": True,
                 "type": bool,
                 "label": _("Alignment to first element"),
-                "tip": 
-                    _("When aligning several elements to each other, they will be aligned to the element...") 
+                "tip":
+                    _("When aligning several elements to each other, they will be aligned to the element...")
                     + "\n"
-                    + _("Ticked: ...that was selected first") 
+                    + _("Ticked: ...that was selected first")
                     + "\n"
                     + _("Unticked: ...that was selected last")
                     + "\n"
@@ -2344,7 +2350,7 @@ class MeerK40t(MWindow):
         if align_first:
             align_mode = "first"
         else:
-            align_mode = "last" 
+            align_mode = "last"
         kernel.register(
             "button/align/AlignLeft",
             {
