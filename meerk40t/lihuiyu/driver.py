@@ -530,6 +530,8 @@ class LihuiyuDriver(Parameters):
             raster_step_value = self._raster_step_g_value, 0
         if self.service.supports_pwm:
             power_val = self.power
+            if power_val != 1000.0:
+                self(b"\n") # Force flush
         else:
             power_val = None
         speed_code = LaserSpeed(
@@ -591,6 +593,8 @@ class LihuiyuDriver(Parameters):
             self._horizontal_major = False
         if self.service.supports_pwm:
             power_val = self.power
+            if power_val != 1000.0:
+                self(b"\n") # Force flush
         else:
             power_val = None
 
