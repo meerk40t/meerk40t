@@ -372,6 +372,9 @@ class Pattern:
         # end_value_y += 1
 
         top_left_x = x0
+        # Scale once, translate often
+        m = Matrix.scale(cw, ch)
+        geom = self.geomstr.as_transformed(m)
         for col in range(start_value_x, cols + end_value_x, 1):
             x_offset = col * (cw + 2 * px)
             x = top_left_x + x_offset
@@ -383,9 +386,9 @@ class Pattern:
                     y_offset += (ch + 2 * py) / 2
                 y = top_left_y + y_offset
 
-                m = Matrix.scale(cw, ch)
-                m *= Matrix.translate(x - self.offset_x, y - self.offset_y)
-                yield self.geomstr.as_transformed(m)
+                g = Geomstr(geom)
+                g.translate(x - self.offset_x, y - self.offset_y)
+                yield g
 
 
 class BeamTable:
