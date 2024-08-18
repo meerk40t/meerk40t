@@ -17748,3 +17748,19 @@ msgstr "Rotations-Schritte:"
 #: meerk40t/tools/livinghinges.py:338 meerk40t/tools/livinghinges.py:339
 msgid "Set a rotation value for the pattern"
 msgstr "Legt den Rotations-Winkel des Musters fest"
+
+#: meerk40t/gui/materialmanager.py:1151
+msgid "Do you really want to delete all {num} visible entries? This can't be undone."
+msgstr "Sollen wirklich alle {num} sichtbaren Einträge gelöscht werden? Das kann nicht rückgängig gemacht werden."
+
+#: meerk40t/gui/materialmanager.py:1156
+msgid "Do you really want to delete all {num} entries with {data}? This can't be undone."
+msgstr "Sollen wirklich alle {num} sichtbaren Einträge des Typs {data} gelöscht werden? Das kann nicht rückgängig gemacht werden."
+
+#: meerk40t/gui/materialmanager.py:2187
+msgid "Delete all with {data}"
+msgstr "Lösche alle mit {data}"
+
+#: meerk40t/gui/materialmanager.py:2631
+msgid "Color all {type}"
+msgstr "Einfärben aller {type}"
