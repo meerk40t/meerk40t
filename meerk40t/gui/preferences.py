@@ -324,7 +324,7 @@ class PreferencesMain(wx.Panel):
             id=wx.ID_ANY,
             context=context,
             choices="preferences",
-            constraint=("-Classification", "-Gui", "-Scene"),
+            constraint=("-Input/Output", "-Classification", "-Gui", "-Scene"),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -393,6 +393,15 @@ class Preferences(MWindow):
 
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
+
+        self.panel_input_output = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint="Input/Output",
+        )
+        self.panel_input_output.SetupScrolling()
         inject_choices = [
             {
                 "attr": "preset_classify_automatic",
@@ -547,6 +556,7 @@ class Preferences(MWindow):
         self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
 
         self.notebook_main.AddPage(self.panel_main, _("General"))
+        self.notebook_main.AddPage(self.panel_input_output, _("Input/Output"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
@@ -555,6 +565,7 @@ class Preferences(MWindow):
 
         self.panels = [
             self.panel_main,
+            self.panel_input_output,
             self.panel_classification,
             self.panel_gui,
             self.panel_scene,
