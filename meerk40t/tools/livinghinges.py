@@ -35,6 +35,7 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.debug_counter = 0
         self.SetHelpText("hinges")
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
@@ -196,7 +197,9 @@ class HingePanel(wx.Panel):
         self._set_logic()
 
         self._setup_settings()
-        self._restore_settings()
+        if self._restore_settings(source="_init_"):
+            self.sync_controls(True)
+            self.apply_generator_values("_init_")
 
         self.Layout()
 
@@ -651,11 +654,13 @@ class HingePanel(wx.Panel):
         if idx < 0:
             idx = 0
         style = self.patterns[idx]
-        self.context.hinge_type = style
-        # Load new set of values...
-        self._restore_settings(reload=True)
-        self.sync_controls(True)
-        self.apply()
+        if style != self.context.hinge_type:
+            self.context.hinge_type = style
+            # Load new set of values...
+            if self._restore_settings(reload=True, source="on_pattern"):
+                self.sync_controls(True)
+                self.apply_generator_values(source="on_pattern")
+                self.refresh_display()
 
     def sync_controls(self, to_text=True):
         # print(f"Sync-Control called: {to_text}")
@@ -670,7 +675,7 @@ class HingePanel(wx.Panel):
         if to_text:
             rotation = self.slider_rotate.GetValue()
             angle_value = rotation / 360 * tau
-            self.text_rotate.SetValue(Angle(angle_value).angle_degrees)
+            self.text_rotate.ChangeValue(Angle(angle_value).angle_degrees)
             self.slider_rotate_label.SetLabel(f"{rotation}°")
             cell_x = self.slider_width.GetValue()
             cell_y = self.slider_height.GetValue()
@@ -679,19 +684,19 @@ class HingePanel(wx.Panel):
             units = self.context.units_name
             cx = cell_x / _FACTOR * wd
             cy = cell_y / _FACTOR * ht
-            self.text_cell_width.SetValue(
+            self.text_cell_width.ChangeValue(
                 Length(amount=cx, preferred_units=units).preferred_length
             )
-            self.text_cell_height.SetValue(
+            self.text_cell_height.ChangeValue(
                 Length(amount=cy, preferred_units=units).preferred_length
             )
 
-            self.text_cell_offset_x.SetValue(
+            self.text_cell_offset_x.ChangeValue(
                 Length(
                     amount=cx * offset_x / _FACTOR, preferred_units=units
                 ).preferred_length
             )
-            self.text_cell_offset_y.SetValue(
+            self.text_cell_offset_y.ChangeValue(
                 Length(
                     amount=cy * offset_y / _FACTOR, preferred_units=units
                 ).preferred_length
@@ -730,11 +735,11 @@ class HingePanel(wx.Panel):
                 py = int(_FACTOR * cy / ht)
             else:
                 py = _FACTOR
-            if self.slider_width.GetValue() != px:
+            if self.slider_width.GetValue() != px and px != 0:
                 self.hinge_cells_x = px
                 self.slider_width.SetValue(px)
                 self.slider_width_label.SetLabel(f"{self.hinge_cells_x/_FACTOR:.1%}")
-            if self.slider_height.GetValue() != py:
+            if self.slider_height.GetValue() != py and py != 0:
                 self.hinge_cells_y = py
                 self.slider_height.SetValue(py)
                 self.slider_height_label.SetLabel(f"{self.hinge_cells_y/_FACTOR:.1%}")
@@ -760,6 +765,8 @@ class HingePanel(wx.Panel):
         Generic update within a pattern
         """
         if event:
+            # origin = event.GetEventObject()
+            # print (f"Event was called with: {str(origin)}, type={event.GetEventType()}")
             event.Skip()
             # Wait until the user has stopped to move the slider
             if (
@@ -868,14 +875,16 @@ class HingePanel(wx.Panel):
         self.hinge_rotate = self.slider_rotate.GetValue()
         self.slider_rotate_label.SetLabel(f"{self.hinge_rotate}°")
 
-        self.sync_controls(to_text=sync_direction)
 
         p_a = self.slider_param_a.GetValue() / 10.0
         p_b = self.slider_param_b.GetValue() / 10.0
         self.hinge_param_a = p_a
         self.hinge_param_b = p_b
+
+        self.sync_controls(to_text=sync_direction)
         self._save_settings()
-        self.apply()
+        self.apply_generator_values("on_option_update")
+        self.refresh_display()
         self.in_change_event = False
 
     def _setup_settings(self):
@@ -894,8 +903,6 @@ class HingePanel(wx.Panel):
         self.context.setting(str, "hinge_type", firstpattern)
 
     def apply(self):
-        # Restore settings will call the LivingHinge class
-        self._restore_settings(reload=False)
         self.refresh_display()
 
     def _save_settings(self):
@@ -913,30 +920,8 @@ class HingePanel(wx.Panel):
         setattr(self.context, f"hinge_{pattern}", default)
         # print (f"Stored defaults for {pattern}: {default}")
 
-    def _restore_settings(self, reload=False):
-        pattern = self.context.hinge_type
-        if pattern not in self.patterns:
-            pattern = self.patterns[0]
-            self.context.hinge_type = pattern
-
-        if reload:
-            default = getattr(self.context, f"hinge_{pattern}", None)
-            # print (f"Got defaults for {pattern}: {default}")
-            if default is None or len(default) < 7:
-                # strange
-                # print(f"Could not get a setting for {pattern}: {default}")
-                return
-            self.hinge_cells_x = default[1]
-            self.hinge_cells_y = default[2]
-            self.hinge_padding_x = default[3]
-            self.hinge_padding_y = default[4]
-            self.hinge_param_a = default[5]
-            self.hinge_param_b = default[6]
-            if len(default) > 7:
-                self.hinge_rotate = float(default[7])
-
-        entry = self.context.lookup(f"pattern/{pattern}")
-        flag, info1, info2 = self.hinge_generator.set_predefined_pattern(entry)
+    def apply_generator_values(self, source:str):
+        # print (f"Application of values from {source}")
         try:
             x = float(Length(self.hinge_origin_x))
         except ValueError:
@@ -953,6 +938,12 @@ class HingePanel(wx.Panel):
             ht = float(Length(self.hinge_height))
         except ValueError:
             ht = float(Length("5cm"))
+        if self.hinge_cells_x <= 0:
+            # print (f"Needed to reset x (reload={reload}, entry={entry})")
+            self.hinge_cells_x = 200
+        if self.hinge_cells_y <= 0:
+            # print ("Needed to reset y")
+            self.hinge_cells_y = 200
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
         self.hinge_generator.set_cell_values(self.hinge_cells_x, self.hinge_cells_y)
         self.hinge_generator.set_padding_values(
@@ -962,6 +953,34 @@ class HingePanel(wx.Panel):
             self.hinge_param_a, self.hinge_param_b
         )
         self.hinge_generator.set_rotation(self.hinge_rotate)
+
+    def _restore_settings(self, reload=False, source=""):
+        require_sync = False
+        pattern = self.context.hinge_type
+        if pattern not in self.patterns:
+            pattern = self.patterns[0]
+            self.context.hinge_type = pattern
+
+        if reload:
+            default = getattr(self.context, f"hinge_{pattern}", None)
+            # print (f"Got defaults for {pattern}: {default}")
+            # for i, s in enumerate(default):
+            #     print (f"#{i} = {s} ({type(s).__name__})")
+            if default is None or len(default) < 7:
+                # strange
+                # print(f"Could not get a setting for {pattern}: {default}")
+                return
+            self.hinge_cells_x = default[1]
+            self.hinge_cells_y = default[2]
+            self.hinge_padding_x = default[3]
+            self.hinge_padding_y = default[4]
+            self.hinge_param_a = default[5]
+            self.hinge_param_b = default[6]
+            if len(default) > 7:
+                self.hinge_rotate = float(default[7])
+
+        entry = self.context.lookup(f"pattern/{pattern}")
+        flag, info1, info2 = self.hinge_generator.set_predefined_pattern(entry)
         self.slider_param_a.Enable(flag)
         self.slider_param_b.Enable(flag)
         self.slider_param_a.Show(flag)
@@ -984,7 +1003,6 @@ class HingePanel(wx.Panel):
         #     self.text_width.ChangeValue(self.hinge_width)
         # if self.text_height.GetValue() != self.hinge_height:
         #     self.text_height.ChangeValue(self.hinge_height)
-        require_sync = False
         if self.slider_rotate.GetValue() != self.hinge_rotate:
             self.slider_rotate.SetValue(int(self.hinge_rotate))
             self.slider_rotate_label.SetLabel(f"{self.hinge_rotate}°")
@@ -1009,11 +1027,12 @@ class HingePanel(wx.Panel):
             self.slider_param_a.SetValue(int(10 * self.hinge_param_a))
         if self.slider_param_b.GetValue() != int(10 * self.hinge_param_b):
             self.slider_param_b.SetValue(int(10 * self.hinge_param_b))
-        if require_sync:
-            self.sync_controls(True)
+        wd = self.hinge_generator.width
+        ht = self.hinge_generator.height
         flag = wd > 0 and ht > 0 and self.hinge_generator.outershape is not None
         self.button_generate.Enable(flag)
         self.Layout()
+        return require_sync
 
     def pane_show(self):
         units = self.context.units_name
