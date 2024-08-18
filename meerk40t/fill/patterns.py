@@ -12,7 +12,6 @@ class LivingHinges:
     """
 
     def __init__(self, xpos, ypos, width, height):
-        self.pattern = None
         self.start_x = xpos
         self.start_y = ypos
         self.width = width
@@ -42,8 +41,8 @@ class LivingHinges:
         self.preview_path = None
         self.outershape = None
         # Specifically for the shape pattern we hold a list of precalculated polygons
-        self.pattern = []
         self._extend_patterns = True
+        self.cutpattern = None
         self.set_cell_values(100, 100)
         self.set_padding_values(50, 50)
         self.set_predefined_pattern(
@@ -56,38 +55,60 @@ class LivingHinges:
                 True,
             )
         )
-        self.cutpattern = None
+
+    def _set_dirty(self, source:str):
+        # print (f"Set_dirty was set by {source}")
+        self.path = None
+        self.preview_path = None
 
     def set_rotation(self, rotated):
+        if self.rotated == rotated:
+            return
         self.rotated = rotated
+        self._set_dirty("Set_rotation")
 
     def set_hinge_shape(self, shapenode):
         # reset cache
         self.outershape = shapenode
+        self._set_dirty("Hinge shape")
 
     def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
+        if (
+            self.start_x == hinge_left and
+            self.start_y == hinge_top and
+            self.width == hinge_width and
+            self.height == hinge_height
+        ):
+            return
         self.start_x = hinge_left
         self.start_y = hinge_top
         self.width = hinge_width
         self.height = hinge_height
+        self.cell_height = self.height * self.cell_height_percentage / _FACTOR
+        self.cell_width = self.width * self.cell_width_percentage / _FACTOR
+        # print (f"Set Hinge area with {hinge_width} x {hinge_height} leads to {self.cell_width} x {self.cell_height}")
         self.x0 = hinge_width * self.gap
         self.y0 = hinge_height * self.gap
         self.x1 = hinge_width * (1 - self.gap)
         self.y1 = hinge_height * (1 - self.gap)
         # Requires recalculation
-        self.path = None
-        self.preview_path = None
+        self._set_dirty("set_hinge_area")
 
     def set_cell_values(self, percentage_x, percentage_y):
+        if self.cell_width_percentage == percentage_x and self.cell_height_percentage == percentage_y:
+            return
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
         self.cell_height = self.height * self.cell_height_percentage / _FACTOR
         self.cell_width = self.width * self.cell_width_percentage / _FACTOR
+        # print (f"Set cell values with {percentage_x} x {percentage_y} leads to {self.cell_width} x {self.cell_height}")
         # Requires recalculation
-        self.path = None
-        self.preview_path = None
+        self._set_dirty("set_cell_values")
 
     def set_padding_values(self, padding_x, padding_y):
+        if self.cell_padding_h_percentage == padding_x and self.cell_padding_v_percentage == padding_y:
+            return
+
         self.cell_padding_h_percentage = padding_x
         self.cell_padding_v_percentage = padding_y
 
@@ -96,54 +117,58 @@ class LivingHinges:
             self.cell_height * self.cell_padding_v_percentage / _FACTOR
         )
         # Requires recalculation
-        self.path = None
-        self.preview_path = None
+        self._set_dirty("set_padding_values")
 
     def set_predefined_pattern(self, entry):
         # The pattern needs to be defined within a 0,0  - 1,1 rectangle
         #
-        self.cutpattern = entry
-
-        self._extend_patterns = entry[5]
+        if self.cutpattern != entry:
+            self.cutpattern = entry
+            self._extend_patterns = entry[5]
+            self._set_dirty("set_predefined_pattern")
         additional_parameter = entry[1]
         info1 = entry[2]
         info2 = entry[3]
-        self.pattern = list(
-            entry[0](self.param_a, self.param_b, outershape=self.outershape)
-        )
         return additional_parameter, info1, info2
 
     def set_additional_parameters(self, param_a, param_b):
+        if self.param_a == param_a and self.param_b == param_b:
+            return
         self.param_a = param_a
         self.param_b = param_b
         # Reset cache for shape pattern
         # Make sure pattern is updated with additional parameter
         self.set_predefined_pattern(self.cutpattern)
+        self._set_dirty("set_additional_parameters")
 
-    @staticmethod
-    def outside(bb_to_check, master_bb):
-        out_x = "inside"
-        out_y = "inside"
-        if bb_to_check[0] > master_bb[2] or bb_to_check[2] < master_bb[0]:
-            # fully out on x
-            out_x = "outside"
-        elif bb_to_check[0] < master_bb[0] or bb_to_check[2] > master_bb[2]:
-            out_x = "cross"
-        if bb_to_check[1] > master_bb[3] or bb_to_check[3] < master_bb[1]:
-            out_y = "outside"
-        elif bb_to_check[1] < master_bb[1] or bb_to_check[3] > master_bb[3]:
-            out_x = "cross"
-        return out_x, out_y
+    # @staticmethod
+    # def outside(bb_to_check, master_bb):
+    #     out_x = "inside"
+    #     out_y = "inside"
+    #     if bb_to_check[0] > master_bb[2] or bb_to_check[2] < master_bb[0]:
+    #         # fully out on x
+    #         out_x = "outside"
+    #     elif bb_to_check[0] < master_bb[0] or bb_to_check[2] > master_bb[2]:
+    #         out_x = "cross"
+    #     if bb_to_check[1] > master_bb[3] or bb_to_check[3] < master_bb[1]:
+    #         out_y = "outside"
+    #     elif bb_to_check[1] < master_bb[1] or bb_to_check[3] > master_bb[3]:
+    #         out_x = "cross"
+    #     return out_x, out_y
 
     def generate(self, show_outline=False, force=False, final=False, clip_bounds=True):
+        force = False
         if final and self.path is not None and not force:
             # No need to recalculate...
             return
         elif not final and self.preview_path is not None and not force:
             # No need to recalculate...
             return
+        if self.outershape is None:
+            return
         from meerk40t.tools.geomstr import Clip, Pattern
 
+        # print (f"Generation with {self.cell_width} x {self.cell_height}")
         p = Pattern()
         p.create_from_pattern(
             self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape
@@ -152,8 +177,6 @@ class LivingHinges:
         p.set_cell_dims(self.cell_width, self.cell_height)
         p.extend_pattern = self._extend_patterns  # Grid type
 
-        if self.outershape is None:
-            return
         outer_path = self.outershape.as_geometry()
         if outer_path is None:
             return
@@ -204,7 +227,6 @@ def set_fishbone(a, b, *args, **kwargs):
     dy = b / 5.0 * 0.5
     yield "M", 0 + dx, 1 - dy
     yield "L", 0.5, 0
-    # self.pattern.append(("M", 0.5, 0))
     yield "L", 1 - dx, 1 - dy
 
 
