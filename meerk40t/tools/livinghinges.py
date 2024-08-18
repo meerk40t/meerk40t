@@ -538,7 +538,6 @@ class HingePanel(wx.Panel):
                 # flag = self.check_debug_outline.GetValue()
                 self.hinge_generator.generate(
                     show_outline=False,
-                    force=False,
                     final=False,
                 )
                 gc.SetPen(mypen_path)
@@ -617,8 +616,7 @@ class HingePanel(wx.Panel):
             self.text_height.ChangeValue(self.hinge_height)
             self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
 
-        # Polycut algorithm does not work for me (yet), final=False still
-        self.hinge_generator.generate(show_outline=False, force=True, final=True)
+        self.hinge_generator.generate(show_outline=False, final=True)
         path = copy(self.hinge_generator.path)
         if path is None:
             # print ("Invalid path")
