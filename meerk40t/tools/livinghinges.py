@@ -1,5 +1,6 @@
 from copy import copy
 from math import tau
+from time import perf_counter
 import wx
 
 from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
@@ -55,7 +56,9 @@ class HingePanel(wx.Panel):
         self.renderer = LaserRender(context)
         self.in_draw_event = False
         self.in_change_event = False
+        self.in_show_event = False
         self.require_refresh = True
+        self.last_show_event = 0
         self._Buffer = None
 
         self.text_origin_x = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -663,7 +666,7 @@ class HingePanel(wx.Panel):
                 self.refresh_display()
 
     def sync_controls(self, to_text=True):
-        # print(f"Sync-Control called: {to_text}")
+        # print (f"Sync-Control called: {to_text}")
         try:
             wd = float(Length(self.text_width.GetValue()))
         except ValueError:
@@ -1035,6 +1038,11 @@ class HingePanel(wx.Panel):
         return require_sync
 
     def pane_show(self):
+        time_call = perf_counter()
+        if self.in_show_event or time_call - self.last_show_event < 0.5:
+            return
+        self.last_show_event = time_call
+        self.in_show_event = True
         units = self.context.units_name
         flag = True
         for node in self.context.elements.elems(emphasized=True):
@@ -1052,7 +1060,7 @@ class HingePanel(wx.Panel):
             else:
                 s = "5cm"
             bounds = (0, 0, float(Length(s)), float(Length(s)))
-        self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
+        # self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
         start_x = bounds[0]
         start_y = bounds[1]
         wd = bounds[2] - bounds[0]
@@ -1078,7 +1086,10 @@ class HingePanel(wx.Panel):
         self.text_width.Enable(flag)
         self.text_height.Enable(flag)
         self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
-        self.on_pattern_update(None)
+        self.sync_controls(True)
+        self.apply_generator_values(source="pane_show")
+        self.refresh_display()
+        self.in_show_event = False
 
 
 class LivingHingeTool(MWindow):
