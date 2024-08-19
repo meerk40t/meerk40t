@@ -17764,3 +17764,43 @@ msgstr "Lösche alle mit {data}"
 #: meerk40t/gui/materialmanager.py:2631
 msgid "Color all {type}"
 msgstr "Einfärben aller {type}"
+
+#: meerk40t/gui/preferences.py:177
+msgid "The modified configuration has been saved.\nPlease note further changes to your configuration will not be saved until the end of the program.\nSo please exit MeerK40t as soon as possible."
+msgstr "Die veränderte Konfiguration wurde gesichert.\nAchtung: weitere Änderungen an der Konfiguration werden bis zum Programmende nicht gespeichert!\nBitte deswegen das Programm so bald wie möglich beenden."
+
+#: meerk40t/gui/preferences.py:238
+msgid "Clear..."
+msgstr "Zurücksetzen von..."
+
+#: meerk40t/gui/preferences.py:245
+msgid "...Pane + Windows-Positions"
+msgstr "...Fenster-Größen und -Positionen"
+
+#: meerk40t/gui/preferences.py:252
+msgid "...color settings"
+msgstr "...Farbwerte"
+
+#: meerk40t/gui/preferences.py:259
+msgid "...recent file names"
+msgstr "...letzte Dateinamen"
+
+#: meerk40t/gui/preferences.py:267
+msgid "...living hinge settings"
+msgstr "...Flexmuster-Einstellungen"
+
+#: meerk40t/gui/preferences.py:272
+msgid "...material test settings"
+msgstr "...Materialtest-Werte"
+
+#: meerk40t/gui/preferences.py:277
+msgid "...camera settings"
+msgstr "...Kamera-Einstellungen"
+
+#: meerk40t/gui/preferences.py:286
+msgid "...all user settings"
+msgstr "...alle Benutzer-Einstellungen"
+
+#: meerk40t/gui/preferences.py:689
+msgid "Input/Output"
+msgstr "Input/Output"
