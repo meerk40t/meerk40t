@@ -976,6 +976,6 @@ class GrblController:
                     pass
 
                 self.service.hardware_config[key] = value
-                self.service.signal(f"grbl:hwsettings", key, value)
+                self.service.signal("grbl:hwsettings", key, value)
             except ValueError:
                 pass
