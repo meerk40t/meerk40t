@@ -11,7 +11,7 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
-from .wxutils import dip_size, StaticBoxSizer, TextCtrl, wxButton, wxRadioBox
+from .wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxRadioBox
 
 _ = wx.GetTranslation
 
@@ -171,15 +171,15 @@ class PreferencesSavingPanel(wx.Panel):
         self.context.signal("restart")
         wx.MessageBox(
             message=_(
-                "The modified configuration has been saved.\n" +
-                "Please note further changes to your configuration will not be saved until the end of the program.\n" +
-                "So please exit MeerK40t as soon as possible."
+                "The modified configuration has been saved.\n"
+                + "Please note further changes to your configuration will not be saved until the end of the program.\n"
+                + "So please exit MeerK40t as soon as possible."
             ),
             caption=_("Warning"),
-            style=wx.OK|wx.ICON_EXCLAMATION
+            style=wx.OK | wx.ICON_EXCLAMATION,
         )
 
-    def delete_persistent_starting_with(self, section:str, startpattern:str, clear:bool=False):
+    def delete_persistent_starting_with(self, section: str, startpattern: str):
         to_be_deleted = list()
         for key in self.context.kernel.keylist(section):
             if key.startswith(startpattern):
@@ -187,8 +187,6 @@ class PreferencesSavingPanel(wx.Panel):
         for key in to_be_deleted:
             # print (f"Will delete {section}.{key}")
             self.context.kernel.delete_persistent(section, key)
-            if clear and section == "/":
-                setattr(self.context, key, "")
         if len(to_be_deleted):
             # d = list(self.context.kernel.keylist(section))
             # d.sort()
@@ -228,36 +226,70 @@ class PreferencesSavingPanel(wx.Panel):
         self.delete_persistent_starting_with("/", "color_")
 
     def on_clear_files(self, event):
-        self.delete_persistent_starting_with("/", "file", clear=True)
+        self.delete_persistent_starting_with("/", "file")
 
     def on_clear_hinges(self, event):
         self.delete_persistent_starting_with("/", "hinge_")
 
     def pane_right_click(self, event):
         menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, _("Clear..."), "", wx.ITEM_NORMAL, )
+        item = menu.Append(
+            wx.ID_ANY,
+            _("Clear..."),
+            "",
+            wx.ITEM_NORMAL,
+        )
         item.Enable(False)
-        item = menu.Append(wx.ID_ANY, _("...Pane + Windows-Positions"), "", wx.ITEM_NORMAL, )
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...Pane + Windows-Positions"),
+            "",
+            wx.ITEM_NORMAL,
+        )
         self.Bind(wx.EVT_MENU, self.on_clear_positions, item)
-        item = menu.Append(wx.ID_ANY, _("...color settings"), "", wx.ITEM_NORMAL, )
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...color settings"),
+            "",
+            wx.ITEM_NORMAL,
+        )
         self.Bind(wx.EVT_MENU, self.on_clear_colors, item)
-        item = menu.Append(wx.ID_ANY, _("...recent file names"), "", wx.ITEM_NORMAL, )
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...recent file names"),
+            "",
+            wx.ITEM_NORMAL,
+        )
         self.Bind(wx.EVT_MENU, self.on_clear_files, item)
         menu.AppendSeparator()
-        item = menu.Append(wx.ID_ANY, _("...living hinge settings"), "", wx.ITEM_NORMAL, )
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...living hinge settings"),
+            "",
+            wx.ITEM_NORMAL,
+        )
         self.Bind(wx.EVT_MENU, self.on_clear_hinges, item)
         # item = menu.Append(wx.ID_ANY, _("...material test settings"), "", wx.ITEM_NORMAL, )
         # self.Bind(wx.EVT_MENU, self.on_clear_templates, item)
         menu.AppendSeparator()
-        item = menu.Append(wx.ID_ANY, _("...camera settings"), "", wx.ITEM_NORMAL, )
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...camera settings"),
+            "",
+            wx.ITEM_NORMAL,
+        )
         self.Bind(wx.EVT_MENU, self.on_clear_camera_settings, item)
         if self.context.root.setting(bool, "developer_mode", False):
             menu.AppendSeparator()
-            item = menu.Append(wx.ID_ANY, _("...all user settings"), "", wx.ITEM_NORMAL, )
+            item = menu.Append(
+                wx.ID_ANY,
+                _("...all user settings"),
+                "",
+                wx.ITEM_NORMAL,
+            )
             self.Bind(wx.EVT_MENU, self.on_clear_all, item)
         self.PopupMenu(menu)
         menu.Destroy()
-
 
     def on_button_save(self, event=None):
         self.context("flush\n")
