@@ -153,7 +153,7 @@ class EllipseTool(ToolWidget):
             self.scene.pane.tool_active = False
             try:
                 if self.p1 is None:
-                    return
+                    return RESPONSE_ABORT
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
