@@ -27,6 +27,7 @@ class Settings:
             self._config_file = filename
         self._config_dict = {}
         self.create_backup = create_backup
+        self.prevent_persisting = False
         if not ignore_settings:
             self.read_configuration()
 
@@ -69,6 +70,8 @@ class Settings:
         This uses the python ConfigParser to save data from the _config_dict.
         @return:
         """
+        if self.prevent_persisting:
+            return
         if targetfile is None:
             targetfile = self._config_file
         try:
