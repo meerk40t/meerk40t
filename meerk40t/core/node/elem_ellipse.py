@@ -66,6 +66,11 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
 
         super().__init__(type="elem ellipse", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         self.__formatter = "{element_type} {id} {stroke}"
         if self.cx is None:

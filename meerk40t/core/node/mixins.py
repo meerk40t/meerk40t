@@ -125,5 +125,10 @@ class Suppressable(ABC):
     def __init__(self, *args, **kwargs):
         self.hidden = False
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         super().__init__()
