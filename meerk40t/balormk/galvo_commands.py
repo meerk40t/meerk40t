@@ -149,7 +149,7 @@ def plugin(service, lifecycle):
             return
         xmin, ymin, xmax, ymax = bounds
         channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
+        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymax - ymin)
         if count > 1:
             geometry.copies(count)
         return "geometry", geometry
