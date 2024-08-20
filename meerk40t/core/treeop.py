@@ -436,7 +436,7 @@ def tree_operations_for_node(registration, node):
                 try:
                     func.submenu = value_submenus[i]
                 except IndexError:
-                    print(f"Wrong index...")
+                    print("Wrong index...")
                     pass
             try:
                 func_dict[func.value_name] = value

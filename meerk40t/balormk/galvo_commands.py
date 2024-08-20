@@ -751,7 +751,7 @@ def plugin(service, lifecycle):
             channel(f"Using default corfile: {filename}")
         if filename is None:
             service.driver.connection.write_correction_file(None)
-            channel(f"Force set corrections to blank.")
+            channel("Force set corrections to blank.")
         else:
             from os.path import exists
 

@@ -526,16 +526,15 @@ class Node:
             result = "<invalid pattern>"
         return result
 
-    def default_map(self, default_map=None, skip_label=False):
+    def default_map(self, default_map=None):   # , skip_label=False
         if default_map is None:
             default_map = self._default_map
         default_map["id"] = str(self.id) if self.id is not None else "-"
-        if not skip_label:
-            lbl = self.display_label()
-            default_map["label"] = lbl if lbl is not None else ""
-            default_map["desc"] = (
-                lbl if lbl is not None else str(self.id) if self.id is not None else "-"
-            )
+        lbl = self.display_label()
+        default_map["label"] = lbl if lbl is not None else ""
+        default_map["desc"] = (
+            lbl if lbl is not None else str(self.id) if self.id is not None else "-"
+        )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
