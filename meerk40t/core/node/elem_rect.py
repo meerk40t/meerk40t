@@ -72,6 +72,11 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.mktabpositions = ""
         super().__init__(type="elem rect", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} {stroke}"
         if self.x is None:

@@ -37,6 +37,11 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         # kwargs can actually reset quite a lot of the properties to none
         # so, we need to revert these changes...

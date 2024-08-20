@@ -88,6 +88,11 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             font = None
         super().__init__(type="elem text", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
 
         # We might have relevant forn-information hidden inside settings...

@@ -31,6 +31,11 @@ class WobbleEffectNode(Node, Suppressable):
             self, type="effect wobble", id=id, label=label, lock=lock, **kwargs
         )
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} - {type} {radius} ({children})"
 
