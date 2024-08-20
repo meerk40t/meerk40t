@@ -205,7 +205,7 @@ class NewlyController:
             return
         self._realtime = True
         self.mode = "realtime"
-        self(f"ZZZFile0")
+        self(f"ZZZFile{0}")
         self._clear_settings()
 
     def _clear_settings(self):

@@ -868,7 +868,7 @@ class StrokeWidthPanel(wx.Panel):
                         found_something = True
 
                 if not found_something:
-                    std = float(Length(f"1mm"))
+                    std = float(Length("1mm"))
                     if node_stroke_width / std < 0.1:
                         idxunit = 0  # px
                     else:

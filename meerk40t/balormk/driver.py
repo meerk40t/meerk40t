@@ -612,7 +612,7 @@ class BalorDriver:
 
         @return:
         """
-        pass
+        return
 
     def wait_finished(self):
         """

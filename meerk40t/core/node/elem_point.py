@@ -27,6 +27,11 @@ class PointNode(Node, FunctionalParameter, LabelDisplay, Suppressable):
         self.stroke_width = 1000.0
         super().__init__(type="elem point", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} {stroke}"
         if self.x is None:

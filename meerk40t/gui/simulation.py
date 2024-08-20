@@ -506,7 +506,7 @@ class CutcodePanel(wx.Panel):
             elif isinstance(e, WaitCut):
                 res = f"Wait: {e.dwell_time}"
             elif isinstance(e, HomeCut):
-                res = f"Home"
+                res = "Home"
             elif isinstance(e, GotoCut):
                 coord = f"({e._start_x:.0f}, {e._start_y:.0f})"
                 res = f"Goto: ({e.start[0]:.0f}, {e.start[1]:.0f}) {coord}"

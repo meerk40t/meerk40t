@@ -66,6 +66,11 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.mktabpositions = ""
         super().__init__(type="elem line", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         if self.x1 is None:
             self.x1 = 0

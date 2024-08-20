@@ -149,7 +149,7 @@ def plugin(service, lifecycle):
             return
         xmin, ymin, xmax, ymax = bounds
         channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
+        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymax - ymin)
         if count > 1:
             geometry.copies(count)
         return "geometry", geometry
@@ -751,7 +751,7 @@ def plugin(service, lifecycle):
             channel(f"Using default corfile: {filename}")
         if filename is None:
             service.driver.connection.write_correction_file(None)
-            channel(f"Force set corrections to blank.")
+            channel("Force set corrections to blank.")
         else:
             from os.path import exists
 
