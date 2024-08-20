@@ -144,6 +144,7 @@ class BalorDriver:
 
         @return:
         """
+        self.service.laser_status = "active"
         con = self.connection
         con._light_speed = None
         con._dark_speed = None
@@ -154,9 +155,7 @@ class BalorDriver:
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             con.set_settings(sets)
             # LOOP CHECKS
-            if self._aborting:
-                con.abort()
-                self._aborting = False
+            if self._abort_mission():
                 return
             if segment_type == "line":
                 last_x, last_y = con.get_last_xy()
@@ -177,9 +176,7 @@ class BalorDriver:
                 g.quad(start, c1, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -195,9 +192,7 @@ class BalorDriver:
                 g.cubic(start, c1, c2, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -213,9 +208,7 @@ class BalorDriver:
                 g.arc(start, c1, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -259,6 +252,7 @@ class BalorDriver:
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()
+        self.service.laser_status = "idle"
 
         if self.service.redlight_preferred:
             con.light_on()
@@ -308,7 +302,9 @@ class BalorDriver:
 
         @return:
         """
+
         # preprocess queue to establish steps
+        self.service.laser_status = "active"
         con = self.connection
         con._light_speed = None
         con._dark_speed = None
@@ -328,9 +324,7 @@ class BalorDriver:
                     self.value_penbox = None
             con.set_settings(settings)
             # LOOP CHECKS
-            if self._aborting:
-                con.abort()
-                self._aborting = False
+            if self._abort_mission():
                 return
             if isinstance(q, LineCut):
                 last_x, last_y = con.get_last_xy()
@@ -349,9 +343,7 @@ class BalorDriver:
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -372,9 +364,7 @@ class BalorDriver:
                 )
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -386,9 +376,7 @@ class BalorDriver:
                     con.goto(x, y)
                 for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -452,9 +440,7 @@ class BalorDriver:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -512,6 +498,7 @@ class BalorDriver:
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()
+        self.service.laser_status = "idle"
 
         if self.service.redlight_preferred:
             con.light_on()
@@ -718,6 +705,7 @@ class BalorDriver:
         self.pulse(time_in_ms)
 
     def pulse(self, pulse_time):
+        self.service.laser_status = "active"
         con = self.connection
         con.program_mode()
         con.frequency(self.service.default_frequency)
@@ -731,6 +719,7 @@ class BalorDriver:
             dwell_time -= d
         con.list_delay_time(int(self.service.delay_end / 10.0))
         con.rapid_mode()
+        self.service.laser_status = "idle"
         if self.service.redlight_preferred:
             con.light_on()
             con.write_port()
@@ -740,6 +729,14 @@ class BalorDriver:
 
     def set_abort(self):
         self._aborting = True
+
+    def _abort_mission(self):
+        if self._aborting:
+            self.connection.abort()
+            self._aborting = False
+            self.service.laser_status = "idle"
+            return True
+        return False
 
     def cylinder_validate(self):
         if self.service.cylinder_active:

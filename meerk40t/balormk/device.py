@@ -821,6 +821,7 @@ class BalorDevice(Service, Status):
 
         self.viewbuffer = ""
         self._simulate = False
+        self.laser_status = "idle"
 
     @property
     def safe_label(self):
