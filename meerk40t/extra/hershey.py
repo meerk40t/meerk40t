@@ -462,7 +462,7 @@ class Meerk40tFonts:
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
             cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
-        except ShxFontParseError:
+        except (AttributeError, ShxFontParseError):
             # Could not parse path.
             pass
 
