@@ -4,6 +4,8 @@
 name: Meerk40t (Windows)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
