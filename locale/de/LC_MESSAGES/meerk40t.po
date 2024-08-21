@@ -17682,7 +17682,7 @@ msgstr ""
 "MeerK40t ist das Ergebnis einer unglaublichen Arbeit von David Olsen aka Tatarize.\n"
 "Er entwickelte dieses Programm über 4 Jahre hinweg und erlaubte so Anwendern auf der ganzen Welt das Beste aus ihren K40-Lasern (und anderen Lasertypen) herauszuholen.\n\n"
 "Obwohl keine Risikofaktoren für Krebserkrankungen vorlagen, erkrankte er an Zungenkrebs, der so schnell Metastasen in seiner Lunge bildete, dass die Hilfe seiner Ärzte zu spät kam. Er starb am 26. Juli 2024.\n"
-"Er wa ein Mentor, eine Inspiration und ein Freund - David, wir werden Dich vermissen aber nicht vergessen.\n\n"
+"Er war ein Mentor, eine Inspiration und ein Freund - David, wir werden Dich vermissen aber nicht vergessen.\n\n"
 "Bitte mach mit beim Kampf gegen Krebs und erwäge eine Spende an eine der vielen Forschungs- und Hilfeorganisationen weltweit.\n\n"
 "Falls Du mehr über die Entwicklungsgeschichte von MeerK40t erfahren möchtest:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
 
