@@ -17682,9 +17682,125 @@ msgstr ""
 "MeerK40t ist das Ergebnis einer unglaublichen Arbeit von David Olsen aka Tatarize.\n"
 "Er entwickelte dieses Programm über 4 Jahre hinweg und erlaubte so Anwendern auf der ganzen Welt das Beste aus ihren K40-Lasern (und anderen Lasertypen) herauszuholen.\n\n"
 "Obwohl keine Risikofaktoren für Krebserkrankungen vorlagen, erkrankte er an Zungenkrebs, der so schnell Metastasen in seiner Lunge bildete, dass die Hilfe seiner Ärzte zu spät kam. Er starb am 26. Juli 2024.\n"
-"Er wa ein Mentor, eine Inspiration und ein Freund - David, wir werden Dich vermissen aber nicht vergessen.\n\n"
+"Er war ein Mentor, eine Inspiration und ein Freund - David, wir werden Dich vermissen aber nicht vergessen.\n\n"
 "Bitte mach mit beim Kampf gegen Krebs und erwäge eine Spende an eine der vielen Forschungs- und Hilfeorganisationen weltweit.\n\n"
 "Falls Du mehr über die Entwicklungsgeschichte von MeerK40t erfahren möchtest:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
 
 msgid "In Memory of David Olsen"
 msgstr "In Memoriam David Olsen"
+
+#: meerk40t/camera/gui/camerapanel.py:596
+msgid "Set camera resolution..."
+msgstr "Kamera-Auflösung festlegen..."
+
+#: meerk40t/gui/wxmmain.py:2328
+msgid "Alignment to first element"
+msgstr "Ausrichten an erstem Element"
+
+#: meerk40t/gui/wxmmain.py:2330
+msgid "When aligning several elements to each other, they will be aligned to the element..."
+msgstr "Wenn mehrere Elemente aneinander ausgerichtet werden sollen, dann werden sie ausgerichtet am..."
+
+#: meerk40t/gui/wxmmain.py:2332
+msgid "Ticked: ...that was selected first"
+msgstr "Aktiv: ...ersten Element, das selektiert wurde"
+
+#: meerk40t/gui/wxmmain.py:2334
+msgid "Unticked: ...that was selected last"
+msgstr "Inaktiv: ...letzten Element, das selektiert wurde"
+
+#: meerk40t/gui/wxmmain.py:2336
+msgid "(Requires a restart to take effect)"
+msgstr "(Benötigt Neustart um wirksam zu werden)"
+
+#: meerk40t/gui/wxmribbon.py:1428
+msgid "Icon"
+msgstr "Icon"
+
+#: meerk40t/rotary/gui/rotarysettings.py:44
+msgid "Uses Roller"
+msgstr "Verwendet Rollachsen"
+
+#: meerk40t/rotary/gui/rotarysettings.py:110
+msgid "Steps required for a full rotation"
+msgstr "Wieviele Schritte benötigt der Stepper-Motor für eine volle Umdrehung"
+
+#: meerk40t/rotary/gui/rotarysettings.py:113
+msgid "Circumference of roller"
+msgstr "Umfang der Roll-Achse"
+
+#: meerk40t/rotary/gui/rotarysettings.py:117
+msgid "Circumference of object in rotary"
+msgstr "Umfang des Objektes in der Rotationseinheit"
+
+#: meerk40t/rotary/gui/rotarysettings.py:125
+msgid "Object Circumference:"
+msgstr "Umfang des Objektes:"
+
+#: meerk40t/rotary/gui/rotarysettings.py:126
+msgid "Roller Circumference:"
+msgstr "Umfang Rollachse:"
+
+#: meerk40t/rotary/gui/rotarysettings.py:127
+msgid "Rotation Steps:"
+msgstr "Rotations-Schritte:"
+
+#: meerk40t/tools/livinghinges.py:338 meerk40t/tools/livinghinges.py:339
+msgid "Set a rotation value for the pattern"
+msgstr "Legt den Rotations-Winkel des Musters fest"
+
+#: meerk40t/gui/materialmanager.py:1151
+msgid "Do you really want to delete all {num} visible entries? This can't be undone."
+msgstr "Sollen wirklich alle {num} sichtbaren Einträge gelöscht werden? Das kann nicht rückgängig gemacht werden."
+
+#: meerk40t/gui/materialmanager.py:1156
+msgid "Do you really want to delete all {num} entries with {data}? This can't be undone."
+msgstr "Sollen wirklich alle {num} sichtbaren Einträge des Typs {data} gelöscht werden? Das kann nicht rückgängig gemacht werden."
+
+#: meerk40t/gui/materialmanager.py:2187
+msgid "Delete all with {data}"
+msgstr "Lösche alle mit {data}"
+
+#: meerk40t/gui/materialmanager.py:2631
+msgid "Color all {type}"
+msgstr "Einfärben aller {type}"
+
+#: meerk40t/gui/preferences.py:177
+msgid "The modified configuration has been saved.\nPlease note further changes to your configuration will not be saved until the end of the program.\nSo please exit MeerK40t as soon as possible."
+msgstr "Die veränderte Konfiguration wurde gesichert.\nAchtung: weitere Änderungen an der Konfiguration werden bis zum Programmende nicht gespeichert!\nBitte deswegen das Programm so bald wie möglich beenden."
+
+#: meerk40t/gui/preferences.py:238
+msgid "Clear..."
+msgstr "Zurücksetzen von..."
+
+#: meerk40t/gui/preferences.py:245
+msgid "...Pane + Windows-Positions"
+msgstr "...Fenster-Größen und -Positionen"
+
+#: meerk40t/gui/preferences.py:252
+msgid "...color settings"
+msgstr "...Farbwerte"
+
+#: meerk40t/gui/preferences.py:259
+msgid "...recent file names"
+msgstr "...letzte Dateinamen"
+
+#: meerk40t/gui/preferences.py:267
+msgid "...living hinge settings"
+msgstr "...Flexmuster-Einstellungen"
+
+#: meerk40t/gui/preferences.py:272
+msgid "...material test settings"
+msgstr "...Materialtest-Werte"
+
+#: meerk40t/gui/preferences.py:277
+msgid "...camera settings"
+msgstr "...Kamera-Einstellungen"
+
+#: meerk40t/gui/preferences.py:286
+msgid "...all user settings"
+msgstr "...alle Benutzer-Einstellungen"
+
+#: meerk40t/gui/preferences.py:689
+msgid "Input/Output"
+msgstr "Input/Output"

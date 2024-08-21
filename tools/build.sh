@@ -13,3 +13,5 @@ echo Moving files back to their original places
 mv mk40t.py meerk40t.py
 mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
 mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
+echo Renaming file
+mv dist/MeerK40t dist/MeerK40t-Linux-Ubuntu-22.04
