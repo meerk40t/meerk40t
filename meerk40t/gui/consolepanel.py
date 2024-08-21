@@ -102,6 +102,58 @@ def register_panel_console(window, context):
             w = context.opened["pane/console"]
             w.control.clear()
 
+    @context.console_option("reset", "r", type=bool, action="store_true")
+    @context.console_command(
+        ("console_font"),
+        help=_("Sets the console font"),
+    )
+    def set_console_font(channel, _, reset=False, *args, **kwargs):
+        def getfont(initial):
+            result = ""
+            data = wx.FontData()
+            data.EnableEffects(True)
+            cur_font = None
+            if initial:
+                try:
+                    cur_font = wx.Font().SetNativeFontInfo(initial)
+                except Exception:
+                    pass
+            if cur_font is None:
+                cur_font = wx.Font(
+                10,
+                wx.FONTFAMILY_TELETYPE,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+            data.SetInitialFont(cur_font)
+
+            dlg = wx.FontDialog(window, data)
+
+            if dlg.ShowModal() == wx.ID_OK:
+                data = dlg.GetFontData()
+                font = data.GetChosenFont()
+                result = font.GetNativeFontInfoDesc()
+
+            # Don't destroy the dialog until you get everything you need from the
+            # dialog!
+            dlg.Destroy()
+            return result
+
+        current = context.setting(str, "console_font", "")
+        if reset:
+            context.console_font = ""
+        else:
+            # Show Fontdialog
+            result = getfont(current)
+            context.console_font = result
+        if "window/Console" in context.opened:
+            w = context.opened["window/Console"]
+            w.panel.reset_font()
+        if "pane/console" in context.opened:
+            w = context.opened["pane/console"]
+            w.control.reset_font()
+        channel(_("Font has been changed"))
+
 
 class ConsolePanel(wx.ScrolledWindow):
     def __init__(self, *args, context=None, **kwargs):
@@ -110,15 +162,11 @@ class ConsolePanel(wx.ScrolledWindow):
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
         self.SetHelpText("notes")
-        font = wx.Font(
-            10,
-            wx.FONTFAMILY_TELETYPE,
-            wx.FONTSTYLE_NORMAL,
-            wx.FONTWEIGHT_NORMAL,
-        )
+        font = self.get_font()
         self.text_entry = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
+        self.richtext = False
 
         try:
             self.text_main = richtext.RichTextCtrl(
@@ -160,6 +208,7 @@ class ConsolePanel(wx.ScrolledWindow):
             self.style = style
             self.text_main.Update()  # Apply style to just opened window
             self._update_text = self.update_text_rich
+            self.richtext = True
 
         except NameError:
             self.text_main = wx.TextCtrl(
@@ -217,6 +266,35 @@ class ConsolePanel(wx.ScrolledWindow):
             context_item = parts[1]
             if context_item != "None" and context_item not in self.command_context:
                 self.command_context.append(context_item)
+
+    def get_font(self):
+        font = None
+        fontdesc = self.context.setting(str, "console_font", "")
+        if fontdesc:
+            # print (f"Try fontdesc: {fontdesc}")
+            try:
+                font = wx.Font(fontdesc)
+            except Exception as e:
+                font = None
+        if font is None:
+            font = wx.Font(
+                10,
+                wx.FONTFAMILY_TELETYPE,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        return font
+
+    def reset_font(self):
+        font = self.get_font()
+        if self.richtext:
+            self.style.SetFont(font)
+            self.text_main.SetBasicStyle(self.style)
+            self.text_main.SetDefaultStyle(self.style)
+            self.text_main.Update()
+        else:
+            self.text_main.SetFont(font)
+        self.Refresh()
 
     def style_normal(self, style):
         return self.style

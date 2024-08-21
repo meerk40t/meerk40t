@@ -1451,10 +1451,37 @@ class DavidPanel(ScrolledPanel):
         )
         self.david_picture.SetSize(self.david_picture.GetBestSize())
         self.david_header = wx.StaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
+        eulogy:str = _(EULOGY_TEXT)
+        from platform import system as _sys
+        if _sys == "Darwin":
+            # MacOS does not wrap labels around, so we need do it ourselves
+            splitted = eulogy.split("\n")
+            lines = []
+            for l in splitted:
+                LINELEN = 45
+                words = l.split()
+                start = ""
+                for w in words:
+                    if len(w) + len(start) > LINELEN:
+                        if start:
+                            lines.append(start)
+                            start = w
+                        else:
+                            # Word is too long
+                            lines.append(w)
+                            start = ""
+                    else:
+                        if start:
+                            start += " " + w
+                        else:
+                            start = w
+                if start:
+                    lines.append(start)
+            eulogy = "\n".join(lines)
         self.david_text = wx.StaticText(
             self,
             wx.ID_ANY,
-            _(EULOGY_TEXT),
+            eulogy,
         )
 
         self.__do_layout()
