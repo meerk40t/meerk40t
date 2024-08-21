@@ -80,6 +80,8 @@ from .propertypanels.rasterwizardpanels import (
 from .propertypanels.textproperty import TextPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 from .propertypanels.wobbleproperty import WobblePropertyPanel
+from .propertypanels.commonproperty import PropertyHolder
+
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
@@ -882,6 +884,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register(
             "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
         )
+        kernel.register("property/Common", PropertyHolder)
 
         kernel.register("window/Console", Console)
         if (

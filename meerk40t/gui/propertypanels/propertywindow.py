@@ -83,6 +83,8 @@ class PropertyWindow(MWindow):
         nodes = list(self.context.elements.flat(selected=True, cascade=False))
         if nodes is None:
             return
+        common = self.context.kernel.root.setting(bool, "show_common_properties", False)
+        common_panel = self.context.lookup("property/Common")
         pages_to_instance = []
         for node in nodes:
             pages_in_node = []
@@ -95,6 +97,8 @@ class PropertyWindow(MWindow):
                 ):
                     pages_in_node.append((property_sheet, node))
                     found = True
+                    if common:
+                        break
             # If we did not have any hits and the node is a reference
             # then we fall back to the master. So if in the future we
             # would have a property panel dealing with reference-nodes
@@ -110,10 +114,18 @@ class PropertyWindow(MWindow):
                     ):
                         pages_in_node.append((property_sheet, snode))
                         found = True
-
-            pages_in_node.sort(key=sort_priority)
+                        if common:
+                            break
+            if found:
+                pages_in_node.sort(key=sort_priority)
+                pages_to_instance.extend(pages_in_node)
+                if common:
+                    break
+        if common and len(nodes) > 1:
+            pages_in_node = []
+            pages_in_node.append((common_panel, None))
             pages_to_instance.extend(pages_in_node)
-
+        # print (f"Pages found: {len(pages_to_instance)}")
         self.window_close()
         # self.panel_instances.clear()
         self.notebook_main.DeleteAllPages()
@@ -122,9 +134,11 @@ class PropertyWindow(MWindow):
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
             )
             try:
-                name = prop_sheet.name
-            except AttributeError:
+                name = page_panel.name
+                # print (f"Propsheet had a name: {name}")
+            except AttributeError as e:
                 name = instance.__class__.__name__
+                # print (f"Propsheet had no name {e}, use instance instead: {name}")
 
             self.notebook_main.AddPage(page_panel, _(name))
             try:
@@ -170,6 +184,21 @@ class PropertyWindow(MWindow):
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },
         )
+        choices = [
+            {
+                "attr": "show_common_properties",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Common properties"),
+                "tip":
+                    _("Active: Display a page with common properties of selected objects") + "\n" +
+                    _("Inactive: Display a property page per selected object"),
+                "page": "Gui",
+                "section": "_90_Property-Display",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
     def window_close(self):
         for p in self.panel_instances:
