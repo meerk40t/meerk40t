@@ -963,7 +963,7 @@ msgstr "Immagine catturata"
 
 #: meerk40t/camera/plugin.py:243 meerk40t/camera/plugin.py:271
 msgid "Camera is not currently running..."
-msgstr "La telecamera non è attualmente attiva..."
+msgstr "La videocamera non è attualmente attiva..."
 
 #: meerk40t/camera/plugin.py:257
 msgid "Attempt to change setting failed, raised cv2 error."
@@ -4442,7 +4442,7 @@ msgid ""
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hoped his contributions would be but\n"
+"who sincerely hopes his contributions will be but\n"
 "the barest trickle that becomes a raging river."
 msgstr ""
 "Meerk40t è un progetto basato sulla licenza MIT"
@@ -5526,7 +5526,7 @@ msgstr "Posiziona una dima"
 
 #: meerk40t/gui/materialtest.py:32
 msgid "Cut"
-msgstr "Taglio"
+msgstr "Taglia"
 
 #: meerk40t/gui/materialtest.py:32
 msgid "Engrave"
@@ -6677,7 +6677,7 @@ msgstr "Mostra l'immagine di sfondo"
 
 #: meerk40t/gui/simulation.py:406
 msgid "Display the background picture in the Simulation pane"
-msgstr "Mostra l'immagine di sfondo (di solito la telecamera) nella finestra di simulazione"
+msgstr "Mostra l'immagine di sfondo (di solito la videocamera) nella finestra di simulazione"
 
 #: meerk40t/gui/simulation.py:416 meerk40t/gui/wxmscene.py:724
 msgid "Show Primary Grid"
@@ -7408,7 +7408,7 @@ msgstr "premendo il tasto return o lasciando il campo"
 #: meerk40t/gui/wxmmain.py:632 meerk40t/gui/wxmmain.py:1317
 #: meerk40t/gui/wxmmain.py:2872
 msgid "Open"
-msgstr "Aperto"
+msgstr "Apri"
 
 #: meerk40t/gui/wxmmain.py:634
 msgid "Opens new project"
@@ -10082,7 +10082,7 @@ msgstr "Esportazione dell'istantanea"
 #: meerk40t/camera/gui/camerapanel.py:120
 #: meerk40t/camera/gui/camerapanel.py:465
 msgid "Reconnect Camera"
-msgstr "Ricollega la videcamera"
+msgstr "Ricollega la videocamera"
 
 #: meerk40t/camera/gui/camerapanel.py:123
 msgid ""
@@ -10092,7 +10092,7 @@ msgid ""
 msgstr ""
 "Correggere le distorsioni/calibrazione\n"
 "È necessario un modello a scacchiera 6x9 stampato (può essere scaricato da OpenCV).\n"
-"Deve essere piatto e completamente visibile dalla telecamera"
+"Deve essere piatto e completamente visibile dalla videocamera"
 
 #: meerk40t/camera/gui/camerapanel.py:131
 msgid ""
@@ -12912,7 +12912,7 @@ msgid "_TREE_Point"
 msgstr "Punto"
 
 msgid "_TREE_Cut"
-msgstr "Taglio"
+msgstr "Taglia"
 
 msgid "_TREE_Engrave"
 msgstr "Incisione"
@@ -18129,7 +18129,7 @@ msgstr "Contorno in diretta"
 
 #: ./meerk40t\camera\plugin.py:94
 msgid "Known camera URIs:"
-msgstr "URI noti della telecamera:"
+msgstr "URI noti della videocamera:"
 
 #: ./meerk40t\camera\plugin.py:112
 msgid "Camera Information:"
@@ -19170,7 +19170,7 @@ msgstr "Crea un solo elemento"
 
 #: meerk40t/gui/wxmmain.py:1246
 msgid "When you design an element, e.g. a line, then MeerK40t will allow you to immediately create the next instance of this type."
-msgstr "Quando viene disegnato un elemento, ad esempio una linea, MeerK40t permette immediatamente di creare un'altra copia di questo tipo"
+msgstr "Quando viene disegnato un elemento, ad esempio una linea, MeerK40t permette immediatamente di creare un'altra copia di quello stesso elemento"
 
 #: meerk40t/gui/wxmmain.py:1250
 msgid "If this option is active then it will create just a single element and return to selection mode."
@@ -19178,7 +19178,7 @@ msgstr "Se questa opzione è attiva, viene generato un solo elemento e viene att
 
 #: meerk40t/gui/wxmmain.py:1252
 msgid "Hint: Escape or a right-click will leave creation mode as well."
-msgstr "Suggerimento: Anche l'Escape o il clic con il tasto destro del mouse terminano la modalità di creazione"
+msgstr "Suggerimento: Anche l'Escape o il click con il tasto destro del mouse terminano la modalità di creazione"
 
 #: meerk40t/gui/wxmmain.py:4545
 msgid "<Multiple files loaded>"
@@ -19242,15 +19242,15 @@ msgstr "Tipo di linea"
 
 #: meerk40t/gui/propertypanels/attributes.py:523
 msgid "Tab-Length"
-msgstr "Dimensione scheda"
+msgstr "Dimensione Linguette/Ponti"
 
 #: meerk40t/gui/propertypanels/attributes.py:524
 msgid "Tabs"
-msgstr "Schede"
+msgstr "Linguette/Ponti"
 
 #: meerk40t/gui/propertypanels/attributes.py:526
 msgid "Tabs/Bridges"
-msgstr "Schede/ponte"
+msgstr "Linguette/Ponti"
 
 #: meerk40t/gui/propertypanels/attributes.py:553
 msgid "Choose the linestyle of the shape"
@@ -19266,7 +19266,7 @@ msgstr "Un elenco di numeri separati da virgole/spazi che definiscono la lunghez
 
 #: meerk40t/gui/propertypanels/attributes.py:556
 msgid "Where do you want to place tabs:"
-msgstr "Dove si desidera inserire i ponti:"
+msgstr "Dove si desidera inserire le linguette/ponti:"
 
 #: meerk40t/gui/propertypanels/attributes.py:557
 msgid "A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers."
@@ -19274,11 +19274,11 @@ msgstr "Un elenco di numeri separati da virgole/spazi che definisce la posizione
 
 #: meerk40t/gui/propertypanels/attributes.py:558
 msgid "You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs."
-msgstr "È possibile specificare un segnaposto per x ponti uniformemente distribuiti: '*x', ad esempio '*4' per quattro ponti"
+msgstr "È possibile specificare un segnaposto X per le linguette/ponti uniformemente distribuiti: '*X', ad esempio '*4' per quattro linguette/ponti "
 
 #: meerk40t/gui/propertypanels/attributes.py:559
 msgid "An empty list stands for no tabs."
-msgstr "Un elenco vuoto non rappresenta alcun ponte"
+msgstr "Un elenco vuoto non rappresenta alcuna linguetta/ponte"
 
 #: meerk40t/gui/propertypanels/attributes.py:564
 msgid "How wide should the tab be?"
@@ -19310,11 +19310,11 @@ msgstr "Ponti"
 
 #: meerk40t/gui/wxmmain.py:1712
 msgid "Edit tabs/bridges of an object"
-msgstr "Modifica di schede/ponti per un oggetto"
+msgstr "Modifica le linguette/ponti per un oggetto"
 
 #: meerk40t/gui/propertypanels/tooltabedit.py:536
 msgid "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"
-msgstr "Spostare i ponti esistenti o aggiungerne di nuovi facendo clic su,\nMaiuscolo-Clicca/Cancella elimina il ponte, Maiuscolo-Cancella elimina tutti i ponti"
+msgstr "Spostare le linguette/ponti esistenti o aggiungerne di nuove facendo clic su,\nMaiuscolo-Clicca/Cancella elimina le linguette/ponti , Maiuscolo-Cancella elimina tutte le linguette/ponti"
 
 
 #: meerk40t/gui/plugin.py:248
@@ -19464,3 +19464,130 @@ msgstr ""
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:281
 msgid "W, H"
 msgstr ""
+
+#: meerk40t/camera/gui/camerapanel.py:596
+msgid "Set camera resolution..."
+msgstr "Imposta la risoluzione della videocamera..."
+
+#: meerk40t/core/elements/shapes.py:2077
+msgid "Invalid width/height"
+msgstr "Larghezza/altezza non valide"
+
+#: meerk40t/device/basedevice.py:97
+msgid "Add a new device and start it"
+msgstr "Aggiunge un nuovo dispositivo e lo avvia"
+
+#: meerk40t/device/basedevice.py:136
+msgid "Activate a particular device entry"
+msgstr "Attiva una particolare voce del dispositivo"
+
+#: meerk40t/device/basedevice.py:147
+msgid "Defined Devices:"
+msgstr "Dispositivi definiti:"
+
+#: meerk40t/gui/about.py:1946
+msgid "In Memory of David Olsen"
+msgstr "In ricordo di David Olsen"
+
+#: meerk40t/gui/materialmanager.py:1151
+msgid "Do you really want to delete all {num} visible entries? This can't be undone."
+msgstr "Si desidera davvero eliminare tutte le voci visibili di {num}? Questa operazione non può essere annullato."
+
+#: meerk40t/gui/materialmanager.py:1156
+msgid "Do you really want to delete all {num} entries with {data}? This can't be undone."
+msgstr "Si desidera davvero eliminare tutte le voci {num} con {data}? Questa operazione non può essere annullata."
+
+#: meerk40t/gui/materialmanager.py:2187
+msgid "Delete all with {data}"
+msgstr "Cancella tutto con {data}"
+
+#: meerk40t/gui/materialmanager.py:2631
+msgid "Color all {type}"
+msgstr "Colora tutto {type}"
+
+#: meerk40t/gui/preferences.py:177
+msgid "The modified configuration has been saved.\nPlease note further changes to your configuration will not be saved until the end of the program.\nSo please exit MeerK40t as soon as possible."
+msgstr "La modifica alla configurazione è stata salvata.\nSi prega di notare che ulteriori variazioni alla configurazione non verranno salvate fino alla fine del programma.\nSi prega quindi di uscire da MeerK40t il prima possibile."
+
+#: meerk40t/gui/preferences.py:238
+msgid "Clear..."
+msgstr "Ripulire..."
+
+#: meerk40t/gui/preferences.py:245
+msgid "...Pane + Windows-Positions"
+msgstr "...riquadro + posizioni delle finestre"
+
+#: meerk40t/gui/preferences.py:252
+msgid "...color settings"
+msgstr "...impostazioni del colore"
+
+#: meerk40t/gui/preferences.py:259
+msgid "...recent file names"
+msgstr "...nomi di file recentemente usati"
+
+#: meerk40t/gui/preferences.py:267
+msgid "...living hinge settings"
+msgstr "...impostazioni dei pattern di piegatura"
+
+#: meerk40t/gui/preferences.py:272
+msgid "...material test settings"
+msgstr "...impostazioni del test dei parametri sui materiale"
+
+#: meerk40t/gui/preferences.py:277
+msgid "...camera settings"
+msgstr "...impostazioni della videocamera"
+
+#: meerk40t/gui/preferences.py:286
+msgid "...all user settings"
+msgstr "...tutte le impostazioni dell'utente"
+
+#: meerk40t/gui/preferences.py:689
+msgid "Input/Output"
+msgstr ""
+
+#: meerk40t/gui/wxmmain.py:2334
+msgid "Alignment to first element"
+msgstr "Allinea al primo elemento"
+
+#: meerk40t/gui/wxmmain.py:2336
+msgid "When aligning several elements to each other, they will be aligned to the element..."
+msgstr "Quando si allineano più elementi tra loro, questi verranno allineati all'elemento..."
+
+#: meerk40t/gui/wxmmain.py:2338
+msgid "Ticked: ...that was selected first"
+msgstr "Attivo: ...che è stato selezionato per primo"
+
+#: meerk40t/gui/wxmmain.py:2340
+msgid "Unticked: ...that was selected last"
+msgstr "Non attivo: ... che è stato selezionato per ultimo"
+
+#: meerk40t/gui/wxmmain.py:2342
+msgid "(Requires a restart to take effect)"
+msgstr "(Richiede un riavvio per avere effetto)"
+
+#: meerk40t/tools/livinghinges.py:344 meerk40t/tools/livinghinges.py:345
+msgid "Set a rotation value for the pattern"
+msgstr "Imposta un valore di rotazione per il modello"
+
+#: meerk40t/gui/consolepanel.py:108
+msgid "Sets the console font"
+msgstr "Imposta il font della console"
+
+#: meerk40t/gui/consolepanel.py:155
+msgid "Font has been changed"
+msgstr "Il carattere è stato modificato"
+
+msgid ""
+"MeerK40t is the result of an incredible piece of work by David Olsen aka Tatarize.\n"
+"He created this program over 4 years allowing users across the world to get the best out of their K40 equipment (and additional lasertypes).\n\n"
+"Despite having no risk factors for getting cancer, he developed a tumor on his tongue that metastasized into his lungs before the doctors could stop it and passed away on July 26, 2024.\n"
+"He was a mentor, an inspiration and a friend - David you will be missed but you won't be forgotten.\n\n"
+"Please join the fight against cancer and consider donating to one of the many research and charity organisations across the world.\n\n"
+"If you are interested to read more about MeerK40t's development history then please refer to:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
+msgstr ""
+"MeerK40t è il risultato dell'opera di David Olsen alias Tatarize.\n"
+"Ha lavorato a questo programma per 4 anni, consentendo agli utenti di tutto il mondo di ottenere il meglio dai laser della famiglia K40 (e da altri tipi di laser).\n\n"
+"Nonostante non avesse alcun particolare fattore di rischio di contrarre il cancro, ha sviluppato un tumore alla lingua che si è diffuso ai polmoni prima che i medici potessero fermarlo, ed è morto il 26 luglio 2024.\n"
+"Era un mentore, un'ispirazione e un amico. David, ci mancherai, ma non sarai dimenticato.\n\n"
+"Vi invitiamo a unirvi alla lotta contro il cancro. Anche, se potete, con una donazione a una delle tante organizzazioni di ricerca e di beneficenza in tutto il mondo.\n\n"
+"Se siete interessati a saperne di più sulla storia dello sviluppo di MeerK40t, fate riferimento a:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
