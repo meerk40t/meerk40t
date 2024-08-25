@@ -189,6 +189,35 @@ class Autosaver:
         if not self.needs_saving:
             return
         elements = self.context.elements
+        VERSIONS = 5
+        try:
+            if os.path.exists(self.autosave_file):
+                base_name, base_ext = os.path.splitext(self.autosave_file)
+                for history in range(VERSIONS - 1, -1, -1):
+                    if history == 0:
+                        v0 = ".bak"
+                    else:
+                        v0 = f".ba{history}"
+                    v1 = f".ba{history + 1}"
+                    v0_file = base_name + v0
+                    v1_file = base_name + v1
+                    if os.path.exists(v0_file):
+                        if os.path.exists(v1_file):
+                            os.remove(v1_file)
+                        os.rename(v0_file, v1_file)
+
+                v1_file = base_name + ".bak"
+                os.rename(self.autosave_file, v1_file)
+        except (
+            PermissionError,
+            OSError,
+            RuntimeError,
+            FileExistsError,
+            FileNotFoundError,
+        ):
+            # print (f"Error happened: {e}")
+            pass
+
         elements.save(self.autosave_file, temporary=True)
         self.needs_saving = False
         # print ("Saved...")
@@ -4356,6 +4385,7 @@ class MeerK40t(MWindow):
     def set_needs_save_status(self, newstatus):
         self.needs_saving = newstatus
         self.autosave.set_saving_indicator(newstatus)
+        self.__set_titlebar()
         app = self.context.app.GetTopWindow()
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
@@ -4601,6 +4631,8 @@ class MeerK40t(MWindow):
             f"{str(self.context.kernel.name)} v{self.context.kernel.version} - "
             f"{dev_label}{label}"
         )
+        if self.needs_saving:
+            title += "(*)"
         self.SetTitle(title)
 
     def __set_properties(self):
