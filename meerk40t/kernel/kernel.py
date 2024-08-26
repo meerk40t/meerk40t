@@ -2483,9 +2483,12 @@ class Kernel(Settings):
                         help_args.append(f"<{arg_name}:{arg_type}>")
                     if found:
                         channel("\n")
-                    if func.long_help is not None:
+                    helpstr = func.long_help
+                    if not helpstr:
+                        helpstr = func.help
+                    if helpstr:
                         channel(
-                            "\t" + inspect.cleandoc(func.long_help).replace("\n", " ")
+                            "\t" + inspect.cleandoc(helpstr).replace("\n", " ")
                         )
                         channel("\n")
 
@@ -3111,6 +3114,32 @@ class Kernel(Settings):
         # BATCH COMMANDS
         # ==========
         @self.console_command(
+            "execute",
+            help=_("Loads a given file and executes all lines as commmands (as long as they don't start with a #)"),
+        )
+        def load_and_execute(channel, _, remainder=None, **kwargs):
+            if not remainder:
+                channel(_("You need to provide a filename to execute"))
+                return
+            filename = remainder
+            if not os.path.exists(filename):
+                channel(_("The file does not exist"))
+                return
+            
+            root = self.root
+            try:
+                with open(filename, "r") as f:
+                    data = f.readlines()
+                    for line in data:
+                        if line.startswith("#"):
+                            continue
+                        line = line.strip()
+                        if line:
+                            root(f"{line}\n")
+            except (FileNotFoundError, OSError, PermissionError):
+                channel(f"Could not load file: {filename}")
+
+        @self.console_command(
             "batch",
             output_type="batch",
             help=_("Base command to manipulate batch commands."),
@@ -3160,7 +3189,7 @@ class Kernel(Settings):
             except IndexError:
                 raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
-        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to execute")
         @self.console_command(
             "run",
             input_type="batch",
@@ -3173,7 +3202,7 @@ class Kernel(Settings):
             except IndexError:
                 raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
-        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to disable/enable")
         @self.console_command(
             ("disable", "enable"),
             input_type="batch",
