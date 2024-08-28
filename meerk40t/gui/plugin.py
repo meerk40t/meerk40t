@@ -326,6 +326,13 @@ and a wxpython version <= 4.1.1."""
             lock.acquire(True)
 
         if kernel._gui:
+            try:
+                from meerk40t.gui.icons import icon_meerk40t
+                image = icon_meerk40t.GetBitmap(resize=150)
+            except ImportError:
+                image = None
+            kernel.busyinfo.start(msg=_("Start MeerK40t"), image=image)
+            kernel.busyinfo.change(msg=_("Load main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
             @kernel.console_command(
@@ -338,12 +345,14 @@ and a wxpython version <= 4.1.1."""
                     pass
 
             if kernel.args.simpleui:
+                kernel.busyinfo.end()
                 kernel.console("window open SimpleUI\n")
                 meerk40tgui.MainLoop()
                 return
 
             kernel.console("window open MeerK40t\n")
             windows_to_ignore = ("HersheyFontSelector", "About", "Properties")
+            kernel.busyinfo.change(msg=_("Loading windows"), keep=1)
             for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
@@ -359,4 +368,6 @@ and a wxpython version <= 4.1.1."""
                     else:
                         kernel.console(f"window open {win_name}\n")
 
+            kernel.busyinfo.change(msg=_("Finishing GUI"), keep=1)
+            kernel.signal("started", "/", "")
             meerk40tgui.MainLoop()
