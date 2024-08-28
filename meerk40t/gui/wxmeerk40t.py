@@ -241,7 +241,7 @@ class GoPanel(ActionPanel):
         self.button_go.Enable(False)
         self.context.kernel.busyinfo.start(msg=_("Processing and sending..."))
         self.context(
-            "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
+            "planz clear copy preprocess validate blob preopt optimize spool\n"
         )
         self.context.kernel.busyinfo.end()
         self.button_go.Enable(True)
