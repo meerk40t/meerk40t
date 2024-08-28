@@ -35,7 +35,7 @@ class AboutPanel(wx.Panel):
         self.context = context
 
         self.bitmap_button_1 = wx.BitmapButton(
-            self, wx.ID_ANY, icon_meerk40t.GetBitmap()
+            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150)
         )
 
         self.__set_properties()
