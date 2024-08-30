@@ -148,7 +148,7 @@ class BusyInfo:
                 bm_h = self.image.GetHeight()
 
             self.text.SetFont(font)
-            self.text.SetLabel(self.msg)
+            self.text.SetLabel(self.msg.replace("|", "\n"))
 
             sizetext = self.text.GetBestSize()
 
