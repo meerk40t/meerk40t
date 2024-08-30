@@ -328,10 +328,11 @@ and a wxpython version <= 4.1.1."""
         if kernel._gui:
             try:
                 from meerk40t.gui.icons import icon_meerk40t
-                image = icon_meerk40t.GetBitmap(resize=150)
+                image = icon_meerk40t.GetBitmap(resize=400)
             except ImportError:
                 image = None
-            kernel.busyinfo.start(msg=_("Start MeerK40t"), image=image)
+            from ..main import APPLICATION_VERSION
+            kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
             kernel.busyinfo.change(msg=_("Load main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
