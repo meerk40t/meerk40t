@@ -5196,3 +5196,7 @@ class MeerK40t(MWindow):
             self.update_statusbar(helptext)
         except RuntimeError:
             pass
+
+    @signal_listener("started")
+    def on_signal_started(self, *args):
+        self.context.kernel.busyinfo.end()
