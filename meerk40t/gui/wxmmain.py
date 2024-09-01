@@ -4784,6 +4784,7 @@ class MeerK40t(MWindow):
         kernel.busyinfo.start(msg=_("Cleaning up..."))
         self.set_working_file_name(None)
         context.elements.clear_all(ops_too=ops_too)
+        context("planz clear\n")
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
