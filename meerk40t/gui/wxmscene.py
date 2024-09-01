@@ -619,6 +619,11 @@ class MeerK40tScenePanel(wx.Panel):
         def scene_focus(
             command, _, channel, data, x, y, width, height, animate=False, **kwgs
         ):
+            if animate:
+                overrule = self.context.setting(bool, "suppress_focus_animation", False)
+                if overrule:
+                    animate = False
+                
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:

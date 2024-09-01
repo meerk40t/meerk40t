@@ -1078,6 +1078,16 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 "section": "Zoom",
             },
+            {
+                "attr": "suppress_focus_animation",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Suppress animation"),
+                "tip": _("Suppress zoom animation"),
+                "page": "Gui",
+                "section": "Zoom",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 
