@@ -4,11 +4,29 @@ import time
 import cv2
 import numpy as np
 
+import os
+
 from meerk40t.kernel import Service
 
 CORNER_SIZE = 25
 
+class FileCamera:
+    def __init__(self, directory_to_watch, filepattern=None, **kwargs):
+        if filepattern is None:
+            filepattern = "*.jpg"
+        self.file_directory = directory_to_watch
+        self.file_pattern = filepattern
+        self.file_retrieved_date = 0 
+        self.image_retrieved = None
 
+    def _get_capture(self):
+        return self
+    
+    def grab(self):
+        # Gets the next picture
+        image = self.image_retrieved
+        return image
+    
 class Camera(Service):
     def __init__(self, kernel, camera_path, *args, **kwargs):
         Service.__init__(self, kernel, camera_path)
@@ -38,6 +56,7 @@ class Camera(Service):
         self.camera_thread = None
         self.max_tries_connect = 10
         self.max_tries_frame = 10
+        
         self.setting(int, "width", 640)
         self.setting(int, "height", 480)
         self.setting(bool, "correction_fisheye", False)
