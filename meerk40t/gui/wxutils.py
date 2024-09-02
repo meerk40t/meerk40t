@@ -1079,16 +1079,92 @@ class ScrolledPanel(SP):
         except RuntimeError:
             pass
 
+class wxListCtrl(wx.ListCtrl):
+    """ 
+    wxListCtrl will extend a regular ListCtrl by saving / restoring column widths 
+    """
+    def __init__(
+        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, context=None, list_name=None
+    ):
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        self.context = context
+        self.list_name = list_name
+        # The resize event is never triggered, so tap into the parent...
+        # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)
+        parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, parent)
+        parent.Bind(wx.EVT_LIST_COL_END_DRAG, self.proxy_col_resized, self)
+    
+    def save_column_widths(self):
+        if self.context is None or self.list_name is None:
+            return
+        sizes = list()
+        for col in range(self.ColumnCount):
+            sizes.append(self.GetColumnWidth(col)) 
+        self.context.setting(tuple, self.list_name, None)
+        setattr(self.context, self.list_name, sizes)
 
-class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+    def load_column_widths(self):
+        if self.context is None or self.list_name is None:
+            return
+        sizes = self.context.setting(tuple, self.list_name, None)
+        if sizes is None:
+            return
+        # print(f"Found for {self.list_name}: {sizes}")
+        available = self.ColumnCount
+        for idx, width in enumerate(sizes):
+            if idx >= available:
+                break
+            self.SetColumnWidth(idx, width)
+        
+    def resize_columns(self):
+        self.load_column_widths()
+        # we could at least try to make use of the available space
+        dummy = self.adjust_last_column()
+        
+    def proxy_col_resized(self, event):
+        # We are not touching the event object to allow other routines to tap into it
+        event.Skip()
+        # print (f"col resized called from {self.GetId()} - {self.list_name}")
+        dummy = self.adjust_last_column()
+        self.save_column_widths()
+
+    def adjust_last_column(self, size_to_use=None):
+        # gap is the amount of pixels to be reserved to allow for a vertical scrollbar
+        gap = 30
+        size = size_to_use
+        if size is None:
+            size = self.GetSize()
+        list_width = size[0]
+        total = gap
+        last = 0
+        for col in range(self.ColumnCount):
+            last = self.GetColumnWidth(col)
+            total += last 
+        # print(f"{self.list_name}, cols={self.ColumnCount}, available={list_width}, used={total}")
+        if total < list_width:
+            col = self.ColumnCount - 1 
+            # print(f"Will adjust last column from {last} to {last + (list_width - total)}")
+            self.SetColumnWidth(col, last + (list_width - total))
+            return True
+        return False
+
+    def proxy_resize_event(self, event):
+        # We are not touching the event object to allow other routines to tap into it
+        event.Skip()
+        # print (f"Resize called from {self.GetId()} - {self.list_name}: {event.Size}")
+        if self.adjust_last_column(event.Size):    
+            self.save_column_widths()
+
+
+class EditableListCtrl(wxListCtrl, listmix.TextEditMixin):
     """TextEditMixin allows any column to be edited."""
 
     # ----------------------------------------------------------------------
     def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, context=None, list_name=None,
     ):
         """Constructor"""
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        wxListCtrl.__init__(self, parent=parent, ID=ID, pos=pos, size=size, style=style, context=context, list_name=list_name)
         listmix.TextEditMixin.__init__(self)
 
 

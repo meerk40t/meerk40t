@@ -947,6 +947,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     self,
                     wx.ID_ANY,
                     style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+                    context=self.context, list_name=f"list_chart_{attr}",
                 )
                 l_columns = c.get("columns", [])
 
@@ -962,6 +963,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             format=wx.LIST_FORMAT_LEFT,
                             width=wd,
                         )
+                    ctrl.resize_columns()
                     for dataline in data:
                         if isinstance(dataline, dict):
                             for kk in dataline.keys():

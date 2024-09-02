@@ -5,7 +5,7 @@ import wx
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
-from .wxutils import dip_size, ScrolledPanel, StaticBoxSizer, wxButton
+from .wxutils import dip_size, ScrolledPanel, StaticBoxSizer, wxButton, wxListCtrl
 
 _ = wx.GetTranslation
 
@@ -1626,10 +1626,11 @@ class ComponentPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.list_preview = wx.ListCtrl(
+        self.list_preview = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_about",
         )
         self.info_btn = wxButton(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
@@ -1661,6 +1662,7 @@ class ComponentPanel(ScrolledPanel):
             self.list_preview.SetItem(list_id, 2, entry[1])
             self.list_preview.SetItem(list_id, 3, entry[2])
             self.list_preview.SetItem(list_id, 4, entry[3])
+        self.list_preview.resize_columns()
 
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.VERTICAL)

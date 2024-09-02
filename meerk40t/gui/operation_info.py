@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, wxButton
+from meerk40t.gui.wxutils import ScrolledPanel, wxButton, wxListCtrl
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -22,10 +22,11 @@ class OpInfoPanel(ScrolledPanel):
         self.context = context
         self.SetHelpText("operationinfo")
 
-        self.list_operations = wx.ListCtrl(
+        self.list_operations = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_operationinfo",
         )
         self.list_operations.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
 
@@ -47,6 +48,7 @@ class OpInfoPanel(ScrolledPanel):
         self.list_operations.AppendColumn(
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
         )
+        self.list_operations.resize_columns()
         self.list_operations.SetToolTip(
             _("Right-Click for more options for ops and unassigned elements")
         )

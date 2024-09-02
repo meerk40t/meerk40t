@@ -4,7 +4,7 @@ from math import isinf, isnan
 from pathlib import Path
 
 import wx
-import wx.lib.mixins.listctrl as listmix
+# import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icons8_route,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import HoverButton, wxButton
+from meerk40t.gui.wxutils import HoverButton, wxButton, wxListCtrl, EditableListCtrl
 from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -64,16 +64,16 @@ def register_panel_spooler(window, context):
     context.register("pane/spooler", pane)
 
 
-class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
-    """TextEditMixin allows any column to be edited."""
+# class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+#     """TextEditMixin allows any column to be edited."""
 
-    # ----------------------------------------------------------------------
-    def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
-    ):
-        """Constructor"""
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        listmix.TextEditMixin.__init__(self)
+#     # ----------------------------------------------------------------------
+#     def __init__(
+#         self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+#     ):
+#         """Constructor"""
+#         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+#         listmix.TextEditMixin.__init__(self)
 
 
 class SpoolerPanel(wx.Panel):
@@ -126,10 +126,12 @@ class SpoolerPanel(wx.Panel):
         self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
         self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
 
-        self.list_job_spool = wx.ListCtrl(
+        self.list_job_spool = wxListCtrl(
             self.win_top,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context,
+            list_name="list_spoolerjobs",
         )
 
         self.info_label = wx.StaticText(
@@ -142,6 +144,8 @@ class SpoolerPanel(wx.Panel):
             self.win_bottom,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context,
+            list_name="list_spoolerhistory", 
         )
 
         self.__set_properties()
@@ -237,7 +241,8 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool.AppendColumn(
             _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
         )
-
+        self.list_job_spool.resize_columns()
+        
         self.list_job_history.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
 
         self.list_job_history.AppendColumn(
@@ -270,7 +275,7 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.AppendColumn(
             _("Jobinfo"), format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE_USEHEADER
         )
-
+        self.list_job_history.resize_columns()
         # end wxGlade
 
     def __do_layout(self):
