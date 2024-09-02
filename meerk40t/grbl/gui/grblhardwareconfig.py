@@ -147,6 +147,7 @@ class GrblHardwareProperties(ScrolledPanel):
                 format=wx.LIST_FORMAT_LEFT,
                 width=width,
             )
+        chart.resize_columns()
 
     def fill_chart(self):
         chart = self.chart

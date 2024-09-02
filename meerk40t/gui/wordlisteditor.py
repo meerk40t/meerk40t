@@ -16,7 +16,7 @@ from .icons import (
     icons8_paste,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox, wxListCtrl
 from ..extra.encode_detect import EncodingDetectFile
 
 _ = wx.GetTranslation
@@ -171,7 +171,7 @@ class WordlistPanel(wx.Panel):
         )
         sizer_index_left.Add(self.cbo_Index, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.grid_wordlist = wx.ListCtrl(
+        self.grid_wordlist = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES
@@ -179,10 +179,12 @@ class WordlistPanel(wx.Panel):
             | wx.LC_VRULES
             | wx.LC_SINGLE_SEL
             | wx.LC_EDIT_LABELS,
+            context=self.context,
+            list_name="list_wordlist"
         )
         sizer_grid_left.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 
-        self.grid_content = wx.ListCtrl(
+        self.grid_content = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES
@@ -190,6 +192,8 @@ class WordlistPanel(wx.Panel):
             | wx.LC_VRULES
             | wx.LC_SINGLE_SEL
             | wx.LC_EDIT_LABELS,
+            context=self.context,
+            list_name="list_wordlist_content",
         )
 
         sizer_edit_wordlist_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -493,6 +497,7 @@ class WordlistPanel(wx.Panel):
         self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE_USEHEADER)
         self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER)
+        self.grid_wordlist.resize_columns()
 
     def get_column_text(self, grid, index, col):
         item = grid.GetItem(index, col)
@@ -523,6 +528,8 @@ class WordlistPanel(wx.Panel):
                 self.grid_content.SetItemTextColour(index, wx.RED)
         wsize = self.grid_content.GetSize()
         self.grid_content.SetColumnWidth(0, wsize[0] - 10)
+        self.grid_content.resize_columns()
+        
         self.cbo_index_single.Set(choices)
         if selidx >= 0:
             self.cbo_index_single.SetSelection(selidx)

@@ -1078,6 +1078,16 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 "section": "Zoom",
             },
+            {
+                "attr": "suppress_focus_animation",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Suppress animation"),
+                "tip": _("Suppress zoom animation"),
+                "page": "Gui",
+                "section": "Zoom",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 
@@ -4784,6 +4794,7 @@ class MeerK40t(MWindow):
         kernel.busyinfo.start(msg=_("Cleaning up..."))
         self.set_working_file_name(None)
         context.elements.clear_all(ops_too=ops_too)
+        context("planz clear\n")
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()

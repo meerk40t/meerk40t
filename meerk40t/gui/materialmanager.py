@@ -8,7 +8,6 @@ import os
 import xml.etree.ElementTree as ET
 
 import wx
-import wx.lib.mixins.listctrl as listmix
 
 from meerk40t.core.node.node import Node
 from meerk40t.gui.icons import (
@@ -31,6 +30,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    EditableListCtrl,
 )
 from meerk40t.kernel.kernel import get_safe_path
 from meerk40t.kernel.settings import Settings
@@ -248,18 +248,6 @@ class ImportDialog(wx.Dialog):
         return info
 
 
-class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
-    """TextEditMixin allows any column to be edited."""
-
-    # ----------------------------------------------------------------------
-    def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
-    ):
-        """Constructor"""
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        listmix.TextEditMixin.__init__(self)
-
-
 class MaterialPanel(ScrolledPanel):
     """
     Panel to modify material library settings.
@@ -373,6 +361,7 @@ class MaterialPanel(ScrolledPanel):
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_materialmanager"
         )
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
         self.list_preview.AppendColumn(
@@ -393,6 +382,7 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.AppendColumn(
             _("Frequency") + " [kHz]", format=wx.LIST_FORMAT_LEFT, width=50
         )
+        self.list_preview.resize_columns()
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
             "op cut": ("Cut", icons8_laser_beam, 0),
@@ -2090,18 +2080,19 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_lens.SetValue(info_lens)
         self.txt_entry_note.SetValue(note)
         self.combo_entry_type.SetSelection(ltype)
-        wd4 = self.list_preview.GetColumnWidth(4)
-        wd5 = self.list_preview.GetColumnWidth(5)
-        wd6 = self.list_preview.GetColumnWidth(6)
-        if self.is_balor and wd6 == 0:
-            wd = int((wd4 + wd5) / 3)
-            for col in range(4, 7):
-                self.list_preview.SetColumnWidth(col, wd)
-        elif not self.is_balor and wd6 != 0:
-            self.list_preview.SetColumnWidth(6, 0)
-            wd = int((wd4 + wd5 + wd6) / 2)
-            for col in range(4, 6):
-                self.list_preview.SetColumnWidth(col, wd)
+        self.list_preview.resize_columns()
+        # wd4 = self.list_preview.GetColumnWidth(4)
+        # wd5 = self.list_preview.GetColumnWidth(5)
+        # wd6 = self.list_preview.GetColumnWidth(6)
+        # if self.is_balor and wd6 == 0:
+        #     wd = int((wd4 + wd5) / 3)
+        #     for col in range(4, 7):
+        #         self.list_preview.SetColumnWidth(col, wd)
+        # elif not self.is_balor and wd6 != 0:
+        #     self.list_preview.SetColumnWidth(6, 0)
+        #     wd = int((wd4 + wd5 + wd6) / 2)
+        #     for col in range(4, 6):
+        #         self.list_preview.SetColumnWidth(col, wd)
 
     def on_preview_selection(self, event):
         event.Skip()

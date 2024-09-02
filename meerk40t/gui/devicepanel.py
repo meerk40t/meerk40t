@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxListCtrl
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -174,7 +174,7 @@ class DevicePanel(wx.Panel):
 
         sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Your Devices"), wx.VERTICAL)
 
-        self.devices_list = wx.ListCtrl(
+        self.devices_list = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_REPORT
@@ -182,6 +182,8 @@ class DevicePanel(wx.Panel):
             | wx.LC_HRULES
             | wx.LC_SINGLE_SEL
             | wx.LC_SORT_ASCENDING,
+            context=self.context,
+            list_name="list_devices"
         )
         self.list_columns = {
             "device": 0,
@@ -193,6 +195,7 @@ class DevicePanel(wx.Panel):
         self.devices_list.InsertColumn(self.list_columns["driver"], _("Driver"))
         self.devices_list.InsertColumn(self.list_columns["family"], _("Type"))
         self.devices_list.InsertColumn(self.list_columns["status"], _("Status"))
+        self.devices_list.resize_columns()
         sizer_1.Add(self.devices_list, 7, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -255,7 +258,6 @@ class DevicePanel(wx.Panel):
         )
         self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_start_edit, self.devices_list)
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit, self.devices_list)
-        self.Parent.Bind(wx.EVT_SIZE, self.on_resize)
         # end wxGlade
 
     def pane_show(self, *args):
@@ -264,31 +266,11 @@ class DevicePanel(wx.Panel):
             self.devices_list.Select(0, 1)
         else:
             self.current_item = -1
-        self.on_resize(None)
         self.enable_controls()
 
     def pane_hide(self, *args):
         pass
 
-    def on_resize(self, event):
-        if event is not None:
-            event.Skip()
-        size = self.devices_list.GetSize()
-        if size[0] == 0 or size[1] == 0:
-            return
-        remaining = size[0]
-        self.devices_list.SetColumnWidth(
-            self.list_columns["device"], int(0.40 * remaining)
-        )
-        self.devices_list.SetColumnWidth(
-            self.list_columns["driver"], int(0.25 * remaining)
-        )
-        self.devices_list.SetColumnWidth(
-            self.list_columns["family"], int(0.25 * remaining)
-        )
-        self.devices_list.SetColumnWidth(
-            self.list_columns["status"], int(0.10 * remaining)
-        )
 
     def on_start_edit(self, event):
         event.Allow()

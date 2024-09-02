@@ -19,7 +19,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import wxButton, wxCheckBox
+from meerk40t.gui.wxutils import wxButton, wxCheckBox, wxListCtrl
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
@@ -1057,8 +1057,9 @@ class CameraURIPanel(wx.Panel):
         self.index = index
         assert isinstance(self.index, int)
         self.context.setting(list, "uris", [])
-        self.list_uri = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+        self.list_uri = wxListCtrl(
+            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES,
+            context=self.context, list_name="list_camerauri",
         )
         self.button_add = wxButton(self, wx.ID_ANY, _("Add URI"))
         self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -1079,6 +1080,7 @@ class CameraURIPanel(wx.Panel):
         self.list_uri.SetToolTip(_("Displays a list of registered camera URIs"))
         self.list_uri.AppendColumn(_("Index"), format=wx.LIST_FORMAT_LEFT, width=69)
         self.list_uri.AppendColumn(_("URI"), format=wx.LIST_FORMAT_LEFT, width=348)
+        self.list_uri.resize_columns()
         self.button_add.SetToolTip(_("Add a new URL"))
         # end wxGlade
 

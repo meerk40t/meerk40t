@@ -4,7 +4,7 @@ import wx
 
 from .icons import icons8_keyboard
 from .mwindow import MWindow
-from .wxutils import get_key_name, wxButton
+from .wxutils import get_key_name, wxButton, wxListCtrl
 
 _ = wx.GetTranslation
 
@@ -17,10 +17,11 @@ class KeymapPanel(wx.Panel):
         self.context = context
         self.list_index = []
 
-        self.list_keymap = wx.ListCtrl(
+        self.list_keymap = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES,
+            context=self.context, list_name="list_keymap",
         )
         self.button_add = wxButton(self, wx.ID_ANY, _("Add Hotkey"))
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -57,6 +58,7 @@ class KeymapPanel(wx.Panel):
         self.list_keymap.AppendColumn(
             _("Command"), format=wx.LIST_FORMAT_LEFT, width=322
         )
+        self.list_keymap.resize_columns()
         self.button_add.SetToolTip(_("Add a new hotkey"))
         # end wxGlade
 

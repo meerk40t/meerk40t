@@ -24,6 +24,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxToggleButton,
+    wxListCtrl,
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
@@ -58,10 +59,11 @@ class FontGlyphPicker(wx.Dialog):
         self.font = font
         self.icon_size = 32
         mainsizer = wx.BoxSizer(wx.VERTICAL)
-        self.list_glyphs = wx.ListCtrl(
+        self.list_glyphs = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_glyphpicker"
         )
         self.list_glyphs.AppendColumn("UC", format=wx.LIST_FORMAT_LEFT, width=75)
         self.list_glyphs.AppendColumn("ASCII", format=wx.LIST_FORMAT_LEFT, width=75)

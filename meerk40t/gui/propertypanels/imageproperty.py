@@ -19,6 +19,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxListCtrl,
 )
 from meerk40t.svgelements import Matrix
 
@@ -442,10 +443,11 @@ class ImageModificationPanel(ScrolledPanel):
         )
         self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Remove all image operations"))
-        self.list_operations = wx.ListCtrl(
+        self.list_operations = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_imageoperations",
         )
 
         self._do_layout()
@@ -463,7 +465,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.list_operations.AppendColumn(
             _("Parameters"), format=wx.LIST_FORMAT_LEFT, width=95
         )
-
+        self.list_operations.resize_columns()
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("RasterWizard"), wx.HORIZONTAL)
 
