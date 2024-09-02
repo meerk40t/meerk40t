@@ -12,6 +12,7 @@ from copy import copy
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
+from meerk40t.balormk.correction import LMC_Correction
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_LIGHT = 1
@@ -801,10 +802,10 @@ class GalvoController:
         self.usb_log(f"Serial Number: {serial_number}")
         version = self.get_version()
         self.usb_log(f"Version: {version}")
-
+        self.correction = LMC_Correction(cor_file)
         self.reset()
         self.usb_log("Reset")
-        self.write_correction_file(cor_file)
+        self.write_correction_file()
         self.enable_laser()
         self.usb_log("Laser Enabled")
         self.set_control_mode(control_mode)
@@ -941,19 +942,15 @@ class GalvoController:
     # HIGH LEVEL OPERATIONS
     #######################
 
-    def write_correction_file(self, filename):
-        if filename is None:
+    def write_correction_file(self):
+        filename = self.correction.corfile_name
+        table = self.correction.cor_table
+        if filename is None or table is None:
             self.write_blank_correct_file()
             self.usb_log("Correction file set to blank.")
             return
-        try:
-            table = self._read_correction_file(filename)
-            self._write_correction_table(table)
-            self.usb_log("Correction File Sent")
-        except OSError:
-            self.write_blank_correct_file()
-            self.usb_log("Correction file set to blank.")
-            return
+        self._write_correction_table(table)
+        self.usb_log("Correction File Sent")
 
     @staticmethod
     def get_scale_from_correction_file(filename):
