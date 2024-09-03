@@ -26,6 +26,46 @@ WIDTH_MULT = 10
 
 _ = wx.GetTranslation
 
+def test_pattern_geometry(s=0x6666):
+    path = Geomstr()
+    m = 0x7FFF
+
+    def c(x, y):
+        return complex(m + (s * x), m + (s * y))
+    # Rectangles
+    for half_size in range(12):
+        x = (half_size + 1) * 1 / 13
+        path.line(c(-x, -x), c(x, -x))
+        path.line(c(x, -x), c(x, x))
+        path.line(c(x, x), c(-x, x))
+        path.line(c(-x, x), c(-x, -x))
+    # diagonals
+    path.line(c(-1,-1), c(1, 1))
+    path.line(c(-1,1), c(1, -1))
+    # main axis
+    path.line(c(-1, 0), c(1, 0))
+    path.line(c(0, -1), c(0, 1))
+
+    # Letter A
+    x = 1 / 13
+    path.line(c(0, 0), c(x/2, -x))
+    path.line(c(x/2, -x), c(x, 0))
+    path.line(c(x/4, -x/2), c(3/4*x, -x/2))
+
+    path.settings(
+        0,
+        {
+            "power": 1000,
+            "delay_laser_on": 100,
+            "delay_laser_off": 100,
+            "delay_laser_polygon": 100,
+            "speed": 255,
+            "rapid_speed": 255,
+            "timing_enabled": True,
+        },
+    )
+    return path
+
 def cor_file_geometry(s=0x6666):
     path = Geomstr()
     m = 0x7FFF
@@ -291,6 +331,24 @@ class CorFileWidget(Widget):
                 self.corfile_save,
                 _("Save the pattern"),
             ),
+            (
+                0xFFFF,
+                9000,
+                3000,
+                3000,
+                icons.icon_balor_full.GetBitmap(use_theme=False),
+                self.pattern_outline,
+                _("Trace the adjusted pattern outline"),
+            ),
+            (
+                0xFFFF,
+                12000,
+                3000,
+                3000,
+                icons.icons8_gas_industry.GetBitmap(use_theme=False),
+                self.pattern_burn,
+                _("Burn the adjusted pattern"),
+            ),
         )
 
         self.countdown = 0
@@ -465,9 +523,33 @@ class CorFileWidget(Widget):
         )
         service.spooler.send(self.job)
 
+    def pattern_outline(self):
+        service = self.scene.context.device
+        if self.job:
+            self.job.stop()
+            self.job = None
+            return
+        from meerk40t.balormk.livelightjob import LiveLightJob
+
+        geom = test_pattern_geometry(self.geometry_size)
+        self.job = LiveLightJob(
+            service,
+            "geometry",
+            geometry=geom,
+            travel_speed=8000,
+            jump_delay=10,
+            raw=True,
+        )
+        service.spooler.send(self.job)
+
     def corfile_burn(self):
         service = self.scene.context.device
         service.spooler.laserjob([self.geometry])
+
+    def pattern_burn(self):
+        service = self.scene.context.device
+        geom = test_pattern_geometry(self.geometry_size)
+        service.spooler.laserjob([geom])
 
     def corfile_save(self):
         root = self.scene.context.root
