@@ -20,8 +20,9 @@ class BalorConfiguration(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_(_("Balor-Configuration")))
+        self.SetTitle(_("Balor-Configuration"))
         self._test_pin = False
+        self._define_cor = False
         self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
@@ -37,6 +38,7 @@ class BalorConfiguration(MWindow):
             ("balor-global", "Global"),
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
+#            ("balor-corfile", "Correction"),
         )
         self.test_bits = ""
         injector = (
@@ -62,6 +64,18 @@ class BalorConfiguration(MWindow):
                 "subsection": "_30_Pin-Index",
             },
         )
+        injector_cor = (
+            {
+                "attr": "define_cor",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Define"),
+                "tip": _("Open a definition screen"),
+                "section": _("Correction-Values"),
+            },
+        )
         self.panels = []
         for item in options:
             section = item[0]
@@ -70,6 +84,8 @@ class BalorConfiguration(MWindow):
             if addpanel:
                 if item[0] == "balor":
                     injection = injector
+                elif item[0] == "balor-corfile":
+                    injection = injector_cor
                 else:
                     injection = None
                 newpanel = ChoicePropertyPanel(
@@ -120,6 +136,16 @@ class BalorConfiguration(MWindow):
             self.context("red on\n")
         else:
             self.context("red off\n")
+
+    @property
+    def define_cor(self):
+        return self._define_cor
+
+    @define_cor.setter
+    def define_cor(self, value):
+        self._define_cor = value
+        if self._define_cor:
+            self.context("widget_corfile\n")
 
     def update_bit_info(self, *args):
         if not self.context.driver.connected:
