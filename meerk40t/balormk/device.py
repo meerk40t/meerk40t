@@ -718,6 +718,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=1),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_2",
@@ -725,6 +726,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=2),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_3",
@@ -732,6 +734,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=3),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_4",
@@ -739,6 +742,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=4),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_5",
@@ -746,6 +750,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=5),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_6",
@@ -753,6 +758,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=6),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_7",
@@ -760,6 +766,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=7),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_8",
@@ -767,6 +774,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=8),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_9",
@@ -774,6 +782,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=9),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_10",
@@ -781,6 +790,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=10),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_11",
@@ -788,6 +798,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=11),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_12",
@@ -795,6 +806,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=12),
+                "section": _("Correction-Values"),
             },
         ]
         self.register_choices("balor-corfile", choices)
