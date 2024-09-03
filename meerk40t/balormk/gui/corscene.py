@@ -22,6 +22,9 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
+WIDTH_MULT = 10
+
+_ = wx.GetTranslation
 
 def cor_file_geometry(s=0x6666):
     path = Geomstr()
@@ -121,7 +124,8 @@ def register_scene(service):
         scene.push_stack(SceneSpaceWidget(scene))
         corfile_widget = CorFileWidget(scene)
         scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
-        scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), scene.gui.Size)
+        s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1]) 
+        scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), s_size)
         scene.request_refresh()
 
 
@@ -159,11 +163,11 @@ class CorFileWidget(Widget):
 
         self.outline_pen = wx.Pen()
         self.outline_pen.SetColour(wx.BLACK)
-        self.outline_pen.SetWidth(4)
+        self.outline_pen.SetWidth(40 * WIDTH_MULT)
 
         self.highlight_pen = wx.Pen()
         self.highlight_pen.SetColour(wx.BLUE)
-        self.highlight_pen.SetWidth(200)
+        self.highlight_pen.SetWidth(80 * WIDTH_MULT)
 
         self.background_brush = wx.Brush()
         self.background_brush.SetColour(wx.WHITE)
@@ -204,6 +208,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_delete.GetBitmap(use_theme=False),
                 self.close,
+                _("Close the correction definition"),
             ),
             (
                 -3000,
@@ -212,6 +217,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_rotate_left.GetBitmap(use_theme=False),
                 self.rotate_left,
+                _("Rotate the pattern by 90° ccw"),
             ),
             (
                 -3000,
@@ -220,6 +226,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_rotate_right.GetBitmap(use_theme=False),
                 self.rotate_right,
+                _("Rotate the pattern by 90° cw"),
             ),
             (
                 -3000,
@@ -228,6 +235,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_flip_horizontal.GetBitmap(use_theme=False),
                 self.hflip,
+                _("Flip the pattern horizontally"),
             ),
             (
                 -3000,
@@ -236,22 +244,25 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_flip_vertical.GetBitmap(use_theme=False),
                 self.vflip,
+                _("Flip the pattern vertically"),
             ),
             (
-                0xFFFF - 5000,
-                -6000,
+                -3000,
+                15000,
                 3000,
                 3000,
                 icons.icons8_up.GetBitmap(use_theme=False),
                 self.geometry_size_increase,
+                _("Increase the pattern size"),
             ),
             (
-                0xFFFF - 2000,
-                -6000,
+                -3000,
+                18000,
                 3000,
                 3000,
                 icons.icons8_down.GetBitmap(use_theme=False),
                 self.geometry_size_decrease,
+                _("Decrease the pattern size"),
             ),
             (
                 0xFFFF,
@@ -260,6 +271,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icon_balor_full.GetBitmap(use_theme=False),
                 self.corfile_outline,
+                _("Trace the pattern outline"),
             ),
             (
                 0xFFFF,
@@ -268,6 +280,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_gas_industry.GetBitmap(use_theme=False),
                 self.corfile_burn,
+                _("Burn the pattern"),
             ),
             (
                 0xFFFF,
@@ -276,6 +289,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_save.GetBitmap(use_theme=False),
                 self.corfile_save,
+                _("Save the pattern"),
             ),
         )
 
@@ -291,7 +305,7 @@ class CorFileWidget(Widget):
         self.pen_color = wx.Colour()
         self.font_color = wx.Colour()
 
-        self.toast_pen.SetWidth(10)
+        self.toast_pen.SetWidth(40 * WIDTH_MULT)
 
         self.toast_alpha = None
         self.set_toast_alpha(255)
@@ -317,7 +331,7 @@ class CorFileWidget(Widget):
             (p(0.45), p(-0.05), 5000, 1000, dev, "cf_10"),
             (p(-0.05), p(-0.45), 5000, 1000, dev, "cf_11"),
             (p(-0.05), p(0.45), 5000, 1000, dev, "cf_12"),
-            (0xFFFF - 5000, -2000, 5000, 1000, self, "geometry_size"),
+            (- 5000, 21000, 5000, 1000, self, "geometry_size"),
         )
 
     def set_toast_alpha(self, alpha):
@@ -560,7 +574,10 @@ class CorFileWidget(Widget):
 
                         try:
                             # Set the obj.attr value as a float()
-                            setattr(obj, attr, float(text))
+                            # print (f"Setting {attr} to {text}")
+                            value = float(text)
+                            setattr(obj, attr, value)
+                            self.scene.context.signal(attr, value, obj)
                         except ValueError:
                             continue
                         # If we correctly set the value, update the cursor location.
@@ -604,9 +621,10 @@ class CorFileWidget(Widget):
             return was_hovered, index
         gc.SetBrush(self.background_brush)
         gc.SetPen(self.outline_pen)
+        any = False
         for i, button in enumerate(self.button_fields):
             index += 1
-            x, y, width, height, bmp, click = button
+            x, y, width, height, bmp, click, msg = button
             if self.active == index:
                 # If this is an active button, draw a white background.
                 gc.SetBrush(self.background_brush)
@@ -617,6 +635,8 @@ class CorFileWidget(Widget):
 
             if self._contains(self.mouse_location, x, y, width, height):
                 # If mouse contained this point, set this as active.
+                any = True
+                self.scene.context.signal("statusmsg", msg)
                 self.active = index
                 was_hovered = True
                 if self.was_clicked:
@@ -624,6 +644,10 @@ class CorFileWidget(Widget):
                     self.hot = index
                     self.was_clicked = False
                     click()
+
+        if not any:
+            self.scene.context.signal("statusmsg", "")
+
         return was_hovered, index
 
     def process_toast(self, gc: wx.GraphicsContext):
