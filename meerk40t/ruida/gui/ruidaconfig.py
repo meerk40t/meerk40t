@@ -151,7 +151,7 @@ class RuidaConfiguration(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_(_("Ruida-Configuration")))
+        self.SetTitle(_("Ruida-Configuration"))
 
         self.notebook_main = wx.aui.AuiNotebook(
             self,

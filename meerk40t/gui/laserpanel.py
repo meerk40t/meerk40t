@@ -717,7 +717,7 @@ class JobPanel(wx.Panel):
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
         self.text_plan = wx.TextCtrl(
-            self, wx.ID_ANY, _(_("--- Empty ---")), style=wx.TE_READONLY
+            self, wx.ID_ANY, _("--- Empty ---"), style=wx.TE_READONLY
         )
         sizer_source.Add(self.text_plan, 2, 0, 0)
 
