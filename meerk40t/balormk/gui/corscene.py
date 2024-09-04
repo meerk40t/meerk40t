@@ -16,7 +16,7 @@ import wx
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_detective
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.tools.geomstr import Geomstr
@@ -201,13 +201,14 @@ class CorFileWidget(Widget):
         self.geometry = cor_file_geometry()
         self.assoc = cor_file_line_associated()
 
+        self.standard_pen = wx.Pen()
+        self.standard_pen.SetColour(wx.BLACK)
+
         self.outline_pen = wx.Pen()
         self.outline_pen.SetColour(wx.BLACK)
-        self.outline_pen.SetWidth(40 * WIDTH_MULT)
 
         self.highlight_pen = wx.Pen()
         self.highlight_pen.SetColour(wx.BLUE)
-        self.highlight_pen.SetWidth(80 * WIDTH_MULT)
 
         self.background_brush = wx.Brush()
         self.background_brush.SetColour(wx.WHITE)
@@ -362,8 +363,6 @@ class CorFileWidget(Widget):
         self.brush_color = wx.Colour()
         self.pen_color = wx.Colour()
         self.font_color = wx.Colour()
-
-        self.toast_pen.SetWidth(40 * WIDTH_MULT)
 
         self.toast_alpha = None
         self.set_toast_alpha(255)
@@ -772,6 +771,26 @@ class CorFileWidget(Widget):
         """
         Draws the background on the scene.
         """
+        matrix = gc.GetTransform().Get()
+        # mat.a mat.d
+        mat_fact = matrix[0]
+        try:
+            linewidth = 2.0 / mat_fact
+        except ZeroDivisionError:
+            linewidth = 2000
+        if linewidth < 1:
+            linewidth = 1
+        try:
+            self.standard_pen.SetWidth(linewidth)
+            self.outline_pen.SetWidth(linewidth)
+            self.highlight_pen.SetWidth(3*linewidth)
+            self.toast_pen.SetWidth(linewidth)
+        except TypeError:
+            self.standard_pen.SetWidth(int(linewidth))
+            self.outline_pen.SetWidth(int(linewidth))
+            self.highlight_pen.SetWidth(int(3*linewidth))
+            self.toast_pen.SetWidth(int(linewidth))
+
         unit_width = 0xFFFF
         unit_height = 0xFFFF
         if self._geometry_size != self.geometry_size:
@@ -788,7 +807,7 @@ class CorFileWidget(Widget):
         gc.DrawRectangle(0, 0, unit_width, unit_height)
 
         # Draw the geometry
-        gc.SetPen(wx.BLACK_PEN)
+        gc.SetPen(self.standard_pen)
         wx_path_geom = self.render.make_geomstr(gc, self.geometry)
         gc.DrawPath(wx_path_geom)
 
