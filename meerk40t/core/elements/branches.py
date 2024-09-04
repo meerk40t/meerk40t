@@ -14,7 +14,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix
-
+from meerk40t.core.elements.element_types import op_nodes
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -436,6 +436,29 @@ def init_commands(kernel):
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return data_type, data
+
+
+    @self.console_command(
+        "empty",
+        help=_("Remove all elements from provided operations"),
+        input_type="ops",
+        output_type="ops",
+    )
+    def operation_empty(channel, _, data=None, **kwargs):
+        if data is None:
+            data = list()
+            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+                data.append(item)
+
+        with self.static("clear_all_op"):
+            index_ops = list(self.ops())
+            for item in data:
+                i = index_ops.index(item)
+                select_piece = "*" if item.emphasized else " "
+                name = f"{select_piece} {i}: {str(item)}"
+                channel(f"{name}: {len(item.children)}")
+                item.remove_all_children()
+        self.signal("rebuild_tree")
 
     @self.console_command(
         "list",
@@ -1168,40 +1191,59 @@ def init_commands(kernel):
     @self.console_option(
         "dy", "y", help=_("copy offset y (for elems)"), type=Length, default=0
     )
+    @self.console_option(
+        "copies", "c", help=_("amount of copies to be created"), type=int, default=1
+    )
     @self.console_command(
         "copy",
         help=_("Duplicate elements"),
         input_type=("elements", "ops"),
         output_type=("elements", "ops"),
     )
-    def e_copy(data=None, data_type=None, post=None, dx=None, dy=None, **kwargs):
+    def e_copy(data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs):
         if data is None:
             # Take tree selection for ops, scene selection for elements
             if data_type == "ops":
                 data = list(self.ops(selected=True))
             else:
                 data = list(self.elems(emphasized=True))
-
+        if copies is None:
+            copies = 1
+        if copies < 1:
+            copies = 1
+        
         if data_type == "ops":
-            add_elem = list(map(copy, data))
-            self.add_ops(add_elem)
-            return "ops", add_elem
+            add_ops = list()
+            for idx in range(copies):
+                add_ops.extend(list(map(copy, data)))
+            # print (f"Add ops contains now: {len(add_ops)} operations")
+            self.add_ops(add_ops)
+            return "ops", add_ops
         else:
             if dx is None:
                 x_pos = 0
             else:
-                x_pos = dx
+                x_pos = float(dx)
             if dy is None:
                 y_pos = 0
             else:
-                y_pos = dy
-            add_elem = list(map(copy, data))
-            matrix = None
-            if x_pos != 0 or y_pos != 0:
-                matrix = Matrix.translate(dx, dy)
+                y_pos = float(dy)
+            add_elem = list()
+            shift = list()
+            tx = 0
+            ty = 0
+            for idx in range(copies):
+                tx += x_pos
+                ty += y_pos
+                this_shift = [(tx, ty)] * len(data)
+                add_elem.extend(list(map(copy, data)))
+                shift.extend(this_shift)
+            # print (f"Add elem contains now: {len(add_elem)} elements")
             delta_wordlist = 1
-            for e in add_elem:
-                if matrix:
+            for e, delta in zip(add_elem, shift):
+                tx, ty = delta
+                if tx != 0 or ty != 0:
+                    matrix = Matrix.translate(tx, ty)
                     e.matrix *= matrix
                 newnode = self.elem_branch.add_node(e)
                 if self.copy_increases_wordlist_references and hasattr(newnode, "text"):
