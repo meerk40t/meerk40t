@@ -5,6 +5,7 @@ The balor controller takes low level lmc galvo commands and converts them into l
 to the hardware controller.
 """
 
+import numpy as np
 import struct
 import threading
 import time
@@ -18,6 +19,7 @@ DRIVER_STATE_LIGHT = 1
 DRIVER_STATE_PROGRAM = 2
 DRIVER_STATE_RAW = 3
 
+CORFILE_INTERNAL = "<<internal>>"
 nop = [0x02, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 empty = bytearray(nop * 0x100)
 
@@ -777,7 +779,12 @@ class GalvoController:
     def init_laser(self):
         if self.mode == DRIVER_STATE_RAW:
             return
-        cor_file = self.service.corfile if self.service.corfile_enabled else None
+        cor_file = None
+        if self.service.corfile_enabled:
+            if self.service.corfile:
+                cor_file = self.service.corfile
+            else:
+                cor_file = CORFILE_INTERNAL
         first_pulse_killer = self.service.first_pulse_killer
         pwm_pulse_width = self.service.pwm_pulse_width
         pwm_half_period = self.service.pwm_half_period
@@ -941,21 +948,143 @@ class GalvoController:
     # HIGH LEVEL OPERATIONS
     #######################
 
+    @property 
+    def is_corrected(self):
+        return self.service.corfile_enabled
+    
+    def set_correction_mode(self, cormode:int):
+        cor_file = self.service.corfile if self.service.corfile_enabled else None
+        if cormode == 0:    # Off
+            cor_file = None
+        elif cormode == 1:  # On with corfile
+            cor_file = self.service.corfile if self.service.corfile_enabled else None
+        else:  # On according to the cf_1 to cf_9 values
+            corfile = CORFILE_INTERNAL
+        self.write_correction_file(corfile)
+
     def write_correction_file(self, filename):
         if filename is None:
             self.write_blank_correct_file()
             self.usb_log("Correction file set to blank.")
             return
+        if filename == CORFILE_INTERNAL:
+            table = self._create_correction_table()
+            if table is None:
+                self.write_blank_correct_file()
+                self.usb_log("Correction file set to blank.")
+            else:
+                self._write_correction_table(table)
+                self.usb_log("Correction file, created internally, sent")
+            return
+
         try:
             table = self._read_correction_file(filename)
             self._write_correction_table(table)
-            self.usb_log("Correction File Sent")
+            self.usb_log(f"Correction file {filename} sent")
         except OSError:
             self.write_blank_correct_file()
             self.usb_log("Correction file set to blank.")
             return
 
-    @staticmethod
+    def _create_correction_table(self):
+        """
+        We have 12 values (cf_1 to cf_12) that are supposed to be 50 (mm) each
+        and correspond to the lengths of the segments.
+        We assume the centerlines are always correct,
+        so   dx=0 for b, e and h 
+        and  dy=0 for d, e and f
+
+                   01    02        
+                a-------b-------c
+                |       |       |
+             08 |    11 |       | 03
+                |  09   |   10  |
+                d-------e-------f
+                |       |       |
+             07 |    12 |       | 04
+                |       |       |
+                g-------h-------i
+                   06       05
+                                
+        """
+        scaling = 1
+        dx_a = (float(self.service.cf_1) - 50) * scaling
+        dx_b = 0 
+        dx_c = (float(self.service.cf_2) - 50) * scaling
+        
+        dx_d = (float(self.service.cf_9) - 50) * scaling
+        dx_e = 0
+        dx_f = (float(self.service.cf_10) - 50) * scaling
+        
+        dx_g = (float(self.service.cf_6) - 50) * scaling
+        dx_h = 0
+        dx_i = (float(self.service.cf_5) - 50) * scaling
+
+        dy_a = (float(self.service.cf_8) - 50) * scaling
+        dy_b = (float(self.service.cf_11) - 50) * scaling
+        dy_c = (float(self.service.cf_3) - 50) * scaling
+        
+        dy_d = 0
+        dy_e = 0
+        dy_f = 0
+        
+        dy_g = (float(self.service.cf_7) - 50) * scaling
+        dy_h = (float(self.service.cf_12) - 50) * scaling
+        dy_i = (float(self.service.cf_4) - 50) * scaling
+
+        # Original 3x3 Matrix with (dx, dy) values
+        original_matrix = np.array([
+            [ [dx_a, dy_a], [dx_b, dy_b], [dx_c, dy_c] ],
+            [ [dx_d, dy_d], [dx_e, dy_e], [dx_f, dy_f] ],
+            [ [dx_g, dy_g], [dx_h, dy_h], [dx_i, dy_i] ],
+        ])
+
+        print (f"Original:\n{original_matrix}")
+        source_size = 3
+        target_size = 65
+
+        # target-coordinates
+        x_new = np.linspace(0, source_size - 1, target_size)
+        y_new = np.linspace(0, source_size - 1, target_size)
+        xx_new, yy_new = np.meshgrid(x_new, y_new)
+
+        # create the target-matrix, filled with zeros
+        interpolated_matrix = np.zeros((target_size, target_size, 2))
+
+        # Extrapolation
+        for i in range(target_size):
+            for j in range(target_size):
+                # Get the corresponding original indices 
+                xi = xx_new[i, j]
+                yi = yy_new[i, j]
+                
+                # Get the values for the 4 surrounding points
+                x1 = int(np.floor(xi))
+                x2 = min(x1 + 1, source_size - 1)
+                y1 = int(np.floor(yi))
+                y2 = min(y1 + 1, source_size - 1)
+                
+                # Values
+                Q11 = original_matrix[y1, x1]
+                Q12 = original_matrix[y2, x1]
+                Q21 = original_matrix[y1, x2]
+                Q22 = original_matrix[y2, x2]
+                
+                # Bilinear interpolation
+                interpolated_matrix[i, j, 0] = (Q11[0] * (x2 - xi) * (y2 - yi) +
+                                                Q21[0] * (xi - x1) * (y2 - yi) +
+                                                Q12[0] * (x2 - xi) * (yi - y1) +
+                                                Q22[0] * (xi - x1) * (yi - y1))
+                
+                interpolated_matrix[i, j, 1] = (Q11[1] * (x2 - xi) * (y2 - yi) +
+                                                Q21[1] * (xi - x1) * (y2 - yi) +
+                                                Q12[1] * (x2 - xi) * (yi - y1) +
+                                                Q22[1] * (xi - x1) * (yi - y1))                
+        
+
+        flattened_list = interpolated_matrix.reshape(-1, 2).tolist()
+        return flattened_list
+    
     def get_scale_from_correction_file(filename):
         with open(filename, "rb") as f:
             label = f.read(0x16)
