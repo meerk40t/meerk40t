@@ -455,21 +455,37 @@ class RectSelectWidget(Widget):
         gc.PopState()
 
     def draw_tiny_indicator(self, gc, symbol, x0, y0, x1, y1, tcolor, tstyle):
-        matrix = self.parent.matrix
+        # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+        # when drawing dashed/dotted lines, so they always appear to be solid
+        # (even if they are dotted on a microscopic level)
+        # To circumvent this issue, we scale the gc back
+        gc.PushState()
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        sx = mat_param[0]
+        sy = mat_param[3]
+        if sx == 0:
+            sx = 0.01
+        if sy == 0:
+            sy = 0.01
+        # print (f"sx={sx}, sy={sy}")
+        gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
 
-        linewidth = 2.0 / matrix_scale(matrix)
-        if linewidth < 1:
-            linewidth = 1
+        linewidth = 1 
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        delta_X = 15.0 / matrix_scale(matrix)
-        delta_Y = 15.0 / matrix_scale(matrix)
-        if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
+        delta_X = 15.0
+        delta_Y = 15.0
+        x0 *= sx
+        x1 *= sx
+        y0 *= sx
+        y1 *= sx
+        if abs(x1 - x0) > delta_X and abs(y1 - y0)  > delta_Y:  # Don't draw if too tiny
             # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
             y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
@@ -479,7 +495,7 @@ class RectSelectWidget(Widget):
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
-            font_size = 10.0 / matrix_scale(matrix)
+            font_size = 10.0 
             if font_size < 1.0:
                 font_size = 1.0
             try:
@@ -502,7 +518,7 @@ class RectSelectWidget(Widget):
                 symbol, (ax1 + x1) / 2 - t_width / 2, (ay1 + y1) / 2 - t_height / 2
             )
             if (
-                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0) > 2 * delta_Y
+                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0)  > 2 * delta_Y
             ):  # Don't draw if too tiny
                 # Draw second symbol at origin
                 ax1 = x0 + x_signum
@@ -512,6 +528,7 @@ class RectSelectWidget(Widget):
                 gc.DrawText(
                     symbol, (ax1 + x0) / 2 - t_width / 2, (ay1 + y0) / 2 - t_height / 2
                 )
+        gc.PopState()
 
     def process_draw(self, gc):
         """
