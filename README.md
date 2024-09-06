@@ -1,7 +1,9 @@
 # Welcome to MeerK40t!
 MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
 
-## Primary Goals
+The primary goals of this software is simple:
+
+
 * Provide users with high quality laser control software.
 * Provide developers with a highly extensible platform to help further their own ideas, and provide novel work to the laser community at large.
 
