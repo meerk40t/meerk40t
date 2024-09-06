@@ -10,13 +10,13 @@ The primary goals of this software is simple:
 ## Getting started
 To get up and running, simply download Meerk40t from [here](https://github.com/meerk40t/meerk40t/releases) for your specific platform. (Windows, Mac OSX, Linux, and by extension, Raspberry Pi).
 
-<summary>
+<details>
 ### Release versions:
 > * 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.4](https://github.com/meerk40t/meerk40t/releases#latest)
 > * 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
 > * 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
 > * 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)
-</summary>
+</details>
 
 ### Command Line Interface
 
