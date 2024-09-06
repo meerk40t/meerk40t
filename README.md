@@ -50,6 +50,9 @@ Meerk40t provides a variety of drivers with an extensible framework to provide s
 *   NewlyDraw System 8.1 Lasers
 *   Ruida-Emulation (Middleman between Lightburn and K40)
 
+<details>
+<summary>More device support info</summary>
+
 ### Lihuiyu M2-Nano/M3-Nano
 For the Lihuiyu (stock driver), Meerk40t supports both the windows and libusb connection methods, making it compatible with Whisperer and with the original Chinese software. So MeerK40t can usually run alongside these other pieces of software interchangeably.
 
@@ -68,6 +71,8 @@ The support for old moshiboards makes meerk40t the only known opensource softwar
 ### System 8.1 Lasers (NewlyDraw)
 
 HPGL-modified laser systems produced under many different company names
+
+</details>
 
 ## Support
 The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
