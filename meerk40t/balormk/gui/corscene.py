@@ -27,6 +27,9 @@ WIDTH_MULT = 10
 _ = wx.GetTranslation
 
 def test_pattern_geometry(s=0x6666):
+    # Scale, ie half-size = 0x6666 = 26214
+    # Full balor range: xFFFF
+    # Origin = 0x7FFF
     path = Geomstr()
     m = 0x7FFF
 
@@ -62,6 +65,8 @@ def test_pattern_geometry(s=0x6666):
             "speed": 255,
             "rapid_speed": 255,
             "timing_enabled": True,
+            "corfile_enabled": True,
+            "corfile": " ", # Intentionally a blank as this will lead to the internal values to be loaded
         },
     )
     return path
@@ -107,6 +112,7 @@ def cor_file_geometry(s=0x6666):
             "speed": 255,
             "rapid_speed": 255,
             "timing_enabled": True,
+            "corfile_enabled": False,
         },
     )
     return path
