@@ -120,7 +120,7 @@ class CorrectionPanel(wx.Panel):
 
         self.txt_y_bottom_1.Bind(wx.EVT_SET_FOCUS, self.on_enter("cf_7", 8))
         self.txt_y_bottom_2.Bind(wx.EVT_SET_FOCUS, self.on_enter("cf_12", 9))
-        self.txt_y_bottom_1.Bind(wx.EVT_SET_FOCUS, self.on_enter("cf_4", 10))
+        self.txt_y_bottom_3.Bind(wx.EVT_SET_FOCUS, self.on_enter("cf_4", 10))
         
         self.txt_x_bottom_1.Bind(wx.EVT_SET_FOCUS, self.on_enter("cf_6", 11))
         self.txt_x_bottom_2.Bind(wx.EVT_SET_FOCUS, self.on_enter("cf_5", 12))
@@ -177,7 +177,7 @@ class CorrectionPanel(wx.Panel):
                 dc.DrawLine(offs, bm_half, offs, bm_full)
             elif idx == 9:
                 dc.DrawLine(bm_half, bm_half, bm_half, bm_full)
-            elif idx == 19:
+            elif idx == 10:
                 dc.DrawLine(bm_full, bm_half, bm_full, bm_full)
             elif idx == 11:
                 dc.DrawLine(offs, bm_full, bm_half, bm_full)
