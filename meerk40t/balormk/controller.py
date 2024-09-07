@@ -615,6 +615,16 @@ class GalvoController:
             self.frequency(frequency)
             self.fpk(fpk)
             self.power(power)
+        corfile_enabled = bool(settings.get("corfile_enabled", self.service.corfile_enabled))
+        cor_file = str(settings.get("corfile", self.service.corfile)).strip()
+        if corfile_enabled:
+            if not cor_file:
+                cor_file = CORFILE_INTERNAL
+        else:        
+            cor_file = None
+        #  print (f"Enabled: {corfile_enabled}, Corfile: '{cor_file}'")
+        self.write_correction_file(cor_file)
+
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
 
         if str(settings.get("timing_enabled", False)).lower() == "true":
@@ -1039,7 +1049,7 @@ class GalvoController:
             [ [dx_g, dy_g], [dx_h, dy_h], [dx_i, dy_i] ],
         ])
 
-        print (f"Original:\n{original_matrix}")
+        # print (f"Original:\n{original_matrix}")
         source_size = 3
         target_size = 65
 
