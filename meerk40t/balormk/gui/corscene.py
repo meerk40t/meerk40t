@@ -517,14 +517,17 @@ class CorFileWidget(Widget):
             self.job = None
             return
         from meerk40t.balormk.livelightjob import LiveLightJob
-
+        
+        geom = self.geometry
+        _set = geom._settings[0]
         self.job = LiveLightJob(
             service,
             "geometry",
-            geometry=self.geometry,
+            geometry=geom,
             travel_speed=8000,
             jump_delay=10,
             raw=True,
+            settings=_set,
         )
         service.spooler.send(self.job)
 
@@ -537,6 +540,7 @@ class CorFileWidget(Widget):
         from meerk40t.balormk.livelightjob import LiveLightJob
 
         geom = test_pattern_geometry(self.geometry_size)
+        _set = geom._settings[0]
         self.job = LiveLightJob(
             service,
             "geometry",
@@ -544,6 +548,7 @@ class CorFileWidget(Widget):
             travel_speed=8000,
             jump_delay=10,
             raw=True,
+            settings=_set,
         )
         service.spooler.send(self.job)
 
