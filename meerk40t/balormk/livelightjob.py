@@ -26,6 +26,7 @@ class LiveLightJob:
         travel_speed=None,
         jump_delay=None,
         quantization=50,
+        settings=None,
         listen=True,
         raw=False,
     ):
@@ -69,6 +70,7 @@ class LiveLightJob:
         self._geometry = geometry
         self._travel_speed = travel_speed
         self._jump_delay = jump_delay
+        self._settings = settings
 
     @property
     def status(self):
@@ -347,7 +349,9 @@ class LiveLightJob:
         """
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
-
+        if self._settings is not None:
+            self.service.driver.connection.set_settings(self._settings)
+ 
         points = list(geometry.as_equal_interpolated_points(distance=self.quantization))
         move = True
         for i, e in enumerate(points):
