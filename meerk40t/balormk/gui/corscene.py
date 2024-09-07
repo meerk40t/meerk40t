@@ -168,7 +168,7 @@ def register_scene(service):
         scene = service.root.opened.get("Scene")
 
         scene.push_stack(SceneSpaceWidget(scene))
-        corfile_widget = CorFileWidget(scene)
+        corfile_widget = CorFileWidget(scene, service)
         scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
         s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1]) 
         scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), s_size)
@@ -200,9 +200,10 @@ class CorFileWidget(Widget):
     Widget for cor file creation routine.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, service):
         Widget.__init__(self, scene, all=True)
         self.name = "Corfile"
+        self.service = service
         self.render = LaserRender(scene.context)
         self.geometry = cor_file_geometry()
         self.assoc = cor_file_line_associated()
@@ -567,7 +568,7 @@ class CorFileWidget(Widget):
         filetype = "*.cor"
         with wx.FileDialog(
             root.gui,
-            _("Export Corfile") + ": Doesn't currently export",
+            _("Export Corfile"),
             wildcard=filetype,
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         ) as fileDialog:
@@ -576,9 +577,7 @@ class CorFileWidget(Widget):
             pathname = fileDialog.GetPath()
             if not pathname.lower().endswith(".cor"):
                 pathname += ".cor"
-
-        with open(pathname, "wb") as f:
-            f.write(b"Testing...")
+        self.service.driver.connection.write_cor_file_to_disk(pathname)
 
     def geometry_size_increase(self):
         self.geometry_size += 100

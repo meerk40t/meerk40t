@@ -13,6 +13,7 @@ from copy import copy
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
+from meerk40t.core.units import Length
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_LIGHT = 1
@@ -1158,6 +1159,35 @@ class GalvoController:
         for dx, dy in table:
             self.write_cor_line(dx, dy, 0 if first else 1)
             first = False
+
+    def write_cor_file_to_disk(self, filename):
+        COR_V2 = b"JCZ_COR_2_1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        ct = 0
+        lines = []
+        lens_size = Length(self.service.lens_size).mm
+        # Scale is arbitrary?!
+        image_index = 0
+        scale = 65536 / lens_size
+        # print(f"Scale: {scale:.3f} - lens-size={lens_size:.1f}mm")
+        data = self._create_correction_table()
+        # So let's write the file to disk...
+        with open(filename, "wb") as f:
+            r = f.write(COR_V2)
+            # print(f"Label written: {r} bytes")
+            header = [0] * 6
+            r = f.write(bytearray(header))
+            # print(f"Header written: {r} bytes")
+            r = f.write(struct.pack("d", scale))
+
+            # print(f"Scale written: {r} bytes")
+            for data in lines:
+                for dx, dy in data:
+                    f.write(int(dx).to_bytes(4, "little", signed=True))
+                    f.write(int(dy).to_bytes(4, "little", signed=True))
+                    ct += 2
+            r = f.write(int(image_index).to_bytes(4, "little", signed=True))
+            # print (f"Trailer written: {r} bytes")
+        # print(f"Corfile written: {filename}, entries={ct}, scale={scale:.3f}")
 
     #######################
     # COMMAND LIST COMMAND
