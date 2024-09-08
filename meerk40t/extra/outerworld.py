@@ -60,7 +60,8 @@ def plugin(kernel, lifecycle):
     elif os_system == "Darwin":
         default_system = 3
     if default_system == 4:
-        @kernel.console_argument("url", type=str, help=_("Web url to call"))
+        @kernel.console_argument("port", type=int, help=_("Port to use"))
+        @kernel.console_argument("value", type=int, help=_("Value to set (0/1)"))
         @kernel.console_command(
             "gpio_set",
             help=_("gpio_set <port> <value>")
