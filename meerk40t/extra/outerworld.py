@@ -1,17 +1,156 @@
 """
 This module exposes a couple of simple commands to send some simple commands to the outer world
 """
+import json
+import threading
+import urllib
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import urllib.parse
 
-import platform
+HTTPD = None
+SERVER_THREAD = None
+KERN = None
 
 def plugin(kernel, lifecycle):
+    global KERN
+    KERN = kernel
+
+    class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            from meerk40t.main import APPLICATION_NAME, APPLICATION_VERSION
+            html = (
+                '<!DOCTYPE html>',
+                '<html lang="en">',
+                '<head>',
+                '    <meta charset="UTF-8">',
+                '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+                '    <title>Webconsole Interface</title>',
+                '</head>',
+                '<body>',
+                f'   <h1>{APPLICATION_NAME} {APPLICATION_VERSION} - Webconsole</h1>',
+                '    <form action="http://127.0.0.1:2080" method="post">',
+                '        <label for="cmd">Command:</label>',
+                '        <input type="text" id="cmd" name="cmd"><br><br>',
+                '       <input type="submit" value="Submit">',
+                '    </form>',
+                '</body>',
+            )            
+            htmlstr = bytes("\n".join(html), "utf-8")
+            
+            # Send response status code
+            self.send_response(200)
+            
+            # Send headers
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            
+            # Write the response content
+            self.wfile.write(htmlstr)            
+
+        def do_POST(self):
+            global KERN
+            # Get the length of the data
+            content_length = int(self.headers['Content-Length'])
+            # Read the data
+            post_data = self.rfile.read(content_length).decode("utf-8")
+            data = urllib.parse.parse_qs(post_data) 
+            # print(f"Received data: {post_data}: {data}")
+            executed= []
+            for header, lines in data.items():
+                for line in lines:
+                    print(f"Received data: '{header}' - '{line}'")
+                    if header == "cmd":
+                        executed.append(line) 
+                        print (f"Execute: '{line}'") 
+                        KERN.root(f"{line}\n")
+                        print ("exec done")
+            # Send response
+            print ("Sending response")
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {"message": "Data received successfully", "executed_commands": executed}
+            self.wfile.write(json.dumps(response).encode('utf-8'))
+
+    def start_server(channel=None, port=None, context=None):
+        global HTTPD
+        global SERVER_THREAD
+
+        def run_server():
+            # print ("Started")
+            try:
+                HTTPD.serve_forever()
+            except Exception as e:
+                # print (f"Dying because: {e}")
+                pass
+
+        if port is None:
+            port = 2080
+        if channel:
+            channel(f"Starting webconsole on port {port}")
+        server_address = ('', port)
+        HTTPD = HTTPServer(server_address, SimpleHTTPRequestHandler)
+        SERVER_THREAD = threading.Thread(target=run_server)
+        SERVER_THREAD.daemon = True  # This ensures the thread will exit when the main program exits
+        SERVER_THREAD.start()
+
+    def stop_server(channel=None):
+        global HTTPD
+        global SERVER_THREAD
+        if HTTPD:
+            if channel:
+                channel("Shutting down webconsole...")
+            HTTPD.server_close()
+            if SERVER_THREAD:
+                if channel:
+                    channel("Shutting down thread")
+                SERVER_THREAD.join()
+                SERVER_THREAD = None
+            if channel:
+                channel("Shut down of webconsole done")
+        
+        HTTPD = None
+
+    if lifecycle == "preshutdown":
+        if HTTPD is not None:
+            stop_server()
+        return
     if lifecycle != "register":
         return
     
+    import platform
+
     from meerk40t.core.units import Length, DEFAULT_PPI, UNITS_PER_PIXEL
 
     _ = kernel.translation
     context = kernel.root
+
+    
+    @kernel.console_argument("port", type=int, help=_("port to listen to, default 2080"))
+    @kernel.console_command("webconsole",
+        help=_("webconsole <port>")
+        + "\n"
+        + _("Opens a webpage or REST-Interface page"),
+        input_type=None,
+        output_type=None,
+    )
+    def webconsole(
+        command,
+        channel,
+        _,
+        port=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        global HTTPD
+
+        if HTTPD is None:
+            start_server(channel=channel, port=port, context=context)
+        else:
+            stop_server(channel=channel)
+
 
     @kernel.console_argument("url", type=str, help=_("Web url to call"))
     @kernel.console_command(
@@ -34,18 +173,12 @@ def plugin(kernel, lifecycle):
         if url is None:
             channel(_("You need to provide an url to call"))
             return
-        try:
-            import urllib
-        except ImportError:
-            channel("Could not import urllib")
-            return
 
         try:
             with urllib.request.urlopen(url, data=None) as f:
                 channel(f.read().decode('utf-8'))
         except Exception as e:
             channel (f"Failed to call {url}: {e}")
-            pass
 
     @kernel.console_argument("url", type=str, help=_("Image url to load"))
     @kernel.console_argument("x", type=Length, help="Sets the x-position of the image",)
