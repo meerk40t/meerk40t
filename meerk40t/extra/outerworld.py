@@ -7,6 +7,8 @@ import urllib
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import urllib.parse
 
+from meerk40t.kernel import get_safe_path
+
 HTTPD = None
 SERVER_THREAD = None
 KERN = None
@@ -306,6 +308,124 @@ def plugin(kernel, lifecycle):
                 n.matrix.post_translate(dx, dy)
 
         post.append(elements_service.post_classify([n]))
+
+        context.signal("refresh_scene", "Scene")
+
+    @kernel.console_argument("url", type=str, help=_("Image url to load"))
+    @kernel.console_argument("x", type=Length, help="Sets the x-position of the image",)
+    @kernel.console_argument("y", type=Length, help="Sets the y-position of the image",)
+    @kernel.console_argument("width", type=Length, help="Sets the width of the given image",)
+    @kernel.console_argument("height", type=Length, help="Sets the width of the given image",)
+    @kernel.console_command(
+        "webload",
+        help=_("webload <url> <x> <y> <width> <height")
+        + "\n"
+        + _("Gets a file and puts it on the screen"),
+        input_type=None,
+        output_type=None,
+    )
+    def get_webfile(
+        command,
+        channel,
+        _,
+        url=None,
+        x=None,
+        y=None,
+        width=None,
+        height=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        if url is None:
+            channel(_("You need to provide an url of a file to load"))
+            return
+        try:
+            import urllib
+            import os.path
+            from meerk40t.svgelements import Matrix
+        except ImportError:
+            channel("Could not import urllib")
+            return
+        # Download the file data
+        tempfile = None
+        try:
+            with urllib.request.urlopen(url) as response:
+                # Try to get the original filename
+                info = response.info()
+                filename = None
+                if 'Content-Disposition' in info:
+                    content_disposition = info['Content-Disposition']
+                    if 'filename=' in content_disposition:
+                        filename = content_disposition.split('filename=')[1].strip('"')
+                if filename is None:
+                    # lets split the name
+                    parts = url.split("/")
+                    if len(parts) > 0:
+                        filename = parts[-1]
+                        for invalid in (":", "/", "\\"):
+                            filename = filename.replace(invalid, "_")
+                    else:
+                        filename = "_webload.svg"
+                file_data = response.read()
+        
+                safe_dir = os.path.realpath(get_safe_path(kernel.name))
+                tempfile = os.path.join(safe_dir, filename)
+                channel(f"Writing result to {tempfile}")
+                with open(tempfile, "wb") as f:
+                    f.write(file_data) 
+        except Exception as e:
+            channel (f"Failed to get {url}: {e}")
+            return
+        if tempfile is None:
+            channel("Could not load any data")
+            return
+        elements_service = kernel.elements
+        res = elements_service.load(tempfile)
+        if not res:
+            return
+        
+        def union_box(elements):
+            boxes = []
+            for e in elements:
+                if not hasattr(e, "bbox"):
+                    continue
+                box = e.bbox()
+                if box is None:
+                    continue
+                boxes.append(box)
+            if len(boxes) == 0:
+                return None
+            (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+            return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
+
+        if width is not None:
+            bb = union_box(elements_service.added_elements)
+            if bb is not None:
+                wd = float(width)
+                if height is None:
+                    # if we don't have a height then we use the ratio
+                    ratio = (bb[2] - bb[0]) / (bb[3] - bb[1])
+                    ht = wd / ratio
+                else:
+                    ht = float(height)
+            sx = wd / (bb[2] - bb[0])
+            sy = ht / (bb[3] - bb[1])
+            for n in elements_service.added_elements:
+                if hasattr(n, "matrix"):
+                    n.matrix.post_scale(sx, sy)
+
+        if x is not None and y is not None:
+            bb = union_box(elements_service.added_elements)
+            if bb is not None:
+                px = float(x)
+                py = float(y)
+                dx = px - bb[0]
+                dy = py - bb[1]
+            for n in elements_service.added_elements:
+                if hasattr(n, "matrix"):
+                    n.matrix.post_translate(dx, dy)
+        elements_service.clear_loaded_information()
 
         context.signal("refresh_scene", "Scene")
 
