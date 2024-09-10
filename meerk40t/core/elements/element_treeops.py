@@ -2742,19 +2742,20 @@ def init_tree(kernel):
                         )
                     dm = copy_node.default_map()
 
-        copy_nodes = list()
-        _dx = self.length_x("3mm")
-        _dy = self.length_y("3mm")
-        alldata = list(self.elems(emphasized=True))
-        minimaldata = self.condense_elements(alldata, expand_at_end=False)
-        for e in minimaldata:
-            parent = e.parent
-            copy_single_node(e, parent, copies, _dx, _dy)
+        with self.static("duplicate_n"):
+            copy_nodes = list()
+            _dx = self.length_x("3mm")
+            _dy = self.length_y("3mm")
+            alldata = list(self.elems(emphasized=True))
+            minimaldata = self.condense_elements(alldata, expand_at_end=False)
+            for e in minimaldata:
+                parent = e.parent
+                copy_single_node(e, parent, copies, _dx, _dy)
 
-        if self.classify_new:
-            self.classify(copy_nodes)
-        self.signal("element_property_reload", copy_nodes)
-        self.set_emphasis(None)
+            if self.classify_new:
+                self.classify(copy_nodes)
+            self.signal("element_property_reload", copy_nodes)
+            self.set_emphasis(None)
 
     def has_wordlist(node):
         result = False
