@@ -2740,6 +2740,7 @@ def init_tree(kernel):
                         copy_single_node(
                             cnode, newparent, 1, (n + 1) * dx, (n + 1) * dy
                         )
+                    dm = copy_node.default_map()
 
         copy_nodes = list()
         _dx = self.length_x("3mm")
@@ -2752,7 +2753,7 @@ def init_tree(kernel):
 
         if self.classify_new:
             self.classify(copy_nodes)
-
+        self.signal("element_property_reload", copy_nodes)
         self.set_emphasis(None)
 
     def has_wordlist(node):
