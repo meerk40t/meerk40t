@@ -2181,9 +2181,10 @@ class ImageLoader:
         element_branch = elements_service.get(type="branch elems")
         if context.create_image_group:
             file_node = element_branch.add(
-                type="file", label=os.path.basename(pathname)
+                type="file", 
+                label=os.path.basename(pathname),
+                filepath=pathname,
             )
-            file_node.filepath = pathname
         else:
             file_node = element_branch
         n = file_node.add(
