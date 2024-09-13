@@ -416,13 +416,13 @@ class MeerK40t(MWindow):
         self.snap_panel = SnapOptionsWidget()
         self.info_panel = InformationWidget()
         self.main_statusbar.add_panel_widget(
-            self.pos_panel, self.idx_selection, "position", True
+            self.pos_panel, self.idx_selection, "position", False
         )
         self.main_statusbar.add_panel_widget(
             self.select_panel, self.idx_selection, "selection", False
         )
         self.main_statusbar.add_panel_widget(
-            self.snap_panel, self.idx_selection, "snap", False
+            self.snap_panel, self.idx_selection, "snap", True
         )
         self.main_statusbar.add_panel_widget(
             self.info_panel, self.idx_selection, "infos", False
