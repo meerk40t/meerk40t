@@ -61,12 +61,20 @@ def register_panel_tree(window, context):
     if lastpage is None or lastpage < 0 or lastpage > 2:
         lastpage = 0
 
+    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
+    wxtree = TreePanel(window, wx.ID_ANY, context=context)
+
     def on_panel_change(context):
         def handler(event):
-            mycontext.root.setting(int, "tree_panel_page", 0)
+            mycontext.root.setting(int, "tree_panel_page", 1)
             pagenum = notetab.GetSelection()
             setattr(mycontext.root, "tree_panel_page", pagenum)
-            return
+            if pagenum == 0:
+                basic_op.pane_show()
+                wxtree.pane_hide()
+            else:
+                basic_op.pane_hide()
+                wxtree.pane_show()
 
         mycontext = context
         return handler
@@ -80,8 +88,6 @@ def register_panel_tree(window, context):
         | wx.aui.AUI_NB_TAB_MOVE,
     )
 
-    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
-    wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
