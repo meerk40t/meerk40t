@@ -106,6 +106,8 @@ class RectSelectWidget(Widget):
     def rect_select(self, elements, sx, sy, ex, ey):
         sector = self.sector
         selected = False
+        # We don't want every single element to to issue a signal
+        elements.suppress_signalling = True
         for node in elements.elems():
             try:
                 q = node.bounds
@@ -167,6 +169,8 @@ class RectSelectWidget(Widget):
                 else:
                     node.emphasized = False
                     node.selected = False
+        elements.suppress_signalling = True
+        elements.signal("emphasized")
         if selected:
             self.scene.context.signal("element_clicked")
 
@@ -473,7 +477,7 @@ class RectSelectWidget(Widget):
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
 
-        linewidth = 1 
+        linewidth = 1
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
@@ -495,7 +499,7 @@ class RectSelectWidget(Widget):
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
-            font_size = 10.0 
+            font_size = 10.0
             if font_size < 1.0:
                 font_size = 1.0
             try:
