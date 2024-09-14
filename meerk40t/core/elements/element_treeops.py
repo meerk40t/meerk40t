@@ -1337,11 +1337,12 @@ def init_tree(kernel):
     def select_similar(node, **kwargs):
         ntype = node.type
         changes = False
-        for e in self.elems():
-            if e.type == ntype and not e.emphasized and e.can_emphasize:
-                e.emphasized = True
-                e.selected = True
-                changes = True
+        with self.static("tree_select"):
+            for e in self.elems():
+                if e.type == ntype and not e.emphasized and e.can_emphasize:
+                    e.emphasized = True
+                    e.selected = True
+                    changes = True
         if changes:
             self.validate_selected_area()
             self.signal("refresh_scene", "Scene")
