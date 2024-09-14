@@ -867,7 +867,7 @@ class Node:
                 self._paint_bounds[2] + dx,
                 self._paint_bounds[3] + dy,
             ]
-        self.set_dirty()
+        # self.set_dirty()
         # No need to translate it as we will apply the matrix later
         # self.translate_functional_parameter(dx, dy)
 
