@@ -90,6 +90,7 @@ def init_commands(kernel):
             y = float(Length(y, relative_length=Length(amount=height).length_mm))
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
+        counted = 0
         with self.static("grid"):
             if relative:
                 x += width
@@ -114,8 +115,10 @@ def init_commands(kernel):
                             e.matrix *= Matrix.translate(x_pos, y_pos)
                             self.elem_branch.add_node(e)
                         data_out.extend(add_elem)
+                        counted += 1
                     x_pos += x
                 y_pos += y
+            channel(f"{counted} copies created")
             # Newly created! Classification needed?
             post.append(classify_new(data_out))
             self.signal("refresh_scene", "Scene")
@@ -196,6 +199,7 @@ def init_commands(kernel):
         # print ("repeats: %d, Radius: %.1f" % (repeats, radius))
         # print ("Center: %.1f, %.1f" % (center_x, center_y))
         # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
+        counted = 0
         with self.static("radial"):
             currentangle = segment_len
             for cc in range(1, repeats):
@@ -213,10 +217,12 @@ def init_commands(kernel):
                         e.matrix *= f"translate({x_pos}, {y_pos})"
                     self.elem_branch.add_node(e)
 
+                counted += 1
                 data_out.extend(add_elem)
 
                 currentangle += segment_len
 
+        channel(f"{counted} copies created")
         # Newly created! Classification needed?
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
@@ -297,6 +303,7 @@ def init_commands(kernel):
         center_x = (bounds[2] + bounds[0]) / 2.0
         center_y = (bounds[3] + bounds[1]) / 2.0
         images = []
+        counted = 0
         with self.static("circ_copy"):
             for cc in range(copies):
                 # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
@@ -316,10 +323,12 @@ def init_commands(kernel):
                         e.matrix *= f"translate({x_pos}, {y_pos})"
                         e.translated(x_pos, y_pos)
                     self.elem_branch.add_node(e)
+                counted += 1
                 data_out.extend(add_elem)
                 currentangle += segment_len
             for e in images:
                 e.update(None)
+        channel(f"{counted} copies created")
 
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
