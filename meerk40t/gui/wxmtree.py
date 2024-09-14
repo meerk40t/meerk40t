@@ -732,7 +732,8 @@ class ShadowTree:
         self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("selected", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("selected", node)
 
     def emphasized(self, node):
         """
@@ -748,7 +749,8 @@ class ShadowTree:
         self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("emphasized", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("emphasized", node)
 
     def targeted(self, node):
         """
@@ -764,7 +766,8 @@ class ShadowTree:
         self.check_validity(item)
         self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("targeted", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("targeted", node)
 
     def highlighted(self, node):
         """
@@ -781,7 +784,8 @@ class ShadowTree:
         self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("highlighted", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("highlighted", node)
 
     def translated(self, node, dx=0, dy=0, *args):
         """

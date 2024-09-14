@@ -524,6 +524,7 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
+        self.suppress_signalling = False
         # We need to set up these as the settings stuff will only be done
         # on postboot after Elemental has already been created
         self.setting(bool, "classify_new", True)
@@ -2316,6 +2317,8 @@ class Elemental(Service):
         If any element is emphasized, all references are highlighted.
         If any element is emphasized, all operations a references to that element are 'targeted'.
         """
+        status = self.suppress_signalling
+        self.suppress_signalling = True
         for s in self._tree.flat():
             if s.highlighted:
                 s.highlighted = False
@@ -2354,6 +2357,8 @@ class Elemental(Service):
             if count > 1 and old_first is None:
                 # It makes no sense to define a 'first' here, as all are equal
                 self.first_emphasized = None
+        self.suppress_signalling = status
+        self.signal("emphasized", emphasize)
 
     def center(self):
         bounds = self._emphasized_bounds
