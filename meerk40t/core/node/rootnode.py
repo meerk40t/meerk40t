@@ -33,6 +33,12 @@ class RootNode(Node):
     def unlisten(self, listener):
         self.listeners.remove(listener)
 
+    def notify_frozen(self, status):
+        # Tells the listener that an update of its visual apperance is not necessary
+        for listen in self.listeners:
+            if hasattr(listen, "frozen"):
+                listen.frozen(status)
+
     def notify_created(self, node=None, **kwargs):
         if node is None:
             node = self

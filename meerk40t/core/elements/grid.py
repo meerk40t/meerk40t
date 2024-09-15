@@ -90,34 +90,38 @@ def init_commands(kernel):
             y = float(Length(y, relative_length=Length(amount=height).length_mm))
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
-        if relative:
-            x += width
-            y += height
-        if origin is None:
-            origin = (1, 1)
-        cx, cy = origin
-        data_out = list(data)
-        if cx is None:
-            cx = 1
-        if cy is None:
-            cy = 1
-        start_x = -1 * x * (cx - 1)
-        start_y = -1 * y * (cy - 1)
-        y_pos = start_y
-        for j in range(r):
-            x_pos = start_x
-            for k in range(c):
-                if j != (cy - 1) or k != (cx - 1):
-                    add_elem = list(map(copy, data))
-                    for e in add_elem:
-                        e.matrix *= Matrix.translate(x_pos, y_pos)
-                        self.elem_branch.add_node(e)
-                    data_out.extend(add_elem)
-                x_pos += x
-            y_pos += y
-        # Newly created! Classification needed?
-        post.append(classify_new(data_out))
-        self.signal("refresh_scene", "Scene")
+        counted = 0
+        with self.static("grid"):
+            if relative:
+                x += width
+                y += height
+            if origin is None:
+                origin = (1, 1)
+            cx, cy = origin
+            data_out = list(data)
+            if cx is None:
+                cx = 1
+            if cy is None:
+                cy = 1
+            start_x = -1 * x * (cx - 1)
+            start_y = -1 * y * (cy - 1)
+            y_pos = start_y
+            for j in range(r):
+                x_pos = start_x
+                for k in range(c):
+                    if j != (cy - 1) or k != (cx - 1):
+                        add_elem = list(map(copy, data))
+                        for e in add_elem:
+                            e.matrix *= Matrix.translate(x_pos, y_pos)
+                            self.elem_branch.add_node(e)
+                        data_out.extend(add_elem)
+                        counted += 1
+                    x_pos += x
+                y_pos += y
+            channel(f"{counted} copies created")
+            # Newly created! Classification needed?
+            post.append(classify_new(data_out))
+            self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
     @self.console_argument("repeats", type=int, help=_("Number of repeats"))
@@ -195,27 +199,30 @@ def init_commands(kernel):
         # print ("repeats: %d, Radius: %.1f" % (repeats, radius))
         # print ("Center: %.1f, %.1f" % (center_x, center_y))
         # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
+        counted = 0
+        with self.static("radial"):
+            currentangle = segment_len
+            for cc in range(1, repeats):
+                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                add_elem = list(map(copy, data))
+                for e in add_elem:
+                    if rotate:
+                        # x_pos = -1 * radius
+                        # y_pos = 0
+                        # e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
+                    else:
+                        x_pos = -1 * radius + radius * cos(currentangle)
+                        y_pos = radius * sin(currentangle)
+                        e.matrix *= f"translate({x_pos}, {y_pos})"
+                    self.elem_branch.add_node(e)
 
-        currentangle = segment_len
-        for cc in range(1, repeats):
-            # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
-            add_elem = list(map(copy, data))
-            for e in add_elem:
-                if rotate:
-                    # x_pos = -1 * radius
-                    # y_pos = 0
-                    # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                    e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
-                else:
-                    x_pos = -1 * radius + radius * cos(currentangle)
-                    y_pos = radius * sin(currentangle)
-                    e.matrix *= f"translate({x_pos}, {y_pos})"
-                self.elem_branch.add_node(e)
+                counted += 1
+                data_out.extend(add_elem)
 
-            data_out.extend(add_elem)
+                currentangle += segment_len
 
-            currentangle += segment_len
-
+        channel(f"{counted} copies created")
         # Newly created! Classification needed?
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
@@ -296,28 +303,32 @@ def init_commands(kernel):
         center_x = (bounds[2] + bounds[0]) / 2.0
         center_y = (bounds[3] + bounds[1]) / 2.0
         images = []
-        for cc in range(copies):
-            # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
-            add_elem = list(map(copy, data))
-            for e in add_elem:
-                if rotate:
-                    x_pos = radius
-                    y_pos = 0
-                    e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
-                    e.modified()
-                    if hasattr(e, "update"):
-                        images.append(e)
-                else:
-                    x_pos = radius * cos(currentangle)
-                    y_pos = radius * sin(currentangle)
-                    e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.translated(x_pos, y_pos)
-                self.elem_branch.add_node(e)
-            data_out.extend(add_elem)
-            currentangle += segment_len
-        for e in images:
-            e.update(None)
+        counted = 0
+        with self.static("circ_copy"):
+            for cc in range(copies):
+                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                add_elem = list(map(copy, data))
+                for e in add_elem:
+                    if rotate:
+                        x_pos = radius
+                        y_pos = 0
+                        e.matrix *= f"translate({x_pos}, {y_pos})"
+                        e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
+                        e.modified()
+                        if hasattr(e, "update"):
+                            images.append(e)
+                    else:
+                        x_pos = radius * cos(currentangle)
+                        y_pos = radius * sin(currentangle)
+                        e.matrix *= f"translate({x_pos}, {y_pos})"
+                        e.translated(x_pos, y_pos)
+                    self.elem_branch.add_node(e)
+                counted += 1
+                data_out.extend(add_elem)
+                currentangle += segment_len
+            for e in images:
+                e.update(None)
+        channel(f"{counted} copies created")
 
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")

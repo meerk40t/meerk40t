@@ -109,6 +109,7 @@ class StrokeWidget(StatusBarWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._needs_generation = False
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
@@ -243,10 +244,24 @@ class StrokeWidget(StatusBarWidget):
                 self.chk_scale.SetValue(e.stroke_scaled)
                 return
 
+    def calculate_infos(self):
+        self.update_stroke_magnitude()
+        self.update_stroke_scale_check()
+        self.startup = False
+
+    def GenerateInfos(self):
+        if self.visible:
+            self.context.elements.set_start_time("strokewidget")
+            self.calculate_infos()
+            self.context.elements.set_end_time("strokewidget")
+        else:
+            self._needs_generation = True
+
+    def Show(self, showit=True):
+        if self._needs_generation and showit:
+            self.calculate_infos()
+        super().Show(showit)
+
     def Signal(self, signal, *args):
-        if signal == "emphasized":
-            self.update_stroke_magnitude()
-            self.update_stroke_scale_check()
-            self.startup = False
-        if signal == "modified":
-            self.update_stroke_magnitude()
+        if signal in ("modified", "emphasized"):
+            self.GenerateInfos()

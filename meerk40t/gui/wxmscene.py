@@ -1400,9 +1400,11 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
+        self.scene.context.elements.set_start_time("Emphasis wxmscene")
         self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
+        self.scene.context.elements.set_end_time("Emphasis wxmscene")
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)

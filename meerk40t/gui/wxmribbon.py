@@ -583,7 +583,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
+        # self.context.elements.set_start_time("Ribbon rule")
         self.apply_enable_rules()
+        # self.context.elements.set_end_time("Ribbon rule")
 
     @signal_listener("undoredo")
     def on_undostate_change(self, origin, *args):
