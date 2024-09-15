@@ -159,6 +159,7 @@ class PositionPanel(wx.Panel):
         self.context.listen("emphasized", self._update_position)
         self.context.listen("modified", self._update_position)
         self.context.listen("altered", self._update_position)
+        self._update_position(True)
         # To get an update about translation / scaling
         # updates to an element we have two options....
         # Option 1: plug yourself to the rootnode update
@@ -300,9 +301,13 @@ class PositionPanel(wx.Panel):
         # end wxGlade
 
     def _update_position(self, *args):
+        self.context.elements.set_start_time("Emphasis positionpanel")
         self.update_position(True)
+        self.context.elements.set_end_time("Emphasis positionpanel")
 
     def update_position(self, reset):
+        if not self.IsShown():
+            return
         more_than_one = False
         ct = 0
         for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):

@@ -734,8 +734,10 @@ class PositionWidget(StatusBarWidget):
 
     def GenerateInfos(self):
         if self.visible:
+            self.context.elements.set_start_time("positionwidget")
             self.update_position(True)
             self.startup = False
+            self.context.elements.set_end_time("positionwidget")
         else:
             self._needs_generation = True
 

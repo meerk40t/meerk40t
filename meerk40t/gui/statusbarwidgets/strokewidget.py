@@ -251,7 +251,9 @@ class StrokeWidget(StatusBarWidget):
 
     def GenerateInfos(self):
         if self.visible:
+            self.context.elements.set_start_time("strokewidget")
             self.calculate_infos()
+            self.context.elements.set_end_time("strokewidget")
         else:
             self._needs_generation = True
 

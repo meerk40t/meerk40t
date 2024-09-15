@@ -779,9 +779,10 @@ class BasicOpPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def signal_handler_emphasized(self, origin, *args, **kwargs):
-        if not self.visible:
+        if not self.IsShown():
             # print ("Delay highlight_operations")
             self.pending_ops["highlight_operations"] = True
             return
-
+        self.context.elements.set_start_time("BasicOpPanel")
         self.highlight_operations(source="emphasized")
+        self.context.elements.set_end_time("BasicOpPanel", message=f"vis={self.visible}")
