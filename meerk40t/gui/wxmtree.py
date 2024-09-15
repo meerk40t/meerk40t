@@ -1099,6 +1099,14 @@ class ShadowTree:
                 self.wxtree.Thaw()
                 self.wxtree.Refresh()
 
+    def frozen(self, status):
+        self.wxtree.Enable(not status)
+        if status:
+            self.wxtree.Freeze()
+        else:
+            self.wxtree.Thaw()
+            self.wxtree.Refresh()
+
     def was_expanded(self, node, level):
         txt = self.wxtree.GetItemText(node)
         chk = f"{level}-{txt}"
