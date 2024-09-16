@@ -1,7 +1,8 @@
 import socket
+from math import isinf
 from urllib.parse import unquote_plus
-from meerk40t.kernel import Module
 
+from meerk40t.kernel import Module
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -87,10 +88,134 @@ class WebServer(Module):
                 command = self.client_headers["post_cmd"]
                 self.context(command + "\n")
                 content = f"Received command: '{command}'"
-        jobs = 0
-        if self.context.device.spooler is not None:
-            jobs = len(self.context.device.spooler.queue)
-        html = (
+        spooler_table = [
+            "<table>",
+            "<tr><td>#</td><td>Device</td><td>Name</td><td>Items</td><td>Status</td><td>Type</td><td>Steps</td><td>Passes</td><td>Priority</td><td>Runtime</td><td>Estimate</td></tr>",
+        ]
+        available_devices = self.context.kernel.services("device")
+        for device in available_devices:
+            spooler = device.spooler
+            if spooler is None:
+                continue
+
+            def _name_str(named_obj):
+                try:
+                    return named_obj.__name__
+                except AttributeError:
+                    return str(named_obj)
+            queue_idx = 0
+            for idx, e in enumerate(spooler.queue):
+                queue_idx += 1
+                m = "<tr>"
+                # Idx, Status, Type, Passes, Priority, Runtime, Estimate
+                m += f"<td>#{queue_idx}"
+                spool_obj = e
+                m += f"<td>{device.label}</td>"
+                # Jobname
+                to_display = ""
+                if hasattr(spool_obj, "label"):
+                    to_display = spool_obj.label
+                    if to_display is None:
+                        to_display = ""
+                if to_display == "":
+                    to_display = _name_str(spool_obj)
+                if to_display.endswith(" items"):
+                    # Look for last ':' and remove everything from there
+                    cpos = -1
+                    lpos = -1
+                    while True:
+                        lpos = to_display.find(":", lpos + 1)
+                        if lpos == -1:
+                            break
+                        cpos = lpos
+                    if cpos > 0:
+                        to_display = to_display[:cpos]
+
+                    m += f"<td>{to_display}</td>"
+                    # Entries
+                    joblen = 1
+                    try:
+                        if hasattr(spool_obj, "items"):
+                            joblen = len(spool_obj.items)
+                        elif hasattr(spool_obj, "elements"):
+                            joblen = len(spool_obj.elements)
+                    except AttributeError:
+                        joblen = 1
+                    m += f"<td>{joblen}</td>"
+
+                    # STATUS
+                    m += f"<td>{spool_obj.status}</td>"
+
+                    # TYPE
+                    try:
+                        content = str(spool_obj.__class__.__name__)
+                    except AttributeError:
+                        content = ""
+                    m += f"<td>{content}</td>"
+
+                    # STEPS
+                    try:
+                        if spool_obj.steps_total == 0:
+                            spool_obj.calc_steps()
+                        content = f"{spool_obj.steps_done}/{spool_obj.steps_total}",
+                    except AttributeError:
+                        content = "-"
+                    m += f"<td>{content}</td>"
+
+                    # PASSES
+                    try:
+                        loop = spool_obj.loops_executed
+                        total = spool_obj.loops
+                        # No invalid values please
+                        if loop is None:
+                            loop = 0
+                        if total is None:
+                            total = 1
+
+                        if isinf(total):
+                            total = "∞"
+                        content = f"{loop}/{total}"
+                    except AttributeError:
+                        content = "-"
+                    m += f"<td>{content}</td>"
+
+                    # Priority
+                    try:
+                        content = f"{spool_obj.priority}"
+                    except AttributeError:
+                        content = "-"
+                    m += f"<td>{content}</td>"
+
+                    # Runtime
+                    try:
+                        t = spool_obj.elapsed_time()
+                        hours, remainder = divmod(t, 3600)
+                        minutes, seconds = divmod(remainder, 60)
+                        content = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                    except AttributeError:
+                        content = "-"
+                    m += f"<td>{content}</td>"
+
+                    # Estimate Time
+                    try:
+                        t = spool_obj.estimate_time()
+                        if isinf(t):
+                            runtime = "∞"
+                        else:
+                            hours, remainder = divmod(t, 3600)
+                            minutes, seconds = divmod(remainder, 60)
+                            content = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                    except AttributeError:
+                        content = "-"
+                    m += f"<td>{content}</td>"
+
+                    m+= "</tr>"
+
+                    spooler_table.append(m)
+
+        spooler_table.append("<table>")
+
+        html = [
             '<!DOCTYPE html>',
             '<html lang="en">',
             '<head>',
@@ -105,9 +230,13 @@ class WebServer(Module):
             '</head>',
             '<body>',
             f'   <h1>{self.context.kernel.name} {self.context.kernel.version} - Webconsole</h1>',
-            '     <table>',
-            f'      <tr><td>Active device</td><td>{self.context.device.label}</td></tr>',
-            f'      <tr><td>Current jobs</td><td>{jobs}</td></tr>',
+            '     <h2>Active device</h2',
+            f'    <p>Active device: {self.context.device.label}</p>',
+            f'    <h2>Current jobs</h2>',
+        ]
+        html.extend(spooler_table)
+        html.extend(
+            (
             '     </table>',
             '     <p></p>',
             '     <h2>Console commands</h2>',
@@ -120,6 +249,7 @@ class WebServer(Module):
             '    </form>',
             f'   <p>{content}</p>'
             '</body>',
+            )
         )
 
         return html
