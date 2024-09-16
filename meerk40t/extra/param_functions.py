@@ -1107,11 +1107,10 @@ def plugin(kernel, lifecycle):
             node.stroke_width = self.default_strokewidth
             node.fill = self.default_fill
             node.altered()
-            node.emphasized = True
+            self.set_emphasis([node])
             node.focus()
 
             data = [node]
-            node.emphasized = True
             # Newly created! Classification needed?
             post.append(classify_new(data))
 

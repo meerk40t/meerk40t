@@ -954,10 +954,8 @@ class ShadowTree:
         item = node._item
         self.check_validity(item)
         self.wxtree.EnsureVisible(item)
-        for s in self.wxtree.GetSelections():
-            self.wxtree.SelectItem(s, False)
-        self.wxtree.SelectItem(item)
         self.wxtree.ScrollTo(item)
+        # self.wxtree.SetFocusedItem(item)
 
     def on_force_element_update(self, *args):
         """
