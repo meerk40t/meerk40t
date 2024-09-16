@@ -2285,7 +2285,6 @@ class Kernel(Settings):
             pos = self._console_buffer.find("\n")
             command = self._console_buffer[0:pos].strip("\r")
             self._console_buffer = self._console_buffer[pos + 1 :]
-            print (f"Parsing line: {command}")
             data_out = self._console_parse(command, channel=self._console_channel)
         return data_out
 
@@ -2393,7 +2392,6 @@ class Kernel(Settings):
                 data_type=input_type,
                 **post_data,
             )
-        print ("done")
         return data
 
     # ==========
