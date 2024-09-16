@@ -896,6 +896,7 @@ def init_commands(kernel):
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
+        self.set_emphasis([node])
         node.focus()
         post.append(classify_new(data))
         return "elements", data
@@ -2092,7 +2093,7 @@ def init_commands(kernel):
                 if hasattr(node, "update"):
                     if node not in images:
                         images.append(node)
-            
+
         # Calculate again
         area = Node.union_bounds(data)
         dx = x_pos - area[0]
