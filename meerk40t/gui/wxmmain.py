@@ -2810,6 +2810,8 @@ class MeerK40t(MWindow):
                 try:
                     context.elements.save(pathname, version=version)
                     gui.validate_save()
+                    # Now just a single file...
+                    self.files_loaded = 0
                     self.set_working_file_name(pathname)
                     gui.set_file_as_recently_used(gui.working_file)
                 except OSError as e:
@@ -5002,6 +5004,7 @@ class MeerK40t(MWindow):
                 self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
                 self.set_file_as_recently_used(pathname)
+                self.set_working_file_name(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
                 return True
