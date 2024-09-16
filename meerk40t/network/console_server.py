@@ -55,3 +55,48 @@ def plugin(kernel, lifecycle=None):
             except (OSError, ValueError):
                 channel(_("Server failed on port: {port}").format(port=port))
             return
+
+        @kernel.console_option(
+            "port", "p", type=int, default=2080, help=_("port to listen on.")
+        )
+        @kernel.console_option(
+            "silent",
+            "s",
+            type=bool,
+            action="store_true",
+            help=_("do not watch server channels"),
+        )
+        @kernel.console_option(
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help=_("shutdown current webserver"),
+        )
+        @kernel.console_command(
+            "webserver", help=_("starts a web-serverconsole_server on port 2080 (http)")
+        )
+        def server_web(
+            command, channel, _, port=2080, silent=False, quit=False, **kwargs
+        ):
+            root = kernel.root
+            try:
+                server = root.open_as("module/WebServer", "web-server", port=port)
+                if quit:
+                    root.close("web-server")
+                    return
+                channel(
+                    _(
+                        "{name} {version} console server on port: {port}".format(
+                            name=kernel.name, version=kernel.version, port=port
+                        )
+                    )
+                )
+                # We could show stuff on the console
+                if not silent:
+                    console = root.channel("console")
+                    server.events_channel.watch(console)
+
+            except (OSError, ValueError):
+                channel(_("Server failed on port: {port}").format(port=port))
+            return

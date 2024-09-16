@@ -528,6 +528,9 @@ class MeerK40t(MWindow):
                     dlg.Destroy()
 
             def paste_text(content):
+                if content.startswith("http://") or content.startswith("https://"):
+                    self.context(f"webimage {content}\n")
+                    return
                 size = 16.0
                 node = self.context.elements.elem_branch.add(
                     text=content,

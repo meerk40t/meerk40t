@@ -521,6 +521,9 @@ class Elemental(Service):
         self.points = list()
         self.segments = list()
 
+        # Will be filled with a list of newly added nodes after a load operation
+        self.added_elements = list()
+
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
@@ -3874,6 +3877,10 @@ class Elemental(Service):
     def load(self, pathname, **kwargs):
         kernel = self.kernel
         _ = kernel.translation
+        
+        _stored_elements = list(e for e in self.elems_nodes())
+        self.clear_loaded_information()
+
         filename_to_process = pathname
         # Let's check first if we have a preprocessor
         # Use-case: if we identify functionalities in the file
@@ -3917,6 +3924,9 @@ class Elemental(Service):
                             opcount_now = self.count_op()
                             self.remove_invalid_references()
                             self.remove_empty_groups()
+                            for e in self.elems_nodes():
+                                if e not in _stored_elements:
+                                    self.added_elements.append(e)
                             # self.listen_tree(self)
                             self._filename = pathname
                             self.set_end_time("load", display=True)
@@ -3946,6 +3956,9 @@ class Elemental(Service):
                             return False
 
         return False
+
+    def clear_loaded_information(self):
+        self.added_elements.clear()
 
     def load_types(self, all=True):
         kernel = self.kernel
