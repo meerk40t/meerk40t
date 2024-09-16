@@ -2301,7 +2301,6 @@ class Kernel(Settings):
             text = text[1:]
         else:
             channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
-        print ("Start analysis")
         data = None  # Initial command context data is null
         input_type = None  # Initial command context is None
         post = list()
@@ -2332,7 +2331,6 @@ class Kernel(Settings):
                     # Exact match only.
                     if regex != command:
                         continue
-                print (f"Found command: {funct} {name} {regex}")
                 try:
                     data, remainder, input_type = funct(
                         command=command,
@@ -2345,11 +2343,9 @@ class Kernel(Settings):
                         post_data=post_data,
                     )
                     command_executed = True
-                    print ("Command executed")
                     break  # command found and executed.
                 except CommandSyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
-                    print (f"Error: {e}")
                     message = funct.help
                     if str(e):
                         message = str(e)
@@ -2375,7 +2371,6 @@ class Kernel(Settings):
                 )
                 return None
 
-            print (f"Remainder: {remainder}")
             # Process remainder as commands
             text = remainder.strip()
 
@@ -2389,7 +2384,6 @@ class Kernel(Settings):
                     ansi=True,
                 )
                 return None
-        print ("checking for post execution")
         # If post execution commands were added along the way, run them now.
         for post_execute_command in post:
             post_execute_command(
