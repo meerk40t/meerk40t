@@ -259,6 +259,7 @@ class PositionWidget(StatusBarWidget):
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
+        self._needs_generation = False
         self.xy_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("X, Y"))
         self.node = None
         self.units = ("mm", "cm", "in", "mil", "%")
@@ -725,7 +726,21 @@ class PositionWidget(StatusBarWidget):
             self.execute_xy_changes()
             self.context.signal("refresh_scene", "Scene")
 
-    def Signal(self, signal, *args):
-        if signal in ("emphasized", "modified", "modified", "element_property_update"):
+    def Show(self, showit=True):
+        if self._needs_generation and showit:
             self.update_position(True)
             self.startup = False
+        super().Show(showit)
+
+    def GenerateInfos(self):
+        if self.visible:
+            self.context.elements.set_start_time("positionwidget")
+            self.update_position(True)
+            self.startup = False
+            self.context.elements.set_end_time("positionwidget")
+        else:
+            self._needs_generation = True
+
+    def Signal(self, signal, *args):
+        if signal in ("emphasized", "modified", "modified", "element_property_update"):
+            self.GenerateInfos()

@@ -54,6 +54,8 @@ class BasicOpPanel(wx.Panel):
         }
 
         # Refresh logic
+        self.visible = False
+        self.pending_ops = dict()
         self.ignore_refill = False
         self.filtered = True
         self._refill_job = Job(
@@ -669,12 +671,13 @@ class BasicOpPanel(wx.Panel):
         self.op_panel.SetupScrolling()
         self.operation_sizer.Layout()
         self.op_panel.Layout()
-        self.highlight_operations()
+        self.highlight_operations(source="fill_operations")
         self.op_panel.Thaw()
         self.op_panel.Refresh()
         # print (f"Fill operations called: {len(self.op_panel.GetChildren())}")
 
-    def highlight_operations(self):
+    def highlight_operations(self, source=None):
+        # print (f"Highlighting [{source}]")
         active_ops = []
         highlight_back = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
         highlight_fore = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
@@ -700,14 +703,29 @@ class BasicOpPanel(wx.Panel):
             ctrl.Refresh()
 
     def pane_show(self, *args):
-        pass
+        # print ("Showing")
+        self.visible = True
+        if "set_display" in self.pending_ops:
+            self.set_display()
+        if "ask_for_refill" in self.pending_ops:
+            self.ask_for_refill()
+            # Ask for refill will also highlight, so no need to check this
+        elif "highlight_operations" in self.pending_ops:
+            self.highlight_operations(source="pane_show")
+
+        self.pending_ops = dict()
 
     def pane_hide(self, *args):
-        pass
+        # print ("Hiding")
+        self.visible = False
 
     @signal_listener("element_property_update")
     @signal_listener("element_property_reload")
     def signal_handler_update(self, origin, *args, **kwargs):
+        if not self.visible:
+            self.pending_ops["ask_for_refill"] = True
+            return
+
         hadops = False
         if len(args) > 0:
             if isinstance(args[0], (list, tuple)):
@@ -733,6 +751,11 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("warn_state_update")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
+        if not self.visible:
+            # print ("Delay ask_for_refill")
+            self.pending_ops["ask_for_refill"] = True
+            return
+
         self.ask_for_refill()
 
     def ask_for_refill(self):
@@ -746,9 +769,20 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
+        if not self.visible:
+            self.pending_ops["set_display"] = True
+            self.pending_ops["ask_for_refill"] = True
+            return
+
         self.set_display()
         self.ask_for_refill()
 
     @signal_listener("emphasized")
     def signal_handler_emphasized(self, origin, *args, **kwargs):
-        self.highlight_operations()
+        if not self.IsShown():
+            # print ("Delay highlight_operations")
+            self.pending_ops["highlight_operations"] = True
+            return
+        self.context.elements.set_start_time("BasicOpPanel")
+        self.highlight_operations(source="emphasized")
+        self.context.elements.set_end_time("BasicOpPanel", message=f"vis={self.visible}")

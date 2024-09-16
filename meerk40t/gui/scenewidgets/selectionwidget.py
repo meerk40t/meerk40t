@@ -1547,6 +1547,7 @@ class MoveWidget(Widget):
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
+        elements.set_start_time("movewidget")
         lastdx = 0
         lastdy = 0
         if nearest_snap is None:
@@ -1765,6 +1766,7 @@ class MoveWidget(Widget):
             # b = elements.selected_area()  # correct, but slow...
             move_to(dx, dy)
         self.scene.request_refresh()
+        elements.set_end_time("movewidget")
 
     def event(
         self,
