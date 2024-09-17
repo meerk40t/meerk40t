@@ -873,7 +873,11 @@ class RibbonBarPanel(wx.Control):
 
     def _exec_tooltip_job(self):
         # print (f"Executed with {self._tooltip}")
-        super().SetToolTip(self._tooltip)
+        try:
+            super().SetToolTip(self._tooltip)
+        except RuntimeError:
+            # Could happen on a shutdown...
+            return
 
     def SetToolTip(self, message):
         self._tooltip = message
