@@ -1050,6 +1050,7 @@ class MeerK40t(MWindow):
                 "default": 0.1,
                 "trailer": "x",
                 "type": float,
+                "style": "flat",
                 "label": _("Default zoom factor:"),
                 "tip": _(
                     "Default zoom factor controls how quick or fast zooming happens."
@@ -1063,6 +1064,7 @@ class MeerK40t(MWindow):
                 "default": 25.0,
                 "trailer": "px",
                 "type": float,
+                "style": "flat",
                 "label": _("Default pan factor:"),
                 "tip": _("Default pan factor controls how quick panning happens."),
                 "page": "Gui",

@@ -799,6 +799,22 @@ class RibbonBarPanel(wx.Control):
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
 
+        # Tooltip logic - as we do have a single control,
+        # this will prevent wxPython from resetting the timer
+        # when hovering to a different button
+        self._tooltip = ""
+        jobname = f"tooltip_ribbon_bar_{self.GetId()}"
+        #  print (f"Requesting job with name: '{jobname}'")
+        tooltip_delay = self.context.setting(int, "tooltip_delay", 100)
+        interval = tooltip_delay / 1000.0
+        self._tooltip_job = Job(
+            process=self._exec_tooltip_job,
+            job_name=jobname,
+            interval=interval,
+            times=1,
+            run_main=True,
+        )
+
     # Preparation for individual page visibility
     def visible_pages(self):
         count = 0
@@ -847,6 +863,31 @@ class RibbonBarPanel(wx.Control):
         self.art.hover_button = None
         self.art.hover_dropdown = None
         self.redrawn()
+
+    def stop_tooltip_job(self):
+        self._tooltip_job.cancel()
+
+    def start_tooltip_job(self):
+        # print (f"Schedule a job with {self._tooltip_job.interval:.2f}sec")
+        self.context.schedule(self._tooltip_job)
+
+    def _exec_tooltip_job(self):
+        # print (f"Executed with {self._tooltip}")
+        try:
+            super().SetToolTip(self._tooltip)
+        except RuntimeError:
+            # Could happen on a shutdown...
+            return
+
+    def SetToolTip(self, message):
+        self._tooltip = message
+        if message == "":
+            self.stop_tooltip_job()
+            super().SetToolTip(message)
+        else:
+            # we restart the job and delete the tooltip in the meantime
+            super().SetToolTip("")
+            self.start_tooltip_job()
 
     def _check_hover_dropdown(self, drop, pos):
         if drop is not None and not drop.contains(pos):
