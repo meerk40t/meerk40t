@@ -880,7 +880,10 @@ class RibbonBarPanel(wx.Control):
             return
 
     def SetToolTip(self, message):
-        self._tooltip = message
+        if callable(message):
+            self._tooltip = message()
+        else:
+            self._tooltip = message
         if message == "":
             self.stop_tooltip_job()
             super().SetToolTip(message)
