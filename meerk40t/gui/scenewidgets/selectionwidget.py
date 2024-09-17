@@ -503,7 +503,7 @@ class RotationWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            elements.prepare_undo("Element rotated")
             return
         elif event == 0:
             if self.rotate_cx is None:
@@ -785,7 +785,7 @@ class CornerWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            elements.prepare_undo("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1025,7 +1025,7 @@ class SideWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            elements.prepare_undo("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1244,7 +1244,7 @@ class SkewWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            elements.prepare_undo("Element skewed")
             return
         elif event == 0:  # move
             if self.is_x:
@@ -1759,7 +1759,7 @@ class MoveWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            elements.prepare_undo("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move

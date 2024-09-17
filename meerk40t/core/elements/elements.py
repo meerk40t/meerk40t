@@ -568,7 +568,7 @@ class Elemental(Service):
                 self.load_default(performclassify=False)
             if list(self.ops()):
                 # Something was loaded for default ops. Mark that.
-                self.undo.mark("op-loaded")  # Mark defaulted
+                self.undo.mark("Operations restored")  # Mark defaulted
 
         self._default_stroke = None
         self._default_strokewidth = None
@@ -643,7 +643,7 @@ class Elemental(Service):
         self._tree.notify_frozen(True)
 
     def resume_visual_updates(self):
-        self._tree.notify_frozen(False)     
+        self._tree.notify_frozen(False)
 
     def stop_updates(self, source, stop_notify=False):
         # print (f"Stop update called from {source}")
@@ -1677,8 +1677,9 @@ class Elemental(Service):
 
     # ------------------------------------------------------------------------
 
-    def prepare_undo(self):
+    def prepare_undo(self, message=None):
         if self.do_undo:
+            self.undo.message = message
             self.schedule(self._save_restore_job)
 
     def emphasized(self, *args):
@@ -1690,13 +1691,13 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.prepare_undo()
+        self.prepare_undo("Element altered")
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.prepare_undo()
+        self.prepare_undo("Element modified")
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1705,7 +1706,7 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.prepare_undo()
+        self.prepare_undo("Element shifted")
 
     def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
         # It's safer to just recompute the selection area
@@ -1714,13 +1715,13 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.prepare_undo()
+        self.prepare_undo("Element scaled")
 
     def node_attached(self, node, **kwargs):
-        self.prepare_undo()
+        self.prepare_undo("Element added")
 
     def node_detached(self, node, **kwargs):
-        self.prepare_undo()
+        self.prepare_undo("Element deleted")
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -3877,7 +3878,7 @@ class Elemental(Service):
     def load(self, pathname, **kwargs):
         kernel = self.kernel
         _ = kernel.translation
-        
+
         _stored_elements = list(e for e in self.elems_nodes())
         self.clear_loaded_information()
 

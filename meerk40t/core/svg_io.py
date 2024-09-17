@@ -725,7 +725,7 @@ class SVGProcessor:
                 if not hasattr(child, "_ref_load"):
                     child.remove_all_children(fast=True, destroy=True)
                     child.remove_node(fast=True, destroy=True)
-            self.elements.undo.mark("op-replaced")
+            self.elements.undo.mark("File loaded")
             for op in self.elements.op_branch.flat():
                 try:
                     refs = op._ref_load
