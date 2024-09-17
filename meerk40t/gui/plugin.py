@@ -221,6 +221,25 @@ and a wxpython version <= 4.1.1."""
                 "section": "Tooltips",
                 "signals": "restart",
             },
+            {
+                "attr": "concern_level",
+                "object": kernel.root,
+                "default": 0,
+                "type": int,
+                "style": "option",
+                "display": (
+                    _("Low + Normal + Critical"),
+                    _("Normal + Critical"),
+                    _("Critical"),
+                    _("Ignore all"),
+                ),
+                "choices": (1, 2, 3, 4),
+                "label": _("Level"),
+                "tip": _("Which warning severity level do you want to recognize"),
+                "page": "Gui",
+                "section": "Warning-Indicator",
+                "signals": "icons",
+            },
         ]
         kernel.register_choices("preferences", choices)
 
