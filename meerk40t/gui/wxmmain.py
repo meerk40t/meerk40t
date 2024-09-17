@@ -123,7 +123,7 @@ from .laserrender import (
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
-
+MULTIPLE = "<Multiple files loaded>"
 
 class Autosaver:
     """
@@ -4682,7 +4682,7 @@ class MeerK40t(MWindow):
             if self.files_loaded == 1:
                 self.working_file = fname
             else:
-                self.working_file = _("<Multiple files loaded>")
+                self.working_file = _(MULTIPLE)
 
     def load_or_open(self, filename):
         """
@@ -4733,31 +4733,19 @@ class MeerK40t(MWindow):
             return  # No menu, cannot populate.
 
         context = self.context
-        recents = [
-            (context.file0, "&1 "),
-            (context.file1, "&2 "),
-            (context.file2, "&3 "),
-            (context.file3, "&4 "),
-            (context.file4, "&5 "),
-            (context.file5, "&6 "),
-            (context.file6, "&7 "),
-            (context.file7, "&8 "),
-            (context.file8, "&9 "),
-            (context.file9, "1&0"),
-            (context.file10, "11"),
-            (context.file11, "12"),
-            (context.file12, "13"),
-            (context.file13, "14"),
-            (context.file14, "15"),
-            (context.file15, "16"),
-            (context.file16, "17"),
-            (context.file17, "18"),
-            (context.file18, "19"),
-            (context.file19, "20"),
-        ]
-
-        # for i in range(self.recent_file_menu.MenuItemCount):
-        # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+        recents = []
+        idx = 0
+        for i in range(20):
+            fname = getattr(context, f"file{i}")
+            if os.path.exists(fname):
+                idx += 1
+                if idx < 10:
+                    label = f"&{idx} "
+                elif idx == 10:
+                    label = f"1&0 "
+                else:
+                    label = f"{idx} "
+                recents.append( (fname, label) )
 
         for item in self.recent_file_menu.GetMenuItems():
             self.recent_file_menu.Remove(item)
@@ -4797,9 +4785,14 @@ class MeerK40t(MWindow):
         self.populate_recent_menu()
 
     def set_file_as_recently_used(self, pathname):
+        if pathname == MULTIPLE or pathname == _(MULTIPLE):
+            return
         recent = list()
         for i in range(20):
-            recent.append(getattr(self.context, "file" + str(i)))
+            s = getattr(self.context, "file" + str(i))
+            if s == MULTIPLE or s == _(MULTIPLE):
+                continue
+            recent.append(s)
         recent = [r for r in recent if r is not None and r != pathname and len(r) > 0]
         recent.insert(0, pathname)
         for i in range(20):
