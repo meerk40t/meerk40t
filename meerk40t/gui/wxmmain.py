@@ -4820,6 +4820,7 @@ class MeerK40t(MWindow):
         self.validate_save()
         kernel.busyinfo.end()
         self.context(".tool none\n")
+        # Hint for translate check: _("Clear Project")
         context.elements.undo.mark("Clear Project")
         self.context.signal("selected")
 

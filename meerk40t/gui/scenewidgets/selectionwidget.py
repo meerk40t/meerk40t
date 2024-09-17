@@ -503,6 +503,7 @@ class RotationWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
+            # Hint for translate check: _("Element rotated")
             elements.prepare_undo("Element rotated")
             return
         elif event == 0:
@@ -785,6 +786,7 @@ class CornerWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
+            # Hint for translate check: _("Element scaled")
             elements.prepare_undo("Element scaled")
             return
         elif event == 0:
@@ -1025,6 +1027,7 @@ class SideWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
+            # Hint for translate check: _("Element scaled")
             elements.prepare_undo("Element scaled")
             return
         elif event == 0:
@@ -1244,6 +1247,7 @@ class SkewWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
+            # Hint for translate check: _("Element skewed")
             elements.prepare_undo("Element skewed")
             return
         elif event == 0:  # move
@@ -1759,6 +1763,7 @@ class MoveWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
+            # Hint for translate check: _("Element shifted")
             elements.prepare_undo("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
