@@ -2102,12 +2102,26 @@ class MeerK40t(MWindow):
         #         > 0,
         #     },
         # )
+        def undo_tip():
+            s = _("Undo last operation")
+            t = kernel.elements.undo.undo_string()
+            if t:
+                s += "\n" + _(t)
+            return s
+
+        def redo_tip():
+            s = _("Redo last operation")
+            t = kernel.elements.undo.redo_string()
+            if t:
+                s += "\n" + _(t)
+            return s
+
         kernel.register(
             "button/undo/Undo",
             {
                 "label": _("Undo"),
                 "icon": icon_mk_undo,
-                "tip": _("Undo last operation"),
+                "tip": undo_tip,
                 "help": "basicediting",
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
@@ -2120,7 +2134,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Redo"),
                 "icon": icon_mk_redo,
-                "tip": _("Redo last operation"),
+                "tip": redo_tip,
                 "help": "basicediting",
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
@@ -4806,7 +4820,7 @@ class MeerK40t(MWindow):
         self.validate_save()
         kernel.busyinfo.end()
         self.context(".tool none\n")
-        context.elements.undo.mark("blank")
+        context.elements.undo.mark("Clear Project")
         self.context.signal("selected")
 
     def clear_and_open(self, pathname, preferred_loader=None):
@@ -5178,9 +5192,38 @@ class MeerK40t(MWindow):
         self.DoGiveHelp_called = True
 
     def on_menu_open(self, event):
+        def undo_label():
+            s = _("&Undo\tCtrl-Z")
+            t = self.context.elements.undo.undo_string()
+            if t:
+                idx = s.find("\t")
+                if idx:
+                    s = s[:idx] + " " + _(t) + s[idx:]
+                else:
+                    s += " " + _(t)
+            return s
+
+        def redo_label():
+            s = _("&Redo\tCtrl-Shift-Z")
+            t = self.context.elements.undo.redo_string()
+            if t:
+                idx = s.find("\t")
+                if idx:
+                    s = s[:idx] + " " + _(t) + s[idx:]
+                else:
+                    s += " " + _(t)
+            return s
+
         self.menus_open += 1
         menu = event.GetMenu()
         if menu:
+            if menu is self.edit_menu:
+                item, pos = menu.FindChildItem(wx.ID_UNDO)
+                if item:
+                    item.SetItemLabel(undo_label())
+                item, pos = menu.FindChildItem(wx.ID_REDO)
+                if item:
+                    item.SetItemLabel(redo_label())
             title = menu.GetTitle()
             if title:
                 self.update_statusbar(title + "...")
