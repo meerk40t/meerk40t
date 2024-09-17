@@ -180,7 +180,7 @@ and a wxpython version <= 4.1.1."""
                     )
                 ),
                 "page": "Gui",
-                "section": "General",
+                "section": "Tooltips",
                 "signals": "restart",
             },
             {
@@ -193,7 +193,33 @@ and a wxpython version <= 4.1.1."""
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),
                 "page": "Gui",
-                "section": "General",
+                "section": "Tooltips",
+            },
+            {
+                "attr": "tooltip_delay",
+                "object": kernel.root,
+                "default": 100,
+                "type": int,
+                "style": "flat",
+                "label": _("ToolTip delay"),
+                "trailer": "ms",
+                "tip": _("How long do you need to hover over a control before the tooltip appears"),
+                "page": "Gui",
+                "section": "Tooltips",
+                "signals": "restart",
+            },
+            {
+                "attr": "tooltip_autopop",
+                "object": kernel.root,
+                "default": 10000,
+                "type": int,
+                "style": "flat",
+                "label": _("ToolTip duration"),
+                "trailer": "ms",
+                "tip": _("How long should the tooltip stay before it disappears"),
+                "page": "Gui",
+                "section": "Tooltips",
+                "signals": "restart",
             },
         ]
         kernel.register_choices("preferences", choices)
