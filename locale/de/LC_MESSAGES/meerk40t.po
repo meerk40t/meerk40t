@@ -17804,3 +17804,47 @@ msgstr "...alle Benutzer-Einstellungen"
 #: meerk40t/gui/preferences.py:689
 msgid "Input/Output"
 msgstr "Input/Output"
+
+#: meerk40t/core/elements/elements.py:571
+msgid "Operations restored"
+msgstr "Operationen wiederhergestellt"
+
+#: meerk40t/core/elements/elements.py:1695
+msgid "Element altered"
+msgstr "Element verändert"
+
+#: meerk40t/core/elements/elements.py:1702
+msgid "Element modified"
+msgstr "Element verändert"
+
+#: meerk40t/core/elements/elements.py:1712 meerk40t/gui/scenewidgets/selectionwidget.py:1766
+msgid "Element shifted"
+msgstr "Element verschoben"
+
+#: meerk40t/core/elements/elements.py:1722 meerk40t/gui/scenewidgets/selectionwidget.py:789 meerk40t/gui/scenewidgets/selectionwidget.py:1030
+msgid "Element scaled"
+msgstr "Element skaliert"
+
+#: meerk40t/core/elements/elements.py:1726
+msgid "Element added"
+msgstr "Element hinzugefügt"
+
+#: meerk40t/core/elements/elements.py:1730
+msgid "Element deleted"
+msgstr "Element gelöscht"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:506
+msgid "Element rotated"
+msgstr "Element rotiert"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1250
+msgid "Element skewed"
+msgstr "Element verzerrt"
+
+#: meerk40t/core/svg_io.py:728
+msgid "File loaded"
+msgstr "Datei geladen"
+
+#: meerk40t/gui/wxmmain.py:4823
+msgid "Clear Project"
+msgstr "Alles löschen"
