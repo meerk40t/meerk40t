@@ -201,6 +201,9 @@ class FormatPainter:
         else:
             self.state = INACTIVE
 
+CONCERN_LOW = 1
+CONCERN_NORMAL = 2
+CONCERN_CRITICAL = 3
 
 class Warnings:
     def __init__(self, context=None, button=None, *args, **kwargs):
@@ -208,12 +211,13 @@ class Warnings:
         self.button = button
         self._concerns = list()
         self._device_acceleration_info = dict()
+        self.context.setting(int, "concern_level", 1)
         self.context.kernel.register(
             self.button,
             {
                 "label": _("Warning"),
                 "icon": icon_warning,
-                "rule_visible": lambda d: len(self._concerns) > 0,
+                "rule_visible": lambda d: len(self.concerns) > 0,
                 "action": self.show_concerns,
                 "tip": _("There are issues with your project"),
                 "size": STD_ICON_SIZE,
@@ -223,11 +227,39 @@ class Warnings:
 
     @property
     def concerns(self):
-        return "\n".join(self._concerns)
+        list_critical = []
+        list_normal = []
+        list_low = []
+        warn_level = self.context.setting(int, "concern_level", 1)
+
+        for msg, level in self._concerns:
+            if level < warn_level:
+                continue
+            if level == CONCERN_LOW:
+                list_low.append(msg)
+            if level == CONCERN_NORMAL:
+                list_normal.append(msg)
+            if level == CONCERN_CRITICAL:
+                list_critical.append(msg)
+        s = ""
+        if len(list_critical):
+            if s:
+                s += "\n"
+            s += "CRITICAL:\n" + "\n".join(list_critical)
+        if len(list_normal):
+            if s:
+                s += "\n"
+            s += "NORMAL:\n" + "\n".join(list_normal)
+        if len(list_low):
+            if s:
+                s += "\n"
+            s += "LOW:\n" + "\n".join(list_low)
+        return s
 
     def show_concerns(self, *args):
-        if len(self._concerns):
-            wx.MessageBox(self.concerns, _("Warning"), style=wx.OK | wx.ICON_WARNING)
+        msg = self.concerns
+        if msg:
+            wx.MessageBox(msg, _("Warning"), style=wx.OK | wx.ICON_WARNING)
 
     def warning_indicator(self):
         def has_ambitious_operations(maxspeed, optypes):
@@ -390,54 +422,75 @@ class Warnings:
                     flag = True
                     count += 1
             return flag, count
-
+        
         self._concerns.clear()
         max_speed = getattr(self.context.device, "max_vector_speed", None)
         if has_ambitious_operations(max_speed, ("op cut", "op engrave")):
             self._concerns.append(
-                _("- Vector operations are too fast.")
-                + "\n  "
-                + _("Could lead to erratic stepper behaviour and incomplete burns.")
+                (
+                    _("- Vector operations are too fast.")
+                    + "\n  "
+                    + _("Could lead to erratic stepper behaviour and incomplete burns."),
+                    CONCERN_CRITICAL
+                )
             )
         max_speed = getattr(self.context.device, "max_raster_speed", None)
         if has_ambitious_operations(max_speed, ("op raster", "op image")):
             self._concerns.append(
-                _("- Raster operations are too fast.")
-                + "\n  "
-                + _("Could lead to erratic stepper behaviour and incomplete burns.")
+                (
+                    _("- Raster operations are too fast.")
+                    + "\n  "
+                    + _("Could lead to erratic stepper behaviour and incomplete burns."),
+                    CONCERN_CRITICAL
+                )
             )
         if has_objects_outside():
             self._concerns.append(
-                _("- Elements are lying outside the burnable area.")
-                + "\n  "
-                + _("Could lead to the laserhead bumping into the rails.")
+                (
+                    _("- Elements are lying outside the burnable area.")
+                    + "\n  "
+                    + _("Could lead to the laserhead bumping into the rails."),
+                    CONCERN_CRITICAL
+                )
             )
         flag, info = has_close_to_edge_rasters()
         if flag:
             self._concerns.append(
-                _("- Raster operations get very close to the edge.")
-                + "\n  "
-                + _("Could lead to the laserhead bumping into the rails.")
-                + "\n  "
-                + info
+                (
+                    _("- Raster operations get very close to the edge.")
+                    + "\n  "
+                    + _("Could lead to the laserhead bumping into the rails.")
+                    + "\n  "
+                    + info,
+                    CONCERN_NORMAL
+                )
             )
 
         non_assigned, non_burn = self.context.elements.have_unburnable_elements()
         if non_assigned:
             self._concerns.append(
-                _("- Elements aren't assigned to an operation and will not be burnt")
+                (
+                    _("- Elements aren't assigned to an operation and will not be burnt"),
+                    CONCERN_NORMAL
+                )
             )
         if non_burn:
             self._concerns.append(
-                _(
-                    "- Some operations containing elements aren't active, so some elements will not be burnt"
+                (
+                    _(
+                        "- Some operations containing elements aren't active, so some elements will not be burnt"
+                    ),
+                    CONCERN_LOW
                 )
             )
 
         non_visible, info = has_hidden_elements()
         if non_visible:
             self._concerns.append(
-                _("- Elements are hidden and will not be burnt") + f" ({info})\n"
+                (
+                    _("- Elements are hidden and will not be burnt") + f" ({info})\n",
+                    CONCERN_LOW
+                )
             )
 
         self.context.signal("icons")
