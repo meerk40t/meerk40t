@@ -478,7 +478,7 @@ class BeamTable:
 
         # Add start and end events.
         for i in range(g.index):
-            if self._segtype(gs[i]) != TYPE_LINE:
+            if g._segtype(gs[i]) != TYPE_LINE:
                 continue
             event1 = get_or_insert_event(g.segments[i][0])
             event2 = get_or_insert_event(g.segments[i][-1])
@@ -600,7 +600,7 @@ class BeamTable:
         events = []
         # Add start and end events.
         for i in range(g.index):
-            if self._segtype(gs[i]) != TYPE_LINE:
+            if g._segtype(gs[i]) != TYPE_LINE:
                 continue
             if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
                 events.append((g.segments[i][0], i, None))
@@ -825,7 +825,7 @@ class Scanbeam:
         self.valid_high = self._high
 
         for i in range(self._geom.index):
-            if self._segtype(self._geom.segments[i]) != TYPE_LINE:
+            if self._geom._segtype(self._geom.segments[i]) != TYPE_LINE:
                 continue
             if (self._geom.segments[i][0].imag, self._geom.segments[i][0].real) < (
                 self._geom.segments[i][-1].imag,
@@ -1147,10 +1147,10 @@ class MergeGraph:
         idx = 0
         intersections = []
         for s in range(index):
-            if self._segtype(segments[s]) != TYPE_LINE:
+            if self.geomstr._segtype(segments[s]) != TYPE_LINE:
                 continue
             for t in range(other.index):
-                if self._segtype(other.segments[t]) != TYPE_LINE:
+                if self.geomstr._segtype(other.segments[t]) != TYPE_LINE:
                     continue
                 intersect = Geomstr.line_intersect(
                     segments[s, 0].real,
