@@ -4737,6 +4737,8 @@ class MeerK40t(MWindow):
         idx = 0
         for i in range(20):
             fname = getattr(context, f"file{i}")
+            if fname is None or fname == "":
+                continue
             if os.path.exists(fname):
                 idx += 1
                 if idx < 10:
