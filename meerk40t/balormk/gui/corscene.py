@@ -65,7 +65,7 @@ def test_pattern_geometry(s=0x6666):
             "speed": 255,
             "rapid_speed": 255,
             "timing_enabled": True,
-            "corfile_enabled": True,
+            "corfile_enabled": False,
             "corfile": " ", # Intentionally a blank as this will lead to the internal values to be loaded
         },
     )
@@ -170,7 +170,7 @@ def register_scene(service):
         scene.push_stack(SceneSpaceWidget(scene))
         corfile_widget = CorFileWidget(scene, service)
         scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
-        s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1]) 
+        s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1])
         scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), s_size)
         scene.request_refresh()
 
@@ -237,6 +237,7 @@ class CorFileWidget(Widget):
 
         self.mouse_location = None
         self.was_clicked = None
+        self.was_clicked_right = None
         self.typed = ""
 
         self.active = None
@@ -256,6 +257,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_delete.GetBitmap(use_theme=False),
                 self.close,
+                self.close,
                 _("Close the correction definition"),
             ),
             (
@@ -265,6 +267,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_rotate_left.GetBitmap(use_theme=False),
                 self.rotate_left,
+                self.rotate_right,
                 _("Rotate the pattern by 90° ccw"),
             ),
             (
@@ -274,6 +277,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_rotate_right.GetBitmap(use_theme=False),
                 self.rotate_right,
+                self.rotate_left,
                 _("Rotate the pattern by 90° cw"),
             ),
             (
@@ -282,6 +286,7 @@ class CorFileWidget(Widget):
                 3000,
                 3000,
                 icons.icons8_flip_horizontal.GetBitmap(use_theme=False),
+                self.hflip,
                 self.hflip,
                 _("Flip the pattern horizontally"),
             ),
@@ -292,6 +297,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_flip_vertical.GetBitmap(use_theme=False),
                 self.vflip,
+                self.vflip,
                 _("Flip the pattern vertically"),
             ),
             (
@@ -301,6 +307,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_up.GetBitmap(use_theme=False),
                 self.geometry_size_increase,
+                self.geometry_size_decrease,
                 _("Increase the pattern size"),
             ),
             (
@@ -310,6 +317,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_down.GetBitmap(use_theme=False),
                 self.geometry_size_decrease,
+                self.geometry_size_increase,
                 _("Decrease the pattern size"),
             ),
             (
@@ -319,6 +327,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icon_balor_full.GetBitmap(use_theme=False),
                 self.corfile_outline,
+                self.corfile_outline_stop,
                 _("Trace the pattern outline"),
             ),
             (
@@ -327,6 +336,7 @@ class CorFileWidget(Widget):
                 3000,
                 3000,
                 icons.icons8_gas_industry.GetBitmap(use_theme=False),
+                self.corfile_burn,
                 self.corfile_burn,
                 _("Burn the pattern"),
             ),
@@ -337,6 +347,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_save.GetBitmap(use_theme=False),
                 self.corfile_save,
+                self.corfile_save,
                 _("Save the pattern"),
             ),
             (
@@ -346,6 +357,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icon_balor_full.GetBitmap(use_theme=False),
                 self.pattern_outline,
+                self.pattern_outline_stop,
                 _("Trace the adjusted pattern outline"),
             ),
             (
@@ -354,6 +366,7 @@ class CorFileWidget(Widget):
                 3000,
                 3000,
                 icons.icons8_gas_industry.GetBitmap(use_theme=False),
+                self.pattern_burn,
                 self.pattern_burn,
                 _("Burn the adjusted pattern"),
             ),
@@ -450,9 +463,7 @@ class CorFileWidget(Widget):
         **kwargs,
     ):
         """
-        Capture and deal with the double click event.
-
-        Doubleclick in the grid loads a menu to remove the background.
+            Deal with the relevant user interactions
         """
         if event_type in ("hover", "move"):
             self.mouse_location = space_pos
@@ -460,12 +471,17 @@ class CorFileWidget(Widget):
             self.was_clicked = True
             # self.message = "Testing Toast..."
             # self.countdown = 100
+        if event_type == "rightdown":
+            self.was_clicked_right = True
+            # self.message = "Testing Toast..."
+            # self.countdown = 100
         if event_type == "key_up":
             key = kwargs.get("keycode")
+            modifier = kwargs.get("modifiers")
+            # print (key, modifier)
             if key:
                 self.typed += key
             else:
-                modifier = kwargs.get("modifiers")
                 if modifier == "right":
                     self.cursor += 1
                 elif modifier == "left":
@@ -476,6 +492,10 @@ class CorFileWidget(Widget):
                 elif modifier == "shift+tab":
                     self.cursor = -1
                     self.tab_prev()
+                elif modifier == "delete":
+                    self.typed += chr(127) # del
+                elif modifier == "home":
+                    self.cursor = 0
         return RESPONSE_CHAIN
 
     def close(self):
@@ -511,6 +531,11 @@ class CorFileWidget(Widget):
             self.job._geometry = self.geometry
             self.job.update()
 
+    def corfile_outline_stop(self):
+        if self.job:
+            self.job.stop()
+            self.job = None
+
     def corfile_outline(self):
         service = self.scene.context.device
         if self.job:
@@ -518,7 +543,7 @@ class CorFileWidget(Widget):
             self.job = None
             return
         from meerk40t.balormk.livelightjob import LiveLightJob
-        
+
         geom = self.geometry
         _set = geom._settings[0]
         self.job = LiveLightJob(
@@ -531,6 +556,11 @@ class CorFileWidget(Widget):
             settings=_set,
         )
         service.spooler.send(self.job)
+
+    def pattern_outline_stop(self):
+        if self.job:
+            self.job.stop()
+            self.job = None
 
     def pattern_outline(self):
         service = self.scene.context.device
@@ -658,6 +688,10 @@ class CorFileWidget(Widget):
                             if self.cursor != 0:
                                 text = text[: self.cursor - 1] + text[self.cursor :]
                                 new_cursor -= 1
+                        elif char == "\x7f":
+                            # This is a delete.
+                            if self.cursor < len(text):
+                                text = text[: self.cursor] + text[self.cursor + 1 :]
                         else:
                             # This is normal text.
                             text = text[: self.cursor] + char + text[self.cursor :]
@@ -715,7 +749,7 @@ class CorFileWidget(Widget):
         any = False
         for i, button in enumerate(self.button_fields):
             index += 1
-            x, y, width, height, bmp, click, msg = button
+            x, y, width, height, bmp, click, click_right, msg = button
             if self.active == index:
                 # If this is an active button, draw a white background.
                 gc.SetBrush(self.background_brush)
@@ -735,6 +769,11 @@ class CorFileWidget(Widget):
                     self.hot = index
                     self.was_clicked = False
                     click()
+                if self.was_clicked_right:
+                    # If we are processing a click value, call the `click_right()` function.
+                    self.hot = index
+                    self.was_clicked_right = False
+                    click_right()
 
         if not any:
             self.scene.context.signal("statusmsg", "")
@@ -848,6 +887,7 @@ class CorFileWidget(Widget):
 
         # If click wasn't processed, it clicked nothing.
         self.was_clicked = False
+        self.was_clicke_right = False
 
     def signal(self, signal, *args, **kwargs):
         """
