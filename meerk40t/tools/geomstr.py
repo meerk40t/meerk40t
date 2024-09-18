@@ -3700,7 +3700,7 @@ class Geomstr:
 
     def _find_intersections(self, segment1, segment2):
         segtype1 = self._segtype(segment1)
-        segtype1 = self._segtype(segment2)
+        segtype2 = self._segtype(segment2)
 
         fun1 = self._get_segment_function(segtype1)
         fun2 = self._get_segment_function(segtype2)
