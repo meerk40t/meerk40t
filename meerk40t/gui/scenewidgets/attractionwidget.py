@@ -308,6 +308,8 @@ class AttractionWidget(Widget):
         Signal commands which indicate that we need to refresh / discard some data
         """
         if signal in ("modified", "emphasized", "element_added", "modified_by_tool"):
+            self.scene.context.elements.set_start_time("attraction")
             self.scene.reset_snap_attraction()
+            self.scene.context.elements.set_end_time("attraction")
         elif signal == "theme":
             self.load_colors()

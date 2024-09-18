@@ -192,6 +192,8 @@ class LaserRender:
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
+        self.caches_generated = 0
+        self.nodes_rendered = 0
 
     def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         if not self.render_node(
@@ -202,7 +204,7 @@ class LaserRender:
                     c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
                 )
 
-    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255, msg="unknown"):
         """
         Render scene information.
 
@@ -213,6 +215,9 @@ class LaserRender:
         @param alpha: render transparency
         @return:
         """
+        self.context.elements.set_start_time(f"renderscene_{msg}")
+        self.caches_generated = 0
+        self.nodes_rendered = 0
         if draw_mode is None:
             draw_mode = self.context.draw_mode
         if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
@@ -251,6 +256,7 @@ class LaserRender:
             self.render_node(
                 node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
             )
+        self.context.elements.set_end_time(f"renderscene_{msg}", message=f"Rendered: {self.nodes_rendered}, caches created: {self.caches_generated}")
 
     def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -262,6 +268,7 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
+        self.nodes_rendered += 1
         if hasattr(node, "hidden"):
             if node.hidden:
                 return False
@@ -271,7 +278,7 @@ class LaserRender:
         if hasattr(node, "output"):
             if not node.output:
                 return False
-        if not hasattr(node, "draw") or not hasattr(node, "_make_cache"):
+        if not hasattr(node, "draw"): # or not hasattr(node, "_make_cache"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
                 "elem path",
@@ -284,7 +291,7 @@ class LaserRender:
                 "effect warp",
             ):
                 node.draw = self.draw_vector
-                node._make_cache = self.cache_geomstr
+                # node._make_cache = self.cache_geomstr
             elif node.type == "elem point":
                 node.draw = self.draw_point_node
             elif node.type in place_nodes:
@@ -681,6 +688,8 @@ class LaserRender:
             del p
 
     def cache_geomstr(self, node, gc):
+        self.caches_generated += 1
+
         try:
             matrix = node.matrix
             node._cache_matrix = copy(matrix)
@@ -722,7 +731,7 @@ class LaserRender:
         except AttributeError:
             cache = None
         if cache is None:
-            node._make_cache(node, gc)
+            self.cache_geomstr(node, gc)
 
         try:
             cache_matrix = node._cache_matrix
@@ -1321,7 +1330,7 @@ class LaserRender:
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(x_min - 1, y_min - 1, x_max + 1, y_max + 1)
-        self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
+        self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES, msg="make_raster")
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(

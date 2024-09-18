@@ -133,7 +133,7 @@ msgstr "Anteil des 'First Pulse Killer' für CO2 Laser"
 
 #: meerk40t/balormk/device.py:627
 msgid "Use correction file?"
-msgstr "Nutze KorrekturDatei (.cor)"
+msgstr "Nutze Korrektur-Datei (.cor)"
 
 #: meerk40t/balormk/device.py:639 meerk40t/gui/wxmmain.py:2033
 msgid "File"
@@ -17804,3 +17804,163 @@ msgstr "...alle Benutzer-Einstellungen"
 #: meerk40t/gui/preferences.py:689
 msgid "Input/Output"
 msgstr "Input/Output"
+
+#: meerk40t/core/elements/elements.py:571
+msgid "Operations restored"
+msgstr "Operationen wiederhergestellt"
+
+#: meerk40t/core/elements/elements.py:1695
+msgid "Element altered"
+msgstr "Element verändert"
+
+#: meerk40t/core/elements/elements.py:1702
+msgid "Element modified"
+msgstr "Element verändert"
+
+#: meerk40t/core/elements/elements.py:1712 meerk40t/gui/scenewidgets/selectionwidget.py:1766
+msgid "Element shifted"
+msgstr "Element verschoben"
+
+#: meerk40t/core/elements/elements.py:1722 meerk40t/gui/scenewidgets/selectionwidget.py:789 meerk40t/gui/scenewidgets/selectionwidget.py:1030
+msgid "Element scaled"
+msgstr "Element skaliert"
+
+#: meerk40t/core/elements/elements.py:1726
+msgid "Element added"
+msgstr "Element hinzugefügt"
+
+#: meerk40t/core/elements/elements.py:1730
+msgid "Element deleted"
+msgstr "Element gelöscht"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:506
+msgid "Element rotated"
+msgstr "Element rotiert"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1250
+msgid "Element skewed"
+msgstr "Element verzerrt"
+
+#: meerk40t/core/svg_io.py:728
+msgid "File loaded"
+msgstr "Datei geladen"
+
+#: meerk40t/gui/wxmmain.py:4823
+msgid "Clear Project"
+msgstr "Alles löschen"
+
+#: meerk40t/gui/consolepanel.py:108
+msgid "Sets the console font"
+msgstr "Ändert den Zeichensatz für die Konsole"
+
+#: meerk40t/gui/consolepanel.py:155
+msgid "Font has been changed"
+msgstr "Zeichensatz wurde geändert"
+
+#: meerk40t/gui/devicepanel.py:195
+msgid "Driver"
+msgstr "Treiber"
+
+#: meerk40t/gui/dialogoptions.py:41
+msgid "Input required"
+msgstr "Eingabe erforderlich"
+
+#: meerk40t/gui/plugin.py:204
+msgid "ToolTip delay"
+msgstr "Anzeige-Verzögerung"
+
+#: meerk40t/gui/plugin.py:206
+msgid "How long do you need to hover over a control before the tooltip appears"
+msgstr "Wie lange muss die Maus über dem Element bleiben, bevor der Hilfetext erscheint"
+
+#: meerk40t/gui/plugin.py:217
+msgid "ToolTip duration"
+msgstr "Anzeige-Dauer"
+
+#: meerk40t/gui/plugin.py:219
+msgid "How long should the tooltip stay before it disappears"
+msgstr "Wie lange soll der Hilfetext angezeigt werden, bevor er verschwindet"
+
+#: meerk40t/gui/plugin.py:362
+msgid "Load main module"
+msgstr "Lade Hauptprogramm"
+
+#: meerk40t/gui/plugin.py:382
+msgid "Loading windows"
+msgstr "Lade Fenster"
+
+#: meerk40t/gui/plugin.py:398
+msgid "Finishing GUI"
+msgstr "Letzte Schritte"
+
+#: meerk40t/gui/statusbarwidgets/infowidget.py:314
+msgid "Gathering information..."
+msgstr "Sammle Informationen..."
+
+#: meerk40t/balormk/gui/balorconfig.py:75
+msgid "Open a definition screen"
+msgstr "Öffne Design-Fenster"
+
+#: meerk40t/balormk/gui/corscene.py:148
+msgid "cor_file"
+msgstr "Korrektur-Datei"
+
+#: meerk40t/balormk/gui/corscene.py:150
+msgid "Create CorFile"
+msgstr "Erzeuge Korrektur-Datei"
+
+#: meerk40t/balormk/gui/corscene.py:159
+msgid "Show the corfile scene widget"
+msgstr "Erlaubt die interaktive Definition der Korrektur-Datei"
+
+#: meerk40t/balormk/gui/corscene.py:252
+msgid "Close the correction definition"
+msgstr "Schließe das Fenster"
+
+#: meerk40t/balormk/gui/corscene.py:261
+msgid "Rotate the pattern by 90° ccw"
+msgstr ""
+
+#: meerk40t/balormk/gui/corscene.py:270
+msgid "Rotate the pattern by 90° cw"
+msgstr ""
+
+#: meerk40t/balormk/gui/corscene.py:279
+msgid "Flip the pattern horizontally"
+msgstr "Spiegel das Testmuster horizontal"
+
+#: meerk40t/balormk/gui/corscene.py:288
+msgid "Flip the pattern vertically"
+msgstr "Spiegel das Testmuster vertikal"
+
+#: meerk40t/balormk/gui/corscene.py:297
+msgid "Increase the pattern size"
+msgstr "Vergrößere das Testmuster"
+
+#: meerk40t/balormk/gui/corscene.py:306
+msgid "Decrease the pattern size"
+msgstr "Verkleinere das Testmuster"
+
+#: meerk40t/balormk/gui/corscene.py:315
+msgid "Trace the pattern outline"
+msgstr "Vorschau des Testmusters"
+
+#: meerk40t/balormk/gui/corscene.py:324
+msgid "Burn the pattern"
+msgstr "Brenne das Testmuster"
+
+#: meerk40t/balormk/gui/corscene.py:333
+msgid "Save the pattern"
+msgstr "Speichere Muster"
+
+#: meerk40t/balormk/gui/corscene.py:342
+msgid "Trace the adjusted pattern outline"
+msgstr "Vorschau des korrigierten Testmusters"
+
+#: meerk40t/balormk/gui/corscene.py:351
+msgid "Burn the adjusted pattern"
+msgstr "Brenne das korrigierte Testmuster"
+
+#: meerk40t/balormk/gui/corscene.py:559
+msgid "Export Corfile"
+msgstr "Exportiere die Korrektur-Datei"

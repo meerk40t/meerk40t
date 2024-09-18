@@ -711,6 +711,8 @@ def _dashed(wobble, x0, y0, x1, y1):
                 for s in sub_spaces:
                     try:
                         value = float(s)
+                        if value <= 0:
+                            continue
                     except ValueError:
                         continue
                     pattern.append(value * UNITS_PER_MM * wobble.unit_factor)

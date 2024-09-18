@@ -123,7 +123,7 @@ from .laserrender import (
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
-
+MULTIPLE = "<Multiple files loaded>"
 
 class Autosaver:
     """
@@ -416,13 +416,13 @@ class MeerK40t(MWindow):
         self.snap_panel = SnapOptionsWidget()
         self.info_panel = InformationWidget()
         self.main_statusbar.add_panel_widget(
-            self.pos_panel, self.idx_selection, "position", True
+            self.pos_panel, self.idx_selection, "position", False
         )
         self.main_statusbar.add_panel_widget(
             self.select_panel, self.idx_selection, "selection", False
         )
         self.main_statusbar.add_panel_widget(
-            self.snap_panel, self.idx_selection, "snap", False
+            self.snap_panel, self.idx_selection, "snap", True
         )
         self.main_statusbar.add_panel_widget(
             self.info_panel, self.idx_selection, "infos", False
@@ -528,6 +528,9 @@ class MeerK40t(MWindow):
                     dlg.Destroy()
 
             def paste_text(content):
+                if content.startswith("http://") or content.startswith("https://"):
+                    self.context(f"webimage {content}\n")
+                    return
                 size = 16.0
                 node = self.context.elements.elem_branch.add(
                     text=content,
@@ -1047,6 +1050,7 @@ class MeerK40t(MWindow):
                 "default": 0.1,
                 "trailer": "x",
                 "type": float,
+                "style": "flat",
                 "label": _("Default zoom factor:"),
                 "tip": _(
                     "Default zoom factor controls how quick or fast zooming happens."
@@ -1060,6 +1064,7 @@ class MeerK40t(MWindow):
                 "default": 25.0,
                 "trailer": "px",
                 "type": float,
+                "style": "flat",
                 "label": _("Default pan factor:"),
                 "tip": _("Default pan factor controls how quick panning happens."),
                 "page": "Gui",
@@ -2097,12 +2102,26 @@ class MeerK40t(MWindow):
         #         > 0,
         #     },
         # )
+        def undo_tip():
+            s = _("Undo last operation")
+            t = kernel.elements.undo.undo_string()
+            if t:
+                s += "\n" + _(t)
+            return s
+
+        def redo_tip():
+            s = _("Redo last operation")
+            t = kernel.elements.undo.redo_string()
+            if t:
+                s += "\n" + _(t)
+            return s
+
         kernel.register(
             "button/undo/Undo",
             {
                 "label": _("Undo"),
                 "icon": icon_mk_undo,
-                "tip": _("Undo last operation"),
+                "tip": undo_tip,
                 "help": "basicediting",
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
@@ -2115,7 +2134,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Redo"),
                 "icon": icon_mk_redo,
-                "tip": _("Redo last operation"),
+                "tip": redo_tip,
                 "help": "basicediting",
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
@@ -2810,6 +2829,8 @@ class MeerK40t(MWindow):
                 try:
                     context.elements.save(pathname, version=version)
                     gui.validate_save()
+                    # Now just a single file...
+                    self.files_loaded = 0
                     self.set_working_file_name(pathname)
                     gui.set_file_as_recently_used(gui.working_file)
                 except OSError as e:
@@ -4661,7 +4682,7 @@ class MeerK40t(MWindow):
             if self.files_loaded == 1:
                 self.working_file = fname
             else:
-                self.working_file = _("<Multiple files loaded>")
+                self.working_file = _(MULTIPLE)
 
     def load_or_open(self, filename):
         """
@@ -4712,31 +4733,19 @@ class MeerK40t(MWindow):
             return  # No menu, cannot populate.
 
         context = self.context
-        recents = [
-            (context.file0, "&1 "),
-            (context.file1, "&2 "),
-            (context.file2, "&3 "),
-            (context.file3, "&4 "),
-            (context.file4, "&5 "),
-            (context.file5, "&6 "),
-            (context.file6, "&7 "),
-            (context.file7, "&8 "),
-            (context.file8, "&9 "),
-            (context.file9, "1&0"),
-            (context.file10, "11"),
-            (context.file11, "12"),
-            (context.file12, "13"),
-            (context.file13, "14"),
-            (context.file14, "15"),
-            (context.file15, "16"),
-            (context.file16, "17"),
-            (context.file17, "18"),
-            (context.file18, "19"),
-            (context.file19, "20"),
-        ]
-
-        # for i in range(self.recent_file_menu.MenuItemCount):
-        # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+        recents = []
+        idx = 0
+        for i in range(20):
+            fname = getattr(context, f"file{i}")
+            if os.path.exists(fname):
+                idx += 1
+                if idx < 10:
+                    label = f"&{idx} "
+                elif idx == 10:
+                    label = f"1&0 "
+                else:
+                    label = f"{idx} "
+                recents.append( (fname, label) )
 
         for item in self.recent_file_menu.GetMenuItems():
             self.recent_file_menu.Remove(item)
@@ -4776,9 +4785,14 @@ class MeerK40t(MWindow):
         self.populate_recent_menu()
 
     def set_file_as_recently_used(self, pathname):
+        if pathname == MULTIPLE or pathname == _(MULTIPLE):
+            return
         recent = list()
         for i in range(20):
-            recent.append(getattr(self.context, "file" + str(i)))
+            s = getattr(self.context, "file" + str(i))
+            if s == MULTIPLE or s == _(MULTIPLE):
+                continue
+            recent.append(s)
         recent = [r for r in recent if r is not None and r != pathname and len(r) > 0]
         recent.insert(0, pathname)
         for i in range(20):
@@ -4799,7 +4813,8 @@ class MeerK40t(MWindow):
         self.validate_save()
         kernel.busyinfo.end()
         self.context(".tool none\n")
-        context.elements.undo.mark("blank")
+        # Hint for translate check: _("Clear Project")
+        context.elements.undo.mark("Clear Project")
         self.context.signal("selected")
 
     def clear_and_open(self, pathname, preferred_loader=None):
@@ -5002,6 +5017,7 @@ class MeerK40t(MWindow):
                 self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
                 self.set_file_as_recently_used(pathname)
+                self.set_working_file_name(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
                 return True
@@ -5170,9 +5186,38 @@ class MeerK40t(MWindow):
         self.DoGiveHelp_called = True
 
     def on_menu_open(self, event):
+        def undo_label():
+            s = _("&Undo\tCtrl-Z")
+            t = self.context.elements.undo.undo_string()
+            if t:
+                idx = s.find("\t")
+                if idx:
+                    s = s[:idx] + " " + _(t) + s[idx:]
+                else:
+                    s += " " + _(t)
+            return s
+
+        def redo_label():
+            s = _("&Redo\tCtrl-Shift-Z")
+            t = self.context.elements.undo.redo_string()
+            if t:
+                idx = s.find("\t")
+                if idx:
+                    s = s[:idx] + " " + _(t) + s[idx:]
+                else:
+                    s += " " + _(t)
+            return s
+
         self.menus_open += 1
         menu = event.GetMenu()
         if menu:
+            if menu is self.edit_menu:
+                item, pos = menu.FindChildItem(wx.ID_UNDO)
+                if item:
+                    item.SetItemLabel(undo_label())
+                item, pos = menu.FindChildItem(wx.ID_REDO)
+                if item:
+                    item.SetItemLabel(redo_label())
             title = menu.GetTitle()
             if title:
                 self.update_statusbar(title + "...")

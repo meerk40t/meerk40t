@@ -1126,7 +1126,9 @@ class LivingHingeTool(MWindow):
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
+        self.context.elements.set_start_time("living hinges")
         self.panel_template.pane_show()
+        self.context.elements.set_end_time("living hinges", display=True)
 
     @staticmethod
     def submenu():

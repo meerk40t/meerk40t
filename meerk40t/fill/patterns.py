@@ -175,8 +175,13 @@ class LivingHinges:
         p.set_cell_padding(self.cell_padding_h, self.cell_padding_v)
         p.set_cell_dims(self.cell_width, self.cell_height)
         p.extend_pattern = self._extend_patterns  # Grid type
-
-        outer_path = self.outershape.as_geometry()
+        outer_path = None
+        if hasattr(self.outershape, "as_geometry"):
+            outer_path = self.outershape.as_geometry()
+        elif hasattr(self.outershape, "bbox"):
+            bb = self.outershape.bbox()
+            if bb is not None:
+                outer_path = Geomstr.rect(bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1])
         if outer_path is None:
             return
         self.path = Geomstr()

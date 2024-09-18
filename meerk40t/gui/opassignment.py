@@ -284,8 +284,10 @@ class OperationAssignPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
+        self.context.elements.set_start_time("Emphasis OpAssignPanel")
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
+        self.context.elements.set_end_time("Emphasis OpAssignPanel")
 
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")

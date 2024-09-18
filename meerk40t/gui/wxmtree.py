@@ -61,12 +61,20 @@ def register_panel_tree(window, context):
     if lastpage is None or lastpage < 0 or lastpage > 2:
         lastpage = 0
 
+    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
+    wxtree = TreePanel(window, wx.ID_ANY, context=context)
+
     def on_panel_change(context):
         def handler(event):
-            mycontext.root.setting(int, "tree_panel_page", 0)
+            mycontext.root.setting(int, "tree_panel_page", 1)
             pagenum = notetab.GetSelection()
             setattr(mycontext.root, "tree_panel_page", pagenum)
-            return
+            if pagenum == 0:
+                basic_op.pane_show()
+                wxtree.pane_hide()
+            else:
+                basic_op.pane_hide()
+                wxtree.pane_show()
 
         mycontext = context
         return handler
@@ -80,8 +88,6 @@ def register_panel_tree(window, context):
         | wx.aui.AUI_NB_TAB_MOVE,
     )
 
-    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
-    wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
@@ -726,7 +732,8 @@ class ShadowTree:
         self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("selected", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("selected", node)
 
     def emphasized(self, node):
         """
@@ -742,7 +749,8 @@ class ShadowTree:
         self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("emphasized", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("emphasized", node)
 
     def targeted(self, node):
         """
@@ -758,7 +766,8 @@ class ShadowTree:
         self.check_validity(item)
         self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("targeted", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("targeted", node)
 
     def highlighted(self, node):
         """
@@ -775,7 +784,8 @@ class ShadowTree:
         self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
-        self.elements.signal("highlighted", node)
+        if not self.context.elements.suppress_signalling:
+            self.elements.signal("highlighted", node)
 
     def translated(self, node, dx=0, dy=0, *args):
         """
@@ -944,10 +954,8 @@ class ShadowTree:
         item = node._item
         self.check_validity(item)
         self.wxtree.EnsureVisible(item)
-        for s in self.wxtree.GetSelections():
-            self.wxtree.SelectItem(s, False)
-        self.wxtree.SelectItem(item)
         self.wxtree.ScrollTo(item)
+        # self.wxtree.SetFocusedItem(item)
 
     def on_force_element_update(self, *args):
         """
@@ -1088,6 +1096,14 @@ class ShadowTree:
             else:
                 self.wxtree.Thaw()
                 self.wxtree.Refresh()
+
+    def frozen(self, status):
+        self.wxtree.Enable(not status)
+        if status:
+            self.wxtree.Freeze()
+        else:
+            self.wxtree.Thaw()
+            self.wxtree.Refresh()
 
     def was_expanded(self, node, level):
         txt = self.wxtree.GetItemText(node)

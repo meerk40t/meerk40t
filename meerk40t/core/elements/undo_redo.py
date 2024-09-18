@@ -17,11 +17,12 @@ def init_commands(kernel):
     # ==========
     # UNDO/REDO COMMANDS
     # ==========
+    @self.console_argument("message", type=str, default=None)
     @self.console_command(
         "save_restore_point",
     )
-    def undo_mark(data=None, **kwgs):
-        self.undo.mark()
+    def undo_mark(data=None, message=None, **kwgs):
+        self.undo.mark(message)
 
     @self.console_command(
         "undo",

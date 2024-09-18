@@ -503,7 +503,8 @@ class RotationWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element rotated")
+            elements.prepare_undo("Element rotated")
             return
         elif event == 0:
             if self.rotate_cx is None:
@@ -785,7 +786,8 @@ class CornerWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element scaled")
+            elements.prepare_undo("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1025,7 +1027,8 @@ class SideWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element scaled")
+            elements.prepare_undo("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1244,7 +1247,8 @@ class SkewWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element skewed")
+            elements.prepare_undo("Element skewed")
             return
         elif event == 0:  # move
             if self.is_x:
@@ -1547,6 +1551,7 @@ class MoveWidget(Widget):
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
+        elements.set_start_time("movewidget")
         lastdx = 0
         lastdy = 0
         if nearest_snap is None:
@@ -1758,13 +1763,15 @@ class MoveWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element shifted")
+            elements.prepare_undo("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move
             # b = elements.selected_area()  # correct, but slow...
             move_to(dx, dy)
         self.scene.request_refresh()
+        elements.set_end_time("movewidget")
 
     def event(
         self,

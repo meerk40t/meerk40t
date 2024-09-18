@@ -2300,7 +2300,6 @@ class Kernel(Settings):
             text = text[1:]
         else:
             channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
-
         data = None  # Initial command context data is null
         input_type = None  # Initial command context is None
         post = list()
@@ -2331,7 +2330,6 @@ class Kernel(Settings):
                     # Exact match only.
                     if regex != command:
                         continue
-
                 try:
                     data, remainder, input_type = funct(
                         command=command,
@@ -2385,7 +2383,6 @@ class Kernel(Settings):
                     ansi=True,
                 )
                 return None
-
         # If post execution commands were added along the way, run them now.
         for post_execute_command in post:
             post_execute_command(
@@ -3125,7 +3122,7 @@ class Kernel(Settings):
             if not os.path.exists(filename):
                 channel(_("The file does not exist"))
                 return
-            
+
             root = self.root
             try:
                 with open(filename, "r") as f:

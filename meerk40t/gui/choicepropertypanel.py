@@ -1162,12 +1162,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(chart, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
-                if label != "":
+                if label != "" and data_style != "flat":
                     control_sizer = StaticBoxSizer(
                         self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                    if label != "":
+                        label_text = wx.StaticText(self, id=wx.ID_ANY, label=label)
+                        control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
                 if data_type == int:
                     check_flag = "int"
                     limit = True

@@ -269,7 +269,9 @@ class DebugTreePanel(wx.Panel):
         # end wxGlade
 
     def _update_position(self, *args):
+        self.context.elements.set_start_time("Emphasis mkdebug")
         self.update_position(True)
+        self.context.elements.set_end_time("Emphasis mkdebug")
 
     def update_position(self, reset):
         def timestr(ts):
