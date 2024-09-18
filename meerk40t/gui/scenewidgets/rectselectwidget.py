@@ -17,7 +17,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.tools.geomstr import TYPE_END
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 
 class RectSelectWidget(Widget):
@@ -305,22 +305,16 @@ class RectSelectWidget(Widget):
                         last = None
                         for seg in geom.segments[: geom.index]:
                             start = seg[0]
-                            seg_type = int(seg[2].real)
+                            seg_type = geom._segtype(seg)
                             end = seg[4]
-                            if seg_type != TYPE_END:
-                                if start != last:
-                                    xx = start.real
-                                    yy = start.imag
-                                    ignore = (
-                                        xx < b[0] - gap
-                                        or xx > b[2] + gap
-                                        or yy < b[1] - gap
-                                        or yy > b[3] + gap
-                                    )
-                                    if not ignore:
-                                        target.append(start)
-                                xx = end.real
-                                yy = end.imag
+                            if seg_type in NON_GEOMETRY_TYPES:
+                                continue
+                            if np.isnan(start) or np.isnan(end):
+                                print (f"Strange, encountered within rectselect a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                                continue
+                            if start != last:
+                                xx = start.real
+                                yy = start.imag
                                 ignore = (
                                     xx < b[0] - gap
                                     or xx > b[2] + gap
@@ -328,8 +322,18 @@ class RectSelectWidget(Widget):
                                     or yy > b[3] + gap
                                 )
                                 if not ignore:
-                                    target.append(end)
-                                last = end
+                                    target.append(start)
+                            xx = end.real
+                            yy = end.imag
+                            ignore = (
+                                xx < b[0] - gap
+                                or xx > b[2] + gap
+                                or yy < b[1] - gap
+                                or yy > b[3] + gap
+                            )
+                            if not ignore:
+                                target.append(end)
+                            last = end
                     # t2 = perf_counter()
                     if (
                         other_points is not None
