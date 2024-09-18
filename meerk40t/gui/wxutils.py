@@ -842,7 +842,10 @@ class TextCtrl(wx.TextCtrl):
         return self.GetValue()
 
     def GetValue(self):
-        result = super().GetValue()
+        try:
+            result = super().GetValue()
+        except RuntimeError:
+            return None
         if (
             result != ""
             and self._check == "length"
@@ -1080,8 +1083,8 @@ class ScrolledPanel(SP):
             pass
 
 class wxListCtrl(wx.ListCtrl):
-    """ 
-    wxListCtrl will extend a regular ListCtrl by saving / restoring column widths 
+    """
+    wxListCtrl will extend a regular ListCtrl by saving / restoring column widths
     """
     def __init__(
         self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, context=None, list_name=None
@@ -1093,13 +1096,13 @@ class wxListCtrl(wx.ListCtrl):
         # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)
         parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, parent)
         parent.Bind(wx.EVT_LIST_COL_END_DRAG, self.proxy_col_resized, self)
-    
+
     def save_column_widths(self):
         if self.context is None or self.list_name is None:
             return
         sizes = list()
         for col in range(self.ColumnCount):
-            sizes.append(self.GetColumnWidth(col)) 
+            sizes.append(self.GetColumnWidth(col))
         self.context.setting(tuple, self.list_name, None)
         setattr(self.context, self.list_name, sizes)
 
@@ -1115,12 +1118,12 @@ class wxListCtrl(wx.ListCtrl):
             if idx >= available:
                 break
             self.SetColumnWidth(idx, width)
-        
+
     def resize_columns(self):
         self.load_column_widths()
         # we could at least try to make use of the available space
         dummy = self.adjust_last_column()
-        
+
     def proxy_col_resized(self, event):
         # We are not touching the event object to allow other routines to tap into it
         event.Skip()
@@ -1139,10 +1142,10 @@ class wxListCtrl(wx.ListCtrl):
         last = 0
         for col in range(self.ColumnCount):
             last = self.GetColumnWidth(col)
-            total += last 
+            total += last
         # print(f"{self.list_name}, cols={self.ColumnCount}, available={list_width}, used={total}")
         if total < list_width:
-            col = self.ColumnCount - 1 
+            col = self.ColumnCount - 1
             # print(f"Will adjust last column from {last} to {last + (list_width - total)}")
             self.SetColumnWidth(col, last + (list_width - total))
             return True
@@ -1152,7 +1155,7 @@ class wxListCtrl(wx.ListCtrl):
         # We are not touching the event object to allow other routines to tap into it
         event.Skip()
         # print (f"Resize called from {self.GetId()} - {self.list_name}: {event.Size}")
-        if self.adjust_last_column(event.Size):    
+        if self.adjust_last_column(event.Size):
             self.save_column_widths()
 
 
