@@ -1,11 +1,11 @@
 import math
-
+import numpy as np
 import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.tools.geomstr import TYPE_END
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 _ = wx.GetTranslation
 
@@ -667,10 +667,14 @@ class ParameterTool(ToolWidget):
                     last = None
                     for seg in geom.segments[: geom.index]:
                         start = seg[0]
-                        seg_type = int(seg[2].real)
+                        seg_type = geom._segtype(seg)
                         end = seg[4]
-                        if seg_type == TYPE_END:
+                        if seg_type in NON_GEOMETRY_TYPES:
                             continue
+                        if np.isnan(start) or np.isnan(end):
+                            print (f"Strange, encountered within toolparameter a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                            continue
+
                         if start != last:
                             delta = abs(start - this_point)
                             if delta < smallest_gap:
