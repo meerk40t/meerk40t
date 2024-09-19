@@ -370,9 +370,10 @@ class Image3DOpNode(Node, Parameters):
                 def threshold_filter(pixel):
                     # This threshold filter function is defined to set pixels to white (255) if they are above
                     # or equal to the threshold, and to black (0) if they are below the threshold.
-                    return 255 if pixel > skip_pixel else 0
+                    return 255 if pixel >= skip_pixel else 0
 
                 cleared_image = pil_image.point(threshold_filter)
+
                 # Create Cut Object
                 cut = RasterCut(
                     image=cleared_image,
