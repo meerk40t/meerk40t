@@ -24,9 +24,11 @@ class RasterCut(CutObject):
         passes=1,
         parent=None,
         color=None,
+        filter=None,
+        label=None,
     ):
         CutObject.__init__(
-            self, settings=settings, passes=passes, parent=parent, color=color
+            self, settings=settings, passes=passes, parent=parent, color=color, label=label
         )
         if image.mode not in ("L", "1"):
             image = image.convert("L")
@@ -46,16 +48,13 @@ class RasterCut(CutObject):
         self.inverted = inverted
         self.scan = overscan
         if inverted:
-            skip_pixel = 255
-
             def image_filter(pixel):
                 return pixel / 255.0
-
         else:
-            skip_pixel = 0
-
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+        if filter is None:
+            filter = image_filter
 
         self.plot = RasterPlotter(
             data=image.load(),
@@ -65,13 +64,12 @@ class RasterCut(CutObject):
             start_minimum_y=self.start_minimum_y,
             start_minimum_x=self.start_minimum_x,
             bidirectional=self.bidirectional,
-            skip_pixel=skip_pixel,
             overscan=self.scan,
             offset_x=self.offset_x,
             offset_y=self.offset_y,
             step_x=self.step_x,
             step_y=self.step_y,
-            filter=image_filter,
+            filter=filter,
         )
 
     def reversible(self):

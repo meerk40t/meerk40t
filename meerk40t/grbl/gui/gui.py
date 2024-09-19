@@ -39,6 +39,7 @@ def plugin(service, lifecycle):
         service.register("property/CutOpNode/GRBL", GRBLAdvancedPanel)
         service.register("property/EngraveOpNode/GRBL", GRBLAdvancedPanel)
         service.register("property/ImageOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/Image3DOpNode/GRBL", GRBLAdvancedPanel)
         service.register("property/DotsOpNode/GRBL", GRBLAdvancedPanel)
         _ = service._
 

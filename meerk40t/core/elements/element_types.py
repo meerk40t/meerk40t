@@ -10,6 +10,7 @@ non_structural_nodes = (
     "op cut",
     "op raster",
     "op image",
+    "op gray3d",
     "op engrave",
     "op dots",
     "effect hatch",
@@ -42,6 +43,7 @@ op_parent_nodes = (
     "op cut",
     "op raster",
     "op image",
+    "op gray3d",
     "op engrave",
     "op dots",
 )
@@ -49,6 +51,7 @@ op_nodes = (
     "op cut",
     "op raster",
     "op image",
+    "op gray3d",
     "op engrave",
     "op dots",
     "util console",
@@ -59,6 +62,19 @@ op_nodes = (
     "util input",
     "place point",
     "place current",
+)
+op_image_nodes = (
+    "op raster",
+    "op image",
+    "op gray3d",
+)
+op_burnable_nodes =(
+    "op cut",
+    "op engrave",
+    "op dots",
+    "op raster",
+    "op image",
+    "op gray3d",
 )
 place_nodes = (
     "place point",

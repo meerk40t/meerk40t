@@ -60,6 +60,7 @@ def plugin(service, lifecycle):
         service.register("property/CutOpNode/Ruida", RuidaOperationPanel)
         service.register("property/EngraveOpNode/Ruida", RuidaOperationPanel)
         service.register("property/ImageOpNode/Ruida", RuidaOperationPanel)
+        service.register("property/Image3DOpNode/Ruida", RuidaOperationPanel)
         service.register("property/DotsOpNode/Ruida", RuidaOperationPanel)
 
         service.add_service_delegate(RuidaGui(service))

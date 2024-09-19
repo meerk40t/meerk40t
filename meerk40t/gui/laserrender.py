@@ -562,7 +562,7 @@ class LaserRender:
         """
         gcmat = gc.GetTransform()
         mat_param = gcmat.Get()
-        gcscale = max(mat_param[0], mat_param[3])
+        gcscale = mat_param[0]
         if gcscale == 0:
             gcscale = 0.01
         highlight_color = Color("magenta")
@@ -574,6 +574,9 @@ class LaserRender:
         last_point = None
         color = None
         for cut in cutcode:
+            if hasattr(cut, "visible") and getattr(cut, "visible") == False:
+                continue
+
             if cut.highlighted:
                 c = highlight_color
             else:

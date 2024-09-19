@@ -5,6 +5,7 @@ from meerk40t.gui.icons import (
     icon_points,
     icons8_direction,
     icons8_image,
+    icon_image3d,
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
@@ -27,7 +28,7 @@ class WarningPanel(wx.Panel):
         self.context = context
         self.SetHelpText("warning")
 
-        self.op_id = ("cut", "engrave", "raster", "image", "dots", "hatch")
+        self.op_id = ("cut", "engrave", "raster", "image", "gray3d", "dots", "hatch")
         self.data = {}
 
         self.images = {
@@ -35,6 +36,7 @@ class WarningPanel(wx.Panel):
             "engrave": icons8_laserbeam_weak,
             "raster": icons8_direction,
             "image": icons8_image,
+            "gray3d": icon_image3d,
             "dots": icon_points,
             "hatch": icon_effect_hatch,
         }

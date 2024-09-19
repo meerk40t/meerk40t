@@ -6,6 +6,7 @@ from meerk40t.gui.icons import (
     icon_points,
     icons8_direction,
     icons8_image,
+    icon_image3d,
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
@@ -173,6 +174,14 @@ class OperationAssignPanel(wx.Panel):
             elif node.type == "op image":
                 c, d = get_color()
                 result = icons8_image.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
+            elif node.type == "op gray3d":
+                c, d = get_color()
+                result = icon_image3d.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

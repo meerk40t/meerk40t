@@ -5,6 +5,7 @@ from meerk40t.gui.icons import (
     icons8_computer_support,
     icons8_direction,
     icons8_image,
+    icon_image3d,
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
@@ -67,6 +68,7 @@ class OpInfoPanel(ScrolledPanel):
             "op cut": ("Cut", icons8_laser_beam, 0),
             "op raster": ("Raster", icons8_direction, 0),
             "op image": ("Image", icons8_image, 0),
+            "op gray3d": ("3D-Image", icon_image3d, 0),
             "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
             "op dots": ("Dots", icon_points, 0),
         }

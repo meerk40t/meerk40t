@@ -36,6 +36,7 @@ from .icons import (
     icons8_group_objects,
     icons8_home_filled,
     icons8_image,
+    icon_image3d,
     icons8_laser_beam,
     icons8_laserbeam_weak,
     icons8_lock,
@@ -582,6 +583,7 @@ class ShadowTree:
             "op engrave": icons8_laserbeam_weak,
             "op cut": icons8_laser_beam,
             "op image": icons8_image,
+            "op gray3d": icon_image3d,
             "op raster": icons8_direction,
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
@@ -2002,6 +2004,11 @@ class ShadowTree:
                     elif node.type == "op image":
                         ttip = _(
                             "This engraves already created images pixel by pixel,\n"
+                            + "applying the settings to the individual pictures"
+                        )
+                    elif node.type == "op gray3d":
+                        ttip = _(
+                            "This engraves already created images gray-layer by gray-layer, pixel by pixel,\n"
                             + "applying the settings to the individual pictures"
                         )
                     elif node.type == "op raster":

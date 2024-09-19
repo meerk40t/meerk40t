@@ -14,7 +14,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_image import ImageOpNode, Image3DOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.rootnode import RootNode
 from meerk40t.core.undos import Undo
@@ -467,7 +467,7 @@ def reversed_enumerate(collection: list):
         yield i, collection[i]
 
 
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
+OP_PRIORITIES = ["op dots", "op image", "op gray3d", "op raster", "op engrave", "op cut"]
 
 
 # def is_dot(element):
@@ -1391,6 +1391,9 @@ class Elemental(Service):
         elif isinstance(node, ImageOpNode):
             # _("Image ({percent}, {speed}mm/s)")
             lbl = "Image ({percent}, {speed}mm/s)"
+        elif isinstance(node, Image3DOpNode):
+            # _("Image ({percent}, {speed}mm/s)")
+            lbl = "3D-Image ({percent}, {speed}mm/s)"
         else:
             lbl = ""
         _ = self.kernel.translation
@@ -2625,7 +2628,7 @@ class Elemental(Service):
                     # is not set? Then skip...
                     if not do_stroke and op.type in ("op engrave", "op cut", "op dots"):
                         continue
-                    if not do_fill and op.type in ("op raster", "op image"):
+                    if not do_fill and op.type in op_image_nodes:
                         continue
                     is_black = False
                     whisperer = True

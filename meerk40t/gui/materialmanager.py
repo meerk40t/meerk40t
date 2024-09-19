@@ -19,6 +19,7 @@ from meerk40t.gui.icons import (
     icons8_console,
     icons8_direction,
     icons8_image,
+    icon_image3d,
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
@@ -388,6 +389,7 @@ class MaterialPanel(ScrolledPanel):
             "op cut": ("Cut", icons8_laser_beam, 0),
             "op raster": ("Raster", icons8_direction, 0),
             "op image": ("Image", icons8_image, 0),
+            "op gray3d": ("3D-Image", icon_image3d, 0),
             "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
             "op dots": ("Dots", icon_points, 0),
             "op hatch": ("Hatch", icon_hatch, 0),
@@ -1256,6 +1258,7 @@ class MaterialPanel(ScrolledPanel):
                     operation_ids["op raster"] = ["R", 0]
                     operation_ids["op cut"] = ["C", 0]
                     operation_ids["op image"] = ["I", 0]
+                    operation_ids["op gray3d"] = ["3", 0]
                     new_import_id += 1
                     sect_num = -1
                     sect = f"{pattern}{new_import_id:0>4}"
@@ -2564,6 +2567,17 @@ class MaterialPanel(ScrolledPanel):
             "power": "1000",
             "label": "Image ({percent}, {speed}mm/s)",
             "color": "#000000",
+        }
+        item = menu.Append(wx.ID_ANY, _("Add Image"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+
+        op_dict = {
+            "type": "op gray3d",
+            "speed": "300",
+            "power": "1000",
+            "label": "3D-Image ({percent}, {speed}mm/s)",
+            "color": "#000000",
+            "resolution": 256,
         }
         item = menu.Append(wx.ID_ANY, _("Add Image"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)

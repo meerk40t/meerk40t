@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_image import ImageOpNode, Image3DOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
@@ -36,6 +36,8 @@ class DefaultOperationWidget(StatusBarWidget):
             slabel = "Raster ({percent}, {speed}mm/s)"
         elif isinstance(node, ImageOpNode):
             slabel = "Image ({percent}, {speed}mm/s)"
+        elif isinstance(node, Image3DOpNode):
+            slabel = "3D-Image ({percent}, {speed}mm/s)"
         else:
             slabel = ""
         slabel = (
@@ -82,7 +84,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
         self.assign_buttons.clear()
         self.assign_operations.clear()
-        op_order = ("op cut", "op engrave", "op raster", "op image", "op dots")
+        op_order = ("op cut", "op engrave", "op raster", "op image", "op gray3d", "op dots")
         oplist = []
         for op in self.context.elements.default_operations:
             if hasattr(op, "type") and op.type in op_order:

@@ -494,6 +494,15 @@ def init_tree(kernel):
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
+    @tree_operation(_("Convert to 3D-Image"), node_type=op_parent_nodes, help="")
+    def convert_operation_image3d(node, **kwargs):
+        for n in list(self.ops(selected=True)):
+            new_settings = dict(n.settings)
+            new_settings["type"] = "op gray3d"
+            n.replace_node(keep_children=True, **new_settings)
+        self.signal("rebuild_tree")
+
+    @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
     def convert_operation_raster(node, **kwargs):
         for n in list(self.ops(selected=True)):
@@ -601,11 +610,11 @@ def init_tree(kernel):
     @tree_submenu(_("Speed for Raster-Operation"))
     @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
-    @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
+    @tree_operation(_("{speed}mm/s"), node_type=op_image_nodes, help="")
     def set_speed_raster(node, speed=150, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type not in ("op raster", "op image"):
+            if n.type not in op_image_nodes:
                 continue
             n.speed = float(speed)
             data.append(n)
@@ -637,7 +646,7 @@ def init_tree(kernel):
     @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
-        node_type=("op cut", "op raster", "op image", "op engrave"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def set_power(node, power=1000, **kwargs):
@@ -787,7 +796,7 @@ def init_tree(kernel):
     @tree_values("raster_direction", values=get_direction_values())
     @tree_operation(
         "{raster_direction}",
-        node_type=("op raster", "op image"),
+        node_type=op_image_nodes,
         help="",
     )
     def set_direction(node, raster_direction="", **kwargs):
@@ -796,7 +805,7 @@ def init_tree(kernel):
             if key == raster_direction:
                 data = list()
                 for n in list(self.ops(selected=True)):
-                    if n.type not in ("op raster", "op image"):
+                    if n.type not in op_image_nodes:
                         continue
                     n.raster_direction = idx
                     data.append(n)
@@ -821,7 +830,7 @@ def init_tree(kernel):
     @tree_values("raster_swing", values=get_swing_values())
     @tree_operation(
         "{raster_swing}",
-        node_type=("op raster", "op image"),
+        node_type=op_image_nodes,
         help="",
     )
     def set_swing(node, raster_swing="", **kwargs):
@@ -830,7 +839,7 @@ def init_tree(kernel):
             if key == raster_swing:
                 data = list()
                 for n in list(self.ops(selected=True)):
-                    if n.type not in ("op raster", "op image"):
+                    if not hasattr(n, "bidirectional"):
                         continue
                     n.bidirectional = bool(idx)
                     data.append(n)
@@ -1313,6 +1322,7 @@ def init_tree(kernel):
             "op cut",
             "op raster",
             "op image",
+            "op gray3d",
             "op engrave",
             "op dots",
             "util console",
@@ -1529,6 +1539,7 @@ def init_tree(kernel):
             "op cut",
             "op raster",
             "op image",
+            "op gray3d",
             "op engrave",
             "op dots",
             "group",
@@ -1856,6 +1867,13 @@ def init_tree(kernel):
     @tree_operation(_("Append Image"), node_type="branch ops", help="")
     def append_operation_image(node, pos=None, **kwargs):
         self.op_branch.add("op image", pos=pos)
+        self.signal("updateop_tree")
+
+    @tree_separator_before()
+    @tree_submenu(_("Append operation"))
+    @tree_operation(_("Append 3D-Image"), node_type="branch ops", help="")
+    def append_operation_image3d(node, pos=None, **kwargs):
+        self.op_branch.add("op gray3d", pos=pos)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2298,7 +2316,7 @@ def init_tree(kernel):
     @tree_submenu(_("Passes"))
     @tree_operation(
         _("Add 1 pass"),
-        node_type=("op image", "op engrave", "op cut"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def add_1_pass(node, **kwargs):
@@ -2309,7 +2327,7 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(
         _("Add {copies} passes"),
-        node_type=("op image", "op engrave", "op cut"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def add_n_passes(node, copies=1, **kwargs):
@@ -2332,7 +2350,7 @@ def init_tree(kernel):
     @tree_submenu(_("Duplicate element(s)"))
     @tree_operation(
         _("Duplicate elements 1 time"),
-        node_type=("op image", "op engrave", "op cut"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def dup_1_copy(node, **kwargs):
@@ -2343,7 +2361,7 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(
         _("Duplicate elements {copies} times"),
-        node_type=("op image", "op engrave", "op cut"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def dup_n_copies(node, copies=1, **kwargs):
@@ -2364,7 +2382,7 @@ def init_tree(kernel):
 
     @tree_operation(
         _("Make raster image"),
-        node_type=("op image", "op raster"),
+        node_type=op_image_nodes,
         help=_("Create an image from the assigned elements."),
     )
     def make_raster_image(node, **kwargs):
@@ -3408,6 +3426,7 @@ def init_tree(kernel):
             "op cut",
             "op raster",
             "op image",
+            "op gray3d",
             "op engrave",
             "op dots",
             "branch elems",
@@ -3429,6 +3448,7 @@ def init_tree(kernel):
             "op cut",
             "op raster",
             "op image",
+            "op gray3d",
             "op engrave",
             "op dots",
             "branch elems",

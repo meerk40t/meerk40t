@@ -404,6 +404,7 @@ class IdPanel(wx.Panel):
             "op engrave": mkicons.icons8_laserbeam_weak,
             "op cut": mkicons.icons8_laser_beam,
             "op image": mkicons.icons8_image,
+            "op gray3d": mkicons.icon_image3d,
             "op raster": mkicons.icons8_direction,
             "op dots": mkicons.icon_points,
             "effect hatch": mkicons.icon_effect_hatch,

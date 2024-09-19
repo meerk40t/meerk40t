@@ -166,6 +166,8 @@ class Parameters:
                 return Color("black")
             elif _type == "op image":
                 return Color("transparent")
+            elif _type == "op gray3d":
+                return Color("transparent")
             elif _type == "op dots":
                 return Color("transparent")
             else:
@@ -279,6 +281,8 @@ class Parameters:
             elif _type == "op raster":
                 return 150.0
             elif _type == "op image":
+                return 150.0
+            elif _type == "op gray3d":
                 return 150.0
             elif _type == "op dots":
                 return 35.0

@@ -38,6 +38,7 @@ def plugin(service, lifecycle):
         service.register("property/CutOpNode/Lihuiyu", LhyAdvancedPanel)
         service.register("property/EngraveOpNode/Lihuiyu", LhyAdvancedPanel)
         service.register("property/ImageOpNode/Lihuiyu", LhyAdvancedPanel)
+        service.register("property/Image3DOpNode/Lihuiyu", LhyAdvancedPanel)
         service.register("property/DotsOpNode/Lihuiyu", LhyAdvancedPanel)
         _ = service.kernel.translation
 

@@ -846,6 +846,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/CutOpNode/OpMain", ParameterPanel)
         kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
         kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
+        kernel.register("property/Image3DOpNode/OpMain", ParameterPanel)
         kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
         kernel.register("property/PlaceCurrentNode/OpMain", PlacementParameterPanel)
         kernel.register("property/PlacePointNode/OpMain", PlacementParameterPanel)

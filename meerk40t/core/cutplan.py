@@ -497,7 +497,7 @@ class CutPlan:
                         g.append(elem.as_geometry())
                         end_index = g.index
                         g.flag_settings(settings_index, start_index, end_index)
-            elif c_type in ("op raster", "op image"):
+            elif c_type in ("op raster", "op image", "op gray3d"):
                 for elem in c.children:
                     if hasattr(elem, "as_image"):
                         settings["raster"] = True

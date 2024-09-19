@@ -7,6 +7,7 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.core.elements.element_types import op_image_nodes
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_paint_brush,
@@ -362,7 +363,7 @@ class Warnings:
                 if (
                     hasattr(op, "output")
                     and op.output
-                    and op.type in ("op raster", "op image")
+                    and op.type in op_image_nodes
                 ):
                     dx = 0
                     dy = 0
@@ -422,7 +423,7 @@ class Warnings:
                     flag = True
                     count += 1
             return flag, count
-        
+
         self._concerns.clear()
         max_speed = getattr(self.context.device, "max_vector_speed", None)
         if has_ambitious_operations(max_speed, ("op cut", "op engrave")):
@@ -435,7 +436,7 @@ class Warnings:
                 )
             )
         max_speed = getattr(self.context.device, "max_raster_speed", None)
-        if has_ambitious_operations(max_speed, ("op raster", "op image")):
+        if has_ambitious_operations(max_speed, op_image_nodes):
             self._concerns.append(
                 (
                     _("- Raster operations are too fast.")

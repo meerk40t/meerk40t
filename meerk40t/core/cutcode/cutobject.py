@@ -9,10 +9,11 @@ class CutObject:
     """
 
     def __init__(
-        self, start=None, end=None, settings=None, parent=None, passes=1, color=None
+        self, start=None, end=None, settings=None, parent=None, passes=1, color=None, label=None
     ):
         if settings is None:
             settings = dict()
+        self.label = label
         self.lock = False
         self.settings = settings
         self.parent = parent

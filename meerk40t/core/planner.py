@@ -7,7 +7,7 @@ from .cutplan import CutPlan, CutPlanningFailedError
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
-from .node.op_image import ImageOpNode
+from .node.op_image import ImageOpNode, Image3DOpNode
 from .node.op_raster import RasterOpNode
 from .node.util_console import ConsoleOperation
 from .node.util_goto import GotoOperation
@@ -770,6 +770,7 @@ class Planner(Service):
                     (
                         RasterOpNode,
                         ImageOpNode,
+                        Image3DOpNode,
                         CutOpNode,
                         EngraveOpNode,
                         DotsOpNode,

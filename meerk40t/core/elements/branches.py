@@ -9,7 +9,7 @@ from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_image import ImageOpNode, Image3DOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
@@ -558,6 +558,8 @@ def init_commands(kernel):
                 return RasterOpNode()
             elif command == "imageop":
                 return ImageOpNode()
+            elif command == "image3dop":
+                return Image3DOpNode()
             elif command == "dots":
                 return DotsOpNode()
             elif command == "hatch":
@@ -734,7 +736,7 @@ def init_commands(kernel):
         if dpi is None:
             found = False
             for op in data:
-                if op.type in ("op raster", "op image"):
+                if op.type in ("op raster", "op image", "op gray3d"):
                     dpi = op.dpi
                     channel(
                         _("Step for {name} is currently: {dpi}").format(
@@ -746,7 +748,7 @@ def init_commands(kernel):
                 channel(_("No raster operations selected."))
             return
         for op in data:
-            if op.type in ("op raster", "op image"):
+            if op.type in ("op raster", "op image", "op gray3d"):
                 op.dpi = dpi
                 op.updated()
         return "ops", data
@@ -1211,7 +1213,7 @@ def init_commands(kernel):
             copies = 1
         if copies < 1:
             copies = 1
-        
+
         if data_type == "ops":
             add_ops = list()
             for idx in range(copies):

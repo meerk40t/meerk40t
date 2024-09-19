@@ -173,6 +173,7 @@ class LayerSettingPanel(wx.Panel):
             "op engrave",
             "op raster",
             "op image",
+            "op gray3d",
             "op dots",
         )
 
@@ -341,7 +342,6 @@ class LayerSettingPanel(wx.Panel):
             "element_property_reload", self.operation, "check_stopop"
         )
         event.Skip()
-
 
 # end of class LayerSettingPanel
 
@@ -540,6 +540,7 @@ class SpeedPpiPanel(wx.Panel):
             "op engrave",
             "op raster",
             "op image",
+            "op gray3d",
             "op dots",
         )
 
@@ -730,6 +731,7 @@ class PassesPanel(wx.Panel):
             "op engrave",
             "op raster",
             "op image",
+            "op gray3d",
             "op dots",
         )
 
@@ -829,10 +831,85 @@ class PassesPanel(wx.Panel):
 
 # end of class PassesPanel
 
+class Gray3DPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: Gray3D.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.operation = node
+
+        sizer_main = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_resolution = StaticBoxSizer(self, wx.ID_ANY, _("Grayscale-Resolution:"), wx.HORIZONTAL)
+
+        self.text_resolution = TextCtrl(
+            self, wx.ID_ANY, "256", limited=True, check="int", style=wx.TE_PROCESS_ENTER
+        )
+        OPERATION_RES_TOOLTIP = (
+            _("How many grayscales do you want to distinguish?") + "\n" +
+            _(
+                "This operation will step through the image and process it per defined grayscale resolution."
+            ) + "\n" +
+            _(
+                "So for full resolution every grayscale level would be processed individually: a black line (or a white line if inverted) would be processed 255 times, a line with grayscale value 128 would be processed 128 times."
+            ) + "\n" +
+            _(
+                "You can define a coarser resolution e.g. 64: then very faint lines (grayscale 1-4) would be burned just once, very strong lines (level 252-255) would be burned 64 times."
+            )
+        )
+
+        self.text_resolution.SetToolTip(OPERATION_RES_TOOLTIP)
+        sizer_resolution.Add(self.text_resolution, 1, wx.EXPAND, 0)
+
+        sizer_main.Add(sizer_resolution, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+
+        self.Layout()
+
+        self.text_resolution.SetActionRoutine(self.on_text_resolution)
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def accepts(self, node):
+        return node.type in (
+            "op gray3d",
+        )
+
+    def set_widgets(self, node):
+        self.operation = node
+        if self.operation is None or not self.accepts(node):
+            self.Hide()
+            return
+        set_ctrl_value(self.text_resolution, str(self.operation.resolution))
+        self.Layout()
+        self.Show()
+
+    def on_text_resolution(self):
+        try:
+            value = int(self.text_resolution.GetValue())
+            if value < 1:
+                value = 1
+            if value > 256:
+                value = 256
+            if self.operation.resolution != value:
+                self.operation.resolution = value
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_resolution"
+                )
+        except ValueError:
+            pass
+
+# end of class Gray3D
 
 class InfoPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
-        # begin wxGlade: PassesPanel.__init__
+        # begin wxGlade: InfoPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
@@ -932,6 +1009,7 @@ class InfoPanel(wx.Panel):
             "op engrave",
             "op raster",
             "op image",
+            "op gray3d",
             "op dots",
         )
 
@@ -1035,6 +1113,7 @@ class PanelStartPreference(wx.Panel):
         return node.type in (
             "op raster",
             "op image",
+            "op gray3d",
         )
 
     def set_widgets(self, node):
@@ -1452,6 +1531,7 @@ class RasterSettingsPanel(wx.Panel):
         return node.type in (
             "op raster",
             "op image",
+            "op gray3d",
         )
 
     def set_widgets(self, node):
@@ -1617,6 +1697,10 @@ class ParameterPanel(ScrolledPanel):
         )
         param_sizer.Add(self.layer_panel, 0, wx.EXPAND, 0)
         self.panels.append(self.layer_panel)
+
+        self.gray3d_panel = Gray3DPanel(self, wx.ID_ANY, context=context, node=node)
+        param_sizer.Add(self.gray3d_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.gray3d_panel)
 
         self.speedppi_panel = SpeedPpiPanel(self, wx.ID_ANY, context=context, node=node)
         param_sizer.Add(self.speedppi_panel, 0, wx.EXPAND, 0)

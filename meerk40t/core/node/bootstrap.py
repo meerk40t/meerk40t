@@ -21,7 +21,7 @@ from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_image import ImageOpNode, Image3DOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.place_current import PlaceCurrentNode
 from meerk40t.core.node.place_point import PlacePointNode
@@ -40,6 +40,7 @@ defaults = {
     "op engrave": {"speed": 35.0, "color": "blue", "frequency": 30.0},
     "op raster": {"speed": 150.0, "dpi": 500, "color": "black", "frequency": 30.0},
     "op image": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
+    "op gray3d": {"speed": 150.0, "color": "transparent", "frequency": 30.0, "resolution": 256},
     "op dots": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
     "util console": {},
     "util wait": {},
@@ -72,6 +73,7 @@ bootstrap = {
     "op engrave": EngraveOpNode,
     "op raster": RasterOpNode,
     "op image": ImageOpNode,
+    "op gray3d": Image3DOpNode,
     "op dots": DotsOpNode,
     "effect hatch": HatchEffectNode,
     "effect wobble": WobbleEffectNode,
