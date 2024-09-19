@@ -21,7 +21,8 @@ from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode, Image3DOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_gray3d import Image3DOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.place_current import PlaceCurrentNode
 from meerk40t.core.node.place_point import PlacePointNode

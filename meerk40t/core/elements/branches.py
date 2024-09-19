@@ -9,7 +9,8 @@ from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode, Image3DOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_gray3d import Image3DOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError

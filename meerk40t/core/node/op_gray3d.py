@@ -7,12 +7,11 @@ from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
-
-class ImageOpNode(Node, Parameters):
+class Image3DOpNode(Node, Parameters):
     """
     Default object defining any operation done on the laser.
 
-    This is a Node of type "op image".
+    This is a Node of type "op gray3d".
     """
 
     def __init__(self, settings=None, **kwargs):
@@ -24,18 +23,19 @@ class ImageOpNode(Node, Parameters):
         self.dangerous = False
         self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
-        self.label = "Image"
+        self.label = "3D-Image"
+        self.resolution = 256
 
         self.allowed_attributes = []
-        super().__init__(type="op image", **kwargs)
-        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
+        super().__init__(type="op gray3d", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}[{resolution}]{direction}{speed}mm/s @{power}"
 
     def __repr__(self):
-        return "ImageOpNode()"
+        return "Image3DOpNode()"
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Image"
+        default_map["element_type"] = "3D-Image"
         default_map["dpi"] = str(int(self.dpi))
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
@@ -80,6 +80,9 @@ class ImageOpNode(Node, Parameters):
             default_map["ppi"] = f"{self.power:.0f}"
         default_map["speed_mm_min"] = (
             "" if self.speed is None else f"{self.speed * 60:.0f}"
+        )
+        default_map["resolution"] = (
+            "" if self.resolution is None else f"{self.resolution}"
         )
         return default_map
 
@@ -206,6 +209,8 @@ class ImageOpNode(Node, Parameters):
 
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+        if self.resolution:
+            estimate *= max(self.resolution, 255)
 
         if isnan(estimate):
             estimate = 0
@@ -300,8 +305,10 @@ class ImageOpNode(Node, Parameters):
                 start_on_left = True
             bidirectional = self.bidirectional
 
-            # Set variables
             pil_image, bounds = image_node.as_image()
+            # Me sure it's grayscale...
+            if pil_image.mode != "L":
+                pil_image = pil_image.convert("L")
             offset_x = bounds[0]
             offset_y = bounds[1]
 
@@ -334,45 +341,46 @@ class ImageOpNode(Node, Parameters):
                     (max_x, min_y),
                 )
             )
+            gres = self.resolution
+            if gres < 0:
+                gres = 0
+            if gres > 255:
+                gres = 255
+            stepsize = 255 /  gres
 
-            # Create Cut Object
-            cut = RasterCut(
-                image=pil_image,
-                offset_x=offset_x,
-                offset_y=offset_y,
-                step_x=step_x,
-                step_y=step_y,
-                inverted=False,
-                bidirectional=bidirectional,
-                horizontal=horizontal,
-                start_minimum_y=start_on_top,
-                start_minimum_x=start_on_left,
-                overscan=overscan,
-                settings=settings,
-                passes=passes,
-            )
-            cut.path = path
-            cut.original_op = self.type
-            yield cut
-            if direction == 4:
-                # Create optional crosshatch cut
-                horizontal = not horizontal
-                settings = dict(settings)
-                if horizontal:
-                    # Raster step is only along y for horizontal raster
-                    settings["raster_step_x"] = 0
-                    settings["raster_step_y"] = step_y
-                else:
-                    # Raster step is only along x for vertical raster
-                    settings["raster_step_x"] = step_x
-                    settings["raster_step_y"] = 0
+            def image_filter(pixel):
+                # We ignore grayscale and move it into black-white = always on
+                return 1
+
+            inverted = False
+            # Not used!
+            if inverted:
+                delta = +1
+                start_pixel = 0
+            else:
+                delta = -1
+                start_pixel = 255
+            for gray in range(self.resolution):
+                skip_pixel = int(start_pixel + gray * delta * stepsize)
+                if skip_pixel < 0:
+                    skip_pixel = 0
+                if skip_pixel > 255:
+                    skip_pixel = 255
+
+                def threshold_filter(pixel):
+                    # This threshold filter function is defined to set pixels to white (255) if they are above
+                    # or equal to the threshold, and to black (0) if they are below the threshold.
+                    return 255 if pixel > skip_pixel else 0
+
+                cleared_image = pil_image.point(threshold_filter)
+                # Create Cut Object
                 cut = RasterCut(
-                    image=pil_image,
+                    image=cleared_image,
                     offset_x=offset_x,
                     offset_y=offset_y,
                     step_x=step_x,
                     step_y=step_y,
-                    inverted=False,
+                    inverted=inverted,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
                     start_minimum_y=start_on_top,
@@ -380,7 +388,41 @@ class ImageOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
+                    filter=image_filter,
+                    label=f"Pass {gray}: cutoff={skip_pixel}"
                 )
                 cut.path = path
                 cut.original_op = self.type
                 yield cut
+                if direction == 4:
+                    # Create optional crosshatch cut
+                    horizontal = not horizontal
+                    settings = dict(settings)
+                    if horizontal:
+                        # Raster step is only along y for horizontal raster
+                        settings["raster_step_x"] = 0
+                        settings["raster_step_y"] = step_y
+                    else:
+                        # Raster step is only along x for vertical raster
+                        settings["raster_step_x"] = step_x
+                        settings["raster_step_y"] = 0
+                    cut = RasterCut(
+                        image=cleared_image,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        step_x=step_x,
+                        step_y=step_y,
+                        inverted=inverted,
+                        bidirectional=bidirectional,
+                        horizontal=horizontal,
+                        start_minimum_y=start_on_top,
+                        start_minimum_x=start_on_left,
+                        overscan=overscan,
+                        settings=settings,
+                        passes=passes,
+                        filter=image_filter,
+                        label=f"Pass {gray}.2: cutoff={skip_pixel}"
+                    )
+                    cut.path = path
+                    cut.original_op = self.type
+                    yield cut
