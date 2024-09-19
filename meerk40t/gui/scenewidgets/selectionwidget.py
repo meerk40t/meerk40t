@@ -236,9 +236,9 @@ class BorderWidget(Widget):
             sx = mat_param[0]
             sy = mat_param[3]
             if sx == 0:
-                sx = 0.01
+                sx = 1
             if sy == 0:
-                sy = 0.01
+                sy = 1
             gc.Scale(1 / sx, 1 / sy)
 
             # Create a copy of the pen

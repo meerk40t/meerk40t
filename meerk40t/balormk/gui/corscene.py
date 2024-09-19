@@ -164,7 +164,7 @@ def register_scene(service):
         scene.push_stack(SceneSpaceWidget(scene))
         corfile_widget = CorFileWidget(scene)
         scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
-        s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1]) 
+        s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1])
         scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), s_size)
         scene.request_refresh()
 
@@ -774,6 +774,8 @@ class CorFileWidget(Widget):
         matrix = gc.GetTransform().Get()
         # mat.a mat.d
         mat_fact = matrix[0]
+        if mat_fact == 0:
+            mat_fact = 1
         try:
             linewidth = 2.0 / mat_fact
         except ZeroDivisionError:

@@ -85,7 +85,7 @@ class SimpleSlider:
         sy = mat_param[3]
         sx = max(sx, sy)
         if sx == 0:
-            sx = 0.01
+            sx = 1
         linewidth = 1 / sx
         try:
             mypen.SetWidth(linewidth)
@@ -548,4 +548,4 @@ class TabEditTool(ToolWidget):
         elif signal == "emphasized":
             self.tool_change()
         elif signal == "tabs_updated" and self.node is not None:
-            self.set_node(self.node)            
+            self.set_node(self.node)

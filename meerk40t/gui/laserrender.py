@@ -560,16 +560,14 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
-        gcmat = gc.GetTransform()
-        mat_param = gcmat.Get()
+        mat_param = gc.GetTransform().Get()
         gcscale = mat_param[0]
         if gcscale == 0:
-            gcscale = 0.01
+            gcscale = 1
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
         highlight_pen = wx.Pen(wx_color)
         highlight_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
-        self._penwidth(highlight_pen, 3 / gcscale)
         p = None
         last_point = None
         color = None
@@ -652,6 +650,11 @@ class LaserRender:
                     gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
                     if cut.highlighted:
                         # gc.SetBrush(wx.RED_BRUSH)
+                        mat_param = gc.GetTransform().Get()
+                        _gcscale = mat_param[0]
+                        if _gcscale == 0:
+                            _gcscale = 1
+                        self._penwidth(highlight_pen, 3 / _gcscale)
                         gc.SetPen(highlight_pen)
                         gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:

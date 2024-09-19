@@ -30,7 +30,10 @@ class EllipseTool(ToolWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
             matrix = gc.GetTransform().Get()
-            pixel = 1.0 / matrix[0]
+            matfact = matrix[0]
+            if matfact == 0:
+                matfact = 1
+            pixel = 1.0 / matfact
             # print (f"1 Px = {pixel}, sx = {matrix[0]}")
             if self.creation_mode == 1:
                 # From center (p1 center, p2 one corner)
