@@ -62,6 +62,7 @@ class PropertyWindow(MWindow):
                 p.signal("modified_by_tool", myargs)
 
     @signal_listener("selected")
+    @signal_listener("emphasized")
     def on_selected(self, origin, *args):
         busy = wx.BusyCursor()
         self.Freeze()
