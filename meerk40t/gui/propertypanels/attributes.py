@@ -423,10 +423,14 @@ class IdPanel(wx.Panel):
             "elem text": mkicons.icon_bmap_text,
             "image raster": mkicons.icons8_image,
             "blob": mkicons.icons8_file,
+            "_3d_image": mkicons.icon_image3d,
         }
         if hasattr(self.node, "type"):
-            if node.type in type_patterns:
-                icon = type_patterns[node.type]
+            n_type = node.type
+            if n_type == "element image" and getattr(node, "is_depthmap", False):
+                n_type = "_3d_image"
+            if n_type in type_patterns:
+                icon = type_patterns[n_type]
                 bmp = icon.GetBitmap(resize=mkicons.STD_ICON_SIZE, buffer=2)
         if bmp is None:
             self.icon_display.Show(False)
