@@ -1237,10 +1237,8 @@ class ImagePropertyPanel(ScrolledPanel):
     def set_widgets(self, node=None):
         if node is None:
             node = self.node
-        self.panel_id.set_widgets(node)
-        self.panel_xy.set_widgets(node)
-        self.panel_lock.set_widgets(node)
-        self.panel_crop.set_widgets(node)
+        for p in self.subpanels:
+            p.set_widgets(node)
         self.node = node
         if node is None:
             return
@@ -1248,13 +1246,16 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
+        self.combo_dither.Enable(bool(node.dither))
         self.check_enable_depthmap.SetValue(node.is_depthmap)
-        resolutions = (2**p for p in range(8, 1, -1))
+        resolutions =list((2**p for p in range(8, 1, -1)))
         try:
             idx = resolutions.index(node.depth_resolution)
-        except (IndexError, AttributeError, ValueError):
+        except (IndexError, AttributeError, ValueError) as e:
+            # print(f"Caught error {e} for value {node.depth_resolution}")
             idx = 0
         self.combo_depthmap.SetSelection(idx)
+        self.combo_depthmap.Enable(bool(node.is_depthmap))
 
         self.check_prevent_crop.SetValue(node.prevent_crop)
 
