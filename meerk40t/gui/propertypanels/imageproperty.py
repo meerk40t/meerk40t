@@ -659,6 +659,8 @@ class ImageModificationPanel(ScrolledPanel):
     def pane_active(self):
         self.fill_operations()
 
+    def signal(self, signalstr, myargs):
+        return
 
 class ImageVectorisationPanel(ScrolledPanel):
     name = _("Vectorisation")
@@ -1059,18 +1061,22 @@ class ImageVectorisationPanel(ScrolledPanel):
             self._need_updates = True
         self.set_images()
 
+    def signal(self, signalstr, myargs):
+        return
 
 class ImagePropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
+        self.subpanels = list()
         self.context = context
         self.node = node
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.SetHelpText("imageproperty")
+        self.subpanels.append(self.panel_id)
 
         self.text_dpi = TextCtrl(
             self,
@@ -1086,13 +1092,16 @@ class ImagePropertyPanel(ScrolledPanel):
         self.panel_lock = PreventChangePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_lock)
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_xy)
 
         self.panel_crop = CropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_crop)
         self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
@@ -1409,6 +1418,7 @@ class ImagePropertyPanel(ScrolledPanel):
             self.check_enable_depthmap.SetValue(False)
             self.combo_depthmap.Enable(False)
         self.node_update()
+        self.context.signal("nodetype")
 
     def on_depthmap(self, event=None):
         depth_flag = self.check_enable_depthmap.GetValue()
@@ -1425,6 +1435,7 @@ class ImagePropertyPanel(ScrolledPanel):
             self.check_enable_dither.SetValue(False)
             self.combo_dither.Enable(False)
         self.node_update()
+        self.context.signal("nodetype")
 
     def on_reset_grayscale(self, event):
         self.node.invert = False
@@ -1467,3 +1478,8 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
         self.node_update()
+
+    def signal(self, signalstr, myargs):
+        for p in self.subpanels:
+            if hasattr(p, "signal"):
+                p.signal(signalstr, myargs)

@@ -427,7 +427,7 @@ class IdPanel(wx.Panel):
         }
         if hasattr(self.node, "type"):
             n_type = node.type
-            if n_type == "element image" and getattr(node, "is_depthmap", False):
+            if n_type == "elem image" and getattr(node, "is_depthmap", False):
                 n_type = "_3d_image"
             if n_type in type_patterns:
                 icon = type_patterns[n_type]
@@ -447,6 +447,9 @@ class IdPanel(wx.Panel):
         else:
             self.Hide()
 
+    def signal(self, signalstr, myargs):
+        if signalstr == "nodetype":
+            self.set_widgets(self.node)
 
 class LinePropPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):

@@ -61,6 +61,13 @@ class PropertyWindow(MWindow):
             if hasattr(p, "signal"):
                 p.signal("modified_by_tool", myargs)
 
+    @signal_listener("nodetype")
+    def on_nodetype(self, origin, *args):
+        myargs = [i for i in args]
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("nodetype", myargs)
+
     @signal_listener("selected")
     def on_selected(self, origin, *args):
         busy = wx.BusyCursor()
