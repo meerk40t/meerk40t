@@ -45,6 +45,21 @@ op_parent_nodes = (
     "op engrave",
     "op dots",
 )
+op_image_nodes = (
+    "op raster",
+    "op image",
+)
+op_vector_nodes = (
+    "op cut",
+    "op engrave",
+)
+op_burnable_nodes =(
+    "op cut",
+    "op engrave",
+    "op dots",
+    "op raster",
+    "op image",
+)
 op_nodes = (
     "op cut",
     "op raster",
