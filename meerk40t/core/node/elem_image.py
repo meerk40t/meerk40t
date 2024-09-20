@@ -33,6 +33,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self.lightness = 1.0
         self.view_invert = False
         self.prevent_crop = False
+        self.is_depthmap = False
+        self.depth_resolution = 256
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
@@ -554,6 +556,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     if op["enable"] and op["type"] is not None:
                         self.dither_type = op["type"]
                         self.dither = True
+                        self.is_depthmap = False
                     else:
                         # Takes precedence
                         self.dither = False
@@ -579,6 +582,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 image = dither(image, self.dither_type)
             if image.mode != "1":
                 image = image.convert("1")
+            self.is_depthmap = False
         return image
 
     def _process_image(self, step_x, step_y, crop=True):

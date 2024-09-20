@@ -264,6 +264,7 @@ class ImageOpNode(Node, Parameters):
         and converts them into rastercut cutobjects.
         """
         for image_node in self.children:
+            cutcodes = []
             # Process each child. All settings are different for each child.
             if image_node.type == "reference":
                 image_node = image_node.node
@@ -334,26 +335,118 @@ class ImageOpNode(Node, Parameters):
                     (max_x, min_y),
                 )
             )
+            if image_node.is_depthmap:
+                # Make sure it's grayscale...
+                if pil_image.mode != "L":
+                    pil_image = pil_image.convert("L")
 
-            # Create Cut Object
-            cut = RasterCut(
-                image=pil_image,
-                offset_x=offset_x,
-                offset_y=offset_y,
-                step_x=step_x,
-                step_y=step_y,
-                inverted=False,
-                bidirectional=bidirectional,
-                horizontal=horizontal,
-                start_minimum_y=start_on_top,
-                start_minimum_x=start_on_left,
-                overscan=overscan,
-                settings=settings,
-                passes=passes,
-            )
-            cut.path = path
-            cut.original_op = self.type
-            yield cut
+                gres = image_node.depth_resolution
+                if gres < 0:
+                    gres = 0
+                if gres > 255:
+                    gres = 255
+                stepsize = 255 /  gres
+
+                def image_filter(pixel):
+                    # We ignore grayscale and move it into black-white = always on
+                    return 1
+
+                inverted = False
+                # Not used!
+                if inverted:
+                    delta = +1
+                    start_pixel = 0
+                else:
+                    delta = -1
+                    start_pixel = 255
+                for gray in range(image_node.depth_resolution):
+                    skip_pixel = int(start_pixel + gray * delta * stepsize)
+                    if skip_pixel < 0:
+                        skip_pixel = 0
+                    if skip_pixel > 255:
+                        skip_pixel = 255
+
+                    def threshold_filter(pixel):
+                        # This threshold filter function is defined to set pixels to white (255) if they are above
+                        # or equal to the threshold, and to black (0) if they are below the threshold.
+                        return 255 if pixel >= skip_pixel else 0
+
+                    cleared_image = pil_image.point(threshold_filter)
+
+                    # Create Cut Object
+                    cut = RasterCut(
+                        image=cleared_image,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        step_x=step_x,
+                        step_y=step_y,
+                        inverted=inverted,
+                        bidirectional=bidirectional,
+                        horizontal=horizontal,
+                        start_minimum_y=start_on_top,
+                        start_minimum_x=start_on_left,
+                        overscan=overscan,
+                        settings=settings,
+                        passes=passes,
+                        post_filter=image_filter,
+                        label=f"Pass {gray}: cutoff={skip_pixel}"
+                    )
+                    cut.path = path
+                    cut.original_op = self.type
+                    cutcodes.append(cut)
+
+                    if direction == 4:
+                        # Create optional crosshatch cut
+                        horizontal = not horizontal
+                        settings = dict(settings)
+                        if horizontal:
+                            # Raster step is only along y for horizontal raster
+                            settings["raster_step_x"] = 0
+                            settings["raster_step_y"] = step_y
+                        else:
+                            # Raster step is only along x for vertical raster
+                            settings["raster_step_x"] = step_x
+                            settings["raster_step_y"] = 0
+                        cut = RasterCut(
+                            image=cleared_image,
+                            offset_x=offset_x,
+                            offset_y=offset_y,
+                            step_x=step_x,
+                            step_y=step_y,
+                            inverted=inverted,
+                            bidirectional=bidirectional,
+                            horizontal=horizontal,
+                            start_minimum_y=start_on_top,
+                            start_minimum_x=start_on_left,
+                            overscan=overscan,
+                            settings=settings,
+                            passes=passes,
+                            post_filter=image_filter,
+                            label=f"Pass {gray}.2: cutoff={skip_pixel}"
+                        )
+                        cut.path = path
+                        cut.original_op = self.type
+                        cutcodes.append(cut)
+            else:
+                # Create Cut Object for regular image
+                cut = RasterCut(
+                    image=pil_image,
+                    offset_x=offset_x,
+                    offset_y=offset_y,
+                    step_x=step_x,
+                    step_y=step_y,
+                    inverted=False,
+                    bidirectional=bidirectional,
+                    horizontal=horizontal,
+                    start_minimum_y=start_on_top,
+                    start_minimum_x=start_on_left,
+                    overscan=overscan,
+                    settings=settings,
+                    passes=passes,
+                )
+                cut.path = path
+                cut.original_op = self.type
+            cutcodes.append(cut)
             if direction == 4:
                 # Create optional crosshatch cut
                 horizontal = not horizontal
@@ -383,4 +476,7 @@ class ImageOpNode(Node, Parameters):
                 )
                 cut.path = path
                 cut.original_op = self.type
+                cutcodes.append(cut)
+            # Yield all generated cutcodes of this image
+            for cut in cutcodes:
                 yield cut
