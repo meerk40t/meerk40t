@@ -2294,39 +2294,42 @@ def init_tree(kernel):
                     except AttributeError:
                         pass
 
-    @tree_conditional(lambda node: node.count_children() > 1)
-    @tree_submenu(_("Passes"))
-    @tree_operation(
-        _("Add 1 pass"),
-        node_type=op_burnable_nodes,
-        help="",
-    )
-    def add_1_pass(node, **kwargs):
-        add_n_passes(node, copies=1, **kwargs)
+    # There's no rela difference between "Add passes" and "Duplicate element(s)"
+    # So lets's disable the code
 
-    @tree_conditional(lambda node: node.count_children() > 1)
-    @tree_submenu(_("Passes"))
-    @tree_iterate("copies", 2, 10)
-    @tree_operation(
-        _("Add {copies} passes"),
-        node_type=op_burnable_nodes,
-        help="",
-    )
-    def add_n_passes(node, copies=1, **kwargs):
-        add_nodes = list(node.children)
+    # @tree_conditional(lambda node: node.count_children() > 1)
+    # @tree_submenu(_("Passes"))
+    # @tree_operation(
+    #     _("Add 1 pass"),
+    #     node_type=op_burnable_nodes,
+    #     help="",
+    # )
+    # def add_1_pass(node, **kwargs):
+    #     add_n_passes(node, copies=1, **kwargs)
 
-        removed = False
-        for i in range(0, len(add_nodes)):
-            for q in range(0, i):
-                if add_nodes[q] is add_nodes[i]:
-                    add_nodes[i] = None
-                    removed = True
-        if removed:
-            add_nodes = [c for c in add_nodes if c is not None]
-        add_nodes *= copies
-        for n in add_nodes:
-            node.add_reference(n.node)
-        self.signal("rebuild_tree")
+    # @tree_conditional(lambda node: node.count_children() > 1)
+    # @tree_submenu(_("Passes"))
+    # @tree_iterate("copies", 2, 10)
+    # @tree_operation(
+    #     _("Add {copies} passes"),
+    #     node_type=op_burnable_nodes,
+    #     help="",
+    # )
+    # def add_n_passes(node, copies=1, **kwargs):
+    #     add_nodes = list(node.children)
+
+    #     removed = False
+    #     for i in range(0, len(add_nodes)):
+    #         for q in range(0, i):
+    #             if add_nodes[q] is add_nodes[i]:
+    #                 add_nodes[i] = None
+    #                 removed = True
+    #     if removed:
+    #         add_nodes = [c for c in add_nodes if c is not None]
+    #     add_nodes *= copies
+    #     for n in add_nodes:
+    #         node.add_reference(n.node)
+    #     self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_submenu(_("Duplicate element(s)"))
