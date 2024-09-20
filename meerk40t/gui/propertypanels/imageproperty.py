@@ -659,6 +659,8 @@ class ImageModificationPanel(ScrolledPanel):
     def pane_active(self):
         self.fill_operations()
 
+    def signal(self, signalstr, myargs):
+        return
 
 class ImageVectorisationPanel(ScrolledPanel):
     name = _("Vectorisation")
@@ -1059,18 +1061,22 @@ class ImageVectorisationPanel(ScrolledPanel):
             self._need_updates = True
         self.set_images()
 
+    def signal(self, signalstr, myargs):
+        return
 
 class ImagePropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
+        self.subpanels = list()
         self.context = context
         self.node = node
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.SetHelpText("imageproperty")
+        self.subpanels.append(self.panel_id)
 
         self.text_dpi = TextCtrl(
             self,
@@ -1086,13 +1092,16 @@ class ImagePropertyPanel(ScrolledPanel):
         self.panel_lock = PreventChangePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_lock)
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_xy)
 
         self.panel_crop = CropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_crop)
         self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
@@ -1110,6 +1119,15 @@ class ImagePropertyPanel(ScrolledPanel):
             choices=self.choices,
             style=wx.CB_DROPDOWN,
         )
+        self.check_enable_depthmap = wxCheckBox(self, wx.ID_ANY, _("Depthmap"))
+        resolutions = list((f"{2**p} - {p}bit" for p in range(8, 1, -1)))
+        self.combo_depthmap = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=resolutions,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+
         # self.op_choices = []
         # self.image_ops = []
         # self.op_choices.append(_("Choose a script to apply"))
@@ -1156,6 +1174,9 @@ class ImagePropertyPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_dither, self.check_enable_dither)
         self.Bind(wx.EVT_COMBOBOX, self.on_dither, self.combo_dither)
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_depthmap, self.check_enable_depthmap)
+        self.Bind(wx.EVT_COMBOBOX, self.on_depthmap, self.combo_depthmap)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
 
         self.Bind(wx.EVT_TEXT_ENTER, self.on_dither, self.combo_dither)
@@ -1216,10 +1237,8 @@ class ImagePropertyPanel(ScrolledPanel):
     def set_widgets(self, node=None):
         if node is None:
             node = self.node
-        self.panel_id.set_widgets(node)
-        self.panel_xy.set_widgets(node)
-        self.panel_lock.set_widgets(node)
-        self.panel_crop.set_widgets(node)
+        for p in self.subpanels:
+            p.set_widgets(node)
         self.node = node
         if node is None:
             return
@@ -1227,12 +1246,24 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
+        self.combo_dither.Enable(bool(node.dither))
+        self.check_enable_depthmap.SetValue(node.is_depthmap)
+        resolutions =list((2**p for p in range(8, 1, -1)))
+        try:
+            idx = resolutions.index(node.depth_resolution)
+        except (IndexError, AttributeError, ValueError) as e:
+            # print(f"Caught error {e} for value {node.depth_resolution}")
+            idx = 0
+        self.combo_depthmap.SetSelection(idx)
+        self.combo_depthmap.Enable(bool(node.is_depthmap))
+
         self.check_prevent_crop.SetValue(node.prevent_crop)
 
     def __set_properties(self):
         self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
-        self.check_enable_dither.SetValue(1)
+        self.check_enable_dither.SetValue(True)
+        self.combo_dither.Enable(True)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
         self.combo_dither.SetSelection(0)
         # self.combo_operations.SetToolTip(_("Select image enhancement script to apply"))
@@ -1246,9 +1277,26 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_grayscale_blue.SetToolTip(_("Blue Factor"))
         self.slider_grayscale_lightness.SetToolTip(_("Lightness control"))
         self.text_grayscale_lightness.SetToolTip(_("Lightness"))
-        self.btn_reset_grayscale.SetToolTip(
-            _("Reset the grayscale modifiers to standard values")
+        self.btn_reset_grayscale.SetToolTip(_("Reset the grayscale modifiers to standard values"))
+
+        DEPTH_FLAG_TOOLTIP = _("Do you want to treat this bitmap as depthmap where every greyscal-level corresponds to the amount of times this pixel will be burnt")
+        self.check_enable_depthmap.SetToolTip(DEPTH_FLAG_TOOLTIP)
+        self.check_enable_depthmap.SetValue(False)
+        DEPTH_RES_TOOLTIP =(
+          _("How many grayscales do you want to distinguish?") + "\n" +
+            _(
+                "This operation will step through the image and process it per defined grayscale resolution."
+            ) + "\n" +
+            _(
+                "So for full resolution every grayscale level would be processed individually: a black line (or a white line if inverted) would be processed 255 times, a line with grayscale value 128 would be processed 128 times."
+            ) + "\n" +
+            _(
+                "You can define a coarser resolution e.g. 64: then very faint lines (grayscale 1-4) would be burned just once, very strong lines (level 252-255) would be burned 64 times."
+            )
         )
+        self.combo_depthmap.SetToolTip(DEPTH_RES_TOOLTIP)
+        self.combo_depthmap.SetSelection(0)
+        self.combo_depthmap.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
@@ -1257,25 +1305,31 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
-        sizer_dpi_dither = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_dpi_crop = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        sizer_dpi_dither.Add(sizer_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi_crop.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
         sizer_crop = StaticBoxSizer(self, wx.ID_ANY, _("Auto-Crop:"), wx.HORIZONTAL)
         sizer_crop.Add(self.check_prevent_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_dpi_dither.Add(sizer_crop, 1, wx.EXPAND, 0)
+        sizer_dpi_crop.Add(sizer_crop, 1, wx.EXPAND, 0)
 
+        sizer_dither_depth = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dither = StaticBoxSizer(self, wx.ID_ANY, _("Dither"), wx.HORIZONTAL)
         sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_dpi_dither.Add(sizer_dither, 2, wx.EXPAND, 0)
+        sizer_dither_depth.Add(sizer_dither, 1, wx.EXPAND, 0)
+        sizer_depth = StaticBoxSizer(self, wx.ID_ANY, _("3D-Treatment"), wx.HORIZONTAL)
+        sizer_depth.Add(self.check_enable_depthmap, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_depth.Add(self.combo_depthmap, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_dither_depth.Add(sizer_depth, 1, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dpi_crop, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dither_depth, 0, wx.EXPAND, 0)
 
         sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
@@ -1353,13 +1407,36 @@ class ImagePropertyPanel(ScrolledPanel):
                 dither_op = op
                 break
         dither_flag = self.check_enable_dither.GetValue()
+        self.combo_dither.Enable(dither_flag)
         dither_type = self.choices[self.combo_dither.GetSelection()]
         if dither_op is not None:
             dither_op["enable"] = dither_flag
             dither_op["type"] = dither_type
         self.node.dither = dither_flag
         self.node.dither_type = dither_type
+        if dither_flag:
+            self.node.is_depthmap = False
+            self.check_enable_depthmap.SetValue(False)
+            self.combo_depthmap.Enable(False)
         self.node_update()
+        self.context.signal("nodetype")
+
+    def on_depthmap(self, event=None):
+        depth_flag = self.check_enable_depthmap.GetValue()
+        self.combo_depthmap.Enable(depth_flag)
+        resolutions = (256, 128, 64, 32, 16, 8, 4)
+        idx = self.combo_depthmap.GetSelection()
+        if idx < 1:
+            idx = 0
+        depth_res = resolutions[idx]
+        self.node.is_depthmap = depth_flag
+        self.node.depth_resolution = depth_res
+        if depth_flag:
+            self.node.dither = False
+            self.check_enable_dither.SetValue(False)
+            self.combo_dither.Enable(False)
+        self.node_update()
+        self.context.signal("nodetype")
 
     def on_reset_grayscale(self, event):
         self.node.invert = False
@@ -1402,3 +1479,8 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
         self.node_update()
+
+    def signal(self, signalstr, myargs):
+        for p in self.subpanels:
+            if hasattr(p, "signal"):
+                p.signal(signalstr, myargs)

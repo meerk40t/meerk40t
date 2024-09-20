@@ -473,6 +473,7 @@ class CutcodePanel(wx.Panel):
             self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE
         )
         self.last_selected = []
+        self.display_highlighted_only = False
         # self.text_operation_param = wx.TextCtrl(
         #     self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         # )
@@ -481,7 +482,7 @@ class CutcodePanel(wx.Panel):
         # )
 
         self.list_cutcode.Bind(wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick)
-        self.list_cutcode.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick)
+        # self.list_cutcode.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick)
         self.list_cutcode.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_select)
         # self.text_operation_param.Bind(wx.EVT_TEXT_ENTER, self.on_text_operation_param)
 
@@ -524,6 +525,8 @@ class CutcodePanel(wx.Panel):
                     res = e.__name__
                 except AttributeError:
                     res = str(e)
+            if hasattr(e, "label") and getattr(e, "label") is not None:
+                res += f" ({getattr(e, 'label')})"
             return res
 
         self.cutcode = cutcode
@@ -531,6 +534,7 @@ class CutcodePanel(wx.Panel):
         if cutcode is not None:
             for cut in self.cutcode:
                 cut.highlighted = False
+                cut.visible = True
         self.plan_name = plan_name
         self.list_cutcode.Clear()
         self.list_cutcode.Enable(True)
@@ -543,6 +547,9 @@ class CutcodePanel(wx.Panel):
             self.list_cutcode.InsertItems([name_str(e) for e in self.cutcode], 0)
 
     def on_listbox_operation_select(self, event):
+        if self.display_highlighted_only:
+            for cut in self.cutcode:
+                cut.visible = False
         for cut in self.last_selected:
             if cut < len(self.cutcode):
                 self.cutcode[cut].highlighted = False
@@ -551,6 +558,7 @@ class CutcodePanel(wx.Panel):
             self.last_selected = []
         for cut in self.last_selected:
             self.cutcode[cut].highlighted = True
+            self.cutcode[cut].visible = True
         self.context.signal("refresh_simulation")
 
     def on_listbox_operation_dclick(self, event):
@@ -570,6 +578,18 @@ class CutcodePanel(wx.Panel):
                 self.cutcode.pop(entry)
                 idx -= 1
             self.context.signal("plan", self.plan_name, 1)
+
+        def display_selected(event):
+            self.display_highlighted_only = not self.display_highlighted_only
+            if self.display_highlighted_only:
+                for cut in self.cutcode:
+                    cut.visible = False
+                for cut in self.last_selected:
+                    self.cutcode[cut].visible = True
+            else:
+                for cut in self.cutcode:
+                    cut.visible = True
+            self.context.signal("refresh_simulation")
 
         def remove_before(event):
             selected = self.list_cutcode.GetSelections()
@@ -737,6 +757,14 @@ class CutcodePanel(wx.Panel):
                     _("Appends this special operation at the end of the cutplan"),
                 ),
             )
+
+        menu.AppendSeparator()
+        item = menu.AppendCheckItem(
+            wx.ID_ANY,
+            _("Only show highlighted cutcode items"),
+        )
+        self.Bind(wx.EVT_MENU, display_selected, item)
+        item.Check(self.display_highlighted_only)
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)

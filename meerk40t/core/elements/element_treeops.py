@@ -601,11 +601,11 @@ def init_tree(kernel):
     @tree_submenu(_("Speed for Raster-Operation"))
     @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
-    @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
+    @tree_operation(_("{speed}mm/s"), node_type=op_image_nodes, help="")
     def set_speed_raster(node, speed=150, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type not in ("op raster", "op image"):
+            if n.type not in op_image_nodes:
                 continue
             n.speed = float(speed)
             data.append(n)
@@ -616,13 +616,13 @@ def init_tree(kernel):
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op cut", "op engrave"),
+        node_type=op_vector_nodes,
         help="",
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type not in ("op cut", "op engrave"):
+            if n.type not in op_vector_nodes:
                 continue
             n.speed = float(speed)
             data.append(n)
@@ -637,7 +637,7 @@ def init_tree(kernel):
     @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
-        node_type=("op cut", "op raster", "op image", "op engrave"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def set_power(node, power=1000, **kwargs):
@@ -787,7 +787,7 @@ def init_tree(kernel):
     @tree_values("raster_direction", values=get_direction_values())
     @tree_operation(
         "{raster_direction}",
-        node_type=("op raster", "op image"),
+        node_type=op_image_nodes,
         help="",
     )
     def set_direction(node, raster_direction="", **kwargs):
@@ -796,7 +796,7 @@ def init_tree(kernel):
             if key == raster_direction:
                 data = list()
                 for n in list(self.ops(selected=True)):
-                    if n.type not in ("op raster", "op image"):
+                    if n.type not in op_image_nodes:
                         continue
                     n.raster_direction = idx
                     data.append(n)
@@ -821,7 +821,7 @@ def init_tree(kernel):
     @tree_values("raster_swing", values=get_swing_values())
     @tree_operation(
         "{raster_swing}",
-        node_type=("op raster", "op image"),
+        node_type=op_image_nodes,
         help="",
     )
     def set_swing(node, raster_swing="", **kwargs):
@@ -830,7 +830,7 @@ def init_tree(kernel):
             if key == raster_swing:
                 data = list()
                 for n in list(self.ops(selected=True)):
-                    if n.type not in ("op raster", "op image"):
+                    if n.type not in op_image_nodes:
                         continue
                     n.bidirectional = bool(idx)
                     data.append(n)
@@ -2294,45 +2294,48 @@ def init_tree(kernel):
                     except AttributeError:
                         pass
 
-    @tree_conditional(lambda node: node.count_children() > 1)
-    @tree_submenu(_("Passes"))
-    @tree_operation(
-        _("Add 1 pass"),
-        node_type=("op image", "op engrave", "op cut"),
-        help="",
-    )
-    def add_1_pass(node, **kwargs):
-        add_n_passes(node, copies=1, **kwargs)
+    # There's no rela difference between "Add passes" and "Duplicate element(s)"
+    # So lets's disable the code
 
-    @tree_conditional(lambda node: node.count_children() > 1)
-    @tree_submenu(_("Passes"))
-    @tree_iterate("copies", 2, 10)
-    @tree_operation(
-        _("Add {copies} passes"),
-        node_type=("op image", "op engrave", "op cut"),
-        help="",
-    )
-    def add_n_passes(node, copies=1, **kwargs):
-        add_nodes = list(node.children)
+    # @tree_conditional(lambda node: node.count_children() > 1)
+    # @tree_submenu(_("Passes"))
+    # @tree_operation(
+    #     _("Add 1 pass"),
+    #     node_type=op_burnable_nodes,
+    #     help="",
+    # )
+    # def add_1_pass(node, **kwargs):
+    #     add_n_passes(node, copies=1, **kwargs)
 
-        removed = False
-        for i in range(0, len(add_nodes)):
-            for q in range(0, i):
-                if add_nodes[q] is add_nodes[i]:
-                    add_nodes[i] = None
-                    removed = True
-        if removed:
-            add_nodes = [c for c in add_nodes if c is not None]
-        add_nodes *= copies
-        for n in add_nodes:
-            node.add_reference(n.node)
-        self.signal("rebuild_tree")
+    # @tree_conditional(lambda node: node.count_children() > 1)
+    # @tree_submenu(_("Passes"))
+    # @tree_iterate("copies", 2, 10)
+    # @tree_operation(
+    #     _("Add {copies} passes"),
+    #     node_type=op_burnable_nodes,
+    #     help="",
+    # )
+    # def add_n_passes(node, copies=1, **kwargs):
+    #     add_nodes = list(node.children)
+
+    #     removed = False
+    #     for i in range(0, len(add_nodes)):
+    #         for q in range(0, i):
+    #             if add_nodes[q] is add_nodes[i]:
+    #                 add_nodes[i] = None
+    #                 removed = True
+    #     if removed:
+    #         add_nodes = [c for c in add_nodes if c is not None]
+    #     add_nodes *= copies
+    #     for n in add_nodes:
+    #         node.add_reference(n.node)
+    #     self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_submenu(_("Duplicate element(s)"))
     @tree_operation(
         _("Duplicate elements 1 time"),
-        node_type=("op image", "op engrave", "op cut"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def dup_1_copy(node, **kwargs):
@@ -2343,7 +2346,7 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(
         _("Duplicate elements {copies} times"),
-        node_type=("op image", "op engrave", "op cut"),
+        node_type=op_burnable_nodes,
         help="",
     )
     def dup_n_copies(node, copies=1, **kwargs):
@@ -2364,7 +2367,7 @@ def init_tree(kernel):
 
     @tree_operation(
         _("Make raster image"),
-        node_type=("op image", "op raster"),
+        node_type=op_burnable_nodes,
         help=_("Create an image from the assigned elements."),
     )
     def make_raster_image(node, **kwargs):

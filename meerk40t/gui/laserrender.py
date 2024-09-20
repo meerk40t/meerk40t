@@ -573,6 +573,8 @@ class LaserRender:
         last_point = None
         color = None
         for cut in cutcode:
+            if hasattr(cut, "visible") and getattr(cut, "visible") is False:
+                continue
             if cut.highlighted:
                 c = highlight_color
             else:
