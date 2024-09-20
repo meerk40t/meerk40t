@@ -564,12 +564,11 @@ class LaserRender:
         mat_param = gcmat.Get()
         gcscale = max(mat_param[0], mat_param[3])
         if gcscale == 0:
-            gcscale = 0.01
+            gcscale = 1
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
         highlight_pen = wx.Pen(wx_color)
         highlight_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
-        self._penwidth(highlight_pen, 3 / gcscale)
         p = None
         last_point = None
         color = None
@@ -627,6 +626,10 @@ class LaserRender:
                     cut.offset_x + x, cut.offset_y + y
                 )  # Adjust image xy
                 gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                _mat_param = gc.GetTransform().Get()
+                _gcscale = max(_mat_param[0], _mat_param[3])
+                if _gcscale == 0:
+                    _gcscale = 1
                 try:
                     cache = cut._cache
                     cache_id = cut._cache_id
@@ -649,6 +652,7 @@ class LaserRender:
                     gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
                     if cut.highlighted:
                         # gc.SetBrush(wx.RED_BRUSH)
+                        self._penwidth(highlight_pen, 3 / _gcscale)
                         gc.SetPen(highlight_pen)
                         gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:

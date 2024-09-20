@@ -2047,7 +2047,7 @@ class SimulationTravelWidget(Widget):
         mat_param = gcmat.Get()
         gcscale = max(mat_param[0], mat_param[3])
         if gcscale == 0:
-            gcscale = 0.01
+            gcscale = 1
         linewidth = 1 / gcscale
 
         starts = self.starts[:pos]
