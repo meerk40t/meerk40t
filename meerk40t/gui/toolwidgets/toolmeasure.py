@@ -38,7 +38,9 @@ class MeasureTool(PointListTool):
             return
         matrix = gc.GetTransform().Get()
         # mat.a mat.d
-        mat_fact = matrix[0]
+        mat_fact = max(matrix[0], matrix[3])
+        if mat_fact == 0:
+            mat_fact = 1
         try:
             font_size = 10.0 / mat_fact
         except ZeroDivisionError:

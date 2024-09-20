@@ -441,9 +441,9 @@ class RectSelectWidget(Widget):
         sx = mat_param[0]
         sy = mat_param[3]
         if sx == 0:
-            sx = 0.01
+            sx = 1
         if sy == 0:
-            sy = 0.01
+            sy = 1
         gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
@@ -471,9 +471,9 @@ class RectSelectWidget(Widget):
         sx = mat_param[0]
         sy = mat_param[3]
         if sx == 0:
-            sx = 0.01
+            sx = 1
         if sy == 0:
-            sy = 0.01
+            sy = 1
         # print (f"sx={sx}, sy={sy}")
         gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
