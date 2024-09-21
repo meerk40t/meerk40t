@@ -2062,16 +2062,23 @@ class Kernel(Settings):
         Process signals in the processing queue.
         @return:
         """
+        to_be_ignored = ("console_update", "statusmsg")
         queue = self._processing
         signal_channel = self.channel("signals")
+        signal_channel_all = self.channel("signals-all")
         for signal, payload in queue.items():
             origin, message = payload
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
                     listener(origin, *message)
-                    if signal_channel:
+                    if signal_channel and signal not in to_be_ignored:
                         signal_channel(
+                            f"Signal: {origin} {signal}: "
+                            f"{listener.__module__}:{listener.__name__}{str(message)}"
+                        )
+                    if signal_channel_all:
+                        signal_channel_all(
                             f"Signal: {origin} {signal}: "
                             f"{listener.__module__}:{listener.__name__}{str(message)}"
                         )
