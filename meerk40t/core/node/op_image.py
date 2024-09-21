@@ -372,6 +372,17 @@ class ImageOpNode(Node, Parameters):
                         return 255 if pixel >= skip_pixel else 0
 
                     cleared_image = pil_image.point(threshold_filter)
+                    extrema = cleared_image.getextrema()
+                    # print (f"{skip_pixel}: extrema={extrema}")
+                    if extrema == (0, 0):
+                        # all black
+                        # We will burn this
+                        pass 
+                    elif extrema == (255, 255):
+                        # all white
+                        # we can skip this
+                        # print (f"Skipping from {skip_pixel} as image is fully white")
+                        continue
 
                     # Create Cut Object
                     cut = RasterCut(
