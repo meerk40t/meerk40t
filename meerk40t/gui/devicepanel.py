@@ -208,11 +208,14 @@ class DevicePanel(wx.Panel):
         self.button_create_device = wxButton(self, wx.ID_ANY, _("Create New Device"))
         sizer_3.Add(self.button_create_device, 0, 0, 0)
 
-        self.button_remove_device = wxButton(self, wx.ID_ANY, _("Remove"))
-        sizer_3.Add(self.button_remove_device, 0, 0, 0)
+        self.button_copy_device = wxButton(self, wx.ID_ANY, _("Duplicate"))
+        sizer_3.Add(self.button_copy_device, 0, 0, 0)
 
         self.button_rename_device = wxButton(self, wx.ID_ANY, _("Rename"))
         sizer_3.Add(self.button_rename_device, 0, 0, 0)
+
+        self.button_remove_device = wxButton(self, wx.ID_ANY, _("Remove"))
+        sizer_3.Add(self.button_remove_device, 0, 0, 0)
 
         self.button_activate_device = wxButton(self, wx.ID_ANY, _("Activate"))
         sizer_3.Add(self.button_activate_device, 0, 0, 0)
@@ -243,6 +246,9 @@ class DevicePanel(wx.Panel):
 
         self.Bind(
             wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device
+        )
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_copy_device, self.button_copy_device
         )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_remove_device, self.button_remove_device
@@ -430,6 +436,7 @@ class DevicePanel(wx.Panel):
         self.button_activate_device.Enable(flag2)
         self.button_remove_device.Enable(flag2)
         self.button_rename_device.Enable(flag1)
+        self.button_copy_device.Enable(flag1)
 
     def on_tree_device_activated(self, event):  # wxGlade: DevicePanel.<event_handler>
         dev_index = event.GetItem().GetData()
@@ -448,6 +455,8 @@ class DevicePanel(wx.Panel):
         if 0 <= dev_index < len(self.devices):
             data = self.devices[dev_index]
             menu = wx.Menu()
+            item0 = menu.Append(wx.ID_ANY, _("Duplicate"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, self.on_tree_popup_duplicate(data), item0)
             item1 = menu.Append(wx.ID_ANY, _("Rename"), "", wx.ITEM_NORMAL)
             self.Bind(wx.EVT_MENU, self.on_tree_popup_rename(data), item1)
             if self.context.device is not data:
@@ -460,6 +469,12 @@ class DevicePanel(wx.Panel):
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_config(data), item4)
             self.PopupMenu(menu)
             menu.Destroy()
+
+    def on_tree_popup_duplicate(self, service):
+        def copyit(event=None):
+            self.duplicate_device(service)
+
+        return copyit
 
     def on_tree_popup_rename(self, service):
         def renameit(event=None):
@@ -497,6 +512,10 @@ class DevicePanel(wx.Panel):
 
         return configit
 
+    def on_button_duplicate_device(self, event):
+        service = self.get_selected_device()
+        self.duplicate_device(service)
+
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         dlg = SelectDevice(None, wx.ID_ANY, context=self.context)
         result = dlg.ShowModal()
@@ -511,6 +530,13 @@ class DevicePanel(wx.Panel):
             self.refresh_device_tree()
             self.context.signal("device;modified")
         dlg.Destroy()
+
+    def duplicate_device(self, service):
+        if service is not None:
+            self.context(f'device duplicate "{service.label}"\n')
+            # We do it the simple way and copy the corresponding settings
+            self.refresh_device_tree()
+            self.context.signal("device;modified")
 
     def remove_device(self, service):
         if service is not None:
@@ -532,6 +558,10 @@ class DevicePanel(wx.Panel):
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
         self.remove_device(service)
+
+    def on_button_copy_device(self, event):  # wxGlade: DevicePanel.<event_handler>
+        service = self.get_selected_device()
+        self.duplicate_device(service)
 
     def on_button_activate_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
