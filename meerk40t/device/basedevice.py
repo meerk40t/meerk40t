@@ -44,6 +44,54 @@ def plugin(kernel, lifecycle=None):
             except AttributeError:
                 pass
 
+        def display_devices(channel):
+            channel(_("Defined Devices:"))
+            channel(_("----------------"))
+            channel("#\tLabel\tType\tFamily\tStatus")
+            dev_infos = list(kernel.find("dev_info"))
+            dev_infos.sort(key=lambda e: e[0].get("priority", 0), reverse=True)
+            for i, device in enumerate(kernel.services("device")):
+                suffix = "    "
+                if device.path == kernel.device.path:
+                    suffix = " (*)"
+                label = device.label
+                msg = f"{i}{suffix}:\t{label}"
+                type_info = getattr(device, "name", device.path)
+                family_default = ""
+                for obj, name, sname in dev_infos:
+                    if device.registered_path == obj.get("provider", ""):
+                        if "choices" in obj:
+                            for prop in obj["choices"]:
+                                if (
+                                    "attr" in prop
+                                    and "default" in prop
+                                    and prop["attr"] == "source"
+                                ):
+                                    family_default = prop["default"]
+                                    break
+                    if family_default:
+                        break
+
+                family_info = device.setting(str, "source", family_default)
+                if family_info:
+                    family_info = family_info.capitalize()
+                active_status = ""
+                try:
+                    if hasattr(device, "laser_status"):
+                        active_status = device.laser_status
+                except AttributeError:
+                    active_status = "??"
+
+                try:
+                    if hasattr(device, "driver") and hasattr(device.driver, "paused"):
+                        if device.driver.paused:
+                            active_status = "paused"
+                except AttributeError:
+                    pass
+                msg += f"\t{type_info}\t{family_info}\t{active_status}"
+                channel(msg)
+
+
         @kernel.console_command(
             "devinfo",
             help=_("Show current device info."),
@@ -143,13 +191,7 @@ def plugin(kernel, lifecycle=None):
             from ..kernel.exceptions import CommandSyntaxError
             available_devices = kernel.services("device")
             if not name:
-                channel(_("----------"))
-                channel(_("Defined Devices:"))
-                for i, spool in enumerate(available_devices):
-                    suffix = ""
-                    if spool.path == kernel.device.path:
-                        suffix = " (*)"
-                    channel(f"{i}: {spool.label}{suffix}")
+                display_devices(channel)
                 return
             found = False
             index = -1
@@ -165,6 +207,116 @@ def plugin(kernel, lifecycle=None):
                     break
             if not found:
                 channel(f"Did not find a device with that name '{name}'")
+
+        @kernel.console_argument("name", type=str)
+        @kernel.console_argument("label", type=str)
+        @kernel.console_command(
+            "duplicate",
+            help=_("Duplicate a particular device entry"),
+            input_type="device",
+        )
+        def device_duplicate(channel, _, data, name=None, label=None, **kwargs):
+            """
+            Duplicate a given device.
+            """
+            from ..kernel.exceptions import CommandSyntaxError
+            available_devices = kernel.services("device")
+            if not name:
+                display_devices(channel)
+                return
+            found = False
+            index = -1
+            try:
+                index = int(name)
+            except ValueError:
+                index = -1
+            given_names = list((d.label for d in available_devices))
+            for i, device in enumerate(available_devices):
+                if device.label == name or i == index:
+                    if label is None:
+                        baselabel = device.label
+                        ipos = baselabel.find(" #")
+                        if ipos > 0: # after first character
+                            baselabel = baselabel[:ipos]
+                        idx = 1
+                        while True:
+                            label = f"{baselabel} #{idx}"
+                            if label not in given_names:
+                                break
+                            idx += 1
+                    found = True
+                    provider_path = device.registered_path
+                    provider = kernel.lookup(provider_path)
+                    if provider is None:
+                        raise CommandSyntaxError("Bad provider.")
+                    path = list(provider_path.split("/"))[-1]
+                    service_path = path
+                    i = 1
+                    while service_path in kernel.contexts:
+                        service_path = path + str(i)
+                        i += 1
+                        choices = [
+                            {
+                                "attr": "label",
+                                "default": label,
+                            },
+                        ]
+
+                    service = provider(kernel, service_path, choices=choices)
+                    # Let's copy properties across
+                    for d in device.__dict__:
+                        if d == "label" or d.startswith("_"):
+                            continue
+                        try:
+                            value = getattr(device, d)
+                            if isinstance(value, (str, int, float, bool, list, tuple)):
+                                # print (f"Copying over value {d}: {value}")
+                                setattr(service, d, value)
+                        except (AttributeError, ValueError) as e:
+                            # print (f"Could not copy {d}: {e}")
+                            pass
+
+                    kernel.add_service("device", service, provider_path)
+
+                    channel(f"Device '{device.label}' has been copied to {label}")
+                    break
+            if not found:
+                channel(f"Did not find a device with that name '{name}'")
+
+        @kernel.console_argument("name", type=str)
+        @kernel.console_command(
+            "delete",
+            help=_("Delete a particular device entry"),
+            input_type="device",
+        )
+        def device_delete(channel, _, data, name=None, label=None, **kwargs):
+            """
+            Delete a given device.
+            """
+            from ..kernel.exceptions import CommandSyntaxError
+            available_devices = kernel.services("device")
+            if not name:
+                display_devices(channel)
+                return
+            found = False
+            index = -1
+            try:
+                index = int(name)
+            except ValueError:
+                index = -1
+            for i, device in enumerate(available_devices):
+                if device.label == name or i == index:
+                    if device.path == kernel.device.path:
+                        channel("You can't delete the active device")
+                        return
+                    found = True
+                    device.destroy()
+                    channel(f"Device '{device.label}' has been deleted")
+                    kernel.root.signal("device;renamed")
+                    break
+            if not found:
+                channel(f"Did not find a device with that name '{name}'")
+
 
     if lifecycle == "preshutdown":
         setattr(kernel.root, "activated_device", kernel.device.path)
