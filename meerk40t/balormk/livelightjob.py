@@ -94,6 +94,7 @@ class LiveLightJob:
         if self.listen:
             self.service.listen("emphasized", self.on_emphasis_changed)
             self.service.listen("modified_by_tool", self.on_emphasis_changed)
+            self.service.listen("updating", self.on_emphasis_changed)
             self.service.listen("view;realized", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
@@ -110,6 +111,7 @@ class LiveLightJob:
         if self.listen:
             self.service.unlisten("emphasized", self.on_emphasis_changed)
             self.service.unlisten("modified_by_tool", self.on_emphasis_changed)
+            self.service.unlisten("updating", self.on_emphasis_changed)
             self.service.unlisten("view;realized", self.on_emphasis_changed)
         self.service.signal("light_simulate", False)
         if self.service.redlight_preferred:

@@ -574,6 +574,7 @@ class RotationWidget(Widget):
                         pass
                     e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
+            elements.signal("updating")
 
         self.scene.request_refresh()
 
@@ -875,6 +876,7 @@ class CornerWidget(Widget):
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
                     node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+            elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -1120,7 +1122,7 @@ class SideWidget(Widget):
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
                     node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
-
+            elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -1283,7 +1285,7 @@ class SkewWidget(Widget):
                             (self.master.right + self.master.left) / 2,
                             (self.master.top + self.master.bottom) / 2,
                         )
-
+            elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -1519,7 +1521,7 @@ class MoveWidget(Widget):
                         # but the pure adjustment of the bbox is hopefully not hurting
                         e.translated(dx, dy)
                     self.translate(dx, dy)
-
+                elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
     def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
@@ -1548,6 +1550,7 @@ class MoveWidget(Widget):
                     # but the pure adjustment of the bbox is hopefully not hurting
                     e.translated(dx, dy)
             self.translate(dx, dy)
+            elements.signal("updating")
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
@@ -2552,7 +2555,7 @@ class SelectionWidget(Widget):
                 if e is not refob:
                     e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
                     e.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
-
+        elements.signal("updating")
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
     def show_reference_align_dialog(self, event):
