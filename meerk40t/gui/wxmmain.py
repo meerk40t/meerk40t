@@ -9,6 +9,7 @@ import wx
 from PIL import Image
 from wx import aui
 
+from meerk40t.main import APPLICATION_NAME
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.gui_mixins import FormatPainter, Warnings
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
@@ -5258,3 +5259,52 @@ class MeerK40t(MWindow):
     @signal_listener("started")
     def on_signal_started(self, *args):
         self.context.kernel.busyinfo.end()
+        self.check_for_crash()
+
+    def check_for_crash(self):
+
+        safe_dir:str = os.path.realpath(get_safe_path(APPLICATION_NAME))
+        crash_indicator:str = os.path.join(safe_dir, "_crash")
+        recovery_file:str = self.autosave.autosave_file
+        # Is there a crash-indicator? The we look for the latest autosave - file
+        if os.path.exists(crash_indicator) and os.path.exists(recovery_file):
+            try:
+                filedate = datetime.datetime.fromtimestamp(os.path.getmtime(recovery_file))
+                recovery_date = filedate.isoformat(" ")
+            except (
+                    PermissionError,
+                    OSError,
+                    RuntimeError,
+                    FileExistsError,
+                    FileNotFoundError,
+                ) as e:
+                    # print (f"Error happened: {e}")
+                    pass
+            except Exception as e:
+                recovery_date = "???"
+
+            message = _("Apparently MeerK40t did crash during the last session, we apologize for this invconvenience.") + "\n"
+            message += _("There is an autosave file ({filename}),\nthat was last saved at {filedate}.").format(filename=recovery_file, filedate=recovery_date) + "\n"
+            message += _("Do you want to load this file?")
+            caption = _("Crash-Recovery")
+            recover =  self.context.kernel.yesno(
+                message,
+                option_yes=_("Load work"),
+                option_no=_("Start fresh"),
+                caption=caption,
+            )
+            # Now remove the crash indicator
+            try:
+                os.remove(crash_indicator)
+            except (
+                    PermissionError,
+                    OSError,
+                    RuntimeError,
+                    FileExistsError,
+                    FileNotFoundError,
+                ) as e:
+                    # print (f"Error happened: {e}")
+                    pass
+            if recover:
+                # Load file
+                self.context(f'load "{recovery_file}"\n')

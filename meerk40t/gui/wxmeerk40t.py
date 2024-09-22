@@ -100,7 +100,6 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 _ = wx.GetTranslation
 
-
 class ActionPanel(wx.Panel):
     def __init__(
         self,
@@ -1289,6 +1288,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         wxversion = wx.version()
     except:
         pass
+    filename = os.path.join(get_safe_path(APPLICATION_NAME), "_crash")
+    try:
+        with open(filename, "w") as file:
+            file.write("MeerK40 crash indicator - you may ignore or delete it.")
+    except Exception as e:
+        pass
 
     error_log = (
         f"MeerK40t crash log. Version: {APPLICATION_VERSION} on {platform.system()}: "
@@ -1320,7 +1325,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                     file.write(variable_info)
                 print(error_log)
         except PermissionError:
-            filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
+            filename = os.path.join(get_safe_path(APPLICATION_NAME), filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 if variable_info:
@@ -1353,7 +1358,7 @@ The good news is that you can help us fix this bug by anonymously sending us the
         answer = wx.ID_NO
     # print (answer)
     in_error_dialog = False
-    if answer in (wx.ID_YES, wx.ID_OK):
+    if answer in (wx.ID_YES, wx.ID_OK, wx.ID_CLOSE):
         send_data_to_developers(filename, data)
     if answer == wx.ID_CANCEL:
         wx.Abort()
