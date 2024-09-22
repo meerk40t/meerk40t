@@ -5,6 +5,7 @@ The Driver has a set of different commands which are standardly sent and utilize
 driver.
 """
 import time
+from usb.core import NoBackendError
 
 from meerk40t.balormk.controller import GalvoController
 from meerk40t.core.cutcode.cubiccut import CubicCut
@@ -64,7 +65,10 @@ class BalorDriver:
         self._shutdown = True
 
     def connect(self):
-        self.connection.connect_if_needed()
+        try:
+            self.connection.connect_if_needed()
+        except (ConnectionRefusedError, NoBackendError):
+            return
 
     def disconnect(self):
         self.connection.disconnect()

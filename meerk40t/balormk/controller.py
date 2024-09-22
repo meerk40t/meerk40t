@@ -9,6 +9,7 @@ import struct
 import threading
 import time
 from copy import copy
+from usb.core import NoBackendError
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
@@ -385,6 +386,11 @@ class GalvoController:
                     self.set_disable_connect(True)
                     self.usb_log("Could not connect to the LMC controller.")
                     self.usb_log("Automatic connections disabled.")
+                    from platform import system
+                    osname = system()
+                    if osname == "Windows":
+                        self.usb_log("Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?")
+                        self.usb_log("Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows")
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
@@ -396,7 +402,10 @@ class GalvoController:
     def send(self, data, read=True):
         if self.is_shutdown:
             return -1, -1, -1, -1
-        self.connect_if_needed()
+        try:
+            self.connect_if_needed()
+        except (ConnectionRefusedError, NoBackendError):
+            return -1, -1, -1, -1
         try:
             self.connection.write(self._machine_index, data)
         except ConnectionError:
