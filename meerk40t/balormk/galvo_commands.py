@@ -3,6 +3,7 @@ import re
 import struct
 import time
 
+from usb.core import NoBackendError
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
@@ -374,8 +375,11 @@ def plugin(service, lifecycle):
                             )
                             if v[0] == 0x8002:
                                 break
-
-                driver.connection.connect_if_needed()
+                try:
+                    driver.connection.connect_if_needed()
+                except (ConnectionRefusedError, NoBackendError):
+                    channel("Could not connect to Galvo")
+                    return
                 driver.connection.connection.write = write
                 job.execute()
 
