@@ -246,6 +246,11 @@ class Node:
             value = False
         if value != self._emphasized:
             self._emphasized = value
+            if value:
+                # Any value that is emphasiezd is automatically selected True
+                # This is not true for the inverse case, a node can be selected
+                # but not necessarily emphasized
+                self._selected = True
             self._emphasized_time = time() if value else None
         self.notify_emphasized(self)
 
