@@ -272,8 +272,7 @@ class MeerK40t(MWindow):
         self.DragAcceptFiles(True)
 
         self.needs_saving = False
-        self.working_file = None
-        self.files_loaded = 0
+        self.working_files = list()
 
         self.pipe_state = None
         self.previous_position = None
@@ -2830,9 +2829,9 @@ class MeerK40t(MWindow):
                     context.elements.save(pathname, version=version)
                     gui.validate_save()
                     # Now just a single file...
-                    self.files_loaded = 0
+                    self.working_files.clear()
                     self.set_working_file_name(pathname)
-                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.set_file_as_recently_used(gui.working_files[0])
                 except OSError as e:
                     dlg = wx.MessageDialog(
                         None,
@@ -2849,19 +2848,19 @@ class MeerK40t(MWindow):
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(quit=False, **kwargs):
-            if gui.working_file is None or self.files_loaded > 1:
+            if len(gui.working_files) != 1:
                 if quit:
                     context(".dialog_save_as -q\n")
                 else:
                     context(".dialog_save_as\n")
             else:
                 try:
-                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.set_file_as_recently_used(gui.working_files[0])
                     gui.validate_save()
-                    context.elements.save(gui.working_file)
+                    context.elements.save(gui.working_files[0])
                     context.signal(
                         "statusmsg",
-                        _("Succesfully saved {file}").format(file=gui.working_file),
+                        _("Succesfully saved {file}").format(file=gui.working_files[0]),
                     )
                 except OSError as e:
                     dlg = wx.MessageDialog(
@@ -4646,7 +4645,12 @@ class MeerK40t(MWindow):
         self.main_statusbar.Reposition(value)
 
     def __set_titlebar(self):
-        label = self.working_file
+        if len(self.working_files) > 1:
+            label = _(MULTIPLE)
+        elif len(self.working_files) == 1:
+            label = self.working_files[0]
+        else:
+            label = None
         if label is None:
             label = ""
         else:
@@ -4675,14 +4679,10 @@ class MeerK40t(MWindow):
 
     def set_working_file_name(self, fname):
         if fname is None:
-            self.working_file = fname
-            self.files_loaded = 0
+            self.working_files.clear()
         else:
-            self.files_loaded += 1
-            if self.files_loaded == 1:
-                self.working_file = fname
-            else:
-                self.working_file = _(MULTIPLE)
+            if fname not in self.working_files:
+                self.working_files.append(fname)
 
     def load_or_open(self, filename):
         """
