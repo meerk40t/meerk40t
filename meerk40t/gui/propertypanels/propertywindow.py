@@ -49,24 +49,33 @@ class PropertyWindow(MWindow):
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
         myargs = [i for i in args]
-        if len(args) > 0 and args[0] == "Scene":
-            for p in self.panel_instances:
-                if hasattr(p, "signal"):
-                    p.signal("refresh_scene", myargs)
+        if len(self.panel_instances) == 0:
+            self.on_selected(None, myargs)
+        else:
+            if len(args) > 0 and args[0] == "Scene":
+                for p in self.panel_instances:
+                    if hasattr(p, "signal"):
+                        p.signal("refresh_scene", myargs)
 
     @signal_listener("modified_by_tool")
     def on_tool_modified(self, origin, *args):
         myargs = [i for i in args]
-        for p in self.panel_instances:
-            if hasattr(p, "signal"):
-                p.signal("modified_by_tool", myargs)
+        if len(self.panel_instances) == 0:
+            self.on_selected(None, myargs)
+        else:
+            for p in self.panel_instances:
+                if hasattr(p, "signal"):
+                    p.signal("modified_by_tool", myargs)
 
     @signal_listener("nodetype")
     def on_nodetype(self, origin, *args):
         myargs = [i for i in args]
-        for p in self.panel_instances:
-            if hasattr(p, "signal"):
-                p.signal("nodetype", myargs)
+        if len(self.panel_instances) == 0:
+            self.on_selected(None, myargs)
+        else:
+            for p in self.panel_instances:
+                if hasattr(p, "signal"):
+                    p.signal("nodetype", myargs)
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
@@ -149,7 +158,6 @@ class PropertyWindow(MWindow):
                 page_panel.SetupScrolling()
             except AttributeError:
                 pass
-
         self.Layout()
         self.Thaw()
         del busy
