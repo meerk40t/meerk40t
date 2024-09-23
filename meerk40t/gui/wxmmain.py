@@ -1379,10 +1379,9 @@ class MeerK40t(MWindow):
         @param node:
         @return:
         """
-        print(f"Calling property for {node.type}")
-        gui = self
-        root = self.context.root
-        root.open("window/Properties", gui)
+        # print(f"Calling property for {node.type}")
+        self.context.elements.set_emphasis([node])
+        self.context("window open Properties\n")
 
     @staticmethod
     def sub_register(kernel):
