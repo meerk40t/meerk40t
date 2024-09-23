@@ -1379,6 +1379,7 @@ class MeerK40t(MWindow):
         @param node:
         @return:
         """
+        print(f"Calling property for {node.type}")
         gui = self
         root = self.context.root
         root.open("window/Properties", gui)

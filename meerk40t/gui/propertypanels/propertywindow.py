@@ -68,6 +68,13 @@ class PropertyWindow(MWindow):
             if hasattr(p, "signal"):
                 p.signal("nodetype", myargs)
 
+    @signal_listener("textselect")
+    def on_textselect(self, origin, *args):
+        myargs = [i for i in args]
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("textselect", myargs)
+
     @signal_listener("selected")
     def on_selected(self, origin, *args):
         busy = wx.BusyCursor()

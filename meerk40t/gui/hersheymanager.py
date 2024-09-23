@@ -703,6 +703,11 @@ class LineTextPropertyPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
+    def signal(self, signalstr, myargs):
+        if signalstr == "textselect" and self.IsShown():
+            self.text_text.SetFocus()
+            self.text_text.SelectAll()
+
 
 class PanelFontSelect(wx.Panel):
     """
