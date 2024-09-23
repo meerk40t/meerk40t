@@ -213,6 +213,16 @@ def init_tree(kernel):
         self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))
+    @tree_operation(_("Convert to normal group"), node_type="file", help="")
+    def convert_file_to_group(node, **kwargs):
+        n = node.replace_node(
+            type="group",
+            keep_children=True,
+            label=_("Content of {filenode}").format(filenode=node.name),
+        )        
+        self.signal("rebuild_tree")
+
+    @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
         to_treat = []
