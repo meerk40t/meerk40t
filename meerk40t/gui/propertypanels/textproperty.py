@@ -720,13 +720,10 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
 
-    # @signal_listener("textselect")
-    # def on_signal_select(self, origin, *args):
-    #     try:
-    #         self.text_text.SelectAll()
-    #         self.text_text.SetFocus()
-    #     except RuntimeError:
-    #         pass
+    def signal(self, signal, *args):
+        if signal == "textselect" and self.IsShown():
+            self.text_text.SelectAll()
+            self.text_text.SetFocus()
 
 
 class TextProperty(MWindow):
