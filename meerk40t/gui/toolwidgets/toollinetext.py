@@ -71,31 +71,8 @@ class LineTextTool(ToolWidget):
                 if font:
                     font = f'-f "{font}"'
                 self.scene.context(f'linetext {x} {y} "{text_content}" {font} -s {fsize}\n')
-                print ("Creating node...")
-                # node = self.scene.context.fonts.create_linetext_node(
-                #     x, y, text_content, font_size=fsize
-                # )
-                # if node is not None:
-                #     print ("Created...")
-                #     node.stroke = text_color
-                #     elements.elem_branch.add_node(node)
-                #     self.scene.context.signal("element_added", node)
-                #     if elements.classify_new:
-                #         elements.classify([node])
-                #     self.notify_created(node)
-                #     print ("Added to tree...")
-                #     elements.set_emphasis([node])
-                #     activate = self.scene.context.kernel.lookup(
-                #         "function/open_property_window_for_node"
-                #     )
-                #     if activate is not None:
-                #         print ("opening property")
-                #         # activate(node)
-                #     self.scene.context.signal("textselect")
-                #     # The ugliest hack ever, somewhere the node gets defocussed,
-                #     # so we are trying to bring it back after all the ruckus happened...
-                #     self.last_node_created = node
-                    # wx.CallLater(750, self.refocus_text)
+                self.scene.context("window open Properties\n")
+                self.scene.context.signal("textselect")
             self.end_tool()
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):

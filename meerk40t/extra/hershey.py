@@ -424,11 +424,10 @@ class Meerk40tFonts:
         if not self._validate_font(font) and font is not None:
             # Is the given font valid?
             # It could still translate to a valid name
-            for item in self.available_fonts():
-                # print(f"Comparing {font.lower()} to {item[1].lower()} ({item})")
-                if font.lower() == item[1].lower():
-                    font == self.short_name(item[0])
-                    return font, item[0]
+            font_path = self.face_to_full_name(font)
+            if font_path:
+                font = self.short_name(font_path)
+                return font, font_path
             font = None
         if not font:
             # No valid font, try last font.
@@ -828,5 +827,10 @@ def plugin(kernel, lifecycle):
             #     stroke=Color("black"),
             # )
             context.elements.elem_branch.add_node(path_node)
+            if context.elements.classify_new:
+                context.elements.classify([path_node])
+            context.elements.set_emphasis([path_node])
+
             context.signal("element_added", path_node)
             context.signal("refresh_scene", "Scene")
+            

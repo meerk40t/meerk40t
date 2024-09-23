@@ -28,6 +28,7 @@ from meerk40t.gui.wxutils import (
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
+from meerk40t.core.units import Length
 
 _ = wx.GetTranslation
 
@@ -351,6 +352,9 @@ class LineTextPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.setting(float, "last_font_size", float(Length("20px")))
+        self.context.setting(str, "last_font", "")
+
         self.node = node
         self.fonts = []
 
@@ -545,6 +549,8 @@ class LineTextPropertyPanel(wx.Panel):
         self.context.fonts.update_linetext(self.node, vtext)
         self.context.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+        self.context.last_font = self.node.mkfont
+        self.context.last_font_size = self.node.mkfontsize
 
     def on_linegap_reset(self, event):
         if self.node is None:
