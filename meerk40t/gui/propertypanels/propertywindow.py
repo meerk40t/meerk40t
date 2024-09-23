@@ -49,36 +49,28 @@ class PropertyWindow(MWindow):
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
         myargs = [i for i in args]
-        if len(self.panel_instances) == 0:
-            self.on_selected(None, myargs)
-        else:
-            if len(args) > 0 and args[0] == "Scene":
-                for p in self.panel_instances:
-                    if hasattr(p, "signal"):
-                        p.signal("refresh_scene", myargs)
+        if len(args) > 0 and args[0] == "Scene":
+            for p in self.panel_instances:
+                if hasattr(p, "signal"):
+                    p.signal("refresh_scene", myargs)
 
     @signal_listener("modified_by_tool")
     def on_tool_modified(self, origin, *args):
         myargs = [i for i in args]
-        if len(self.panel_instances) == 0:
-            self.on_selected(None, myargs)
-        else:
-            for p in self.panel_instances:
-                if hasattr(p, "signal"):
-                    p.signal("modified_by_tool", myargs)
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("modified_by_tool", myargs)
 
     @signal_listener("nodetype")
     def on_nodetype(self, origin, *args):
         myargs = [i for i in args]
-        if len(self.panel_instances) == 0:
-            self.on_selected(None, myargs)
-        else:
-            for p in self.panel_instances:
-                if hasattr(p, "signal"):
-                    p.signal("nodetype", myargs)
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("nodetype", myargs)
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
+        print ("on selected")
         busy = wx.BusyCursor()
         self.Freeze()
         for p in self.panel_instances:
@@ -131,6 +123,8 @@ class PropertyWindow(MWindow):
             pages_to_instance.extend(pages_in_node)
 
         self.window_close()
+
+        # print(f"Nodes selected: {len(nodes)} - pages found: {len(pages_to_instance)}")
         # self.panel_instances.clear()
         self.notebook_main.DeleteAllPages()
         for prop_sheet, instance in pages_to_instance:
@@ -143,21 +137,16 @@ class PropertyWindow(MWindow):
                 name = instance.__class__.__name__
 
             self.notebook_main.AddPage(page_panel, _(name))
-            try:
+            if hasattr(page_panel, "set_widgets"):
                 page_panel.set_widgets(instance)
-            except AttributeError:
-                pass
             self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
-            try:
+            if hasattr(page_panel, "pane_show"):
                 page_panel.pane_show()
-            except AttributeError:
-                pass
             page_panel.Layout()
-            try:
+            if hasattr(page_panel, "SetupScrolling"):
                 page_panel.SetupScrolling()
-            except AttributeError:
-                pass
+        # print(f"Panels created: {len(self.panel_instances)}")
         self.Layout()
         self.Thaw()
         del busy
@@ -185,7 +174,10 @@ class PropertyWindow(MWindow):
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },
         )
-
+    
+    def window_open(self):
+        self.on_selected(None, None)
+    
     def window_close(self):
         for p in self.panel_instances:
             try:
