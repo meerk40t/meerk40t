@@ -5308,3 +5308,5 @@ class MeerK40t(MWindow):
             if recover:
                 # Load file
                 self.context(f'load "{recovery_file}"\n')
+                self.set_needs_save_status(True)
+                
