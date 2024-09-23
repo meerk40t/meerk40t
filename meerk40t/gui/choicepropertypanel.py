@@ -125,7 +125,6 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.context = context
         self.listeners = list()
         self.entries_per_column = entries_per_column
-        self._detached = False
         if choices is None:
             return
         if isinstance(choices, str):
@@ -1578,23 +1577,27 @@ class ChoicePropertyPanel(ScrolledPanel):
         return result
 
     def reload(self):
-        if not self._detached:
-            for attr, listener, obj in self.listeners:
-                try:
-                    value = getattr(obj, attr)
-                except AttributeError as e:
-                    print(f"error: {e}")
-                    continue
-                listener("internal", value, obj)
+        for attr, listener, obj in self.listeners:
+            try:
+                value = getattr(obj, attr)
+            except AttributeError as e:
+                # print(f"error: {e}")
+                continue
+            listener("internal", value, obj)
 
     def module_close(self, *args, **kwargs):
         self.pane_hide()
 
     def pane_hide(self):
-        if not self._detached:
+        # print (f"hide called: {len(self.listeners)}")
+        if len(self.listeners):
             for attr, listener, obj in self.listeners:
                 self.context.unlisten(attr, listener)
-            self._detached = True
+                del listener
+            self.listeners.clear()
 
     def pane_show(self):
+        # print ("show called")
+        # if len(self.listeners) == 0:
+        #     print ("..but no one cares")
         pass
