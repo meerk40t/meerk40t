@@ -147,7 +147,11 @@ class LaserPanel(wx.Panel):
         ):
             self.btn_config_laser.Enable(False)
         self.sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
-        self.btn_config_laser.SetMinSize(dip_size(self, 20, -1))
+        if platform.system() == "Windows":
+            minsize = 20
+        else:
+            minsize = 30
+        self.btn_config_laser.SetMinSize(dip_size(self, minsize, -1))
         self.sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
