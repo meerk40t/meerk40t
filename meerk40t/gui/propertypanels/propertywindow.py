@@ -96,7 +96,7 @@ class PropertyWindow(MWindow):
 
             pages_in_node.sort(key=sort_priority)
             pages_to_instance.extend(pages_in_node)
-        
+
         # This will clear the old list
         self.window_close()
 
@@ -124,7 +124,7 @@ class PropertyWindow(MWindow):
                 page_panel.SetupScrolling()
         # print(f"Panels created: {len(self.panel_instances)}")
         # self.Refresh()
-    
+
     def validate_display(self, nodes, source):
         # Are the new nodes identical to the displayed ones?
         different = False
@@ -132,16 +132,29 @@ class PropertyWindow(MWindow):
             nodes = list()
         else:
             nodes = list(nodes)
+        to_be_deleted = []
+        for idx, e in enumerate(nodes):
+            # We remove reference nodes and insert the 'real' thing instead.
+            if e.type == "reference":
+                node = e.node
+                if node not in nodes:
+                    nodes.append(node)
+                # Reverse order
+                to_be_deleted.insert(0, idx)
+        # print (f"Need to delete {len(to_be_deleted)} references")
+        for idx in to_be_deleted:
+            nodes.pop(idx)
+
         nlen = len(nodes)
         plen = len(self.nodes_displayed)
-            
+
         if nlen != plen:
             different = True
         else:
             for e in nodes:
                 if e not in self.nodes_displayed:
                     different = True
-                    break        
+                    break
         # print (f"Check done for {source}, displayed={len(self.nodes_displayed)}, nodes={len(nodes)} - {'different' if different else 'identical'}")
         if different:
             busy = wx.BusyCursor()
@@ -216,10 +229,10 @@ class PropertyWindow(MWindow):
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },
         )
-    
+
     def window_open(self):
         self.on_selected(None, None)
-    
+
     def window_close(self):
         for p in self.panel_instances:
             try:
