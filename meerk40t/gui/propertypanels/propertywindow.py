@@ -70,6 +70,7 @@ class PropertyWindow(MWindow):
         for node in nodes:
             pages_in_node = []
             found = False
+            # print(f"Looking for 'property/{node.__class__.__name__}/.*'")
             for property_sheet in self.context.lookup_all(
                 f"property/{node.__class__.__name__}/.*"
             ):
@@ -162,7 +163,10 @@ class PropertyWindow(MWindow):
             self.unload_property_panes()
             self.nodes_displayed.clear()
             if len(nodes) > 0:
-                self.nodes_displayed.extend(nodes)
+                for e in nodes:
+                    if e not in self.nodes_displayed:
+                        self.nodes_displayed.append(e)
+                # self.nodes_displayed.extend(nodes)
             self.load_property_panes()
             self.Layout()
             self.Thaw()

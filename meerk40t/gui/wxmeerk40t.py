@@ -62,6 +62,7 @@ from .propertypanels.imageproperty import (
 )
 from .propertypanels.inputproperty import InputPropertyPanel
 from .propertypanels.opbranchproperties import OpBranchPanel
+from .propertypanels.regbranchproperties import RegBranchPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.pathproperty import PathPropertyPanel
@@ -866,6 +867,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/GotoOperation/GotoProperty", GotoPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
+        kernel.register("property/BranchRegmarkNode/RegmarkProperty", RegBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
