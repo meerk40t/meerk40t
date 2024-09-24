@@ -61,47 +61,8 @@ class PropertyWindow(MWindow):
             self.remove_module_delegate(p)
         self.panel_instances.clear()
 
-    def load_property_panes(self):
-        def sort_priority(prop):
-            prop_sheet, node = prop
-            return (
-                getattr(prop_sheet, "priority")
-                if hasattr(prop_sheet, "priority")
-                else 0
-            )
-
+    def load_property_panes(self, pages_to_instance):
         nodes = self.nodes_displayed
-        pages_to_instance = []
-        for node in nodes:
-            pages_in_node = []
-            found = False
-            # print(f"Looking for 'property/{node.__class__.__name__}/.*'")
-            for property_sheet in self.context.lookup_all(
-                f"property/{node.__class__.__name__}/.*"
-            ):
-                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                    node
-                ):
-                    pages_in_node.append((property_sheet, node))
-                    found = True
-            # If we did not have any hits and the node is a reference
-            # then we fall back to the master. So if in the future we
-            # would have a property panel dealing with reference-nodes
-            # then this would no longer apply.
-            if node.type == "reference" and not found:
-                snode = node.node
-                found = False
-                for property_sheet in self.context.lookup_all(
-                    f"property/{snode.__class__.__name__}/.*"
-                ):
-                    if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                        snode
-                    ):
-                        pages_in_node.append((property_sheet, snode))
-                        found = True
-
-            pages_in_node.sort(key=sort_priority)
-            pages_to_instance.extend(pages_in_node)
 
         # This will clear the old list
         self.window_close()
@@ -134,6 +95,14 @@ class PropertyWindow(MWindow):
         # self.Refresh()
 
     def validate_display(self, nodes, source):
+        def sort_priority(prop):
+            prop_sheet, node = prop
+            return (
+                getattr(prop_sheet, "priority")
+                if hasattr(prop_sheet, "priority")
+                else 0
+            )
+
         # Are the new nodes identical to the displayed ones?
         different = False
         if nodes is None:
@@ -163,11 +132,51 @@ class PropertyWindow(MWindow):
                 if e not in self.nodes_displayed:
                     different = True
                     break
-        if self.channel:
-            self.channel(
-                f"Check done for {source}, displayed={len(self.nodes_displayed)}, nodes={len(nodes)} - {'different' if different else 'identical'}"
-            )
+        pages_to_instance = []
         if different:
+            for node in nodes:
+                pages_in_node = []
+                found = False
+                # print(f"Looking for 'property/{node.__class__.__name__}/.*'")
+                for property_sheet in self.context.lookup_all(
+                    f"property/{node.__class__.__name__}/.*"
+                ):
+                    if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                        node
+                    ):
+                        pages_in_node.append((property_sheet, node))
+                        found = True
+                # If we did not have any hits and the node is a reference
+                # then we fall back to the master. So if in the future we
+                # would have a property panel dealing with reference-nodes
+                # then this would no longer apply.
+                if node.type == "reference" and not found:
+                    snode = node.node
+                    found = False
+                    for property_sheet in self.context.lookup_all(
+                        f"property/{snode.__class__.__name__}/.*"
+                    ):
+                        if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                            snode
+                        ):
+                            pages_in_node.append((property_sheet, snode))
+                            found = True
+
+                pages_in_node.sort(key=sort_priority)
+                pages_to_instance.extend(pages_in_node)
+
+        if self.channel:
+            msg = f"Check done for {source}, displayed={len(self.nodes_displayed)}, nodes={len(nodes)}"
+            if different and len(pages_to_instance) > 0:
+                msg += " - different, so new panels will load"
+            elif different:
+                msg += " - different but nothing defined, so panels remain"
+                if len(nodes) > 0:
+                    msg += f"(first node was: {nodes[0].type})"
+            else:
+                msg += " - identical, so panels remain"
+            self.channel(msg)
+        if different and len(pages_to_instance) > 0:
             t1 = perf_counter()
             busy = wx.BusyCursor()
             self.Freeze()
@@ -178,7 +187,7 @@ class PropertyWindow(MWindow):
                     if e not in self.nodes_displayed:
                         self.nodes_displayed.append(e)
                 # self.nodes_displayed.extend(nodes)
-            self.load_property_panes()
+            self.load_property_panes(pages_to_instance)
             self.Layout()
             self.Thaw()
             del busy
