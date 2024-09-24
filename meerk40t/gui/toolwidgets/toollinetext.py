@@ -27,13 +27,6 @@ class LineTextTool(ToolWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         pass
 
-    def refocus_text(self):
-        node = self.last_node_created
-        if node is None:
-            return
-        self.scene.context.elements.set_emphasis([node])
-        node.focus()
-
     def end_tool(self, force=False):
         self.scene.context.signal("statusmsg", "")
         self.scene.request_refresh()
@@ -58,21 +51,19 @@ class LineTextTool(ToolWidget):
             else:
                 x = nearest_snap[0]
                 y = nearest_snap[1]
-            ## self.scene.context(f"window open TextEntry {x} {y}\n")
-            self.scene.context("tool none\n")
             elements = self.scene.context.elements
-            if elements.default_stroke is None:
-                text_color = Color("black")
-            else:
-                text_color = elements.default_stroke
-                text_content = "Text"
-                fsize = self.scene.context.last_font_size
-                font = self.scene.context.last_font
-                if font:
-                    font = f'-f "{font}"'
-                self.scene.context(f'linetext {x} {y} "{text_content}" {font} -s {fsize}\n')
-                self.scene.context("window open Properties\n")
-                self.scene.context.signal("textselect")
+            # if elements.default_stroke is None:
+            #     text_color = Color("black")
+            # else:
+            #     text_color = elements.default_stroke
+            text_content = "Text"
+            fsize = self.scene.context.last_font_size
+            font = self.scene.context.last_font
+            if font:
+                font = f'-f "{font}"'
+            self.scene.context(f'linetext {x} {y} "{text_content}" {font} -s {fsize}\n')
+            self.scene.context(".window open Properties\n")
+            self.scene.context.signal("textselect")
             self.end_tool()
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
