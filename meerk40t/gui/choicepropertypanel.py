@@ -1562,9 +1562,15 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         self.SetSizer(sizer_very_main)
         sizer_very_main.Fit(self)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
+    
+    def on_close(self, event):
+        # We should not need this, but better safe than sorry
+        event.Skip()
+        self.pane_hide()
 
     @staticmethod
     def unsorted_label(original):

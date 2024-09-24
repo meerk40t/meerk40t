@@ -411,7 +411,7 @@ class Meerk40tFonts:
                 return self.full_name(fname)
         return None
 
-    def _try_availible(self):
+    def _try_available(self):
         if not self.available_fonts():
             return None
         for i, font in enumerate(self._available_fonts):
@@ -420,16 +420,14 @@ class Meerk40tFonts:
                 return candidate
         return None
 
-    def create_linetext_node(
-        self, x, y, text, font=None, font_size=None, font_spacing=1.0
-    ):
-        if font_size is None:
-            font_size = Length("20px")
-        if font_spacing is None:
-            font_spacing = 1
-        self.context.setting(str, "last_font", "")
-        if not self._validate_font(font):
+    def retrieve_font(self, font):
+        if not self._validate_font(font) and font is not None:
             # Is the given font valid?
+            # It could still translate to a valid name
+            font_path = self.face_to_full_name(font)
+            if font_path:
+                font = self.short_name(font_path)
+                return font, font_path
             font = None
         if not font:
             # No valid font, try last font.
@@ -441,17 +439,36 @@ class Meerk40tFonts:
             font = self._try_candidates()
         if not font:
             # You know, I take anything at this point...
-            font = self._try_availible()
-        # We tried everything if there is a font, set it to last_font.
-        self.context.last_font = font
+            font = self._try_available()
+
+        if not font:
+            # No font could be located.
+            return None, None
+
+        # We have our valid font.
+        font_path = self.full_name(font)
+        font = self.short_name(font)
+        return font, font_path
+
+    def create_linetext_node(
+        self, x, y, text, font=None, font_size=None, font_spacing=1.0
+    ):
+        if font_size is None:
+            font_size = Length("20px")
+        if font_spacing is None:
+            font_spacing = 1
+        self.context.setting(str, "last_font", "")
+        font, font_path = self.retrieve_font(font)
 
         if not font:
             # No font could be located.
             return None
 
+        # We tried everything if there is a font, set it to last_font.
+        self.context.last_font = font
+
         # We have our valid font.
-        font_path = self.full_name(font)
-        font = self.short_name(font)
+
         horizontal = True
         cfont = self.cached_fontclass(font_path)
         weld = False
@@ -736,7 +753,11 @@ def plugin(kernel, lifecycle):
         ):
             kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
-        @context.console_option("font", "f", type=str, help=_("SHX font file."))
+
+        @context.console_argument("x", type=Length, help=_("X-Coordinate"))
+        @context.console_argument("y", type=Length, help=_("Y-Coordinate"))
+        @context.console_argument("text", type=str, help=_("Text to render"))
+        @context.console_option("font", "f", type=str, help=_("Font file."))
         @context.console_option(
             "font_size", "s", type=Length, default="20px", help=_("Font size")
         )
@@ -754,62 +775,51 @@ def plugin(kernel, lifecycle):
             command,
             channel,
             _,
+            x=None,
+            y=None,
+            text=None,
             font=None,
             font_size=None,
             font_spacing=None,
             remainder=None,
             **kwargs,
         ):
-            def display_fonts():
-                for extension, item in registered_fonts:
-                    desc = item[0]
-                    channel(
-                        _("{ftype} fonts in {path}:").format(ftype=desc, path=font_dir)
-                    )
-                    for p in glob(join(font_dir, "*." + extension.lower())):
-                        channel(p)
-                    for p in glob(join(font_dir, "*." + extension.upper())):
-                        channel(p)
-                    return
+            if x is None or y is None or text is None:
+                channel(_("linetext <x> <y> <text> - please provide all required arguments"))
+                registered_fonts = context.fonts.available_fonts()
+                for item in registered_fonts:
+                    channel(f"{item[1]} ({item[0]})")
+                return
+            try:
+                x = float(Length(x))
+                y = float(Length(y))
+            except ValueError:
+                channel(_("Invalid coordinates"))
+                return
+            if text is None or text == "":
+                channel(_("No text given."))
+                return
+            
 
-            registered_fonts = context.fonts.fonts_registered
             if font_spacing is None:
                 font_spacing = 1
 
             context.setting(str, "last_font", None)
-            if font is not None:
-                context.last_font = font
-            font = context.last_font
-
-            safe_dir = realpath(get_safe_path(context.kernel.name))
-            context.setting(str, "font_directory", safe_dir)
-            font_dir = context.font_directory
-
             if font is None:
-                display_fonts()
-                return
-            font_path = join(font_dir, font)
-            if not exists(font_path):
-                channel(_("Font was not found at {path}").format(path=font_path))
-                display_fonts()
-                return
-            if remainder is None:
-                channel(_("No text to make a path with."))
-                info = str(context.fonts.cached_fontclass.cache_info())
-                channel(info)
-                return
-            x = 0
-            y = float(font_size)
+                font = context.last_font
 
-            # try:
-            #     font = ShxFont(font_path)
-            #     path = FontPath()
-            #     font.render(path, remainder, True, float(font_size))
-            # except ShxFontParseError as e:
-            #     channel(f"{e.args}")
-            #     return
+            font_name, font_path = context.fonts.retrieve_font(font)
+            if font_name is None:
+                channel(f"Could not find a valid font file for '{font}'")
+                registered_fonts = context.fonts.available_fonts()
+                for item in registered_fonts:
+                    channel(f"{item[1]} ({item[0]})")
+                return
+            
+            channel(f"Will use font '{font_name}' ({font_path})")
+    
             path_node = context.fonts.create_linetext_node(
-                context, x, y, remainder, font, font_size, font_spacing
+                x, y, text, font_path, font_size, font_spacing
             )
             # path_node = PathNode(
             #     path=path.path,
@@ -817,4 +827,10 @@ def plugin(kernel, lifecycle):
             #     stroke=Color("black"),
             # )
             context.elements.elem_branch.add_node(path_node)
+            if context.elements.classify_new:
+                context.elements.classify([path_node])
+            context.elements.set_emphasis([path_node])
+
             context.signal("element_added", path_node)
+            context.signal("refresh_scene", "Scene")
+            
