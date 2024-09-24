@@ -114,12 +114,13 @@ class Undo:
             yield f"{q}{str(i).ljust(5)}: state {str(v)}"
 
     def undo_string(self, *args):
-        if self._undo_index == 0 or len(self._undo_stack) == 0:
+        idx = max(self._undo_index, len(self._undo_stack) - 1)
+        if idx == 0 or len(self._undo_stack) == 0:
             # At bottom of stack / empty stack
             return ""
         # for idx, s in enumerate(self._undo_stack):
         #     print (f"[{idx}]{'*' if idx==self._undo_index else " "} {str(s)}")
-        return str(self._undo_stack[self._undo_index])
+        return str(self._undo_stack[idx])
 
     def has_undo(self, *args):
         if self._undo_index == 0:
@@ -129,10 +130,11 @@ class Undo:
         return len(self._undo_stack) != 0
 
     def redo_string(self, *args):
-        if self._undo_index >= len(self._undo_stack) - 1:
+        idx = max(self._undo_index, len(self._undo_stack) - 1)
+        if idx >= len(self._undo_stack) - 1:
             # At top of stack
             return ""
-        return str(self._undo_stack[self._undo_index + 1])
+        return str(self._undo_stack[idx + 1])
 
     def has_redo(self, *args):
         return self._undo_index < len(self._undo_stack) - 1
