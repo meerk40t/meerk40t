@@ -95,7 +95,7 @@ class ElementsWidget(Widget):
         if event_type == "rightdown" and empty_or_right:
             if not self.scene.pane.tool_active:
                 if self.scene.pane.active_tool != "none":
-                    self.scene.context("tool none")
+                    self.scene.context("tool none\n")
                     return RESPONSE_CONSUME
                 else:
                     self.scene.context.signal("scene_right_click")
