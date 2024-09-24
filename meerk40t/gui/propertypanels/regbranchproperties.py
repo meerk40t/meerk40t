@@ -52,6 +52,8 @@ class RegBranchPanel(wx.Panel):
             if len(data):
                 elements.drag_and_drop(data, drop_node)
         self.set_widgets(self.node)
+        elements.set_selected([self.node])
+        self.context.signal("selected")
 
     def pane_hide(self):
         pass
