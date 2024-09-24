@@ -1745,6 +1745,8 @@ class ComponentPanel(ScrolledPanel):
                 else:
                     status = _("Present (slow)")
                     info = "??"
+                if not hasattr(potrace, "Bitmap"):
+                    status = _("Faulty, please report")
             except ImportError:
                 info = "??"
                 status = _("Missing")

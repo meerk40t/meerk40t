@@ -51,6 +51,10 @@ def plugin(kernel, lifecycle=None):
         try:
             import numpy
             import potrace
+            if not hasattr(potrace, "Bitmap"):
+                # This is a strange variant, that we do not support!
+                print ("The version of potrace that is installed on your machine is incompatible. Please report this to the developers.")
+                return True
         except ImportError:
             # print("Potrace plugin could not load because potracer/pypotrace is not installed.")
             return True
