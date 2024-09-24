@@ -18,6 +18,7 @@ class PropertyWindow(MWindow):
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Properties"))
         self.panel_instances = list()
+        self.nodes_displayed = list()
 
         self.notebook_main = aui.AuiNotebook(
             self,
@@ -45,6 +46,114 @@ class PropertyWindow(MWindow):
                     panel.pane_deactive()
             except AttributeError:
                 pass
+
+    def unload_property_panes(self):
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+            self.remove_module_delegate(p)
+        self.panel_instances.clear()
+
+    def load_property_panes(self):
+        def sort_priority(prop):
+            prop_sheet, node = prop
+            return (
+                getattr(prop_sheet, "priority")
+                if hasattr(prop_sheet, "priority")
+                else 0
+            )
+
+        nodes = self.nodes_displayed
+        pages_to_instance = []
+        for node in nodes:
+            pages_in_node = []
+            found = False
+            for property_sheet in self.context.lookup_all(
+                f"property/{node.__class__.__name__}/.*"
+            ):
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                    node
+                ):
+                    pages_in_node.append((property_sheet, node))
+                    found = True
+            # If we did not have any hits and the node is a reference
+            # then we fall back to the master. So if in the future we
+            # would have a property panel dealing with reference-nodes
+            # then this would no longer apply.
+            if node.type == "reference" and not found:
+                snode = node.node
+                found = False
+                for property_sheet in self.context.lookup_all(
+                    f"property/{snode.__class__.__name__}/.*"
+                ):
+                    if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                        snode
+                    ):
+                        pages_in_node.append((property_sheet, snode))
+                        found = True
+
+            pages_in_node.sort(key=sort_priority)
+            pages_to_instance.extend(pages_in_node)
+        
+        # This will clear the old list
+        self.window_close()
+
+        # print(f"Nodes selected: {len(nodes)} - pages found: {len(pages_to_instance)}")
+        # self.panel_instances.clear()
+        self.notebook_main.DeleteAllPages()
+        for prop_sheet, instance in pages_to_instance:
+            page_panel = prop_sheet(
+                self.notebook_main, wx.ID_ANY, context=self.context, node=instance
+            )
+            try:
+                name = prop_sheet.name
+            except AttributeError:
+                name = instance.__class__.__name__
+
+            self.notebook_main.AddPage(page_panel, _(name))
+            if hasattr(page_panel, "set_widgets"):
+                page_panel.set_widgets(instance)
+            self.add_module_delegate(page_panel)
+            self.panel_instances.append(page_panel)
+            if hasattr(page_panel, "pane_show"):
+                page_panel.pane_show()
+            page_panel.Layout()
+            if hasattr(page_panel, "SetupScrolling"):
+                page_panel.SetupScrolling()
+        # print(f"Panels created: {len(self.panel_instances)}")
+        # self.Refresh()
+    
+    def validate_display(self, nodes, source):
+        # Are the new nodes identical to the displayed ones?
+        different = False
+        if nodes is None:
+            nodes = list()
+        else:
+            nodes = list(nodes)
+        nlen = len(nodes)
+        plen = len(self.nodes_displayed)
+            
+        if nlen != plen:
+            different = True
+        else:
+            for e in nodes:
+                if e not in self.nodes_displayed:
+                    different = True
+                    break        
+        # print (f"Check done for {source}, displayed={len(self.nodes_displayed)}, nodes={len(nodes)} - {'different' if different else 'identical'}")
+        if different:
+            busy = wx.BusyCursor()
+            self.Freeze()
+            self.unload_property_panes()
+            self.nodes_displayed.clear()
+            if len(nodes) > 0:
+                self.nodes_displayed.extend(nodes)
+            self.load_property_panes()
+            self.Layout()
+            self.Thaw()
+            del busy
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
@@ -77,86 +186,13 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
-        busy = wx.BusyCursor()
-        self.Freeze()
-        for p in self.panel_instances:
-            try:
-                p.pane_hide()
-            except AttributeError:
-                pass
-            self.remove_module_delegate(p)
-
-        def sort_priority(prop):
-            prop_sheet, node = prop
-            return (
-                getattr(prop_sheet, "priority")
-                if hasattr(prop_sheet, "priority")
-                else 0
-            )
-
         nodes = list(self.context.elements.flat(selected=True, cascade=False))
-        if nodes is None:
-            return
-        pages_to_instance = []
-        for node in nodes:
-            pages_in_node = []
-            found = False
-            for property_sheet in self.context.lookup_all(
-                f"property/{node.__class__.__name__}/.*"
-            ):
-                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                    node
-                ):
-                    pages_in_node.append((property_sheet, node))
-                    found = True
-            # If we did not have any hits and the node is a reference
-            # then we fall back to the master. So if in the future we
-            # would have a property panel dealing with reference-nodes
-            # then this would no longer apply.
-            if node.type == "reference" and not found:
-                snode = node.node
-                found = False
-                for property_sheet in self.context.lookup_all(
-                    f"property/{snode.__class__.__name__}/.*"
-                ):
-                    if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                        snode
-                    ):
-                        pages_in_node.append((property_sheet, snode))
-                        found = True
+        self.validate_display(nodes, "selected")
 
-            pages_in_node.sort(key=sort_priority)
-            pages_to_instance.extend(pages_in_node)
-
-        self.window_close()
-
-        # print(f"Nodes selected: {len(nodes)} - pages found: {len(pages_to_instance)}")
-        # self.panel_instances.clear()
-        self.notebook_main.DeleteAllPages()
-        for prop_sheet, instance in pages_to_instance:
-            page_panel = prop_sheet(
-                self.notebook_main, wx.ID_ANY, context=self.context, node=instance
-            )
-            try:
-                name = prop_sheet.name
-            except AttributeError:
-                name = instance.__class__.__name__
-
-            self.notebook_main.AddPage(page_panel, _(name))
-            if hasattr(page_panel, "set_widgets"):
-                page_panel.set_widgets(instance)
-            self.add_module_delegate(page_panel)
-            self.panel_instances.append(page_panel)
-            if hasattr(page_panel, "pane_show"):
-                page_panel.pane_show()
-            page_panel.Layout()
-            if hasattr(page_panel, "SetupScrolling"):
-                page_panel.SetupScrolling()
-        # print(f"Panels created: {len(self.panel_instances)}")
-        self.Layout()
-        self.Thaw()
-        del busy
-        # self.Refresh()
+    @signal_listener("emphasized")
+    def on_emphasized(self, origin, *args):
+        nodes = list(self.context.elements.flat(emphasized=True, cascade=False))
+        self.validate_display(nodes, "emphasized")
 
     @staticmethod
     def sub_register(kernel):
