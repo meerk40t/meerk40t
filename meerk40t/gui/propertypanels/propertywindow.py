@@ -1,3 +1,5 @@
+from time import perf_counter
+
 import wx
 from wx import aui
 
@@ -32,6 +34,7 @@ class PropertyWindow(MWindow):
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
         self.restore_aspect(honor_initial_values=True)
+        self.channel = self.context.channel("propertypanel", timestamp=True)
 
     def on_page_changed(self, event):
         event.Skip()
@@ -48,6 +51,8 @@ class PropertyWindow(MWindow):
                 pass
 
     def unload_property_panes(self):
+        if self.channel:
+            self.channel("Unload property panes")
         for p in self.panel_instances:
             try:
                 p.pane_hide()
@@ -100,8 +105,10 @@ class PropertyWindow(MWindow):
 
         # This will clear the old list
         self.window_close()
-
-        # print(f"Nodes selected: {len(nodes)} - pages found: {len(pages_to_instance)}")
+        if self.channel:
+            self.channel(
+                f"Loading new property panes for {len(nodes)} nodes - pages found: {len(pages_to_instance)}"
+            )
         # self.panel_instances.clear()
         self.notebook_main.DeleteAllPages()
         for prop_sheet, instance in pages_to_instance:
@@ -156,8 +163,12 @@ class PropertyWindow(MWindow):
                 if e not in self.nodes_displayed:
                     different = True
                     break
-        # print (f"Check done for {source}, displayed={len(self.nodes_displayed)}, nodes={len(nodes)} - {'different' if different else 'identical'}")
+        if self.channel:
+            self.channel(
+                f"Check done for {source}, displayed={len(self.nodes_displayed)}, nodes={len(nodes)} - {'different' if different else 'identical'}"
+            )
         if different:
+            t1 = perf_counter()
             busy = wx.BusyCursor()
             self.Freeze()
             self.unload_property_panes()
@@ -171,6 +182,9 @@ class PropertyWindow(MWindow):
             self.Layout()
             self.Thaw()
             del busy
+            t2 = perf_counter()
+            if self.channel:
+                self.channel(f"Took {t2-t1:.2f} seconds to load")
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
@@ -235,7 +249,8 @@ class PropertyWindow(MWindow):
         )
 
     def window_open(self):
-        self.on_selected(None, None)
+        nodes = list(self.context.elements.flat(selected=True, cascade=False))
+        self.validate_display(nodes, "window_open")
 
     def window_close(self):
         for p in self.panel_instances:
