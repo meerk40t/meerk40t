@@ -335,6 +335,8 @@ class ImageOpNode(Node, Parameters):
                     (max_x, min_y),
                 )
             )
+            inverted = False
+            # Not used!
             if image_node.is_depthmap:
                 # Make sure it's grayscale...
                 if pil_image.mode != "L":
@@ -347,12 +349,19 @@ class ImageOpNode(Node, Parameters):
                     gres = 255
                 stepsize = 255 /  gres
 
-                def image_filter(pixel):
-                    # We ignore grayscale and move it into black-white = always on
-                    return 1
+                # no need for the filter as we have already moved every
+                # pixel during preprocessing to either 255 or 0
+                # def image_filter(pixel):
+                #     # We ignore grayscale and move it into black-white = always on
+                #     # The filter takes a pixel value between 0=black and 255=white
+                #     # provides and creates a power value of 1.0 for black
+                #     # and 0.0 for white
+                #     if pixel == 255:
+                #         return 0.0
+                #     else:
+                #         return 1.0
+                image_filter = None
 
-                inverted = False
-                # Not used!
                 if inverted:
                     delta = +1
                     start_pixel = 0
@@ -377,7 +386,7 @@ class ImageOpNode(Node, Parameters):
                     if extrema == (0, 0):
                         # all black
                         # We will burn this
-                        pass 
+                        pass
                     elif extrema == (255, 255):
                         # all white
                         # we can skip this
@@ -446,7 +455,7 @@ class ImageOpNode(Node, Parameters):
                     offset_y=offset_y,
                     step_x=step_x,
                     step_y=step_y,
-                    inverted=False,
+                    inverted=inverted,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
                     start_minimum_y=start_on_top,
@@ -476,7 +485,7 @@ class ImageOpNode(Node, Parameters):
                     offset_y=offset_y,
                     step_x=step_x,
                     step_y=step_y,
-                    inverted=False,
+                    inverted=inverted,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
                     start_minimum_y=start_on_top,
