@@ -1228,6 +1228,18 @@ class SVGProcessor:
                     _lightness = float(element.values.get("lightness"))
                 except (ValueError, TypeError):
                     pass
+                _is_depthmap = False
+                try:
+                    _is_depthmap = bool(element.values.get("is_depthmap") == "True")
+                except (ValueError, TypeError):
+                    pass
+                _depth_resolution = 256
+                try:
+                    _depth_resolution = int(element.values.get("depth_resolution"))
+                    if _depth_resolution <= 1 or _depth_resolution > 256:
+                        _depth_resolution = 256
+                except (ValueError, TypeError):
+                    pass
                 node = context_node.add(
                     image=element.image,
                     matrix=element.transform,
@@ -1246,6 +1258,8 @@ class SVGProcessor:
                     label=label,
                     operations=operations,
                     lock=lock,
+                    is_depthmap=_is_depthmap,
+                    depth_resolution=_depth_resolution,
                 )
                 self.check_for_label_display(node, element)
                 e_list.append(node)
