@@ -50,6 +50,8 @@ class GRBLDriver(Parameters):
             self.settings, single=True, ppi=False, shift=False, group=True
         )
         self.queue = []
+        self._queue_current = 0
+        self._queue_total = 0
         self.plot_data = None
 
         self.on_value = 0
@@ -88,6 +90,13 @@ class GRBLDriver(Parameters):
             self.out_real(e)
         else:
             self.out_pipe(e)
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     @signal_listener("line_end")
     def _set_line_end(self, origin=None, *args):
@@ -392,7 +401,11 @@ class GRBLDriver(Parameters):
         else:
             self(f"M4{self.line_end}")
         first = True
+        total = len(self.queue)
+        current = 0
         for q in self.queue:
+            current += 1
+            self._set_queue_status(current, total)
             while self.hold_work(0):
                 if self.service.kernel.is_shutdown:
                     return
@@ -511,6 +524,7 @@ class GRBLDriver(Parameters):
                     self.on_value = on
                     self._move(x, y)
         self.queue.clear()
+        self._set_queue_status(0, 0)
 
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")

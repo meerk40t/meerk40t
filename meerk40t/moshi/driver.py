@@ -54,6 +54,8 @@ class MoshiDriver(Parameters):
 
         self.plot_planner = PlotPlanner(self.settings)
         self.queue = list()
+        self._queue_current = 0
+        self._queue_total = 0
 
         self.program = MoshiBuilder()
 
@@ -90,6 +92,13 @@ class MoshiDriver(Parameters):
             self.out_real(e)
         else:
             self.out_pipe(e)
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     def hold_work(self, priority):
         """
@@ -284,7 +293,12 @@ class MoshiDriver(Parameters):
 
         @return:
         """
+        total = len(self.queue)
+        current = 0
         for q in self.queue:
+            current += 1
+            self._set_queue_status(current, total)
+
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
@@ -381,6 +395,7 @@ class MoshiDriver(Parameters):
                         continue
                     self._goto_absolute(x, y, on & 1)
         self.queue.clear()
+        self._set_queue_status(0, 0)
 
     def move_abs(self, x, y):
         """
