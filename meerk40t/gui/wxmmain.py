@@ -357,7 +357,13 @@ class MeerK40t(MWindow):
             self.Maximize()
         if hasattr(kernel.args, "minimized") and kernel.args.minimized:
             self.Iconize()
+        self.Bind(wx.EVT_ACTIVATE, self.on_active)
 
+    def on_active(self, event):
+        if event.GetActive():
+            self.context.signal("scene_activated")
+        else:
+            self.context.signal("scene_deactivated")
 
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
@@ -5309,4 +5315,4 @@ class MeerK40t(MWindow):
                 # Load file
                 self.context(f'load "{recovery_file}"\n')
                 self.set_needs_save_status(True)
-                
+

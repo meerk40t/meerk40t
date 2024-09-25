@@ -623,7 +623,7 @@ class MeerK40tScenePanel(wx.Panel):
                 overrule = self.context.setting(bool, "suppress_focus_animation", False)
                 if overrule:
                     animate = False
-                
+
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
@@ -1466,6 +1466,13 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
         self.widget_scene.context.elements.default_fill = color
+
+    @signal_listener("scene_deactivated")
+    def on_scene_deactived(self, origin, *args):
+        if not self.context.setting(bool, "auto_tool_reset", True):
+            return
+        if self.active_tool != "none":
+            self.context(".tool none\n")
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
