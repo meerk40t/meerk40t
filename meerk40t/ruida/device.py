@@ -324,7 +324,7 @@ class RuidaDevice(Service):
             hidden=True,
             help=_("Updates interface state for the device."),
         )
-        def interface_update(**kwargs):
+        def interface_update(command, channel, _, data=None, **kwargs):
             if self.interface == "mock":
                 self.active_interface = self.interface_mock
                 self.driver.controller.write = self.interface_mock.write
@@ -340,7 +340,7 @@ class RuidaDevice(Service):
                 self.driver.controller.write = self.interface_usb.write
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
-        def pipe_abort(channel, _, **kwargs):
+        def pipe_abort(command, channel, _, data=None, **kwargs):
             self.driver.reset()
             channel(_("Emergency Stop."))
             self.signal("pipe;running", False)
@@ -349,7 +349,7 @@ class RuidaDevice(Service):
             "pause",
             help=_("realtime pause/resume of the machine"),
         )
-        def realtime_pause(**kwargs):
+        def realtime_pause(command, channel, _, data=None, **kwargs):
             if self.driver.paused:
                 self.driver.resume()
             else:
@@ -361,32 +361,36 @@ class RuidaDevice(Service):
             hidden=True,
             help=_("Connects to the device."),
         )
-        def interface_update(**kwargs):
+        def ruida_connect(command, channel, _, data=None, **kwargs):
             if not self.connected:
-                self.active_interface.open()
+                try:
+                    self.active_interface.open()
+                except Exception as e:
+                    channel(f"Could not establish the connection: {e}")
 
         @self.console_command(
             "ruida_disconnect",
             hidden=True,
             help=_("Disconnects from the device."),
         )
-        def interface_update(**kwargs):
+        def ruida_disconnect(command, channel, _, data=None, **kwargs):
             if self.connected:
                 self.active_interface.close()
+                channel("Connection closed")
 
         @self.console_command(
             "focusz",
             hidden=True,
             help=_("Initiates a FocusZ Operation"),
         )
-        def interface_update(**kwargs):
+        def focusz(command, channel, _, data=None, **kwargs):
             self.driver.focusz()
 
         @kernel.console_command(
             "+xforward",
             hidden=True,
         )
-        def plus_x_forward(data, **kwgs):
+        def plus_x_forward(command, channel, _, data=None, **kwgs):
             pipe = self.driver.controller.write
             job = self.driver.controller.job
             job.keydown_x_right(pipe)
@@ -395,7 +399,7 @@ class RuidaDevice(Service):
             "-xforward",
             hidden=True,
         )
-        def minus_x_forward(data, **kwgs):
+        def minus_x_forward(command, channel, _, data=None, **kwgs):
             pipe = self.driver.controller.write
             job = self.driver.controller.job
             job.keyup_x_right(pipe)
