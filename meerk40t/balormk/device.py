@@ -267,6 +267,18 @@ class BalorDevice(Service, Status):
                 "signals": "balorpin",
             },
             {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
+            },
+            {
                 "attr": "device_coolant",
                 "object": self,
                 "default": "",
