@@ -50,10 +50,10 @@ def plugin(kernel, lifecycle):
 
 
     @kernel.console_argument("url", type=str, help=_("Image url to load"))
-    @kernel.console_argument("x", type=str, help="Sets the x-position of the image",)
-    @kernel.console_argument("y", type=str, help="Sets the y-position of the image",)
-    @kernel.console_argument("width", type=Length, help="Sets the width of the given image",)
-    @kernel.console_argument("height", type=Length, help="Sets the width of the given image",)
+    @kernel.console_argument("x", type=str, help="Sets the x-position of the data ('c' to center)",)
+    @kernel.console_argument("y", type=str, help="Sets the y-position of the data ('c' to center)",)
+    @kernel.console_argument("width", type=Length, help="Sets the width of the loaded data",)
+    @kernel.console_argument("height", type=Length, help="Sets the height of the loaded data",)
     @kernel.console_option("relative", "r", type=str, help="Establishes the id of an element that will act as the reference, if none given then reference is the scene")
     @kernel.console_command(
         "webload",
@@ -219,10 +219,10 @@ def plugin(kernel, lifecycle):
 
 
     @kernel.console_argument("filename", type=str, help=_("Filename to load"))
-    @kernel.console_argument("x", type=str, help="Sets the x-position of the image",)
-    @kernel.console_argument("y", type=str, help="Sets the y-position of the image",)
-    @kernel.console_argument("width", type=Length, help="Sets the width of the given image",)
-    @kernel.console_argument("height", type=Length, help="Sets the width of the given image",)
+    @kernel.console_argument("x", type=str, help="Sets the x-position of the data ('c' to center)",)
+    @kernel.console_argument("y", type=str, help="Sets the y-position of the data ('c' to center)",)
+    @kernel.console_argument("width", type=Length, help="Sets the width of the loaded data",)
+    @kernel.console_argument("height", type=Length, help="Sets the height of the loaded data",)
     @kernel.console_option("relative", "r", type=str, help="Establishes the id of an element that will act as the reference, if none given then reference is the scene")
     @kernel.console_command(
         "xload",
