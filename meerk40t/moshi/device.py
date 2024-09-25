@@ -202,6 +202,18 @@ class MoshiDevice(Service, Status):
                 ),
                 "section": "_30_Interface",
             },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
+            },
         ]
         self.register_choices("bed_dim", choices)
 

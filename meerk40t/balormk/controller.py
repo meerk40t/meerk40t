@@ -285,6 +285,7 @@ class GalvoController:
         self._list_executing = False
         self._number_of_list_packets = 0
         self.paused = False
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def define_pins(self):
         self._light_bit = self.service.setting(int, "light_pin", 8)
@@ -1047,6 +1048,15 @@ class GalvoController:
         x = int(x)
         y = int(y)
         self._list_write(listJumpTo, x, y, angle, distance)
+        if self._signal_updates:
+            view  = self.service.view
+            l_x, l_y = view.iposition(self._last_x, self._last_y)
+            n_x, n_y = view.iposition(x, y)
+            self.service.signal(
+                "driver;position",
+                (l_x, l_y, n_x, n_y),
+            )
+
         self._last_x = x
         self._last_y = y
 
@@ -1072,6 +1082,16 @@ class GalvoController:
         x = int(x)
         y = int(y)
         self._list_write(listMarkTo, x, y, angle, distance)
+
+        if self._signal_updates:
+            view  = self.service.view
+            l_x, l_y = view.iposition(self._last_x, self._last_y)
+            n_x, n_y = view.iposition(x, y)
+            self.service.signal(
+                "driver;position",
+                (l_x, l_y, n_x, n_y),
+            )
+
         self._last_x = x
         self._last_y = y
 

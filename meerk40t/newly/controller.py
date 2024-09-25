@@ -90,6 +90,7 @@ class NewlyController:
         self.mode = "init"
         self.paused = False
         self._command_buffer = []
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __call__(self, cmd, *args, **kwargs):
         if isinstance(cmd, str):
@@ -190,7 +191,8 @@ class NewlyController:
         )
         x, y = self.service.view.iposition(self._last_x, self._last_y)
         self.sync()
-        self.service.signal("driver;position", (last_x, last_y, x, y))
+        if self._signal_updates:
+            self.service.signal("driver;position", (last_x, last_y, x, y))
 
     #######################
     # MODE SHIFTS

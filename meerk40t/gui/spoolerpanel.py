@@ -145,7 +145,7 @@ class SpoolerPanel(wx.Panel):
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
             context=self.context,
-            list_name="list_spoolerhistory", 
+            list_name="list_spoolerhistory",
         )
 
         self.__set_properties()
@@ -242,7 +242,7 @@ class SpoolerPanel(wx.Panel):
             _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_spool.resize_columns()
-        
+
         self.list_job_history.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
 
         self.list_job_history.AppendColumn(
@@ -755,13 +755,15 @@ class SpoolerPanel(wx.Panel):
                     try:
                         if spool_obj.steps_total == 0:
                             spool_obj.calc_steps()
-                        self.list_job_spool.SetItem(
-                            list_id,
-                            JC_STEPS,
-                            f"{spool_obj.steps_done}/{spool_obj.steps_total}",
-                        )
+                        info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
+                        if hasattr(spooler, "driver"):
+                            if hasattr(spooler.driver, "get_internal_queue_status"):
+                                internal_current, internal_total = spooler.driver.get_internal_queue_status()
+                                if internal_current != 0:
+                                    info_s += f" ({internal_current}/{internal_total})"
                     except AttributeError:
-                        self.list_job_spool.SetItem(list_id, JC_STEPS, "-")
+                        info_s = "-"
+                    self.list_job_spool.SetItem(list_id, JC_STEPS, info_s)
                     # PASSES
                     try:
                         loop = spool_obj.loops_executed
@@ -1099,15 +1101,25 @@ class SpoolerPanel(wx.Panel):
                     self.list_job_spool.SetItem(list_id, JC_RUNTIME, "-")
                 else:
                     refresh_needed = True
+            except RuntimeError:
+                # Form no longer valid
+                return
 
             try:
-                pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
-                self.list_job_spool.SetItem(list_id, JC_STEPS, pass_str)
+                if spool_obj.steps_total == 0:
+                    spool_obj.calc_steps()
+                info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
+                if hasattr(spooler, "driver"):
+                    if hasattr(spooler.driver, "get_internal_queue_status"):
+                        internal_current, internal_total = spooler.driver.get_internal_queue_status()
+                        if internal_current != 0:
+                            info_s += f" ({internal_current}/{internal_total})"
             except AttributeError:
-                if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, JC_STEPS, "-")
-                else:
+                info_s = "-"
+                if list_id >= self.list_job_spool.GetItemCount():
                     refresh_needed = True
+
+            self.list_job_spool.SetItem(list_id, JC_STEPS, info_s)
             try:
                 loop = spool_obj.loops_executed
                 total = spool_obj.loops

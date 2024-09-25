@@ -41,6 +41,8 @@ class BalorDriver:
         self._shutdown = False
 
         self.queue = list()
+        self._queue_current = 0
+        self._queue_total = 0
         self.plot_planner = PlotPlanner(
             dict(), single=True, ppi=False, shift=False, group=True
         )
@@ -92,6 +94,13 @@ class BalorDriver:
         @return:
         """
         return priority <= 0 and self.paused
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     def get(self, key, default=None):
         """
@@ -318,7 +327,11 @@ class BalorDriver:
         last_on = None
         queue = self.queue
         self.queue = list()
+        total = len(queue)
+        current = 0
         for q in queue:
+            current += 1
+            self._set_queue_status(current, total)
             settings = q.settings
             penbox = settings.get("penbox_value")
             if penbox is not None:
@@ -503,6 +516,7 @@ class BalorDriver:
         self._list_bits = None
         con.rapid_mode()
         self.service.laser_status = "idle"
+        self._set_queue_status(0, 0)
 
         if self.service.redlight_preferred:
             con.light_on()

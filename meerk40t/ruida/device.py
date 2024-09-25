@@ -37,10 +37,20 @@ class RuidaDevice(Service):
                 if attr is not None and default is not None:
                     setattr(self, attr, default)
 
-        self.setting(str, "label", path)
+        # self.setting(str, "label", path)
 
         _ = self._
         choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": path,
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+                "section": "_00_General",
+                "priority": "10",
+            },
             {
                 "attr": "bedwidth",
                 "object": self,
@@ -172,6 +182,18 @@ class RuidaDevice(Service):
                 "label": _("Curve Interpolation"),
                 "section": "_10_Parameters",
                 "tip": _("Native units interpolation points."),
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("bed_dim", choices)

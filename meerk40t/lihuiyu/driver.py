@@ -140,6 +140,8 @@ class LihuiyuDriver(Parameters):
         self.plot_attribute_update()
 
         self.plot_data = None
+        self._queue_current = 0
+        self._queue_total = 0
 
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
@@ -156,6 +158,8 @@ class LihuiyuDriver(Parameters):
         self.CODE_ANGLE = b"M"
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
+
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
         self.paused = False
 
@@ -189,6 +193,13 @@ class LihuiyuDriver(Parameters):
 
     def __call__(self, e):
         self.out_pipe.write(e)
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     def plot_attribute_update(self):
         self.plot_planner.force_shift = self.service.plot_shift
@@ -624,10 +635,11 @@ class LihuiyuDriver(Parameters):
         self.state = DRIVER_STATE_RAPID
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def physical_home(self):
         """ "
@@ -900,7 +912,13 @@ class LihuiyuDriver(Parameters):
         """
         if self.plot_data is None:
             return False
+        # We don't know the length of a generator object
+        total = 0
+        current = 0
         for x, y, on in self.plot_data:
+            current += 1
+            total = current
+            self._set_queue_status(current, total)
             while self.hold_work(0):
                 time.sleep(0.05)
             sx = self.native_x
@@ -977,6 +995,7 @@ class LihuiyuDriver(Parameters):
                 dy = y - self.native_y
             self._goto_octent(dx, dy, on & 1)
         self.plot_data = None
+        self._set_queue_status(0, 0)
         return False
 
     def _set_speed(self, speed=None):
@@ -1226,10 +1245,11 @@ class LihuiyuDriver(Parameters):
             self._mode_shift_on_the_fly(dx, dy)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _mode_shift_on_the_fly(self, dx=0, dy=0):
         """
@@ -1426,10 +1446,11 @@ class LihuiyuDriver(Parameters):
             self._goto_xy(dx, dy, on=on)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _code_declare_directions(self):
         x_dir = self.CODE_LEFT if self._leftward else self.CODE_RIGHT
