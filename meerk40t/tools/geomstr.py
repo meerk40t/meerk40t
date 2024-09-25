@@ -418,7 +418,10 @@ class BeamTable:
         return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
-        self.compute_beam_bo()
+        ok = self.compute_beam_bo()
+        if not ok:
+            # print("Failed. Fallback...")
+            self.compute_beam_brute()
 
     def compute_beam_bo(self):
         g = self.geometry
@@ -561,8 +564,18 @@ class BeamTable:
                 next = complex(float("inf"), float("inf"))
 
             for index in removes:
-                rp = actives.index(index)
-                del actives[rp]
+                try:
+                    rp = actives.index(index)
+                    del actives[rp]
+                except ValueError:
+                    # hmm no longer available?!
+                    # Not sure what happens here, but we can recreate this error with a welded linetext element
+                    # Text= "Wit" and Font="AntPoldCond Bold" (https://www.ffonts.net/AntPoltCond-Bold.font.download)
+                    # Reduce the charactergap and you will end up with an attempt to remove a non-existing index.
+                    # We cover this, but it will lead then to a degenerate path
+                    # Issue # 2595
+                    # print(f"Would have crashed for {index}...\n\nAdds={adds}\nRemoves={removes}\nActives={actives}")
+                    return False
                 # if 0 < rp < len(actives):
                 #     check_intersection(i, actives[rp - 1], actives[rp], pt)
             for index in adds:
@@ -593,6 +606,7 @@ class BeamTable:
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
             self._nb_scan[i, 0 : len(active)] = active
+        return True
 
     def compute_beam_brute(self):
         g = self.geometry
