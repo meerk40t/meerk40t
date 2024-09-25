@@ -335,6 +335,8 @@ class ImageOpNode(Node, Parameters):
                     (max_x, min_y),
                 )
             )
+            inverted = False
+            # Not used!
             if image_node.is_depthmap:
                 # Make sure it's grayscale...
                 if pil_image.mode != "L":
@@ -360,8 +362,6 @@ class ImageOpNode(Node, Parameters):
                 #         return 1.0
                 image_filter = None
 
-                inverted = False
-                # Not used!
                 if inverted:
                     delta = +1
                     start_pixel = 0
