@@ -672,6 +672,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.node = node
+        self._visible = False
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # self.vector_lock = threading.Lock()
         # self.alive = True
@@ -839,7 +840,6 @@ class ImageVectorisationPanel(ScrolledPanel):
 
         self.wximage = wx.NullBitmap
         self.wxvector = wx.NullBitmap
-        self._visible = False
 
         self.Layout()
         self.Centre()
