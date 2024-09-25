@@ -50,13 +50,14 @@ def plugin(kernel, lifecycle):
 
 
     @kernel.console_argument("url", type=str, help=_("Image url to load"))
-    @kernel.console_argument("x", type=Length, help="Sets the x-position of the image",)
-    @kernel.console_argument("y", type=Length, help="Sets the y-position of the image",)
+    @kernel.console_argument("x", type=str, help="Sets the x-position of the image",)
+    @kernel.console_argument("y", type=str, help="Sets the y-position of the image",)
     @kernel.console_argument("width", type=Length, help="Sets the width of the given image",)
     @kernel.console_argument("height", type=Length, help="Sets the width of the given image",)
+    @kernel.console_option("relative", "r", type=str, help="Establishes the id of an element that will act as the reference, if none given then reference is the scene")
     @kernel.console_command(
         "webload",
-        help=_("webload <url> <x> <y> <width> <height")
+        help=_("webload <url> <x> <y> <width> <height>")
         + "\n"
         + _("Gets a file and puts it on the screen"),
         input_type=None,
@@ -71,6 +72,7 @@ def plugin(kernel, lifecycle):
         y=None,
         width=None,
         height=None,
+        relative=None,
         data=None,
         post=None,
         **kwargs,
@@ -119,8 +121,36 @@ def plugin(kernel, lifecycle):
             channel("Could not load any data")
             return
         elements_service = kernel.elements
+        units = kernel.root.units_name
+        org_x = 0
+        org_y = 0
+        size_x = kernel.device.view.width
+        size_y = kernel.device.view.height
+        if relative is not None:
+            relative = str(relative).lower()
+            # Let's try to find an element with that id
+            for e in elements_service.elems():
+                if e.id is None:
+                    continue
+                if str(e.id).lower() == relative:
+                    try:
+                        bb = e.bounds
+                    except AttributeError:
+                        continue
+                    if bb is None:
+                        continue
+                    org_x = bb[0]
+                    org_y = bb[1]
+                    size_x = bb[2] - bb[0]
+                    size_y = bb[3] - bb[1]
+                    channel (f"Reference element with id '{e.id}' found: '{e.display_label()}'")
+                    break
+        if org_x != 0 or org_y != 0:
+            channel(f"Upper left corner at: {Length(org_x, digits=2, preferred_units=units)}, {Length(org_y, digits=2, preferred_units=units)}")
+
         res = elements_service.load(tempfile)
         if not res:
+            channel("Could not load any data")
             return
 
         def union_box(elements):
@@ -137,6 +167,7 @@ def plugin(kernel, lifecycle):
             (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
             return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
 
+        channel(f"Loaded {len(elements_service.added_elements)} elements")
         if width is not None:
             bb = union_box(elements_service.added_elements)
             if bb is not None:
@@ -145,6 +176,7 @@ def plugin(kernel, lifecycle):
                     # if we don't have a height then we use the ratio
                     ratio = (bb[2] - bb[0]) / (bb[3] - bb[1])
                     ht = wd / ratio
+                    channel(f"Setting height to {Length(ht, digits=2, preferred_units=units)}")
                 else:
                     ht = float(height)
             sx = wd / (bb[2] - bb[0])
@@ -155,14 +187,30 @@ def plugin(kernel, lifecycle):
 
         if x is not None and y is not None:
             bb = union_box(elements_service.added_elements)
+            dx = 0
+            dy = 0
             if bb is not None:
-                px = float(x)
-                py = float(y)
-                dx = px - bb[0]
-                dy = py - bb[1]
-            for n in elements_service.added_elements:
-                if hasattr(n, "matrix"):
-                    n.matrix.post_translate(dx, dy)
+                if x.lower() == "c":
+                    dx = (org_x + size_x / 2) - (bb[0] + bb[2]) / 2
+                else:
+                    try:
+                        px = float(Length(x))
+                        dx = (org_x + px) - bb[0]
+                    except ValueError:
+                        pass
+                if y.lower() == "c":
+                    dy = (org_y + size_y / 2) - (bb[1] + bb[3]) / 2
+                else:
+                    try:
+                        py = float(Length(y))
+                        dy = (org_y + py) - bb[1]
+                    except ValueError:
+                        pass
+
+            if dx != 0 or dy != 0:
+                for n in elements_service.added_elements:
+                    if hasattr(n, "matrix"):
+                        n.matrix.post_translate(dx, dy)
         elements_service.clear_loaded_information()
 
         context.signal("refresh_scene", "Scene")
