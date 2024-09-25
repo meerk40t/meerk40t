@@ -56,6 +56,7 @@ class RuidaDriver(Parameters):
             dict(), single=True, ppi=False, shift=False, group=True
         )
         self._aborting = False
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __repr__(self):
         return f"RuidaDriver({self.name})"
@@ -307,10 +308,11 @@ class RuidaDriver(Parameters):
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def move_rel(self, dx, dy):
         """
@@ -339,10 +341,11 @@ class RuidaDriver(Parameters):
         self.native_x += dx
         self.native_y += dy
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def focusz(self):
         """
@@ -524,7 +527,8 @@ class RuidaDriver(Parameters):
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )

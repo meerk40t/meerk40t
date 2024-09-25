@@ -81,6 +81,7 @@ class GRBLDriver(Parameters):
         self.elements = None
         self.power_scale = 1.0
         self.speed_scale = 1.0
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -176,10 +177,11 @@ class GRBLDriver(Parameters):
         x, y = self.service.view.position(x, y)
         self._move(x, y)
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def move_rel(self, dx, dy):
         """
@@ -206,10 +208,11 @@ class GRBLDriver(Parameters):
         self._move(unit_dx, unit_dy)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def dwell(self, time_in_ms):
         """
@@ -562,10 +565,11 @@ class GRBLDriver(Parameters):
         else:
             self(f"G28{self.line_end}")
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def home(self):
         """
@@ -835,10 +839,11 @@ class GRBLDriver(Parameters):
             self.speed_dirty = False
         self(" ".join(line) + self.line_end)
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _clean_motion(self):
         if self.absolute_dirty:

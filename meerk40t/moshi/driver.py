@@ -72,6 +72,8 @@ class MoshiDriver(Parameters):
         self.out_pipe = None
         self.out_real = None
 
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+
         def primary_hold():
             if self.out_pipe is None:
                 return True
@@ -795,10 +797,11 @@ class MoshiDriver(Parameters):
         self.native_y = y
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _move_absolute(self, x, y):
         """
@@ -811,10 +814,11 @@ class MoshiDriver(Parameters):
         self.native_y = y
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def laser_disable(self, *values):
         self.laser_enabled = False

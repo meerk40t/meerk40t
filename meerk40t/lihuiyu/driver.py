@@ -159,6 +159,8 @@ class LihuiyuDriver(Parameters):
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
 
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+
         self.paused = False
 
         def primary_hold():
@@ -633,10 +635,11 @@ class LihuiyuDriver(Parameters):
         self.state = DRIVER_STATE_RAPID
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def physical_home(self):
         """ "
@@ -1242,10 +1245,11 @@ class LihuiyuDriver(Parameters):
             self._mode_shift_on_the_fly(dx, dy)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _mode_shift_on_the_fly(self, dx=0, dy=0):
         """
@@ -1442,10 +1446,11 @@ class LihuiyuDriver(Parameters):
             self._goto_xy(dx, dy, on=on)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _code_declare_directions(self):
         x_dir = self.CODE_LEFT if self._leftward else self.CODE_RIGHT
