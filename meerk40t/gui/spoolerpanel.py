@@ -1101,6 +1101,9 @@ class SpoolerPanel(wx.Panel):
                     self.list_job_spool.SetItem(list_id, JC_RUNTIME, "-")
                 else:
                     refresh_needed = True
+            except RuntimeError:
+                # Form no longer valid
+                return
 
             try:
                 if spool_obj.steps_total == 0:
