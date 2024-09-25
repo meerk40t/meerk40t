@@ -2879,6 +2879,17 @@ class MeerK40t(MWindow):
                     dlg.ShowModal()
                     dlg.Destroy()
 
+        @context.console_option("ops_too", "o", action="store_true", type=bool)
+        @context.console_command("clear_project")
+        def reset_workspace(command, channel, ops_too=False, **kwargs):
+            self.set_working_file_name(None)
+            self.context.elements.clear_all(ops_too=ops_too)
+            self.context(".planz clear\n")
+            self.context(".laserpath_clear\n")
+            self.validate_save()
+            self.context(".tool none\n")
+            self.context.elements.undo.mark("Clear Project")
+
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", False)
 
@@ -4815,15 +4826,10 @@ class MeerK40t(MWindow):
         context = self.context
         kernel = context.kernel
         kernel.busyinfo.start(msg=_("Cleaning up..."))
-        self.set_working_file_name(None)
-        context.elements.clear_all(ops_too=ops_too)
-        context("planz clear\n")
-        self.context(".laserpath_clear\n")
-        self.validate_save()
+        options = " -o" if ops_too else ""
+        self.context(f".clear_project{options}\n")
         kernel.busyinfo.end()
-        self.context(".tool none\n")
         # Hint for translate check: _("Clear Project")
-        context.elements.undo.mark("Clear Project")
         self.context.signal("selected")
 
     def clear_and_open(self, pathname, preferred_loader=None):
