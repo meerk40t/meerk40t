@@ -18118,16 +18118,16 @@ msgid "Use with care, please!"
 msgstr "Bitte mit Bedacht verwenden!"
 
 #: meerk40t/gui/autoexec.py:72
-msgid "Tip 1: click on the form background to get a list of useful commands..."
-msgstr "Tip 1: für eine Liste von nützlichen Kommandos auf den Formular-Hintergrund klicken..."
+msgid "Click to get a list of useful commands"
+msgstr "Clicken, um eine Liste von nützlichen Kommandos zu erhalten"
 
 #: meerk40t/gui/autoexec.py:73
-msgid "Tip 2: you can deactivate any command by starting the line with a '#'"
-msgstr "Tip 2: durch Voranstellen eines '#' in der Zeile, kann ein Kommando deaktiviert werden"
+msgid "Tip: you can deactivate any command by starting the line with a '#'"
+msgstr "Tip: durch Voranstellen eines '#' in der Zeile, kann ein Kommando deaktiviert werden"
 
 #: meerk40t/gui/autoexec.py:75
-msgid "The autoexec content of any file (not just this one) will be executed/ignored if this option is active/deactive"
-msgstr "Die Startkommandos jeder Datei (nicht nur dieser) werden ignoriert, wenn diese Option deaktiv ist"
+msgid "The autoexec content of this file will be ignored if this option is deactive"
+msgstr "Die Startkommandos dieser Datei werden ignoriert, wenn diese Option deaktiv ist"
 
 #: meerk40t/gui/autoexec.py:76
 msgid "Execute the commands"
