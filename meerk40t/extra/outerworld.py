@@ -386,7 +386,7 @@ def plugin(kernel, lifecycle):
                 channel(_("You need to provide a port between 1 and 16"))
                 return
             if value is None:
-                channel(_("You need to provide a value to set (1 / = or True / False"))
+                channel(_("You need to provide a value to set (1 / 0 = or True / False)"))
                 return
             if value:
                 port_value = gpio.HIGH
