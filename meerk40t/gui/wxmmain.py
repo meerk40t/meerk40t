@@ -4386,6 +4386,7 @@ class MeerK40t(MWindow):
                 "size": STD_ICON_SIZE,
             },
         )
+        self.context.root.signal("page", "home")
 
     @signal_listener("file;loaded")
     @signal_listener("file;saved")
