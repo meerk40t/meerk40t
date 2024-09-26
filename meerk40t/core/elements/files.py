@@ -62,3 +62,17 @@ def init_commands(kernel):
         for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype, version in saver.save_types():
                 channel(f"{description} ({version}: {extension})")
+
+    @self.console_command("file_startup", help=_("Execute file startup command list"))
+    def file_autoexec(command, channel, _, **kwargs):
+        if self.autoexec:
+            commands = self.autoexec.split("\n")
+            for command in commands:
+                if len(command) == 0:
+                    continue
+                if command.startswith("#"):
+                    channel(command)
+                else:
+                    self(command + "\n")
+        else:
+            channel("No commands defined")

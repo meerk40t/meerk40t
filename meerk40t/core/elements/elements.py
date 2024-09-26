@@ -509,6 +509,7 @@ class Elemental(Service):
         self._clipboard_default = "0"
 
         self.note = None
+        self.autoexec = None
         self._filename = None
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -546,6 +547,7 @@ class Elemental(Service):
         self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
+        self.setting(bool, "auto_startup", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
@@ -2099,6 +2101,7 @@ class Elemental(Service):
                 self.clear_operations(fast=fast)
             self.clear_files()
             self.clear_note()
+            self.clear_autoexec()
             self.clear_regmarks(fast=fast)
             # Do we have any other routine that wants
             # to be called when we start from scratch?
@@ -2114,6 +2117,10 @@ class Elemental(Service):
     def clear_note(self):
         self.note = None
         self.signal("note", self.note)
+
+    def clear_autoexec(self):
+        self.autoexec= None
+        self.signal("autoexec", self.autoexec)
 
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes

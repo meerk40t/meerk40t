@@ -220,6 +220,9 @@ class SVGWriter:
             if elements.note is not None:
                 subelement = SubElement(root, "note")
                 subelement.set(SVG_TAG_TEXT, str(elements.note))
+            if elements.autoexec is not None:
+                subelement = SubElement(root, "autoexec")
+                subelement.set("autoexec", str(elements.autoexec))
 
         SVGWriter._write_tree(root, elements._tree, version)
 
@@ -1293,6 +1296,12 @@ class SVGProcessor:
         if tag == "note":
             self.elements.note = element.values.get(SVG_TAG_TEXT)
             self.elements.signal("note", self.pathname)
+            return
+
+        # Check if note-type
+        if tag == "autoexec":
+            self.elements.autoexec = element.values.get("autoexec")
+            self.elements.signal("autoexec", self.pathname)
             return
 
         node_type = element.values.get("type")

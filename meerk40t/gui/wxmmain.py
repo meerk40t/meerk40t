@@ -517,7 +517,7 @@ class MeerK40t(MWindow):
                 rejected = 0
                 rejected_files = []
                 for pathname in files:
-                    if self.load(pathname):
+                    if self.load(pathname, execution=False):
                         accepted += 1
                     else:
                         rejected += 1
@@ -2803,7 +2803,7 @@ class MeerK40t(MWindow):
                             preferred_loader = loader_name
                             break
                 pathname = fileDialog.GetPath()
-                gui.load(pathname, preferred_loader)
+                gui.load(pathname, preferred_loader, execution=False)
 
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save_as", hidden=True)
@@ -4709,7 +4709,7 @@ class MeerK40t(MWindow):
         """
         if os.path.exists(filename):
             try:
-                self.load(filename)
+                self.load(filename, execution=True)
                 self.set_working_file_name(filename)
             except PermissionError:
                 self.tryopen(filename)
@@ -4745,7 +4745,7 @@ class MeerK40t(MWindow):
                         preferred_loader = loader_name
                         break
             pathname = fileDialog.GetPath()
-            self.load(pathname, preferred_loader)
+            self.load(pathname, preferred_loader, execution=True)
 
     def populate_recent_menu(self):
         if not hasattr(self, "recent_file_menu"):
@@ -4835,7 +4835,7 @@ class MeerK40t(MWindow):
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)
-        if self.load(pathname, preferred_loader):
+        if self.load(pathname, preferred_loader, execution=True):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
                     # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -4845,7 +4845,7 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
-    def load(self, pathname, preferred_loader=None):
+    def load(self, pathname, preferred_loader=None, execution=False):
         def unescaped(filename):
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
@@ -4959,7 +4959,8 @@ class MeerK40t(MWindow):
             self.context("tool none\n")
             info = _("Loading File...") + "\n" + unescaped(pathname)
             kernel.busyinfo.start(msg=info)
-            n = self.context.elements.note
+            old_note = self.context.elements.note
+            old_autoexec = self.context.elements.autoexec
             results = self.context.elements.load(
                 pathname,
                 channel=self.context.channel("load"),
@@ -5034,8 +5035,10 @@ class MeerK40t(MWindow):
 
                 self.set_file_as_recently_used(pathname)
                 self.set_working_file_name(pathname)
-                if n != self.context.elements.note and self.context.elements.auto_note:
+                if old_note != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
+                if execution and self.context.elements.autoexec and self.context.elements.auto_startup:
+                    self.context("file_startup\n")
                 return True
             return False
 
@@ -5049,7 +5052,7 @@ class MeerK40t(MWindow):
         rejected = 0
         rejected_files = []
         for pathname in event.GetFiles():
-            if self.load(pathname):
+            if self.load(pathname, execution=False):
                 accepted += 1
             else:
                 rejected += 1
