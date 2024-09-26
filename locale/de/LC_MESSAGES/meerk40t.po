@@ -18160,3 +18160,35 @@ msgstr "Start-Kommandos"
 #: meerk40t/gui/autoexec.py:204
 msgid "Edit file startup commands"
 msgstr "Bearbeite Datei-Start-Kommandos"
+
+#: meerk40t/core/elements/elements.py:456 meerk40t/gui/wxmmain.py:5080
+msgid "Ignore"
+msgstr "Ignorieren"
+
+#: meerk40t/core/elements/elements.py:457
+msgid "Ask"
+msgstr "Fragen"
+
+#: meerk40t/core/elements/elements.py:458
+msgid "Allow"
+msgstr "Zulassen"
+
+#: meerk40t/core/elements/elements.py:463
+msgid "Choose if file startup commands are allowed in principle or will all be ignored."
+msgstr "Sind Datei Start-Kommandos grundsätzlich zulässig oder werden sie ignoriert?"
+
+#: meerk40t/core/elements/elements.py:464
+msgid "Note: They still need to be activated on a per file basis."
+msgstr "Wichtig: die Ausführung wird auch im positiven Fall durch die Einstellung in der Datei geregelt."
+
+#: meerk40t/gui/wxmmain.py:5078
+msgid "This file contains an active autostart sequence!\nDo you wish to execute it?"
+msgstr "Dise Datei enthält aktive Start-Kommandos!\nSollen diese ausgeführt werden?"
+
+#: meerk40t/gui/wxmmain.py:5079
+msgid "Execute"
+msgstr "Ausführen"
+
+#: meerk40t/gui/wxmmain.py:5081
+msgid "Startup-sequence found"
+msgstr "Start-Kommandos gefunden"
