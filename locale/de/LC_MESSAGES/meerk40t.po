@@ -17964,3 +17964,131 @@ msgstr "Brenne das korrigierte Testmuster"
 #: meerk40t/balormk/gui/corscene.py:559
 msgid "Export Corfile"
 msgstr "Exportiere die Korrektur-Datei"
+
+#: meerk40t/balormk/device.py:185
+msgid "Rotate View"
+msgstr "Rotation"
+
+#: meerk40t/balormk/device.py:186
+msgid "Rotate the device field"
+msgstr "Soll die Anzeige um den gewählten Wert rotiert werden"
+
+#: meerk40t/balormk/device.py:274 meerk40t/grbl/device.py:179 meerk40t/lihuiyu/device.py:201 meerk40t/moshi/device.py:210 meerk40t/newly/device.py:279 meerk40t/ruida/device.py:191
+msgid "Device Position"
+msgstr "Laserposition"
+
+#: meerk40t/balormk/device.py:277 meerk40t/grbl/device.py:182 meerk40t/lihuiyu/device.py:204 meerk40t/moshi/device.py:213 meerk40t/newly/device.py:282 meerk40t/ruida/device.py:194
+msgid "Do you want to see some indicator about the current device position?"
+msgstr "Soll ein Indikator für die aktuelle Laser-Position angezeigt werden?"
+
+#: meerk40t/balormk/device.py:278 meerk40t/grbl/device.py:183 meerk40t/lihuiyu/device.py:205 meerk40t/moshi/device.py:214 meerk40t/newly/device.py:283 meerk40t/ruida/device.py:195
+msgid "Screen updates"
+msgstr "Darstellung"
+
+#: meerk40t/balormk/device.py:732 meerk40t/balormk/device.py:740 meerk40t/balormk/device.py:748 meerk40t/balormk/device.py:756 meerk40t/balormk/device.py:764 meerk40t/balormk/device.py:772 meerk40t/balormk/device.py:780 meerk40t/balormk/device.py:788 meerk40t/balormk/device.py:796 meerk40t/balormk/device.py:804 meerk40t/balormk/device.py:812 meerk40t/balormk/device.py:820
+msgid "Corfile distance {index}"
+msgstr "Korrektur Abstand {index}"
+
+#: meerk40t/balormk/device.py:733 meerk40t/balormk/device.py:741 meerk40t/balormk/device.py:749 meerk40t/balormk/device.py:757 meerk40t/balormk/device.py:765 meerk40t/balormk/device.py:773 meerk40t/balormk/device.py:781 meerk40t/balormk/device.py:789 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:805 meerk40t/balormk/device.py:813 meerk40t/balormk/device.py:821 meerk40t/balormk/gui/balorconfig.py:76
+msgid "Correction-Values"
+msgstr "Korrektur-Werte"
+
+#: meerk40t/balormk/usb_connection.py:237
+msgid "Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"
+msgstr "Wurde der libusb Treiber mit Zadig (https://zadig.akeo.ie/) installiert?"
+
+#: meerk40t/balormk/usb_connection.py:238
+msgid "Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+msgstr "Besuche das Wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+
+#: meerk40t/core/elements/trace.py:401
+msgid "0=immediate, 1=User interaction, 2=wait for 5 seconds"
+msgstr "0=Sofort, 1=Bestätigung erforderlich, 2=Warte 5 Sekunden"
+
+#: meerk40t/gui/wxmmain.py:1097
+msgid "Suppress animation"
+msgstr "Animation unterdrücken"
+
+#: meerk40t/gui/wxmmain.py:1098
+msgid "Suppress zoom animation"
+msgstr "Zoom-Animation unterdrücken"
+
+#: meerk40t/gui/wxmmain.py:5298
+msgid "Apparently MeerK40t did crash during the last session, we apologize for this invconvenience."
+msgstr "Anscheinend ist MeerK40t während der letzten Sicherung abgestürzt, wir bitten dafür um Nachsicht."
+
+#: meerk40t/gui/wxmmain.py:5299
+msgid "There is an autosave file ({filename}),\nthat was last saved at {filedate}."
+msgstr "Es gibt eine automatische Sicherung ({filename}),\ngespeichert am {filedate}."
+
+#: meerk40t/gui/wxmmain.py:5300
+msgid "Do you want to load this file?"
+msgstr "Soll diese Datei geladen werden?"
+
+#: meerk40t/gui/wxmmain.py:5301
+msgid "Crash-Recovery"
+msgstr "Absturz-Behandlung"
+
+#: meerk40t/gui/wxmmain.py:5304
+msgid "Load work"
+msgstr "Alte Daten laden"
+
+#: meerk40t/gui/wxmmain.py:5305
+msgid "Start fresh"
+msgstr "Neubeginn"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1120
+msgid "Depthmap"
+msgstr "3D-Tiefenkarte"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1280
+msgid "Do you want to treat this bitmap as depthmap where every greyscal-level corresponds to the amount of times this pixel will be burnt"
+msgstr ""
+"Soll dieses Bild als Tiefenkarte interpretiert werden, bei der jeder Pixel so oft\n"
+"gebrannt wird, wie es seinem Graustufenwert entspricht (weiß=Nie, schwarz=255-mal)?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1284
+msgid "How many grayscales do you want to distinguish?"
+msgstr "Wieviele Graustufen sollen unterschieden werden?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1287
+msgid "This operation will step through the image and process it per defined grayscale resolution."
+msgstr "Diese Methode wird jedes Pixel im Bild so oft brennen, wie es seinem Graustufenwert entspricht."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1290
+msgid "So for full resolution every grayscale level would be processed individually: a black line (or a white line if inverted) would be processed 255 times, a line with grayscale value 128 would be processed 128 times."
+msgstr ""
+"So wird bei feinster Auflösung jeder einzelne Graustufenwert genutzt:\n"
+"eine schwarze Linie wird 255-mal gebrannt, eine Line mit dem Graustufenwert 128 würde 128-mal gebrannt und eine weiße Linie nie."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1293
+msgid "You can define a coarser resolution e.g. 64: then very faint lines (grayscale 1-4) would be burned just once, very strong lines (level 252-255) would be burned 64 times."
+msgstr "Es kann auch eine grober Auflösunge genutzt werden: bei 64 etwa wird eine sehr schwache Linien (Graustufe 1-4) nur einmal gebrannt werden, sehr starke Linien würden 64-mal gebrannt werden."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1324
+msgid "3D-Treatment"
+msgstr "3D-Modus"
+
+#: meerk40t/gui/plugin.py:231
+msgid "Warning-Indicator"
+msgstr "Warn-Indikator"
+
+#: meerk40t/gui/plugin.py:231
+msgid "Low + Normal + Critical"
+msgstr "Niedrig + Normal + Kritisch"
+
+#: meerk40t/gui/plugin.py:232
+msgid "Normal + Critical"
+msgstr "Normal + Kritisch"
+
+#: meerk40t/gui/plugin.py:233
+msgid "Critical"
+msgstr "Kritisch"
+
+#: meerk40t/gui/plugin.py:234
+msgid "Ignore all"
+msgstr "Alle ignorieren"
+
+#: meerk40t/gui/plugin.py:238
+msgid "Which warning severity level do you want to recognize"
+msgstr "Welcher Warnstufen-Level soll berücksichtigt werden"

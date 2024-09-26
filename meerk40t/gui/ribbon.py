@@ -715,7 +715,7 @@ class RibbonPage:
     Ribbon Page is a page of buttons this is the series of ribbon panels as triggered by the different tags.
     """
 
-    def __init__(self, context, parent, id, label, icon):
+    def __init__(self, context, parent, id, label, icon, reference):
         self.context = context
         self.parent = parent
         self.id = id
@@ -725,6 +725,7 @@ class RibbonPage:
         self.position = None
         self.tab_position = None
         self.visible = True
+        self.reference = reference
 
     def add_panel(self, panel, ref):
         """
@@ -1205,6 +1206,7 @@ class RibbonBarPanel(wx.Control):
             id,
             label,
             icon,
+            ref,
         )
         if ref is not None:
             # print(f"Setattr in add_page: {ref} = {page}")
