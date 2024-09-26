@@ -678,9 +678,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
             return
         pagename = pagename.lower()
         if pagename == "":
-            pagename = "project"
+            pagename = "home"
         for p in self.pages:
-            if p.label.lower() == pagename:
+            # print (f"compare '{p.reference.lower()}' to '{pagename}'")
+            if p.reference.lower() == pagename:
                 self.art.current_page = p
                 self.modified()
                 if getattr(self.context.root, "_active_page", "") != pagename:
