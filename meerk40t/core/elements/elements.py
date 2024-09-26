@@ -448,9 +448,16 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "auto_startup",
                 "object": elements,
-                "default": True,
-                "type": bool,
+                "default": 1,
+                "type": int,
                 "label": _("File startup commands"),
+                "style": "option",
+                "display": (
+                    _("Ignore"),
+                    _("Ask"),
+                    _("Allow"),
+                ),
+                "choices": (0, 1, 2),
                 "tip":
                     (
                         _("Choose if file startup commands are allowed in principle or will all be ignored.") + "\n" +
@@ -563,7 +570,7 @@ class Elemental(Service):
         self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
-        self.setting(bool, "auto_startup", True)
+        self.setting(int, "auto_startup", 1)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)

@@ -5066,10 +5066,25 @@ class MeerK40t(MWindow):
                 if (
                     execution and
                     self.context.elements.last_file_autoexec and
-                    self.context.elements.last_file_autoexec_active and
-                    self.context.elements.auto_startup
+                    self.context.elements.last_file_autoexec_active
                 ):
-                    self.context("file_startup\n")
+                    flag = False
+                    if self.context.elements.auto_startup == 0:
+                        # forbidden
+                        flag = False
+                    elif self.context.elements.auto_startup == 1:
+                        # ask
+                        flag = self.context.kernel.yesno(
+                            _("This file contains an active autostart sequence!\nDo you wish to execute it?"),
+                            option_yes=_("Execute"),
+                            option_no=_("Ignore"),
+                            caption=_("Startup-sequence found"),
+                        )
+                    elif self.context.elements.auto_startup == 2:
+                        # allowed
+                        flag = True
+                    if flag:
+                        self.context("file_startup\n")
                 return True
             return False
 
