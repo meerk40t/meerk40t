@@ -1,3 +1,4 @@
+
 # Italian translations for MeerK40t.
 # This file is distributed under the same license as the MeerK40t project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -8623,7 +8624,7 @@ msgstr "Colore da aggiungere"
 
 #: meerk40t/image/imagetools.py:333
 msgid "Must specify a color, to add."
-msgstr ""
+msgstr "È necessario specificare un colore da aggiungere"
 
 #: meerk40t/image/imagetools.py:369
 msgid "Requires 1-bit or grayscale image."
@@ -10979,7 +10980,7 @@ msgstr "Con questo metodo, viene spostata solo la testa del laser, che ha una ma
 msgid "Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head "
 msgstr ""
 "La rasterizzazione in direzione Y (da sinistra a destra o da destra a sinistra) richiede "
-"non solo un movimento della testa ma anche dell'intera struttura dell'asse X"
+"non solo un movimento della testa ma anche dell'intera struttura dell'asse X "
 
 msgid "but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself."
 msgstr "compreso il motore passo-passo, lo specchio, ecc."
@@ -17365,7 +17366,7 @@ msgstr ""
 #: ./meerk40t\core\elements\elements.py:382
 msgid "Unticked: A drag operation of regmark nodes to an operation will be ignored."
 msgstr ""
-"Inattivo: il trascinamento degli elementi dei crocini di registrazione in un processo viene ignorato"
+"Inattivo: il trascinamento degli elementi di un processo verranno ingnorati se spostati in Riferimenti"
 
 #: ./meerk40t\core\elements\element_treeops.py:2789
 msgid "Convert to vector text"
@@ -18381,7 +18382,7 @@ msgstr "Ruota il campo del dispositivo"
 
 #: ./meerk40t\balormk\galvo_commands.py:101
 msgid "Execute regmark live light idle job"
-msgstr "Eseguire il lavoro dei crocini di taglio in attesa "
+msgstr ""
 
 #: ./meerk40t\balormk\galvo_commands.py:109
 msgid "Execute convex hull light idle job"
@@ -19527,7 +19528,7 @@ msgstr "...nomi di file recentemente usati"
 
 #: meerk40t/gui/preferences.py:267
 msgid "...living hinge settings"
-msgstr "...impostazioni dei pattern di piegatura"
+msgstr "...impostazioni dei pattern flessibile"
 
 #: meerk40t/gui/preferences.py:272
 msgid "...material test settings"
@@ -19591,3 +19592,369 @@ msgstr ""
 "Era un mentore, un'ispirazione e un amico. David, ci mancherai, ma non sarai dimenticato.\n\n"
 "Vi invitiamo a unirvi alla lotta contro il cancro. Anche, se potete, con una donazione a una delle tante organizzazioni di ricerca e di beneficenza in tutto il mondo.\n\n"
 "Se siete interessati a saperne di più sulla storia dello sviluppo di MeerK40t, fate riferimento a:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
+
+#: meerk40t/balormk/device.py:721 meerk40t/balormk/device.py:729 meerk40t/balormk/device.py:737 meerk40t/balormk/device.py:745 meerk40t/balormk/device.py:753 meerk40t/balormk/device.py:761 meerk40t/balormk/device.py:769 meerk40t/balormk/device.py:777 meerk40t/balormk/device.py:785 meerk40t/balormk/device.py:793 meerk40t/balormk/device.py:801 meerk40t/balormk/device.py:809 meerk40t/balormk/gui/balorconfig.py:76
+msgid "Correction-Values"
+msgstr "Valori di correzione"
+
+#: meerk40t/balormk/gui/balorconfig.py:75
+msgid "Open a definition screen"
+msgstr "Apre una schermata di definizione"
+
+#: meerk40t/balormk/gui/corscene.py:252
+msgid "Close the correction definition"
+msgstr "Chiude la definizione di correzione"
+
+#: meerk40t/balormk/gui/corscene.py:261
+msgid "Rotate the pattern by 90° ccw"
+msgstr "Ruota il pattern di 90° in senso orario"
+
+#: meerk40t/balormk/gui/corscene.py:270
+msgid "Rotate the pattern by 90° cw"
+msgstr "Ruota il pattern di 90° in senso orario"
+
+#: meerk40t/balormk/gui/corscene.py:279
+msgid "Flip the pattern horizontally"
+msgstr "Specchia il pattern orizzontalmente"
+
+#: meerk40t/balormk/gui/corscene.py:288
+msgid "Flip the pattern vertically"
+msgstr "Specchia il pattern verticalmente"
+
+#: meerk40t/balormk/gui/corscene.py:297
+msgid "Increase the pattern size"
+msgstr "Aumenta la dimensione del pattern"
+
+#: meerk40t/balormk/gui/corscene.py:306
+msgid "Decrease the pattern size"
+msgstr "Diminuisce le dimensioni del modello"
+
+#: meerk40t/balormk/gui/corscene.py:315
+msgid "Trace the pattern outline"
+msgstr "Traccia il contorno del modello"
+
+#: meerk40t/balormk/gui/corscene.py:324
+msgid "Burn the pattern"
+msgstr "Esegue il pattern"
+
+#: meerk40t/balormk/gui/corscene.py:333
+msgid "Save the pattern"
+msgstr "Salva il pattern"
+
+#: meerk40t/balormk/gui/corscene.py:342
+msgid "Trace the adjusted pattern outline"
+msgstr "Traccia il contorno del modello modificato"
+
+#: meerk40t/balormk/gui/corscene.py:351
+msgid "Burn the adjusted pattern"
+msgstr "Esegue il pattern modificato"
+
+#: meerk40t/core/elements/branches.py:443
+msgid "Remove all elements from provided operations"
+msgstr "Rimuove tutti gli elementi dalle operazioni"
+
+#: meerk40t/core/elements/branches.py:1195
+msgid "amount of copies to be created"
+msgstr "numero di copie da creare"
+
+#: meerk40t/gui/plugin.py:336
+msgid "Load main module"
+msgstr "Carica il modulo principale"
+
+#: meerk40t/gui/plugin.py:356
+msgid "Loading windows"
+msgstr "Caricamento finestre"
+
+#: meerk40t/gui/plugin.py:372
+msgid "Finishing GUI"
+msgstr ""
+
+#: meerk40t/gui/wxmmain.py:1086
+msgid "Suppress animation"
+msgstr "Sopprime le animazioni"
+
+#: meerk40t/gui/wxmmain.py:1087
+msgid "Suppress zoom animation"
+msgstr "Sopprime l'animazione dello zoom"
+
+#: meerk40t/gui/statusbarwidgets/infowidget.py:314
+msgid "Gathering information..."
+msgstr "Raccolta di informazioni..."
+
+#: meerk40t/kernel/kernel.py:3115
+msgid "Loads a given file and executes all lines as commmands (as long as they don't start with a #)"
+msgstr "Carica un dato file ed esegue tutte le righe come comandi (purché non inizino con un #)"
+
+#: meerk40t/kernel/kernel.py:3119
+msgid "You need to provide a filename to execute"
+msgstr "È necessario fornire un nome file per l'esecuzione di"
+
+#: meerk40t/ruida/gui/ruidaconfig.py:154
+msgid "Ruida-Configuration"
+msgstr "Configurazione di Ruida"
+
+#: meerk40t/balormk/device.py:274 meerk40t/grbl/device.py:179 meerk40t/lihuiyu/device.py:201 meerk40t/moshi/device.py:210 meerk40t/newly/device.py:279 meerk40t/ruida/device.py:191
+msgid "Device Position"
+msgstr "Posizione del dispositivo"
+
+#: meerk40t/balormk/device.py:277 meerk40t/grbl/device.py:182 meerk40t/lihuiyu/device.py:204 meerk40t/moshi/device.py:213 meerk40t/newly/device.py:282 meerk40t/ruida/device.py:194
+msgid "Do you want to see some indicator about the current device position?"
+msgstr "Si desidera visualizzare un indicatore della posizione attuale del dispositivo?"
+
+#: meerk40t/balormk/device.py:278 meerk40t/grbl/device.py:183 meerk40t/lihuiyu/device.py:205 meerk40t/moshi/device.py:214 meerk40t/newly/device.py:283 meerk40t/ruida/device.py:195
+msgid "Screen updates"
+msgstr "Aggiorna le schermate"
+
+#: meerk40t/balormk/usb_connection.py:237
+msgid "Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"
+msgstr "Il driver libusb è stato istallato tramite Zadig (https://zadig.akeo.ie/)?"
+
+#: meerk40t/balormk/usb_connection.py:238
+msgid "Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+msgstr "Consultare la wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+
+#: meerk40t/core/svg_io.py:728
+msgid "File loaded"
+msgstr "File caricati"
+
+#: meerk40t/core/elements/elements.py:571
+msgid "Operations restored"
+msgstr "Operazioni ripristinate"
+
+#: meerk40t/core/elements/elements.py:1695
+msgid "Element altered"
+msgstr "Elemento modificato"
+
+#: meerk40t/core/elements/elements.py:1702
+msgid "Element modified"
+msgstr "Elemento modificato"
+
+#: meerk40t/core/elements/elements.py:1712 meerk40t/gui/scenewidgets/selectionwidget.py:1773
+msgid "Element shifted"
+msgstr "Elemento spostato"
+
+#: meerk40t/core/elements/elements.py:1722 meerk40t/gui/scenewidgets/selectionwidget.py:790 meerk40t/gui/scenewidgets/selectionwidget.py:1032
+msgid "Element scaled"
+msgstr "Elemento in scala"
+
+#: meerk40t/core/elements/elements.py:1726
+msgid "Element added"
+msgstr "Elemento aggiunto"
+
+#: meerk40t/core/elements/elements.py:1730
+msgid "Element deleted"
+msgstr "Elemento cancellato"
+
+#: meerk40t/core/elements/element_treeops.py:216
+msgid "Convert to normal group"
+msgstr "Converte in gruppo normale"
+
+#: meerk40t/core/elements/element_treeops.py:221
+msgid "Content of {filenode}"
+msgstr "Contenuto di {filenode}"
+
+#: meerk40t/device/basedevice.py:49
+msgid "----------------"
+msgstr ""
+
+#: meerk40t/device/basedevice.py:215
+msgid "Duplicate a particular device entry"
+msgstr "Duplica una particolare voce di dispositivo"
+
+#: meerk40t/device/basedevice.py:289
+msgid "Delete a particular device entry"
+msgstr "Elimina una voce particolare del dispositivo"
+
+#: meerk40t/extra/hershey.py:757
+msgid "X-Coordinate"
+msgstr "Coordinata X"
+
+#: meerk40t/extra/hershey.py:758
+msgid "Y-Coordinate"
+msgstr "Coordinata Y"
+
+#: meerk40t/extra/hershey.py:759
+msgid "Text to render"
+msgstr ""
+
+#: meerk40t/extra/hershey.py:760
+msgid "Font file."
+msgstr "File dei caratteri."
+
+#: meerk40t/extra/hershey.py:788
+msgid "linetext <x> <y> <text> - please provide all required arguments"
+msgstr "Linea di testo <x> <y> <text> - fornire tutti gli argomenti richiesti"
+
+#: meerk40t/extra/hershey.py:797
+msgid "Invalid coordinates"
+msgstr "Coordinate non valide"
+
+#: meerk40t/extra/hershey.py:800
+msgid "No text given."
+msgstr "Non è stato fornito un testo."
+
+#: meerk40t/extra/outerworld.py:52Non Ã¨ stato fornito un testo.
+msgid "Image url to load"
+msgstr "URL immagine da caricare"
+
+#: meerk40t/extra/outerworld.py:60
+msgid "webload <url> <x> <y> <width> <height>"
+msgstr ""
+
+#: meerk40t/extra/outerworld.py:62 meerk40t/extra/outerworld.py:231
+msgid "Gets a file and puts it on the screen"
+msgstr "Recupera un file e lo mette sullo schermo"
+
+#: meerk40t/extra/outerworld.py:81
+msgid "You need to provide an url of a file to load"
+msgstr "È necessario fornire un url di un file da caricare"
+
+#: meerk40t/extra/outerworld.py:221
+msgid "Filename to load"
+msgstr "Nome del file da caricare"
+
+#: meerk40t/extra/outerworld.py:229
+msgid "xload <filename> <x> <y> <width> <height>"
+msgstr ""
+
+#: meerk40t/extra/outerworld.py:250
+msgid "You need to provide a file to load"
+msgstr "Occorre fornire un file da caricare"
+
+#: meerk40t/extra/outerworld.py:366
+msgid "Port to use"
+msgstr "Porta da utilizzare"
+
+#: meerk40t/extra/outerworld.py:367
+msgid "Value to set (0/1)"
+msgstr "Valore da impostare (0/1)"
+
+#: meerk40t/gui/about.py:1749
+msgid ""
+msgstr ""
+
+#: meerk40t/gui/plugin.py:204
+msgid "ToolTip delay"
+msgstr "Difettoso, si prega di segnalarlo"
+
+#: meerk40t/gui/plugin.py:206
+msgid "How long do you need to hover over a control before the tooltip appears"
+msgstr "Per quanto tempo è necessario passare il mouse su un controllo prima che appaia il tooltip"
+
+#: meerk40t/gui/plugin.py:217
+msgid "ToolTip duration"
+msgstr "Durata ToolTip"
+
+#: meerk40t/gui/plugin.py:219
+msgid "How long should the tooltip stay before it disappears"
+msgstr "Per quanto tempo deve rimanere visibile il tooltip prima di scomparire"
+
+#: meerk40t/gui/plugin.py:231
+msgid "Low + Normal + Critical"
+msgstr "Basso + Normale + Critico"
+
+#: meerk40t/gui/plugin.py:232
+msgid "Normal + Critical"
+msgstr "Normale + Critico"
+
+#: meerk40t/gui/plugin.py:233
+msgid "Critical"
+msgstr "Critico"
+
+#: meerk40t/gui/plugin.py:234
+msgid "Ignore all"
+msgstr "Ignora tutto"
+
+#: meerk40t/gui/plugin.py:238
+msgid "Which warning severity level do you want to recognize"
+msgstr "Quale livello di gravità dell'avviso si desidera riconoscere"
+
+#: meerk40t/gui/simulation.py:764
+msgid "Only show highlighted cutcode items"
+msgstr "Mostra solo gli elementi del codice di taglio evidenziati"
+
+#: meerk40t/gui/wxmmain.py:4832
+msgid "Clear Project"
+msgstr ""
+
+#: meerk40t/gui/wxmmain.py:5298
+msgid "Apparently MeerK40t did crash during the last session, we apologize for this invconvenience."
+msgstr "A quanto pare MeerK40t si è bloccato durante l'ultima sessione, ci scusiamo per l'inconveniente."
+
+#: meerk40t/gui/wxmmain.py:5299
+msgid "There is an autosave file ({filename}),\nthat was last saved at {filedate}."
+msgstr "Esiste un file di salvataggio automatico ({filename}), l'ultimo dei quali è stato salvato a {filedate}."
+
+#: meerk40t/gui/wxmmain.py:5300
+msgid "Do you want to load this file?"
+msgstr "Vuoi caricare questo file?"
+
+#: meerk40t/gui/wxmmain.py:5301
+msgid "Crash-Recovery"
+msgstr "Recupero crash"
+
+#: meerk40t/gui/wxmmain.py:5304
+msgid "Load work"
+msgstr "Carica lavoro"
+
+#: meerk40t/gui/wxmmain.py:5305
+msgid "Start fresh"
+msgstr "Inizia da capo"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1120
+msgid "Depthmap"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1280
+msgid "Do you want to treat this bitmap as depthmap where every greyscal-level corresponds to the amount of times this pixel will be burnt"
+msgstr "Si vuole trattare questa bitmap come una depthmap in cui ogni livello di grigio corrisponde alla quantità di volte in cui questo pixel verrà bruciato?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1284
+msgid "How many grayscales do you want to distinguish?"
+msgstr "Quante scale di grigio si vogliono distinguere?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1287
+msgid "This operation will step through the image and process it per defined grayscale resolution."
+msgstr "Questa operazione consente di scorrere l'immagine e di elaborarla in base alla risoluzione in scala di grigi definita."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1290
+msgid "So for full resolution every grayscale level would be processed individually: a black line (or a white line if inverted) would be processed 255 times, a line with grayscale value 128 would be processed 128 times."
+msgstr "Quindi, per una risoluzione completa, ogni livello di scala di grigi verrebbe elaborato singolarmente: una linea nera (o bianca se invertita) verrebbe elaborata 255 volte, una linea con valore di scala di grigi 128 verrebbe elaborata 128 volte."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1293
+msgid "You can define a coarser resolution e.g. 64: then very faint lines (grayscale 1-4) would be burned just once, very strong lines (level 252-255) would be burned 64 times."
+msgstr "È possibile definire una risoluzione più grossolana, ad esempio 64: in questo caso le linee molto deboli (scala di grigi 1-4) verrebbero bruciate una sola volta, mentre le linee molto forti (livello 252-255) verrebbero bruciate 64 volte."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1324
+msgid "3D-Treatment"
+msgstr "Trattamento 3D"
+
+#: meerk40t/gui/propertypanels/regbranchproperties.py:20
+msgid "Toggle"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/regbranchproperties.py:22
+msgid "Move all back"
+msgstr "Sposta tutto indietro"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:506
+msgid "Element rotated"
+msgstr "Ruota elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1252
+msgid "Element skewed"
+msgstr "Elemento inclinato"
+
+#: meerk40t/network/console_server.py:74
+msgid "shutdown current webserver"
+msgstr "arresta il server web corrente"
+
+#: meerk40t/network/console_server.py:77
+msgid "starts a web-serverconsole_server on port 2080 (http)"
+msgstr "avvia un web-server_server sulla porta 2080 (http)"
+
+#: meerk40t/gui/about.py:1749
+msgid "Faulty, please report"
+msgstr "Difettoso, si prega di segnalarlo"
+
+
