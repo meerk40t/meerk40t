@@ -127,17 +127,6 @@ class Notes(MWindow):
     @staticmethod
     def sub_register(kernel):
         kernel.register("wxpane/Notes", register_panel)
-        kernel.register(
-            "button/project/Notes",
-            {
-                "label": _("Notes"),
-                "icon": icons8_comments,
-                "tip": _("Open Notes Window"),
-                "help": "notes",
-                "action": lambda v: kernel.console("window toggle Notes\n"),
-                "size": STD_ICON_SIZE,
-            },
-        )
 
     def window_open(self):
         self.context.close(self.name)

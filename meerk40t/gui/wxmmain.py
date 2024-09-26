@@ -48,9 +48,8 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_open_door,
     icon_effect_wobble,
     icon_hatch,
-    icon_hatch_bidir,
-    icon_hatch_diag,
-    icon_hatch_diag_bidir,
+    icons8_comments,
+    icons8_circled_play,
     icon_line,
     icon_meerk40t,
     icon_mk_align_bottom,
@@ -2485,6 +2484,34 @@ class MeerK40t(MWindow):
                 ],
             },
         )
+
+        kernel.register(
+            "button/project/Notes",
+            {
+                "identifier": "notes",
+                "label": _("Notes"),
+                "icon": icons8_comments,
+                "tip": _("Open Notes Window"),
+                "help": "notes",
+                "action": lambda v: kernel.console("window toggle Notes\n"),
+                "size": STD_ICON_SIZE,
+                "default": "notes",
+                "multi": [
+                    {
+                        "identifier": "startup",
+                        "label": _("Startup"),
+                        "icon": icons8_circled_play,
+                        "tip": _("Edit file startup commands"),
+                        "help": "autoexec",
+                        "action": lambda v: kernel.console("window toggle AutoExec\n"),
+                        "size": STD_ICON_SIZE,
+                    },
+
+                ]
+            },
+        )
+
+
 
         # Default Size for small buttons
         # buttonsize = STD_ICON_SIZE / 2

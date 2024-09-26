@@ -1,12 +1,13 @@
 """
 This module offers the opportunity to define a couple of commands that will automatically be executed on a (main) file load
 """
+from platform import system
 import wx
 from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_circled_play
 from .mwindow import MWindow
-from .wxutils import wxCheckBox
+from .wxutils import wxCheckBox, wxButton, dip_size
 
 _ = wx.GetTranslation
 
@@ -25,7 +26,8 @@ class AutoExecPanel(wx.Panel):
             style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP | wx.TE_RICH,
         )
         self.check_auto_startup = wxCheckBox(self, wx.ID_ANY, _("Execute on load"))
-        self.button_execute = wx.Button(self, wx.ID_ANY, _("Execute commands"))
+        self.button_execute = wxButton(self, wx.ID_ANY, _("Execute commands"))
+        self.button_adding = wxButton(self, wx.ID_ANY, "*")
 
         self.__set_properties()
         self.__do_layout()
@@ -34,8 +36,7 @@ class AutoExecPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_autoexec, self.text_autoexec)
         self.Bind(wx.EVT_BUTTON, self.on_execute, self.button_execute)
         self.Bind(wx.EVT_CHECKBOX, self.on_check, self.check_auto_startup)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_context_menu, self)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_context_menu, self)
+        self.Bind(wx.EVT_BUTTON, self.on_context_menu, self.button_adding)
 
     def on_execute(self, event):
         self.context(".file_startup\n")
@@ -48,11 +49,16 @@ class AutoExecPanel(wx.Panel):
             _("List of commands that will be immediately executed after the file has been loaded") + "\n" +
             _("While this might be useful to immediately change a device, it can also be dangerous if you e.g. chose to start a burn.") + "\n" +
             _("Use with care, please!") + "\n" +
-            _("Tip 1: click on the form background to get a list of useful commands...") + "\n" +
-            _("Tip 2: you can deactivate any command by starting the line with a '#'")
+            _("Tip: you can deactivate any command by starting the line with a '#'")
         )
-        self.check_auto_startup.SetToolTip(_("The autoexec content of any file (not just this one) will be executed/ignored if this option is active/deactive"))
+        self.check_auto_startup.SetToolTip(_("The autoexec content of this file will be ignored if this option is deactive"))
         self.button_execute.SetToolTip(_("Execute the commands"))
+        self.button_adding.SetToolTip(_("Click to get a list of useful commands"))
+        if system() == "Windows":
+            minsize = 20
+        else:
+            minsize = 30
+        self.button_adding.SetMinSize(dip_size(self, minsize, -1))
 
     def __do_layout(self):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -61,6 +67,7 @@ class AutoExecPanel(wx.Panel):
         sizer_2.Add(self.check_auto_startup, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_2.AddStretchSpacer(1)
         sizer_2.Add(self.button_execute, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_2.Add(self.button_adding, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
@@ -94,7 +101,7 @@ class AutoExecPanel(wx.Panel):
 
         useful = [
             ("clear", _("Clear console")),
-            ("planz clear copy preprocess validate blob preopt optimize", _("Start simulation")),
+            ("planz clear copy preprocess validate blob preopt optimize\nwindow open Simulation z", _("Start simulation")),
             ("burn", _("Burn content on current device")),
         ]
         kernel = self.context.kernel
@@ -148,7 +155,7 @@ class AutoExecPanel(wx.Panel):
             self.button_execute.Enable(True)
         self.context.elements.signal("autoexec", self)
 
-    def on_autoexec_listen(self, origin, source):
+    def on_autoexec_listen(self, origin, source=None):
         if source is self:
             return
         commands = self.context.elements.last_file_autoexec
@@ -156,6 +163,8 @@ class AutoExecPanel(wx.Panel):
             commands = ""
         if self.text_autoexec.GetValue() != commands:
             self.text_autoexec.SetValue(commands)
+        flag = self.context.elements.last_file_autoexec_active
+        self.check_auto_startup.SetValue(flag)
 
 
 class AutoExec(MWindow):
@@ -174,17 +183,7 @@ class AutoExec(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register(
-            "button/project/Startup",
-            {
-                "label": _("Startup"),
-                "icon": icons8_circled_play,
-                "tip": _("Edit file startup commands"),
-                "help": "autoexec",
-                "action": lambda v: kernel.console("window toggle AutoExec\n"),
-                "size": STD_ICON_SIZE,
-            },
-        )
+        return
 
     def window_open(self):
         self.context.close(self.name)
