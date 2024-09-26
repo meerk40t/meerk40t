@@ -18092,3 +18092,71 @@ msgstr "Alle ignorieren"
 #: meerk40t/gui/plugin.py:238
 msgid "Which warning severity level do you want to recognize"
 msgstr "Welcher Warnstufen-Level soll berücksichtigt werden"
+
+#: meerk40t/gui/about.py:1749
+msgid "Faulty, please report"
+msgstr "Fehlerhaft, bitte melden"
+
+#: meerk40t/gui/autoexec.py:48
+msgid "Execute on load"
+msgstr "Ausführen bei Laden"
+
+#: meerk40t/gui/autoexec.py:49
+msgid "Execute commands"
+msgstr "Kommandos ausführen"
+
+#: meerk40t/gui/autoexec.py:69
+msgid "List of commands that will be immediately executed after the file has been loaded"
+msgstr "Liste der Kommandos, die unmittelbar nach Laden der Datei ausgeführt werden sollen."
+
+#: meerk40t/gui/autoexec.py:70
+msgid "While this might be useful to immediately change a device, it can also be dangerous if you e.g. chose to start a burn."
+msgstr "Das ist nützlich, um bspsw. soofrt einen anderen Laser auszuwählen, kann aber auch unerwartet und gefährlich sein, wenn z.B. der Brennvorgang gestartet werden soll!"
+
+#: meerk40t/gui/autoexec.py:71
+msgid "Use with care, please!"
+msgstr "Bitte mit Bedacht verwenden!"
+
+#: meerk40t/gui/autoexec.py:72
+msgid "Tip 1: click on the form background to get a list of useful commands..."
+msgstr "Tip 1: für eine Liste von nützlichen Kommandos auf den Formular-Hintergrund klicken..."
+
+#: meerk40t/gui/autoexec.py:73
+msgid "Tip 2: you can deactivate any command by starting the line with a '#'"
+msgstr "Tip 2: durch Voranstellen eines '#' in der Zeile, kann ein Kommando deaktiviert werden"
+
+#: meerk40t/gui/autoexec.py:75
+msgid "The autoexec content of any file (not just this one) will be executed/ignored if this option is active/deactive"
+msgstr "Die Startkommandos jeder Datei (nicht nur dieser) werden ignoriert, wenn diese Option deaktiv ist"
+
+#: meerk40t/gui/autoexec.py:76
+msgid "Execute the commands"
+msgstr "Kommandos ausführen"
+
+#: meerk40t/gui/autoexec.py:117
+msgid "Clear console"
+msgstr "Lösche Konsolen-Ausgabe"
+
+#: meerk40t/gui/autoexec.py:118
+msgid "Start simulation"
+msgstr "Starte Simulation"
+
+#: meerk40t/gui/autoexec.py:119
+msgid "Burn content on current device"
+msgstr "Brenne Inahlt auf aktuellem Gerät"
+
+#: meerk40t/gui/autoexec.py:149
+msgid "Activate {info}"
+msgstr "Wechsel zu {info}"
+
+#: meerk40t/gui/autoexec.py:192
+msgid "File startup commands"
+msgstr "Datei-Start-Kommandos"
+
+#: meerk40t/gui/autoexec.py:202
+msgid "Startup"
+msgstr "Start-Kommandos"
+
+#: meerk40t/gui/autoexec.py:204
+msgid "Edit file startup commands"
+msgstr "Bearbeite Datei-Start-Kommandos"

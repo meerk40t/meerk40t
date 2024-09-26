@@ -4960,7 +4960,6 @@ class MeerK40t(MWindow):
             info = _("Loading File...") + "\n" + unescaped(pathname)
             kernel.busyinfo.start(msg=info)
             old_note = self.context.elements.note
-            old_autoexec = self.context.elements.autoexec
             results = self.context.elements.load(
                 pathname,
                 channel=self.context.channel("load"),
@@ -5037,7 +5036,12 @@ class MeerK40t(MWindow):
                 self.set_working_file_name(pathname)
                 if old_note != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
-                if execution and self.context.elements.autoexec and self.context.elements.auto_startup:
+                if (
+                    execution and
+                    self.context.elements.last_file_autoexec and
+                    self.context.elements.last_file_autoexec_active and
+                    self.context.elements.auto_startup
+                ):
                     self.context("file_startup\n")
                 return True
             return False

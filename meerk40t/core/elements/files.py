@@ -65,9 +65,10 @@ def init_commands(kernel):
 
     @self.console_command("file_startup", help=_("Execute file startup command list"))
     def file_autoexec(command, channel, _, **kwargs):
-        if self.autoexec:
-            commands = self.autoexec.split("\n")
+        if self.last_file_autoexec:
+            commands = self.last_file_autoexec.split("\n")
             for command in commands:
+                command = command.strip()
                 if len(command) == 0:
                     continue
                 if command.startswith("#"):

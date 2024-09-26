@@ -4,32 +4,11 @@ This module offers the opportunity to define a couple of commands that will auto
 import wx
 from wx import aui
 
-from .icons import STD_ICON_SIZE, icons8_comments
+from .icons import STD_ICON_SIZE, icons8_circled_play
 from .mwindow import MWindow
 from .wxutils import wxCheckBox
 
 _ = wx.GetTranslation
-
-
-def register_panel(window, context):
-    panel = AutoExecPanel(window, wx.ID_ANY, context=context, pane=True)
-    pane = (
-        aui.AuiPaneInfo()
-        .Float()
-        .MinSize(100, 100)
-        .FloatingSize(170, 230)
-        .MaxSize(500, 500)
-        .Caption(_("Notes"))
-        .CaptionVisible(not context.pane_lock)
-        .Name("notes")
-        .Hide()
-    )
-    pane.dock_proportion = 100
-    pane.control = panel
-    pane.submenu = "_50_" + _("Tools")
-
-    window.on_pane_create(pane)
-    context.register("pane/autoexec", pane)
 
 
 class AutoExecPanel(wx.Panel):
@@ -62,7 +41,7 @@ class AutoExecPanel(wx.Panel):
         self.context(".file_startup\n")
 
     def on_check(self, event):
-        self.context.elements.auto_startup = self.check_auto_startup.GetValue()
+        self.context.elements.last_file_autoexec_active = self.check_auto_startup.GetValue()
 
     def __set_properties(self):
         self.text_autoexec.SetToolTip(
@@ -88,11 +67,11 @@ class AutoExecPanel(wx.Panel):
         self.Layout()
 
     def pane_show(self, *args):
-        text = self.context.elements.autoexec
+        text = self.context.elements.last_file_autoexec
         if text is None:
             text = ""
         self.text_autoexec.SetValue(text)
-        self.check_auto_startup.SetValue(self.context.elements.auto_startup)
+        self.check_auto_startup.SetValue(self.context.elements.last_file_autoexec_active)
         self.context.listen("autoexec", self.on_autoexec_listen)
 
     def pane_hide(self):
@@ -162,18 +141,18 @@ class AutoExecPanel(wx.Panel):
 
     def on_text_autoexec(self, event=None):
         if len(self.text_autoexec.GetValue()) == 0:
-            self.context.elements.autoexec = None
+            self.context.elements.last_file_autoexec = None
             self.button_execute.Enable(False)
         else:
-            self.context.elements.autoexec = self.text_autoexec.GetValue()
+            self.context.elements.last_file_autoexec = self.text_autoexec.GetValue()
             self.button_execute.Enable(True)
         self.context.elements.signal("autoexec", self)
 
     def on_autoexec_listen(self, origin, source):
         if source is self:
             return
-        commands = self.context.elements.autoexec
-        if self.context.elements.autoexec is None:
+        commands = self.context.elements.last_file_autoexec
+        if self.context.elements.last_file_autoexec is None:
             commands = ""
         if self.text_autoexec.GetValue() != commands:
             self.text_autoexec.SetValue(commands)
@@ -187,7 +166,7 @@ class AutoExec(MWindow):
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_comments.GetBitmap())
+        _icon.CopyFromBitmap(icons8_circled_play.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("File startup commands"))
         self.Children[0].SetFocus()
@@ -195,12 +174,11 @@ class AutoExec(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("wxpane/AutoExec", register_panel)
         kernel.register(
             "button/project/Startup",
             {
                 "label": _("Startup"),
-                "icon": icons8_comments,
+                "icon": icons8_circled_play,
                 "tip": _("Edit file startup commands"),
                 "help": "autoexec",
                 "action": lambda v: kernel.console("window toggle AutoExec\n"),
