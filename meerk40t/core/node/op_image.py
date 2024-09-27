@@ -454,7 +454,7 @@ class ImageOpNode(Node, Parameters):
                         start_minimum_x=start_on_left,
                         overscan=overscan,
                         settings=settings,
-                        passes=1,
+                        passes=passes,
                         post_filter=image_filter,
                         label=f"Pass {gray}: cutoff={skip_pixel}"
                     )
@@ -462,7 +462,9 @@ class ImageOpNode(Node, Parameters):
                     cut.original_op = self.type
                     cutcodes.append(cut)
 
-                # Yield all generated cutcodes of this image as a cutgroup
+                # Yield all generated cutcodes of this image
+                # Todo: to prevent optimisation to tear the hatch op apart we need to thinkabout a proper cutgroup
+                # The naiive implementation that has been commented out will not work.
                 for cut in cutcodes:
                     yield cut
                 # yield CutGroup(children=cutcodes, parent=None, passes=passes, settings=settings)
