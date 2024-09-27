@@ -1211,11 +1211,15 @@ def init_commands(kernel):
             copies = 1
         if copies < 1:
             copies = 1
-        
+
         if data_type == "ops":
             add_ops = list()
             for idx in range(copies):
-                add_ops.extend(list(map(copy, data)))
+                c_list = list(map(copy, data))
+                for e in c_list:
+                    if e.id is not None:
+                        e.id = f"{e.id}-{idx}"
+                add_ops.extend(c_list)
             # print (f"Add ops contains now: {len(add_ops)} operations")
             self.add_ops(add_ops)
             return "ops", add_ops
@@ -1236,7 +1240,11 @@ def init_commands(kernel):
                 tx += x_pos
                 ty += y_pos
                 this_shift = [(tx, ty)] * len(data)
-                add_elem.extend(list(map(copy, data)))
+                c_list = list(map(copy, data))
+                for e in c_list:
+                    if e.id is not None:
+                        e.id = f"{e.id}-{idx}"
+                add_elem.extend(c_list)
                 shift.extend(this_shift)
             # print (f"Add elem contains now: {len(add_elem)} elements")
             delta_wordlist = 1
