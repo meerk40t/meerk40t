@@ -217,6 +217,20 @@ class PropertyWindow(MWindow):
             if hasattr(p, "signal"):
                 p.signal("nodetype", myargs)
 
+    @signal_listener("imageprop;nodither")
+    def on_no_dither(self, origin, *args):
+        myargs = [i for i in args]
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("imageprop;nodither", myargs)
+
+    @signal_listener("imageprop;nodepth")
+    def on_no_depth(self, origin, *args):
+        myargs = [i for i in args]
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal("imageprop;nodepth", myargs)
+
     @signal_listener("textselect")
     def on_textselect(self, origin, *args):
         myargs = [i for i in args]

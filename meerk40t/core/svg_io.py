@@ -1281,7 +1281,7 @@ class SVGProcessor:
                     depth_resolution=_depth_resolution,
                     depth_interrupt_operation=_depth_int_op,
                     depth_interrupt_steps=_depth_int_steps,
-                    depth_interrupt_angle_delta =_depth_int_angle,
+                    depth_interrupt_angle=_depth_int_angle,
                 )
                 self.check_for_label_display(node, element)
                 e_list.append(node)

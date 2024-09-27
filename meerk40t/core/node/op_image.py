@@ -389,7 +389,7 @@ class ImageOpNode(Node, Parameters):
 
                     if op_found:
                         try:
-                            delta_angle = Angle(image_node.depth_interrupt_angle_delta)
+                            delta_angle = Angle(image_node._depth_interrupt_angle)
                             if delta_angle.angle == 0:
                                 delta_angle = None
                         except (TypeError, ValueError):   # None or invalid string

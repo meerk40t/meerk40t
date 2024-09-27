@@ -42,7 +42,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         # the id of this operation node in <depth_interrupt_operation>
         self.depth_interrupt_operation = None
         self.depth_interrupt_steps = 10
-        self.depth_interrupt_angle_delta = "0deg"
+        self.depth_interrupt_angle = "0deg"
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
