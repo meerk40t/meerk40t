@@ -48,6 +48,7 @@ from .lasertoolpanel import LaserTool
 from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
 from .notes import Notes
+from .autoexec import AutoExec
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.blobproperty import BlobPropertyPanel
@@ -898,6 +899,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
+        kernel.register("window/AutoExec", AutoExec)
         kernel.register("window/JobSpooler", JobSpooler)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Tips", Tips)

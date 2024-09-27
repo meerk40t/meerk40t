@@ -444,7 +444,29 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
-
+        choices = [
+            {
+                "attr": "auto_startup",
+                "object": elements,
+                "default": 1,
+                "type": int,
+                "label": _("File startup commands"),
+                "style": "option",
+                "display": (
+                    _("Ignore"),
+                    _("Ask"),
+                    _("Allow"),
+                ),
+                "choices": (0, 1, 2),
+                "tip":
+                    (
+                        _("Choose if file startup commands are allowed in principle or will all be ignored.") + "\n" +
+                        _("Note: They still need to be activated on a per file basis.")
+                    ),
+                "page": "Start",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
@@ -509,6 +531,8 @@ class Elemental(Service):
         self._clipboard_default = "0"
 
         self.note = None
+        self.last_file_autoexec = None
+        self.last_file_autoexec_active = False
         self._filename = None
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -546,6 +570,7 @@ class Elemental(Service):
         self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
+        self.setting(int, "auto_startup", 1)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
@@ -2099,6 +2124,7 @@ class Elemental(Service):
                 self.clear_operations(fast=fast)
             self.clear_files()
             self.clear_note()
+            self.clear_autoexec()
             self.clear_regmarks(fast=fast)
             # Do we have any other routine that wants
             # to be called when we start from scratch?
@@ -2114,6 +2140,11 @@ class Elemental(Service):
     def clear_note(self):
         self.note = None
         self.signal("note", self.note)
+
+    def clear_autoexec(self):
+        self.last_file_autoexec = None
+        self.last_file_autoexec_active = False
+        self.signal("autoexec")
 
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
