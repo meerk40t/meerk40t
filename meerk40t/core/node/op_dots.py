@@ -248,7 +248,7 @@ class DotsOpNode(Node, Parameters):
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
+    def as_cutobjects(self, closed_distance=15, passes=1, plan=None):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
         for point_node in self.children:

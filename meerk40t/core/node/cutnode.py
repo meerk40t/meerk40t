@@ -28,5 +28,5 @@ class CutNode(Node):
     def drop(self, drag_node, modify=True):
         return False
 
-    def as_cutobjects(self, closed_distance=15):
+    def as_cutobjects(self, closed_distance=15, plan=None):
         yield from self.cutcode

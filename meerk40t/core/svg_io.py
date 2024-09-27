@@ -1244,6 +1244,21 @@ class SVGProcessor:
                         _depth_resolution = 256
                 except (ValueError, TypeError):
                     pass
+                _depth_int_op = None
+                try:
+                    _depth_int_op = element.values.get("depth_interrupt_operation")
+                except (ValueError, TypeError):
+                    pass
+                _depth_int_steps = 10
+                try:
+                    _depth_int_steps = int(element.values.get("depth_interrupt_steps"))
+                except (ValueError, TypeError):
+                    pass
+                _depth_int_angle = "0deg"
+                try:
+                    _depth_int_angle = element.values.get("depth_interrupt_angle")
+                except (ValueError, TypeError):
+                    pass
                 node = context_node.add(
                     image=element.image,
                     matrix=element.transform,
@@ -1264,6 +1279,9 @@ class SVGProcessor:
                     lock=lock,
                     is_depthmap=_is_depthmap,
                     depth_resolution=_depth_resolution,
+                    depth_interrupt_operation=_depth_int_op,
+                    depth_interrupt_steps=_depth_int_steps,
+                    depth_interrupt_angle_delta =_depth_int_angle,
                 )
                 self.check_for_label_display(node, element)
                 e_list.append(node)

@@ -1,10 +1,11 @@
 from math import isnan
 
+from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
+from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length, Angle
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -258,7 +259,7 @@ class ImageOpNode(Node, Parameters):
             elif self.raster_direction == 3:
                 self.raster_direction = 2
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
+    def as_cutobjects(self, closed_distance=15, passes=1, plan=None):
         """
         Generator of cutobjects for the image operation. This takes any image node children
         and converts them into rastercut cutobjects.
@@ -368,7 +369,53 @@ class ImageOpNode(Node, Parameters):
                 else:
                     delta = -1
                     start_pixel = 255
+
+                # During the processing of a depth map (255 layers) we
+                # interrupt the process every <depth_interrupt_steps>
+                # by inserting another cutcode operation - we store
+                # the id of this operation node in <depth_interrupt_operation>
+                interrupt_node = None
+                interrupt_steps = 1000
+                delta_angle = None
+                # print (f"Looking for '{image_node.depth_interrupt_operation}'")
+                if plan is not None and image_node.depth_interrupt_operation is not None:
+                    op_found = False
+                    for other_op in plan.plan:
+                        # print (other_op.type, other_op.id)
+                        if getattr(other_op, "id", None) == image_node.depth_interrupt_operation and hasattr(other_op, "as_cutobjects"):
+                            interrupt_node = other_op
+                            op_found = True
+                            break
+
+                    if op_found:
+                        try:
+                            delta_angle = Angle(image_node.depth_interrupt_angle_delta)
+                            if delta_angle.angle == 0:
+                                delta_angle = None
+                        except (TypeError, ValueError):   # None or invalid string
+                            delta_angle = None
+                        interrupt_steps = image_node.depth_interrupt_steps
+                        if interrupt_steps <= 0 or interrupt_steps > 255:
+                            interrupt_steps = 1000 # Will never be called
+                # We need to make clear that this a group...
+
                 for gray in range(image_node.depth_resolution):
+                    if interrupt_node is not None and gray > 0 and gray % interrupt_steps == 0:
+                        other_cuts = list(interrupt_node.as_cutobjects())
+                        cutcodes.extend(other_cuts)
+                        for cnode in interrupt_node.children:
+                            if delta_angle is not None and cnode.type.startswith("effect ") and hasattr(cnode, "hatch_angle"):
+                                angle_s = cnode.hatch_angle
+                                if angle_s is None:
+                                    angle_s = "0deg"
+                                try:
+                                    h_angle = Angle(angle_s)
+                                except ValueError:
+                                    h_angle = Angle("0deg")
+                                h_angle += delta_angle
+                                cnode.hatch_angle = h_angle.angle_degrees
+                                cnode.recalculate()
+
                     skip_pixel = int(start_pixel + gray * delta * stepsize)
                     if skip_pixel < 0:
                         skip_pixel = 0
@@ -407,7 +454,7 @@ class ImageOpNode(Node, Parameters):
                         start_minimum_x=start_on_left,
                         overscan=overscan,
                         settings=settings,
-                        passes=passes,
+                        passes=1,
                         post_filter=image_filter,
                         label=f"Pass {gray}: cutoff={skip_pixel}"
                     )
@@ -415,38 +462,10 @@ class ImageOpNode(Node, Parameters):
                     cut.original_op = self.type
                     cutcodes.append(cut)
 
-                    if direction == 4:
-                        # Create optional crosshatch cut
-                        horizontal = not horizontal
-                        settings = dict(settings)
-                        if horizontal:
-                            # Raster step is only along y for horizontal raster
-                            settings["raster_step_x"] = 0
-                            settings["raster_step_y"] = step_y
-                        else:
-                            # Raster step is only along x for vertical raster
-                            settings["raster_step_x"] = step_x
-                            settings["raster_step_y"] = 0
-                        cut = RasterCut(
-                            image=cleared_image,
-                            offset_x=offset_x,
-                            offset_y=offset_y,
-                            step_x=step_x,
-                            step_y=step_y,
-                            inverted=inverted,
-                            bidirectional=bidirectional,
-                            horizontal=horizontal,
-                            start_minimum_y=start_on_top,
-                            start_minimum_x=start_on_left,
-                            overscan=overscan,
-                            settings=settings,
-                            passes=passes,
-                            post_filter=image_filter,
-                            label=f"Pass {gray}.2: cutoff={skip_pixel}"
-                        )
-                        cut.path = path
-                        cut.original_op = self.type
-                        cutcodes.append(cut)
+                # Yield all generated cutcodes of this image as a cutgroup
+                for cut in cutcodes:
+                    yield cut
+                # yield CutGroup(children=cutcodes, parent=None, passes=passes, settings=settings)
             else:
                 # Create Cut Object for regular image
                 cut = RasterCut(

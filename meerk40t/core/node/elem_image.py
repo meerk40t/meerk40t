@@ -35,6 +35,14 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self.prevent_crop = False
         self.is_depthmap = False
         self.depth_resolution = 256
+        # These values are probably very much balor specific
+        # During the processing of a depth map (255 layers) we
+        # interrupt the process every <depth_interrupt_steps>
+        # by inserting another cutcode operation - we store
+        # the id of this operation node in <depth_interrupt_operation>
+        self.depth_interrupt_operation = None
+        self.depth_interrupt_steps = 10
+        self.depth_interrupt_angle_delta = "0deg"
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)

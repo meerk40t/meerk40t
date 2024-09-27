@@ -68,7 +68,7 @@ class GotoOperation(Node):
         else:
             self.x, self.y = matrix.transform_vector([self.x, self.y])
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
+    def as_cutobjects(self, closed_distance=15, passes=1, plan=None):
         """
         Generator of cutobjects for a raster operation. This takes any image node children
         and converts them into rastercut objects. These objects should have already been converted

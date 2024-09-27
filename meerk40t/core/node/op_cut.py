@@ -310,7 +310,7 @@ class CutOpNode(Node, Parameters):
             complex(device.view.native_scale_x, device.view.native_scale_y)
         )
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
+    def as_cutobjects(self, closed_distance=15, passes=1, plan=None):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
         if "native_mm" in settings:

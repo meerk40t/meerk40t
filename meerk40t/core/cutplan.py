@@ -375,6 +375,7 @@ class CutPlan:
                 op.as_cutobjects(
                     closed_distance=context.opt_closed_distance,
                     passes=passes,
+                    plan=self,
                 ),
                 settings=settings,
             )
