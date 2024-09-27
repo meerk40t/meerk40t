@@ -57,6 +57,7 @@ class EngraveOpNode(Node, Parameters):
 
         super().__init__(type="op engrave", **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+        self.set_id(self.id)
 
     def __repr__(self):
         return "EngraveOpNode()"

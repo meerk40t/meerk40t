@@ -37,6 +37,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         else:
             self.label = label
 
+        self.set_id(self.id)
         self.recalculate()
         self.perspective_matrix = PMatrix()
         self.set_bounds_parameters()

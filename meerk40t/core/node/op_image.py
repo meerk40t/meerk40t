@@ -29,6 +29,7 @@ class ImageOpNode(Node, Parameters):
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
+        self.set_id(self.id)
 
     def __repr__(self):
         return "ImageOpNode()"

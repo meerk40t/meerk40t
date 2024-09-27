@@ -101,6 +101,7 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             (self.x1 + self.x2) / 2.0,
             (self.y1 + self.y2) / 2.0,
         )
+        self.set_id(self.id)
 
     def __copy__(self):
         nd = self.node_dict

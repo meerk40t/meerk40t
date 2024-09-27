@@ -19,6 +19,7 @@ class PlaceCurrentNode(Node):
         # Active?
         self.output = True
         self._formatter = "{enabled}{element_type}"
+        self.set_id(self.id)
 
     def placements(self, context, outline, matrix, plan):
         if outline is None:

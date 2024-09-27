@@ -14,6 +14,7 @@ class HomeOperation(Node):
         self.output = True
         super().__init__(type="util home", **kwargs)
         self._formatter = "{enabled}{element_type}"
+        self.set_id(self.id)
 
     def __repr__(self):
         return "HomeOperation()"

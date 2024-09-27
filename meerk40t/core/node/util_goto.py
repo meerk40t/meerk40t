@@ -17,6 +17,7 @@ class GotoOperation(Node):
         self.absolute = False
         super().__init__(type="util goto", **kwargs)
         self._formatter = "{enabled}{element_type} {absolute}{x} {y} "
+        self.set_id(self.id)
 
     def __repr__(self):
         return f"GotoOperation('{self.x}, {self.y}')"

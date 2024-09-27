@@ -77,6 +77,7 @@ class PlacePointNode(Node):
             "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}"
         )
         self.validate()
+        self.set_id(self.id)
 
     def validate(self):
         def _valid_bool(field):

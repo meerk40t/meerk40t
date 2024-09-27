@@ -59,6 +59,7 @@ class HatchEffectNode(Node, Suppressable):
         self._angle = None
         self._angle_delta = 0
         self._effect = True
+        self.set_id(self.id)
         self.recalculate()
 
     @property

@@ -116,6 +116,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
             self.stroke_width_zero()
 
         self.set_dirty_bounds()
+        self.set_id(self.id)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"

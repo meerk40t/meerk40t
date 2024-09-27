@@ -22,7 +22,7 @@ Tree Functions are to be stored: tree/command/type. These store many functions l
 import ast
 from copy import copy
 from enum import IntEnum
-from time import time
+import time
 
 
 # LINEJOIN
@@ -251,7 +251,7 @@ class Node:
                 # This is not true for the inverse case, a node can be selected
                 # but not necessarily emphasized
                 self._selected = True
-            self._emphasized_time = time() if value else None
+            self._emphasized_time = time.time() if value else None
         self.notify_emphasized(self)
 
     @property
@@ -272,7 +272,7 @@ class Node:
         # to allow simultaneous assignments to return the same delta
         factor = 100
         if reftime is None:
-            reftime = time()
+            reftime = time.time()
         if self._emphasized_time is None:
             delta = 0
         else:
@@ -1348,3 +1348,15 @@ class Node:
     @property
     def name(self):
         return self.__str__()
+
+    def set_id(self, id=None):
+        if id is None:
+            pattern = "m"
+            parts = self.type.split()
+            if len(parts) > 1:
+                pattern += parts[0][0:2].lower() + parts[1][0:3].lower()
+            else:
+                pattern += parts[0][0:3].lower()
+            timestamp = time.strftime("%M%S", time.localtime(time.time()))
+            id = pattern + ":" + timestamp
+        self.id = id

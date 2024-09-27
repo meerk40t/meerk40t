@@ -59,6 +59,7 @@ class CutOpNode(Node, Parameters):
         ]
         super().__init__(type="op cut", **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+        self.set_id(self.id)
 
     def __repr__(self):
         return "CutOpNode()"
