@@ -352,6 +352,11 @@ def plugin(kernel, lifecycle=None):
                 "page": "Scene",
                 "section": "General",
             },
+        ]
+        for c in choices:
+            c["help"] = "classification"
+        kernel.register_choices("preferences", choices)
+        choices = [
             {
                 "attr": "op_show_default",
                 "object": elements,
@@ -363,8 +368,8 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n"
                 + _("Unticked: Show their current value."),
-                "page": "Scene",
-                "section": "Operation",
+                "page": "Operations",
+                "section": "Display",
             },
             {
                 "attr": "allow_reg_to_op_dragging",
@@ -379,12 +384,48 @@ def plugin(kernel, lifecycle=None):
                 + _(
                     "Unticked: A drag operation of regmark nodes to an operation will be ignored."
                 ),
-                "page": "Scene",
-                "section": "Operation",
+                "page": "Operations",
+                "section": "Behaviour",
+            },
+            {
+                "attr": "reuse_operations_on_load",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Reuse existing"),
+                "tip": _(
+                    "Ticked: When loading a file we will reuse an existing operation with the same principal properties."
+                )
+                + "\n"
+                + _(
+                    "Unticked: We will add another operation aongside existing ones (always the case if properties differ)."
+                ),
+                "page": "Operations",
+                "section": "Loading",
+            },
+            {
+                "attr": "default_ops_display_mode",
+                "object": elements,
+                "default": 0,
+                "type": int,
+                "label": _("Statusbar display"),
+                "style": "option",
+                "display": (
+                    _("As in operations tree"),
+                    _("Group types together (CC EE RR II)"),
+                    _("Matching (CERI CERI)"),
+                ),
+                "choices": (0, 1, 2),
+                "tip": _(
+                    "Choose if and how you want to group together / display the default operations at the bottom of the screen"
+                ),
+                "page": "Operations",
+                "section": "_95_Default Operations",
+                "signals": "default_operations",
             },
         ]
         for c in choices:
-            c["help"] = "classification"
+            c["help"] = "operations"
         kernel.register_choices("preferences", choices)
         choices = [
             {
@@ -421,29 +462,7 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
-        choices = [
-            {
-                "attr": "default_ops_display_mode",
-                "object": elements,
-                "default": 0,
-                "type": int,
-                "label": _("Statusbar display"),
-                "style": "option",
-                "display": (
-                    _("As in operations tree"),
-                    _("Group types together (CC EE RR II)"),
-                    _("Matching (CERI CERI)"),
-                ),
-                "choices": (0, 1, 2),
-                "tip": _(
-                    "Choose if and how you want to group together / display the default operations at the bottom of the screen"
-                ),
-                "page": "Classification",
-                "section": "_95_Default Operations",
-                "signals": "default_operations",
-            },
-        ]
-        kernel.register_choices("preferences", choices)
+
         choices = [
             {
                 "attr": "auto_startup",
@@ -568,6 +587,7 @@ class Elemental(Service):
         # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
+        self.setting(bool, "reuse_operations_on_load", True)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(int, "auto_startup", 1)
