@@ -136,6 +136,9 @@ class DepthmapPanel(wx.Panel):
         )
         self.combo_depthmap.SetToolTip(DEPTH_RES_TOOLTIP)
         self.combo_depthmap.SetSelection(0)
+        self.combo_operation.SetToolTip(_("Pick the engrave operation aka cleaning pass that should be done every x steps") + "\n" + _("NB: You need to turn optimization off!!"))
+        self.text_steps.SetToolTip(_("Every x layers we will stop the image engraving and do one pass of the selected engrave operation."))
+        self.text_angle.SetToolTip(_("After every cleaning pass we will rotate the hatch by this amount."))
         self.combo_depthmap.Enable(False)
 
     def __do_layout(self):
@@ -148,15 +151,15 @@ class DepthmapPanel(wx.Panel):
         sizer_main.Add(sizer_depth, 1, wx.EXPAND, 0)
 
         sizer_clean = StaticBoxSizer(self, wx.ID_ANY, _("Cleaning"), wx.HORIZONTAL)
-        lbl1 = wx.StaticText(self, wx.ID_ANY, _("Cleaning operation"))
+        lbl1 = wx.StaticText(self, wx.ID_ANY, _("Operation"))
         sizer_clean.Add(lbl1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_clean.Add(self.combo_operation, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         lbl2 = wx.StaticText(self, wx.ID_ANY, _("Every x steps"))
         sizer_clean.Add(lbl2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_clean.Add(self.text_steps, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_clean.Add(self.text_steps, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         lbl3 = wx.StaticText(self, wx.ID_ANY, _("Angle delta"))
         sizer_clean.Add(lbl3, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_clean.Add(self.text_angle, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_clean.Add(self.text_angle, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(sizer_clean, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -212,8 +215,8 @@ class DepthmapPanel(wx.Panel):
                 ang = Angle(value)
             except ValueError:
                 return
-            if ang != self.node.depth_interrupt_angle:
-                self.node.depth_interrupt_angle = ang
+            if ang.angle_degrees != self.node.depth_interrupt_angle:
+                self.node.depth_interrupt_angle = ang.angle_degrees
                 self.node_update()
 
     def signal(self, signalstr, myargs):
