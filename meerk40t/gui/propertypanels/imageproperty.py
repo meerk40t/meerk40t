@@ -1635,7 +1635,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.node_update()
 
     def signal(self, signalstr, myargs):
-        if signalstr == "imageprop;nodepth":
+        if signalstr == "imageprop;nodither":
             self.check_enable_dither.SetValue(False)
             self.combo_dither.Enable(False)
         for p in self.subpanels:
