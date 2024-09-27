@@ -1649,7 +1649,6 @@ class SVGLoader:
         except ParseError as e:
             raise BadFileError(str(e)) from e
         reuse = elements_service.reuse_operations_on_load
-        print (reuse)
         elements_service._loading_cleared = True
         svg_processor = SVGProcessor(elements_service, load_operations=True, reuse_operations=reuse)
         svg_processor.process(svg, pathname)
