@@ -658,6 +658,9 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
+        if node.id is None and node.type not in ("root", "branch reg", "branch ops", "branch elems", "reference"):
+            self.elements.remember_for_id_creation(node)
+            self.elements.signal("validate_ids")
         if self._freeze or self.context.elements.suppress_updates:
             return
         self.elements.signal("modified")

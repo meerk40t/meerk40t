@@ -547,6 +547,8 @@ class Elemental(Service):
 
         # Will be filled with a list of newly added nodes after a load operation
         self.added_elements = list()
+        # Internal buffer for non-created ids
+        self._ids_to_check = list()
 
         self.undo = Undo(self, self._tree)
         self.do_undo = True
@@ -1266,11 +1268,20 @@ class Elemental(Service):
         result = self.mywordlist.translate(pattern, increment=increment)
         return result
 
+    def deal_with_validate_signal(self, *args):
+        # That has been called if a node was created, so we just focus on the ones we have to deal with
+        target = None
+        if len(self._ids_to_check):
+            target = (e for e in self._ids_to_check)
+        self.validate_ids(target)
+
     def service_detach(self, *args, **kwargs):
         self.unlisten_tree(self)
+        self.unlisten("validate_ids", self.deal_with_validate_signal)
 
     def service_attach(self, *args, **kwargs):
         self.listen_tree(self)
+        self.listen("validate_ids", self.deal_with_validate_signal)
 
     def shutdown(self, *args, **kwargs):
         # No need for an opinfo dict
@@ -1942,15 +1953,48 @@ class Elemental(Service):
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
 
+    def remember_for_id_creation(self, node):
+        if node not in self._ids_to_check:
+            print (f"Added node: {node.type}")
+            self._ids_to_check.append(node)
+
     def validate_ids(self, nodelist=None, generic=True):
         changes = False
         idx = 1
         uid = {}
         missing = list()
+        needs_adding = False
         if nodelist is None:
-            nodelist = list(self.flat())
-        for node in nodelist:
+            toc = "all"
+        else:
+            try:
+                toc = f"{len(nodelist)} nodes"
+            except TypeError:
+                toc = "generator"
+
+        print (f"Called validate_ids - to check: {toc}, creation backlog: {len(self._ids_to_check)}")
+
+        if nodelist is None:
+            needs_adding = True
+            nodelist = []
+        else:
+            nodelist = list(nodelist)
+        for node in self.flat():
+            if needs_adding:
+                nodelist.append(node)
+            if node.id is None:
+                continue
             if node.id in uid:
+                # ID already used. Clear.
+                node.id = None
+                continue
+            uid[node.id] = node
+        for node in self._ids_to_check:
+            if node not in nodelist:
+                nodelist.append(node)
+        self._ids_to_check.clear()
+        for node in nodelist:
+            if node.id in uid and uid[node.id] is not node:
                 # ID already used. Clear.
                 node.id = None
             if node.id is None:
@@ -1960,6 +2004,8 @@ class Elemental(Service):
                 # Set this ID as used.
                 uid[node.id] = node
         for m in missing:
+            if m.type in ("root", "branch reg", "branch ops", "branch elems"):
+                continue
             changes = True
             pattern = "meerk40t:"
             if not generic and m.type.startswith("op "):
@@ -1968,6 +2014,9 @@ class Elemental(Service):
                 idx += 1
             m.id = f"{pattern}{idx}"
             uid[m.id] = m
+            print (f"Assigned '{m.id} to {m.type}")
+        if changes and len(missing) > 0:
+            self.signal("element_property_reload", missing)
         return changes
 
     @property
