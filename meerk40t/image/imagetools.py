@@ -95,7 +95,7 @@ def plugin(kernel, lifecycle=None):
         if hasattr(node, "node"):
             node.node.altered()
         node.altered()
-        context.elements.do_image_update(node)
+        context.elements.do_image_update(node, context)
 
     @context.console_command(
         "image",
