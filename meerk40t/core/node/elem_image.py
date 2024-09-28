@@ -125,7 +125,13 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
         nd["operations"] = copy(self.operations)
-        return ImageNode(**nd)
+        newnode = ImageNode(**nd)
+        if self._keyhole_geometry is not None:
+            g = copy(self._keyhole_geometry)
+        else:
+            g = None
+        newnode.set_keyhole(self.keyhole_reference, g)
+        return newnode
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
@@ -783,7 +789,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             # to the polygon method of ImageDraw instead
             maskimage = Image.new("L", image.size, "black")
             draw = ImageDraw.Draw(maskimage)
-            bounds = self._keyhole_geometry.bbox()
             inverted_main_matrix = Matrix(self.matrix).inverse()
             matrix = actualized_matrix * inverted_main_matrix * self.matrix
             x0, y0 = matrix.point_in_matrix_space((0, 0))
@@ -798,16 +803,19 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 bounds = geom.bbox()
                 # print (bounds)
                 # Let's simplify things, if we don't have any overlap then we don't need to do something
-                if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
-                    continue
+                # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
+                #     continue
                 geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
                 points = list()
-                for pt in geom_points:
+                for idx, pt in enumerate(geom_points):
                     gx = pt.real
                     gy = pt.imag
                     x = int(maskimage.width * (gx - x0) / i_wd )
                     y = int(maskimage.height * (gy - y0) / i_ht )
                     points.append( (x, y) )
+                    # if idx < 4:
+                    #     print (f"[{idx}] {x:.2f}, {y:.2f} from {gx:.2f}, {gy:.2f}")
+
                 # print (points)
                 draw.polygon( points, fill="white", outline="white")
             # For debug purposes...
