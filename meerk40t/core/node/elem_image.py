@@ -1,4 +1,5 @@
 import threading
+import time
 from copy import copy
 from math import ceil, floor
 
@@ -38,7 +39,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         # Keyhole-Variables
         self._keyhole_reference = None
         self._keyhole_geometry = None
-        self._keyhole_image = None
+        self._processing = False
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
@@ -155,7 +156,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
     def keyhole_reference(self, value):
         self._keyhole_reference = value
         self._keyhole_geometry = None
-        self._keyhole_image = None
         self._bounds_dirty = True
 
     def set_keyhole(self, keyhole_ref, geom=None):
@@ -269,31 +269,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
             def get_keyhole_geometry():
                 self._keyhole_geometry = None
-                found = False
-                interval = int(UNITS_PER_MM / 10)
-                for node in context.elements.elems():
-                    if node.id != self._keyhole_reference:
-                        continue
-                    if not hasattr(node, "as_geometry"):
-                        continue
-                    found = True
-                    geom = node.as_geometry()
-                    # We need a polygon...
-                    self._keyhole_geometry = geom
-                    break
-                if found:
-                    return
-                # We did not find something, so let's look in regmarks too
-                for node in context.elements.regs():
-                    if node.id != self._keyhole_reference:
-                        continue
-                    if not hasattr(node, "as_geometry"):
-                        continue
-                    found = True
-                    geom = node.as_geometry()
-                    # We need a polygon...
-                    self._keyhole_geometry = geom
-                    break
+                refnode = context.elements.find_node(self.id)
+                if refnode is not None and hasattr(refnode, "as_geometry"):
+                    self._keyhole_geometry = refnode.as_geometry()
 
             self._processed_image = None
             # self.processed_matrix = None
@@ -311,8 +289,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 if self._keyhole_reference is not None and self._keyhole_geometry is None:
                     get_keyhole_geometry()
 
+                # We need to have a thread per image, so we need to provide a node specific thread_name!
                 self._update_thread = context.threaded(
-                    self._process_image_thread, result=clear, daemon=True
+                    self._process_image_thread, result=clear, daemon=True, thread_name=f"image_update_{self.id}_{str(time.perf_counter())}"
                 )
 
     def _process_image_thread(self):
@@ -327,9 +306,10 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y, not self.prevent_crop)
-            # Unset cache.
-            self._cache = None
+            with self._update_lock:
+                self.process_image(step_x, step_y, not self.prevent_crop)
+                # Unset cache.
+                self._cache = None
 
     def process_image(self, step_x=None, step_y=None, crop=True):
         """
@@ -348,6 +328,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         """
 
         from PIL import Image, ImageDraw
+        while self._processing:
+            # print ("Waiting...")
+            time.sleep(0.05)
 
         if step_x is None:
             step_x = self.step_x
@@ -367,12 +350,14 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             Image.DecompressionBombError,
             ValueError,
             ZeroDivisionError,
-        ):
+        ) as e:
             # Memory error if creating requires too much memory.
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
             # ZeroDivide if inverting the processed matrix cannot happen because image is a line
+            # print (f"Shit, crashed with {e}")
             self._process_image_failed = True
+            self._processing = False
         self.updated()
 
     @property
@@ -665,7 +650,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             BICUBIC = Resampling.BICUBIC
         except ImportError:
             BICUBIC = Image.BICUBIC
-
+        self._processing = True
         image = self.image
 
         transparent_mask = self._get_transparent_mask(image)
@@ -781,7 +766,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
-
         image, newbounds = self._process_script(image)
         # This may have again changed the size of the image (op crop)
         # so we need to adjust the reject mask...
@@ -792,47 +776,47 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         image = background
 
         image = self._apply_dither(image)
+
         if self._keyhole_geometry is not None:
-            if self._keyhole_image is None:
-                # We can't render something with the usual suspects ie laserrender.render
-                # as we do not have access to wxpython on the command line, so we stick
-                # to the polygon method of ImageDraw instead
-                maskimage = Image.new("L", image.size, "black")
-                draw = ImageDraw.Draw(maskimage)
-                bounds = self._keyhole_geometry.bbox()
-                inverted_main_matrix = Matrix(self.matrix).inverse()
-                matrix = actualized_matrix * inverted_main_matrix * self.matrix
-                x0, y0 = matrix.point_in_matrix_space((0, 0))
-                x1, y1 = matrix.point_in_matrix_space((0, image_height))
-                x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
-                x3, y3 = matrix.point_in_matrix_space((image.width, 0))
-                # print (x0, y0, x2, y2)
-                # Let's simplify things, if we don't have any overlap then the image is white...
-                i_wd = x2 - x0
-                i_ht = y2 - y0
-                for geom in self._keyhole_geometry.as_subpaths():
-                    bounds = geom.bbox()
-                    # print (bounds)
-                    # Let's simplify things, if we don't have any overlap then we don't need to do something
-                    if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
-                        continue
-                    geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
-                    points = list()
-                    for pt in geom_points:
-                        gx = pt.real
-                        gy = pt.imag
-                        x = int(maskimage.width * (gx - x0) / i_wd )
-                        y = int(maskimage.height * (gy - y0) / i_ht )
-                        points.append( (x, y) )
-                    # print (points)
-                    draw.polygon( points, fill="white", outline="white")
-                # For debug purposes...
-                # maskimage.save("C:\\temp\\maskimage.png")
-                self._keyhole_image = maskimage
+            # We can't render something with the usual suspects ie laserrender.render
+            # as we do not have access to wxpython on the command line, so we stick
+            # to the polygon method of ImageDraw instead
+            maskimage = Image.new("L", image.size, "black")
+            draw = ImageDraw.Draw(maskimage)
+            bounds = self._keyhole_geometry.bbox()
+            inverted_main_matrix = Matrix(self.matrix).inverse()
+            matrix = actualized_matrix * inverted_main_matrix * self.matrix
+            x0, y0 = matrix.point_in_matrix_space((0, 0))
+            x1, y1 = matrix.point_in_matrix_space((0, image_height))
+            x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
+            x3, y3 = matrix.point_in_matrix_space((image.width, 0))
+            # print (x0, y0, x2, y2)
+            # Let's simplify things, if we don't have any overlap then the image is white...
+            i_wd = x2 - x0
+            i_ht = y2 - y0
+            for geom in self._keyhole_geometry.as_subpaths():
+                bounds = geom.bbox()
+                # print (bounds)
+                # Let's simplify things, if we don't have any overlap then we don't need to do something
+                if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
+                    continue
+                geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
+                points = list()
+                for pt in geom_points:
+                    gx = pt.real
+                    gy = pt.imag
+                    x = int(maskimage.width * (gx - x0) / i_wd )
+                    y = int(maskimage.height * (gy - y0) / i_ht )
+                    points.append( (x, y) )
+                # print (points)
+                draw.polygon( points, fill="white", outline="white")
+            # For debug purposes...
+            # maskimage.save("C:\\temp\\maskimage.png")
             background = Image.new("L", image.size, "white")
-            background.paste(image, mask=self._keyhole_image)
+            background.paste(image, mask=maskimage)
             image = background
 
+        self._processing = False
         return actualized_matrix, image
 
     @staticmethod
@@ -912,14 +896,3 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
         return abs(Path(Polygon((x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0))))
 
-    def translated(self, dx, dy):
-        self._keyhole_image = None
-        super().translated(dx, dy)
-
-    def scaled(self, sx, sy, ox, oy):
-        self._keyhole_image = None
-        super().scaled(sx, sy, ox, oy)
-
-    def altered(self):
-        self._keyhole_image = None
-        return super().altered()
