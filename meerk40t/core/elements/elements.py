@@ -4173,9 +4173,12 @@ class Elemental(Service):
             node.update(context)
         self.remembered_keyhole_nodes.clear()
 
-    def do_image_update(self, node, context=None):
-        node.update(context)
-        self.forget_keyhole_nodes(node)
+    def do_image_update(self, node, context=None, delayed=False):
+        if delayed:
+            self.remember_keyhole_nodes(node)
+        else:
+            node.update(context)
+            self.forget_keyhole_nodes(node)
 
     def simplify_node(self, node):
         """
