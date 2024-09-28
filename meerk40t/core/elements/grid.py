@@ -327,7 +327,7 @@ def init_commands(kernel):
                 data_out.extend(add_elem)
                 currentangle += segment_len
             for e in images:
-                e.update(None)
+                self.do_image_update(e)
         channel(f"{counted} copies created")
 
         post.append(classify_new(data_out))

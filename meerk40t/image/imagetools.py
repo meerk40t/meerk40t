@@ -95,7 +95,7 @@ def plugin(kernel, lifecycle=None):
         if hasattr(node, "node"):
             node.node.altered()
         node.altered()
-        node.update(context)
+        context.elements.do_image_update(node)
 
     @context.console_command(
         "image",
@@ -208,7 +208,7 @@ def plugin(kernel, lifecycle=None):
             if not len(script) and inode.operations:
                 channel(_("Disabled raster script."))
             inode.operations = script
-            inode.update(context)
+            context.elements.do_image_update(inode, context)
         return "image", data
 
     @context.console_command(
@@ -2181,7 +2181,7 @@ class ImageLoader:
         element_branch = elements_service.get(type="branch elems")
         if context.create_image_group:
             file_node = element_branch.add(
-                type="file", 
+                type="file",
                 label=os.path.basename(pathname),
                 filepath=pathname,
             )
