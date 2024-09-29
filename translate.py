@@ -4,14 +4,19 @@ import polib
 
 
 # Simple tool to recursively translate all .po-files into their .mo-equivalents under ./locale/LC_MESSAGES
-def create_mo_files(force:bool):
+def create_mo_files(force:bool, locales:list):
     data_files = []
     localedir = "./locale"
-    po_dirs = [
-        localedir + "/" + l + "/LC_MESSAGES/" for l in next(os.walk(localedir))[1]
-    ]
+    po_dirs = []
+    po_locales = []
+    for l in next(os.walk(localedir))[1]:
+        po_dirs.append(localedir + "/" + l + "/LC_MESSAGES/")
+        po_locales.append(l)
     counts = [0, 0, 0]
-    for d in po_dirs:
+    for d_local, d in zip(po_locales, po_dirs):
+        if len(locales) > 0 and d_local not in locales:
+            print (f"Skip locale {d_local}")
+            continue
         mo_files = []
         po_files = [f for f in next(os.walk(d))[2] if os.path.splitext(f)[1] == ".po"]
         for po_file in po_files:
@@ -54,10 +59,17 @@ def create_mo_files(force:bool):
 def main():
     force = False
     args = sys.argv[1:]
-    if len(args) > 0 and args[0].lower() == "force":
-        force = True
-    print("Usage: python ./translate.py>")
-    print("Will compile all po-files")
-    create_mo_files(force)
+    locales = []
+    if len(args) > 0:
+        locales = list(a for a in args)
+        if locales[0].lower() == "force":
+            force = True
+            locales.pop(0)
+    print("Usage: python ./translate.py <locales>")
+    if len(locales):
+        print(f"Will compile po-files for {','.join(locales)}")
+    else:
+        print("Will compile all po-files")
+    create_mo_files(force, locales)
 
 main()
