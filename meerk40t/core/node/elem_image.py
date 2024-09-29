@@ -116,7 +116,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._process_image_failed = False
 
         self.message = None
-        self.set_id(self.id))
+        self.set_id(self.id)
         if self.operations or self.dither or self.prevent_crop or self.keyhole_reference:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
