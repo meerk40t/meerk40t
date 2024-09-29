@@ -1722,16 +1722,16 @@ class Elemental(Service):
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element altered")
-        self.test_keyholes(node, "altered")
         self.prepare_undo("Element altered")
+        self.test_for_keyholes(node)
 
     def modified(self, node=None, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element modified")
-        self.test_keyholes(node, "modified")
         self.prepare_undo("Element modified")
+        self.test_for_keyholes(node)
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1741,8 +1741,8 @@ class Elemental(Service):
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element shifted")
-        self.test_keyholes(node, "translated")
         self.prepare_undo("Element shifted")
+        self.test_for_keyholes(node)
 
     def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
         # It's safer to just recompute the selection area
@@ -1752,8 +1752,8 @@ class Elemental(Service):
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element scaled")
-        self.test_keyholes(node, "scaled")
         self.prepare_undo("Element scaled")
+        self.test_for_keyholes(node)
 
     def node_attached(self, node, **kwargs):
         # Hint for translate check: _("Element added")
@@ -1761,8 +1761,8 @@ class Elemental(Service):
 
     def node_detached(self, node, **kwargs):
         # Hint for translate check: _("Element deleted")
-        self.remove_keyhole(node)
         self.prepare_undo("Element deleted")
+        self.remove_keyhole(node)
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -4066,11 +4066,12 @@ class Elemental(Service):
             return True
         return False
 
-    def test_keyholes(self, node, source):
+    def test_for_keyholes(self, node):
         if node is None or node.id is None:
             return
-        if node.type == "elem image" and node.keyhole_reference is not None:
-            self.remember_keyhole_nodes(node)
+        if node.type == "elem image":
+            if node.keyhole_reference is not None:
+                self.remember_keyhole_nodes(node)
             return
         if not hasattr(node, "as_geometry"):
             return

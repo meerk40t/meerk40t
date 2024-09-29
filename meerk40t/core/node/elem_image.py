@@ -112,6 +112,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._update_lock = threading.Lock()
         self._processed_image = None
         self._processed_matrix = None
+        self._actualized_matrix = None
         self._process_image_failed = False
 
         self.message = None
@@ -143,10 +144,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
-        if self._processed_image is not None:
-            return self._processed_image
-        else:
-            return self.image
+        image = self._apply_keyhole()
+        return image
+        # if self._processed_image is not None:
+        #     return self._processed_image
+        # else:
+        #     return self.image
 
     @property
     def active_matrix(self):
@@ -168,10 +171,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         # This is useful if we do want to set it after loading a file
         # or when assigning the reference, as this does not need a context
         # query the complete node tree
+        self._cache = None
         self.keyhole_reference = keyhole_ref
-        if geom:
-            interval = int(UNITS_PER_MM / 10)
-            self._keyhole_geometry = geom
+        self._keyhole_geometry = geom
 
     def preprocess(self, context, matrix, plan):
         """
@@ -345,6 +347,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         try:
             actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
             inverted_main_matrix = Matrix(self.matrix).inverse()
+            self._actualized_matrix = actualized_matrix
             self._processed_matrix = actualized_matrix * inverted_main_matrix
             self._processed_image = image
             self._process_image_failed = False
@@ -641,7 +644,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             by the color and the state of the self.invert attribute.
         @return:
         """
-        from PIL import Image, ImageOps, ImageDraw
+        from PIL import Image, ImageOps
 
         try:
             from PIL.Image import Transform
@@ -783,7 +786,17 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         image = self._apply_dither(image)
 
+        self._processing = False
+        return actualized_matrix, image
+
+    def _apply_keyhole(self):
+        from PIL import Image, ImageDraw
+
+        image = self._processed_image
+        if image is None:
+            image = self.image
         if self._keyhole_geometry is not None:
+            actualized_matrix = self._actualized_matrix
             # We can't render something with the usual suspects ie laserrender.render
             # as we do not have access to wxpython on the command line, so we stick
             # to the polygon method of ImageDraw instead
@@ -791,30 +804,25 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             draw = ImageDraw.Draw(maskimage)
             inverted_main_matrix = Matrix(self.matrix).inverse()
             matrix = actualized_matrix * inverted_main_matrix * self.matrix
+            
             x0, y0 = matrix.point_in_matrix_space((0, 0))
-            x1, y1 = matrix.point_in_matrix_space((0, image_height))
             x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
-            x3, y3 = matrix.point_in_matrix_space((image.width, 0))
             # print (x0, y0, x2, y2)
             # Let's simplify things, if we don't have any overlap then the image is white...
             i_wd = x2 - x0
             i_ht = y2 - y0
             for geom in self._keyhole_geometry.as_subpaths():
-                bounds = geom.bbox()
-                # print (bounds)
                 # Let's simplify things, if we don't have any overlap then we don't need to do something
                 # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
                 #     continue
                 geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
                 points = list()
-                for idx, pt in enumerate(geom_points):
+                for pt in geom_points:
                     gx = pt.real
                     gy = pt.imag
                     x = int(maskimage.width * (gx - x0) / i_wd )
                     y = int(maskimage.height * (gy - y0) / i_ht )
                     points.append( (x, y) )
-                    # if idx < 4:
-                    #     print (f"[{idx}] {x:.2f}, {y:.2f} from {gx:.2f}, {gy:.2f}")
 
                 # print (points)
                 draw.polygon( points, fill="white", outline="white")
@@ -823,9 +831,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             background = Image.new("L", image.size, "white")
             background.paste(image, mask=maskimage)
             image = background
-
-        self._processing = False
-        return actualized_matrix, image
+        return image
 
     @staticmethod
     def line(p):
@@ -903,4 +909,3 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         x2, y2 = matrix.point_in_matrix_space((image_width, image_height))
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
         return abs(Path(Polygon((x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0))))
-
