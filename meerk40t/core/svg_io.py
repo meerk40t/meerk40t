@@ -290,6 +290,9 @@ class SVGWriter:
                 "xlink:href",
                 f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
             )
+            ref = c.keyhole_reference
+            if ref is not None:
+                subelement.set("keyhole_reference", ref)
             subelement.set(SVG_ATTR_X, "0")
             subelement.set(SVG_ATTR_Y, "0")
             subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
@@ -1212,6 +1215,12 @@ class SVGProcessor:
                     _dither_type = element.values.get("dither_type")
                 except (ValueError, TypeError):
                     pass
+                _keyhole = None
+                try:
+                    _keyhole = element.values.get("keyhole_reference")
+                except (ValueError, TypeError):
+                    pass
+
                 _red = None
                 try:
                     _red = float(element.values.get("red"))
@@ -1264,6 +1273,7 @@ class SVGProcessor:
                     lock=lock,
                     is_depthmap=_is_depthmap,
                     depth_resolution=_depth_resolution,
+                    keyhole_reference=_keyhole,
                 )
                 self.check_for_label_display(node, element)
                 e_list.append(node)
@@ -1604,6 +1614,23 @@ class SVGProcessor:
                     c.insert_sibling(n)
                 c.remove_node()  # Removing group/file node.
 
+        needs_update = False
+        for c in self.elements.flat():
+            # All nodes including regmarks and elements
+            if c.type == "elem image" and c.keyhole_reference is not None:
+                refnode = self.elements.find_node(c.keyhole_reference)
+                if refnode is None or not hasattr(refnode, "as_geometry"):
+                    # Invalid -> remove
+                    c.keyhole_reference = None
+                else:
+                    try:
+                        self.elements.register_keyhole(refnode, c)
+                        needs_update = True
+                    except ValueError as e:
+                        c.keyhole_reference = None
+
+        if needs_update:
+            self.elements.process_keyhole_updates(None)
 
 class SVGLoader:
     """

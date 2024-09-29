@@ -755,7 +755,8 @@ def init_commands(kernel):
                         "lightness",
                     ):
                         # Images require some recalculation too
-                        e.update(None)
+                        self.do_image_update(e)
+
                 else:
                     channel(
                         _("Element {name} has no property {field}").format(
@@ -1704,7 +1705,8 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError
         for node in images:
-            node.update(None)
+            self.do_image_update(node)
+
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -1813,7 +1815,8 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError
         for node in images:
-            node.update(None)
+            self.do_image_update(node)
+        self.process_keyhole_updates(None)
         self.signal("refresh_scene", "Scene")
         self.signal("modified_by_tool")
         return "elements", data
@@ -2004,6 +2007,7 @@ def init_commands(kernel):
                 node.translated(dx, dy)
                 changes = True
         if changes:
+            self.process_keyhole_updates(None)
             self.signal("refresh_scene", "Scene")
             self.signal("modified_by_tool")
         return "elements", data
@@ -2110,7 +2114,7 @@ def init_commands(kernel):
                         images.append(node)
 
         for node in images:
-            node.update(None)
+            self.do_image_update(node)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -2169,7 +2173,7 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError
         for node in images:
-            node.update(None)
+            self.do_image_update(node)
         self.signal("refresh_scene", "Scene")
         return
 
@@ -2195,7 +2199,7 @@ def init_commands(kernel):
             if hasattr(e, "update"):
                 images.append(e)
         for e in images:
-            e.update(None)
+            self.do_image_update(e)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 

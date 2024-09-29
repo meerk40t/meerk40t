@@ -28,6 +28,72 @@ _ = wx.GetTranslation
 # The default value needs to be true, as the static method will be called before init happened...
 HAS_VECTOR_ENGINE = True
 
+class KeyholePanel(wx.Panel):
+    name = _("Keyhole")
+    priority = 5
+
+    @staticmethod
+    def accepts(node):
+        if not hasattr(node, "as_image"):
+            return False
+
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+        self.button_release = wxButton(self, wx.ID_ANY, _("Remove keyhole"))
+        self.__set_properties()
+        self.__do_layout()
+        self.button_release.Bind(wx.EVT_BUTTON, self.on_release)
+        self.set_widgets(self.node)
+
+    def __do_layout(self):
+        # begin wxGlade: PositionPanel.__do_layout
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_release = StaticBoxSizer(
+            self, wx.ID_ANY, _("Keyhole:"), wx.HORIZONTAL
+        )
+        sizer_release.Add(self.button_release, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_main.Add(sizer_release, 0, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+    def __set_properties(self):
+        self.button_release.SetToolTip(
+            _(
+                "Remove the keyhole and show the complete image"
+            )
+        )
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def _set_widgets_hidden(self):
+        self.Hide()
+
+    def set_widgets(self, node):
+        self.node = node
+        if self.node.keyhole_reference is None:
+            self.button_release.Enable(False)
+        else:
+            self.button_release.Enable(True)
+        self.Show()
+
+    def on_release(self, event):
+        elements = self.context.elements
+        rid = self.node.keyhole_reference
+        elements.deregister_keyhole(rid, self.node)
+        self.set_widgets(self.node)
+        elements.process_keyhole_updates(self.context)
+
 
 class CropPanel(wx.Panel):
     name = _("Crop")
@@ -207,7 +273,8 @@ class CropPanel(wx.Panel):
         self._bounds = [0, 0, w, h]
         self.op["bounds"] = self._bounds
         self.set_slider_limits("lrtb")
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
+
 
     def on_check_enable_crop(self, event=None):
         flag = self.check_enable_crop.GetValue()
@@ -232,7 +299,8 @@ class CropPanel(wx.Panel):
             if self.op is not None:
                 self.op["enable"] = flag
         if self.op is not None and not self._no_update:
-            self.node.update(self.context)
+            self.context.elements.do_image_update(self.node, self.context)
+
         self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
@@ -347,7 +415,7 @@ class CropPanel(wx.Panel):
         if self.op is not None:
             self.op["bounds"][0] = value
             if not self._no_update:
-                self.node.update(self.context)
+                self.context.elements.do_image_update(self.node, self.context)
 
     @property
     def cropright(self):
@@ -372,7 +440,7 @@ class CropPanel(wx.Panel):
         if self.op is not None:
             self.op["bounds"][2] = value
             if not self._no_update:
-                self.node.update(self.context)
+                self.context.elements.do_image_update(self.node, self.context)
 
     @property
     def croptop(self):
@@ -396,7 +464,7 @@ class CropPanel(wx.Panel):
         if self.op is not None:
             self.op["bounds"][1] = value
             if not self._no_update:
-                self.node.update(self.context)
+                self.context.elements.do_image_update(self.node, self.context)
 
     @property
     def cropbottom(self):
@@ -415,8 +483,7 @@ class CropPanel(wx.Panel):
         if self.op is not None:
             self.op["bounds"][3] = value
             if not self._no_update:
-                self.node.update(self.context)
-
+                self.context.elements.do_image_update(self.node, self.context)
 
 class ImageModificationPanel(ScrolledPanel):
     name = _("Modification")
@@ -526,7 +593,7 @@ class ImageModificationPanel(ScrolledPanel):
 
     def update_node(self):
         self.context.elements.emphasized()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
         self.context.signal("element_property_update", self.node)
         self.context.signal("selected", self.node)
 
@@ -1091,6 +1158,12 @@ class ImagePropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.subpanels.append(self.panel_lock)
+
+        self.panel_keyhole = KeyholePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.subpanels.append(self.panel_keyhole)
+
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -1372,7 +1445,11 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 
-        sizer_main.Add(self.panel_lock, 0, wx.EXPAND, 0)
+        hor_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        hor_sizer.Add(self.panel_lock, 1, wx.EXPAND, 0)
+        hor_sizer.Add(self.panel_keyhole, 1, wx.EXPAND, 0)
+
+        sizer_main.Add(hor_sizer, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -1382,7 +1459,7 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def node_update(self):
         self.node.set_dirty_bounds()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
         self.context.elements.emphasized()
         self.context.signal("element_property_update", self.node)
 

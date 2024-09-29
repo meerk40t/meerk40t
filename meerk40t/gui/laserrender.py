@@ -1046,43 +1046,43 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        image, bounds = node.as_image()
         gc.PushState()
 
-        try:
-            image = node.active_image
-            matrix = node.active_matrix
-            bounds = 0, 0, image.width, image.height
-            if matrix is not None and not matrix.is_identity():
-                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        except AttributeError:
-            pass
-
         cache = None
+        bounds = node.bbox()
         try:
             cache = node._cache
         except AttributeError:
             pass
         if cache is None:
+            # We need to establish the cache
+            try:
+                image = node.active_image
+                matrix = node.active_matrix
+                bounds = 0, 0, image.width, image.height
+                if matrix is not None and not matrix.is_identity():
+                    gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+            except AttributeError:
+                pass
+
             try:
                 max_allowed = node.max_allowed
             except AttributeError:
                 max_allowed = 2048
-            node._cache_width, node._cache_height = image.size
-            node._cache = self.make_thumbnail(
-                image,
-                maximum=max_allowed,
-                alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-            )
-        node._cache_width, node._cache_height = image.size
-        try:
-            cache = self.make_thumbnail(
-                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
-            )
-            min_x, min_y, max_x, max_y = bounds
-            gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
-        except MemoryError:
-            pass
+            try:
+                cache = self.make_thumbnail(
+                    image,
+                    maximum=max_allowed,
+                    alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                )
+                node._cache_width, node._cache_height = image.size
+                node._cache = cache
+            except MemoryError:
+                pass
+
+        min_x, min_y, max_x, max_y = bounds
+        gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
+
         gc.PopState()
         if hasattr(node, "message"):
             txt = node.message

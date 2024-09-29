@@ -1391,6 +1391,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
+        self.context.elements.process_keyhole_updates(self.context)
         self.scene.signal("modified_by_tool")
 
     @signal_listener("tabs_updated")
