@@ -1,10 +1,10 @@
 import os
-
+import sys
 import polib
 
 
 # Simple tool to recursively translate all .po-files into their .mo-equivalents under ./locale/LC_MESSAGES
-def create_mo_files():
+def create_mo_files(force:bool):
     data_files = []
     localedir = "./locale"
     po_dirs = [
@@ -19,13 +19,19 @@ def create_mo_files():
             mo_file = filename + ".mo"
             doit = True
             if os.path.exists(d + mo_file):
+                res = polib.detect_encoding(d + mo_file)
                 po_date = os.path.getmtime(d + po_file)
                 mo_date = os.path.getmtime(d + mo_file)
                 if mo_date > po_date:
-                    print("mo-File for " + d + po_file + " is newer, so skip it...")
+                    print(f"mo-File for {d}{po_file} is newer (enoded: {res})...")
                     doit = False
-            if doit:
-                print("Translate " + d + po_file)
+            if doit or force:
+                if doit:
+                    action = "Translate"
+                else:
+                    action = "Forced translate"
+                res = polib.detect_encoding(d + po_file)
+                print(f"{action} {d}{po_file} (encoded={res})")
                 try:
                     po = polib.pofile(d + po_file)
                     po.save_as_mofile(d + mo_file)
@@ -45,4 +51,13 @@ def create_mo_files():
     return data_files
 
 
-create_mo_files()
+def main():
+    force = False
+    args = sys.argv[1:]
+    if len(args) > 0 and args[0].lower() == "force":
+        force = True
+    print("Usage: python ./translate.py>")
+    print("Will compile all po-files")
+    create_mo_files(force)
+
+main()
