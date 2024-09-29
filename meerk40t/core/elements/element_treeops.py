@@ -3119,6 +3119,7 @@ def init_tree(kernel):
         help="Add akeyhole effect between the selected elements",
     )
     def add_a_keyhole(singlenode, **kwargs):
+        self.validate_ids()
         self("keyhole\n")
 
     @tree_conditional(
