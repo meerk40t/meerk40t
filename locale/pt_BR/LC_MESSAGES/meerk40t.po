@@ -2027,7 +2027,6 @@ msgid ""
 "then)"
 msgstr ""
 "Por favor, forneça pelo menos um valor adicional (que atuará como raio "
-
 "então)"
 
 #: meerk40t/core/elements.py:3794
@@ -16045,6 +16044,7 @@ msgstr "Con qué frecuencia debería MeerK40t buscar nuevas versiones"
 
 msgid "Button repeat-interval"
 msgstr "Intervalo de repetición del botón"
+
 msgid ""
 "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
 "the movement action will be repeated. This value establishes\n"

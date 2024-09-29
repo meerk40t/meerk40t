@@ -6304,7 +6304,6 @@ msgstr "缩放到床\tCtrl-B"
 msgid "GUI-Elements"
 msgstr "界面元素"
 
-msgid ""
 #: meerk40t/gui/wxmmain.py:2745
 msgid "Show/Hide UI-Panels\tCtrl-U"
 msgstr "显示/隐藏界面面板\tCtrl-U"
