@@ -4092,6 +4092,8 @@ class Elemental(Service):
             for node in nodelist:
                 self.deregister_keyhole(rid, node, False)
             # That should lead to a full removal
+        # We need a redraw/recalculation!
+        self.signal("modified_by_tool")
 
     def deregister_keyhole(self, rid, node, reset_on_empty=True):
         if hasattr(node, "keyhole_reference"):
