@@ -2198,7 +2198,8 @@ class ShadowTree:
             # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
             # cause them to appear to drop invalid nodes.
             return
-
+        # print (f"tree claims: {self.wxtree.FindFocus().GetId()},  parent claims: {self.wxtree.GetParent().FindFocus().GetId()}, toplevel claims: {self.wxtree.GetTopLevelParent().FindFocus().GetId()}, tree-id={self.wxtree.GetId()}")
+        its_me = bool(self.wxtree.FindFocus() is self.wxtree)
         # Just out of curiosity, is there no image set? Then just do it again.
         item = event.GetItem()
         if item:
@@ -2232,6 +2233,12 @@ class ShadowTree:
         self.elements.set_selected(selected)
         # self.refresh_tree(source="on_item_selection")
         event.Allow()
+
+        # We seem to lose focus, so lets reclaim it
+        if its_me:
+            def restore_focus():
+                self.wxtree.SetFocus()
+            wx.CallAfter(restore_focus)
 
     def select_in_tree_by_emphasis(self, origin, *args):
         """

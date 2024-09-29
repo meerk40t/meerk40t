@@ -219,7 +219,7 @@ def init_tree(kernel):
             type="group",
             keep_children=True,
             label=_("Content of {filenode}").format(filenode=node.name),
-        )        
+        )
         self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))
@@ -547,7 +547,7 @@ def init_tree(kernel):
             if e.type != "elem image":
                 continue
             e.operations = []
-            e.update(None)
+            self.do_image_update(e)
             if firstnode is None:
                 firstnode = e
         self.signal("refresh_scene", "Scene")
@@ -566,7 +566,7 @@ def init_tree(kernel):
             if e.type != "elem image":
                 continue
             e.operations = raster_script
-            e.update(None)
+            self.do_image_update(e)
             if firstnode is None:
                 firstnode = e
         self.signal("refresh_scene", "Scene")
@@ -684,7 +684,7 @@ def init_tree(kernel):
         for n in list(self.elems(emphasized=True)):
             if n.type == "elem image":
                 n.dpi = dpi
-                n.update(None)
+                self.do_image_update(n)
                 data.append(n)
         if len(data) > 0:
             self.signal("refresh_scene", "Scene")
@@ -3095,6 +3095,48 @@ def init_tree(kernel):
                 setattr(newnode, item[0], item[1])
             newnode.altered()
 
+    def valid_keyhole_pair():
+        number_of_images:int = 0
+        number_of_masks:int = 0
+        for node in self.elems(emphasized=True):
+            if node.type == "elem image":
+                number_of_images += 1
+            elif hasattr(node, "as_geometry"):
+                number_of_masks += 1
+
+            if number_of_masks > 1:
+                # No need to go through all elements any longer
+                return False
+
+        return bool(number_of_images > 0 and number_of_masks == 1)
+
+    @tree_conditional(
+        lambda node: valid_keyhole_pair()
+    )
+    @tree_operation(
+        _("Add a keyhole"),
+        node_type=elem_nodes,
+        help="Add akeyhole effect between the selected elements",
+    )
+    def add_a_keyhole(singlenode, **kwargs):
+        self.validate_ids()
+        self("keyhole\n")
+
+    @tree_conditional(
+        lambda node: hasattr(node, "as_geometry") and self.has_keyhole_subscribers(node)
+    )
+    @tree_operation(
+        _("Remove keyhole"),
+        node_type=elem_nodes,
+        help="Remove all associated keyholes",
+    )
+    def remove_all_keyholes(singlenode, **kwargs):
+        for node in list(self.elems(emphasized=True)):
+            if not hasattr(node, "as_geometry"):
+                continue
+            self.remove_keyhole(node)
+        self.signal("modified_by_tool")
+
     @tree_submenu(_("Flip"))
     @tree_separator_before()
     @tree_conditional(lambda node: not is_regmark(node))
@@ -3412,6 +3454,15 @@ def init_tree(kernel):
     )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
+
+    @tree_separator_before()
+    @tree_submenu(_("Image"))
+    @tree_conditional(lambda node: node.keyhole_reference is not None)
+    @tree_operation(
+        _("Remove keyhole"), node_type="elem image", help=""
+    )
+    def image_break_keyhole(node, **kwargs):
+        self("remove_keyhole\n")
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()

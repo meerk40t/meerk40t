@@ -290,6 +290,9 @@ class SVGWriter:
                 "xlink:href",
                 f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
             )
+            ref = c.keyhole_reference
+            if ref is not None:
+                subelement.set("keyhole_reference", ref)
             subelement.set(SVG_ATTR_X, "0")
             subelement.set(SVG_ATTR_Y, "0")
             subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
@@ -665,7 +668,7 @@ class SVGProcessor:
     Special care is taken to load MK specific objects like `note` and `operations`
     """
 
-    def __init__(self, elements, load_operations):
+    def __init__(self, elements, load_operations, reuse_operations=True):
         self.elements = elements
 
         self.operation_list = list()
@@ -674,9 +677,10 @@ class SVGProcessor:
 
         self.reverse = False
         self.requires_classification = True
-        self.operations_replaced = False
+        self.operations_generated = False
         self.pathname = None
         self.load_operations = load_operations
+        self.reuse_operations = reuse_operations
         self.mk_params = list(
             self.elements.kernel.lookup_all("registered_mk_svg_parameters")
         )
@@ -721,8 +725,9 @@ class SVGProcessor:
 
         self.parse(svg, file_node, self.element_list, branch="elements")
 
-        if self.load_operations and self.operations_replaced:
+        if self.load_operations and self.operations_generated:
             # print ("Will replace all operations...")
+            self.requires_classification = False
             for child in list(self.elements.op_branch.children):
                 if child in retain_op_list:
                     continue
@@ -739,8 +744,6 @@ class SVGProcessor:
                     continue
                 if refs is None:
                     continue
-
-                self.requires_classification = False
 
                 for ref in refs.split(" "):
                     for e in self.element_list:
@@ -1212,6 +1215,12 @@ class SVGProcessor:
                     _dither_type = element.values.get("dither_type")
                 except (ValueError, TypeError):
                     pass
+                _keyhole = None
+                try:
+                    _keyhole = element.values.get("keyhole_reference")
+                except (ValueError, TypeError):
+                    pass
+
                 _red = None
                 try:
                     _red = float(element.values.get("red"))
@@ -1264,6 +1273,7 @@ class SVGProcessor:
                     lock=lock,
                     is_depthmap=_is_depthmap,
                     depth_resolution=_depth_resolution,
+                    keyhole_reference=_keyhole,
                 )
                 self.check_for_label_display(node, element)
                 e_list.append(node)
@@ -1350,8 +1360,8 @@ class SVGProcessor:
             if not self.load_operations:
                 # We don't do that.
                 return
-            if not self.operations_replaced:
-                self.operations_replaced = True
+
+            self.operations_generated = True
 
             try:
                 if node_type == "op hatch":
@@ -1494,7 +1504,7 @@ class SVGProcessor:
                 if not self.load_operations:
                     # We don't do that.
                     return
-                self.operations_replaced = True
+                self.operations_generated = True
                 self.parse(
                     element,
                     self.elements.op_branch,
@@ -1509,10 +1519,61 @@ class SVGProcessor:
             for attr in ("type", "id", "label"):
                 if attr in e_dict:
                     del e_dict[attr]
-            context_node = context_node.add(
-                type=e_type, id=ident, label=_label, **e_dict
-            )
-            self.check_for_label_display(context_node, element)
+
+            #
+            already = False
+            if self.reuse_operations:
+                # No need to create another operation, if we do
+                # have an identical operation in place
+                if e_type.startswith("op "):
+                    # It needs to be non-empty to be used!
+                    for testop in self.elements.ops():
+                        if len(testop.children) == 0:
+                            continue
+                        if e_type != testop.type:
+                            continue
+                        differs = False
+                        for check_attr, check_default in (
+                            ("id", None),
+                            ("power", "1000"),
+                            ("speed", None),
+                            ("passes", "0"),
+                            ("color", None),
+                        ):
+                            if not hasattr(testop, check_attr):
+                                if check_attr in e_dict:
+                                    differs = True
+                                    break
+                                continue
+                            test_val = getattr(testop, check_attr, check_default)
+                            if test_val is None:
+                                test_val = ""
+                            else:
+                                test_val = str(test_val)
+                            if check_attr == "id":
+                                eop_val = ident
+                            else:
+                                if check_attr not in e_dict:
+                                    eop_val = check_default
+                                else:
+                                    eop_val = e_dict[check_attr]
+                            if eop_val is None:
+                                eop_val = ""
+                            if test_val != eop_val:
+                                differs = True
+                                # print (f"{testop.type}.{check_attr}: {eop_val} != {test_val}")
+                                break
+                        if differs:
+                            continue
+                        context_node = testop
+                        already = True
+                        break
+
+            if not already:
+                context_node = context_node.add(
+                    type=e_type, id=ident, label=_label, **e_dict
+                )
+                self.check_for_label_display(context_node, element)
             context_node._ref_load = element.values.get("references")
             e_list.append(context_node)
             if hasattr(context_node, "validate"):
@@ -1553,6 +1614,23 @@ class SVGProcessor:
                     c.insert_sibling(n)
                 c.remove_node()  # Removing group/file node.
 
+        needs_update = False
+        for c in self.elements.flat():
+            # All nodes including regmarks and elements
+            if c.type == "elem image" and c.keyhole_reference is not None:
+                refnode = self.elements.find_node(c.keyhole_reference)
+                if refnode is None or not hasattr(refnode, "as_geometry"):
+                    # Invalid -> remove
+                    c.keyhole_reference = None
+                else:
+                    try:
+                        self.elements.register_keyhole(refnode, c)
+                        needs_update = True
+                    except ValueError as e:
+                        c.keyhole_reference = None
+
+        if needs_update:
+            self.elements.process_keyhole_updates(None)
 
 class SVGLoader:
     """
@@ -1597,8 +1675,9 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
+        reuse = elements_service.reuse_operations_on_load
         elements_service._loading_cleared = True
-        svg_processor = SVGProcessor(elements_service, True)
+        svg_processor = SVGProcessor(elements_service, load_operations=True, reuse_operations=reuse)
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
         return True
@@ -1647,7 +1726,7 @@ class SVGLoaderPlain:
         except ParseError as e:
             raise BadFileError(str(e)) from e
         elements_service._loading_cleared = True
-        svg_processor = SVGProcessor(elements_service, False)
+        svg_processor = SVGProcessor(elements_service, load_operations=False)
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
         return True

@@ -1886,7 +1886,12 @@ class Geomstr:
 
     def as_points(self):
         at_start = True
-        for start, c1, info, c2, end in self.segments[: self.index]:
+        for seg in self.segments[: self.index]:
+            start = seg[0]
+            end = seg[4]
+            segtype = self._segtype(seg)
+            if segtype in NON_GEOMETRY_TYPES:
+                continue
             if at_start:
                 yield start
             yield end

@@ -188,7 +188,7 @@ class FormatPainter:
                     nodes_classify.append(node)
             if len(nodes_changed) > 0:
                 for node in nodes_images:
-                    node.update(None)
+                    self.context.elements.do_image_update(node, self.context)
                 if len(nodes_classify) > 0 and self.context.elements.classify_new:
                     self.context.elements.classify(nodes_classify)
                 self.context.signal("element_property_update", nodes_changed)
@@ -422,7 +422,7 @@ class Warnings:
                     flag = True
                     count += 1
             return flag, count
-        
+
         self._concerns.clear()
         max_speed = getattr(self.context.device, "max_vector_speed", None)
         if has_ambitious_operations(max_speed, ("op cut", "op engrave")):

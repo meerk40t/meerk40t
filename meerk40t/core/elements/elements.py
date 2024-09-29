@@ -352,6 +352,11 @@ def plugin(kernel, lifecycle=None):
                 "page": "Scene",
                 "section": "General",
             },
+        ]
+        for c in choices:
+            c["help"] = "classification"
+        kernel.register_choices("preferences", choices)
+        choices = [
             {
                 "attr": "op_show_default",
                 "object": elements,
@@ -363,8 +368,8 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n"
                 + _("Unticked: Show their current value."),
-                "page": "Scene",
-                "section": "Operation",
+                "page": "Operations",
+                "section": "Display",
             },
             {
                 "attr": "allow_reg_to_op_dragging",
@@ -379,12 +384,48 @@ def plugin(kernel, lifecycle=None):
                 + _(
                     "Unticked: A drag operation of regmark nodes to an operation will be ignored."
                 ),
-                "page": "Scene",
-                "section": "Operation",
+                "page": "Operations",
+                "section": "Behaviour",
+            },
+            {
+                "attr": "reuse_operations_on_load",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Reuse existing"),
+                "tip": _(
+                    "Ticked: When loading a file we will reuse an existing operation with the same principal properties."
+                )
+                + "\n"
+                + _(
+                    "Unticked: We will add another operation aongside existing ones (always the case if properties differ)."
+                ),
+                "page": "Operations",
+                "section": "Loading",
+            },
+            {
+                "attr": "default_ops_display_mode",
+                "object": elements,
+                "default": 0,
+                "type": int,
+                "label": _("Statusbar display"),
+                "style": "option",
+                "display": (
+                    _("As in operations tree"),
+                    _("Group types together (CC EE RR II)"),
+                    _("Matching (CERI CERI)"),
+                ),
+                "choices": (0, 1, 2),
+                "tip": _(
+                    "Choose if and how you want to group together / display the default operations at the bottom of the screen"
+                ),
+                "page": "Operations",
+                "section": "_95_Default Operations",
+                "signals": "default_operations",
             },
         ]
         for c in choices:
-            c["help"] = "classification"
+            c["help"] = "operations"
         kernel.register_choices("preferences", choices)
         choices = [
             {
@@ -421,29 +462,7 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
-        choices = [
-            {
-                "attr": "default_ops_display_mode",
-                "object": elements,
-                "default": 0,
-                "type": int,
-                "label": _("Statusbar display"),
-                "style": "option",
-                "display": (
-                    _("As in operations tree"),
-                    _("Group types together (CC EE RR II)"),
-                    _("Matching (CERI CERI)"),
-                ),
-                "choices": (0, 1, 2),
-                "tip": _(
-                    "Choose if and how you want to group together / display the default operations at the bottom of the screen"
-                ),
-                "page": "Classification",
-                "section": "_95_Default Operations",
-                "signals": "default_operations",
-            },
-        ]
-        kernel.register_choices("preferences", choices)
+
         choices = [
             {
                 "attr": "auto_startup",
@@ -548,6 +567,10 @@ class Elemental(Service):
         # Will be filled with a list of newly added nodes after a load operation
         self.added_elements = list()
 
+        # keyhole-logic
+        self.registered_keyholes = dict()
+        self.remembered_keyhole_nodes = list()
+
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
@@ -568,6 +591,7 @@ class Elemental(Service):
         # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
+        self.setting(bool, "reuse_operations_on_load", True)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(int, "auto_startup", 1)
@@ -1713,19 +1737,21 @@ class Elemental(Service):
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
 
-    def altered(self, *args):
+    def altered(self, node=None, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element altered")
         self.prepare_undo("Element altered")
+        self.test_for_keyholes(node)
 
-    def modified(self, *args):
+    def modified(self, node=None, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element modified")
         self.prepare_undo("Element modified")
+        self.test_for_keyholes(node)
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1736,6 +1762,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element shifted")
         self.prepare_undo("Element shifted")
+        self.test_for_keyholes(node)
 
     def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
         # It's safer to just recompute the selection area
@@ -1746,6 +1773,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element scaled")
         self.prepare_undo("Element scaled")
+        self.test_for_keyholes(node)
 
     def node_attached(self, node, **kwargs):
         # Hint for translate check: _("Element added")
@@ -1754,6 +1782,7 @@ class Elemental(Service):
     def node_detached(self, node, **kwargs):
         # Hint for translate check: _("Element deleted")
         self.prepare_undo("Element deleted")
+        self.remove_keyhole(node)
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -2100,6 +2129,8 @@ class Elemental(Service):
     def clear_elements(self, fast=False):
         elements = self.elem_branch
         elements.remove_all_children(fast=fast)
+        self.remembered_keyhole_nodes.clear()
+        self.registered_keyholes.clear()
 
     def clear_regmarks(self, fast=False):
         elements = self.reg_branch
@@ -4040,6 +4071,137 @@ class Elemental(Service):
                 filetypes.append(f"{description} ({extension})")
                 filetypes.append(f"*.{extension}")
         return "|".join(filetypes)
+
+    def find_node(self, identifier):
+        for node in self.flat():
+            if node.id == identifier:
+                return node
+        return None
+
+    def has_keyhole_subscribers(self, node):
+        if node is None or node.id is None:
+            return False
+        rid = node.id
+        if rid in self.registered_keyholes:
+            return True
+        return False
+
+    def test_for_keyholes(self, node):
+        if node is None or node.id is None:
+            return
+        if node.type == "elem image":
+            if node.keyhole_reference is not None:
+                self.remember_keyhole_nodes(node)
+            return
+        if not hasattr(node, "as_geometry"):
+            return
+        rid = node.id
+        geom = node.as_geometry()
+        if rid in self.registered_keyholes:
+            nodelist = list(self.registered_keyholes[rid])
+            # print (f"Update for node {node.type} [{rid}]: {len(nodelist)} images")
+            self.remember_keyhole_nodes(nodelist)
+            for node in nodelist:
+                node.set_keyhole(rid, geom=geom)
+
+    def remove_keyhole(self, node):
+        if node is None or node.id is None:
+            return
+        rid = node.id
+        if rid in self.registered_keyholes:
+            nodelist = list(self.registered_keyholes[rid])
+            for node in nodelist:
+                self.deregister_keyhole(rid, node, False)
+            # That should lead to a full removal
+        # We need a redraw/recalculation!
+        self.signal("modified_by_tool")
+
+    def deregister_keyhole(self, rid, node, reset_on_empty=True):
+        if hasattr(node, "keyhole_reference"):
+            node.keyhole_reference = None
+            self.remember_keyhole_nodes(node)
+        if rid in self.registered_keyholes:
+            nodelist = list(self.registered_keyholes[rid])
+            if node in nodelist:
+                nodelist.remove(node)
+            if len(nodelist):
+                self.registered_keyholes[rid] = nodelist
+            else:
+                # No longer needed
+                del self.registered_keyholes[rid]
+                if reset_on_empty:
+                    # Lets make it visible again
+                    refnode = self.find_node(rid)
+                    if refnode is not None:
+                        if hasattr(refnode, "stroke") and refnode.stroke is None:
+                            refnode.stroke = Color("blue")
+                            if self.classify_on_color:
+                                self.classify([refnode])
+
+
+    def register_keyhole(self, refnode, node):
+        rid = refnode.id
+        if rid is None:
+            raise ValueError("You can't register a keyhole element that does not have an ID")
+        if not hasattr(refnode, "as_geometry"):
+            raise ValueError("You can't register a keyhole that has not a geometry")
+        if node.type != "elem image":
+            raise ValueError("You can't link a keyhole to a non-image")
+
+        if rid in self.registered_keyholes:
+            nodelist = list(self.registered_keyholes[rid])
+            if not node in nodelist:
+                nodelist.append(node)
+        else:
+            nodelist = (node, )
+            if hasattr(refnode, "stroke"):
+                refnode.stroke = None
+            if hasattr(refnode, "fill"):
+                refnode.fill = None
+            # Remove it from all classifications
+            for ref in list(refnode._references):
+                ref.remove_node()
+
+        self.registered_keyholes[rid] = nodelist
+        node.set_keyhole(refnode.id, geom=refnode.as_geometry())
+        self.remember_keyhole_nodes(node)
+
+    def remember_keyhole_nodes(self, to_add):
+        if isinstance(to_add, (list, tuple)):
+            for node in to_add:
+                if node not in self.remembered_keyhole_nodes:
+                    self.remembered_keyhole_nodes.append(node)
+        else:
+            if to_add not in self.remembered_keyhole_nodes:
+                self.remembered_keyhole_nodes.append(to_add)
+
+    def forget_keyhole_nodes(self, to_add):
+        if isinstance(to_add, (list, tuple)):
+            for node in to_add:
+                try:
+                    self.remembered_keyhole_nodes.remove(node)
+                except ValueError:
+                    # Not in list
+                    pass
+        else:
+            try:
+                self.remembered_keyhole_nodes.remove(to_add)
+            except ValueError:
+                # Not in list
+                pass
+
+    def process_keyhole_updates(self, context=None):
+        # print (f"Need to deal with {len(self.remembered_keyhole_nodes)} images")
+        for node in self.remembered_keyhole_nodes:
+            node.update(context)
+        self.remembered_keyhole_nodes.clear()
+
+    def do_image_update(self, node, context=None, delayed=False):
+        if delayed:
+            self.remember_keyhole_nodes(node)
+        else:
+            node.update(context)
+            self.forget_keyhole_nodes(node)
 
     def simplify_node(self, node):
         """

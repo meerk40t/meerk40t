@@ -492,7 +492,7 @@ class RotationWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context, delayed=True)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
@@ -779,7 +779,7 @@ class CornerWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context)
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
@@ -1021,7 +1021,7 @@ class SideWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context)
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
@@ -1241,7 +1241,7 @@ class SkewWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context, delayed=True)
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:

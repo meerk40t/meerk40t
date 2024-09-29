@@ -427,7 +427,6 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
                 self.combo_svg_ppi.SetSelection(3)
         elements.svg_ppi = svg_ppi
 
-
 # end of class PreferencesPixelsPerInchPanel
 
 
@@ -436,7 +435,7 @@ class PreferencesMain(wx.Panel):
         # begin wxGlade: PreferencesMain.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = None
+        self.context = context
         self.SetHelpText("preferences")
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -446,15 +445,12 @@ class PreferencesMain(wx.Panel):
         self.panel_language = PreferencesLanguagePanel(self, wx.ID_ANY, context=context)
         sizer_main.Add(self.panel_language, 0, wx.EXPAND, 0)
 
-        self.panel_ppi = PreferencesPixelsPerInchPanel(self, wx.ID_ANY, context=context)
-        sizer_main.Add(self.panel_ppi, 0, wx.EXPAND, 0)
-
         self.panel_pref1 = ChoicePropertyPanel(
             self,
             id=wx.ID_ANY,
             context=context,
             choices="preferences",
-            constraint=("-Input/Output", "-Classification", "-Gui", "-Scene"),
+            constraint=("-Input/Output", "-Classification", "-Gui", "-Scene", "-Operations"),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -467,12 +463,42 @@ class PreferencesMain(wx.Panel):
         # end wxGlade
 
     def delegates(self):
-        yield self.panel_ppi
         yield self.panel_language
         yield self.panel_units
         yield self.panel_pref1
         yield self.panel_management
 
+
+class PreferencesInputOutput(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PreferencesMain.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.SetHelpText("preferences")
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        self.panel_ppi = PreferencesPixelsPerInchPanel(self, wx.ID_ANY, context=context)
+        sizer_main.Add(self.panel_ppi, 0, wx.EXPAND, 0)
+
+        self.panel_input_output = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint="Input/Output",
+        )
+        self.panel_input_output.SetupScrolling()
+        sizer_main.Add(self.panel_input_output, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+
+        self.Layout()
+        # end wxGlade
+
+    def delegates(self):
+        yield self.panel_ppi
+        yield self.panel_input_output
 
 # end of class PreferencesMain
 
@@ -524,14 +550,8 @@ class Preferences(MWindow):
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
 
-        self.panel_input_output = ChoicePropertyPanel(
-            self,
-            id=wx.ID_ANY,
-            context=self.context,
-            choices="preferences",
-            constraint="Input/Output",
-        )
-        self.panel_input_output.SetupScrolling()
+        self.panel_input_output = PreferencesInputOutput(self, wx.ID_ANY, context=self.context)
+
         inject_choices = [
             {
                 "attr": "preset_classify_automatic",
@@ -598,6 +618,15 @@ class Preferences(MWindow):
             injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
+
+        self.panel_ops = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint="Operations",
+        )
+        self.panel_ops.SetupScrolling()
 
         self.panel_gui = ChoicePropertyPanel(
             self,
@@ -688,6 +717,7 @@ class Preferences(MWindow):
         self.notebook_main.AddPage(self.panel_main, _("General"))
         self.notebook_main.AddPage(self.panel_input_output, _("Input/Output"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
+        self.notebook_main.AddPage(self.panel_ops, _("Operations"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
@@ -697,12 +727,13 @@ class Preferences(MWindow):
             self.panel_main,
             self.panel_input_output,
             self.panel_classification,
+            self.panel_ops,
             self.panel_gui,
             self.panel_scene,
             self.panel_color,
             self.panel_ribbon,
         ]
-        self.panel_ids = ["main", "classification", "gui", "scene", "color", "ribbon"]
+        self.panel_ids = ["main", "classification", "ops", "gui", "scene", "color", "ribbon"]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(
