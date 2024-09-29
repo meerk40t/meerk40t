@@ -19829,10 +19829,6 @@ msgstr "Porta da utilizzare"
 msgid "Value to set (0/1)"
 msgstr "Valore da impostare (0/1)"
 
-#: meerk40t/gui/about.py:1749
-msgid ""
-msgstr ""
-
 #: meerk40t/gui/plugin.py:204
 msgid "ToolTip delay"
 msgstr "Difettoso, si prega di segnalarlo"
@@ -19956,5 +19952,3 @@ msgstr "avvia un web-server_server sulla porta 2080 (http)"
 #: meerk40t/gui/about.py:1749
 msgid "Faulty, please report"
 msgstr "Difettoso, si prega di segnalarlo"
-
-
