@@ -3,20 +3,6 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 # Updates in 2022 by JP
 #
-msgid ""
-msgstr ""
-"Project-Id-Version: MEERK40T 0.7\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 22-09-25 09:25UTC\n"
-"PO-Revision-Date: 22-09-25 09:25UTC\n"
-"Last-Translator: jpirnay\n"
-"Language: de\n"
-"Language-Team: de <LL@li.org, JP>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Poboy 0.0.1\n"
 
 #: meerk40t/grbl/plugin.py:30 meerk40t/kernelserver.py:13
 #: meerk40t/lihuiyu/device.py:656
