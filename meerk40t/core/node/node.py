@@ -1350,13 +1350,7 @@ class Node:
         return self.__str__()
 
     def set_id(self, id=None):
+        # This will be overloaded anyway
         if id is None:
-            pattern = "m"
-            parts = self.type.split()
-            if len(parts) > 1:
-                pattern += parts[0][0:2].lower() + parts[1][0:3].lower()
-            else:
-                pattern += parts[0][0:3].lower()
-            timestamp = time.strftime("%M%S", time.localtime(time.time()))
-            id = pattern + ":" + timestamp
+            id = "overload_failed"
         self.id = id

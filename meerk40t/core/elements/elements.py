@@ -49,6 +49,7 @@ def plugin(kernel, lifecycle=None):
             tree_commands,
             undo_redo,
             wordlist,
+            identifier,
         )
 
         return [
@@ -70,6 +71,7 @@ def plugin(kernel, lifecycle=None):
             placements.plugin,
             offset_mk.plugin,
             offset_clpr.plugin,
+            identifier.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
@@ -633,6 +635,9 @@ class Elemental(Service):
 
         self.default_operations = []
         self.init_default_operations_nodes()
+
+        self.saved_identifiers = list()
+        self.setup_identifiers()
 
     def set_start_time(self, key):
         if key in self._timing_stack:
@@ -1777,11 +1782,19 @@ class Elemental(Service):
 
     def node_attached(self, node, **kwargs):
         # Hint for translate check: _("Element added")
+        if node.id is not None:
+            if node.id not in self.saved_identifiers:
+                self.saved_identifiers.append(node.id)
+            # else:
+            #     # Should not be the case
+            #     pass
         self.prepare_undo("Element added")
 
     def node_detached(self, node, **kwargs):
         # Hint for translate check: _("Element deleted")
         self.prepare_undo("Element deleted")
+        if node.id is not None and node.id in self.saved_identifiers:
+            self.saved_identifiers.remove(node.id)
         self.remove_keyhole(node)
 
     def listen_tree(self, listener):
@@ -4208,6 +4221,87 @@ class Elemental(Service):
         else:
             node.update(context)
             self.forget_keyhole_nodes(node)
+
+    # ------------------------ Id Management
+
+    def setup_identifiers(self):
+        def better_set_id(node, id=None):
+            # print (f"Want to set {node.type} to {id}, current value: {node.id}")
+            # The check for duplicate entries is difficult as we have a couple of 
+            # nodes in the background that are not part of the tree!
+
+            # if id is not None:
+            #     othernode = self.find_node(id)
+            #     if othernode is not None and othernode is not node:
+            #         print (f"That id is already taken by someone else")
+            #         id = None
+
+            if id is None:
+                id = self.create_new_id()
+                # print (f"Will assign {id}")
+                self.saved_identifiers.append(id)
+            node.id = id
+        
+        Node.set_id = better_set_id
+    
+    def set_node_id(self, node, id, default=None):
+        if id is not None:
+            othernode = self.find_node(id)
+            if othernode is not None and othernode is not node:
+                # print (f"That id is already taken by someone else")
+                id = None
+
+        if id is None:
+            id = self.create_new_id(default)
+            # print (f"Will assign {id}")
+            self.saved_identifiers.append(id)
+        node.id = id
+
+
+    def load_identifiers(self):
+        self.saved_identifiers.clear()
+        issues_duplicate = list()
+        issues_empty = list()
+        acceptable_empty = ("reference", )
+        for node in self.flat():
+            if node.type in root_nodes:
+                continue
+            if node.id is None:
+                if node.type not in acceptable_empty:
+                    issues_empty.append(node)
+            else:
+                if node.id in self.saved_identifiers:
+                    issues_duplicate.append(node)
+                else:
+                    self.saved_identifiers.append(node.id)
+        return bool(len(issues_duplicate) or len(issues_empty)), issues_duplicate, issues_empty
+    
+    def resolve_empty_ids(self, nodelist):
+        for node in nodelist:
+            if node.id is not None:
+                # Shouldn't be the case, but hey better safe than sorry
+                continue
+            newid = self.create_new_id()
+            node.id = newid
+            self.saved_identifiers.append(newid)
+
+    def resolve_duplicate_ids(self, nodelist):
+        for node in nodelist:
+            newid = self.create_new_id()
+            node.id = newid
+            self.saved_identifiers.append(newid)
+
+    def create_new_id(self, default=None):
+        if default is None:
+            pattern = "meerk40t"
+        else:
+            pattern = default
+        index = 1
+        while f"{pattern}:{index}" in self.saved_identifiers:
+            index += 1
+        return f"{pattern}:{index}"
+    
+    # --- Miscellania
 
     def simplify_node(self, node):
         """
