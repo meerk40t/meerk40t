@@ -815,6 +815,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 # Let's simplify things, if we don't have any overlap then the image is white...
                 i_wd = x2 - x0
                 i_ht = y2 - y0
+                gidx = 0
                 for geom in self._keyhole_geometry.as_subpaths():
                     # Let's simplify things, if we don't have any overlap then we don't need to do something
                     # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
@@ -822,6 +823,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
                     points = list()
                     for pt in geom_points:
+                        if pt is None:
+                            continue
                         gx = pt.real
                         gy = pt.imag
                         x = int(maskimage.width * (gx - x0) / i_wd )
