@@ -239,6 +239,8 @@ class ImageOpNode(Node, Parameters):
                 def process_images():
                     if hasattr(image_node, "process_image"):
                         if image_node._keyhole_geometry is not None:
+                            image_node._keyhole_image = None
+                            image_node._cache = None
                             image_node._keyhole_geometry.transform(matrix)
                         image_node._context = context
                         image_node.process_image()
