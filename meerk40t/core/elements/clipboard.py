@@ -91,7 +91,7 @@ def init_commands(kernel):
                     channel(_("Error: clipboard empty node"))
                     continue
                 if copy_node.id is not None:
-                    copy_node.id = f"{copy_node.id}-1"
+                    self.set_node_id(copy_node, copy_node.id, default=copy_node.id)
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
                 options = ["fill", "stroke", "wxfont"]

@@ -114,7 +114,7 @@ def init_commands(kernel):
                         for e in add_elem:
                             e.matrix *= Matrix.translate(x_pos, y_pos)
                             if e.id is not None:
-                                e.id = f"{e.id}-{j}.{k}"
+                                self.set_node_id(e, f"{e.id}-{j}.{k}")
                             self.elem_branch.add_node(e)
                         data_out.extend(add_elem)
                         counted += 1
@@ -218,7 +218,7 @@ def init_commands(kernel):
                         y_pos = radius * sin(currentangle)
                         e.matrix *= f"translate({x_pos}, {y_pos})"
                     if e.id is not None:
-                        e.id = f"{e.id}-{cc}"
+                        self.set_node_id(e, f"{e.id}-{cc}")
                     self.elem_branch.add_node(e)
 
                 counted += 1
@@ -327,7 +327,7 @@ def init_commands(kernel):
                         e.matrix *= f"translate({x_pos}, {y_pos})"
                         e.translated(x_pos, y_pos)
                     if e.id is not None:
-                        e.id = f"{e.id}-{cc}"
+                        self.set_node_id(e, f"{e.id}-{cc}")
                     self.elem_branch.add_node(e)
                 counted += 1
                 data_out.extend(add_elem)
