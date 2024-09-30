@@ -573,6 +573,8 @@ class RotationWidget(Widget):
                     except AttributeError:
                         pass
                     e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+                    if e.type == "elem image":
+                        e._cache = None
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
             elements.signal("updating")
 
@@ -876,6 +878,8 @@ class CornerWidget(Widget):
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
                     node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+                    if e.type == "elem image":
+                        e._cache = None
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -1122,6 +1126,8 @@ class SideWidget(Widget):
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
                     node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+                    if e.type == "elem image":
+                        e._cache = None
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -1285,6 +1291,8 @@ class SkewWidget(Widget):
                             (self.master.right + self.master.left) / 2,
                             (self.master.top + self.master.bottom) / 2,
                         )
+                    if e.type == "elem image":
+                        e._cache = None
             elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -2510,6 +2518,8 @@ class SelectionWidget(Widget):
                 if e.lock:
                     continue
                 e.matrix.post_rotate(angle, cx, cy)
+                if e.type == "elem image":
+                    e._cache = None
             # Update bbox
             cc[0] = cx - dy / 2
             cc[2] = cc[0] + dy
