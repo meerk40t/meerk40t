@@ -39,6 +39,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         # Keyhole-Variables
         self._keyhole_reference = None
         self._keyhole_geometry = None
+        self._keyhole_image = None
         self._processing = False
 
         self.passthrough = False
@@ -174,6 +175,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._cache = None
         self.keyhole_reference = keyhole_ref
         self._keyhole_geometry = geom
+        self._keyhole_image = None
 
     def preprocess(self, context, matrix, plan):
         """
@@ -277,6 +279,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
             def get_keyhole_geometry():
                 self._keyhole_geometry = None
+                self._keyhole_image = None
                 refnode = context.elements.find_node(self.id)
                 if refnode is not None and hasattr(refnode, "as_geometry"):
                     self._keyhole_geometry = refnode.as_geometry()
@@ -796,40 +799,43 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         if image is None:
             image = self.image
         if self._keyhole_geometry is not None:
-            actualized_matrix = self._actualized_matrix
-            # We can't render something with the usual suspects ie laserrender.render
-            # as we do not have access to wxpython on the command line, so we stick
-            # to the polygon method of ImageDraw instead
-            maskimage = Image.new("L", image.size, "black")
-            draw = ImageDraw.Draw(maskimage)
-            inverted_main_matrix = Matrix(self.matrix).inverse()
-            matrix = actualized_matrix * inverted_main_matrix * self.matrix
-            
-            x0, y0 = matrix.point_in_matrix_space((0, 0))
-            x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
-            # print (x0, y0, x2, y2)
-            # Let's simplify things, if we don't have any overlap then the image is white...
-            i_wd = x2 - x0
-            i_ht = y2 - y0
-            for geom in self._keyhole_geometry.as_subpaths():
-                # Let's simplify things, if we don't have any overlap then we don't need to do something
-                # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
-                #     continue
-                geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
-                points = list()
-                for pt in geom_points:
-                    gx = pt.real
-                    gy = pt.imag
-                    x = int(maskimage.width * (gx - x0) / i_wd )
-                    y = int(maskimage.height * (gy - y0) / i_ht )
-                    points.append( (x, y) )
+            if self._keyhole_image is None:
+                actualized_matrix = self._actualized_matrix
+                # We can't render something with the usual suspects ie laserrender.render
+                # as we do not have access to wxpython on the command line, so we stick
+                # to the polygon method of ImageDraw instead
+                maskimage = Image.new("L", image.size, "black")
+                draw = ImageDraw.Draw(maskimage)
+                inverted_main_matrix = Matrix(self.matrix).inverse()
+                matrix = actualized_matrix * inverted_main_matrix * self.matrix
+                
+                x0, y0 = matrix.point_in_matrix_space((0, 0))
+                x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
+                # print (x0, y0, x2, y2)
+                # Let's simplify things, if we don't have any overlap then the image is white...
+                i_wd = x2 - x0
+                i_ht = y2 - y0
+                for geom in self._keyhole_geometry.as_subpaths():
+                    # Let's simplify things, if we don't have any overlap then we don't need to do something
+                    # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
+                    #     continue
+                    geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
+                    points = list()
+                    for pt in geom_points:
+                        gx = pt.real
+                        gy = pt.imag
+                        x = int(maskimage.width * (gx - x0) / i_wd )
+                        y = int(maskimage.height * (gy - y0) / i_ht )
+                        points.append( (x, y) )
 
-                # print (points)
-                draw.polygon( points, fill="white", outline="white")
-            # For debug purposes...
-            # maskimage.save("C:\\temp\\maskimage.png")
+                    # print (points)
+                    draw.polygon( points, fill="white", outline="white")
+                self._keyhole_image = maskimage
+                # For debug purposes...
+                # maskimage.save("C:\\temp\\maskimage.png")
+
             background = Image.new("L", image.size, "white")
-            background.paste(image, mask=maskimage)
+            background.paste(image, mask=self._keyhole_image)
             image = background
         return image
 
@@ -912,6 +918,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
     def translated(self, dx, dy):
         self._cache = None
+        self._keyhole_image = None
         if self._actualized_matrix is not None:
             self._actualized_matrix.post_translate(dx, dy)
         return super().translated(dx, dy)
