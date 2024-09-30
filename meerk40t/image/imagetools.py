@@ -1400,7 +1400,7 @@ def plugin(kernel, lifecycle=None):
             update_image_node(inode)
         return "image", data
 
-    @context.console_option("minimal", "m", type=int, help=_("minimal area"), default=2)
+    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
     @context.console_option(
         "outer",
         "o",
@@ -1744,6 +1744,150 @@ def plugin(kernel, lifecycle=None):
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
+
+    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
+    @context.console_option(
+        "outer",
+        "o",
+        type=bool,
+        help=_("Ignore outer areas"),
+        action="store_true",
+    )
+    @context.console_option(
+        "simplified",
+        "s",
+        type=bool,
+        help=_("Display simplified outline"),
+        action="store_true",
+    )
+    @context.console_command(
+        "identify_contour",
+        help=_("identify contours in image"),
+        input_type=(None, "image"),
+        output_type="elements",
+    )
+    def image_contour(
+        command,
+        channel,
+        _,
+        minimal=None,
+        outer=False,
+        simplified=False,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError:
+            channel("Either cv2 or numpy weren't installed")
+            return
+       
+        def img_to_polygons(node_image, minimal, maximal):
+            cordnt_list = []
+
+            # Convert the image to grayscale
+            gray = np.array(node_image.convert("L"))
+
+            # Apply thresholding to create a binary image
+            _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            # Find contours in the binary image
+            contours, hierarchy = cv2.findContours(th2, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+            width, height = node_image.size
+            minarea = int(minimal / 100.0 * width * height)
+            maxarea = int(maximal / 100.0 * width * height)
+
+            # Extract coordinates of white regions
+            white_regions_coordinates = []
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                if area < minarea or area > maxarea:
+                    continue
+                coordinates = contour.squeeze().astype(float).tolist()
+                white_regions_coordinates.append(coordinates)
+
+            # Gather the coordinates of each white region
+            for region in white_regions_coordinates:
+                if type(region[0]) is list:
+                    if len(region) > 2:
+                        # Calculate the area of the contour
+                        area = cv2.contourArea(np.around(np.array([[pnt] for pnt in region])).astype(np.int32))
+                        if area > 100:
+                            # Convert coordinates to the required format
+                            crdnts = [{'x': i[0], 'y': i[1]} for i in region]
+                            cordnt_list.append(crdnts)
+
+            return cordnt_list
+
+       
+        elements = context.elements
+        # from PIL import Image
+        if data is None:
+            data = list(e for e in elements.flat(emphasized=True) if e.type == "elem image")
+        if data is None:
+            channel(_("No images selected"))
+
+        if minimal is None:
+            minimal = 2
+        if minimal <= 0 or minimal > 100:
+            minimal = 2
+        maximal = 95
+
+        data_out = list()
+
+        # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
+        for idx, inode in enumerate(data):
+            if inode.type != "elem image":
+                continue
+            node_image = inode.image
+            width, height = node_image.size
+            if width == 0 or height == 0:
+                continue
+            if not hasattr(inode, "bounds"):
+                continue
+            bb = inode.bounds
+            ox = bb[0]
+            oy = bb[1]
+            coord_width = bb[2] - bb[0]
+            coord_height = bb[3] - bb[1]
+            # Extract polygons from the image
+            polygons = img_to_polygons(node_image, minimal, maximal)
+
+            def getpoint(ix, iy):
+                # Translate image to scene coordinates
+                return (
+                    ox + ix / width * coord_width,
+                    oy + iy / height * coord_height,
+                )
+
+            for pidx, ply in enumerate(polygons):
+                geom = Geomstr()
+                notfirst = False
+                for pnt in ply:
+                    rx, ry = pnt['x'], pnt['y']
+                    if notfirst:
+                        geom.line(complex(lx, ly), complex(rx, ry))
+                    notfirst = True
+                    lx = rx
+                    ly = ry
+                geom.close()
+                geom.simplify(10)
+                geom.transform(inode.active_matrix)
+                node = context.elements.elem_branch.add(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    fill=Color("yellow"),
+                    label=f"Contour {idx}.{pidx}",
+                    type="elem path",
+                )
+                data_out.append(node)
+
+                # inode.remove_node()
+
+        post.append(context.elements.post_classify(data_out))
+        return "elements", data_out
 
 
 class RasterScripts:
