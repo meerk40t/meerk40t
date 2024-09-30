@@ -1242,6 +1242,7 @@ def init_commands(kernel):
                 tx += x_pos
                 ty += y_pos
                 this_shift = [(tx, ty)] * len(data)
+                c_list = list(map(copy, data))
                 for e, d in zip(c_list, data):
                     if d.id is None:
                         self.set_node_id(e, None)
