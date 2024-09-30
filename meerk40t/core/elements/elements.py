@@ -1743,7 +1743,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element altered")
         self.prepare_undo("Element altered")
-        self.test_for_keyholes(node)
+        self.test_for_keyholes(node, "altered")
 
     def modified(self, node=None, *args):
         self._emphasized_bounds_dirty = True
@@ -1751,7 +1751,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element modified")
         self.prepare_undo("Element modified")
-        self.test_for_keyholes(node)
+        self.test_for_keyholes(node, "modified")
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1762,7 +1762,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element shifted")
         self.prepare_undo("Element shifted")
-        self.test_for_keyholes(node)
+        self.test_for_keyholes(node, "translated")
 
     def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
         # It's safer to just recompute the selection area
@@ -1773,7 +1773,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element scaled")
         self.prepare_undo("Element scaled")
-        self.test_for_keyholes(node)
+        self.test_for_keyholes(node, "scaled")
 
     def node_attached(self, node, **kwargs):
         # Hint for translate check: _("Element added")
@@ -4086,11 +4086,16 @@ class Elemental(Service):
             return True
         return False
 
-    def test_for_keyholes(self, node):
+    def test_for_keyholes(self, node, method):
         if node is None or node.id is None:
             return
+        update_required = True
+        if method == "translated":
+            update_required = False
+        elif node.type != "elem image":
+            update_required = False
         if node.type == "elem image":
-            if node.keyhole_reference is not None:
+            if node.keyhole_reference is not None and update_required:
                 self.remember_keyhole_nodes(node)
             return
         if not hasattr(node, "as_geometry"):
@@ -4100,7 +4105,8 @@ class Elemental(Service):
         if rid in self.registered_keyholes:
             nodelist = list(self.registered_keyholes[rid])
             # print (f"Update for node {node.type} [{rid}]: {len(nodelist)} images")
-            self.remember_keyhole_nodes(nodelist)
+            if update_required:
+                self.remember_keyhole_nodes(nodelist)
             for node in nodelist:
                 node.set_keyhole(rid, geom=geom)
 
