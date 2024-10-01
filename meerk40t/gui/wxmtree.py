@@ -1440,9 +1440,12 @@ class ShadowTree:
         defaultcolor = Color("black")
         if mini_icon:
             if node.type == "elem image":
-                image = self.renderer.make_thumbnail(
-                    node.active_image, width=self.iconsize, height=self.iconsize
-                )
+                try:
+                    image = self.renderer.make_thumbnail(
+                        node.active_image, width=self.iconsize, height=self.iconsize
+                    )
+                except (MemoryError, RuntimeError):
+                    image = None
             else:
                 # Establish colors (and some images)
                 if node.type.startswith("op ") or node.type.startswith("util "):
