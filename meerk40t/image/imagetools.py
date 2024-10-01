@@ -9,7 +9,6 @@ from ..core.exceptions import BadFileError
 from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
-from ..extra.linesimplifier import simplify_geometry
 from .dither import dither
 
 
@@ -1750,17 +1749,24 @@ def plugin(kernel, lifecycle=None):
     @context.console_option("threshold", "t", type=float, help=_("Threshold for simplification"), default=0.25)
     @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
     @context.console_option(
-        "outer",
-        "o",
+        "inner",
+        "i",
         type=bool,
-        help=_("Ignore outer areas"),
+        help=_("Ignore inner areas"),
+        action="store_true",
+    )
+    @context.console_option(
+        "dontinvert",
+        "d",
+        type=bool,
+        help=_("Do not invert the image"),
         action="store_true",
     )
     @context.console_option(
         "simplified",
         "s",
         type=bool,
-        help=_("Display simplified outline"),
+        help=_("Use alternative simplification method"),
         action="store_true",
     )
     @context.console_command(
@@ -1776,37 +1782,53 @@ def plugin(kernel, lifecycle=None):
         minimal=None,
         threshold=None,
         simplified=False,
+        inner=False,
+        dontinvert=False,
         data=None,
         post=None,
         **kwargs,
     ):
         try:
             import cv2
+            from PIL import ImageOps
             import numpy as np
+            import time
         except ImportError:
             channel("Either cv2 or numpy weren't installed")
             return
 
-        def img_to_polygons(node_image, minimal, maximal):
+        def img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=True):
             cordnt_list = []
 
             # Convert the image to grayscale
-            gray = np.array(node_image.convert("L"))
+            img = node_image.convert("L")
+            if needs_invert:
+                gray = np.array(ImageOps.invert(img))
+            else:
+                gray = np.array(img)
 
             # Apply thresholding to create a binary image
             _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
             # Find contours in the binary image
-            contours, hierarchy = cv2.findContours(th2, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+            contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+            # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
             width, height = node_image.size
             minarea = int(minimal / 100.0 * width * height)
             maxarea = int(maximal / 100.0 * width * height)
 
             # Extract coordinates of white regions
             white_regions_coordinates = []
-            for contour in contours:
+            for idx, contour in enumerate(contours):
+                hierarchy = hierarchies[0][idx]
+                # print (hierarchy)
+                h_next, h_prev, h_child, h_parent = hierarchy
+                if ignoreinner and h_parent >= 0:
+                    continue
                 area = cv2.contourArea(contour)
-                if area < minarea or area > maxarea:
+                if area < minarea:
+                    continue
+                if area > maxarea:
                     continue
                 coordinates = contour.squeeze().astype(float).tolist()
                 white_regions_coordinates.append(coordinates)
@@ -1817,14 +1839,13 @@ def plugin(kernel, lifecycle=None):
                     if len(region) > 2:
                         # Calculate the area of the contour
                         area = cv2.contourArea(np.around(np.array([[pnt] for pnt in region])).astype(np.int32))
-                        if area > 100:
-                            # Convert coordinates to the required format
-                            crdnts = [{'x': i[0], 'y': i[1]} for i in region]
-                            cordnt_list.append(crdnts)
+                        crdnts = [{'x': i[0], 'y': i[1]} for i in region]
+                        cordnt_list.append(crdnts)
 
             return cordnt_list
 
-
+        t0 = time.perf_counter()
+        t_total = 0
         elements = context.elements
         # from PIL import Image
         if data is None:
@@ -1833,6 +1854,12 @@ def plugin(kernel, lifecycle=None):
             channel(_("No images selected"))
             return
 
+        ignoreinner = inner
+        if ignoreinner is None:
+            ignoreinner = False
+        if dontinvert is None:
+            dontinvert = False
+
         if minimal is None:
             minimal = 2
         if minimal <= 0 or minimal > 100:
@@ -1840,11 +1867,11 @@ def plugin(kernel, lifecycle=None):
         maximal = 95
 
         if threshold is None:
+            # We are on pixel level
             threshold = 0.25
 
         data_out = list()
 
-        # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
         remembered_dithers = list()
         for idx, inode in enumerate(data):
             if inode.type != "elem image":
@@ -1862,19 +1889,8 @@ def plugin(kernel, lifecycle=None):
             if not hasattr(inode, "bounds"):
                 continue
             bb = inode.bounds
-            ox = bb[0]
-            oy = bb[1]
-            coord_width = bb[2] - bb[0]
-            coord_height = bb[3] - bb[1]
             # Extract polygons from the image
-            polygons = img_to_polygons(node_image, minimal, maximal)
-
-            def getpoint(ix, iy):
-                # Translate image to scene coordinates
-                return (
-                    ox + ix / width * coord_width,
-                    oy + iy / height * coord_height,
-                )
+            polygons = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
 
             for pidx, ply in enumerate(polygons):
                 geom = Geomstr()
@@ -1888,12 +1904,15 @@ def plugin(kernel, lifecycle=None):
                     ly = ry
                 geom.close()
                 # We are at pixel level! So a small epsilon is in order
+                t1 = time.perf_counter()
                 if simplified:
-                    # Let's try some cubic beziers
-                    geom = simplify_geometry(geom, threshold=threshold)
+                    # Let's try Visvalingam line simplification
+                    geom = geom.simplify_geometry(threshold=threshold)
                 else:
+                    # Use Douglas-Peucker instead
                     geom = geom.simplify(threshold)
-
+                t2 = time.perf_counter()
+                t_total += t2 - t1
                 geom.transform(inode.active_matrix)
                 node = context.elements.elem_branch.add(
                     geometry=geom,
@@ -1902,13 +1921,14 @@ def plugin(kernel, lifecycle=None):
                     type="elem path",
                 )
                 data_out.append(node)
-
-                # inode.remove_node()
                 continue
         for inode in remembered_dithers:
             inode.dither = True
             inode.update(None)
 
+        t_total_overall = time.perf_counter() - t0
+        channel(f"Done, created: {len(data_out)} contour elements.")
+        channel(f"Total time: {t_total_overall:.2f} sec (simplification: {t_total:.2f} sec)")
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
