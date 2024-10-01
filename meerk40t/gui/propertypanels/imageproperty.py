@@ -596,6 +596,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.context.elements.do_image_update(self.node, self.context)
         self.context.signal("element_property_update", self.node)
         self.context.signal("selected", self.node)
+        self.fill_operations()
 
     def on_apply_replace(self, event):
         idx = self.combo_scripts.GetSelection()
