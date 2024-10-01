@@ -97,11 +97,14 @@ class PropertyWindow(MWindow):
     def validate_display(self, nodes, source):
         def sort_priority(prop):
             prop_sheet, node = prop
-            return (
-                getattr(prop_sheet, "priority")
-                if hasattr(prop_sheet, "priority")
-                else 0
-            )
+            prio = 0
+            if hasattr(prop_sheet, "priority"):
+                p = getattr(prop_sheet, "priority")
+                if callable(p):
+                    prio = p(node)
+                else:
+                    prio = p 
+            return prio
 
         # Are the new nodes identical to the displayed ones?
         different = False

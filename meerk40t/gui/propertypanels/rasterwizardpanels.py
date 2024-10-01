@@ -7,10 +7,24 @@ from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 
 _ = wx.GetTranslation
 
+"""
+Establishes property panels for some image operations
+The priority of appearance is defined dynamically based 
+on the order within the node operations
 
+"""
 class ContrastPanel(wx.Panel):
     name = _("Contrast")
-    priority = 10
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "contrast"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -150,7 +164,16 @@ class ContrastPanel(wx.Panel):
 
 class HalftonePanel(wx.Panel):
     name = _("Halftone")
-    priority = 15
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "halftone"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -331,8 +354,17 @@ class HalftonePanel(wx.Panel):
 
 class ToneCurvePanel(wx.Panel):
     name = _("Tone")
-    priority = 20
 
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "tone"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
+    
     @staticmethod
     def accepts(node):
         if not hasattr(node, "as_image"):
@@ -513,7 +545,16 @@ class ToneCurvePanel(wx.Panel):
 
 class SharpenPanel(wx.Panel):
     name = _("Sharpen")
-    priority = 25
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "unsharp_mask"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -698,7 +739,16 @@ class SharpenPanel(wx.Panel):
 
 class GammaPanel(wx.Panel):
     name = _("Gamma")
-    priority = 30
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "gamma"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -798,7 +848,16 @@ class GammaPanel(wx.Panel):
 
 class EdgePanel(wx.Panel):
     name = _("Edge Enhance")
-    priority = 40
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "edge_enhance"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -856,7 +915,16 @@ class EdgePanel(wx.Panel):
 
 class AutoContrastPanel(wx.Panel):
     name = _("Auto Contrast")
-    priority = 45
+    @staticmethod
+
+    def priority(node):
+        base_priority = 20
+        prop = "auto_contrast"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
