@@ -4010,6 +4010,10 @@ class Elemental(Service):
                             for e in self.elems_nodes():
                                 if e not in _stored_elements:
                                     self.added_elements.append(e)
+
+                            issues, empty_ids, duplicate_ids = self.load_identifiers()
+                            if issues and empty_ids:
+                                self.resolve_empty_ids(empty_ids)
                             # self.listen_tree(self)
                             self._filename = pathname
                             self.set_end_time("load", display=True)
@@ -4227,7 +4231,7 @@ class Elemental(Service):
     def setup_identifiers(self):
         def better_set_id(node, id=None):
             # print (f"Want to set {node.type} to {id}, current value: {node.id}")
-            # The check for duplicate entries is difficult as we have a couple of 
+            # The check for duplicate entries is difficult as we have a couple of
             # nodes in the background that are not part of the tree!
 
             # if id is not None:
@@ -4241,9 +4245,9 @@ class Elemental(Service):
                 # print (f"Will assign {id}")
                 self.saved_identifiers.append(id)
             node.id = id
-        
+
         Node.set_id = better_set_id
-    
+
     def set_node_id(self, node, id, default=None):
         if id is not None:
             othernode = self.find_node(id)
@@ -4275,7 +4279,7 @@ class Elemental(Service):
                 else:
                     self.saved_identifiers.append(node.id)
         return bool(len(issues_duplicate) or len(issues_empty)), issues_duplicate, issues_empty
-    
+
     def resolve_empty_ids(self, nodelist):
         for node in nodelist:
             if node.id is not None:
@@ -4300,7 +4304,7 @@ class Elemental(Service):
         while f"{pattern}:{index}" in self.saved_identifiers:
             index += 1
         return f"{pattern}:{index}"
-    
+
     # --- Miscellania
 
     def simplify_node(self, node):
