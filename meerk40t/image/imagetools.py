@@ -1783,7 +1783,7 @@ def plugin(kernel, lifecycle=None):
         except ImportError:
             channel("Either cv2 or numpy weren't installed")
             return
-       
+
         def img_to_polygons(node_image, minimal, maximal):
             cordnt_list = []
 
@@ -1821,13 +1821,14 @@ def plugin(kernel, lifecycle=None):
 
             return cordnt_list
 
-       
+
         elements = context.elements
         # from PIL import Image
         if data is None:
             data = list(e for e in elements.flat(emphasized=True) if e.type == "elem image")
-        if data is None:
+        if data is None or len(data) == 0:
             channel(_("No images selected"))
+            return
 
         if minimal is None:
             minimal = 2
@@ -1838,10 +1839,17 @@ def plugin(kernel, lifecycle=None):
         data_out = list()
 
         # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
+        remembered_dithers = list()
         for idx, inode in enumerate(data):
             if inode.type != "elem image":
                 continue
-            node_image = inode.image
+            if inode.dither:
+                remembered_dithers.append(inode)
+                inode.dither = False
+                inode.update(None)
+
+            # node_image = inode.image
+            node_image = inode.active_image
             width, height = node_image.size
             if width == 0 or height == 0:
                 continue
@@ -1873,18 +1881,22 @@ def plugin(kernel, lifecycle=None):
                     lx = rx
                     ly = ry
                 geom.close()
-                geom.simplify(10)
+                # We are at pixel level! So a small epislon is in order
+                geom = geom.simplify(0.05)
                 geom.transform(inode.active_matrix)
                 node = context.elements.elem_branch.add(
                     geometry=geom,
                     stroke=Color("blue"),
-                    fill=Color("yellow"),
                     label=f"Contour {idx}.{pidx}",
                     type="elem path",
                 )
                 data_out.append(node)
 
                 # inode.remove_node()
+                continue
+        for inode in remembered_dithers:
+            inode.dither = True
+            inode.update(None)
 
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
