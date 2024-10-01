@@ -1,13 +1,15 @@
+import numpy as np
 import os
 import subprocess
 from copy import copy
-
+from math import comb
 from meerk40t.kernel import CommandSyntaxError
 
 from ..core.exceptions import BadFileError
 from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
+from ..extra.linesimplifier import simplify_geometry
 from .dither import dither
 
 
@@ -1745,6 +1747,7 @@ def plugin(kernel, lifecycle=None):
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
 
+    @context.console_option("threshold", "t", type=float, help=_("Threshold for simplification"), default=0.25)
     @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
     @context.console_option(
         "outer",
@@ -1771,7 +1774,7 @@ def plugin(kernel, lifecycle=None):
         channel,
         _,
         minimal=None,
-        outer=False,
+        threshold=None,
         simplified=False,
         data=None,
         post=None,
@@ -1836,6 +1839,9 @@ def plugin(kernel, lifecycle=None):
             minimal = 2
         maximal = 95
 
+        if threshold is None:
+            threshold = 0.25
+
         data_out = list()
 
         # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
@@ -1881,8 +1887,13 @@ def plugin(kernel, lifecycle=None):
                     lx = rx
                     ly = ry
                 geom.close()
-                # We are at pixel level! So a small epislon is in order
-                geom = geom.simplify(0.05)
+                # We are at pixel level! So a small epsilon is in order
+                if simplified:
+                    # Let's try some cubic beziers
+                    geom = simplify_geometry(geom, threshold=threshold)
+                else:
+                    geom = geom.simplify(threshold)
+
                 geom.transform(inode.active_matrix)
                 node = context.elements.elem_branch.add(
                     geometry=geom,
