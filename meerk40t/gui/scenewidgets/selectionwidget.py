@@ -878,8 +878,8 @@ class CornerWidget(Widget):
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
                     node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
-                    if e.type == "elem image":
-                        e._cache = None
+                    if node.type == "elem image":
+                        node._cache = None
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -1126,8 +1126,8 @@ class SideWidget(Widget):
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
                     node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
-                    if e.type == "elem image":
-                        e._cache = None
+                    if node.type == "elem image":
+                        node._cache = None
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
