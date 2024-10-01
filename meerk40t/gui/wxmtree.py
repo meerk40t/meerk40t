@@ -224,15 +224,22 @@ class TreePanel(wx.Panel):
         # self.Show(False)
 
     def check_for_issues(self):
+        needs_showing = False
         non_assigned, non_burn = self.context.elements.have_unburnable_elements()
+        warn_level = self.context.setting(int, "concern_level", 1)
+        if non_assigned and warn_level <= 2:
+            needs_showing = True
+        if non_burn and warn_level <= 1:
+            needs_showing = True
         self.btn_fix_assign_create.Enable(non_assigned)
         self.btn_fix_assign_existing.Enable(non_assigned)
         self.btn_fix_unburnt.Enable(non_burn)
         new_issue = non_assigned or non_burn
-        if self._last_issue == new_issue:
+        if (self._last_issue == new_issue) and (needs_showing == self.btn_fix_unburnt.IsShown()):
+            # no changes
             return
         self._last_issue = new_issue
-        if new_issue:
+        if new_issue and needs_showing:
             self.warn_panel.Show(True)
             self.warn_panel.ShowItems(True)
         else:
