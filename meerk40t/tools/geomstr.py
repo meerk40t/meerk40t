@@ -2116,6 +2116,11 @@ class Geomstr:
         self.allocate_at_position(e, space)
         self.segments[e : e + space] = lines
 
+    def append_segment(self, start, control, info, control2, end):
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (start, control, info, control2, end)
+        self.index += 1
+
     def append_lines(self, lines):
         self._ensure_capacity(self.index + len(lines))
         self.segments[self.index : self.index + len(lines)] = lines
@@ -2168,15 +2173,13 @@ class Geomstr:
             a = 0
         if b is None:
             b = 0
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             a,
             complex(TYPE_LINE, settings),
             b,
             end,
         )
-        self.index += 1
 
     def quad(self, start, control, end, settings=0):
         """
@@ -2187,15 +2190,13 @@ class Geomstr:
         @param settings: optional settings level for the quadratic bezier curve
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             control,
             complex(TYPE_QUAD, settings),
             control,
             end,
         )
-        self.index += 1
 
     def cubic(self, start, control0, control1, end, settings=0):
         """
@@ -2207,15 +2208,13 @@ class Geomstr:
         @param settings: optional settings level for the cubic Bézier curve
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             control0,
             complex(TYPE_CUBIC, settings),
             control1,
             end,
         )
-        self.index += 1
 
     def arc(self, start, control, end, settings=0):
         """
@@ -2226,15 +2225,13 @@ class Geomstr:
         @param settings: optional settings level for the arc
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             control,
             complex(TYPE_ARC, settings),
             control,
             end,
         )
-        self.index += 1
 
     def point(self, position, settings=0, a=None, b=None):
         """
@@ -2250,15 +2247,13 @@ class Geomstr:
             a = 0
         if b is None:
             b = 0
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             position,
             a,
             complex(TYPE_POINT, settings),
             b,
             position,
         )
-        self.index += 1
 
     def end(self, settings=0):
         """
@@ -2269,15 +2264,13 @@ class Geomstr:
         if self.index and self._segtype(self.segments[self.index - 1]) == TYPE_END:
             # No two consecutive ends
             return
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             np.nan,
             np.nan,
             complex(TYPE_END, settings),
             np.nan,
             np.nan,
         )
-        self.index += 1
 
     def vertex(self, vertex=0):
         """
@@ -2287,15 +2280,13 @@ class Geomstr:
         @param vertex: Vertex index of vertex being added
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             np.nan,
             np.nan,
             complex(TYPE_VERTEX, vertex),
             np.nan,
             np.nan,
         )
-        self.index += 1
 
     def close(self, settings=0):
         """
