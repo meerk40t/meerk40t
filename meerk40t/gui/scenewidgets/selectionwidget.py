@@ -126,17 +126,17 @@ def process_event(
             widget.master.check_rot_center()
             widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
             return RESPONSE_CONSUME
-    elif event_type == "middledown":
-        # Hmm, I think this is never called due to the consumption of this event by scene pane...
-        widget.was_lb_raised = False
-        widget.save_width = widget.master.width
-        widget.save_height = widget.master.height
-        widget.uniform = False
-        widget.master.total_delta_x = dx
-        widget.master.total_delta_y = dy
-        widget.master.tool_running = optimize_drawing
-        widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
-        return RESPONSE_CONSUME
+    # elif event_type == "middledown":
+    #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
+    #     widget.was_lb_raised = False
+    #     widget.save_width = widget.master.width
+    #     widget.save_height = widget.master.height
+    #     widget.uniform = False
+    #     widget.master.total_delta_x = dx
+    #     widget.master.total_delta_y = dy
+    #     widget.master.tool_running = optimize_drawing
+    #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
+    #     return RESPONSE_CONSUME
     elif event_type == "leftup":
         if widget.was_lb_raised:
             widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
