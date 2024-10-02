@@ -1797,8 +1797,18 @@ def plugin(kernel, lifecycle=None):
             channel("Either cv2 or numpy weren't installed")
             return
 
-        def img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=True):
-            cordnt_list = []
+        def img_to_polygons(
+                node_image,                 # The image 
+                minimal,                    # Minimum area in percent (int) to consider
+                maximal,                    # Maximum area in percent (int) to consider
+                ignoreinner,                # Ignore inner contours 
+                needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+        ):
+            """
+            Takes the image and provides a list of geomstr + associated matrix
+            containing the (simplified) contours of the artifacts found on the image
+            """
+            geom_list = list()
 
             # Convert the image to grayscale
             img = node_image.convert("L")
@@ -1811,7 +1821,7 @@ def plugin(kernel, lifecycle=None):
             _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
             # Find contours in the binary image
-            contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+            contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
             # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
             width, height = node_image.size
             minarea = int(minimal / 100.0 * width * height)
@@ -1840,12 +1850,23 @@ def plugin(kernel, lifecycle=None):
                         # Calculate the area of the contour
                         area = cv2.contourArea(np.around(np.array([[pnt] for pnt in region])).astype(np.int32))
                         crdnts = [{'x': i[0], 'y': i[1]} for i in region]
-                        cordnt_list.append(crdnts)
 
-            return cordnt_list
+                        geom = Geomstr()
+                        notfirst = False
+                        for pnt in crdnts:
+                            rx, ry = pnt['x'], pnt['y']
+                            if notfirst:
+                                geom.line(complex(lx, ly), complex(rx, ry))
+                            notfirst = True
+                            lx = rx
+                            ly = ry
+                        geom.close()
+                        matrix = Matrix()
+                        geom_list.append( (geom, matrix) )
+
+            return geom_list
 
         t0 = time.perf_counter()
-        t_total = 0
         elements = context.elements
         # from PIL import Image
         if data is None:
@@ -1890,30 +1911,19 @@ def plugin(kernel, lifecycle=None):
                 continue
             bb = inode.bounds
             # Extract polygons from the image
-            polygons = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
-
-            for pidx, ply in enumerate(polygons):
-                geom = Geomstr()
-                notfirst = False
-                for pnt in ply:
-                    rx, ry = pnt['x'], pnt['y']
-                    if notfirst:
-                        geom.line(complex(lx, ly), complex(rx, ry))
-                    notfirst = True
-                    lx = rx
-                    ly = ry
-                geom.close()
-                # We are at pixel level! So a small epsilon is in order
-                t1 = time.perf_counter()
+            geometries = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+            pidx = 0
+            for geom, matr in geometries:
+                pidx += 1                        
                 if simplified:
                     # Let's try Visvalingam line simplification
                     geom = geom.simplify_geometry(threshold=threshold)
                 else:
                     # Use Douglas-Peucker instead
                     geom = geom.simplify(threshold)
-                t2 = time.perf_counter()
-                t_total += t2 - t1
-                geom.transform(inode.active_matrix)
+                matrix = matr * inode.active_matrix
+                geom.transform(matrix)
+
                 node = context.elements.elem_branch.add(
                     geometry=geom,
                     stroke=Color("blue"),
@@ -1921,14 +1931,12 @@ def plugin(kernel, lifecycle=None):
                     type="elem path",
                 )
                 data_out.append(node)
-                continue
         for inode in remembered_dithers:
             inode.dither = True
             inode.update(None)
 
         t_total_overall = time.perf_counter() - t0
-        channel(f"Done, created: {len(data_out)} contour elements.")
-        channel(f"Total time: {t_total_overall:.2f} sec (simplification: {t_total:.2f} sec)")
+        channel(f"Done, created: {len(data_out)} contour elements (Total time: {t_total_overall:.2f} sec)")
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
