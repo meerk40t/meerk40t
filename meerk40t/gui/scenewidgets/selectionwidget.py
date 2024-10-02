@@ -101,7 +101,7 @@ def process_event(
         # print ("ignore")
         return RESPONSE_CHAIN
 
-    if event_type in ("leftdown", "middledown"):
+    if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
         # as these will extend / reduce the selection
         if widget_identifier == "move" or (
@@ -137,7 +137,7 @@ def process_event(
     #     widget.master.tool_running = optimize_drawing
     #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
     #     return RESPONSE_CONSUME
-    elif event_type in ("leftup", "middleup"):
+    elif event_type == "leftup":
         if widget.was_lb_raised:
             widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
             widget.scene.context.elements.ensure_positive_bounds()
