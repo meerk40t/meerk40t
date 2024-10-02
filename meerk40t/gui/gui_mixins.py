@@ -21,6 +21,95 @@ INACTIVE = "inactive"
 WAITING = "waiting"
 PASTING = "pasting"
 
+class WarningDialog(wx.Dialog):
+    """
+    WarningDialog provides a dialog to display the multiple warnings 
+    and offers an option how to set them 
+    """
+
+    def __init__(self, *args, context=None, txt_lo=None, txt_mid=None, txt_hi=None, **kwds):
+        self.context = context
+        _ = context._
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        wx.Dialog.__init__(self, *args, **kwds)
+        self.SetTitle(_("Warning"))
+        warn_level = context.setting(int, "concern_level", 1)
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        label1 = wx.StaticText(
+            self,
+            wx.ID_ANY,
+            _("Your project might have the following issues:"),
+        )
+        sizer_main.Add(self, 0, wx.EXPAND, 0)
+        self.lbl_high = wx.StaticText(self, wx.ID_ANY, "")
+        self.text_high = wx.TextCtrl(self, wx.ID_ANY, txt_hi, style=wx.TE_READONLY | wx.TE_MULTILINE)
+        sizer_main.Add(self.lbl_high, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.text_high, 1, wx.EXPAND, 0)
+        self.lbl_mid = wx.StaticText(self, wx.ID_ANY, "")
+        self.text_mid = wx.TextCtrl(self, wx.ID_ANY, txt_mid, style=wx.TE_READONLY | wx.TE_MULTILINE)
+        sizer_main.Add(self.lbl_mid, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.text_mid, 1, wx.EXPAND, 0)
+        self.lbl_low = wx.StaticText(self, wx.ID_ANY, "")
+        self.text_low = wx.TextCtrl(self, wx.ID_ANY, txt_lo, style=wx.TE_READONLY | wx.TE_MULTILINE)
+        sizer_main.Add(self.lbl_low, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.text_low, 1, wx.EXPAND, 0)
+
+        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
+        label_5 = wx.StaticText(
+            self,
+            wx.ID_ANY,
+            _("Warnlevel:"),
+        )
+        choices = (
+            _("Low + Normal + Critical"),
+            _("Normal + Critical"),
+            _("Critical"),
+            _("Ignore all")
+        )
+        self.combo_options = wx.ComboBox(self, wx.ID_ANY, choices = choices)
+        sizer_options.Add(label_5, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_options.Add(self.combo_options, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(sizer_options, 0, wx.EXPAND, 0)
+
+        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
+
+        self.button_OK = wx.Button(self, wx.ID_OK, _("OK"))
+        self.button_OK.SetToolTip(_("Align and scale the elements"))
+        self.button_OK.SetDefault()
+        sizer_buttons.Add(self.button_OK, 0, wx.EXPAND, 0)
+        self.update_labels(warnlevel=warn_level)
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(label1)
+
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo, self.combo_options)
+        self.Bind(wx.EVT_BUTTON, self.on_button, self.button_OK)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+        print ("I am ready now")
+        self.Layout()
+
+
+    def on_close(self, event):
+        print ("Close!")
+        event.Allow()
+        
+    def on_button(self, event):
+        self.Close()
+        
+    def update_labels(self, warnlevel):
+        ignored = f" ({_('ignored')})"
+        self.lbl_low.SetLabel(_("Low:") + ignored if warnlevel>1 else "")
+        self.lbl_mid.SetLabel(_("Normal:") + ignored if warnlevel>2 else "")
+        self.lbl_high.SetLabel(_("High:") + ignored if warnlevel>3 else "")
+        self.combo_options.SetSelection(warnlevel - 1)
+
+    def on_combo(self, event):
+        idx = self.combo_options.GetSelection()
+        if idx < 0:
+            idx = 0 
+        self.context.concern_level = idx +1
+        self.update_labels(idx + 1)
 
 class FormatPainter:
     def __init__(self, context, button, identifier, *args, **kwds):
@@ -257,9 +346,33 @@ class Warnings:
         return s
 
     def show_concerns(self, *args):
-        msg = self.concerns
-        if msg:
-            wx.MessageBox(msg, _("Warning"), style=wx.OK | wx.ICON_WARNING)
+        # Display a more elaborate information
+        list_low = []
+        list_normal = []
+        list_critical = []
+        for msg, level in self._concerns:
+            if level == CONCERN_LOW:
+                list_low.append(msg)
+            if level == CONCERN_NORMAL:
+                list_normal.append(msg)
+            if level == CONCERN_CRITICAL:
+                list_critical.append(msg)
+        txt_low = "\n".join(list_low)
+        txt_mid = "\n".join(list_normal)
+        txt_critical = "\n".join(list_critical)
+        print (txt_low)
+        print (txt_mid)
+        print (txt_critical)
+        dlg = WarningDialog(
+            None, 
+            id=wx.ID_ANY, 
+            context=self.context, 
+            txt_hi=txt_critical, 
+            txt_mid=txt_mid, 
+            txt_lo=txt_low
+        )
+        res = dlg.ShowModal()
+        dlg.Destroy()
 
     def warning_indicator(self):
         def has_ambitious_operations(maxspeed, optypes):
