@@ -74,7 +74,7 @@ def img_to_polygons(
                     ly = ry
                 geom.close()
                 matrix = Matrix()
-                geom_list.append( (geom, matrix) )
+                geom_list.append( geom )
 
     return geom_list
 
@@ -137,8 +137,7 @@ def img_to_rectangles(
         geom.line(start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1]))
         geom.line(start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1]))
         geom.line(start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1]))
-        matrix = Matrix()
-        geom_list.append( (geom, matrix) )
+        geom_list.append( geom )
 
     return geom_list
 
@@ -1981,10 +1980,12 @@ def plugin(kernel, lifecycle=None):
             # Extract polygons from the image
             if rectangles:
                 geometries = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                msg = "Bounding"
             else:
                 geometries = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                msg = "Contour"
             pidx = 0
-            for geom, matr in geometries:
+            for geom in geometries:
                 pidx += 1                        
                 if simplified:
                     # Let's try Visvalingam line simplification
@@ -1992,14 +1993,12 @@ def plugin(kernel, lifecycle=None):
                 else:
                     # Use Douglas-Peucker instead
                     geom = geom.simplify(threshold)
-                # matrix = matr * inode.active_matrix
-                matrix =  inode.active_matrix * matr
-                geom.transform(matrix)
+                geom.transform(inode.active_matrix)
 
                 node = context.elements.elem_branch.add(
                     geometry=geom,
                     stroke=Color("blue"),
-                    label=f"Contour {idx}.{pidx}",
+                    label=f"{msg} {idx+1}.{pidx}",
                     type="elem path",
                 )
                 data_out.append(node)
