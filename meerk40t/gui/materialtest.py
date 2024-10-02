@@ -599,6 +599,10 @@ class TemplatePanel(wx.Panel):
         return self.context.device.use_mm_min_for_speed_display
 
     def set_param_according_to_op(self, event):
+        def preset_image_dpi(node=None):
+            # Will be called ahead of the modification of the 'op image' dpi variable
+            node.overrule_dpi = True
+
         def preset_passes(node=None):
             # Will be called ahead of the modification of the passes variable
             node.passes_custom = True
@@ -679,45 +683,45 @@ class TemplatePanel(wx.Panel):
 
         if opidx == 0:
             # Cut
-            # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
+            # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive, type)
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
-                ("dpi", None, _("DPI"), "dpi", False, True),
-                ("overscan", None, _("Overscan"), "mm", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                ("dpi", None, _("DPI"), "dpi", False, True, int),
+                ("overscan", None, _("Overscan"), "mm", False, True, None),
             ]
         elif opidx == 3:
             # Image
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
-                ("dpi", None, _("DPI"), "dpi", False, True),
-                ("overscan", None, _("Overscan"), "mm", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                ("dpi", preset_image_dpi, _("DPI"), "dpi", False, True, int),
+                ("overscan", None, _("Overscan"), "mm", False, True, None),
             ]
         elif opidx == 4:
             # Hatch
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
-                ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
-                ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                ("hatch_distance", None, _("Hatch Distance"), "mm", False, True, None),
+                ("hatch_angle", None, _("Hatch Angle"), "deg", False, True, None),
             ]
 
         if "balor" in self.context.device.path:
@@ -1059,13 +1063,20 @@ class TemplatePanel(wx.Panel):
                 node.modified()
                 text_op_y.add_reference(node, 0)
 
-            p_value_1 = min_value_1
+            _p_value_1 = min_value_1
 
             xx = start_x
             for idx1 in range(count_1):
+                p_value_1 = _p_value_1
+                if param_value_type_1 is not None:
+                    try:
+                        _pp = param_value_type_1(_p_value_1)
+                        p_value_1 = _pp
+                    except ValueError:
+                        pass
                 pval1 = self.shortened(p_value_1, 3)
 
-                p_value_2 = min_value_2
+                _p_value_2 = min_value_2
                 yy = start_y
 
                 if display_values:
@@ -1086,6 +1097,14 @@ class TemplatePanel(wx.Panel):
                     text_op_x.add_reference(node, 0)
 
                 for idx2 in range(count_2):
+                    p_value_2 = _p_value_2
+                    if param_value_type_2 is not None:
+                        try:
+                            _pp = param_value_type_2(_p_value_2)
+                            p_value_2 = _pp
+                        except ValueError:
+                            pass
+
                     pval2 = self.shortened(p_value_2, 3)
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
@@ -1240,9 +1259,9 @@ class TemplatePanel(wx.Panel):
                         )
                     elemnode.label = s_lbl
                     this_op.add_reference(elemnode, 0)
-                    p_value_2 += delta_2
+                    _p_value_2 += delta_2
                     yy = yy + gap_y + size_y
-                p_value_1 += delta_1
+                _p_value_1 += delta_1
                 xx = xx + gap_x + size_x
 
         # Read the parameters and user input
@@ -1257,6 +1276,7 @@ class TemplatePanel(wx.Panel):
         # 4 = keep_unit, 5 = needs_to_be_positive)
         param_name_1 = self.parameters[idx][2]
         param_type_1 = self.parameters[idx][0]
+        param_value_type_1 = self.parameters[idx][6]
         param_prepper_1 = self.parameters[idx][1]
         if param_prepper_1 == "":
             param_prepper_1 = None
@@ -1269,6 +1289,7 @@ class TemplatePanel(wx.Panel):
             return
         param_name_2 = self.parameters[idx][2]
         param_type_2 = self.parameters[idx][0]
+        param_value_type_2 = self.parameters[idx][6]
         param_prepper_2 = self.parameters[idx][1]
         if param_prepper_2 == "":
             param_prepper_2 = None

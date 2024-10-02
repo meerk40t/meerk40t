@@ -1177,6 +1177,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
+            "Legacy-Floyd-Steinberg",
             "Atkinson",
             "Jarvis-Judice-Ninke",
             "Stucki",
@@ -1189,7 +1190,7 @@ class ImagePropertyPanel(ScrolledPanel):
             self,
             wx.ID_ANY,
             choices=self.choices,
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
         self.check_enable_depthmap = wxCheckBox(self, wx.ID_ANY, _("Depthmap"))
         resolutions = list((f"{2**p} - {p}bit" for p in range(8, 1, -1)))
