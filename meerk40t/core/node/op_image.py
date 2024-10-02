@@ -179,7 +179,10 @@ class ImageOpNode(Node, Parameters):
                 node = node.node
             try:
                 e = node.image
-                dpi = node.dpi
+                if self.overrule_dpi and self.dpi:
+                    dpi = self.dpi
+                else:
+                    dpi = node.dpi
             except AttributeError:
                 continue
             min_x, min_y, max_x, max_y = node.bounds
