@@ -671,7 +671,7 @@ def init_tree(kernel):
     @tree_values("dpi", (100, 200, 250, 300, 333.3, 500, 666.6, 750, 1000))
     @tree_operation(
         _("DPI {dpi}"),
-        node_type=("op raster", "elem image"),
+        node_type=("op raster", "op image", "elem image"),
         help=_("Change dpi values"),
     )
     def set_step_n(node, dpi=1, **kwargs):
@@ -680,6 +680,8 @@ def init_tree(kernel):
             if not hasattr(n, "dpi"):
                 continue
             n.dpi = dpi
+            if hasattr(n, "override_dpi"):
+                n.override_dpi = True
             data.append(n)
         for n in list(self.elems(emphasized=True)):
             if n.type == "elem image":
