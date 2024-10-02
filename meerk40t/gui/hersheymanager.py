@@ -1353,6 +1353,8 @@ class PanelFontManager(wx.Panel):
         # Reload....
         self.on_text_directory(None)
 
+    def pane_hide(self):
+        self.sysdirs.pane_hide()
 
 # end of class FontManager
 

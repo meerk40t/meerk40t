@@ -13,6 +13,8 @@ from meerk40t.gui.icons import (
     icon_paint_brush_green,
     icon_warning,
 )
+from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 
@@ -257,9 +259,97 @@ class Warnings:
         return s
 
     def show_concerns(self, *args):
-        msg = self.concerns
-        if msg:
-            wx.MessageBox(msg, _("Warning"), style=wx.OK | wx.ICON_WARNING)
+        # Display a more elaborate information
+        warn_level = self.context.setting(int, "concern_level", 1)
+        list_low = []
+        list_normal = []
+        list_critical = []
+        for msg, level in self._concerns:
+            if level == CONCERN_LOW:
+                list_low.append(msg)
+            if level == CONCERN_NORMAL:
+                list_normal.append(msg)
+            if level == CONCERN_CRITICAL:
+                list_critical.append(msg)
+        txt_low = "\n".join(list_low)
+        txt_mid = "\n".join(list_normal)
+        txt_critical = "\n".join(list_critical)
+        dlg = wx.Dialog(
+            None,
+            wx.ID_ANY,
+            title=_("Warning"),
+            size=wx.DefaultSize,
+            pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+        )
+        # contents
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        l_hi = _("Critical")
+        l_mid = _("Normal")
+        l_low = _("Low")
+        msg = " " + _("(Would not cause the warn-icon to appear)")
+        if warn_level > 3:
+            l_hi += " " + msg
+        if warn_level > 2:
+            l_mid += " " + msg
+        if warn_level > 1:
+            l_low += " " + msg
+
+        label1 = wx.StaticText(dlg, wx.ID_ANY, l_hi)
+        sizer.Add(label1, 0, wx.EXPAND, 0)
+        info_hi = wx.TextCtrl(
+            dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
+        info_hi.SetValue(txt_critical)
+        sizer.Add(info_hi, 1, wx.EXPAND, 0)
+
+        label2 = wx.StaticText(dlg, wx.ID_ANY, l_mid)
+        sizer.Add(label2, 0, wx.EXPAND, 0)
+        info_mid = wx.TextCtrl(
+            dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
+        info_mid.SetValue(txt_mid)
+        sizer.Add(info_mid, 1, wx.EXPAND, 0)
+
+        label3 = wx.StaticText(dlg, wx.ID_ANY, l_low)
+        sizer.Add(label3, 0, wx.EXPAND, 0)
+        info_low = wx.TextCtrl(
+            dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
+        info_low.SetValue(txt_low)
+        sizer.Add(info_low, 1, wx.EXPAND, 0)
+
+        choices = []
+        prechoices = self.context.lookup("choices/preferences")
+        for info in prechoices:
+            if info["attr"] == "concern_level":
+                cinfo = dict(info)
+                cinfo["page"] = ""
+                choices.append(cinfo)
+                break
+        panel = ChoicePropertyPanel(
+            dlg, wx.ID_ANY, context=self.context, choices=choices
+        )
+        sizer.Add(panel, 1, wx.EXPAND, 0)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(dlg, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        # btn = wx.Button(dlg, wx.ID_CANCEL)
+        # btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+        dlg.SetSizer(sizer)
+        sizer.Fit(dlg)
+        dlg.SetSize(dip_size(dlg, 620, 400))
+        dlg.CenterOnScreen()
+        answer = dlg.ShowModal()
+        # Unlisten
+        panel.module_close()
+        dlg.Destroy()
+        # We need to revisit the new value...
+        self.warning_indicator()
 
     def warning_indicator(self):
         def has_ambitious_operations(maxspeed, optypes):
