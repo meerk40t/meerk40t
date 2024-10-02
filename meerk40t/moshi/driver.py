@@ -235,7 +235,13 @@ class MoshiDriver(Parameters):
             self.settings.update(sets)
 
             if segment_type == "line":
-                self._goto_absolute(end.real, end.imag, 1)
+                interp = self.service.interp
+                g.clear()
+                g.line(start, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
             elif segment_type == "end":
                 pass
             elif segment_type == "quad":
@@ -308,7 +314,13 @@ class MoshiDriver(Parameters):
                 self._goto_absolute(start_x, start_y, 0)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self._goto_absolute(*q.end, 1)
+                interp = self.service.interp
+                g = Geomstr()
+                g.line(complex(*q.start), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
             elif isinstance(q, QuadCut):
                 interp = self.service.interp
                 g = Geomstr()
