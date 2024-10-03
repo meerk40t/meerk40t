@@ -7030,8 +7030,8 @@ msgid "Image DPI Scaling"
 msgstr "图像 DPI 缩放"
 
 #: meerk40t/image/imagetools.py:38
-msgid "Unset: Use the image as if it were 1000 pixels per inch."
-msgstr "未设置：将图像视为每英寸 1000 像素。"
+msgid "Unset: Use the image as if it were 96 pixels per inch."
+msgstr "未设置：将图像视为每英寸 96 像素。"
 
 #: meerk40t/image/imagetools.py:39
 msgid ""

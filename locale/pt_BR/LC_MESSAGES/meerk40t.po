@@ -8310,8 +8310,8 @@ msgid "Set: Put the image under a file-node created for it."
 msgstr "Definir: Colocar a imagem sob um nó de arquivo criado para ela."
 
 #: meerk40t/image/imagetools.py:36
-msgid "Unset: Use the image as if it were 1000 pixels per inch."
-msgstr "Não definido: Usar a imagem como se fosse 1000 pixels por polegada."
+msgid "Unset: Use the image as if it were 96 pixels per inch."
+msgstr "Não definido: Usar a imagem como se fosse 96 pixels por polegada."
 
 #: meerk40t/image/imagetools.py:37
 msgid ""
