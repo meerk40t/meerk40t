@@ -1153,6 +1153,8 @@ class ImagePropertyPanel(ScrolledPanel):
             limited=True,
             nonzero=True,
         )
+        self.check_keep_size = wxCheckBox(self, wx.ID_ANY, _("Keep size on change"))
+        self.check_keep_size.SetValue(True)
         self.check_prevent_crop = wxCheckBox(self, wx.ID_ANY, _("No final crop"))
 
         self.panel_lock = PreventChangePanel(
@@ -1315,7 +1317,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.node = node
         if node is None:
             return
-
+        if self.node.type == "elem image":
+            self.check_keep_size.Show(True)
+        else:
+            self.check_keep_size.Show(True)
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
@@ -1333,6 +1338,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.check_prevent_crop.SetValue(node.prevent_crop)
 
     def __set_properties(self):
+        self.check_keep_size.SetToolTip(
+            _("Enabled: Keep size and amend internal resolution") + "\n" +
+            _("Disabled: Keep internal resolution and change size") 
+        )
         self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(True)
@@ -1382,6 +1391,7 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi.Add(self.check_keep_size, 0, wx.EXPAND, 0)
 
         sizer_dpi_crop.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
@@ -1466,7 +1476,17 @@ class ImagePropertyPanel(ScrolledPanel):
         self.context.signal("element_property_update", self.node)
 
     def on_text_dpi(self):
+        old_step = self.node.dpi
         new_step = float(self.text_dpi.GetValue())
+        if old_step == new_step:
+            return
+        if self.node.type == "elem image":
+            keep_size = self.check_keep_size.GetValue()
+            if not keep_size:
+                # We need to rescale the image
+                img_scale = old_step / new_step
+                bb = self.node.bounds
+                self.node.matrix.post_scale(img_scale, img_scale, bb[0], bb[1])
         self.node.dpi = new_step
         self.node_update()
 
