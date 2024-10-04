@@ -156,6 +156,9 @@ def init_commands(kernel):
                 submenu = submenus[submenu_name]
             elif submenu_name is not None:
                 submenu = list()
+                if func.separate_before:
+                    menu_context.append(("------", None))
+                    func.separate_before = False
                 menu.append((submenu_name, submenu))
                 submenus[submenu_name] = submenu
 
