@@ -11,6 +11,7 @@ This data is expected to be called in a menu, but can be called via the console 
 
 import functools
 
+ZZDEFAULT = "ZZZZZZZZZZ"
 
 def tree_calc(value_name, calc_func):
     """
@@ -237,7 +238,7 @@ def tree_separator_before():
 
 
 def tree_operation(
-    registration, name, node_type=None, help=None, enable=True, **kwargs
+    registration, name, node_type=None, help=None, enable=True, grouping=None, **kwargs
 ):
     """
     Main tree registration decorator. Registers the tree operation with the given help and set the enabled state.
@@ -247,6 +248,7 @@ def tree_operation(
     @param node_type: types of node this operation applies to.
     @param help: Help data to be displayed in menu or other help information locations.
     @param enable: Should this be enabled.
+    @param grouping: Hint how to group items together
     @param kwargs: Any remaining keywords.
     @return:
     """
@@ -292,6 +294,8 @@ def tree_operation(
 
         # Should add a separator before this function.
         inner.separate_before = False
+
+        inner.grouping = grouping
 
         # Conditionals required to be true to enable function.
         inner.conditionals = list()
@@ -354,7 +358,36 @@ def tree_operations_for_node(registration, node):
     """
     if node.type is None:
         return
+    mylist = list()
+    print ("Before sort")
+    idx = 0
     for func, m, sname in registration.find("tree", node.type, ".*"):
+        print (f"{idx} - {sname} - {func.submenu} - {func.grouping}")
+        if hasattr(func, "grouping"):
+            mylist.append((func, m, sname, ZZDEFAULT if func.grouping is None else func.grouping))
+        else:
+            mylist.append((func, m, sname, ZZDEFAULT))
+        idx += 1
+    mylist.sort(key=lambda x: x[3])   # Use grouping a sortindicator
+    print ("After sort")
+    idx = 0
+    last_grouping = ""
+    last_submenu = None
+    for func, m, sname, grouping in mylist:
+        if grouping != last_grouping and last_grouping != "":
+            if (last_submenu == func.submenu) or not func.submenu:
+                func.separate_before = True
+            else:
+                if idx > 0:
+                    otherfunc = mylist[idx - 1][0]
+                    otherfunc.separate_after = True
+        print (f"{idx} - {sname} - {func.submenu} - {func.grouping}")
+        last_submenu = func.submenu
+        last_grouping = func.grouping
+        idx += 1
+    
+
+    for func, m, sname, grouping in mylist:
         reject = False
         for cond in func.conditionals:
             # Do not provide this if the conditionals fail.
@@ -456,7 +489,7 @@ def tree_operations_for_node(registration, node):
                     func.radio_state = False
             else:
                 func.radio_state = None
-
+            
             if hasattr(func, "check") and func.check is not None:
                 # Sets the checkbox state by the checkbox function.
                 try:
@@ -473,7 +506,6 @@ def tree_operations_for_node(registration, node):
             func.func_dict = func_dict
             func.real_name = name
             yield func
-
 
 def get_tree_operation_for_node(registration):
     """
