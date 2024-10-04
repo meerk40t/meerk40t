@@ -321,16 +321,16 @@ def init_tree(kernel):
         if res > 0:
             self.signal("rebuild_tree")
 
-    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
-    @tree_operation(
-        _("Elements in scene..."),
-        node_type=elem_nodes,
-        help="",
-        enable=False,
-        grouping="CC__generic",
-    )
-    def element_label(node, **kwargs):
-        return
+    # @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+    # @tree_operation(
+    #     _("Elements in scene..."),
+    #     node_type=elem_nodes,
+    #     help="",
+    #     enable=False,
+    #     grouping="50_ELEM_",
+    # )
+    # def element_label(node, **kwargs):
+    #     return
 
     def add_node_and_children(node):
         data = []
