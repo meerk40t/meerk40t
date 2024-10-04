@@ -1619,6 +1619,7 @@ def init_tree(kernel):
         _("Convert to Elements"),
         node_type="blob",
         help=_("Convert attached binary object to elements"),
+        grouping="85_OPS_BLOB",
     )
     def blob2path(node, **kwargs):
         cancelled = False
@@ -1659,6 +1660,7 @@ def init_tree(kernel):
         _("Execute Blob"),
         node_type="blob",
         help=_("Run the given blob on the current device"),
+        grouping="85_OPS_BLOB",
     )
     def blob_execute(node, **kwargs):
         spooler_job = self.lookup(f"spoolerjob/{node.data_type}")
@@ -1672,6 +1674,7 @@ def init_tree(kernel):
         _("Convert to Cutcode"),
         node_type="blob",
         help="",
+        grouping="85_OPS_BLOB",
     )
     def blob2cut(node, **kwargs):
         node.replace_node(node.as_cutobjects(), type="cutcode")
@@ -1680,6 +1683,7 @@ def init_tree(kernel):
         _("Convert to Path"),
         node_type="cutcode",
         help="",
+        grouping="85_OPS_BLOB",
     )
     def cutcode2pathcut(node, **kwargs):
         cutcode = node.cutcode
