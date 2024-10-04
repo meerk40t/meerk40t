@@ -308,7 +308,36 @@ class MoshiDriver(Parameters):
                 self._goto_absolute(start_x, start_y, 0)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self._goto_absolute(*q.end, 1)
+                x0, y0, x1, y1 = int(q.start[0]), int(q.start[1]), int(q.end[0]), int(q.end[1])
+                dx, dy = abs(x1 - x0), abs(y1 - y0)
+                # horizontal, vertical or 45 deg angled line
+                if dx == 0 or dy == 0 or dx == dy:
+                    self._goto_absolute(*q.end, 1)
+                else:
+                    # other oblique line
+                    if dx > dy:
+                        d = dy
+                        sx = float((x1 - x0) / dy)
+                        if y1 - y0 > 0:
+                            sy = 1
+                        else:
+                            sy = -1
+                    else:
+                        d = dx
+                        if x1 - x0 > 0:
+                            sx = 1
+                        else:
+                            sx = -1
+                        sy = float((y1 - y0) / dx)
+                    x = x0
+                    y = y0
+                    self._goto_absolute(*q.start, 0)
+                    for i in range(d):
+                        while self.hold_work(0):
+                            time.sleep(0.05)
+                        x += sx
+                        y += sy
+                        self._goto_absolute(int(x), int(y), 1)
             elif isinstance(q, QuadCut):
                 interp = self.service.interp
                 g = Geomstr()
