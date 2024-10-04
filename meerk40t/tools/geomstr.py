@@ -1949,20 +1949,7 @@ class Geomstr:
                 at_start = True
                 continue
             elif seg_type == TYPE_LINE:
-                ts = np.linspace(0, 1, 1000)
-                pts = self._line_position(e, ts)
-                distances = np.abs(pts[:-1] - pts[1:])
-                distances = np.cumsum(distances)
-                max_distance = distances[-1]
-                dist_values = np.linspace(
-                    0,
-                    max_distance,
-                    int(np.ceil(max_distance / distance)),
-                    endpoint=False,
-                )[1:]
-                near_t = np.searchsorted(distances, dist_values, side="right")
-                pts = pts[near_t]
-                yield from pts
+                pass
             elif seg_type == TYPE_QUAD:
                 ts = np.linspace(0, 1, 1000)
                 pts = self._quad_position(e, ts)
