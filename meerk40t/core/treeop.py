@@ -223,7 +223,7 @@ def tree_separator_after():
     return decor
 
 
-def tree_separator_before():
+def tree_separate_before():
     """
     Decorator to flag this operation as having a separator before it.
 
@@ -359,40 +359,47 @@ def tree_operations_for_node(registration, node):
     if node.type is None:
         return
     mylist = list()
-    print ("Before sort")
+    # print ("Before sort")
     idx = 0
     for func, m, sname in registration.find("tree", node.type, ".*"):
-        print (f"{idx} - {sname} - {func.submenu} - {func.grouping}")
+        if func.submenu is None:
+            func.submenu = ""
+        # print (f"{idx} - {sname} - {func.submenu} - {func.grouping}")
         if hasattr(func, "grouping"):
             mylist.append((func, m, sname, ZZDEFAULT if func.grouping is None else func.grouping))
         else:
             mylist.append((func, m, sname, ZZDEFAULT))
         idx += 1
-    mylist.sort(key=lambda x: x[3])   # Use grouping a sortindicator
-    print ("After sort")
-    idx = 0
+    mylist = sorted(
+        sorted(mylist, key=lambda d: d[0].submenu),
+        key=lambda d: d[3],
+    )
     last_grouping = ""
-    last_submenu = None
     for func, m, sname, grouping in mylist:
         if grouping != last_grouping and last_grouping != "":
-            if (last_submenu == func.submenu) or not func.submenu:
-                func.separate_before = True
-            else:
-                if idx > 0:
-                    otherfunc = mylist[idx - 1][0]
-                    otherfunc.separate_after = True
-        print (f"{idx} - {sname} - {func.submenu} - {func.grouping}")
-        last_submenu = func.submenu
+            func.separate_before = True
         last_grouping = func.grouping
-        idx += 1
     
-
+    # print ("After sort")
+    last_separator = None
+    idx = -1
     for func, m, sname, grouping in mylist:
+        idx += 1
+        # print (f"{idx} - {sname} - {func.submenu} - {func.grouping} - {last_separator} {func.separate_before if hasattr(func, 'separate_before') else '---'}")
+        if last_separator is not None and hasattr(func, "separate_before"):
+            func.separate_before = func.separate_before or last_separator
+
         reject = False
         for cond in func.conditionals:
             # Do not provide this if the conditionals fail.
             if not cond(node):
                 reject = True
+                # print (f"Reject 1, was {last_separator} will become {func.separate_before if hasattr(func, 'separate_before') else '---'}")
+                if hasattr(func, "separate_before"):
+                    if last_separator is not None:
+                        last_separator = last_separator or func.separate_before
+                    else:
+                        last_separator = func.separate_before
                 break
         if reject:
             continue
@@ -400,6 +407,12 @@ def tree_operations_for_node(registration, node):
             # Do not provide this if the try conditional fail. Crash is a pass.
             try:
                 if not cond(node):
+                    # print (f"Reject 2, was {last_separator} will become {func.separate_before if hasattr(func, 'separate_before') else '---'}")
+                    if hasattr(func, "separate_before"):
+                        if last_separator is not None:
+                            last_separator = last_separator or func.separate_before
+                        else:
+                            last_separator = func.separate_before
                     reject = True
                     break
             except Exception:
@@ -506,6 +519,7 @@ def tree_operations_for_node(registration, node):
             func.func_dict = func_dict
             func.real_name = name
             yield func
+            last_separator = None
 
 def get_tree_operation_for_node(registration):
     """
