@@ -770,7 +770,7 @@ class CornerWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1:
+        if event == 1: # End
             images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 # modified no longer relevant
@@ -780,6 +780,7 @@ class CornerWidget(Widget):
                 #     pass
                 if hasattr(e, "update"):
                     images.append(e)
+                e.modified()
             for e in images:
                 elements.do_image_update(e, self.scene.context)
             self.scene.pane.modif_active = False
@@ -877,7 +878,7 @@ class CornerWidget(Widget):
                     except AttributeError:
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
                     if node.type == "elem image":
                         node._cache = None
             elements.signal("updating")
@@ -1022,6 +1023,7 @@ class SideWidget(Widget):
                 #     e.modified()
                 # except AttributeError:
                 #     pass
+                e.modified()
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
@@ -1125,7 +1127,7 @@ class SideWidget(Widget):
                     except AttributeError:
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
                     if node.type == "elem image":
                         node._cache = None
             elements.signal("updating")
@@ -1527,7 +1529,7 @@ class MoveWidget(Widget):
                         e.matrix.post_translate(dx, dy)
                         # We would normally not adjust the node properties,
                         # but the pure adjustment of the bbox is hopefully not hurting
-                        e.translated(dx, dy)
+                        e.translated(dx, dy, interim=False)
                     self.translate(dx, dy)
                 elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -1537,7 +1539,7 @@ class MoveWidget(Widget):
         Change the position of the selected elements.
         """
 
-        def move_to(dx, dy):
+        def move_to(dx, dy, interim=True):
             if dx == 0 and dy == 0:
                 return
             self.total_dx += dx
@@ -1556,7 +1558,7 @@ class MoveWidget(Widget):
                     e.matrix.post_translate(dx, dy)
                     # We would normally not adjust the node properties,
                     # but the pure adjustment of the bbox is hopefully not hurting
-                    e.translated(dx, dy)
+                    e.translated(dx, dy, interim=interim)
             self.translate(dx, dy)
             elements.signal("updating")
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -1705,7 +1707,7 @@ class MoveWidget(Widget):
                         dy = pt1.imag - pt2.imag
                         self.total_dx = 0
                         self.total_dy = 0
-                        move_to(dx, dy)
+                        move_to(dx, dy, interim=False)
                 # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
@@ -1740,7 +1742,7 @@ class MoveWidget(Widget):
                         dy = pt1[1] - pt2[1]
                         self.total_dx = 0
                         self.total_dy = 0
-                        move_to(dx, dy)
+                        move_to(dx, dy, interim=False)
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
@@ -1750,10 +1752,10 @@ class MoveWidget(Widget):
 
             if not did_snap_to_point:
                 if nearest_snap is None:
-                    move_to(lastdx, lastdy)
+                    move_to(lastdx, lastdy, interim=False)
                 else:
                     move_to(
-                        lastdx - self.master.offset_x, lastdy - self.master.offset_y
+                        lastdx - self.master.offset_x, lastdy - self.master.offset_y, interim=False
                     )
                 self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
@@ -1768,6 +1770,13 @@ class MoveWidget(Widget):
             #             pass
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
+            for node in elements.elems(emphasized=True):
+                try:
+                    if node.lock:
+                        continue
+                except AttributeError:
+                    pass
+                node.modified()
 
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
@@ -1784,7 +1793,7 @@ class MoveWidget(Widget):
             self.total_dy = 0
         elif event == 0:  # move
             # b = elements.selected_area()  # correct, but slow...
-            move_to(dx, dy)
+            move_to(dx, dy, interim=True)
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
 

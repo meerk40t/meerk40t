@@ -1737,7 +1737,7 @@ class Elemental(Service):
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
 
-    def altered(self, node=None, *args):
+    def altered(self, node=None, *args, **kwargs):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -1753,7 +1753,7 @@ class Elemental(Service):
         self.prepare_undo("Element modified")
         self.test_for_keyholes(node, "modified")
 
-    def translated(self, node=None, dx=0, dy=0, *args):
+    def translated(self, node=None, dx=0, dy=0, interim=False, *args):
         # It's safer to just recompute the selection area
         # as these listener routines will be called for every
         # element that faces a .translated(dx, dy)
@@ -1764,7 +1764,7 @@ class Elemental(Service):
         self.prepare_undo("Element shifted")
         self.test_for_keyholes(node, "translated")
 
-    def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
+    def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, *args):
         # It's safer to just recompute the selection area
         # as these listener routines will be called for every
         # element that faces a .translated(dx, dy)
@@ -4089,6 +4089,9 @@ class Elemental(Service):
     def test_for_keyholes(self, node, method):
         if node is None or node.id is None:
             return
+        relevant = getattr(node, "_acts_as_keyhole", False) or getattr(node, "keyhole_reference", None)
+        if not relevant:
+          return
         update_required = True
         if method == "translated":
             update_required = False
@@ -4139,6 +4142,7 @@ class Elemental(Service):
                     # Lets make it visible again
                     refnode = self.find_node(rid)
                     if refnode is not None:
+                        refnode._acts_as_keyhole = False
                         if hasattr(refnode, "stroke") and refnode.stroke is None:
                             refnode.stroke = Color("blue")
                             if self.classify_on_color:
@@ -4153,7 +4157,7 @@ class Elemental(Service):
             raise ValueError("You can't register a keyhole that has not a geometry")
         if node.type != "elem image":
             raise ValueError("You can't link a keyhole to a non-image")
-
+        refnode._acts_as_keyhole = True
         if rid in self.registered_keyholes:
             nodelist = list(self.registered_keyholes[rid])
             if not node in nodelist:
