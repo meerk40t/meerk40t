@@ -130,7 +130,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
         return path
 
-    def scaled(self, sx, sy, ox, oy):
+    def scaled(self, sx, sy, ox, oy, interim=False):
         """
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering its properties
@@ -164,7 +164,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             self._bounds[3] + delta,
         )
         self.set_dirty()
-        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)
 
     def bbox(self, transformed=True, with_stroke=False):
         geometry = self.as_geometry()

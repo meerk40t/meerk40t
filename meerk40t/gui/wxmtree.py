@@ -794,13 +794,13 @@ class ShadowTree:
         if not self.context.elements.suppress_signalling:
             self.elements.signal("highlighted", node)
 
-    def translated(self, node, dx=0, dy=0, *args):
+    def translated(self, node, dx=0, dy=0, interim=False, *args):
         """
         This node was moved
         """
         return
 
-    def scaled(self, node, sx=1, sy=1, ox=0, oy=0, *args):
+    def scaled(self, node, sx=1, sy=1, ox=0, oy=0, interim=False, *args):
         """
         This node was scaled
         """
@@ -836,7 +836,7 @@ class ShadowTree:
             pass
         self.elements.signal("modified", node)
 
-    def altered(self, node):
+    def altered(self, node, *args, **kwargs):
         """
         Notified that this node was altered.
         This node was changed in fundamental ways and nothing about this node remains trusted.
