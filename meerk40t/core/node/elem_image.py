@@ -400,6 +400,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 g = self.green * 0.587
                 b = self.blue * 0.114
                 v = self.lightness
+                if v == 0:
+                    v = 0.000001
                 c = r + g + b
                 try:
                     c /= v
