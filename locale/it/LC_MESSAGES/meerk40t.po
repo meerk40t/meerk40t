@@ -19287,7 +19287,7 @@ msgstr "Quanto dovrebbe essere grande il ponte?"
 
 #: meerk40t/core/elements/element_treeops.py:292
 msgid "Toggle visibility"
-msgstr "Alterna la visibilità"
+msgstr "Alterna Visualizza/Nascondi"
 
 #: meerk40t/core/elements/element_treeops.py:748
 msgid "Horizontal distance between placements?"
@@ -19667,7 +19667,7 @@ msgstr "Caricamento finestre"
 
 #: meerk40t/gui/plugin.py:372
 msgid "Finishing GUI"
-msgstr ""
+msgstr "GUI di finitura"
 
 #: meerk40t/gui/wxmmain.py:1086
 msgid "Suppress animation"
@@ -19829,6 +19829,10 @@ msgstr "Porta da utilizzare"
 msgid "Value to set (0/1)"
 msgstr "Valore da impostare (0/1)"
 
+###
+###
+###
+
 #: meerk40t/gui/plugin.py:204
 msgid "ToolTip delay"
 msgstr "Difettoso, si prega di segnalarlo"
@@ -19952,5 +19956,201 @@ msgstr "avvia un web-server_server sulla porta 2080 (http)"
 #: meerk40t/gui/about.py:1749
 msgid "Faulty, please report"
 msgstr "Difettoso, si prega di segnalarlo"
+
+#: meerk40t/extra/outerworld.py:389
+msgid "You need to provide a value to set (1 / 0 = or True / False)"
+msgstr "È necessario fornire un valore da impostare (1 / 0 = or True / False)"
+
+#: meerk40t/core/elements/elements.py:395
+msgid "Reuse existing"
+msgstr "Riutilizza l'esistente"
+
+#: meerk40t/core/elements/elements.py:398
+msgid "Ticked: When loading a file we will reuse an existing operation with the same principal properties."
+msgstr "Selezionato: Quando si carica un file, si riutilizza un'operazione esistente con le stesse proprietà principali."
+
+#: meerk40t/core/elements/elements.py:402
+msgid "Unticked: We will add another operation aongside existing ones (always the case if properties differ)."
+msgstr "Deselezionato: Aggiungeremo un'altra operazione accanto a quelle esistenti (se le proprietà differiscono)"
+
+#: meerk40t/core/elements/elements.py:472 meerk40t/gui/autoexec.py:180
+msgid "File startup commands"
+msgstr "Comandi di avvio file"
+
+#: meerk40t/core/elements/elements.py:475 meerk40t/gui/wxmmain.py:5080
+msgid "Ignore"
+msgstr "Ignora"
+
+#: meerk40t/core/elements/elements.py:476
+msgid "Ask"
+msgstr "Chiede"
+
+#: meerk40t/core/elements/elements.py:477
+msgid "Allow"
+msgstr "Consente"
+
+#: meerk40t/core/elements/elements.py:482
+msgid "Choose if file startup commands are allowed in principle or will all be ignored."
+msgstr "Scegliere se i comandi di avvio dei file sono consentiti in linea di principio o se vengono tutti ignorati"
+
+#: meerk40t/core/elements/elements.py:483
+msgid "Note: They still need to be activated on a per file basis."
+msgstr "Nota: devono ancora essere attivati per ogni singolo file"
+
+#: meerk40t/core/elements/element_treeops.py:3119
+msgid "Add a keyhole"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3131 meerk40t/core/elements/element_treeops.py:3464 meerk40t/gui/propertypanels/imageproperty.py:46
+msgid "Remove keyhole"
+msgstr ""
+
+#: meerk40t/core/elements/files.py:66
+msgid "Execute file startup command list"
+msgstr "Esegue l'elenco dei comandi di avvio dei file"
+
+#: meerk40t/core/elements/render.py:690
+msgid "The id of the keyhole element"
+msgstr ""
+
+#: meerk40t/core/elements/render.py:693
+msgid "Set a path-like element as keyhole frame for selected images"
+msgstr ""
+
+#: meerk40t/core/elements/render.py:711
+msgid "You need to provide an ID of an element to act as a keyhole"
+msgstr ""
+
+#: meerk40t/core/elements/render.py:715
+msgid "A node with such an ID couldn't be found"
+msgstr "Non è stato possibile trovare un nodo con tale ID"
+
+#: meerk40t/core/elements/render.py:718
+msgid "This node can not act as a keyhole: {nodetype}"
+msgstr ""
+
+#: meerk40t/core/elements/render.py:722 meerk40t/core/elements/render.py:750
+msgid "No images selected/provided"
+msgstr "Non sono state selezionate/fornite immagini"
+
+#: meerk40t/core/elements/render.py:740
+msgid "Removes keyhole frame for selected images"
+msgstr ""
+
+#: meerk40t/extra/outerworld.py:52
+msgid "Filename/url to load"
+msgstr "Nome file/url da caricare"
+
+#: meerk40t/gui/autoexec.py:28
+msgid "Execute on load"
+msgstr "Esegue carico"
+
+#: meerk40t/gui/autoexec.py:29
+msgid "Execute commands"
+msgstr "Esegue comandi"
+
+#: meerk40t/gui/autoexec.py:49
+msgid "List of commands that will be immediately executed after the file has been loaded"
+msgstr "Elenco dei comandi che verranno eseguiti immediatamente dopo il caricamento del file"
+
+#: meerk40t/gui/autoexec.py:50
+msgid "While this might be useful to immediately change a device, it can also be dangerous if you e.g. chose to start a burn."
+msgstr "Se da un lato può essere utile per cambiare immediatamente un dispositivo, dall'altro può essere pericoloso se, ad esempio, si sceglie di avviare il laser"
+
+#: meerk40t/gui/autoexec.py:51
+msgid "Use with care, please!"
+msgstr "Usare con cautela, per favore!"
+
+#: meerk40t/gui/autoexec.py:52
+msgid "Tip: you can deactivate any command by starting the line with a '#'"
+msgstr "Suggerimento: è possibile disattivare qualsiasi comando iniziando la riga con un “#”"
+
+#: meerk40t/gui/autoexec.py:54
+msgid "The autoexec content of this file will be ignored if this option is deactive"
+msgstr "Il contenuto di autoexec di questo file viene ignorato se questa opzione è disattivata"
+
+#: meerk40t/gui/autoexec.py:55
+msgid "Execute the commands"
+msgstr "Esegue i comandi"
+
+#: meerk40t/gui/autoexec.py:56
+msgid "Click to get a list of useful commands"
+msgstr "Clic per ottenere un elenco di comandi utili"
+
+#: meerk40t/gui/autoexec.py:103
+msgid "Clear console"
+msgstr "Pulisci console"
+
+#: meerk40t/gui/autoexec.py:104
+msgid "Start simulation"
+msgstr "Avvio simulazione"
+
+#: meerk40t/gui/autoexec.py:105
+msgid "Burn content on current device"
+msgstr "Avvia la lavorazione sul dispositivo corrente"
+
+#: meerk40t/gui/autoexec.py:135
+msgid "Activate {info}"
+msgstr "Attiva {info}"
+
+#: meerk40t/gui/gui_mixins.py:289
+msgid "Low"
+msgstr "Basso"
+
+#: meerk40t/gui/gui_mixins.py:290
+msgid "(Would not cause the warn-icon to appear)"
+msgstr "(Non visualizza l'icona dell'avviso)"
+
+#: meerk40t/gui/wxmmain.py:2502
+msgid "Startup"
+msgstr "Avvio"
+
+#: meerk40t/gui/wxmmain.py:2504
+msgid "Edit file startup commands"
+msgstr "Modifica il file dei comandi di avvio"
+
+#: meerk40t/gui/wxmmain.py:5078
+msgid "This file contains an active autostart sequence!\nDo you wish to execute it?"
+msgstr "Questo file contiene una sequenza di avvio automatico, avvio?"
+
+#: meerk40t/gui/wxmmain.py:5079
+msgid "Execute"
+msgstr "Esegui"
+
+#: meerk40t/gui/wxmmain.py:5081
+msgid "Startup-sequence found"
+msgstr "Trovata seuenza di avvio"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:32
+msgid "Keyhole"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:56
+msgid "Keyhole:"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:70
+msgid "Remove the keyhole and show the complete image"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1156
+msgid "Keep size on change"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1342
+msgid "Enabled: Keep size and amend internal resolution"
+msgstr "Abilitato: Mantiene le dimensioni e modifica la risoluzione interna"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1343
+msgid "Disabled: Keep internal resolution and change size"
+msgstr "Disabilitato: Mantiene la risoluzione interna e cambia le dimensioni"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1303
+msgid "Overrules image dpi settings and uses this value instead"
+msgstr "Sovrascrive le impostazioni dei dpi dell'immagine e usa questo valore al suo posto"
+
+#: meerk40t/image/imagetools.py:40
+msgid "Unset: Use the image as if it were 96 pixels per inch."
+msgstr "Disabilitato: Utilizza l'immagine come se fosse di 96 pixel per pollice"
 
 
