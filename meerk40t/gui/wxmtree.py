@@ -2190,6 +2190,10 @@ class ShadowTree:
         @return:
         """
         first_element = self.elements.first_element(emphasized=True)
+        if first_element is None:
+            first_element = self.elements.first_element(selected=True)
+        if first_element is None:
+            return
         if hasattr(first_element, "node"):
             # Reference
             first_element = first_element.node
