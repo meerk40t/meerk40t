@@ -921,7 +921,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
         return abs(Path(Polygon((x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0))))
 
-    def translated(self, dx, dy):
+    def translated(self, dx, dy, interim=False):
         self._cache = None
         self._keyhole_image = None
         if self._actualized_matrix is not None:
