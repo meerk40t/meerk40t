@@ -2708,7 +2708,7 @@ msgid "Note Set."
 msgstr "Notiz gespeichert."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr ""
 
 #: meerk40t/core/elements.py:6291
@@ -2716,7 +2716,7 @@ msgid "trace the given elements"
 msgstr ""
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr ""
 
 #: meerk40t/core/elements.py:6312
