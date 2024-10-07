@@ -4308,10 +4308,8 @@ class Geomstr:
         points = sorted(set(points), key=lambda p: p.real)
         first_point_on_hull = points[0]
         point_on_hull = first_point_on_hull
-        idx = 0
         while True:
             yield point_on_hull
-            idx += 1
             endpoint = point_on_hull
             for t in points:
                 if (
@@ -4349,10 +4347,10 @@ class Geomstr:
             else:
                 r = self.segments[r][0]
         # I think tats math is wrong, so here's my orientation calculation
+        # but that will let multiple unit tests fail
         # val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
-        # Tats calculation
-        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
 
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
         if val == 0:
             return "linear"
         elif val > 0:
