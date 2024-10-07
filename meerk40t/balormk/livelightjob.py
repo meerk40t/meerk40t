@@ -395,11 +395,18 @@ class LiveLightJob:
         """
         geometry = Geomstr()
         for n in elements:
-            if hasattr(n, "as_geometry"):
-                geometry.append(n.as_geometry())
-            if hasattr(n, "as_image"):
-                nx, ny, mx, my = n.bounds
-                geometry.append(Geomstr.rect(nx, ny, mx - nx, my - ny))
+            e = None
+            if hasattr(n, "convex_hull"):
+                e = n.convex_hull()
+            if e is None and hasattr(n, "as_geometry"):
+                e = n.as_geometry()
+
+            if e is not None:
+                geometry.append(e)
+            else:
+                if hasattr(n, "as_image"):
+                    nx, ny, mx, my = n.bounds
+                    geometry.append(Geomstr.rect(nx, ny, mx - nx, my - ny))
         if not geometry:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
@@ -439,7 +446,11 @@ class LiveLightJob:
             geometry = Geomstr()
             for node in elements:
                 try:
-                    e = node.as_geometry()
+                    e = None
+                    if hasattr(node, "convex_hull"):
+                        e = node.convex_hull()
+                    if e is None:
+                        e = node.as_geometry()
                 except AttributeError:
                     continue
                 geometry.append(e)

@@ -247,6 +247,12 @@ def generate_hull_shape_quick(data):
 def generate_hull_shape_hull(data):
     pts = []
     for node in data:
+        if hasattr(node, "convex_hull"):
+            ghull = node.convex_hull()
+            if ghull is not None:
+                for pt in ghull.as_points():
+                    pts.append((pt.real, pt.imag))
+                continue
         try:
             path = node.as_path()
             p = path.first_point
