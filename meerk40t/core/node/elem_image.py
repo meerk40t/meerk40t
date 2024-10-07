@@ -202,6 +202,11 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         non_white_pixels = left_side
         t1 = time.perf_counter()
         # Compute the convex hull
+        """
+        After the introduction of the quickhull routine in geomstr
+        the ConvexHull routine from scipy provides only limited
+        advantages over our own routine
+
         pts = None
         try:
             # The ConvexHull routine from scipy provides less points
@@ -214,11 +219,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             # print (f"scipy Hull has {len(pts)} pts")
         except ImportError:
             pass
+        t1b = time.perf_counter()
         if pts is None:
-            c_points = list(complex(p[0], p[1]) for p in non_white_pixels)
-            pts = list(Geomstr.convex_hull(None, c_points))
-            if pts:
-                pts.append(pts[0])
+        """
+        pts = list(Geomstr.convex_hull(None, non_white_pixels))
+        if pts:
+            pts.append(pts[0])
         # print("convex hull done")
         t2 = time.perf_counter()
         # print (f"Hull has {len(pts)} pts")
@@ -227,7 +233,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._convex_hull.transform(self.active_matrix)
         # print (f"Final dimension: {self._convex_hull.bbox()}")
         t3 = time.perf_counter()
-        # print (f"Time to get pixels: {t1-t0:.3f}s, convex_hull: {t2-t1:.3f}s, total: {t3-t0:.3f}s")
+        # print (f"Time to get pixels: {t1-t0:.3f}s, geomstr: {t2-t1b:.3f}s, scipy: {t1b-t1:.3f}s, total: {t3-t0:.3f}s")
         return self._convex_hull
 
     def preprocess(self, context, matrix, plan):
