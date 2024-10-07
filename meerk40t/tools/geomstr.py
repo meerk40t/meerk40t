@@ -4362,9 +4362,9 @@ class Geomstr:
         # Tats calculation
         # val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
 
-        if val1 == 0:
+        if val == 0:
             return "linear"
-        elif val1 > 0:
+        elif val > 0:
             return "ccw"
         else:
             return "cw"
