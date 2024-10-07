@@ -79,12 +79,16 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         else:
             if get("separate_before", default=False):
                 menu.AppendSeparator()
+                c["separate_before"] = False
             if submenu_name:
                 submenu = wx.Menu()
                 menu.AppendSubMenu(submenu, submenu_name)
                 submenus[submenu_name] = submenu
 
         menu_context = submenu if submenu is not None else menu
+        if get("separate_before", default=False):
+            menu.AppendSeparator()
+            c["separate_before"] = False
         t = get("type")
         if t == bool:
             item = menu_context.Append(
@@ -264,12 +268,17 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                             parent_menu = submenu
                         else:
                             submenu = wx.Menu()
+                            if func.separate_before:
+                                last_was_separator = True
+                                parent_menu.AppendSeparator()
+                                func.separate_before = False
+
                             parent_menu.AppendSubMenu(submenu, sname, func.help)
                             submenus[common] = submenu
                             parent_menu = submenu
+            
             menu_context = submenu if submenu is not None else menu
             if func.separate_before:
-                last_was_separator = True
                 menu_context.AppendSeparator()
             if func.reference is not None:
                 menu_context.AppendSubMenu(
@@ -348,6 +357,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         parent_menu = submenu
                     else:
                         submenu = wx.Menu()
+                        if func.separate_before:
+                            parent_menu.AppendSeparator()
+                            func.separate_before = False
                         parent_menu.AppendSubMenu(submenu, sname, func.help)
                         submenus[common] = submenu
                         parent_menu = submenu
@@ -355,6 +367,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         menu_context = submenu if submenu is not None else menu
         if func.separate_before:
             menu_context.AppendSeparator()
+            func.separate_before = False
         if func.reference is not None:
             menu_context.AppendSubMenu(
                 create_menu_for_node(gui, func.reference(node), elements),

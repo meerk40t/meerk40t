@@ -22,7 +22,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..svgelements import Group, Polygon
+from ..svgelements import Group, Polygon, Matrix
 from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
@@ -849,6 +849,43 @@ def is_inside(inner, outer, tolerance=0):
     @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
+    def convex_geometry(raster) -> Geomstr:
+        dx = raster.bounding_box[0]
+        dy = raster.bounding_box[1]
+        dw = raster.bounding_box[2] - raster.bounding_box[0]
+        dh = raster.bounding_box[3] - raster.bounding_box[1]
+        if raster.image is None:
+            return Geomstr.rect(dx, dy, dw, dh)
+        image_np = np.array(raster.image.convert("L"))
+        # Find non-white pixels
+        # Iterate over each row in the image
+        left_side = []
+        right_side = []
+        for y in range(image_np.shape[0]):
+            row = image_np[y]
+            non_white_indices = np.where(row < 255)[0]
+
+            if non_white_indices.size > 0:
+                leftmost = non_white_indices[0]
+                rightmost = non_white_indices[-1]
+                left_side.append((leftmost, y))
+                right_side.insert(0, (rightmost, y))
+        left_side.extend(right_side)
+        non_white_pixels = left_side
+        # Compute convex hull
+        pts = list(Geomstr.convex_hull(None, non_white_pixels))
+        if pts:
+            pts.append(pts[0])
+        geom = Geomstr.lines(*pts)
+        sx = dw / raster.image.width
+        sy = dh / raster.image.height
+        matrix = Matrix()
+        matrix.post_scale(sx, sy)
+        matrix.post_translate(dx, dy)
+        geom.transform(matrix)
+        # print (f"Just as a check: {raster.bounding_box} vs. {geom.bbox()}")
+        return geom
+
     # We still consider a path to be inside another path if it is
     # within a certain tolerance
     inner_path = inner
@@ -867,14 +904,19 @@ def is_inside(inner, outer, tolerance=0):
         return False
     if inner.bounding_box is None:
         return False
-    # Raster is inner if the bboxes overlap anywhere
     if isinstance(inner, RasterCut):
-        return (
-            inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
-            and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
-            and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
-            and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
-        )
+        if not hasattr(inner, "convex_path"):
+            inner.convex_path = convex_geometry(inner).as_path()
+        inner_path = inner.convex_path
+    # # Raster is inner if the bboxes overlap anywhere
+    # if isinstance(inner, RasterCut) and not hasattr(inner, "path"):
+    #     image = inner.image
+    #     return (
+    #         inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
+    #         and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
+    #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
+    #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
+    #     )
     if outer.bounding_box[0] > inner.bounding_box[0] + tolerance:
         # outer minx > inner minx (is not contained)
         return False

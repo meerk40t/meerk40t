@@ -4531,6 +4531,63 @@ class Geomstr:
         If a point refers to a non-point with differing start/end values then
         ~index refers to the endpoint and index refers to the start point.
 
+        Also accepts complex number coordinates, as well as (x,y) coordinate, instead of geom endpoint.
+
+        @param pts:
+
+        @return:
+        Uses a fast quickhull implementation found here: https://gist.github.com/marmakoide/549d925fa55b4d24dad9a0dedc33ae11
+        Quickhull algorithm: https://en.wikipedia.org/wiki/Quickhull
+        """
+
+        def process(S, P, a, b):
+            signed_dist = np.cross(S[P] - S[a], S[b] - S[a])
+            K = [i for s, i in zip(signed_dist, P) if s > 0 and i != a and i != b]
+
+            if len(K) == 0:
+                return (a, b)
+
+            c = max(zip(signed_dist, P))[1]
+            return process(S, K, a, c)[:-1] + process(S, K, c, b)
+
+        def quickhull_2d(S: np.ndarray) -> np.ndarray:
+            a, b = np.argmin(S[:,0]), np.argmax(S[:,0])
+            max_index = np.argmax(S[:,0])
+            # max_element = S[max_index]
+            return process(S, np.arange(S.shape[0]), a, max_index)[:-1] + process(S, np.arange(S.shape[0]), max_index, a)[:-1]
+
+        if len(pts) == 0:
+            return
+        points = []
+        for i in range(len(pts)):
+            p = pts[i]
+            if p is None or (isinstance(p, complex) and np.isnan(p.real)):
+                continue
+            if isinstance(p, int):
+                if p < 0:
+                    p = self.segments[~p][-1]
+                else:
+                    p = self.segments[p][0]
+            if isinstance(p, complex):
+                points.append((p.real, p.imag))
+            else:
+                points.append(p)
+
+        c_points = np.array(points)
+        hull = quickhull_2d(c_points)
+        if hull:
+            res_pts = c_points[np.array(hull)]
+            for p in res_pts:
+                yield complex(p[0], p[1])
+
+
+    def _convex_hull_original(self, pts):
+        """
+        Generate points of the convex hull around the given points.
+
+        If a point refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
         Also accepts complex number coordinates, instead of geom endpoint.
 
         @param pts:
@@ -4590,9 +4647,11 @@ class Geomstr:
                 r = self.segments[~r][-1]
             else:
                 r = self.segments[r][0]
-        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
-            r.imag - q.imag
-        )
+        # I think tats math is wrong, so here's my orientation calculation
+        # but that will let multiple unit tests fail
+        # val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
+
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
         if val == 0:
             return "linear"
         elif val > 0:

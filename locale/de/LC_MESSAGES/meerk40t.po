@@ -2708,7 +2708,7 @@ msgid "Note Set."
 msgstr "Notiz gespeichert."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr ""
 
 #: meerk40t/core/elements.py:6291
@@ -2716,7 +2716,7 @@ msgid "trace the given elements"
 msgstr ""
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr ""
 
 #: meerk40t/core/elements.py:6312
@@ -8493,9 +8493,9 @@ msgid "Set: Put the image under a file-node created for it."
 msgstr "Aktiv: Fügt das Bild unterhalb eines Datei-Elements ein"
 
 #: meerk40t/image/imagetools.py:36
-msgid "Unset: Use the image as if it were 1000 pixels per inch."
+msgid "Unset: Use the image as if it were 96 pixels per inch."
 msgstr ""
-"Zurücksetzen: behandle das Bild als hätte es eine Auflösung von 1000 "
+"Zurücksetzen: behandle das Bild als hätte es eine Auflösung von 96 "
 "Pixel/Zoll."
 
 #: meerk40t/image/imagetools.py:37

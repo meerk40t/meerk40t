@@ -116,6 +116,10 @@ class CropPanel(wx.Panel):
         self._width = None
         self._height = None
         self._bounds = None
+        self._cropleft = 0
+        self._cropright = 0
+        self._cropbottom = 0
+        self._croptop = 0
         self.op = None
         self._no_update = False
 
@@ -173,6 +177,13 @@ class CropPanel(wx.Panel):
         self.node = node
         self.op = None
         self._width, self._height = self.node.image.size
+        for ctl in (self.slider_left, self.slider_right):
+            ctl.SetMin(0)
+            ctl.SetMax(self._width)
+        for ctl in (self.slider_top, self.slider_bottom):
+            ctl.SetMin(0)
+            ctl.SetMax(self._height)
+
         self._bounds = [0, 0, self._width, self._height]
         flag = False
         for n in node.operations:
@@ -188,15 +199,18 @@ class CropPanel(wx.Panel):
                 self._bounds = [0, 0, self._width, self._height]
                 self.op["bounds"] = self._bounds
 
-        self.set_slider_limits("lrtb", False)
-
         self.check_enable_crop.SetValue(flag)
         self.activate_controls(flag)
+        # We need to set the internal variables, as otherwise recalc will take place
+        self._cropleft = self._bounds[0]
+        self._cropright = self._width - self._bounds[2]
 
-        self.cropleft = self._bounds[0]
-        self.cropright = self._bounds[2]
-        self.croptop = self._bounds[1]
-        self.cropbottom = self._bounds[3]
+        self._croptop = self._bounds[1]
+        self._cropbottom = self._height - self._bounds[3]
+        # print (f"From {self._bounds} to l={self.cropleft}, r={self.cropright}, t={self.croptop}, b={self.cropbottom}")
+
+        self.set_slider_limits("lrtb", False)
+
         self._no_update = False
 
     def __set_properties(self):
@@ -271,6 +285,10 @@ class CropPanel(wx.Panel):
             return
         w, h = self.node.image.size
         self._bounds = [0, 0, w, h]
+        self._cropleft = 0
+        self._cropright = 0
+        self._croptop = 0
+        self._cropbottom = 0
         self.op["bounds"] = self._bounds
         self.set_slider_limits("lrtb")
         self.context.elements.do_image_update(self.node, self.context)
@@ -289,9 +307,9 @@ class CropPanel(wx.Panel):
                 last = self._no_update
                 self._no_update = True
                 self.cropleft = 0
-                self.cropright = w
+                self.cropright = 0
                 self.croptop = 0
-                self.cropbottom = h
+                self.cropbottom = 0
                 self._no_update = last
             else:
                 self.op["enable"] = flag
@@ -349,61 +367,72 @@ class CropPanel(wx.Panel):
 
     def set_slider_limits(self, pattern, constraint=True):
         if "l" in pattern:
-            value = self._bounds[2]
+            value = self._width - self.cropright
             self.slider_left.SetMin(0)
             self.slider_left.SetMax(value - 1 if constraint else self._width)
-            if self._bounds[0] != self.slider_left.GetValue():
-                self.slider_left.SetValue(int(self._bounds[0]))
-                dvalue = self._bounds[0]
+            if self.cropleft != self.slider_left.GetValue():
+                self.slider_left.SetValue(int(self.cropleft))
+                dvalue = self.cropleft
                 if dvalue == 0:
                     self.text_left.SetValue("---")
                 else:
                     self.text_left.SetValue(f"> {dvalue} px")
         if "r" in pattern:
-            value = self._bounds[0]
-            self.slider_right.SetMin(value + 1 if constraint else 0)
-            self.slider_right.SetMax(self._width)
-            if self._bounds[2] != self.slider_right.GetValue():
-                self.slider_right.SetValue(int(self._bounds[2]))
-                dvalue = self._width - self._bounds[2]
+            value = self._width - self.cropleft
+            self.slider_right.SetMin(0)
+            self.slider_right.SetMax(value - 1 if constraint else self._width)
+            if self.cropright != self.slider_right.GetValue():
+                self.slider_right.SetValue(int(self.cropright))
+                dvalue = self.cropright
                 if dvalue == 0:
                     self.text_right.SetValue("---")
                 else:
-                    self.text_right.SetValue(f"{dvalue} px <")
+                    self.text_right.SetValue(f"> {dvalue} px")
         if "t" in pattern:
-            value = self._bounds[3]
+            value = self._height - self.cropbottom
             self.slider_top.SetMin(0)
             self.slider_top.SetMax(value - 1 if constraint else self._height)
-            if self._bounds[1] != self.slider_top.GetValue():
-                self.slider_top.SetValue(int(self._bounds[1]))
-                dvalue = self._bounds[1]
+            if self.croptop != self.slider_top.GetValue():
+                self.slider_top.SetValue(int(self.croptop))
+                dvalue = self.croptop
                 if dvalue == 0:
                     self.text_top.SetValue("---")
                 else:
                     self.text_top.SetValue(f"> {dvalue} px")
         if "b" in pattern:
-            value = self._bounds[1]
-            self.slider_bottom.SetMin(value + 1 if constraint else 0)
-            self.slider_bottom.SetMax(self._height)
-            if self._bounds[3] != self.slider_bottom.GetValue():
-                self.slider_bottom.SetValue(int(self._bounds[3]))
-                dvalue = self._height - self._bounds[3]
+            value = self._height - self.croptop
+            self.slider_bottom.SetMin(0)
+            self.slider_bottom.SetMax(value - 1 if constraint else self._height)
+            if self.cropbottom != self.slider_bottom.GetValue():
+                self.slider_bottom.SetValue(int(self.cropbottom))
+                dvalue = self.cropbottom
                 if dvalue == 0:
                     self.text_bottom.SetValue("---")
                 else:
-                    self.text_bottom.SetValue(f"{dvalue} px <")
+                    self.text_bottom.SetValue(f"> {dvalue} px")
+
+
+    def _setbounds(self):
+        if self.op is None:
+            return
+       
+        self.op["bounds"][0] = self.cropleft
+        self.op["bounds"][2] = self._width - self.cropright
+        self.op["bounds"][1] = self.croptop
+        self.op["bounds"][3] = self._height - self.cropbottom
+        self._bounds = self.op["bounds"]
+        # print (f"width: {self._width} from left: {self.cropleft}, from right {self.cropright}: {self.op['bounds'][0]} - {self.op['bounds'][2]}")
+        # print (f"height: {self._height} from top: {self.croptop}, from bottom {self.cropbottom}: {self.op['bounds'][1]} - {self.op['bounds'][3]}")
+        if not self._no_update:
+            self.context.elements.do_image_update(self.node, self.context)
 
     @property
     def cropleft(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[0]
+        return self._cropleft
 
     @cropleft.setter
     def cropleft(self, value):
-        # print(f"Set left to: {value}")
-        self._bounds[0] = value
+        self._cropleft = value
         if self.slider_left.GetValue() != value:
             self.slider_left.SetValue(int(value))
         if value == 0:
@@ -412,47 +441,33 @@ class CropPanel(wx.Panel):
             self.text_left.SetValue(f"> {value} px")
         # We need to adjust the boundaries of the right slider.
         self.set_slider_limits("r")
-        if self.op is not None:
-            self.op["bounds"][0] = value
-            if not self._no_update:
-                self.context.elements.do_image_update(self.node, self.context)
+        self._setbounds()
 
     @property
     def cropright(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[2]
+        return self._cropright
 
     @cropright.setter
     def cropright(self, value):
-        # print(f"Set right to: {value}")
-        self._bounds[2] = value
+        self._cropright = value
         if self.slider_right.GetValue() != value:
             self.slider_right.SetValue(int(value))
-        dvalue = self._width - value
-        if dvalue == 0:
+        if value == 0:
             self.text_right.SetValue("---")
         else:
-            self.text_right.SetValue(f"{dvalue} px <")
+            self.text_right.SetValue(f"{value} px <")
         # We need to adjust the boundaries of the left slider.
         self.set_slider_limits("l")
-        if self.op is not None:
-            self.op["bounds"][2] = value
-            if not self._no_update:
-                self.context.elements.do_image_update(self.node, self.context)
+        self._setbounds()
 
     @property
     def croptop(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[1]
+        return self._croptop
 
     @croptop.setter
     def croptop(self, value):
         # print(f"Set top to: {value}")
-        self._bounds[1] = value
+        self._croptop = value
         if self.slider_top.GetValue() != value:
             self.slider_top.SetValue(int(value))
         if value == 0:
@@ -461,29 +476,25 @@ class CropPanel(wx.Panel):
             self.text_top.SetValue(f"> {value} px")
         # We need to adjust the boundaries of the bottom slider.
         self.set_slider_limits("b")
-        if self.op is not None:
-            self.op["bounds"][1] = value
-            if not self._no_update:
-                self.context.elements.do_image_update(self.node, self.context)
+        self._setbounds()
 
     @property
     def cropbottom(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[3]
+        return self._cropbottom
 
     @cropbottom.setter
     def cropbottom(self, value):
-        self._bounds[3] = value
+        # print(f"Set top to: {value}")
+        self._cropbottom = value
         if self.slider_bottom.GetValue() != value:
             self.slider_bottom.SetValue(int(value))
+        if value == 0:
+            self.text_bottom.SetValue("---")
+        else:
+            self.text_bottom.SetValue(f"{value} px <")
         # We need to adjust the boundaries of the top slider.
         self.set_slider_limits("t")
-        if self.op is not None:
-            self.op["bounds"][3] = value
-            if not self._no_update:
-                self.context.elements.do_image_update(self.node, self.context)
+        self._setbounds()
 
 class ImageModificationPanel(ScrolledPanel):
     name = _("Modification")
@@ -596,6 +607,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.context.elements.do_image_update(self.node, self.context)
         self.context.signal("element_property_update", self.node)
         self.context.signal("selected", self.node)
+        self.fill_operations()
 
     def on_apply_replace(self, event):
         idx = self.combo_scripts.GetSelection()
@@ -1152,6 +1164,8 @@ class ImagePropertyPanel(ScrolledPanel):
             limited=True,
             nonzero=True,
         )
+        self.check_keep_size = wxCheckBox(self, wx.ID_ANY, _("Keep size on change"))
+        self.check_keep_size.SetValue(True)
         self.check_prevent_crop = wxCheckBox(self, wx.ID_ANY, _("No final crop"))
 
         self.panel_lock = PreventChangePanel(
@@ -1176,6 +1190,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
+            "Legacy-Floyd-Steinberg",
             "Atkinson",
             "Jarvis-Judice-Ninke",
             "Stucki",
@@ -1188,7 +1203,7 @@ class ImagePropertyPanel(ScrolledPanel):
             self,
             wx.ID_ANY,
             choices=self.choices,
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
         self.check_enable_depthmap = wxCheckBox(self, wx.ID_ANY, _("Depthmap"))
         resolutions = list((f"{2**p} - {p}bit" for p in range(8, 1, -1)))
@@ -1313,7 +1328,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.node = node
         if node is None:
             return
-
+        if self.node.type == "elem image":
+            self.check_keep_size.Show(True)
+        else:
+            self.check_keep_size.Show(True)
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
@@ -1331,6 +1349,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.check_prevent_crop.SetValue(node.prevent_crop)
 
     def __set_properties(self):
+        self.check_keep_size.SetToolTip(
+            _("Enabled: Keep size and amend internal resolution") + "\n" +
+            _("Disabled: Keep internal resolution and change size") 
+        )
         self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(True)
@@ -1380,6 +1402,7 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi.Add(self.check_keep_size, 0, wx.EXPAND, 0)
 
         sizer_dpi_crop.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
@@ -1464,7 +1487,17 @@ class ImagePropertyPanel(ScrolledPanel):
         self.context.signal("element_property_update", self.node)
 
     def on_text_dpi(self):
+        old_step = self.node.dpi
         new_step = float(self.text_dpi.GetValue())
+        if old_step == new_step:
+            return
+        if self.node.type == "elem image":
+            keep_size = self.check_keep_size.GetValue()
+            if not keep_size:
+                # We need to rescale the image
+                img_scale = old_step / new_step
+                bb = self.node.bounds
+                self.node.matrix.post_scale(img_scale, img_scale, bb[0], bb[1])
         self.node.dpi = new_step
         self.node_update()
 

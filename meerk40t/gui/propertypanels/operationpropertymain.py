@@ -1299,13 +1299,14 @@ class RasterSettingsPanel(wx.Panel):
         param_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
-
+        self.check_overrule_dpi = wxCheckBox(self, wx.ID_ANY)
+        self.check_overrule_dpi.SetToolTip(_("Overrules image dpi settings and uses this value instead"))
         self.text_dpi = TextCtrl(
             self,
             wx.ID_ANY,
             "500",
             limited=True,
-            check="float",
+            check="int",
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_dpi.set_error_level(1, 100000)
@@ -1339,6 +1340,7 @@ class RasterSettingsPanel(wx.Panel):
             + _("this can prevent your laser from stuttering.")
         )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
+        sizer_3.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_6 = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
@@ -1433,7 +1435,7 @@ class RasterSettingsPanel(wx.Panel):
         self.SetSizer(raster_sizer)
 
         self.Layout()
-
+        self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
 
@@ -1460,7 +1462,18 @@ class RasterSettingsPanel(wx.Panel):
             self.Hide()
             return
         if self.operation.dpi is not None:
-            set_ctrl_value(self.text_dpi, str(self.operation.dpi))
+            dpi = int(self.operation.dpi)
+            set_ctrl_value(self.text_dpi, str(dpi))
+        if hasattr(self.operation, "overrule_dpi"):
+            self.check_overrule_dpi.Show(True)
+            overrule = self.operation.overrule_dpi
+            if overrule is None:
+                overrule = False
+            self.check_overrule_dpi.SetValue(overrule)
+            self.text_dpi.Enable(overrule)
+        else:
+            self.check_overrule_dpi.Show(False)
+            self.text_dpi.Enable(True)
         if self.operation.overscan is not None:
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
         if self.operation.raster_direction is not None:
@@ -1468,6 +1481,17 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.Show()
+
+    def on_overrule(self, event):
+        if self.operation is None or not hasattr(self.operation, "overrule_dpi"):
+            return
+        b = self.check_overrule_dpi.GetValue()
+        self.text_dpi.Enable(b)
+        if self.operation.overrule_dpi != b:
+            self.operation.overrule_dpi = b
+            self.context.signal(
+                "element_property_reload", self.operation, "text_dpi"
+            )
 
     def on_text_dpi(self):
         try:
@@ -1477,7 +1501,8 @@ class RasterSettingsPanel(wx.Panel):
                 self.context.signal(
                     "element_property_reload", self.operation, "text_dpi"
                 )
-        except ValueError:
+        except ValueError as e:
+            # print (e)
             pass
 
     def on_text_overscan(self):

@@ -85,7 +85,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         return WarpEffectNode(**nd)
 
-    def scaled(self, sx, sy, ox, oy):
+    def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
 
     def notify_attached(self, node=None, **kwargs):
@@ -116,19 +116,25 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.altered()
         self.set_bounds_parameters()
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
-        self.set_bounds_parameters()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+            self.set_bounds_parameters()
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        Node.notify_translated(self, node, dx, dy, **kwargs)
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
-        self.set_bounds_parameters()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+            self.set_bounds_parameters()
 
     def recalculate(self):
         """
@@ -178,6 +184,9 @@ class WarpEffectNode(Node, FunctionalParameter):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
+        if self._interim:
+            return outlines
+
         self.set_bounds_parameters()
 
         self.perspective_matrix = PMatrix.map(

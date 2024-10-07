@@ -753,7 +753,7 @@ class Node:
                 node = self
             self._parent.notify_modified(node=node, **kwargs)
 
-    def notify_translated(self, node=None, dx=0, dy=0, invalidate=False, **kwargs):
+    def notify_translated(self, node=None, dx=0, dy=0, invalidate=False, interim=False, **kwargs):
         if invalidate:
             self.set_dirty_bounds()
         if self._parent is not None:
@@ -761,11 +761,11 @@ class Node:
                 node = self
             # Any change to position / size needs a recalculation of the bounds
             self._parent.notify_translated(
-                node=node, dx=dx, dy=dy, invalidate=True, **kwargs
+                node=node, dx=dx, dy=dy, invalidate=True, interim=interim, **kwargs
             )
 
     def notify_scaled(
-        self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, **kwargs
+        self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, interim=False, **kwargs
     ):
         if invalidate:
             self.set_dirty_bounds()
@@ -774,7 +774,7 @@ class Node:
                 node = self
             # Any change to position / size needs a recalculation of the bounds
             self._parent.notify_scaled(
-                node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate=True, **kwargs
+                node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate=True, interim=interim, **kwargs
             )
 
     def notify_altered(self, node=None, **kwargs):
@@ -847,7 +847,7 @@ class Node:
         self.invalidated()
         self.notify_modified(self)
 
-    def translated(self, dx, dy):
+    def translated(self, dx, dy, interim=False):
         """
         This is a special case of the modified call, we are translating
         the node without fundamentally altering its properties
@@ -882,14 +882,13 @@ class Node:
         #     for pt in self._points:
         #         pt[0] += dx
         #         pt[1] += dy
-        self.notify_translated(self, dx=dx, dy=dy)
+        self.notify_translated(self, dx=dx, dy=dy, interim=interim)
 
-    def scaled(self, sx, sy, ox, oy):
+    def scaled(self, sx, sy, ox, oy, interim=False):
         """
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering its properties
         """
-
         def apply_it(box):
             x0, y0, x1, y1 = box
             if sx != 1.0:
@@ -916,7 +915,7 @@ class Node:
         if self._paint_bounds is not None:
             self._paint_bounds = apply_it(self._paint_bounds)
         self.set_dirty()
-        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)
 
     def empty_cache(self):
         # Remove cached artifacts
@@ -931,7 +930,7 @@ class Node:
             pass
         self._cache = None
 
-    def altered(self):
+    def altered(self, *args, **kwargs):
         """
         The data structure was changed. Any assumptions about what this object is/was are void.
         """

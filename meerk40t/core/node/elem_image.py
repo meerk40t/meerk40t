@@ -1,3 +1,4 @@
+import numpy as np
 import threading
 import time
 from copy import copy
@@ -8,7 +9,7 @@ from meerk40t.core.node.mixins import LabelDisplay, Suppressable
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
-
+from meerk40t.tools.geomstr import Geomstr
 
 class ImageNode(Node, LabelDisplay, Suppressable):
     """
@@ -41,6 +42,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._keyhole_geometry = None
         self._keyhole_image = None
         self._processing = False
+        self._convex_hull = None
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
@@ -177,6 +179,63 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._keyhole_geometry = geom
         self._keyhole_image = None
 
+    def convex_hull(self) -> Geomstr:
+        if self._convex_hull is not None:
+            return self._convex_hull
+        t0 = time.perf_counter()
+        image_np = np.array(self.active_image.convert("L"))
+        # print (image_np)
+        # Find non-white pixels
+        # Iterate over each row in the image
+        left_side = []
+        right_side = []
+        for y in range(image_np.shape[0]):
+            row = image_np[y]
+            non_white_indices = np.where(row < 255)[0]
+
+            if non_white_indices.size > 0:
+                leftmost = non_white_indices[0]
+                rightmost = non_white_indices[-1]
+                left_side.append((leftmost, y))
+                right_side.insert(0, (rightmost, y))
+        left_side.extend(right_side)
+        non_white_pixels = left_side
+        t1 = time.perf_counter()
+        # Compute the convex hull
+        """
+        After the introduction of the quickhull routine in geomstr
+        the ConvexHull routine from scipy provides only limited
+        advantages over our own routine
+
+        pts = None
+        try:
+            # The ConvexHull routine from scipy provides less points
+            # and is faster (plus it has fewer non-understood artifacts)
+            from scipy.spatial import ConvexHull
+            c_points = np.array(non_white_pixels)
+            hull = ConvexHull(c_points)
+            hpts = c_points[hull.vertices]
+            pts = list( ( p[0], p[1] ) for p in hpts)
+            # print (f"scipy Hull has {len(pts)} pts")
+        except ImportError:
+            pass
+        t1b = time.perf_counter()
+        if pts is None:
+        """
+        pts = list(Geomstr.convex_hull(None, non_white_pixels))
+        if pts:
+            pts.append(pts[0])
+        # print("convex hull done")
+        t2 = time.perf_counter()
+        # print (f"Hull has {len(pts)} pts")
+        self._convex_hull = Geomstr.lines(*pts)
+        # print (f"Hull dimension: {self._convex_hull.bbox()} (for reference: image is {self.active_image.width}x{self.active_image.height} pixels)")
+        self._convex_hull.transform(self.active_matrix)
+        # print (f"Final dimension: {self._convex_hull.bbox()}")
+        t3 = time.perf_counter()
+        # print (f"Time to get pixels: {t1-t0:.3f}s, geomstr: {t2-t1b:.3f}s, scipy: {t1b-t1:.3f}s, total: {t3-t0:.3f}s")
+        return self._convex_hull
+
     def preprocess(self, context, matrix, plan):
         """
         Preprocess step during the cut planning stages.
@@ -285,6 +344,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     self._keyhole_geometry = refnode.as_geometry()
 
             self._processed_image = None
+            self._convex_hull = None
             # self.processed_matrix = None
             if context is None:
                 # Direct execution
@@ -400,6 +460,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 g = self.green * 0.587
                 b = self.blue * 0.114
                 v = self.lightness
+                if v == 0:
+                    v = 0.000001
                 c = r + g + b
                 try:
                     c /= v
@@ -808,7 +870,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 draw = ImageDraw.Draw(maskimage)
                 inverted_main_matrix = Matrix(self.matrix).inverse()
                 matrix = actualized_matrix * inverted_main_matrix * self.matrix
-                
+
                 x0, y0 = matrix.point_in_matrix_space((0, 0))
                 x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
                 # print (x0, y0, x2, y2)
@@ -919,9 +981,11 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
         return abs(Path(Polygon((x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0))))
 
-    def translated(self, dx, dy):
+    def translated(self, dx, dy, interim=False):
         self._cache = None
         self._keyhole_image = None
         if self._actualized_matrix is not None:
             self._actualized_matrix.post_translate(dx, dy)
+        if self._convex_hull is not None:
+            self._convex_hull.translate(dx, dy)
         return super().translated(dx, dy)

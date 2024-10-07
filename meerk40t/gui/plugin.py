@@ -238,7 +238,7 @@ and a wxpython version <= 4.1.1."""
                 "tip": _("Which warning severity level do you want to recognize"),
                 "page": "Gui",
                 "section": "Warning-Indicator",
-                "signals": "icons",
+                "signals": ("icons", "warn_state_update"),
             },
         ]
         kernel.register_choices("preferences", choices)

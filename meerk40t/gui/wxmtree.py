@@ -224,15 +224,22 @@ class TreePanel(wx.Panel):
         # self.Show(False)
 
     def check_for_issues(self):
+        needs_showing = False
         non_assigned, non_burn = self.context.elements.have_unburnable_elements()
+        warn_level = self.context.setting(int, "concern_level", 1)
+        if non_assigned and warn_level <= 2:
+            needs_showing = True
+        if non_burn and warn_level <= 1:
+            needs_showing = True
         self.btn_fix_assign_create.Enable(non_assigned)
         self.btn_fix_assign_existing.Enable(non_assigned)
         self.btn_fix_unburnt.Enable(non_burn)
         new_issue = non_assigned or non_burn
-        if self._last_issue == new_issue:
+        if (self._last_issue == new_issue) and (needs_showing == self.btn_fix_unburnt.IsShown()):
+            # no changes
             return
         self._last_issue = new_issue
-        if new_issue:
+        if new_issue and needs_showing:
             self.warn_panel.Show(True)
             self.warn_panel.ShowItems(True)
         else:
@@ -787,13 +794,13 @@ class ShadowTree:
         if not self.context.elements.suppress_signalling:
             self.elements.signal("highlighted", node)
 
-    def translated(self, node, dx=0, dy=0, *args):
+    def translated(self, node, dx=0, dy=0, interim=False, *args):
         """
         This node was moved
         """
         return
 
-    def scaled(self, node, sx=1, sy=1, ox=0, oy=0, *args):
+    def scaled(self, node, sx=1, sy=1, ox=0, oy=0, interim=False, *args):
         """
         This node was scaled
         """
@@ -829,7 +836,7 @@ class ShadowTree:
             pass
         self.elements.signal("modified", node)
 
-    def altered(self, node):
+    def altered(self, node, *args, **kwargs):
         """
         Notified that this node was altered.
         This node was changed in fundamental ways and nothing about this node remains trusted.
@@ -1440,9 +1447,12 @@ class ShadowTree:
         defaultcolor = Color("black")
         if mini_icon:
             if node.type == "elem image":
-                image = self.renderer.make_thumbnail(
-                    node.active_image, width=self.iconsize, height=self.iconsize
-                )
+                try:
+                    image = self.renderer.make_thumbnail(
+                        node.active_image, width=self.iconsize, height=self.iconsize
+                    )
+                except (MemoryError, RuntimeError):
+                    image = None
             else:
                 # Establish colors (and some images)
                 if node.type.startswith("op ") or node.type.startswith("util "):
@@ -2180,6 +2190,10 @@ class ShadowTree:
         @return:
         """
         first_element = self.elements.first_element(emphasized=True)
+        if first_element is None:
+            first_element = self.elements.first_element(selected=True)
+        if first_element is None:
+            return
         if hasattr(first_element, "node"):
             # Reference
             first_element = first_element.node

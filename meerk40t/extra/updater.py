@@ -537,6 +537,8 @@ def plugin(kernel, lifecycle):
                             dlg.SetSize(dip_size(dlg, 620, 400))
                             dlg.CenterOnScreen()
                             answer = dlg.ShowModal()
+                            # Unlisten
+                            panel.module_close()
                             dlg.Destroy()
                             response = bool(answer in (wx.YES, wx.ID_YES, wx.ID_OK))
                         else:

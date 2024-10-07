@@ -27,6 +27,7 @@ class HatchEffectNode(Node, Suppressable):
         self.hatch_angle_delta = None
         self.hatch_type = None
         self.loops = None
+        self._interim = False
         super().__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
@@ -74,8 +75,11 @@ class HatchEffectNode(Node, Suppressable):
         nd["fill"] = copy(self.fill)
         return HatchEffectNode(**nd)
 
-    def scaled(self, sx, sy, ox, oy):
-        self.altered()
+    def scaled(self, sx, sy, ox, oy, interim=False):
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
     def notify_attached(self, node=None, **kwargs):
         Node.notify_attached(self, node=node, **kwargs)
@@ -101,17 +105,23 @@ class HatchEffectNode(Node, Suppressable):
             return
         self.altered()
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        Node.notify_translated(self, node, dx, dy, **kwargs)
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
     @property
     def angle(self):
@@ -242,6 +252,8 @@ class HatchEffectNode(Node, Suppressable):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
+        if self._interim:
+            return outlines
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
@@ -254,6 +266,14 @@ class HatchEffectNode(Node, Suppressable):
                 )
             )
         return path
+
+    def set_interim(self):
+        self.empty_cache()
+        self._interim = True
+
+    def altered(self, *args, **kwargs):
+        self._interim = False
+        super().altered()
 
     def modified(self):
         self.altered()

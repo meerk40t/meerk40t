@@ -168,7 +168,7 @@ def plugin(kernel, lifecycle=None):
             "label": _("Image DPI Scaling"),
             "tip": "\n".join(
                 (
-                    _("Unset: Use the image as if it were 1000 pixels per inch."),
+                    _("Unset: Use the image as if it were 96 pixels per inch."),
                     _(
                         "Set: Use the DPI setting saved in the image to scale the image to the correct size."
                     ),

@@ -18,6 +18,7 @@ class Stroked(ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
+        self._acts_as_keyhole = False
 
     @property
     def stroke_scaled(self):

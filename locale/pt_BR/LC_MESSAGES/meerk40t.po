@@ -2656,7 +2656,7 @@ msgid "Note Set."
 msgstr "Nota Definida."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr "Método a ser usado (um dos rápidos, casco, complexo, segmento, círculo)"
 
 #: meerk40t/core/elements.py:6291
@@ -2664,7 +2664,7 @@ msgid "trace the given elements"
 msgstr "traçar os elementos fornecidos"
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr "Método inválido, por favor use um dos rápidos, casco, complexo, segmento, círculo."
 
 #: meerk40t/core/elements.py:6312
@@ -8310,8 +8310,8 @@ msgid "Set: Put the image under a file-node created for it."
 msgstr "Definir: Colocar a imagem sob um nó de arquivo criado para ela."
 
 #: meerk40t/image/imagetools.py:36
-msgid "Unset: Use the image as if it were 1000 pixels per inch."
-msgstr "Não definido: Usar a imagem como se fosse 1000 pixels por polegada."
+msgid "Unset: Use the image as if it were 96 pixels per inch."
+msgstr "Não definido: Usar a imagem como se fosse 96 pixels por polegada."
 
 #: meerk40t/image/imagetools.py:37
 msgid ""

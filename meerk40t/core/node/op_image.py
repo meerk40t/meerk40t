@@ -25,6 +25,7 @@ class ImageOpNode(Node, Parameters):
         self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
         self.label = "Image"
+        self.overrule_dpi = False
 
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
@@ -36,7 +37,7 @@ class ImageOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Image"
-        default_map["dpi"] = str(int(self.dpi))
+        default_map["dpi"] = str(int(self.dpi)) if self.overrule_dpi else ""
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -178,7 +179,10 @@ class ImageOpNode(Node, Parameters):
                 node = node.node
             try:
                 e = node.image
-                dpi = node.dpi
+                if self.overrule_dpi and self.dpi:
+                    dpi = self.dpi
+                else:
+                    dpi = node.dpi
             except AttributeError:
                 continue
             min_x, min_y, max_x, max_y = node.bounds
@@ -232,8 +236,9 @@ class ImageOpNode(Node, Parameters):
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
-
         for node in self.children:
+            if self.overrule_dpi and self.dpi:
+                node.dpi = self.dpi 
 
             def actual(image_node):
                 def process_images():

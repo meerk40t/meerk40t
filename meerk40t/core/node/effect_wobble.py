@@ -26,7 +26,7 @@ class WobbleEffectNode(Node, Suppressable):
         self.wobble_interval = "0.1mm"
         self.wobble_speed = 50
         self.wobble_type = "circle"
-
+        self._interim = False
         super().__init__(
             self, type="effect wobble", id=id, label=label, lock=lock, **kwargs
         )
@@ -65,7 +65,7 @@ class WobbleEffectNode(Node, Suppressable):
         nd["fill"] = copy(self.fill)
         return WobbleEffectNode(**nd)
 
-    def scaled(self, sx, sy, ox, oy):
+    def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
 
     def notify_attached(self, node=None, **kwargs):
@@ -92,17 +92,23 @@ class WobbleEffectNode(Node, Suppressable):
             return
         self.altered()
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        Node.notify_translated(self, node, dx, dy, **kwargs)
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
     @property
     def radius(self):
@@ -230,6 +236,9 @@ class WobbleEffectNode(Node, Suppressable):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
+        if self._interim:
+            return outlines
+
         path = Geomstr()
         if self._radius is None or self._interval is None:
             self.recalculate()
@@ -352,6 +361,14 @@ class WobbleEffectNode(Node, Suppressable):
                 )
             )
         return path
+
+    def set_interim(self):
+        self.empty_cache()
+        self._interim = True
+
+    def altered(self, *args, **kwargs):
+        self._interim = False
+        super().altered()
 
     def modified(self):
         self.altered()
