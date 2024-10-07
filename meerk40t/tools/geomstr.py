@@ -4310,23 +4310,14 @@ class Geomstr:
         point_on_hull = first_point_on_hull
         idx = 0
         while True:
-            print (f"{idx}: {point_on_hull.real:.2f}, {point_on_hull.imag:.2f}")
             yield point_on_hull
             idx += 1
             endpoint = point_on_hull
-            lastlinear = None
-            for idx2, t in enumerate(points):
-                orient = Geomstr.orientation(None, point_on_hull, t, endpoint)
-                if orient=="linear":
-                    lastlinear = t
-
-                # if idx == 2 and idx2 <= 3000:
-                #     print (f"Checking {idx2}: {orient}")
+            for t in points:
                 if (
                     point_on_hull is endpoint
-                    or orient == "ccw"
+                    or Geomstr.orientation(None, point_on_hull, t, endpoint) == "ccw"
                 ):
-                    print (f"found something following {idx}: {idx2}")
                     endpoint = t
             point_on_hull = endpoint
             if first_point_on_hull is point_on_hull:
