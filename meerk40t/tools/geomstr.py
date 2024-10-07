@@ -4308,14 +4308,25 @@ class Geomstr:
         points = sorted(set(points), key=lambda p: p.real)
         first_point_on_hull = points[0]
         point_on_hull = first_point_on_hull
+        idx = 0
         while True:
+            print (f"{idx}: {point_on_hull.real:.2f}, {point_on_hull.imag:.2f}")
             yield point_on_hull
+            idx += 1
             endpoint = point_on_hull
-            for t in points:
+            lastlinear = None
+            for idx2, t in enumerate(points):
+                orient = Geomstr.orientation(None, point_on_hull, t, endpoint)
+                if orient=="linear":
+                    lastlinear = t
+
+                # if idx == 2 and idx2 <= 3000:
+                #     print (f"Checking {idx2}: {orient}")
                 if (
                     point_on_hull is endpoint
-                    or Geomstr.orientation(None, point_on_hull, t, endpoint) == "ccw"
+                    or orient == "ccw"
                 ):
+                    print (f"found something following {idx}: {idx2}")
                     endpoint = t
             point_on_hull = endpoint
             if first_point_on_hull is point_on_hull:
@@ -4346,12 +4357,14 @@ class Geomstr:
                 r = self.segments[~r][-1]
             else:
                 r = self.segments[r][0]
-        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
-            r.imag - q.imag
-        )
-        if val == 0:
+        # I think tats math is wrong, so here's my orientation calculation
+        val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
+        # Tats calculation
+        # val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
+
+        if val1 == 0:
             return "linear"
-        elif val > 0:
+        elif val1 > 0:
             return "ccw"
         else:
             return "cw"
