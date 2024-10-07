@@ -1,7 +1,8 @@
+import numpy as np
 import os
 import subprocess
 from copy import copy
-
+from math import tau
 from meerk40t.kernel import CommandSyntaxError
 
 from ..core.exceptions import BadFileError
@@ -9,6 +10,136 @@ from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
 from .dither import dither
+
+def img_to_polygons(
+        node_image,                 # The image 
+        minimal,                    # Minimum area in percent (int) to consider
+        maximal,                    # Maximum area in percent (int) to consider
+        ignoreinner,                # Ignore inner contours 
+        needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+):
+    """
+    Takes the image and provides a list of geomstr + associated matrix
+    containing the (simplified) contours of the artifacts found on the image
+    """
+    try:
+        import cv2
+        from PIL import ImageOps
+    except ImportError:
+        return list()
+    geom_list = list()
+
+    # Convert the image to grayscale
+    img = node_image.convert("L")
+    if needs_invert:
+        gray = np.array(ImageOps.invert(img))
+    else:
+        gray = np.array(img)
+
+    # Apply thresholding to create a binary image
+    _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Find contours in the binary image
+    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
+    width, height = node_image.size
+    minarea = int(minimal / 100.0 * width * height)
+    maxarea = int(maximal / 100.0 * width * height)
+
+    # Extract coordinates of white regions
+    for idx, contour in enumerate(contours):
+        hierarchy = hierarchies[0][idx]
+        # print (hierarchy)
+        h_next, h_prev, h_child, h_parent = hierarchy
+        if ignoreinner and h_parent >= 0:
+            continue
+        area = cv2.contourArea(contour)
+        if area < minarea:
+            continue
+        if area > maxarea:
+            continue
+        region = contour.squeeze().astype(float).tolist()
+        if type(region[0]) is list:
+            if len(region) > 2:
+                crdnts = [{'x': i[0], 'y': i[1]} for i in region]
+
+                geom = Geomstr()
+                notfirst = False
+                for pnt in crdnts:
+                    rx, ry = pnt['x'], pnt['y']
+                    if notfirst:
+                        geom.line(complex(lx, ly), complex(rx, ry))
+                    notfirst = True
+                    lx = rx
+                    ly = ry
+                geom.close()
+                matrix = Matrix()
+                geom_list.append( geom )
+
+    return geom_list
+
+def img_to_rectangles(
+        node_image,                 # The image 
+        minimal,                    # Minimum area in percent (int) to consider
+        maximal,                    # Maximum area in percent (int) to consider
+        ignoreinner,                # Ignore inner contours 
+        needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+):
+    """
+    Takes the image and provides a list of geomstr + associated matrix
+    containing the minimum bounding rectangle of the artifacts found on the image
+    Please note that these rectangles can be already rotated.
+    """
+    try:
+        import cv2
+        from PIL import ImageOps
+    except ImportError:
+        return list()
+    geom_list = list()
+
+    # Convert the image to grayscale
+    img = node_image.convert("L")
+    if needs_invert:
+        gray = np.array(ImageOps.invert(img))
+    else:
+        gray = np.array(img)
+
+    # Apply thresholding to create a binary image
+    _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Find contours in the binary image
+    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
+    width, height = node_image.size
+    minarea = int(minimal / 100.0 * width * height)
+    maxarea = int(maximal / 100.0 * width * height)
+
+    for idx, contour in enumerate(contours):
+        hierarchy = hierarchies[0][idx]
+        # print (hierarchy)
+        h_next, h_prev, h_child, h_parent = hierarchy
+        if ignoreinner and h_parent >= 0:
+            continue
+        area = cv2.contourArea(contour)
+        if area < minarea:
+            continue
+        if area > maxarea:
+            continue
+        rot_rect = cv2.minAreaRect(contour)
+        box = cv2.boxPoints(rot_rect)
+        # rot_rect is a tuple containing  ( (center_x, center_y), (width, height), angle_in_degress
+        # box contains the coordinates of the 4 corners
+        # (center_x, center_y), (rect_width, rect_height), angle_deg = rot_rect
+        # print (f"center: {center_x:.2f}, {center_y:.2f}, dimension: {rect_width:.2f}x{rect_height:.2f}, angle={angle_deg:.1f}")
+        # print (box)
+        geom = Geomstr()
+        geom.line(start=complex(box[0][0], box[0][1]), end=complex(box[1][0], box[1][1]))
+        geom.line(start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1]))
+        geom.line(start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1]))
+        geom.line(start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1]))
+        geom_list.append( geom )
+
+    return geom_list
 
 
 def plugin(kernel, lifecycle=None):
@@ -1400,7 +1531,7 @@ def plugin(kernel, lifecycle=None):
             update_image_node(inode)
         return "image", data
 
-    @context.console_option("minimal", "m", type=int, help=_("minimal area"), default=2)
+    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
     @context.console_option(
         "outer",
         "o",
@@ -1458,9 +1589,8 @@ def plugin(kernel, lifecycle=None):
     ):
         try:
             import cv2
-            import numpy as np
         except ImportError:
-            channel("Either cv2 or numpy weren't installed")
+            channel("cv2 wasn't installed")
             return
         # from PIL import Image
         if data is None:
@@ -1744,6 +1874,142 @@ def plugin(kernel, lifecycle=None):
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
+
+    @context.console_option("threshold", "t", type=float, help=_("Threshold for simplification"), default=0.25)
+    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
+    @context.console_option(
+        "inner",
+        "i",
+        type=bool,
+        help=_("Ignore inner areas"),
+        action="store_true",
+    )
+    @context.console_option(
+        "dontinvert",
+        "d",
+        type=bool,
+        help=_("Do not invert the image"),
+        action="store_true",
+    )
+    @context.console_option(
+        "rectangles",
+        "r",
+        type=bool,
+        help=_("Create minimum-area bounding rectangle instead of the contour"),
+        action="store_true",
+    )
+    @context.console_option(
+        "simplified",
+        "s",
+        type=bool,
+        help=_("Use alternative simplification method"),
+        action="store_true",
+    )
+    @context.console_command(
+        "identify_contour",
+        help=_("identify contours in image"),
+        input_type=(None, "image"),
+        output_type="elements",
+    )
+    def image_contour(
+        command,
+        channel,
+        _,
+        minimal=None,
+        threshold=None,
+        simplified=False,
+        inner=False,
+        dontinvert=False,
+        rectangles=False,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        try:
+            import cv2
+            import time
+        except ImportError:
+            channel("cv2 wasn't installed")
+            return
+
+        t0 = time.perf_counter()
+        elements = context.elements
+        # from PIL import Image
+        if data is None:
+            data = list(e for e in elements.flat(emphasized=True) if e.type == "elem image")
+        if data is None or len(data) == 0:
+            channel(_("No images selected"))
+            return
+
+        ignoreinner = inner
+        if ignoreinner is None:
+            ignoreinner = False
+        if dontinvert is None:
+            dontinvert = False
+        if rectangles is None:
+            rectangles = False
+
+        if minimal is None:
+            minimal = 2
+        if minimal <= 0 or minimal > 100:
+            minimal = 2
+        maximal = 95
+
+        if threshold is None:
+            # We are on pixel level
+            threshold = 0.25
+
+        data_out = list()
+
+        remembered_dithers = list()
+        for idx, inode in enumerate(data):
+            if inode.type != "elem image":
+                continue
+            if inode.dither:
+                remembered_dithers.append(inode)
+                inode.dither = False
+                inode.update(None)
+
+            # node_image = inode.image
+            node_image = inode.active_image
+            width, height = node_image.size
+            if width == 0 or height == 0:
+                continue
+            if not hasattr(inode, "bounds"):
+                continue
+            # Extract polygons from the image
+            if rectangles:
+                geometries = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                msg = "Bounding"
+            else:
+                geometries = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                msg = "Contour"
+            pidx = 0
+            for geom in geometries:
+                pidx += 1                        
+                if simplified:
+                    # Let's try Visvalingam line simplification
+                    geom = geom.simplify_geometry(threshold=threshold)
+                else:
+                    # Use Douglas-Peucker instead
+                    geom = geom.simplify(threshold)
+                geom.transform(inode.active_matrix)
+
+                node = context.elements.elem_branch.add(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    label=f"{msg} {idx+1}.{pidx}",
+                    type="elem path",
+                )
+                data_out.append(node)
+        for inode in remembered_dithers:
+            inode.dither = True
+            inode.update(None)
+
+        t_total_overall = time.perf_counter() - t0
+        channel(f"Done, created: {len(data_out)} contour elements (Total time: {t_total_overall:.2f} sec)")
+        post.append(context.elements.post_classify(data_out))
+        return "elements", data_out
 
 
 class RasterScripts:
