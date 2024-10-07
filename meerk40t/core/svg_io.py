@@ -1607,6 +1607,19 @@ class SVGProcessor:
         # 1) Fix regmark grouping.
         # Regmarks nodes are saved under a group with visibility=False set
         # So let's flatten this top group
+        if len(self.regmark_list) > 0:
+            # We need to add another filenode under regmarks and move all elements to it
+            context_node = self.elements.reg_branch
+            file_node = context_node.add(type="file", filepath=self.pathname)
+            for node in self.regmark_list:
+                if node._parent is context_node:
+                    if node.type == "group" and (node.id == "regmarks" or node.label == "regmarks"):
+                        for n in list(node.children):
+                            file_node.append_child(n)
+                        node.remove_node()  # Removing group/file node.
+                    else:
+                        file_node.append_child(node)
+
         regmark = self.elements.reg_branch
         for c in regmark.children:
             if c.type == "group" and (c.id == "regmarks" or c.label == "regmarks"):

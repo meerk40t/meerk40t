@@ -1434,8 +1434,16 @@ def init_tree(kernel):
         grouping="10_ELEM_DELETION",
     )
     def remove_type_file(node, **kwargs):
+        to_be_removed = [node]
+        for e in self.elem_branch.children:
+            if e.type == "file" and e.filepath == node.filepath and e not in to_be_removed:
+                to_be_removed.append(e)
+        for e in self.reg_branch.children:
+            if e.type == "file" and e.filepath == node.filepath and e not in to_be_removed:
+                to_be_removed.append(e)
+        for e in to_be_removed:
+            e.remove_node()
         self.set_emphasis(None)
-        node.remove_node()
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -2818,7 +2826,15 @@ def init_tree(kernel):
                 _("File does not exist."),
             )
             return
-        node.remove_node()
+        to_be_removed = [node]
+        for e in self.elem_branch.children:
+            if e.type == "file" and e.filepath == node.filepath and e not in to_be_removed:
+                to_be_removed.append(e)
+        for e in self.reg_branch.children:
+            if e.type == "file" and e.filepath == node.filepath and e not in to_be_removed:
+                to_be_removed.append(e)
+        for e in to_be_removed:
+            e.remove_node()
         self.load(filepath)
 
     @tree_operation(
