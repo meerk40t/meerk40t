@@ -12321,7 +12321,7 @@ msgid "Delay 5 seconds"
 msgstr ""
 
 #: meerk40t/core/elements/trace.py:382 meerk40t/core/elements/trace.py:475
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr ""
 
 #: meerk40t/core/elements/trace.py:389
@@ -12333,7 +12333,7 @@ msgid "trace the given elements"
 msgstr ""
 
 #: meerk40t/core/elements/trace.py:411 meerk40t/core/elements/trace.py:501
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr ""
 
 #: meerk40t/core/elements/trace.py:421

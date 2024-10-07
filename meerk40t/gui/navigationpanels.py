@@ -441,9 +441,6 @@ class Drag(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull
         )
-        self.button_align_trace_hull.Bind(
-            wx.EVT_RIGHT_DOWN, self.on_button_align_trace_complex
-        )
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_trace_quick,
@@ -839,9 +836,6 @@ class Drag(wx.Panel):
 
     def on_button_align_trace_hull(self, event=None):
         self.context("element* trace hull\n")
-
-    def on_button_align_trace_complex(self, event=None):
-        self.context("element* trace complex\n")
 
     def on_button_align_trace_circle(self, event=None):
         self.context("element* trace circle\n")

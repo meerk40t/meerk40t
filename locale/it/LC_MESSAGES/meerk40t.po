@@ -2717,16 +2717,16 @@ msgid "Note Set."
 msgstr "Nota impostata."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
-msgstr "Metodo da utilizza (uno tra rapido, contorno, complesso, segmento, cerchio)"
+msgid "Method to use (one of quick, hull, segment, circle)"
+msgstr "Metodo da utilizza (uno tra quick, hull, segment, circle)"
 
 #: meerk40t/core/elements.py:6291
 msgid "trace the given elements"
 msgstr "traccia gli elementi dati"
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
-msgstr "Metodo non valido, utilizza uno dei seguenti metodi: rapido, contorno, complesso, segmento, cerchio"
+msgid "Invalid method, please use one of quick, hull, segment, circle."
+msgstr "Metodo non valido, utilizza uno dei seguenti metodi: quick, hull, segment, circle"
 
 #: meerk40t/core/elements.py:6312
 msgid "No elements bounds to trace"

@@ -2656,7 +2656,7 @@ msgid "Note Set."
 msgstr "Nota Definida."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr "Método a ser usado (um dos rápidos, casco, complexo, segmento, círculo)"
 
 #: meerk40t/core/elements.py:6291
@@ -2664,7 +2664,7 @@ msgid "trace the given elements"
 msgstr "traçar os elementos fornecidos"
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr "Método inválido, por favor use um dos rápidos, casco, complexo, segmento, círculo."
 
 #: meerk40t/core/elements.py:6312
