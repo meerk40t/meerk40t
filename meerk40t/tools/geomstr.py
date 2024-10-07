@@ -4349,9 +4349,9 @@ class Geomstr:
             else:
                 r = self.segments[r][0]
         # I think tats math is wrong, so here's my orientation calculation
-        val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
+        # val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
         # Tats calculation
-        # val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
 
         if val == 0:
             return "linear"
