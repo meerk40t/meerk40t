@@ -15,7 +15,7 @@ from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix
 from meerk40t.core.elements.element_types import op_nodes
-
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -1211,7 +1211,7 @@ def init_commands(kernel):
             copies = 1
         if copies < 1:
             copies = 1
-        
+
         if data_type == "ops":
             add_ops = list()
             for idx in range(copies):
@@ -1490,18 +1490,43 @@ def init_commands(kernel):
         channel("----------")
         return "elements", data
 
+    @kernel.console_option("stitchtolerance", "s", type=Length, help=_("By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"))
+    @kernel.console_option("nostitch", "n", type=bool, action="store_true", help=_("By default elements will be stitched together if the have a common end/start point, this option prevents that and real subpaths will be created"))
     @self.console_command(
         "merge",
         help=_("merge elements"),
         input_type="elements",
         output_type="elements",
     )
-    def element_merge(data=None, post=None, **kwargs):
+    def element_merge(command, channel, _, data=None, post=None, nostitch=None, stitchtolerance=None, **kwargs):
         """
         Merge combines the geometries of the inputs. This matters in some cases where fills are used. Such that two
         nested circles forms a toroid rather two independent circles.
         """
-        node = self.elem_branch.add(type="elem path")
+        if nostitch is None:
+            nostitch = False
+        tolerance = 0
+        if stitchtolerance is not None:
+            try:
+                tolerance = float(Length(stitchtolerance))
+            except ValueError:
+                channel(_("Invalid tolerance distance provided"))
+                return
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No item selected."))
+            return
+        node_label = None
+        for e in data:
+            if e.label is not None:
+                el = e.label
+                idx = el.rfind("-")
+                if idx > 0:
+                    el = el[:idx]
+                node_label = el
+                break
+        node = self.elem_branch.add(type="elem path", label=node_label)
         for e in data:
             try:
                 if hasattr(e, "final_geometry"):
@@ -1525,7 +1550,19 @@ def init_commands(kernel):
                     node.stroke_width = e.stroke_width
             except AttributeError:
                 pass
-            node.geometry.append(path)
+            flag = True
+            if not nostitch:
+                seg1 = node.geometry.segments[node.geometry.index - 1]
+                seg2 = path.segments[0]
+                if node.geometry._segtype(seg1) not in NON_GEOMETRY_TYPES and path._segtype(seg2) not in NON_GEOMETRY_TYPES:
+                    _dummy1, _dummy2, _dummy3, _dummy4, segend = seg1
+                    segstart, _dummy1, _dummy2, _dummy3, _dummy4 = seg2
+                    if abs(segend - segstart) <= tolerance:
+                        channel (_("Stitching two segments together"))
+                        seg2[0] = segend
+                        path.segments[0] = seg2
+                        flag = False
+            node.geometry.append(path, end=flag)
         self.remove_elements(data)
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
@@ -1548,12 +1585,13 @@ def init_commands(kernel):
         elements_nodes = []
         elems = []
         for node in data:
+            node_label = node.label
             node_attributes = []
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
                     node_attributes.append([attrib, oldval])
-            group_node = node.replace_node(type="group", label=node.label)
+            group_node = node.replace_node(type="group", label=node_label)
 
             try:
                 if hasattr(node, "final_geometry"):
@@ -1563,11 +1601,14 @@ def init_commands(kernel):
                 geometry.ensure_proper_subpaths()
             except AttributeError:
                 continue
-
+            idx = 0
             for subpath in geometry.as_subpaths():
-                subnode = group_node.add(geometry=subpath, type="elem path")
+                subpath.ensure_proper_subpaths()
+                idx += 1
+                subnode = group_node.add(geometry=subpath, type="elem path", label=f"{node_label}-{idx}")
                 for item in node_attributes:
                     setattr(subnode, item[0], item[1])
+
                 elems.append(subnode)
             elements_nodes.append(group_node)
         post.append(classify_new(elems))

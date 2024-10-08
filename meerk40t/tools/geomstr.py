@@ -5061,6 +5061,11 @@ class Geomstr:
                 # print (f"inserted an end at #{idx}")
                 self.insert(idx, end_segment)
             idx += 1
+        # And at last: we don't need an TYPE_END as very last segment
+        if self.index:
+            seg1 = self.segments[self.index - 1]
+            if self._segtype(seg1) == TYPE_END:
+                self.index -= 1
 
     def as_subpaths(self):
         """
