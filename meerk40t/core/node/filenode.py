@@ -13,6 +13,7 @@ class FileNode(Node):
         self.filepath = None
         super().__init__(type="file", **kwargs)
         self._formatter = "{element_type}: {filename}"
+        self.set_id(self.id)
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)

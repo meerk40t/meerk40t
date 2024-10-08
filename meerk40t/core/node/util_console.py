@@ -14,6 +14,7 @@ class ConsoleOperation(Node):
         self.command = None
         self._formatter = "{enabled}{command}"
         super().__init__(type="util console", **kwargs)
+        self.set_id(self.id)
 
     def __repr__(self):
         return f"ConsoleOperation('{self.command}')"

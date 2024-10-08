@@ -57,6 +57,7 @@ class RasterOpNode(Node, Parameters):
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
+        self.set_id(self.id)
 
     def __repr__(self):
         return "RasterOp()"

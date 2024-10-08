@@ -17,6 +17,7 @@ class InputOperation(Node):
         self.output = True
         super().__init__(type="util input", **kwargs)
         self._formatter = "{enabled}{element_type} {bits}"
+        self.set_id(self.id)
 
     def __repr__(self):
         return f"InputOperation('{self.input_mask}')"

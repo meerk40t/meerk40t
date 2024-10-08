@@ -123,3 +123,10 @@ elem_ref_nodes = (
     "effect warp",
     "reference",
 )
+
+root_nodes = (
+    "root",
+    "branch reg",
+    "branch ops",
+    "branch elems",
+)

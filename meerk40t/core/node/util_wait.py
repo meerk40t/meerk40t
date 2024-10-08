@@ -17,6 +17,7 @@ class WaitOperation(Node):
         self.output = True
         super().__init__(type="util wait", **kwargs)
         self._formatter = "{enabled}{element_type} {wait}"
+        self.set_id(self.id)
 
     def __repr__(self):
         return f"WaitOperation('{self.wait}')"

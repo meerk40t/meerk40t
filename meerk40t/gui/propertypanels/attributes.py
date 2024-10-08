@@ -290,7 +290,13 @@ class IdPanel(wx.Panel):
 
     def on_text_id_change(self):
         try:
-            self.node.id = self.text_id.GetValue()
+            idt = self.text_id.GetValue()
+            if idt == "":
+                idt = None
+            default = idt
+            self.context.elements.set_node_id(self.node, idt, default=default)
+            if self.node.id != idt:
+                self.text_id.ChangeValue(self.node.id)
             self.context.elements.signal("element_property_reload", self.node)
         except AttributeError:
             pass

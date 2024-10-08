@@ -1447,6 +1447,8 @@ class MoveWidget(Widget):
                         others[2] = newparent
 
             copy_node = copy(e)
+            if copy_node.id is not None:
+                copy_node.id = f"{copy_node.id}-1"
             copy_node.emphasized = False
             copy_node.selected = False
             had_optional = False

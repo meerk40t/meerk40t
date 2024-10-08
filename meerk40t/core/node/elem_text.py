@@ -137,6 +137,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             self.matrix.pre_rotate(rotangle)
 
         self.bounds_with_variables_translated = None
+        self.set_id(self.id)
 
         if font is not None:
             self.parse_font(font)

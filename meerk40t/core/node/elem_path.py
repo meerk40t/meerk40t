@@ -78,6 +78,7 @@ class PathNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             self.stroke_width_zero()
 
         self.set_dirty_bounds()
+        self.set_id(self.id)
 
     def __copy__(self):
         nd = self.node_dict

@@ -394,7 +394,7 @@ def init_commands(kernel):
             channel(_("No selected nodes"))
             return
         for e in data:
-            e.id = id
+            self.set_node_id(e, id, default=id)
         self.validate_ids()
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
@@ -1215,7 +1215,13 @@ def init_commands(kernel):
         if data_type == "ops":
             add_ops = list()
             for idx in range(copies):
-                add_ops.extend(list(map(copy, data)))
+                c_list = list(map(copy, data))
+                for e, d in zip(c_list, data):
+                    if d.id is None:
+                        self.set_node_id(e, None)
+                    else:
+                        self.set_node_id(e, d.id + ":1", default=d.id)
+                add_ops.extend(c_list)
             # print (f"Add ops contains now: {len(add_ops)} operations")
             self.add_ops(add_ops)
             return "ops", add_ops
@@ -1236,7 +1242,13 @@ def init_commands(kernel):
                 tx += x_pos
                 ty += y_pos
                 this_shift = [(tx, ty)] * len(data)
-                add_elem.extend(list(map(copy, data)))
+                c_list = list(map(copy, data))
+                for e, d in zip(c_list, data):
+                    if d.id is None:
+                        self.set_node_id(e, None)
+                    else:
+                        self.set_node_id(e, d.id + ":1", default=d.id)
+                add_elem.extend(c_list)
                 shift.extend(this_shift)
             # print (f"Add elem contains now: {len(add_elem)} elements")
             delta_wordlist = 1

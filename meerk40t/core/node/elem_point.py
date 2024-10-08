@@ -40,6 +40,7 @@ class PointNode(Node, FunctionalParameter, LabelDisplay, Suppressable):
             self.y = 0
         if self.matrix is None:
             self.matrix = Matrix()
+        self.set_id(self.id)
 
     def __copy__(self):
         nd = self.node_dict

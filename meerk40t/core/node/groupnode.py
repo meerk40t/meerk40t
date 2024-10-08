@@ -15,6 +15,7 @@ class GroupNode(Node, LabelDisplay):
             self._hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} ({children} elems)"
         self.set_dirty_bounds()
+        self.set_id(self.id)
 
     def __repr__(self):
         return f"GroupNode('{self.type}', {str(self._parent)})"

@@ -43,6 +43,7 @@ class WobbleEffectNode(Node, Suppressable):
             self.label = "Wobble"
         else:
             self.label = label
+        self.set_id(self.id)
         self.recalculate()
 
         self._total_count = 0
