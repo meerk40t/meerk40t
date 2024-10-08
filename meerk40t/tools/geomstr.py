@@ -210,18 +210,18 @@ class Simplifier:
         - added the two PRs #8 and #11
 
     From the Wiki article https://en.wikipedia.org/wiki/Visvalingam%E2%80%93Whyatt_algorithm
-    The Visvalingam–Whyatt algorithm, is an algorithm that decimates a curve composed 
-    of line segments to a similar curve with fewer points, primarily for usage in 
+    The Visvalingam–Whyatt algorithm, is an algorithm that decimates a curve composed
+    of line segments to a similar curve with fewer points, primarily for usage in
     cartographic generalisation.
-    
+
     Idea
-    Given a polygonal chain (often called a polyline), the algorithm attempts 
+    Given a polygonal chain (often called a polyline), the algorithm attempts
     to find a similar chain composed of fewer points.
 
-    Points are assigned an importance based on local conditions, and points are 
+    Points are assigned an importance based on local conditions, and points are
     removed from the least important to most important.
 
-    In Visvalingam's algorithm, the importance is related to the triangular area added by each point. 
+    In Visvalingam's algorithm, the importance is related to the triangular area added by each point.
 
     Advantages
     The algorithm is easy to understand and explain, but is often competitive with much more complex approaches.
@@ -232,7 +232,7 @@ class Simplifier:
 
     The algorithm does not differentiate between sharp spikes and shallow features, meaning that it will clean up sharp spikes that may be important.
     The algorithm simplifies the entire length of the curve evenly, meaning that curves with high and low detail areas will likely have their fine details eroded.
-    
+
     """
 
     def __init__(self, pts):
@@ -2630,6 +2630,12 @@ class Geomstr:
     def is_closed(self):
         if self.index == 0:
             return True
+        # Even if the last and first segment stitch to each other,
+        # they could still belong to different subpaths!
+        # So a geomstr that has more than one subpath will not be considered closed!
+        for p in self.segments[: self.index]:
+            if self._segtype(p) == TYPE_END:
+                return False
         return abs(self.segments[0][0] - self.segments[self.index - 1][-1]) < 1e-5
 
     #######################
@@ -5055,6 +5061,11 @@ class Geomstr:
                 # print (f"inserted an end at #{idx}")
                 self.insert(idx, end_segment)
             idx += 1
+        # And at last: we don't need an TYPE_END as very last segment
+        if self.index:
+            seg1 = self.segments[self.index - 1]
+            if self._segtype(seg1) == TYPE_END:
+                self.index -= 1
 
     def as_subpaths(self):
         """
