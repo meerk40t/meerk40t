@@ -689,6 +689,15 @@ class Elemental(Service):
         finally:
             self.do_undo = True
 
+    @contextlib.contextmanager
+    def undoscope(self, message):
+        self.undo.mark(message)
+        try:
+            self.do_undo = False
+            yield self
+        finally:
+            self.do_undo = True
+
     def stop_visual_updates(self):
         self._tree.notify_frozen(True)
 
