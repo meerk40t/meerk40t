@@ -2498,6 +2498,15 @@ class MeerK40t(MWindow):
                 "default": "notes",
                 "multi": [
                     {
+                        "identifier": "notes",
+                        "label": _("Notes"),
+                        "icon": icons8_comments,
+                        "tip": _("Open Notes Window"),
+                        "help": "notes",
+                        "action": lambda v: kernel.console("window toggle Notes\n"),
+                        "size": STD_ICON_SIZE,
+                    },
+                    {
                         "identifier": "startup",
                         "label": _("Startup"),
                         "icon": icons8_circled_play,
