@@ -3340,6 +3340,8 @@ def init_tree(kernel):
             result = True
         return result
 
+    @tree_submenu(_("Vectorization..."))
+    @tree_separator_after()
     @tree_conditional(lambda node: has_vectorize(node))
     @tree_operation(
         _("Trace bitmap"),
@@ -3353,6 +3355,118 @@ def init_tree(kernel):
     def trace_bitmap(node, **kwargs):
         with self.undoscope("Trace bitmap"):
             self("vectorize\n")
+
+    @tree_submenu(_("Vectorization..."))
+    @tree_operation(
+        _("Contour detection - shapes"),
+        node_type=(
+            "elem image",
+        ),
+        help=_("Recognize contours=shapes on the given element"),
+        grouping="70_ELEM_IMAGES_Z", # test
+    )
+    def contour_bitmap_polyline(node, **kwargs):
+        current = self.setting(str, "contour_size", "big")
+        if current == "small":
+            minval = 0.2
+        elif current == "normal":
+            minval = 2
+        else:
+            minval = 10
+        inner = self.setting(bool, "contour_inner", True)
+        option = f"--minimal {minval:.2f}{' --inner' if inner else ''}"
+        with self.undoscope("Contour detection"):
+            self(f"identify_contour --simplified {option}\n")
+
+    @tree_submenu(_("Vectorization..."))
+    @tree_separator_after()
+    @tree_operation(
+        _("Contour detection - bounding"),
+        node_type=(
+            "elem image",
+        ),
+        help=_("Recognize contours=shapes on the given element"),
+        grouping="70_ELEM_IMAGES_Z", # test
+    )
+    def contour_bitmap_rectangles(node, **kwargs):
+        current = self.setting(str, "contour_size", "big")
+        if current == "small":
+            minval = 0.2
+        elif current == "normal":
+            minval = 2
+        else:
+            minval = 10
+        inner = self.setting(bool, "contour_inner", True)
+        option = f"--minimal {minval:.2f}{' --inner' if inner else ''}"
+        with self.undoscope("Contour detection"):
+            self(f"identify_contour --rectangles {option}\n")
+
+    def sizecheck(value):
+        def comparison(*args, **kwargs):
+            current = self.setting(str, "contour_size", "big")
+            return current == value
+
+        return comparison
+
+    def inner_check(*args, **kwargs):
+        current = self.setting(bool, "contour_inner", True)
+        return current
+
+    @tree_separate_before()
+    @tree_submenu(_("Vectorization..."))
+    @tree_check(inner_check)
+    @tree_operation(
+        _("Ignore inner areas"),
+        node_type=("elem image", ),
+        help=_("Inner areas will be ignored"),
+        grouping="70_ELEM_IMAGES_Z",
+    )
+    def set_contour_inner(node, **kwargs):
+        current = self.setting(bool, "contour_inner", True)
+        self.contour_inner = not self.contour_inner
+
+    @tree_separate_before()
+    @tree_submenu(_("Vectorization..."))
+    @tree_check(sizecheck("big"))
+    @tree_operation(
+        _("Big objects"),
+        node_type=("elem image", ),
+        help=_(
+            "Only large object will be recognized if checked"
+        ),
+        grouping="70_ELEM_IMAGES_Z",
+    )
+    def set_contour_size_big(node, **kwargs):
+        self.setting(str, "contour_size", "big")
+        self.contour_size = "big"
+
+    @tree_submenu(_("Vectorization..."))
+    @tree_check(sizecheck("normal"))
+    @tree_operation(
+        _("Normal objects"),
+        node_type=("elem image", ),
+        help=_(
+            "Also medium sized objects will be recognized if checked"
+        ),
+        grouping="70_ELEM_IMAGES_Z",
+    )
+    def set_contour_size_normal(node, **kwargs):
+        self.setting(str, "contour_size", "big")
+        self.contour_size = "normal"
+
+    @tree_submenu(_("Vectorization..."))
+    @tree_check(sizecheck("small"))
+    @tree_operation(
+        _("Small objects"),
+        node_type=("elem image", ),
+        help=_(
+            "Also small objects will be recognized if checked"
+        ),
+        grouping="70_ELEM_IMAGES_Z",
+    )
+    def set_contour_size_small(node, **kwargs):
+        self.setting(str, "contour_size", "big")
+        self.contour_size = "small"
 
     @tree_operation(
         _("Convert to vector text"),

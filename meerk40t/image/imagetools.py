@@ -12,10 +12,10 @@ from ..tools.geomstr import Geomstr
 from .dither import dither
 
 def img_to_polygons(
-        node_image,                 # The image 
+        node_image,                 # The image
         minimal,                    # Minimum area in percent (int) to consider
         maximal,                    # Maximum area in percent (int) to consider
-        ignoreinner,                # Ignore inner contours 
+        ignoreinner,                # Ignore inner contours
         needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
 ):
     """
@@ -79,10 +79,10 @@ def img_to_polygons(
     return geom_list
 
 def img_to_rectangles(
-        node_image,                 # The image 
+        node_image,                 # The image
         minimal,                    # Minimum area in percent (int) to consider
         maximal,                    # Maximum area in percent (int) to consider
-        ignoreinner,                # Ignore inner contours 
+        ignoreinner,                # Ignore inner contours
         needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
 ):
     """
@@ -1986,7 +1986,7 @@ def plugin(kernel, lifecycle=None):
                 msg = "Contour"
             pidx = 0
             for geom in geometries:
-                pidx += 1                        
+                pidx += 1
                 if simplified:
                     # Let's try Visvalingam line simplification
                     geom = geom.simplify_geometry(threshold=threshold)
@@ -2007,7 +2007,7 @@ def plugin(kernel, lifecycle=None):
             inode.update(None)
 
         t_total_overall = time.perf_counter() - t0
-        channel(f"Done, created: {len(data_out)} contour elements (Total time: {t_total_overall:.2f} sec)")
+        channel(f"Done, created: {len(data_out)} contour elements >= {minimal}% (Total time: {t_total_overall:.2f} sec)")
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
