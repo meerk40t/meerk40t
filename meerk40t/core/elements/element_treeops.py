@@ -1,7 +1,89 @@
 """
-This is a large number of flagged tree operations. The details of how these are registered is available in the treeop.py
-file. These define the right-click node menu operations. That menu is dynamically created based on various context
-cues.
+This module contains a collection of tree operations that define the right-click node menu operations.
+These operations are dynamically created based on various context cues and allow for manipulation of
+elements within the application.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up the tree operations.
+- init_tree(kernel): Initializes the tree operations and defines various helper functions for node manipulation.
+- operation_property(node, **kwargs): Opens the property window for the selected operation node.
+- edit_console_command(node, **kwargs): Opens the property window for the console command node.
+- path_property(node, **kwargs): Opens the property window for the selected path element.
+- group_property(node, **kwargs): Opens the property window for the selected group node.
+- text_property(node, **kwargs): Opens the property window for the selected text element.
+- image_property(node, **kwargs): Opens the property window for the selected image element.
+- image_convert_unmodified(node, **kwargs): Replaces the node with its original image without modifications.
+- image_convert_unmodified_2(node, **kwargs): Replaces the node with its modified image.
+- image_convert_modifier(node, **kwargs): Unlocks modifications on the image node.
+- remove_effect(node, **kwargs): Removes the effect from the selected node.
+- unhatch_elements(node, **kwargs): Unhatches the selected elements.
+- convert_file_to_group(node, **kwargs): Converts a file node to a normal group.
+- ungroup_elements(node, **kwargs): Ungroups the selected elements.
+- simplify_groups(node, **kwargs): Simplifies nested groups into a single group if applicable.
+- element_visibility_toggle(node, **kwargs): Toggles the visibility of the selected elements.
+- group_elements(node, **kwargs): Groups the selected elements into a new group.
+- clear_all_op_entries(node, **kwargs): Clears all items from the selected operation.
+- toggle_n_operations(node, **kwargs): Enables or disables the selected operations.
+- toggle_op_elem_visibility(node, **kwargs): Shows or hides the contained elements of the selected operation.
+- ops_enable_similar(node, **kwargs): Enables all operations of the same type as the selected operation.
+- ops_disable_similar(node, **kwargs): Disables all operations of the same type as the selected operation.
+- execute_job(node, **kwargs): Executes the selected operation(s).
+- compile_and_simulate(node, **kwargs): Simulates the selected operation(s).
+- clear_all(node, **kwargs): Clears all entries from the operations branch.
+- clear_unused(node, **kwargs): Clears operations without children.
+- set_speed_levels(node, speed=150, **kwargs): Sets the maximum speed for all operations.
+- set_power_levels(node, power=1000, **kwargs): Sets the maximum power for all operations.
+- ops_enable_all(node, **kwargs): Enables all operations in the operations branch.
+- ops_disable_all(node, **kwargs): Disables all operations in the operations branch.
+- remove_n_ops(node, **kwargs): Removes selected operations.
+- select_similar(node, **kwargs): Selects all elements of the same type as the given node.
+- remove_n_elements(node, **kwargs): Deletes the selected elements.
+- make_node_reference(node, **kwargs): Converts the selected node into a reference object.
+- make_polygon_regular(node, **kwargs): Converts a closed polyline into a regular polygon.
+- trace_bitmap(node, **kwargs): Vectorizes the given bitmap element.
+- convert_to_vectext(node, **kwargs): Converts bitmap text to vector text.
+- convert_to_path(singlenode, **kwargs): Converts the selected node to a path.
+- convert_to_path_effect(singlenode, **kwargs): Converts the selected effect node to a path.
+- add_a_keyhole(singlenode, **kwargs): Adds a keyhole effect between selected elements.
+- remove_all_keyholes(singlenode, **kwargs): Removes all associated keyholes from the selected elements.
+- mirror_elem(node, **kwargs): Mirrors the selected elements horizontally.
+- flip_elem(node, **kwargs): Flips the selected elements vertically.
+- scale_elem_amount(node, scale, **kwargs): Scales the selected elements by a specified percentage.
+- rotate_elem_amount(node, angle, **kwargs): Rotates the selected elements by a specified angle.
+- reify_elem_changes(node, **kwargs): Reifies user changes made to the selected elements.
+- break_subpath_elem(node, **kwargs): Breaks subpaths of the selected path element.
+- remove_assignments(singlenode, **kwargs): Removes all assignments from the selected elements.
+- set_assign_option_exclusive(node, **kwargs): Toggles exclusive assignment for the selected elements.
+- set_assign_option_stroke(node, **kwargs): Toggles stroke inheritance for the selected elements.
+- set_assign_option_fill(node, **kwargs): Toggles fill inheritance for the selected elements.
+- duplicate_element_1(node, **kwargs): Duplicates the selected elements once.
+- duplicate_element_n(node, copies, **kwargs): Duplicates the selected elements a specified number of times.
+- make_raster_image(node, **kwargs): Creates a raster image from the assigned elements.
+- add_operation_image(node, **kwargs): Appends an image operation to the operations branch.
+- add_operation_raster(node, **kwargs): Appends a raster operation to the operations branch.
+- add_operation_engrave(node, **kwargs): Appends an engrave operation to the operations branch.
+- add_operation_cut(node, **kwargs): Appends a cut operation to the operations branch.
+- add_operation_hatch(node, **kwargs): Appends a hatch operation to the operations branch.
+- add_operation_dots(node, **kwargs): Appends a dots operation to the operations branch.
+- add_operation_home(node, **kwargs): Appends a home operation to the operations branch.
+- add_operation_origin(node, **kwargs): Appends a return to origin operation to the operations branch.
+- add_operation_beep(node, **kwargs): Appends a beep operation to the operations branch.
+- add_operation_interrupt(node, **kwargs): Appends an interrupt operation to the operations branch.
+- add_operation_wait(node, wait_time, **kwargs): Appends a wait operation to the operations branch.
+- add_operation_output(node, **kwargs): Appends an output operation to the operations branch.
+- add_operation_input(node, **kwargs): Appends an input operation to the operations branch.
+- add_operation_cool_on(node, **kwargs): Appends a coolant on operation to the operations branch.
+- add_operation_cool_off(node, **kwargs): Appends a coolant off operation to the operations branch.
+- add_operation_home_beep_interrupt(node, **kwargs): Appends home, beep, and interrupt operations to the operations branch.
+- add_operation_origin_beep_interrupt(node, **kwargs): Appends origin, beep, and interrupt operations to the operations branch.
+- reload_file(node, **kwargs): Reloads the specified file.
+- open_file_in_explorer(node, **kwargs): Opens the containing folder of the specified file in the system's file manager.
+- open_system_file(node, **kwargs): Opens the specified file in the system application associated with its type.
+- load_ops(node, opname, **kwargs): Loads operations from the specified material.
+- set_mat_load_option(node, **kwargs): Toggles the option to update the status bar on material load.
+- get_direction_values(): Returns a list of possible burn directions.
+- set_direction(node, raster_direction="", **kwargs): Sets the raster direction for the selected operations.
+- set_swing(node, raster_swing="", **kwargs): Sets the swing direction for the selected operations.
 """
 
 import math
