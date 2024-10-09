@@ -168,10 +168,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             newnode._processed_image = copy(self._processed_image)
             newnode._processed_matrix = copy(self._processed_matrix)
             newnode._actualized_matrix = copy(self._actualized_matrix)
-        if self._keyhole_geometry is not None:
-            g = copy(self._keyhole_geometry)
-        else:
-            g = None
+        g = None if self._keyhole_geometry is None else copy(self._keyhole_geometry)
         newnode.set_keyhole(self.keyhole_reference, g)
         return newnode
 
@@ -481,12 +478,11 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         from PIL import Image
 
         img = self.image
-        if img is not None:
-            if img.mode == "RGBA":
-                r, g, b, a = img.split()
-                background = Image.new("RGB", img.size, "white")
-                background.paste(img, mask=a)
-                img = background
+        if img is not None and img.mode == "RGBA":
+            r, g, b, a = img.split()
+            background = Image.new("RGB", img.size, "white")
+            background.paste(img, mask=a)
+            img = background
         return img
 
     def _convert_image_to_grayscale(self, image):
@@ -956,9 +952,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         except ZeroDivisionError:
             m = [1] * N
         # b = y - mx
-        b = [p[i][1] - (m[i] * p[i][0]) for i in range(0, N)]
+        b = [p[i][1] - (m[i] * p[i][0]) for i in range(N)]
         r = list()
-        for i in range(0, p[0][0]):
+        for i in range(p[0][0]):
             r.append(0)
         for i in range(len(p) - 1):
             x0 = p[i][0]
@@ -981,21 +977,21 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         """
         try:
             N = len(p) - 1
-            w = [(p[i + 1][0] - p[i][0]) for i in range(0, N)]
-            h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(0, N)]
+            w = [(p[i + 1][0] - p[i][0]) for i in range(N)]
+            h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(N)]
             ftt = (
                 [0]
-                + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(0, N - 1)]
+                + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(N - 1)]
                 + [0]
             )
-            A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(0, N)]
-            B = [ftt[i] / 2 for i in range(0, N)]
-            C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(0, N)]
-            D = [p[i][1] for i in range(0, N)]
+            A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(N)]
+            B = [ftt[i] / 2 for i in range(N)]
+            C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(N)]
+            D = [p[i][1] for i in range(N)]
         except ZeroDivisionError:
             return list(range(256))
         r = list()
-        for i in range(0, p[0][0]):
+        for i in range(p[0][0]):
             r.append(0)
         for i in range(len(p) - 1):
             a = p[i][0]

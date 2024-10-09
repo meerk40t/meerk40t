@@ -1,3 +1,25 @@
+"""
+ImageOpNode defines an operation for processing images in the laser cutting application.
+
+This class represents a node of type "op image" and manages the settings and behaviors
+associated with image operations, including image processing, classification, and
+time estimation for operations. It allows for the manipulation of image attributes,
+the application of raster cuts, and the handling of drag-and-drop functionality for
+image nodes.
+
+Args:
+    settings (dict, optional): Initial settings for the operation.
+    **kwargs: Additional keyword arguments for node initialization.
+
+Methods:
+    classify(node, fuzzy=False, fuzzydistance=100, usedefault=False): Classifies the given node based on its attributes.
+    load(settings, section): Loads settings from a specified section.
+    save(settings, section): Saves the current settings to a specified section.
+    time_estimate(): Estimates the time required for the operation based on its parameters.
+    preprocess(context, matrix, plan): Preprocesses the operation for execution based on the provided context and matrix.
+    as_cutobjects(closed_distance=15, passes=1): Generates cut objects for the image operation.
+"""
+
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
@@ -238,7 +260,7 @@ class ImageOpNode(Node, Parameters):
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
         for node in self.children:
             if self.overrule_dpi and self.dpi:
-                node.dpi = self.dpi 
+                node.dpi = self.dpi
 
             def actual(image_node):
                 def process_images():
@@ -296,7 +318,7 @@ class ImageOpNode(Node, Parameters):
             horizontal = False
             start_on_left = False
             start_on_top = False
-            if direction == 0 or direction == 4:
+            if direction in [0, 4]:
                 horizontal = True
                 start_on_top = True
             elif direction == 1:
