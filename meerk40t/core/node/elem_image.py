@@ -1,3 +1,32 @@
+"""
+ImageNode is the bootstrapped node type for handling image elements within the application.
+
+This class manages the properties and behaviors associated with image nodes, including
+image processing, transformations, and keyhole functionalities. It supports various
+operations such as cropping, dither effects, and applying raster scripts, while also
+maintaining the necessary metadata for rendering and manipulation.
+
+Args:
+    **kwargs: Additional keyword arguments for node initialization.
+
+Attributes:
+    image: The original image loaded into the node.
+    matrix: The transformation matrix applied to the image.
+    dpi: The resolution of the image in dots per inch.
+    operations: A list of operations to be applied to the image.
+    keyhole_reference: Reference for keyhole operations.
+    active_image: The processed image ready for rendering.
+    active_matrix: The matrix that combines the main matrix with the processed matrix.
+    convex_hull: The convex hull of the non-white pixels in the image.
+
+Methods:
+    set_keyhole(keyhole_ref, geom=None): Sets the keyhole reference and geometry.
+    process_image(step_x=None, step_y=None, crop=True): Processes the image based on the specified steps and cropping options.
+    update(context): Initiates the image processing thread and updates the image.
+    as_image(): Returns the active image and its bounding box.
+    bbox(transformed=True, with_stroke=False): Returns the bounding box of the image.
+"""
+
 import numpy as np
 import threading
 import time
