@@ -1,7 +1,14 @@
 """
-The elements module governs all the interactions with the various nodes, as well as dealing with tree information.
-This serves effectively as the datastructure that stores all information about any active project. This includes
-several smaller functional pieces like Penbox and Wordlists.
+The elements module governs all interactions with various nodes and manages
+the tree structure that stores all information about any active project.
+It includes functionalities for handling operations, elements, and related
+data structures such as Penbox and Wordlists.
+
+This module provides a comprehensive set of classes and functions to manage
+elements within the kernel, including operations for cutting, engraving,
+rasterizing, and handling user-defined settings. It also supports undo
+functionality, element classification, and the management of persistent
+operations and preferences.
 """
 
 import contextlib
@@ -28,6 +35,25 @@ from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
+    """
+    Plugin function for managing the lifecycle of the kernel in the application.
+
+    This function handles different lifecycle events such as plugin registration,
+    pre-registration of commands, and post-boot configurations. It allows for the
+    dynamic loading of various plugins and the registration of commands and preferences
+    based on the specified lifecycle phase.
+
+    Args:
+        kernel: The kernel instance to which the plugins and commands are registered.
+        lifecycle (str, optional): The current lifecycle phase. It can be one of
+            "plugins", "preregister", "register", "postboot", "prestart", or "poststart".
+
+    Returns:
+        list: A list of plugin functions if the lifecycle is "plugins", otherwise None.
+
+    Raises:
+        BadFileError: If there is an issue loading a file during the "prestart" phase.
+    """
     _ = kernel.translation
     # The order of offset_mk before offset_clpr is relevant,
     # as offset_clpr could and should redefine something later
@@ -477,11 +503,13 @@ def plugin(kernel, lifecycle=None):
                     _("Allow"),
                 ),
                 "choices": (0, 1, 2),
-                "tip":
-                    (
-                        _("Choose if file startup commands are allowed in principle or will all be ignored.") + "\n" +
-                        _("Note: They still need to be activated on a per file basis.")
-                    ),
+                "tip": (
+                    _(
+                        "Choose if file startup commands are allowed in principle or will all be ignored."
+                    )
+                    + "\n"
+                    + _("Note: They still need to be activated on a per file basis.")
+                ),
                 "page": "Start",
             },
         ]
@@ -4089,9 +4117,11 @@ class Elemental(Service):
     def test_for_keyholes(self, node, method):
         if node is None or node.id is None:
             return
-        relevant = getattr(node, "_acts_as_keyhole", False) or getattr(node, "keyhole_reference", None)
+        relevant = getattr(node, "_acts_as_keyhole", False) or getattr(
+            node, "keyhole_reference", None
+        )
         if not relevant:
-          return
+            return
         update_required = True
         if method == "translated":
             update_required = False
@@ -4148,11 +4178,12 @@ class Elemental(Service):
                             if self.classify_on_color:
                                 self.classify([refnode])
 
-
     def register_keyhole(self, refnode, node):
         rid = refnode.id
         if rid is None:
-            raise ValueError("You can't register a keyhole element that does not have an ID")
+            raise ValueError(
+                "You can't register a keyhole element that does not have an ID"
+            )
         if not hasattr(refnode, "as_geometry"):
             raise ValueError("You can't register a keyhole that has not a geometry")
         if node.type != "elem image":
@@ -4163,7 +4194,7 @@ class Elemental(Service):
             if not node in nodelist:
                 nodelist.append(node)
         else:
-            nodelist = (node, )
+            nodelist = (node,)
             if hasattr(refnode, "stroke"):
                 refnode.stroke = None
             if hasattr(refnode, "fill"):

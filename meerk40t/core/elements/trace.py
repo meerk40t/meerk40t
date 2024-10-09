@@ -1,5 +1,27 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains a collection of console commands that manage and implement the elements system related to tracing shapes.
+It provides functionalities for calculating minimum enclosing circles, generating hull shapes, and tracing elements based on various methods.
+
+Functions:
+- plugin: Initializes the console commands for the trace system.
+- dist: Calculates the Euclidean distance between two points.
+- is_inside: Checks if a point lies inside or on the boundary of a circle.
+- get_circle_center: Computes the center of a circle defined by three points.
+- circle_from1: Returns the smallest circle that intersects two points.
+- circle_from2: Returns a unique circle that intersects three points.
+- is_valid_circle: Checks if a circle encloses a given set of points.
+- min_circle_trivial: Returns the minimum enclosing circle for up to three points.
+- welzl_helper: Implements Welzl's algorithm to find the minimum enclosing circle.
+- welzl: Finds the minimum enclosing circle using a randomized approach.
+- generate_hull_shape_segment: Generates a hull shape segment from the provided data.
+- generate_hull_shape_quick: Quickly generates a bounding box for the provided data.
+- generate_hull_shape_hull: Generates a convex hull shape from the provided data.
+- generate_hull_shape_circle_data: Computes the minimum enclosing circle for the provided data.
+- generate_hull_shape_circle: Generates a circular hull shape based on the minimum enclosing circle.
+- init_commands: Sets up the console commands related to tracing operations.
+- trace_trace_spooler: Traces the given elements using a specified method.
+- trace_trace_generator: Creates a trace around the given elements based on a specified method.
+
 """
 
 from math import cos, isinf, sin, sqrt, tau

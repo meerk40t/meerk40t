@@ -1,5 +1,144 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing branches and operations within the application.
+These commands allow users to load files, manage operations, and manipulate elements in various ways.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up branch commands.
+- init_commands(kernel): Initializes the branch commands and defines the associated operations.
+- load(channel, _, filename=None, **kwargs): Loads a file from the working directory and adds its contents to the application.
+  Args:
+    channel: The communication channel for messages.
+    filename: The name of the file to load.
+  Returns:
+    A tuple containing the type of the file and its path.
+- element(command, **kwargs): Displays information about operations in the system.
+  Args:
+    command: The command context.
+  Returns:
+    None
+- operation_select(**kwargs): Selects the currently emphasized operations.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and the selected operations.
+- operation_all(**kwargs): Selects all operations in the system.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and all operations.
+- operation_invert(**kwargs): Selects all non-emphasized operations.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and the non-selected operations.
+- operation_base(**kwargs): Selects the currently emphasized operations.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and the emphasized operations.
+- operation_re(command, channel, _, **kwargs): Selects operations based on specified indices.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    A tuple containing the type of operations and the selected operations.
+- operation_select_emphasis(data=None, **kwargs): Sets the specified operations as the current selection.
+  Args:
+    data: The operations to select.
+  Returns:
+    A tuple containing the type of operations and the selected operations.
+- operation_select_plus(data=None, **kwargs): Adds the specified operations to the current selection.
+  Args:
+    data: The operations to add.
+  Returns:
+    A tuple containing the type of operations and the updated selection.
+- operation_select_minus(data=None, **kwargs): Removes the specified operations from the current selection.
+  Args:
+    data: The operations to remove.
+  Returns:
+    A tuple containing the type of operations and the updated selection.
+- operation_select_xor(data=None, **kwargs): Toggles the specified operations in the current selection.
+  Args:
+    data: The operations to toggle.
+  Returns:
+    A tuple containing the type of operations and the updated selection.
+- opelem_select_range(data=None, data_type=None, start=None, end=None, step=1, **kwargs): Subsets the current selection based on specified start, end, and step indices.
+  Args:
+    data: The elements to subset.
+    data_type: The type of data being processed.
+    start: The starting index for the subset.
+    end: The ending index for the subset.
+    step: The step size for the subset.
+  Returns:
+    A tuple containing the type of data and the subsetted elements.
+- opelem_filter(channel=None, data=None, data_type=None, filter=None, **kwargs): Filters the current selection based on the provided filter string.
+  Args:
+    channel: The communication channel for messages.
+    data: The elements to filter.
+    data_type: The type of data being processed.
+    filter: The filter string to apply.
+  Returns:
+    A tuple containing the type of data and the filtered elements.
+- opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs): Sets or retrieves the ID of the specified elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    id: The new ID to set.
+    data: The elements to modify.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the modified elements.
+- opelem_label(command, channel, _, label=None, data=None, data_type=None, **kwargs): Sets or retrieves the label of the specified elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    label: The new label to set.
+    data: The elements to modify.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the modified elements.
+- operation_empty(channel, _, data=None, data_type=None, **kwargs): Removes all elements from the specified operations.
+  Args:
+    channel: The communication channel for messages.
+    data: The operations to clear.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the cleared operations.
+- operation_list(command, channel, _, data=None, **kwargs): Lists information about the specified operations.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The operations to list.
+  Returns:
+    A tuple containing the type of data and the listed operations.
+- element_lock(data=None, **kwargs): Locks the specified elements to prevent manipulation.
+  Args:
+    data: The elements to lock.
+  Returns:
+    A tuple containing the type of data and the locked elements.
+- element_unlock(data=None, **kwargs): Unlocks the specified elements to allow manipulation.
+  Args:
+    data: The elements to unlock.
+  Returns:
+    A tuple containing the type of data and the unlocked elements.
+- e_copy(data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs): Duplicates the specified elements a given number of times with optional offsets.
+  Args:
+    data: The elements to copy.
+    data_type: The type of data being processed.
+    post: Additional processing information.
+    dx: The x-offset for the copies.
+    dy: The y-offset for the copies.
+    copies: The number of copies to create.
+  Returns:
+    A tuple containing the type of data and the copied elements.
+- e_delete(command, channel, _, data=None, data_type=None, **kwargs): Deletes the specified elements or operations.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements or operations to delete.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the deleted elements.
 """
 
 import re

@@ -1,5 +1,77 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing the penbox within the application.
+Users can add, retrieve, and manipulate pen settings, facilitating the organization and retrieval of pen configurations.
+Pens contain a coupöe of burn settings that can be applied by using the pen for a given element.
+It will feel familiar to ezc*d users.
+It's probably a very similar concept to the material methodology and the material manager.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up penbox commands.
+- init_commands(kernel): Initializes the penbox commands and defines the associated operations.
+- penbox(command, channel, _, key=None, remainder=None, **kwargs): Displays information about the penbox or lists the available pen entries.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The specific penbox key to retrieve.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the type of penbox and the data.
+- penbox_add(command, channel, _, count=None, data=None, remainder=None, **kwargs): Adds a specified number of pens to the chosen penbox.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    count: The number of pens to add.
+    data: The penbox to which pens are added.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the type of penbox and the data.
+- penbox_del(command, channel, _, count=None, data=None, remainder=None, **kwargs): Deletes a specified number of pens from the chosen penbox.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    count: The number of pens to delete.
+    data: The penbox from which pens are deleted.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the type of penbox and the data.
+- penbox_set(command, channel, _, index=None, key=None, value=None, data=None, remainder=None, **kwargs): Sets a value in the penbox for the specified index and key.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    index: The index in the penbox to set the value.
+    key: The key for the penbox entry.
+    value: The value to set in the penbox.
+    data: The penbox to modify.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the type of penbox and the data.
+- penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs): Sets the penbox pass for the given operation.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The penbox key to set the pass for.
+    remainder: Additional command arguments.
+    data: The operations to modify.
+  Returns:
+    A tuple containing the type of operations and the data.
+- penbox_value(command, channel, _, key=None, remainder=None, data=None, **kwargs): Sets the penbox value for the given operation.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The penbox key to set the value for.
+    remainder: Additional command arguments.
+    data: The operations to modify.
+  Returns:
+    A tuple containing the type of operations and the data.
+- load_persistent_penbox(): Loads pen settings from persistent storage into the application.
+  Returns:
+    None
+- save_persistent_penbox(): Saves the current pen settings to persistent storage.
+  Returns:
+    None
+- shutdown(*args, **kwargs): Handles the shutdown process by saving pen settings.
+  Returns:
+    None
 """
 
 import re
