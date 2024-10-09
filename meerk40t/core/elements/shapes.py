@@ -847,6 +847,8 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         self.validate_selected_area()
 
+    @self.console_option("douglas", "d", type=bool, action="store_true", default=False)
+    @self.console_option("visvalingam", "v", type=bool, action="store_true", default=False)
     @self.console_option(
         "tolerance",
         "t",
@@ -857,7 +859,7 @@ def init_commands(kernel):
         "simplify", input_type=("elements", None), output_type="elements"
     )
     def simplify_path(
-        command, channel, _, data=None, tolerance=None, post=None, **kwargs
+        command, channel, _, data=None, tolerance=None, douglas=None, visvalingam=None, post=None, **kwargs
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -865,6 +867,11 @@ def init_commands(kernel):
         if len(data) == 0:
             channel("Requires a selected polygon")
             return None
+        method = "douglaspeucker"
+        if douglas:
+            method = "douglaspeucker"
+        if visvalingam:
+            method = "visvalingam"
         if tolerance is None:
             tolerance = 25  # About 1/1000 mil
         for node in data:
@@ -875,7 +882,11 @@ def init_commands(kernel):
             if hasattr(node, "geometry"):
                 geom = node.geometry
                 seg_before = node.geometry.index
-                node.geometry = geom.simplify(tolerance)
+                if method == "douglaspeucker":
+                    node.geometry = geom.simplify(tolerance)
+                else:
+                    # Let's try Visvalingam line simplification
+                    node.geometry = geom.simplify_geometry(threshold=tolerance)
                 node.altered()
                 seg_after = node.geometry.index
                 try:
