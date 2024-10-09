@@ -50,9 +50,9 @@ jobs:
 
     - name: Build MeerK40t
       run: |
-        # Just for the sake of completeness install regular and optional libraries
-        pip install -r requirements.txt
-        pip install -r requirements-optional.txt
+        ## Just for the sake of completeness install regular and optional libraries
+        ## pip install -r requirements.txt
+        ## pip install -r requirements-optional.txt
         ## pyinstaller struggles recognizing and including imports that are dynamic (such as for the plugins)
         ## So for build purposes, we replace the dynamic imports with the static listing that we include in builds
         cd meerk40t
