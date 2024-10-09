@@ -5545,11 +5545,11 @@ class Geomstr:
                 elif segtype == TYPE_END:
                     if len(points):
                         processpts()
-                    newgeom.add_segment(start, control, info, control2, end)
+                    newgeom.append_segment(start, control, info, control2, end)
                 else:
                     if len(points):
                         processpts()
-                    newgeom.add_segment(start, control, info, control2, end)
+                    newgeom.append_segment(start, control, info, control2, end)
             if len(points):
                 processpts()
             if closed and newgeom.index > 0:
