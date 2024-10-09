@@ -1,4 +1,138 @@
 """
+This module provides a set of console commands for managing alignment operations within the application.
+These commands allow users to align elements based on various criteria, including their position and grouping.
+
+It uses a probably overly complicated system of alignment settings that are pushed and popped on an alignment
+stack. This feature was never really used, so its just a bit too much sophisticated?!
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up alignment commands.
+- init_commands(kernel): Initializes the alignment commands and defines the associated operations.
+- _align_xy(channel, _, mode, bounds, data, align_x=None, align_y=None, asgroup=None, **kwargs): Prepares the data for alignment based on the specified parameters.
+  Args:
+    channel: The communication channel for messages.
+    mode: The alignment mode to apply.
+    bounds: The bounds for alignment.
+    data: The elements to align.
+    align_x: The alignment parameter for the x-axis.
+    align_y: The alignment parameter for the y-axis.
+    asgroup: A flag indicating whether to treat the selection as a group.
+  Returns:
+    None
+- alignmode_push(channel, _, data, **kwargs): Pushes the current alignment mode onto the stack for later retrieval.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the current alignment data.
+- alignmode_pop(channel, _, data, **kwargs): Pops the last alignment mode from the stack and sets it as the current mode.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_group(command, channel, _, data, **kwargs): Sets the alignment mode to treat the selection as a group.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_individual(command, channel, _, data, **kwargs): Sets the alignment mode to treat the selection as individual elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_default(channel, _, data, **kwargs): Sets the alignment mode to default, aligning all selected elements equally.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_first(command, channel, _, data, **kwargs): Sets the alignment mode to the first element selected.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_last(command, channel, _, data, **kwargs): Sets the alignment mode to the last element selected.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_bed(channel, _, data, **kwargs): Sets the alignment mode to align elements within the bed dimensions.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_ref(channel, _, data, boundaries, **kwargs): Sets the alignment mode to align elements to a specified reference object.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+    boundaries: The boundaries for alignment.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- align_elements_base(command, channel, _, data=None, remainder=None, **kwargs): Base command for aligning selected elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to align.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_xy(command, channel, _, data=None, alignx=None, aligny=None, **kwargs): Aligns elements based on specified x and y alignment parameters.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to align.
+    alignx: The alignment parameter for the x-axis.
+    aligny: The alignment parameter for the y-axis.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spaceh(command, channel, _, data=None, **kwargs): Distributes selected elements across horizontal space.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spacev(command, channel, _, data=None, **kwargs): Distributes selected elements across vertical space.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spaceh2(command, channel, _, data=None, **kwargs): Distributes selected elements across horizontal space without considering distance.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spacev2(command, channel, _, data=None, **kwargs): Distributes selected elements across vertical space without considering distance.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align(command, channel, _, data=None, preserve_aspect_ratio="none", **kwargs): Aligns elements within the viewbox according to specified aspect ratio rules.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to align.
+    preserve_aspect_ratio: The aspect ratio to preserve during alignment.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+"""
+"""
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 

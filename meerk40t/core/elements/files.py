@@ -1,5 +1,43 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing file operations within the application.
+Users can load and save files, as well as retrieve information about supported file types.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up file commands.
+- init_commands(kernel): Initializes the file commands and defines the associated operations.
+- file_open(command, channel, _, filename, **kwargs): Loads a specified file and reports the result to the user.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    filename: The name of the file to load.
+  Returns:
+    None
+- file_open_types(command, channel, _, **kwargs): Lists the types of files that can be loaded by the application.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    None
+- file_save(command, channel, _, filename, version, **kwargs): Saves the current data to a specified file with an optional version.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    filename: The name of the file to save.
+    version: The version of the file to save.
+  Returns:
+    None
+- file_save_types(command, channel, _, **kwargs): Lists the types of files that can be saved by the application.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    None
+- file_autoexec(command, channel, _, **kwargs): Executes a list of startup commands defined in the last loaded file.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    None
 """
 
 

@@ -48,8 +48,8 @@ https://feirell.github.io/offset-bezier/
 The algorithm deals with the challenge as follows:
 a) It walks through the subpaths of a given path so that we have a continuous curve
 b) It looks at the different segment typs and deals with them,
-generating a new offseted segement
-c) Finally it stitches those segments together, treating for the simplifaction
+generating a new offseted segment
+c) Finally it stitches those segments together, preparing for the simplification
 """
 
 

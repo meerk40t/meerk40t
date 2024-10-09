@@ -1,5 +1,11 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module clipboard operations provides a set of console commands for managing clipboard operations
+within the elements system of the application. application.
+It allows the user to copy, cut, paste, and clear elements, as well to as manage clipboard contents and settings.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up copy, clipboard commands.
+- init_commands(kernel): cut, paste, and clear Initializes the clipboard commands and defines elements, as well as manage clipboard contents.
 """
 
 from copy import copy

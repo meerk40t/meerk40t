@@ -1,5 +1,49 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains a collection of console commands that manage and implement the elements system within the application.
+It provides functionalities for creating, modifying, and classifying various geometric shapes and elements.
+
+Functions:
+- plugin: Initializes the console commands for the elements system.
+- init_commands: Sets up the console commands related to shapes and elements.
+- element_circle: Creates a circle element at specified coordinates with a given radius.
+- element_circle_r: Creates a circle element at the origin with a specified radius.
+- element_ellipse: Creates an ellipse element with specified center and radii.
+- element_rect: Draws a rectangle with optional rounded corners.
+- element_line: Draws a line between two specified points.
+- effect_remove: Removes effects from selected elements.
+- effect_hatch: Adds a hatch effect to selected elements.
+- effect_wobble: Adds a wobble effect to selected elements.
+- element_text: Creates a text element with specified content and font size.
+- element_text_anchor: Sets the text anchor for a text element.
+- element_text_edit: Edits the text content of a text element.
+- element_property_set: Sets a specified property to a new value for selected elements.
+- recalc: Recalculates the bounds of selected elements.
+- simplify_path: Simplifies the geometry of selected paths.
+- create_pattern: Creates a pattern from selected elements.
+- element_poly: Creates a polygon or polyline from specified points.
+- element_pathd_info: Lists the path data of recognized paths.
+- element_path: Creates a path element from SVG path syntax.
+- element_stroke_width: Adjusts the stroke width of selected elements.
+- element_cap: Sets the line cap style for selected paths.
+- element_join: Sets the line join style for selected paths.
+- element_rule: Sets the fill rule for selected paths.
+- element_stroke: Sets the stroke color for selected elements.
+- element_fill: Sets the fill color for selected elements.
+- element_frame: Draws a frame around the currently selected elements.
+- element_rotate: Rotates selected elements by a specified angle.
+- element_scale: Scales selected elements by specified factors.
+- element_area: Provides information about or changes the area of selected elements.
+- element_translate: Translates selected elements by specified offsets.
+- element_position: Sets the position of selected elements to specified coordinates.
+- element_move_to_laser: Moves selected elements to the current position of the laser head.
+- element_resize: Resizes selected elements to specified dimensions.
+- element_matrix: Sets the transformation matrix for selected elements.
+- reset: Resets affine transformations for selected elements.
+- element_reify: Reifies affine transformations for selected elements.
+- element_circ_arc_path: Converts paths to use circular arcs.
+- element_classify: Classifies selected elements into operations.
+- declassify: Declassifies selected elements.
+
 """
 
 from math import sqrt
