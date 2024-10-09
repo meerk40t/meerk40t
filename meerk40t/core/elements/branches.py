@@ -1666,6 +1666,7 @@ def init_commands(kernel):
                 node_label = el
                 break
         node = self.elem_branch.add(type="elem path", label=node_label)
+        first = True
         for e in data:
             try:
                 if hasattr(e, "final_geometry"):
@@ -1689,19 +1690,70 @@ def init_commands(kernel):
                     node.stroke_width = e.stroke_width
             except AttributeError:
                 pass
-            flag = True
+            if first:
+                node.geometry = path
+                first = False
+                continue
+            separate = True
+            orientation = True
+            path_before = False
             if not nostitch:
-                seg1 = node.geometry.segments[node.geometry.index - 1]
-                seg2 = path.segments[0]
-                if node.geometry._segtype(seg1) not in NON_GEOMETRY_TYPES and path._segtype(seg2) not in NON_GEOMETRY_TYPES:
-                    _dummy1, _dummy2, _dummy3, _dummy4, segend = seg1
-                    segstart, _dummy1, _dummy2, _dummy3, _dummy4 = seg2
-                    if abs(segend - segstart) <= tolerance:
-                        channel (_("Stitching two segments together"))
-                        seg2[0] = segend
-                        path.segments[0] = seg2
-                        flag = False
-            node.geometry.append(path, end=flag)
+                other = node.geometry
+                seg1_start = other.segments[0]
+                seg1_end = other.segments[other.index - 1]
+                seg2_start = path.segments[0]
+                seg2_end = path.segments[other.index - 1]
+                # We have four cases:
+                def areequal(aseg, bseg, starta, startb):
+                    def segt(info):
+                        return int(info[2].real) & 0xFF
+
+                    if segt(aseg) not in NON_GEOMETRY_TYPES and segt(bseg) not in NON_GEOMETRY_TYPES:
+                        s1, _dummy2, _dummy3, _dummy4, e1 = aseg
+                        s2, _dummy2, _dummy3, _dummy4, e2 = bseg
+                        c1 = s1 if starta else e1
+                        c2 = s2 if startb else e2
+                        if abs(c1 - c2) <= tolerance + 1E-6:
+                            return True
+                    return False
+
+                if areequal(seg1_end, seg2_start, False, True):
+                    # path after other, proper orientation
+                    orientation = True
+                    path_before = False
+                    separate = False
+                    # print ("s1.end = s2.start")
+                    other.segments[other.index - 1, 4] = path.segments[0, 0]
+                elif areequal(seg1_start, seg2_end, True, False):
+                    # path before other, proper orientation
+                    orientation = True
+                    path_before = True
+                    separate = False
+                    # print ("s1.start = s2.end")
+                    path.segments[path.index - 1, 4] = other.segments[0, 0]
+                elif areequal(seg1_start, seg2_start, True, True):
+                    # path before other, wrong orientation
+                    orientation = False
+                    path_before = True
+                    separate = False
+                    # print ("s1.start = s2.start")
+                    path.segments[0, 0] = other.segments[0, 0]
+                elif areequal(seg1_end, seg2_end, False, False):
+                    # path after other, wrong orientation
+                    orientation = False
+                    path_before = False
+                    separate = False
+                    # print ("s1.end = s2.end")
+                    path.segments[path.index - 1, 4] = other.segments[other.index - 1, 4]
+
+            channel(f"{'Insert' if path_before else 'Append'} a {'regular' if orientation else 'reversed'} path - separate: {separate}")
+            if not orientation:
+                path.reverse()
+            if path_before:
+                node.geometry.insert(0, path.segments[:path.index])
+            else:
+                node.geometry.append(path, end=separate)
+
         self.remove_elements(data)
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
