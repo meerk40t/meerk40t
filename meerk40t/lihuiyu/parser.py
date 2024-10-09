@@ -46,6 +46,7 @@ class LihuiyuParser:
         self.returning_finished = False
 
         self.mode = None
+        self.power = 1000
         self.raster_step = 0
         self.paused_state = False
         self.compact_state = False
@@ -200,6 +201,17 @@ class LihuiyuParser:
             self.mode = int(self.number_value)
             self.number_value = ""
             self.number_consumer = self.speedcode_mult_consumer
+
+    def power_consumer(self, c):
+        self.number_value += c
+        if len(self.number_value) >= 3:
+            if self.channel:
+                self.channel(f"Set Power level = {self.number_value}")
+            self.power = int(self.number_value)
+            if self.power == 0:
+                self.power = 1000
+            self.number_value = ""
+            self.number_consumer = self.distance_consumer
 
     def append_distance(self, amount):
         if self.x_on:
@@ -402,3 +414,11 @@ class LihuiyuParser:
                 self.channel(
                     f"Diagonal {'Top' if self.top else 'Bottom'} {'Left' if self.left else 'Right'}"
                 )
+        elif c == "W":
+            """
+            W: Set Laser Power(W000 .. W999)
+            Example: IV……W500 (Set Laser Power is 50.0%)
+            Note: only M3 and fireware up 2024.01.18g support set laser power
+            Earlier M3 only is M2+
+            """
+            self.number_consumer = self.power_consumer
