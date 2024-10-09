@@ -43,6 +43,10 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._keyhole_image = None
         self._processing = False
         self._convex_hull = None
+        startup = True
+        if "comingfromcopy" in kwargs:
+            startup = False
+            del kwargs["comingfromcopy"]
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
@@ -119,7 +123,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._process_image_failed = False
 
         self.message = None
-        if self.operations or self.dither or self.prevent_crop or self.keyhole_reference:
+        if (self.operations or self.dither or self.prevent_crop or self.keyhole_reference) and startup:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
@@ -129,7 +133,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
         nd["operations"] = copy(self.operations)
+        nd["comingfromcopy"] = True
         newnode = ImageNode(**nd)
+        if self._processed_image is not None:
+            newnode._processed_image = copy(self._processed_image)
+            newnode._processed_matrix = copy(self._processed_matrix)
+            newnode._actualized_matrix = copy(self._actualized_matrix)
         if self._keyhole_geometry is not None:
             g = copy(self._keyhole_geometry)
         else:
@@ -142,13 +151,19 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
     @property
     def active_image(self):
+        # This may be called too quick, so the image is still processing.
+        # This would cause an immediate recalculation which would make
+        # things even worse, we wait max 1 second
+        counter = 0
+        while self._processing and counter < 20:
+            time.sleep(0.05)
+            counter += 1
         if self._processed_image is None:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
-        image = self._apply_keyhole()
-        return image
+        return self._apply_keyhole()
         # if self._processed_image is not None:
         #     return self._processed_image
         # else:
