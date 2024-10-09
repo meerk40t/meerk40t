@@ -1677,7 +1677,7 @@ def init_commands(kernel):
             seg1_start = other.segments[0]
             seg1_end = other.segments[other.index - 1]
             seg2_start = path.segments[0]
-            seg2_end = path.segments[other.index - 1]
+            seg2_end = path.segments[path.index - 1]
             # We have six cases: forbidden, s1.end=s2.start, s1.start=s2.end, s1.start=s2.start, s2.end=s1.end, anything else
 
             if nocase:
