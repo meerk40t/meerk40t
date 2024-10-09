@@ -2512,7 +2512,7 @@ def init_tree(kernel):
     )
     def append_element_effect_warp(node, pos=None, **kwargs):
         # Language hint _("Apply warp")
-        with self.undoscopy("Apply warp"):
+        with self.undoscope("Apply warp"):
             group_node = node.parent.add(
                 type="effect warp",
                 pos=pos,
@@ -2526,7 +2526,7 @@ def init_tree(kernel):
 
     def wobble_me(node, wobble_type, wobble_radius, wobble_interval, pos):
         # Language hint _("Apply wobble")
-        with self.undoscopy("Apply wobble"):
+        with self.undoscope("Apply wobble"):
             group_node = node.parent.add(
                 type="effect wobble",
                 wobble_type=wobble_type,
