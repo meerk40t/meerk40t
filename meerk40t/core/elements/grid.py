@@ -1,5 +1,100 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing grid and radial operations within the application.
+Users can create grids, radial patterns, and circular copies of elements, allowing for efficient arrangement and manipulation of graphical objects.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up grid commands.
+- init_commands(kernel): Initializes the grid commands and defines the associated operations.
+- element_grid(command, channel, _, c: int, r: int, x: str, y: str, origin=None, relative=None, data=None, post=None, **kwargs): Creates a grid of elements based on specified rows, columns, and distances.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    c: The number of columns in the grid.
+    r: The number of rows in the grid.
+    x: The distance between columns.
+    y: The distance between rows.
+    origin: The origin point for the grid.
+    relative: A flag indicating whether distances are relative.
+    data: The elements to arrange in the grid.
+    post: Additional processing information.
+  Returns:
+    A tuple containing the type of elements and the created grid elements.
+- element_radial(command, channel, _, repeats: int, radius=None, startangle=None, endangle=None, rotate=None, deltaangle=None, data=None, post=None, **kwargs): Creates a radial arrangement of elements based on specified parameters.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    repeats: The number of copies to create.
+    radius: The radius of the radial arrangement.
+    startangle: The starting angle for the arrangement.
+    endangle: The ending angle for the arrangement.
+    rotate: A flag indicating whether to rotate copies towards the center.
+    deltaangle: The angle increment for each copy.
+    data: The elements to arrange radially.
+    post: Additional processing information.
+  Returns:
+    A tuple containing the type of elements and the created radial elements.
+- element_circularcopies(command, channel, _, copies: int, radius=None, startangle=None, endangle=None, rotate=None, deltaangle=None, data=None, post=None, **kwargs): Creates circular copies of elements based on specified parameters.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    copies: The number of copies to create.
+    radius: The radius of the circular arrangement.
+    startangle: The starting angle for the arrangement.
+    endangle: The ending angle for the arrangement.
+    rotate: A flag indicating whether to rotate copies towards the center.
+    deltaangle: The angle increment for each copy.
+    data: The elements to arrange circularly.
+    post: Additional processing information.
+  Returns:
+    A tuple containing the type of elements and the created circular elements.
+- element_subpath(data=None, post=None, **kwargs): Breaks elements into subpaths, creating separate nodes for each.
+  Args:
+    data: The elements to break into subpaths.
+    post: Additional processing information.
+  Returns:
+    A tuple containing the type of elements and the created subpath elements.
+- operation_empty(channel, _, data=None, data_type=None, **kwargs): Removes all elements from the specified operations.
+  Args:
+    channel: The communication channel for messages.
+    data: The operations to clear.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the cleared operations.
+- operation_list(command, channel, _, data=None, **kwargs): Lists information about the specified operations.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The operations to list.
+  Returns:
+    A tuple containing the type of data and the listed operations.
+- e_lock(data=None, **kwargs): Locks the specified elements to prevent manipulation.
+  Args:
+    data: The elements to lock.
+  Returns:
+    A tuple containing the type of data and the locked elements.
+- e_unlock(data=None, **kwargs): Unlocks the specified elements to allow manipulation.
+  Args:
+    data: The elements to unlock.
+  Returns:
+    A tuple containing the type of data and the unlocked elements.
+- e_copy(data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs): Duplicates the specified elements a given number of times with optional offsets.
+  Args:
+    data: The elements to copy.
+    data_type: The type of data being processed.
+    post: Additional processing information.
+    dx: The x-offset for the copies.
+    dy: The y-offset for the copies.
+    copies: The number of copies to create.
+  Returns:
+    A tuple containing the type of data and the copied elements.
+- e_delete(command, channel, _, data=None, data_type=None, **kwargs): Deletes the specified elements or operations.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements or operations to delete.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the deleted elements.
 """
 
 from copy import copy

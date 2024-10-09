@@ -1,5 +1,16 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains console commands that interact with the elements system in the program.
+It provides functionality for rendering, vectorizing, outlining, and managing keyhole elements for images.
+
+Functions:
+- plugin: Initializes console commands related to rendering and vectorization.
+- init_commands: Sets up various console commands for rendering and manipulating elements.
+- render_elements: Creates a raster image from the given elements.
+- vectorize_elements: Converts given elements to a path.
+- element_outline: Creates an outline path at the inner and outer side of a path.
+- keyhole_elements: Sets a path-like element as a keyhole frame for selected images.
+- remove_keyhole_elements: Removes keyhole frame for selected images.
+
 """
 
 from copy import copy
@@ -414,10 +425,7 @@ def init_commands(kernel):
             opticurve = True
         if opttolerance is None:
             opttolerance = 0.2
-        if color is None:
-            pathcolor = Color("blue")
-        else:
-            pathcolor = color
+        pathcolor = Color("blue") if color is None else color
         if invert is None:
             invert = False
         if blacklevel is None:
