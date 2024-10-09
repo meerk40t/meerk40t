@@ -1642,6 +1642,84 @@ def init_commands(kernel):
         Merge combines the geometries of the inputs. This matters in some cases where fills are used. Such that two
         nested circles forms a toroid rather two independent circles.
         """
+        def set_nonset_attributes(node, e):
+            try:
+                if node.stroke is None:
+                    node.stroke = e.stroke
+            except AttributeError:
+                pass
+            try:
+                if node.fill is None:
+                    node.fill = e.fill
+            except AttributeError:
+                pass
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+
+        def merge_paths(other, path, nocase, tolerance):
+            def segments_can_stitch(aseg, bseg, starta, startb):
+                def segtype(info):
+                    return int(info[2].real) & 0xFF
+
+                if segtype(aseg) not in NON_GEOMETRY_TYPES and segtype(bseg) not in NON_GEOMETRY_TYPES:
+                    s1, _dummy2, _dummy3, _dummy4, e1 = aseg
+                    s2, _dummy2, _dummy3, _dummy4, e2 = bseg
+                    c1 = s1 if starta else e1
+                    c2 = s2 if startb else e2
+                    if abs(c1 - c2) <= tolerance + 1E-6:
+                        return True
+                return False
+
+
+            seg1_start = other.segments[0]
+            seg1_end = other.segments[other.index - 1]
+            seg2_start = path.segments[0]
+            seg2_end = path.segments[other.index - 1]
+            # We have six cases: forbidden, s1.end=s2.start, s1.start=s2.end, s1.start=s2.start, s2.end=s1.end, anything else
+
+            if nocase:
+                # ignore, path after other, proper orientation, disjoint
+                separate = True
+                orientation = True
+                path_before = False
+                to_set_seg, to_set_idx, from_seg, from_idx = None, None, None, None
+            elif segments_can_stitch(seg1_end, seg2_start, False, True):
+                # s1.end = s2.start, path after other, proper orientation
+                orientation = True
+                path_before = False
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = 0, 0, other.index - 1, 4
+            elif segments_can_stitch(seg1_start, seg2_end, True, False):
+                # s1.start = s2.end, path before other, proper orientation, joint
+                orientation = True
+                path_before = True
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = path.index - 1, 4, 0, 0
+            elif segments_can_stitch(seg1_start, seg2_start, True, True):
+                # s1.start = s2.start, path before other, wrong orientation, joint
+                orientation = False
+                path_before = True
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = 0, 0, 0, 0
+            elif segments_can_stitch(seg1_end, seg2_end, False, False):
+                # s1.end = s2. end, path after other, wrong orientation, joint
+                orientation = False
+                path_before = False
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = path.index - 1, 4, other.index - 1, 4
+            else:
+                # ignore, path after other, proper orientation, disjoint
+                separate = True
+                orientation = True
+                path_before = False
+                to_set_seg, to_set_idx, from_seg, from_idx = None, None, None, None
+
+            return separate, orientation, path_before, to_set_seg, to_set_idx, from_seg, from_idx
+
+
         if nostitch is None:
             nostitch = False
         tolerance = 0
@@ -1675,84 +1753,27 @@ def init_commands(kernel):
                     path = e.as_geometry()
             except AttributeError:
                 continue
-            try:
-                if node.stroke is None:
-                    node.stroke = e.stroke
-            except AttributeError:
-                pass
-            try:
-                if node.fill is None:
-                    node.fill = e.fill
-            except AttributeError:
-                pass
-            try:
-                if node.stroke_width is None:
-                    node.stroke_width = e.stroke_width
-            except AttributeError:
-                pass
+
+            set_nonset_attributes(node, e)
+
             if first:
                 node.geometry = path
                 first = False
-                continue
-            separate = True
-            orientation = True
-            path_before = False
-            if not nostitch:
-                other = node.geometry
-                seg1_start = other.segments[0]
-                seg1_end = other.segments[other.index - 1]
-                seg2_start = path.segments[0]
-                seg2_end = path.segments[other.index - 1]
-                # We have four cases:
-                def areequal(aseg, bseg, starta, startb):
-                    def segt(info):
-                        return int(info[2].real) & 0xFF
-
-                    if segt(aseg) not in NON_GEOMETRY_TYPES and segt(bseg) not in NON_GEOMETRY_TYPES:
-                        s1, _dummy2, _dummy3, _dummy4, e1 = aseg
-                        s2, _dummy2, _dummy3, _dummy4, e2 = bseg
-                        c1 = s1 if starta else e1
-                        c2 = s2 if startb else e2
-                        if abs(c1 - c2) <= tolerance + 1E-6:
-                            return True
-                    return False
-
-                if areequal(seg1_end, seg2_start, False, True):
-                    # path after other, proper orientation
-                    orientation = True
-                    path_before = False
-                    separate = False
-                    # print ("s1.end = s2.start")
-                    other.segments[other.index - 1, 4] = path.segments[0, 0]
-                elif areequal(seg1_start, seg2_end, True, False):
-                    # path before other, proper orientation
-                    orientation = True
-                    path_before = True
-                    separate = False
-                    # print ("s1.start = s2.end")
-                    path.segments[path.index - 1, 4] = other.segments[0, 0]
-                elif areequal(seg1_start, seg2_start, True, True):
-                    # path before other, wrong orientation
-                    orientation = False
-                    path_before = True
-                    separate = False
-                    # print ("s1.start = s2.start")
-                    path.segments[0, 0] = other.segments[0, 0]
-                elif areequal(seg1_end, seg2_end, False, False):
-                    # path after other, wrong orientation
-                    orientation = False
-                    path_before = False
-                    separate = False
-                    # print ("s1.end = s2.end")
-                    path.segments[path.index - 1, 4] = other.segments[other.index - 1, 4]
-
-            channel(f"{'Insert' if path_before else 'Append'} a {'regular' if orientation else 'reversed'} path - separate: {separate}")
-            if not orientation:
-                path.reverse()
-            if path_before:
-                node.geometry.insert(0, path.segments[:path.index])
             else:
-                node.geometry.append(path, end=separate)
+                other = node.geometry
+
+                separate, orientation, path_before, to_set_seg, to_set_idx, from_seg, from_idx = merge_paths(other, path, nostitch, tolerance)
+                if to_set_seg is not None:
+                    path.segments[to_set_seg, to_set_idx] = other.segments[from_seg, from_idx]
+                actionstr = 'Insert' if path_before else 'Append'
+                typestr = 'regular' if orientation else 'reversed'
+                channel(f"{actionstr} a {typestr} path - separate: {separate}")
+                if not orientation:
+                    path.reverse()
+                if path_before:
+                    node.geometry.insert(0, path.segments[:path.index])
+                else:
+                    node.geometry.append(path, end=separate)
 
         self.remove_elements(data)
         self.set_node_emphasis(node, True)
