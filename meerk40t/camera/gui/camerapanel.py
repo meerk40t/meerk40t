@@ -1098,9 +1098,11 @@ class CameraURIPanel(wx.Panel):
 
     def pane_show(self):
         self.on_list_refresh()
+        self.list_uri.load_column_widths()
 
     def pane_hide(self):
         self.commit()
+        self.list_uri.save_column_widths()
 
     def commit(self):
         if not self.changed:

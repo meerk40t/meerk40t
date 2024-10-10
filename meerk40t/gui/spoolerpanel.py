@@ -1158,6 +1158,14 @@ class SpoolerPanel(wx.Panel):
     def update_queue(self):
         if self.shown:
             self.on_device_update(None)
+    
+    def pane_show(self):
+        self.list_job_history.load_column_widths()
+        self.list_job_spool.load_column_widths()
+
+    def pane_hide(self):
+        self.list_job_history.save_column_widths()
+        self.list_job_spool.save_column_widths()
 
 
 class JobSpooler(MWindow):

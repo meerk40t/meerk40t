@@ -48,9 +48,10 @@ class KeymapPanel(wx.Panel):
     def pane_show(self):
         self.reload_keymap()
         self.Children[0].SetFocus()
+        self.list_keymap.load_column_widths()
 
     def pane_hide(self):
-        pass
+        self.list_keymap.save_column_widths()
 
     def __set_properties(self):
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))

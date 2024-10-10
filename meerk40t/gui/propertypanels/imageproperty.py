@@ -654,10 +654,14 @@ class ImageModificationPanel(ScrolledPanel):
             menu.Destroy()
 
     def pane_show(self):
+        self.list_operations.load_column_widths()
         self.fill_operations()
 
     def pane_active(self):
         self.fill_operations()
+
+    def pane_hide(self):
+        self.list_operations.save_column_widths()
 
     def signal(self, signalstr, myargs):
         return
