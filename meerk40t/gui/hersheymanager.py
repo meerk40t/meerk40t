@@ -86,7 +86,7 @@ class FontGlyphPicker(wx.Dialog):
 
         self.list_glyphs.Bind(wx.EVT_LEFT_DCLICK, self.on_dbl_click)
         self.SetSizer(mainsizer)
-
+        self.list_glyphs.load_column_widths()
         self.Layout()
         # end wxGlade
         self.load_font()

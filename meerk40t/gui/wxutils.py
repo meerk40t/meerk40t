@@ -1111,7 +1111,7 @@ class wxListCtrl(wx.ListCtrl):
         if self.context is None or self.list_name is None:
             return
         sizes = list()
-        for col in range(self.ColumnCount):
+        for col in range(self.GetColumnCount()):
             sizes.append(self.GetColumnWidth(col)) 
         self.context.setting(tuple, self.list_name, None)
         setattr(self.context, self.list_name, sizes)
@@ -1123,7 +1123,7 @@ class wxListCtrl(wx.ListCtrl):
         if sizes is None:
             return
         # print(f"Found for {self.list_name}: {sizes}")
-        available = self.ColumnCount
+        available = self.GetColumnCount()
         for idx, width in enumerate(sizes):
             if idx >= available:
                 break
@@ -1150,14 +1150,20 @@ class wxListCtrl(wx.ListCtrl):
         list_width = size[0]
         total = gap
         last = 0
-        for col in range(self.ColumnCount):
+        for col in range(self.GetColumnCount()):
             last = self.GetColumnWidth(col)
             total += last 
-        # print(f"{self.list_name}, cols={self.ColumnCount}, available={list_width}, used={total}")
+        # print(f"{self.list_name}, cols={self.GetColumnCount()}, available={list_width}, used={total}")
         if total < list_width:
-            col = self.ColumnCount - 1 
+            col = self.GetColumnCount() - 1 
+            if col < 0 :
+                return False
             # print(f"Will adjust last column from {last} to {last + (list_width - total)}")
-            self.SetColumnWidth(col, last + (list_width - total))
+            try:
+                self.SetColumnWidth(col, last + (list_width - total))
+            except Exception as e:
+                print(f"Something strange happened while resizing the last columns for {self.list_name}: {e}")
+                return False
             return True
         return False
 
@@ -1165,7 +1171,7 @@ class wxListCtrl(wx.ListCtrl):
         # We are not touching the event object to allow other routines to tap into it
         event.Skip()
         # print (f"Resize called from {self.GetId()} - {self.list_name}: {event.Size}")
-        if self.adjust_last_column(event.Size):    
+        if self.adjust_last_column(event.Size): 
             self.save_column_widths()
 
 

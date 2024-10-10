@@ -175,10 +175,10 @@ class OpInfoPanel(ScrolledPanel):
         self.refresh_data()
 
     def pane_show(self):
-        pass
+        self.list_operations.load_column_widths()
 
     def pane_hide(self):
-        pass
+        self.list_operations.save_column_widths()
 
     def on_tree_popup_mark_elem(self, elemtype=""):
         def emphas(event=None):

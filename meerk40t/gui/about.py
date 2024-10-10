@@ -1943,6 +1943,11 @@ class ComponentPanel(ScrolledPanel):
             # print ("couldn't access clipboard")
             wx.Bell()
 
+    def pane_show(self):
+        self.list_preview.load_column_widths()
+    
+    def pane_hide(self):
+        self.list_preview.save_column_widths()
 
 class About(MWindow):
     def __init__(self, *args, **kwds):

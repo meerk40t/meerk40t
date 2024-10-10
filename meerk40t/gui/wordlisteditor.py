@@ -388,11 +388,14 @@ class WordlistPanel(wx.Panel):
         self.parent_panel = par_panel
 
     def pane_show(self):
+        self.grid_wordlist.load_column_widths()
+        self.grid_content.load_column_widths()
         self.populate_gui()
         self.grid_wordlist.SetFocus()
 
     def pane_hide(self):
-        pass
+        self.grid_wordlist.save_column_widths()
+        self.grid_content.save_column_widths()
 
     def autosave(self):
         if self.check_autosave.GetValue():
