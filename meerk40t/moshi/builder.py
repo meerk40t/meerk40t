@@ -403,7 +403,7 @@ class MoshiBuilder:
         assert self._stage == 0
         self._stage = 1
         if self.channel:
-            self.channel(f"Raster Header Speed: {int(speed_mms)} cm/s")
+            self.channel(f"Raster Header Speed: {int(speed_mms)} mm/s")
         self.write(swizzle_table[MOSHI_RASTER_SPEED][0])
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
