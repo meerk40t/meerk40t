@@ -115,7 +115,10 @@ def register_panel_console(window, context):
             cur_font = None
             if initial:
                 try:
-                    cur_font = wx.Font().SetNativeFontInfo(initial)
+                    cur_font = wx.Font()
+                    success = cur_font.SetNativeFontInfo(initial)
+                    if not success:
+                        cur_font = None
                 except Exception:
                     pass
             if cur_font is None:
@@ -275,6 +278,7 @@ class ConsolePanel(wx.ScrolledWindow):
             try:
                 font = wx.Font(fontdesc)
             except Exception as e:
+                # print (e)
                 font = None
         if font is None:
             font = wx.Font(
