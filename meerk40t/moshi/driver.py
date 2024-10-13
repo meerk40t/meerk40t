@@ -53,7 +53,7 @@ class MoshiDriver(Parameters):
         self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.queue = list()
+        self.queue = []
         self._queue_current = 0
         self._queue_total = 0
 
@@ -300,13 +300,24 @@ class MoshiDriver(Parameters):
         for q in self.queue:
             current += 1
             self._set_queue_status(current, total)
+            p_set = Parameters(q.settings)
+            if p_set.power != self.power:
+                self._set_power(p_set.power)
+            if (
+                p_set.speed != self.speed
+                or p_set.raster_step_x != self.raster_step_x
+                or p_set.raster_step_y != self.raster_step_y
+            ):
+                self._set_speed(p_set.speed)
+                self._set_step(p_set.raster_step_x, p_set.raster_step_y)
+                self.rapid_mode()
+            self.settings.update(q.settings)
 
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
             if x != start_x or y != start_y:
                 self._goto_absolute(start_x, start_y, 0)
-            self.settings.update(q.settings)
             if isinstance(q, LineCut):
                 x0, y0, x1, y1 = int(q.start[0]), int(q.start[1]), int(q.end[0]), int(q.end[1])
                 dx, dy = abs(x1 - x0), abs(y1 - y0)
@@ -463,7 +474,7 @@ class MoshiDriver(Parameters):
         if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.rapid_mode()
-        self.speed = 40
+        self.set("speed", 40)
         self.program_mode(0, 0, 0, 0)
         self.rapid_mode()
         self.native_x = 0
@@ -710,7 +721,6 @@ class MoshiDriver(Parameters):
             speed = 20
         if normal_speed is None:
             normal_speed = speed
-
         # Normal speed is rapid. Passing same speed so PPI isn't crazy.
         self.program.vector_speed(speed, normal_speed)
         self.program.set_offset(0, offset_x, offset_y)
@@ -740,11 +750,7 @@ class MoshiDriver(Parameters):
         self.native_y = move_y
 
     def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.power = max(0, min(1000, power))
 
     def _set_overscan(self, overscan=None):
         self.overscan = overscan
