@@ -2754,7 +2754,7 @@ msgid "Convert to Dots"
 msgstr "Converter para Pontos"
 
 #: meerk40t/core/elements.py:6573 meerk40t/core/elements.py:6582
-msgid "RasterWizard"
+msgid "Raster-Wizard"
 msgstr "Assistente de Raster"
 
 #: meerk40t/core/elements.py:6574
@@ -2804,7 +2804,7 @@ msgid "Passes {passvalue}"
 msgstr "Passagens {passvalue}"
 
 #: meerk40t/core/elements.py:6683
-msgid "Burn Direction"
+msgid "Burn direction"
 msgstr "Direção de Queima"
 
 #: meerk40t/core/elements.py:6712
@@ -10246,7 +10246,7 @@ msgid "Successfully queried laser-data!"
 msgstr "Dados do laser consultados com sucesso!"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:48
-msgid "Global Settings"
+msgid "Global operation settings"
 msgstr "Configurações Globais"
 
 #: meerk40t/grbl/gui/grblserialcontroller.py:99
@@ -15442,10 +15442,10 @@ msgstr "Clic izquierdo para ir a la posición guardada\nClic derecho para guarda
 msgid "Select all elements of same type"
 msgstr "Seleccionar todos los elementos del mismo tipo"
 
-msgid "Speed for Raster-Operation"
+msgid "Speed for Raster-operation"
 msgstr "Velocidad para la operación de trama"
 
-msgid "Speed for Vector-Operation"
+msgid "Speed for Vector-operation"
 msgstr "Velocidad para la operación de vector"
 
 msgid "Simplify group"
@@ -16900,7 +16900,7 @@ msgid "Create placement"
 msgstr "Crear colocación"
 
 #: ./meerk40t\core\elements\element_treeops.py:2556
-msgid "Toggle Magnet-Lines"
+msgid "Toggle magnet-lines"
 msgstr "Alternar líneas magnéticas"
 
 #: ./meerk40t\core\elements\element_treeops.py:2557

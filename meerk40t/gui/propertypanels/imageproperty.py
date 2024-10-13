@@ -545,7 +545,7 @@ class ImageModificationPanel(ScrolledPanel):
         )
         self.list_operations.resize_columns()
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("RasterWizard"), wx.HORIZONTAL)
+        sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("Raster-Wizard"), wx.HORIZONTAL)
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
