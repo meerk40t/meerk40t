@@ -10573,7 +10573,7 @@ msgstr ""
 #: meerk40t/core/elements/element_treeops.py:334
 #: meerk40t/core/elements/element_treeops.py:351
 #: meerk40t/gui/propertypanels/imageproperty.py:423
-msgid "RasterWizard"
+msgid "Raster-Wizard"
 msgstr "Rasztervarázsló"
 
 #: meerk40t/core/elements/element_treeops.py:335
@@ -10586,7 +10586,7 @@ msgid "Apply: {script}"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:373
-msgid "Speed for Raster-Operation"
+msgid "Speed for Raster-operation"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:376
@@ -10595,7 +10595,7 @@ msgid "{speed}mm/s"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:386
-msgid "Speed for Vector-Operation"
+msgid "Speed for Vector-operation"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:411
@@ -10623,7 +10623,7 @@ msgid "Loops {loopvalue}"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:507
-msgid "Burn Direction"
+msgid "Burn direction"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:530
@@ -10658,7 +10658,7 @@ msgstr "Szimuláció futtatása a kiválasztott művelet (ek) hez"
 
 #: meerk40t/core/elements/element_treeops.py:588
 #: meerk40t/grbl/gui/grblconfiguration.py:82
-msgid "Global Settings"
+msgid "Global operation settings"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:594

@@ -266,7 +266,7 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_operation(
-        _("Unlock Modifications"),
+        _("Unlock modifications"),
         node_type="image raster",
         help="",
         grouping="70_ELEM_IMAGES",
@@ -779,7 +779,7 @@ def init_tree(kernel):
                 n.replace_node(keep_children=True, **new_settings)
         self.signal("rebuild_tree")
 
-    @tree_submenu(_("RasterWizard"))
+    @tree_submenu(_("Raster-Wizard"))
     @tree_operation(
         _("Set to None"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
     )
@@ -802,7 +802,7 @@ def init_tree(kernel):
             activate(firstnode)
             self.signal("propupdate", firstnode)
 
-    @tree_submenu(_("RasterWizard"))
+    @tree_submenu(_("Raster-Wizard"))
     @tree_values("script", values=list(self.match("raster_script", suffix=True)))
     @tree_operation(
         _("Apply: {script}"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
@@ -868,7 +868,7 @@ def init_tree(kernel):
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
 
-    @tree_submenu(_("Speed for Raster-Operation"))
+    @tree_submenu(_("Speed for Raster-operation"))
     @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(
@@ -882,12 +882,12 @@ def init_tree(kernel):
             data.append(n)
         if not data:
             return
-        with self.undoscope("Speed for Raster-Operation"):
+        with self.undoscope("Speed for Raster-operation"):
             for n in data:
                 n.speed = float(speed)
         self.signal("element_property_reload", data)
 
-    @tree_submenu(_("Speed for Vector-Operation"))
+    @tree_submenu(_("Speed for Vector-operation"))
     @tree_radio(radio_match_speed)
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
@@ -901,7 +901,7 @@ def init_tree(kernel):
             data.append(n)
         if not data:
             return
-        with self.undoscope("Speed for Vector-Operation"):
+        with self.undoscope("Speed for Vector-operation"):
             for n in data:
                 n.speed = float(speed)
         self.signal("element_property_reload", data)
@@ -1063,7 +1063,7 @@ def init_tree(kernel):
                 return node.raster_direction == idx
         return False
 
-    @tree_submenu(_("Burn Direction"))
+    @tree_submenu(_("Burn direction"))
     @tree_radio(radio_match_direction)
     @tree_values("raster_direction", values=get_direction_values())
     @tree_operation(
@@ -1076,7 +1076,7 @@ def init_tree(kernel):
         values = get_direction_values()
         for idx, key in enumerate(values):
             if key == raster_direction:
-                with self.undoscope("Burn Direction"):
+                with self.undoscope("Burn direction"):
                     data = list()
                     for n in list(self.ops(selected=True)):
                         if n.type not in op_image_nodes:
@@ -1172,7 +1172,7 @@ def init_tree(kernel):
     # ==========
 
     @tree_operation(
-        _("Global Settings"),
+        _("Global operation settings"),
         node_type="branch ops",
         help="",
         grouping="00PROPS",
@@ -1183,7 +1183,7 @@ def init_tree(kernel):
             activate(node)
 
     @tree_operation(
-        _("Clear all"), node_type="branch ops", help="", grouping="10_OPS_DELETION"
+        _("Clear all"), node_type="branch ops", help=_("Delete all operations"), grouping="10_OPS_DELETION"
     )
     def clear_all(node, **kwargs):
         if self.kernel.yesno(
@@ -1230,7 +1230,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Max speed = {speed}mm/s"),
         node_type="branch ops",
-        help="",
+        help=_("Scale all operation speed values relative to a new maximum"),
         grouping="OPS_70_MODIFY",
     )
     def set_speed_levels(node, speed=150, **kwargs):
@@ -1269,7 +1269,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Max power = {power}ppi ({power_10}%)"),
         node_type="branch ops",
-        help="",
+        help=_("Scale all operation power values relative to a new maximum"),
         grouping="OPS_70_MODIFY",
     )
     def set_power_levels(node, power=1000, **kwargs):
@@ -1343,7 +1343,7 @@ def init_tree(kernel):
     # ==========
 
     @tree_operation(
-        _("Clear all"), node_type="branch elems", help="", grouping="10_ELEM_DELETION"
+        _("Clear all"), node_type="branch elems", help=_("Delete all elements"), grouping="10_ELEM_DELETION"
     )
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
@@ -1360,7 +1360,7 @@ def init_tree(kernel):
     # ==========
 
     @tree_operation(
-        _("Clear all"), node_type="branch reg", help="", grouping="REG_05_DELETION"
+        _("Clear all"), node_type="branch reg", help=_("Delete all registration marks"), grouping="REG_05_DELETION"
     )
     def clear_all_regmarks(node, **kwargs):
         if self.kernel.yesno(
@@ -1391,7 +1391,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Remove {ecount} selected items from operations"),
         node_type="reference",
-        help="",
+        help=_("Delete all selected operations"),
         grouping="10_OPS_DELETION",
     )
     def remove_multi_references(node, **kwargs):
@@ -1413,7 +1413,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Delete operation '{name}' fully"),
         node_type=op_nodes,
-        help="",
+        help=_("Delete the selected operation"),
         grouping="10_OPS_DELETION",
     )
     def remove_type_op(node, **kwargs):
@@ -1430,7 +1430,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Delete blob '{name}' fully"),
         node_type="blob",
-        help="",
+        help=_("Delete the selected binary object"),
         grouping="10_OPS_DELETION",
     )
     def remove_type_blob(node, **kwargs):
@@ -1451,7 +1451,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Delete {ecount} operations fully"),
         node_type=op_nodes,
-        help="",
+        help=_("Delete the selected operations"),
         grouping="10_OPS_DELETION",
     )
     def remove_type_op_multiple(node, **kwargs):
@@ -1483,7 +1483,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Delete group '{name}' and all its child-elements fully"),
         node_type="group",
-        help="",
+        help=_("Delete the selected group and all its content"),
         grouping="10_ELEM_DELETION",
     )
     def remove_type_grp(node, **kwargs):
@@ -1502,7 +1502,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Remove loaded file '{name}' and all its child-elements fully"),
         node_type="file",
-        help="",
+        help=_("Delete the content of the loaded file"),
         grouping="10_ELEM_DELETION",
     )
     def remove_type_file(node, **kwargs):
@@ -1597,7 +1597,7 @@ def init_tree(kernel):
             "cutcode",
             "blob",
         ),
-        help="",
+        help=_("Delete the selected operations"),
         grouping="10_OPS_DELETION",
     )
     def remove_n_ops(node, **kwargs):
@@ -1632,7 +1632,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Delete {ecount} elements, as selected in scene"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Delete the selected elements"),
         grouping="10_ELEM_DELETION",
     )
     def remove_n_elements(node, **kwargs):
@@ -1642,7 +1642,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Become reference object"),
         node_type=elem_nodes,
-        help="",
+        help=_("Make the selected object the reference object for alignment"),
         grouping="30_ELEM_VISIBLE",
     )
     def make_node_reference(node, **kwargs):
@@ -1654,7 +1654,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Make Polygon regular"),
         node_type="elem polyline",
-        help="",
+        help=_("CHange the selected polygon so that all sides have equal length"),
         grouping="50_ELEM_MODIFY_ZMISC",
     )
     def make_polygon_regular(node, **kwargs):
@@ -1767,7 +1767,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Cutcode"),
         node_type="blob",
-        help="",
+        help=_("Recreate cutcode from the binary object"),
         grouping="85_OPS_BLOB",
     )
     def blob2cut(node, **kwargs):
@@ -1776,7 +1776,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Path"),
         node_type="cutcode",
-        help="",
+        help=_("Recreate a path element from the selected cutcode"),
         grouping="85_OPS_BLOB",
     )
     def cutcode2pathcut(node, **kwargs):
@@ -1794,7 +1794,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Clone reference"))
     @tree_operation(
-        _("Make 1 copy"), node_type=("reference",), help="", grouping="20_OPS_DUPLICATION"
+        _("Make 1 copy"), node_type=("reference",), help=_("Add more references of the master element"), grouping="20_OPS_DUPLICATION"
     )
     def clone_single_element_op(node, **kwargs):
         clone_element_op(node, copies=1, **kwargs)
@@ -1844,7 +1844,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Generate operations if needed"),
         node_type=("branch ops", "branch elems"),
-        help="",
+        help=_("Will create mising operations if required"),
         enable=False,
         grouping="40_ELEM_CLASSIFY",
     )
@@ -1889,11 +1889,11 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_submenu(_("Classification"))
-    ## @tree_separate_before()
+    @tree_separate_before()
     @tree_operation(
         _("Use only existing operations"),
         node_type=("branch ops", "branch elems"),
-        help="",
+        help=_("Stick with existing operations only"),
         enable=False,
         grouping="40_ELEM_CLASSIFY",
     )
@@ -1938,11 +1938,11 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_submenu(_("Classification"))
-    ## @tree_separate_before()
+    @tree_separate_before()
     @tree_operation(
         _("Clear all assignments"),
         node_type=("branch ops", "branch elems"),
-        help="",
+        help=_("Remove all assignments of elements to operations"),
         grouping="40_ELEM_CLASSIFY",
     )
     def do_classification_clear(node, **kwargs):
@@ -2087,7 +2087,7 @@ def init_tree(kernel):
     @tree_values("opname", values=material_ids)
     @tree_submenu_list(material_menus)
     @tree_calc("material", lambda opname: material_name(opname))
-    @tree_operation("{material}", node_type="branch ops", help="", grouping="OPS_60_MATMAN")
+    @tree_operation("{material}", node_type="branch ops", help=_("Populate the operation template list at the bottom"), grouping="OPS_60_MATMAN")
     def load_ops(node, opname, **kwargs):
         self(f"material load {opname}\n")
         if self.update_statusbar_on_material_load:
@@ -2117,7 +2117,7 @@ def init_tree(kernel):
     ## @tree_separate_before()
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Image"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Image"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_image(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2126,7 +2126,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Raster"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Raster"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_raster(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2135,7 +2135,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Engrave"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Engrave"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_engrave(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2144,7 +2144,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Cut"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Cut"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_cut(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2153,7 +2153,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Hatch"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Hatch"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_hatch(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2163,7 +2163,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Dots"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Dots"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_dots(node, pos=None, **kwargs):
         self.op_branch.add("op dots", pos=pos)
@@ -2171,7 +2171,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
-        _("Append Home"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Home"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_home(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2182,7 +2182,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Return to Origin"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_goto(node, pos=None, **kwargs):
@@ -2210,7 +2210,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
-        _("Append Beep"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Beep"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_beep(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2225,7 +2225,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Interrupt"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_interrupt(node, pos=None, **kwargs):
@@ -2240,7 +2240,7 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("wait_time", _("Wait for how long (in seconds)?"), data_type=float)
     @tree_operation(
-        _("Append Wait"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Wait"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_wait(node, wait_time, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2253,7 +2253,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
-        _("Append Output"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Output"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_output(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2268,7 +2268,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
-        _("Append Input"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Input"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_input(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2285,7 +2285,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Coolant On"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_cool_on(node, pos=None, **kwargs):
@@ -2301,7 +2301,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Coolant Off"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_cool_off(node, pos=None, **kwargs):
@@ -2317,7 +2317,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Home/Beep/Interrupt"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_home_beep_interrupt(node, **kwargs):
@@ -2330,7 +2330,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Origin/Beep/Interrupt"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_origin_beep_interrupt(node, **kwargs):
@@ -2344,7 +2344,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Shutdown"),
         node_type="branch ops",
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def append_operation_shutdown(node, pos=None, **kwargs):
@@ -2359,7 +2359,7 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("opname", _("Console command to append to operations?"))
     @tree_operation(
-        _("Append Console"), node_type="branch ops", help="", grouping="OPS_40_ADDITION"
+        _("Append Console"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_custom(node, opname, pos=None, **kwargs):
         with self.undoscope("Append operation"):
@@ -2455,7 +2455,7 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="", grouping="50_ELEM_MODIFY_ZMISC")
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help=_("Apply hatch"), grouping="50_ELEM_MODIFY_ZMISC")
     def append_element_effect_eulerian(node, pos=None, **kwargs):
         hatch_me(
             node,
@@ -2467,7 +2467,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
-        _("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help="", grouping="50_ELEM_MODIFY_ZMISC"
+        _("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help=_("Apply hatch"), grouping="50_ELEM_MODIFY_ZMISC"
     )
     def append_element_effect_eulerian_45(node, pos=None, **kwargs):
         hatch_me(
@@ -2479,7 +2479,7 @@ def init_tree(kernel):
         )
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append Line-Fill 1mm"), node_type=hatchable_elems, help="", grouping="50_ELEM_MODIFY_ZMISC")
+    @tree_operation(_("Append Line-Fill 1mm"), node_type=hatchable_elems, help=_("Apply hatch"), grouping="50_ELEM_MODIFY_ZMISC")
     def append_element_effect_line(node, pos=None, **kwargs):
         hatch_me(
             node,
@@ -2491,7 +2491,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
-        _("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help="", grouping="50_ELEM_MODIFY_ZMISC"
+        _("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help=_("Apply hatch"), grouping="50_ELEM_MODIFY_ZMISC"
     )
     def append_element_effect_line_45(node, pos=None, **kwargs):
         hatch_me(
@@ -2507,7 +2507,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append Warp").format(),
         node_type=hatchable_elems,
-        help="",
+        help=_("Apply a warp effect"),
         grouping="50_ELEM_MODIFY_ZMISC_WARP",
     )
     def append_element_effect_warp(node, pos=None, **kwargs):
@@ -2547,7 +2547,7 @@ def init_tree(kernel):
             type=_("Circle"), radius="0.5mm", interval="0.05mm"
         ),
         node_type=wobbleable_elems,
-        help="",
+        help=_("Apply a wobble (contour follower)"),
         grouping="50_ELEM_MODIFY_ZMISC_WOBBLE",
     )
     def append_element_effect_wobble_c05(node, pos=None, **kwargs):
@@ -2565,7 +2565,7 @@ def init_tree(kernel):
             type=_("Circle"), radius="1mm", interval="0.1mm"
         ),
         node_type=wobbleable_elems,
-        help="",
+        help=_("Apply a wobble (contour follower)"),
         grouping="50_ELEM_MODIFY_ZMISC_WOBBLE",
     )
     def append_element_effect_wobble_c1(node, pos=None, **kwargs):
@@ -2583,7 +2583,7 @@ def init_tree(kernel):
             type=_("Circle"), radius="3mm", interval="0.1mm"
         ),
         node_type=wobbleable_elems,
-        help="",
+        help=_("Apply a wobble (contour follower)"),
         grouping="50_ELEM_MODIFY_ZMISC_WOBBLE",
     )
     def append_element_effect_wobble_c3(node, pos=None, **kwargs):
@@ -2601,7 +2601,7 @@ def init_tree(kernel):
             type=_("Meander"), radius="1mm", interval="1.25mm"
         ),
         node_type=wobbleable_elems,
-        help="",
+        help=_("Apply a wobble (contour follower)"),
         grouping="50_ELEM_MODIFY_ZMISC_WOBBLE",
     )
     def append_element_effect_wobble_m1(node, pos=None, **kwargs):
@@ -2645,7 +2645,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Duplicate elements 1 time"),
         node_type=op_burnable_nodes,
-        help="",
+        help=_("Create one copy of the selected elements"),
         grouping="20_ELEM_DUPLICATION",
     )
     def dup_1_copy(node, **kwargs):
@@ -2657,7 +2657,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Duplicate elements {copies} times"),
         node_type=op_burnable_nodes,
-        help="",
+        help=_("Create multiple copies of the selected elements"),
         grouping="20_ELEM_DUPLICATION",
     )
     def dup_n_copies(node, copies=1, **kwargs):
@@ -2730,49 +2730,49 @@ def init_tree(kernel):
     ## @tree_separate_before()
     @tree_submenu(_("Insert operation"))
     @tree_operation(
-        _("Add Image"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Image"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_image(node, **kwargs):
         append_operation_image(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert operation"))
     @tree_operation(
-        _("Add Raster"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Raster"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_raster(node, **kwargs):
         append_operation_raster(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert operation"))
     @tree_operation(
-        _("Add Engrave"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Engrave"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_engrave(node, **kwargs):
         append_operation_engrave(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert operation"))
     @tree_operation(
-        _("Add Cut"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Cut"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_cut(node, **kwargs):
         append_operation_cut(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert operation"))
     @tree_operation(
-        _("Add Hatch"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Hatch"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_hatch(node, **kwargs):
         append_operation_hatch(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert operation"))
     @tree_operation(
-        _("Add Dots"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Dots"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_dots(node, **kwargs):
         append_operation_dots(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Home"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Home"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_home(node, **kwargs):
         append_operation_home(node, pos=add_after_index(node), **kwargs)
@@ -2781,7 +2781,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Add Return to Origin"),
         node_type=op_nodes,
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def add_operation_origin(node, **kwargs):
@@ -2789,14 +2789,14 @@ def init_tree(kernel):
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Beep"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Beep"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_beep(node, **kwargs):
         append_operation_beep(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Interrupt"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Interrupt"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_interrupt(node, **kwargs):
         append_operation_interrupt(node, pos=add_after_index(node), **kwargs)
@@ -2804,7 +2804,7 @@ def init_tree(kernel):
     @tree_submenu(_("Insert special operation(s)"))
     @tree_prompt("wait_time", _("Wait for how long (in seconds)?"), data_type=float)
     @tree_operation(
-        _("Add Wait"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Wait"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_wait(node, wait_time, **kwargs):
         append_operation_wait(
@@ -2813,28 +2813,28 @@ def init_tree(kernel):
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Output"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Output"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_output(node, **kwargs):
         append_operation_output(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Input"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Input"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_input(node, **kwargs):
         append_operation_input(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Coolant on"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Coolant on"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_cool_on(node, pos=None, **kwargs):
         append_operation_cool_on(node, pos=add_after_index(node), **kwargs)
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
-        _("Add Coolant Off"), node_type=op_nodes, help="", grouping="OPS_40_ADDITION"
+        _("Add Coolant Off"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def add_operation_cool_off(node, pos=None, **kwargs):
         append_operation_cool_off(node, pos=add_after_index(node), **kwargs)
@@ -2843,7 +2843,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Add Home/Beep/Interrupt"),
         node_type=op_nodes,
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def add_operation_home_beep_interrupt(node, **kwargs):
@@ -2860,7 +2860,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Add Origin/Beep/Interrupt"),
         node_type=op_nodes,
-        help="",
+        help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
     def add_operation_origin_beep_interrupt(node, **kwargs):
@@ -2873,7 +2873,7 @@ def init_tree(kernel):
             pos += 1
         append_operation_interrupt(node, pos=pos, **kwargs)
 
-    @tree_operation(_("Reload '{name}'"), node_type="file", help="", grouping="40_ELEM_FILE")
+    @tree_operation(_("Reload '{name}'"), node_type="file", help=_("Reload the content of the file"), grouping="40_ELEM_FILE")
     def reload_file(node, **kwargs):
         filepath = node.filepath
         if not os.path.exists(filepath):
@@ -2966,7 +2966,7 @@ def init_tree(kernel):
     @tree_submenu(_("Assign Operation"))
     @tree_values("op_assign", values=get_values)
     @tree_operation(
-        "{op_assign}", node_type=elem_nodes, help="", grouping="40_ELEM_CLASSIFY"
+        "{op_assign}", node_type=elem_nodes, help=_("Assign an operation to the selected elements"), grouping="40_ELEM_CLASSIFY"
     )
     def menu_assign_operations(node, op_assign, **kwargs):
         if self.classify_inherit_stroke:
@@ -3073,7 +3073,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_submenu(_("Duplicate element(s)"))
     @tree_operation(
-        _("Make 1 copy"), node_type=elem_group_nodes, help="", grouping="20_ELEM_DUPLICATION"
+        _("Make 1 copy"), node_type=elem_group_nodes, help=_("Create one copy of the selected elements"), grouping="20_ELEM_DUPLICATION"
     )
     def duplicate_element_1(node, **kwargs):
         duplicate_element_n(node, copies=1, **kwargs)
@@ -3084,7 +3084,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Make {copies} copies"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Create multiple copies of the selected elements"),
         grouping="20_ELEM_DUPLICATION",
     )
     def duplicate_element_n(node, copies, **kwargs):
@@ -3227,7 +3227,7 @@ def init_tree(kernel):
     @tree_operation(
         _("...with {offset}mm distance"),
         node_type=elem_nodes,
-        help="",
+        help=_("Create an outline around the selected elements"),
         grouping="50_ELEM_MODIFY_ZMISC"
     )
     def make_outlines(node, offset=1, **kwargs):
@@ -3751,7 +3751,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Rotate {angle}°"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Rotate the selected elements by the given amount"),
         grouping="50_ELEM_MODIFY",
     )
     def rotate_elem_amount(node, angle, **kwargs):
@@ -3771,7 +3771,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Reify User Changes"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Integrate user scale, translate and rotate changes"),
         grouping="80_ELEM_REIFY",
     )
     def reify_elem_changes(node, **kwargs):
@@ -3784,7 +3784,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Break Subpaths"),
         node_type="elem path",
-        help="",
+        help=_("Split paths into subelements (if any)"),
         grouping="50_ELEM_MODIFY_ZMISC",
     )
     def break_subpath_elem(node, **kwargs):
@@ -3797,7 +3797,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Reset user changes"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Revert user scale, translate and rotate changes"),
         grouping="80_ELEM_REIFY",
     )
     def reset_user_changes(node, copies=1, **kwargs):
@@ -3925,7 +3925,7 @@ def init_tree(kernel):
         self.signal("refresh_scene", "Scene")
 
     @tree_conditional(lambda node: is_regmark(node))
-    @tree_submenu(_("Toggle Magnet-Lines"))
+    @tree_submenu(_("Toggle magnet-lines"))
     @tree_operation(
         _("Around border"), node_type=elem_group_nodes, help="", grouping="SCENE"
     )
@@ -3935,7 +3935,7 @@ def init_tree(kernel):
         self.signal("magnet_gen", ("outer", node))
 
     @tree_conditional(lambda node: is_regmark(node))
-    @tree_submenu(_("Toggle Magnet-Lines"))
+    @tree_submenu(_("Toggle magnet-lines"))
     @tree_operation(
         _("At center"), node_type=elem_group_nodes, help="", grouping="SCENE"
     )

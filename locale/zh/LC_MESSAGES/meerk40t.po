@@ -10488,7 +10488,7 @@ msgstr "转换为点"
 #: meerk40t/core/elements/element_treeops.py:334
 #: meerk40t/core/elements/element_treeops.py:351
 #: meerk40t/gui/propertypanels/imageproperty.py:423
-msgid "RasterWizard"
+msgid "Raster-Wizard"
 msgstr "光栅向导"
 
 #: meerk40t/core/elements/element_treeops.py:335
@@ -10501,7 +10501,7 @@ msgid "Apply: {script}"
 msgstr "应用：{script}"
 
 #: meerk40t/core/elements/element_treeops.py:373
-msgid "Speed for Raster-Operation"
+msgid "Speed for Raster-operation"
 msgstr "光栅操作的速度"
 
 #: meerk40t/core/elements/element_treeops.py:376
@@ -10510,7 +10510,7 @@ msgid "{speed}mm/s"
 msgstr "{speed}mm/s"
 
 #: meerk40t/core/elements/element_treeops.py:386
-msgid "Speed for Vector-Operation"
+msgid "Speed for Vector-operation"
 msgstr "矢量操作的速度"
 
 #: meerk40t/core/elements/element_treeops.py:411
@@ -10538,7 +10538,7 @@ msgid "Loops {loopvalue}"
 msgstr "循环 {loopvalue}"
 
 #: meerk40t/core/elements/element_treeops.py:507
-msgid "Burn Direction"
+msgid "Burn direction"
 msgstr "烧制方向"
 
 #: meerk40t/core/elements/element_treeops.py:530
@@ -10573,7 +10573,7 @@ msgstr "对所选操作运行模拟"
 
 #: meerk40t/core/elements/element_treeops.py:588
 #: meerk40t/grbl/gui/grblconfiguration.py:82
-msgid "Global Settings"
+msgid "Global operation settings"
 msgstr "全局设置"
 
 #: meerk40t/core/elements/element_treeops.py:594
