@@ -158,7 +158,7 @@ def init_tree(kernel):
     ## @tree_separator_after()
     @tree_conditional(lambda node: len(list(self.ops(selected=True))) == 1)
     @tree_operation(
-        _("Operation properties"), node_type=op_nodes, help="", grouping="00PROPS"
+        _("Operation properties"), node_type=op_nodes, help=_("Open property window for operation"), grouping="00PROPS"
     )
     def operation_property(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
@@ -166,7 +166,7 @@ def init_tree(kernel):
             activate(node)
 
     ## @tree_separator_after()
-    @tree_operation(_("Edit"), node_type="util console", help="", grouping="00PROPS")
+    @tree_operation(_("Edit"), node_type="util console", help=_("Modfiy console command"), grouping="00PROPS")
     def edit_console_command(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
@@ -183,7 +183,7 @@ def init_tree(kernel):
             "elem rect",
             "elem line",
         ),
-        help="",
+        help=_("Open property window for shape"),
         grouping="00PROPS",
     )
     def path_property(node, **kwargs):
@@ -195,7 +195,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Group properties"),
         node_type="group",
-        help="",
+        help=_("Open information window for group"),
         grouping="00PROPS",
     )
     def group_property(node, **kwargs):
@@ -207,7 +207,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Text properties"),
         node_type="elem text",
-        help="",
+        help=_("Open property window for text"),
         grouping="00PROPS",
     )
     def text_property(node, **kwargs):
@@ -219,7 +219,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Image properties"),
         node_type="elem image",
-        help="",
+        help=_("Open property window for image"),
         grouping="00PROPS",
     )
     def image_property(node, **kwargs):
@@ -241,7 +241,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_submenu(_("Passthrough"))
     @tree_operation(
-        _("From Original"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("From Original"), node_type="elem image", help=_("Set image to passthrough mode"), grouping="70_ELEM_IMAGES"
     )
     def image_convert_unmodified(node, **kwargs):
         with self.undoscope("From Original"):
@@ -254,7 +254,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_submenu(_("Passthrough"))
     @tree_operation(
-        _("From Modified"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("From Modified"), node_type="elem image", help=_("Set image to passthrough mode"), grouping="70_ELEM_IMAGES"
     )
     def image_convert_unmodified_2(node, **kwargs):
         with self.undoscope("From Modified"):
@@ -268,7 +268,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Unlock modifications"),
         node_type="image raster",
-        help="",
+        help=_("Unlock modfications for passthrough image"),
         grouping="70_ELEM_IMAGES",
     )
     def image_convert_modifier(node, **kwargs):
@@ -281,10 +281,9 @@ def init_tree(kernel):
             )
 
     @tree_operation(
-        _("Remove effect"), node_type=effect_nodes, help="", grouping="10_ELEM_DELETION"
+        _("Remove effect"), node_type=effect_nodes, help=_("Remove hatch/wobble"), grouping="10_ELEM_DELETION"
     )
     def remove_effect(node, **kwargs):
-        # Language hint: _("Remove effect")
         childs = [e for e in node._children]
         if not childs:
             return
@@ -298,7 +297,7 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: is_hatched(node))
     @tree_operation(
-        _("Remove effect"), node_type=elem_nodes, help="", grouping="10_ELEM_DELETION"
+        _("Remove effect"), node_type=elem_nodes, help=_("Remove surrounding hatch/wobble"), grouping="10_ELEM_DELETION"
     )
     def unhatch_elements(node, **kwargs):
         # Language hint: _("Remove effect")
@@ -341,7 +340,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to normal group"),
         node_type="file",
-        help="",
+        help=_("Convert filenode into a regular group"),
         grouping="40_ELEM_FILE",
     )
     def convert_file_to_group(node, **kwargs):
@@ -357,7 +356,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Ungroup elements"),
         node_type=("group", "file"),
-        help="",
+        help=_("Ungroup the child elements of this node and remove the node"),
         grouping="40_ELEM_GROUPS",
     )
     def ungroup_elements(node, **kwargs):
@@ -444,7 +443,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Toggle visibility"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("When invisible the element will neither been displayed nor burnt"),
         grouping="30_ELEM_VISIBLE",
     )
     def element_visibility_toggle(node, **kwargs):
@@ -479,7 +478,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Group elements"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Group selected elements"),
         grouping="40_ELEM_GROUPS",
     )
     def group_elements(node, **kwargs):
@@ -520,7 +519,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Remove all items from operation"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Clear all assignments from this operation"),
         grouping="10_OPS_DELETION",
     )
     def clear_all_op_entries(node, **kwargs):
@@ -539,7 +538,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Enable/Disable ops"),
         node_type=op_nodes,
-        help="",
+        help=_("When disabled the operation will be ignored during a burn"),
         grouping="30_OPS_VISIBILITY",
     )
     def toggle_n_operations(node, **kwargs):
@@ -567,7 +566,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Show/Hide contained elements"),
         node_type=op_nodes,
-        help="",
+        help=_("Temporarily suppress all assigned elements of this operation"),
         grouping="30_OPS_VISIBILITY",
     )
     def toggle_op_elem_visibility(node, **kwargs):
@@ -667,7 +666,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Burning sequence"))
     @tree_operation(
-        _("Burn first"), node_type=op_parent_nodes, help="", grouping="OPS_40_SEQUENCE"
+        _("Burn first"), node_type=op_parent_nodes, help=_("Establish the sequence of operations during burntime"), grouping="OPS_40_SEQUENCE"
     )
     def burn_first(node, **kwargs):
         move_op(node, "top")
@@ -676,7 +675,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Burn earlier"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Establish the sequence of operations during burntime"),
         grouping="OPS_40_SEQUENCE",
     )
     def burn_earlier(node, **kwargs):
@@ -684,14 +683,14 @@ def init_tree(kernel):
 
     @tree_submenu(_("Burning sequence"))
     @tree_operation(
-        _("Burn later"), node_type=op_parent_nodes, help="", grouping="OPS_40_SEQUENCE"
+        _("Burn later"), node_type=op_parent_nodes, help=_("Establish the sequence of operations during burntime"), grouping="OPS_40_SEQUENCE"
     )
     def burn_later(node, **kwargs):
         move_op(node, "down")
 
     @tree_submenu(_("Burning sequence"))
     @tree_operation(
-        _("Burn last"), node_type=op_parent_nodes, help="", grouping="OPS_40_SEQUENCE"
+        _("Burn last"), node_type=op_parent_nodes, help=_("Establish the sequence of operations during burntime"), grouping="OPS_40_SEQUENCE"
     )
     def burn_last(node, **kwargs):
         move_op(node, "bottom")
@@ -700,7 +699,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Image"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Convert an operation to a different type maintaining properties and assigned elements"),
         grouping="OPS_60_CONVERSION",
     )
     def convert_operation_image(node, **kwargs):
@@ -718,7 +717,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Raster"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Convert an operation to a different type maintaining properties and assigned elements"),
         grouping="OPS_60_CONVERSION",
     )
     def convert_operation_raster(node, **kwargs):
@@ -736,7 +735,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Engrave"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Convert an operation to a different type maintaining properties and assigned elements"),
         grouping="OPS_60_CONVERSION",
     )
     def convert_operation_engrave(node, **kwargs):
@@ -754,7 +753,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Cut"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Convert an operation to a different type maintaining properties and assigned elements"),
         grouping="OPS_60_CONVERSION",
     )
     def convert_operation_cut(node, **kwargs):
@@ -772,7 +771,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Dots"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Convert an operation to a different type maintaining properties and assigned elements"),
         grouping="OPS_60_CONVERSION",
     )
     def convert_operation_dots(node, **kwargs):
@@ -788,7 +787,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Raster-Wizard"))
     @tree_operation(
-        _("Set to None"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("Set to None"), node_type="elem image", help=_("Remove stored image operations"), grouping="70_ELEM_IMAGES"
     )
     def image_rasterwizard_apply_none(node, **kwargs):
         data = []
@@ -812,7 +811,7 @@ def init_tree(kernel):
     @tree_submenu(_("Raster-Wizard"))
     @tree_values("script", values=list(self.match("raster_script", suffix=True)))
     @tree_operation(
-        _("Apply: {script}"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("Apply: {script}"), node_type="elem image", help=_("Apply a predefined script to an image"), grouping="70_ELEM_IMAGES"
     )
     def image_rasterwizard_apply(node, script=None, **kwargs):
         raster_script = self.lookup(f"raster_script/{script}")
@@ -836,7 +835,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(
-        _("Horizontal"), node_type="elem image", help="", grouping="50_ELEM_MODIFY_ZMISC"
+        _("Horizontal"), node_type="elem image", help=_("Create a horizontal linepattern from the image"), grouping="50_ELEM_MODIFY_ZMISC"
     )
     def image_convert_to_path_horizontal(node, **kwargs):
         # Language hint _("To path: Horizontal")
@@ -855,7 +854,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(
-        _("Vertical"), node_type="elem image", help="", grouping="50_ELEM_MODIFY_ZMISC"
+        _("Vertical"), node_type="elem image", help=_("Create a vertical linepattern from the image"), grouping="50_ELEM_MODIFY_ZMISC"
     )
     def image_convert_to_path_vertical(node, **kwargs):
         # Language hint _("To path: Vertical")
@@ -879,7 +878,7 @@ def init_tree(kernel):
     @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(
-        _("{speed}mm/s"), node_type=op_image_nodes, help="", grouping="OPS_70_MODIFY"
+        _("{speed}mm/s"), node_type=op_image_nodes, help=_("Set speed for the operation"), grouping="OPS_70_MODIFY"
     )
     def set_speed_raster(node, speed=150, **kwargs):
         data = list()
@@ -898,7 +897,7 @@ def init_tree(kernel):
     @tree_radio(radio_match_speed)
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
-        _("{speed}mm/s"), node_type=op_vector_nodes, help="", grouping="OPS_70_MODIFY"
+        _("{speed}mm/s"), node_type=op_vector_nodes, help=_("Set speed for the operation"), grouping="OPS_70_MODIFY"
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
@@ -923,7 +922,7 @@ def init_tree(kernel):
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
         node_type=op_burnable_nodes,
-        help="",
+        help=_("Set power for the operation"),
         grouping="OPS_70_MODIFY",
     )
     def set_power(node, power=1000, **kwargs):
@@ -1009,7 +1008,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Passes {passvalue}"),
         node_type=op_parent_nodes,
-        help="",
+        help=_("Define the amount of executions/passes for the operation"),
         grouping="OPS_70_MODIFY",
     )
     def set_n_passes(node, passvalue=1, **kwargs):
@@ -1035,7 +1034,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Loops {loopvalue}"),
         node_type="place point",
-        help="",
+        help=_("Set amount of passes/execution at this placement"),
         grouping="OPS_70_MODIFY",
     )
     def set_n_loops(node, loopvalue=1, **kwargs):
@@ -1076,7 +1075,7 @@ def init_tree(kernel):
     @tree_operation(
         "{raster_direction}",
         node_type=op_image_nodes,
-        help="",
+        help=_("Define the burn-direction for this operation"),
         grouping="OPS_70_MODIFY",
     )
     def set_direction(node, raster_direction="", **kwargs):
@@ -1112,7 +1111,7 @@ def init_tree(kernel):
     @tree_operation(
         "{raster_swing}",
         node_type=op_image_nodes,
-        help="",
+        help=_("Define the behaviour for this operation"),
         grouping="OPS_70_MODIFY",
     )
     def set_swing(node, raster_swing="", **kwargs):
@@ -1181,7 +1180,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Global operation settings"),
         node_type="branch ops",
-        help="",
+        help=_("Define global loops and other properties"),
         grouping="00PROPS",
     )
     def op_prop(node, **kwargs):
@@ -1801,7 +1800,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Clone reference"))
     @tree_operation(
-        _("Make 1 copy"), node_type=("reference",), help=_("Add more references of the master element"), grouping="20_OPS_DUPLICATION"
+        _("Make 1 copy"), node_type=("reference",), help=_("Add an additional reference of the master element"), grouping="20_OPS_DUPLICATION"
     )
     def clone_single_element_op(node, **kwargs):
         clone_element_op(node, copies=1, **kwargs)
@@ -1811,7 +1810,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Make {copies} copies"),
         node_type=("reference",),
-        help="",
+        help=_("Add more references of the master element"),
         grouping="20_OPS_DUPLICATION",
     )
     def clone_element_op(node, copies=1, **kwargs):
@@ -3828,7 +3827,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: node.lock)
     ## @tree_separate_before()
     @tree_operation(
-        _("Unlock element, allows manipulation"), node_type=elem_nodes, help=""
+        _("Unlock element, allows manipulation"), node_type=elem_nodes, help=_("Remove manipulation protection flag")
     )
     def element_unlock_manipulations(node, **kwargs):
         self("element unlock\n")
@@ -3838,7 +3837,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Lock elements, prevents manipulations"),
         node_type=elem_nodes,
-        help="",
+        help=_("Set manipulation protection flag"),
         grouping="30_ELEM_VISIBLE",
     )
     def element_lock_manipulations(node, **kwargs):
@@ -3849,7 +3848,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Toggle visibility of regmarks"),
         node_type="branch reg",
-        help="",
+        help=_("Show/Hide the content of the regmark branch"),
         grouping="30_REG_VISIBLE",
     )
     def toggle_visibility(node, **kwargs):
@@ -3860,7 +3859,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Move back to elements"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Move the selected regmarks back to the element branch"),
         grouping="REG_10_OPTIONS",
     )
     def move_back(node, **kwargs):
@@ -3882,7 +3881,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Move to regmarks"),
         node_type=elem_group_nodes,
-        help="",
+        help=_("Move the selected elements to the regmark branch"),
         grouping="90_ELEM_REGMARKS",
     )
     def move_to_regmark(node, **kwargs):
@@ -3905,7 +3904,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Create placement"),
         node_type=elem_nodes,
-        help="",
+        help=_("Define a job starting point aka placement"),
         grouping="REG_20_PLACEMENT",
     )
     def regmark_as_placement(node, **kwargs):
@@ -3934,7 +3933,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: is_regmark(node))
     @tree_submenu(_("Toggle magnet-lines"))
     @tree_operation(
-        _("Around border"), node_type=elem_group_nodes, help="", grouping="SCENE"
+        _("Around border"), node_type=elem_group_nodes, help=_("Set/remove magnet lines around the regmark element"), grouping="SCENE"
     )
     def regmark_to_magnet_1(node, **kwargs):
         if not hasattr(node, "bounds"):
@@ -3944,7 +3943,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: is_regmark(node))
     @tree_submenu(_("Toggle magnet-lines"))
     @tree_operation(
-        _("At center"), node_type=elem_group_nodes, help="", grouping="SCENE"
+        _("At center"), node_type=elem_group_nodes, help=_("Set/remove magnet lines right through the middle of the regmark element"), grouping="SCENE"
     )
     def regmark_to_magnet_2(node, **kwargs):
         if not hasattr(node, "bounds"):
@@ -3957,7 +3956,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Divide into {divide} images"),
         node_type="elem image",
-        help="",
+        help=_("Split image into multiple subimages based on the grayscale level"),
         grouping="70_ELEM_IMAGES",
     )
     def image_zdepth(node, divide=1, **kwargs):
@@ -3975,7 +3974,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Unlock manipulations"),
         node_type="elem image",
-        help="",
+        help=_("Allow manipulations of the image"),
         grouping="70_ELEM_IMAGES",
     )
     def image_unlock_manipulations(node, **kwargs):
@@ -3986,7 +3985,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Lock manipulations"),
         node_type="elem image",
-        help="",
+        help=_("Prevent manipulations of the image"),
         grouping="70_ELEM_IMAGES",
     )
     def image_lock_manipulations(node, **kwargs):
@@ -3997,7 +3996,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Dither to 1 bit"),
         node_type="elem image",
-        help="",
+        help=_("Create a pixelated b/w copy of the image"),
         grouping="70_ELEM_IMAGES",
     )
     def image_dither(node, **kwargs):
@@ -4007,7 +4006,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Image"))
     @tree_operation(
-        _("Invert image"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("Invert image"), node_type="elem image", help=_("Invert the image"), grouping="70_ELEM_IMAGES"
     )
     def image_invert(node, **kwargs):
         with self.undoscope("Invert image"):
@@ -4018,7 +4017,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Mirror horizontal"),
         node_type="elem image",
-        help="",
+        help=_("Mirror the image along the Y-Axis"),
         grouping="70_ELEM_IMAGES",
     )
     def image_mirror(node, **kwargs):
@@ -4028,7 +4027,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Image"))
     @tree_operation(
-        _("Flip vertical"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("Flip vertical"), node_type="elem image", help=_("Mirror the image along the X-Axis"), grouping="70_ELEM_IMAGES"
     )
     def image_flip(node, **kwargs):
         with self.undoscope("Flip vertical"):
@@ -4037,7 +4036,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Image"))
     @tree_operation(
-        _("Rotate 90° CW"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("Rotate 90° CW"), node_type="elem image", help=_("Rotate the image by 90° clockwise"), grouping="70_ELEM_IMAGES"
     )
     def image_cw(node, **kwargs):
         with self.undoscope("Rotate 90° CW"):
@@ -4046,7 +4045,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Image"))
     @tree_operation(
-        _("Rotate 90° CCW"), node_type="elem image", help="", grouping="70_ELEM_IMAGES"
+        _("Rotate 90° CCW"), node_type="elem image", help=_("Rotate the image by 90° counterclockwise"), grouping="70_ELEM_IMAGES"
     )
     def image_ccw(node, **kwargs):
         with self.undoscope("Rotate 90° CCW"):
@@ -4058,7 +4057,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Identify inner white areas"),
         node_type="elem image",
-        help="",
+        help=_("Identify and mark bigger white areas inside the image"),
         grouping="70_ELEM_IMAGES",
     )
     def image_white_area(node, **kwargs):
@@ -4071,7 +4070,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Split image along white areas"),
         node_type="elem image",
-        help="",
+        help=_("Split image along white areas to reduce rastering time"),
         grouping="70_ELEM_IMAGES",
     )
     def image_white_area_split(node, **kwargs):
@@ -4084,7 +4083,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Save original image to output.png"),
         node_type="elem image",
-        help="",
+        help=_("Save the unmodified image to disk"),
         grouping="70_ELEM_IMAGES_SAVE",
     )
     def image_save(node, **kwargs):
@@ -4094,7 +4093,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Save processed image to output.png"),
         node_type="elem image",
-        help="",
+        help=_("Save the modified image to disk"),
         grouping="70_ELEM_IMAGES_SAVE",
     )
     def image_save_processed(node, **kwargs):
@@ -4106,7 +4105,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Remove keyhole"),
         node_type="elem image",
-        help="",
+        help=_("Remove the keyhole-link between image and shape"),
         grouping="70_ELEM_IMAGES_KEYHOLE",
     )
     def image_break_keyhole(node, **kwargs):
