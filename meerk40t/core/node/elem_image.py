@@ -901,6 +901,11 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         if image is None:
             image = self.image
         if self._keyhole_geometry is not None:
+            # Let's check whether the keyhole dimensions match
+            if self._keyhole_image is not None:
+                if self._keyhole_image.width != image.width or self._keyhole_image.height != image.height:
+                    # print ("Need to recalculate")
+                    self._keyhole_image = None
             if self._keyhole_image is None:
                 actualized_matrix = self._actualized_matrix
                 # We can't render something with the usual suspects ie laserrender.render
