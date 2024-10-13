@@ -452,17 +452,24 @@ def init_tree(kernel):
         data = self.condense_elements(raw_data, expand_at_end=False)
         if not data:
             return
-        with self.undoscope("Toggle visibility"):
+
+        def toggle_vis(dataset):
             updated = []
-            for e in data:
+            for e in dataset:
                 if hasattr(e, "hidden"):
                     e.hidden = not e.hidden
                     if e.hidden:
                         e.emphasized = False
                 if e.type in ("file", "group"):
-                    updated.extend(add_node_and_children(e))
+                    childset = toggle_vis(e.children)
+                    updated.extend(childset)
                 else:
                     updated.append(e)
+            return updated
+
+        updated = []
+        with self.undoscope("Toggle visibility"):
+            updated = toggle_vis(data)
         self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", updated)
         self.signal("warn_state_update")
@@ -3769,7 +3776,7 @@ def init_tree(kernel):
     @tree_conditional(lambda node: has_changes(node))
     @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(
-        _("Reify User Changes"),
+        _("Reify user changes"),
         node_type=elem_group_nodes,
         help=_("Integrate user scale, translate and rotate changes"),
         grouping="80_ELEM_REIFY",
