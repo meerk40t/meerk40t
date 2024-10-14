@@ -779,6 +779,7 @@ class VectorIcon:
         noadjustment=False,
         keepalpha=False,
         force_darkmode=False,
+        force_lightmode=False,
         buffer=None,
         resolution=1,
         **kwargs,
@@ -788,7 +789,7 @@ class VectorIcon:
                 # Color is white...
                 force_darkmode = True
 
-        if force_darkmode or DARKMODE:
+        if (force_darkmode or DARKMODE) and not force_lightmode:
             self.dark_mode(color)
             darkm = True
         else:
