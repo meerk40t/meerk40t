@@ -2,6 +2,8 @@ import datetime
 
 import wx
 
+from platform import system
+
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
@@ -18,6 +20,8 @@ HEADER_TEXT = (
     + "who sincerely hoped his contributions would be but\n"
     + "the barest trickle that becomes a raging river."
 )
+HEADER_TEXT_2 = "Since early 2024 jpirnay has taken on the role of lead developer trying to fill in some awfully large shoes."
+
 EULOGY_TEXT = (
     "MeerK40t is the result of an incredible piece of work by David Olsen aka Tatarize.\n"
     + "He created this program over 4 years allowing users across the world to get the best out of their K40 equipment (and additional lasertypes).\n\n"
@@ -35,15 +39,18 @@ class AboutPanel(wx.Panel):
         self.context = context
 
         self.bitmap_button_1 = wx.BitmapButton(
-            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150)
+            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150, force_lightmode=True)
         )
+        self.bitmap_button_1.SetBackgroundColour(wx.WHITE)
 
         self.__set_properties()
         self.__do_layout()
 
         name = self.context.kernel.name
         version = self.context.kernel.version
-        self.meerk40t_about_version_text.SetLabelText(f"{name}\nv{version}")
+        # msg = f"{name}\nv{version}"
+        msg = f"v{version}"
+        self.meerk40t_about_version_text.SetLabelText(msg)
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
@@ -56,9 +63,12 @@ class AboutPanel(wx.Panel):
         hsizer_pic_info = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_pic_iver = wx.BoxSizer(wx.VERTICAL)
         vsizer_pic_iver.Add(self.bitmap_button_1, 0, 0, 0)
+        fontsize = 10
+        if system() == "Darwin":
+            fontsize = 16
         self.meerk40t_about_version_text.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -72,11 +82,11 @@ class AboutPanel(wx.Panel):
         self.meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            _(HEADER_TEXT),
+            _(HEADER_TEXT) + "\n" + _(HEADER_TEXT_2),
         )
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -96,7 +106,6 @@ class AboutPanel(wx.Panel):
         # jaredly ~ 15
         # frogmaster ~ 10
         hall_of_fame = [
-            "jpirnay",
             "Sophist-UK",
             "tiger12506",
             "jaredly",
@@ -142,7 +151,7 @@ class AboutPanel(wx.Panel):
         )
         meerk40t_about_text.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -150,6 +159,7 @@ class AboutPanel(wx.Panel):
                 "Segoe UI",
             )
         )
+        vsizer_main.AddSpacer(5)
         vsizer_main.Add(meerk40t_about_text, 4, wx.EXPAND, 0)
         self.SetSizer(vsizer_main)
         self.Layout()
@@ -1489,6 +1499,9 @@ class DavidPanel(ScrolledPanel):
 
     def __do_layout(self):
         # begin wxGlade: About.__do_layout
+        fontsize = 10
+        if system() == "Darwin":
+            fontsize = 16
         self.david_header.SetFont(
             wx.Font(
                 8,
@@ -1501,7 +1514,7 @@ class DavidPanel(ScrolledPanel):
         )
         self.david_text.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
