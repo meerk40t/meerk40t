@@ -318,6 +318,9 @@ class Warnings:
         )
         info_low.SetValue(txt_low)
         sizer.Add(info_low, 1, wx.EXPAND, 0)
+        info_hi.SetToolTip(_("Critical: might damage your laser (e.g. laserhead bumping into rail)"))
+        info_mid.SetToolTip(_("Normal: might ruin your burn (e.g. unassigned=unburnt elements)"))
+        info_low.SetToolTip(_("Low: I hope you know what your doing (e.g. disabled operations)"))
 
         choices = []
         prechoices = self.context.lookup("choices/preferences")

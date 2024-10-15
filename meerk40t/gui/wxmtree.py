@@ -1076,16 +1076,19 @@ class ShadowTree:
 
         self.wxtree.Expand(op_item)
         unassigned, unburnt = self.elements.have_unburnable_elements()
-        if unassigned or unburnt:
+        needs_showing = False
+        warn_level = self.context.setting(int, "concern_level", 1)
+        messages = []
+        if unassigned and warn_level <= 2:
+            needs_showing = True
+            messages.append( _("You have unassigned elements, that won't be burned") )
+        if unburnt and warn_level <= 1:
+            needs_showing = True
+            messages.append( _("You have elements in disabled operations, that won't be burned") )
+
+        if needs_showing:
             self.wxtree.SetItemState(op_item, self.iconstates["warning"])
-            s1 = _("You have elements in disabled operations, that won't be burned")
-            s2 = _("You have unassigned elements, that won't be burned")
-            if unassigned and unburnt:
-                status = s1 + "\n" + s2
-            elif unburnt:
-                status = s1
-            elif unassigned:
-                status = s2
+            status = "\n".join(messages)
         else:
             self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
             status = ""
