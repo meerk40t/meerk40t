@@ -275,6 +275,10 @@ class TreePanel(wx.Panel):
             self.wxtree,
         )
         self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
+        self.wxtree.Bind(wx.EVT_LEAVE_WINDOW, self.on_lost_focus, self.wxtree)
+
+    def on_lost_focus(self, event):
+        self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def on_key_down(self, event):
         """
@@ -1168,6 +1172,10 @@ class ShadowTree:
     # def reset_expanded(self):
     #     self.was_already_expanded = []
 
+    def reset_dragging(self):
+        self.dragging_nodes = None
+        self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+
     def rebuild_tree(self, source):
         """
         Tree requires being deleted and completely rebuilt.
@@ -1192,7 +1200,6 @@ class ShadowTree:
         # Rebuild tree destroys the emphasis, so let's store it...
         emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
-        self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
         if self.tree_images is not None:
             self.tree_images.Destroy()
@@ -1909,9 +1916,12 @@ class ShadowTree:
             event.Skip()
             return
 
-        self.dragging_nodes = [
-            self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
-        ]
+        self.dragging_nodes = []
+        for item in self.wxtree.GetSelections():
+            node = self.wxtree.GetItemData(item)
+            if node is not None and node.is_draggable():
+                self.dragging_nodes.append(node) 
+
         if len(self.dragging_nodes) == 0:
             # print ("Dragging_nodes was empty")
             event.Skip()
@@ -1974,7 +1984,7 @@ class ShadowTree:
                 self.context.signal("tree_changed")
                 break
         # self.rebuild_tree()
-        self.dragging_nodes = None
+        self.reset_dragging()
 
     def on_mouse_over(self, event):
         # establish the item we are over...
@@ -1989,7 +1999,7 @@ class ShadowTree:
             node = self.wxtree.GetItemData(item)
             if node is not None:
                 # Lets check the dragging status
-                if self.dragging_nodes is not None:
+                if self.dragging_nodes:
                     if hasattr(node, "would_accept_drop"):
                         would_drop = node.would_accept_drop(self.dragging_nodes)
                     else:
@@ -1998,6 +2008,8 @@ class ShadowTree:
                         self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_HAND))
                     else:
                         self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+                else:
+                    self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
                 if hasattr(node, "_tooltip"):
                     # That has precedence and will be displayed in all cases
