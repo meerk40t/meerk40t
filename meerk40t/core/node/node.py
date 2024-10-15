@@ -1134,16 +1134,25 @@ class Node:
         if new_child is None:
             return
         new_parent = self
+        belonged_to_me = bool(new_child.parent is self)
         if new_child.parent is not None:
             source_siblings = new_child.parent.children
+            if belonged_to_me and source_siblings.index(new_child) == 0:
+                # The very first will be moved to the end
+                belonged_to_me = False
             source_siblings.remove(new_child)  # Remove child
         destination_siblings = new_parent.children
 
         new_child.notify_detached(new_child)
 
-        destination_siblings.append(new_child)  # Add child.
-        new_child._parent = new_parent
-        new_child.notify_attached(new_child)
+        if belonged_to_me:
+            destination_siblings.insert(0, new_child)
+            new_child._parent = new_parent
+            new_child.notify_attached(new_child, pos=0)
+        else:
+            destination_siblings.append(new_child)  # Add child.
+            new_child._parent = new_parent
+            new_child.notify_attached(new_child)
 
     def insert_sibling(self, new_sibling, below=True):
         """
