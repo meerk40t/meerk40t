@@ -581,8 +581,12 @@ class Node:
 
     def is_draggable(self):
         return True
+    
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        return False
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         """
         Process drag and drop node values for tree reordering.
 

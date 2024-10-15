@@ -119,7 +119,7 @@ class RasterOpNode(Node, Parameters):
         )
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         count = 0
         existing = 0
         result = False
@@ -165,6 +165,24 @@ class RasterOpNode(Node, Parameters):
                 some_nodes = True
             result = some_nodes
         return result
+
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        for drag_node in data:
+            if drag_node.has_ancestor("branch reg"):
+                continue
+            if (
+                drag_node.type in self._allowed_elements_dnd or
+                drag_node.type in ("file", "group") or 
+                drag_node.type in op_nodes or
+                drag_node.type == "reference"
+            ):
+                return True
+        return False
 
     def has_color_attribute(self, attribute):
         return attribute in self.allowed_attributes

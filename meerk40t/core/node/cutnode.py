@@ -25,7 +25,7 @@ class CutNode(Node):
         default_map["element_type"] = "Cutcode"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         return False
 
     def as_cutobjects(self, closed_distance=15):

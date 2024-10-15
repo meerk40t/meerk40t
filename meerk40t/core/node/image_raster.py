@@ -91,7 +91,7 @@ class ImageRasterNode(Node):
         default_map["element_type"] = "Image"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
@@ -100,7 +100,22 @@ class ImageRasterNode(Node):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            return drag_node.drop(self, modify=modify, flag=flag)
+        return False
+
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        for drag_node in data:
+            if (
+                hasattr(drag_node, "as_geometry") or 
+                hasattr(drag_node, "as_image") or 
+                drag_node.type.startswith("op")
+            ):
+                return True
         return False
 
     def notify_scaled(self, *args, **kwargs):

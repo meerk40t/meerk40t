@@ -278,7 +278,7 @@ class HatchEffectNode(Node, Suppressable):
     def modified(self):
         self.altered()
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("effect"):
             if modify:
@@ -308,7 +308,7 @@ class HatchEffectNode(Node, Suppressable):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            return drag_node.drop(self, modify=modify, flag=flag)
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,
             # then we will do it only if this an element effect
@@ -319,4 +319,15 @@ class HatchEffectNode(Node, Suppressable):
                     self.append_child(drag_node)
                 self.altered()
             return True
+        return False
+
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        for drag_node in data:
+            if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or drag_node.type.startswith("op "):
+                return True
         return False

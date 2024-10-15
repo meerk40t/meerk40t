@@ -1941,7 +1941,7 @@ class ShadowTree:
         if self.dragging_nodes is None:
             event.Skip()
             return
-
+        self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
         drop_item = event.GetItem()
         if drop_item is None or drop_item.ID is None:
             event.Skip()
@@ -1988,6 +1988,17 @@ class ShadowTree:
             state = self.wxtree.GetItemState(item)
             node = self.wxtree.GetItemData(item)
             if node is not None:
+                # Lets check the dragging status
+                if self.dragging_nodes is not None:
+                    if hasattr(node, "would_accept_drop"):
+                        would_drop = node.would_accept_drop(self.dragging_nodes)
+                    else:
+                        would_drop = False
+                    if would_drop:
+                        self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+                    else:
+                        self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+
                 if hasattr(node, "_tooltip"):
                     # That has precedence and will be displayed in all cases
                     ttip = node._tooltip

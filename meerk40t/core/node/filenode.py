@@ -33,13 +33,28 @@ class FileNode(Node):
             candidate = candidate.parent
         return False
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         # Do not allow dragging onto children
         if self.is_a_child_of(drag_node):
             return False
         if drag_node.type == "group":
             if modify:
                 self.append_child(drag_node)
+        return False
+
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        for drag_node in data:
+            if self.is_a_child_of(drag_node):
+                continue
+            if (
+                drag_node.type == "group"
+            ):
+                return True
         return False
 
     @property

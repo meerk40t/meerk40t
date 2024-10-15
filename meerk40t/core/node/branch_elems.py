@@ -16,7 +16,7 @@ class BranchElementsNode(Node):
         default_map["element_type"] = "Elements"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.append_child(drag_node)
@@ -25,6 +25,17 @@ class BranchElementsNode(Node):
             if modify:
                 self.append_child(drag_node)
             return True
+        return False
+    
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        for drag_node in data:
+            if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
+                return True
         return False
 
     def is_draggable(self):
