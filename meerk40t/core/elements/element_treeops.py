@@ -378,7 +378,7 @@ def init_tree(kernel):
 
             for gnode in to_treat:
                 for n in list(gnode.children):
-                    gnode.insert_sibling(n)
+                    gnode.insert_sibling(n, below=False)
                 gnode.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
