@@ -1141,7 +1141,7 @@ class Node:
         new_child._parent = new_parent
         new_child.notify_attached(new_child)
 
-    def insert_sibling(self, new_sibling):
+    def insert_sibling(self, new_sibling, below=True):
         """
         Add the new_sibling node next to the current node.
         If the node exists elsewhere in the tree it will be removed from that location.
@@ -1150,9 +1150,10 @@ class Node:
         source_siblings = new_sibling.parent.children
         destination_siblings = reference_sibling.parent.children
 
-        reference_position = destination_siblings.index(reference_sibling)
-
         source_siblings.remove(new_sibling)
+        reference_position = destination_siblings.index(reference_sibling)
+        if below:
+            reference_position += 1
 
         new_sibling.notify_detached(new_sibling)
         destination_siblings.insert(reference_position, new_sibling)
