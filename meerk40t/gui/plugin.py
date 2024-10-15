@@ -235,7 +235,12 @@ and a wxpython version <= 4.1.1."""
                 ),
                 "choices": (1, 2, 3, 4),
                 "label": _("Level"),
-                "tip": _("Which warning severity level do you want to recognize"),
+                "tip": (
+                    _("Which warning severity level do you want to recognize") + "\n" +
+                    _("Critical: might damage your laser (e.g. laserhead bumping into rail)") + "\n" +
+                    _("Normal: might ruin your burn (e.g. unassigned=unburnt elements)") + "\n" +
+                    _("Low: I hope you know what your doing (e.g. disabled operations)") 
+                ),
                 "page": "Gui",
                 "section": "Warning-Indicator",
                 "signals": ("icons", "warn_state_update"),
