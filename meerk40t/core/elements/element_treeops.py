@@ -1660,7 +1660,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Make Polygon regular"),
         node_type="elem polyline",
-        help=_("CHange the selected polygon so that all sides have equal length"),
+        help=_("Change the selected polygon so that all sides have equal length"),
         grouping="50_ELEM_MODIFY_ZMISC",
     )
     def make_polygon_regular(node, **kwargs):

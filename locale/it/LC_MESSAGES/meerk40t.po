@@ -20511,7 +20511,7 @@ msgid "Make the selected object the reference object for alignment"
 msgstr "Rendere l'oggetto selezionato il riferimento per l'allineamento."
 
 #: meerk40t/core/elements/element_treeops.py:1663
-msgid "CHange the selected polygon so that all sides have equal length"
+msgid "Change the selected polygon so that all sides have equal length"
 msgstr "Modificare il poligono selezionato in modo che tutti i lati abbiano la stessa lunghezza"
 
 #: meerk40t/core/elements/element_treeops.py:1776
