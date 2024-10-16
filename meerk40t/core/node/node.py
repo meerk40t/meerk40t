@@ -581,8 +581,20 @@ class Node:
 
     def is_draggable(self):
         return True
+    
+    def can_drop(self, drag_node):
+        return False
+    
+    def would_accept_drop(self, drag_nodes):
+        # drag_nodes can be a single node or a list of nodes
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        return any(self.can_drop(node) for node in data)
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         """
         Process drag and drop node values for tree reordering.
 
@@ -1130,18 +1142,27 @@ class Node:
         if new_child is None:
             return
         new_parent = self
+        belonged_to_me = bool(new_child.parent is self)
         if new_child.parent is not None:
             source_siblings = new_child.parent.children
+            if belonged_to_me and source_siblings.index(new_child) == 0:
+                # The very first will be moved to the end
+                belonged_to_me = False
             source_siblings.remove(new_child)  # Remove child
         destination_siblings = new_parent.children
 
         new_child.notify_detached(new_child)
 
-        destination_siblings.append(new_child)  # Add child.
-        new_child._parent = new_parent
-        new_child.notify_attached(new_child)
+        if belonged_to_me:
+            destination_siblings.insert(0, new_child)
+            new_child._parent = new_parent
+            new_child.notify_attached(new_child, pos=0)
+        else:
+            destination_siblings.append(new_child)  # Add child.
+            new_child._parent = new_parent
+            new_child.notify_attached(new_child)
 
-    def insert_sibling(self, new_sibling):
+    def insert_sibling(self, new_sibling, below=True):
         """
         Add the new_sibling node next to the current node.
         If the node exists elsewhere in the tree it will be removed from that location.
@@ -1150,9 +1171,10 @@ class Node:
         source_siblings = new_sibling.parent.children
         destination_siblings = reference_sibling.parent.children
 
-        reference_position = destination_siblings.index(reference_sibling)
-
         source_siblings.remove(new_sibling)
+        reference_position = destination_siblings.index(reference_sibling)
+        if below:
+            reference_position += 1
 
         new_sibling.notify_detached(new_sibling)
         destination_siblings.insert(reference_position, new_sibling)

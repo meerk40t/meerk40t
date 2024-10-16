@@ -1036,7 +1036,7 @@ class Elemental(Service):
             op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
         )
         for n in data:
-            if op_assign.drop(n, modify=False):
+            if op_assign.can_drop(n):
                 if exclusive:
                     for ref in list(n._references):
                         ref.remove_node()
@@ -2214,7 +2214,7 @@ class Elemental(Service):
         self.last_file_autoexec_active = False
         self.signal("autoexec")
 
-    def drag_and_drop(self, dragging_nodes, drop_node):
+    def drag_and_drop(self, dragging_nodes, drop_node, flag=False):
         data = dragging_nodes
         success = False
         to_classify = []
@@ -2284,8 +2284,8 @@ class Elemental(Service):
             if op_treatment and drag_node.has_ancestor("branch reg"):
                 # We need to first relocate the drag_node to the elem branch
                 # print(f"Relocate {drag_node.type} to elem branch")
-                self.elem_branch.drop(drag_node)
-            if drop_node.drop(drag_node, modify=False):
+                self.elem_branch.drop(drag_node, flag=flag)
+            if drop_node.can_drop(drag_node):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
                 if drag_node.has_ancestor("branch reg"):
@@ -2294,7 +2294,7 @@ class Elemental(Service):
                             to_classify.append(e)
                     else:
                         to_classify.append(drag_node)
-                drop_node.drop(drag_node, modify=True)
+                drop_node.drop(drag_node, modify=True, flag=flag)
                 success = True
             else:
                 # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")

@@ -102,9 +102,21 @@ class GroupNode(Node, LabelDisplay):
             candidate = candidate.parent
         return False
 
-    def drop(self, drag_node, modify=True):
-        # Do not allow dragging onto children
+    def can_drop(self, drag_node):
         if self.is_a_child_of(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
+            # Move a group
+            return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.can_drop(self)
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Do not allow dragging onto children
+        if not self.can_drop(drag_node):
             return False
 
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
@@ -120,7 +132,7 @@ class GroupNode(Node, LabelDisplay):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            return drag_node.drop(self, modify=modify, flag=flag)
         return False
 
     @property

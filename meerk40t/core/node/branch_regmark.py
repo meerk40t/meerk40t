@@ -24,7 +24,14 @@ class BranchRegmarkNode(Node):
         for ref in list(node.children):
             self.remove_references(ref)
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
+            return True
+        return False
+    
+    def drop(self, drag_node, modify=True, flag=False):
+        if not self.can_drop(drag_node):
+            return False
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.remove_references(drag_node)

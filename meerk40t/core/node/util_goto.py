@@ -38,18 +38,18 @@ class GotoOperation(Node):
         default_map["absolute"] = "=" if self.absolute else ""
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Move operation to a different position.
+        return bool(drag_node.type in op_nodes)
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an op node - irrelevant for others...
         drop_node = self
-        if drag_node.type in op_nodes:
-            if modify:
-                drop_node.insert_sibling(drag_node)
-            return True
-        elif drop_node.type == "branch ops":
-            # Dragging operation to op branch to effectively move to bottom.
-            if modify:
-                drop_node.append_child(drag_node)
-            return True
-        return False
+        if not self.can_drop(drag_node):
+            return False
+        if modify:
+            drop_node.insert_sibling(drag_node)
+        return True
 
     def preprocess(self, context, matrix, plan):
         """

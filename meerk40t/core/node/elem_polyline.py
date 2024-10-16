@@ -231,9 +231,20 @@ class PolylineNode(
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or 
+            hasattr(drag_node, "as_image") or 
+            drag_node.type.startswith("op") or
+            drag_node.type in ("file", "group")
+        )
+    
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
@@ -242,7 +253,7 @@ class PolylineNode(
             # then we will reverse the game, but we will take the operations color
             if hasattr(drag_node, "color") and drag_node.color is not None:
                 self.stroke = drag_node.color
-            return drag_node.drop(self, modify=modify)
+            return drag_node.drop(self, modify=modify, flag=flag)
         return False
 
     def revalidate_points(self):
