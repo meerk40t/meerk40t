@@ -528,7 +528,7 @@ def init_tree(kernel):
             data.append(item)
         if not data:
             return
-        # Language hint: _("Empty operation")
+        # Language hint: _("Remove all items from operation")
         with self.undoscope("Remove all items from operation"):
             with self.static("clear_all_op"):
                 for item in data:
