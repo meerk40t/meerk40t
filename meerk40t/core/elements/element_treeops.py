@@ -166,7 +166,7 @@ def init_tree(kernel):
             activate(node)
 
     ## @tree_separator_after()
-    @tree_operation(_("Edit"), node_type="util console", help=_("Modfiy console command"), grouping="00PROPS")
+    @tree_operation(_("Edit"), node_type="util console", help=_("Modify console command"), grouping="00PROPS")
     def edit_console_command(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:

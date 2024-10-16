@@ -20323,7 +20323,7 @@ msgid "Open property window for operation"
 msgstr "Apre la finestra delle proprietà del processo"
 
 #: meerk40t/core/elements/element_treeops.py:169
-msgid "Modfiy console command"
+msgid "Modify console command"
 msgstr "Comando della console Modfiy"
 
 #: meerk40t/core/elements/element_treeops.py:186
