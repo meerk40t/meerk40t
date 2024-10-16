@@ -119,6 +119,23 @@ class RasterOpNode(Node, Parameters):
         )
         return default_map
 
+    def can_drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.has_ancestor("branch reg"):
+            # Will be dealt with in elements - 
+            # we don't implement a more sophisticated routine here
+            return False
+        if drag_node.type.startswith("elem ") and drag_node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type in op_nodes:
+            # Move operation to a different position.
+            return True
+        elif drag_node.type in ("file", "group"):
+            return any(drag_node.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+        return False    
+
     def drop(self, drag_node, modify=True, flag=False):
         count = 0
         existing = 0
@@ -165,24 +182,6 @@ class RasterOpNode(Node, Parameters):
                 some_nodes = True
             result = some_nodes
         return result
-
-    def would_accept_drop(self, drag_nodes):
-        # drag_nodes can be a single node or a list of nodes
-        if isinstance(drag_nodes, (list, tuple)):
-            data = drag_nodes
-        else:
-            data = list(drag_nodes)
-        for drag_node in data:
-            if drag_node.has_ancestor("branch reg"):
-                continue
-            if (
-                drag_node.type in self._allowed_elements_dnd or
-                drag_node.type in ("file", "group") or 
-                drag_node.type in op_nodes or
-                drag_node.type == "reference"
-            ):
-                return True
-        return False
 
     def has_color_attribute(self, attribute):
         return attribute in self.allowed_attributes

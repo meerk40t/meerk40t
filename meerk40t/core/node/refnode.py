@@ -29,7 +29,18 @@ class ReferenceNode(Node):
         default_map["ref_id"] = str(self.id)
         return default_map
 
+    def can_drop(self, drag_node):
+        # Dragging element into element.
+        return bool(
+            hasattr(drag_node, "as_geometry") or 
+            hasattr(drag_node, "as_image") or 
+            drag_node.type == "reference"
+        )
+    
     def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             op = self.parent
             drop_index = op.children.index(self)
@@ -40,23 +51,6 @@ class ReferenceNode(Node):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        return False
-
-    def would_accept_drop(self, drag_nodes):
-        # drag_nodes can be a single node or a list of nodes
-        if isinstance(drag_nodes, (list, tuple)):
-            data = drag_nodes
-        else:
-            data = list(drag_nodes)
-        for drag_node in data:
-            if drag_node.has_ancestor("branch reg"):
-                continue
-            if (
-                hasattr(drag_node, "as_geometry") or
-                hasattr(drag_node, "as_image") or 
-                drag_node.type == "reference"
-            ):
-                return True
         return False
 
     def notify_destroyed(self, node=None, **kwargs):

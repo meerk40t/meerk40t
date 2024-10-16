@@ -582,9 +582,17 @@ class Node:
     def is_draggable(self):
         return True
     
+    def can_drop(self, drag_node):
+        return False
+    
     def would_accept_drop(self, drag_nodes):
         # drag_nodes can be a single node or a list of nodes
-        return False
+        # drag_nodes can be a single node or a list of nodes
+        if isinstance(drag_nodes, (list, tuple)):
+            data = drag_nodes
+        else:
+            data = list(drag_nodes)
+        return any(self.can_drop(node) for node in data)
 
     def drop(self, drag_node, modify=True, flag=False):
         """

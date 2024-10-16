@@ -26,24 +26,20 @@ class BranchOperationsNode(Node):
                 default_map["loops"] = ""
         return default_map
 
+    def can_drop(self, drag_node):
+        if drag_node.type.startswith("op ") or drag_node.type.startswith("util "):
+            return True
+        return False
+
     def drop(self, drag_node, modify=True, flag=False):
-        if drag_node.type.startswith("op"):
+        if not self.can_drop(drag_node):
+            return False
+        if drag_node.type.startswith("op ") or drag_node.type.startswith("util "):
             # Dragging operation to op branch to effectively move to bottom.
             if modify:
                 self.append_child(drag_node)
             return True
         return False
         
-    def would_accept_drop(self, drag_nodes):
-        # drag_nodes can be a single node or a list of nodes
-        if isinstance(drag_nodes, (list, tuple)):
-            data = drag_nodes
-        else:
-            data = list(drag_nodes)
-        for drag_node in data:
-            if drag_node.type.startswith("op"):
-                return True
-        return False
-
     def is_draggable(self):
         return False

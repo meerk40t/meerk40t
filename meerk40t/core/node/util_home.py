@@ -32,26 +32,20 @@ class HomeOperation(Node):
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True, flag=False):
-        drop_node = self
+    def can_drop(self, drag_node):
         if drag_node.type in op_nodes:
-            if modify:
-                drop_node.insert_sibling(drag_node)
+            # Move operation to a different position.
             return True
-        return False
+        return False    
 
-    def would_accept_drop(self, drag_nodes):
-        # drag_nodes can be a single node or a list of nodes
-        if isinstance(drag_nodes, (list, tuple)):
-            data = drag_nodes
-        else:
-            data = list(drag_nodes)
-        for drag_node in data:
-            if (
-                drag_node.type in op_nodes
-            ):
-                return True
-        return False
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an op node - irrelevant for others...
+        drop_node = self
+        if not self.can_drop(drag_node):
+            return False
+        if modify:
+            drop_node.insert_sibling(drag_node)
+        return True
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """

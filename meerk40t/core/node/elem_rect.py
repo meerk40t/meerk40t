@@ -239,9 +239,20 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         default_map.update(self.__dict__)
         return default_map
 
+    def can_drop(self, drag_node):
+        # Dragging element into element.
+        return bool(
+            hasattr(drag_node, "as_geometry") or 
+            hasattr(drag_node, "as_image") or 
+            drag_node.type.startswith("op") or
+            drag_node.type in ("file", "group")
+        )
+    
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
@@ -251,22 +262,6 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             if hasattr(drag_node, "color") and drag_node.color is not None:
                 self.stroke = drag_node.color
             return drag_node.drop(self, modify=modify, flag=flag)
-        return False
-
-    def would_accept_drop(self, drag_nodes):
-        # drag_nodes can be a single node or a list of nodes
-        if isinstance(drag_nodes, (list, tuple)):
-            data = drag_nodes
-        else:
-            data = list(drag_nodes)
-        for drag_node in data:
-            if (
-                hasattr(drag_node, "as_geometry") or 
-                hasattr(drag_node, "as_image") or 
-                # drag_node.type in ("file", "group") or
-                drag_node.type.startswith("op")
-            ):
-                return True
         return False
 
     def revalidate_points(self):

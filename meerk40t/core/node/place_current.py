@@ -35,6 +35,3 @@ class PlaceCurrentNode(Node):
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map.update(self.__dict__)
         return default_map
-
-    def drop(self, drag_node, modify=True, flag=False):
-        return False

@@ -24,7 +24,14 @@ class BranchRegmarkNode(Node):
         for ref in list(node.children):
             self.remove_references(ref)
 
+    def can_drop(self, drag_node):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
+            return True
+        return False
+    
     def drop(self, drag_node, modify=True, flag=False):
+        if not self.can_drop(drag_node):
+            return False
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.remove_references(drag_node)
@@ -35,17 +42,6 @@ class BranchRegmarkNode(Node):
                 self.remove_references(drag_node)
                 self.append_child(drag_node)
             return True
-        return False
-
-    def would_accept_drop(self, drag_nodes):
-        # drag_nodes can be a single node or a list of nodes
-        if isinstance(drag_nodes, (list, tuple)):
-            data = drag_nodes
-        else:
-            data = list(drag_nodes)
-        for drag_node in data:
-            if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
-                return True
         return False
 
     def is_draggable(self):
