@@ -33,10 +33,8 @@ class HomeOperation(Node):
         return default_map
 
     def can_drop(self, drag_node):
-        if drag_node.type in op_nodes:
-            # Move operation to a different position.
-            return True
-        return False    
+        # Move operation to a different position.
+        return bool(drag_node.type in op_nodes)
 
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an op node - irrelevant for others...
