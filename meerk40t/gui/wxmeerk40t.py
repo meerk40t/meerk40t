@@ -713,7 +713,14 @@ class wxMeerK40t(wx.App, Module):
                     raise CommandSyntaxError
             else:  # Toggle.
                 if window_class is not None:
-                    if window_name in path.opened:
+                    to_be_closed = bool(window_name in path.opened)
+                    if to_be_closed:
+                        win = path.opened[window_name]
+                        if hasattr(win, "IsIconized") and win.IsIconized():
+                            # Minimized windows will reappear first
+                            to_be_closed = False
+
+                    if to_be_closed:
                         if wx.IsMainThread():
                             window_close(None)
                         else:
