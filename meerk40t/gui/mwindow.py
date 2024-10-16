@@ -122,6 +122,10 @@ class MWindow(wx.Frame, Module):
     def window_open(self):
         pass
 
+    def restore(self, *args, **kwargs):
+        if self.IsIconized():
+            self.Iconize(False)
+
     def window_close(self):
         pass
 
