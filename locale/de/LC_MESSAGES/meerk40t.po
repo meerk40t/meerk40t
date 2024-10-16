@@ -3,6 +3,27 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 # Updates in 2022 by JP
 #
+msgid ""
+msgstr ""
+"Project-Id-Version: MEERK40T 0.7\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 22-09-25 09:25UTC\n"
+"PO-Revision-Date: 22-09-25 09:25UTC\n"
+"Last-Translator: jpirnay\n"
+"Language: de\n"
+"Language-Team: de <LL@li.org, JP>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Poboy 0.0.1\n"
+
+# äöüÄÖÜ
+# German translations for MEERK40T.
+# This file is distributed under the same license as the MEERK40T project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+# Updates in 2022 by JP
+#
 
 #: meerk40t/grbl/plugin.py:30 meerk40t/kernelserver.py:13
 #: meerk40t/lihuiyu/device.py:656
@@ -18178,3 +18199,83 @@ msgstr "Ausführen"
 #: meerk40t/gui/wxmmain.py:5081
 msgid "Startup-sequence found"
 msgstr "Start-Kommandos gefunden"
+
+#: meerk40t/core/elements/branches.py:1542
+msgid "No image element selected."
+msgstr "Kein Bild ausgewählt"
+
+#: meerk40t/core/elements/branches.py:1632
+msgid "By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"
+msgstr "Standardmäßig werden Elemente zusammengefügt, wenn sie gemeinsame Start/Endpunkte haben - diese Option erlaubt eine Abstand-Toleranz-Wert anzugeben"
+
+#: meerk40t/core/elements/branches.py:1633
+msgid "By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"
+msgstr "Standardmäßig werden Elemente zusammengefügt, wenn sie gemeinsame Start/Endpunkte haben - diese Option verhindert das und echte Unterpfade werden angelegt"
+
+#: meerk40t/core/elements/branches.py:1730
+msgid "Invalid tolerance distance provided"
+msgstr "Ungültiger Toleranz-Abstand angegeben"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1303
+msgid "Overrules image dpi settings and uses this value instead"
+msgstr "Übersteuert den DPI-Wert des Bilds und nutzt stattdessen diesen Wert"
+
+#: meerk40t/gui/propertypanels/regbranchproperties.py:20
+msgid "Toggle"
+msgstr "Umschalten"
+
+#: meerk40t/gui/propertypanels/regbranchproperties.py:22
+msgid "Move all back"
+msgstr "Alle zurückbewegen"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:32
+msgid "Keyhole"
+msgstr "Schlüsselloch"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:56
+msgid "Keyhole:"
+msgstr "Schlüsselloch:"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:70
+msgid "Remove the keyhole and show the complete image"
+msgstr "Entferne das Schlüsselloch und zeige das komplette Bild"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1171
+msgid "Keep size on change"
+msgstr "Größe beibehalten"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1357
+msgid "Enabled: Keep size and amend internal resolution"
+msgstr "Aktiv: Behalte Größe und verändere interne Auflösung"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1358
+msgid "Disabled: Keep internal resolution and change size"
+msgstr "Inaktiv: Behalte die interne Auflösung und verändere Größe"
+
+#: meerk40t/gui/simulation.py:764
+msgid "Only show highlighted cutcode items"
+msgstr "Nur ausgewählte Cutcode-Einträge anzeigen"
+
+#: meerk40t/gui/simulation.py:861
+msgid "Cutcode"
+msgstr "Cutcode"
+
+#: meerk40t/gui/gui_mixins.py:289
+msgid "Low"
+msgstr "Niedrig"
+
+#: meerk40t/gui/gui_mixins.py:290
+msgid "(Would not cause the warn-icon to appear)"
+msgstr "(Würde das Warnicon nicht anzeigen lassen)"
+
+#: meerk40t/gui/gui_mixins.py:321 meerk40t/gui/plugin.py:240
+msgid "Critical: might damage your laser (e.g. laserhead bumping into rail)"
+msgstr "Kritisch: könnte den Laser beschädigen (z.B. Laser fährt in Begrenzungen)"
+
+#: meerk40t/gui/gui_mixins.py:322 meerk40t/gui/plugin.py:241
+msgid "Normal: might ruin your burn (e.g. unassigned=unburnt elements)"
+msgstr "Normal: könnte den Brennauftrag ruinieren (z.B. nicht zugeordnete=nicht gebrannte Elemente)"
+
+#: meerk40t/gui/gui_mixins.py:323 meerk40t/gui/plugin.py:242
+msgid "Low: I hope you know what your doing (e.g. disabled operations)"
+msgstr "Niedrig: Ich nehme an, Du weißt was Du tust (z.B. inaktive Arbeitsabläufe)"
