@@ -1630,7 +1630,7 @@ def init_commands(kernel):
         return "elements", data
 
     @kernel.console_option("stitchtolerance", "s", type=Length, help=_("By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"))
-    @kernel.console_option("nostitch", "n", type=bool, action="store_true", help=_("By default elements will be stitched together if the have a common end/start point, this option prevents that and real subpaths will be created"))
+    @kernel.console_option("nostitch", "n", type=bool, action="store_true", help=_("By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"))
     @self.console_command(
         "merge",
         help=_("merge elements"),

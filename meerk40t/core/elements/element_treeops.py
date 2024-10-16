@@ -166,7 +166,7 @@ def init_tree(kernel):
             activate(node)
 
     ## @tree_separator_after()
-    @tree_operation(_("Edit"), node_type="util console", help=_("Modfiy console command"), grouping="00PROPS")
+    @tree_operation(_("Edit"), node_type="util console", help=_("Modify console command"), grouping="00PROPS")
     def edit_console_command(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
@@ -528,7 +528,7 @@ def init_tree(kernel):
             data.append(item)
         if not data:
             return
-        # Language hint: _("Empty operation")
+        # Language hint: _("Remove all items from operation")
         with self.undoscope("Remove all items from operation"):
             with self.static("clear_all_op"):
                 for item in data:
@@ -1660,7 +1660,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Make Polygon regular"),
         node_type="elem polyline",
-        help=_("CHange the selected polygon so that all sides have equal length"),
+        help=_("Change the selected polygon so that all sides have equal length"),
         grouping="50_ELEM_MODIFY_ZMISC",
     )
     def make_polygon_regular(node, **kwargs):

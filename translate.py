@@ -24,11 +24,12 @@ def create_mo_files(force:bool, locales:list):
             mo_file = filename + ".mo"
             doit = True
             if os.path.exists(d + mo_file):
-                res = polib.detect_encoding(d + mo_file)
+                res = polib.detect_encoding(d + po_file)
+                res2 = polib.detect_encoding(d + mo_file)
                 po_date = os.path.getmtime(d + po_file)
                 mo_date = os.path.getmtime(d + mo_file)
                 if mo_date > po_date:
-                    print(f"mo-File for {d}{po_file} is newer (enoded: {res})...")
+                    print(f"mo-File for {d}{po_file} is newer (input encoded={res}, output encoded={res2})...")
                     doit = False
             if doit or force:
                 if doit:
@@ -36,7 +37,6 @@ def create_mo_files(force:bool, locales:list):
                 else:
                     action = "Forced translate"
                 res = polib.detect_encoding(d + po_file)
-                print(f"{action} {d}{po_file} (encoded={res})")
                 try:
                     po = polib.pofile(d + po_file)
                     po.save_as_mofile(d + mo_file)
@@ -45,6 +45,9 @@ def create_mo_files(force:bool, locales:list):
                     counts[2] += 1
                     continue
 
+                res2 = polib.detect_encoding(d + mo_file)
+
+                print(f"{action} {d}{po_file} (input encoded={res}, output encoded={res2})")
                 mo_files.append(d + mo_file)
                 counts[0] += 1
             else:
