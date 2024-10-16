@@ -18366,7 +18366,7 @@ msgstr "Wandelt eine Datei-Node in eine normale Gruppe um"
 
 #: meerk40t/core/elements/element_treeops.py:351
 msgid "Content of {filenode}"
-msgstr "Inhalt von {filennode}"
+msgstr "Inhalt von {filenode}"
 
 #: meerk40t/core/elements/element_treeops.py:359
 msgid "Ungroup the child elements of this node and remove the node"
