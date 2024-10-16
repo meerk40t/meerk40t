@@ -17,9 +17,11 @@ class BranchElementsNode(Node):
         return default_map
 
     def can_drop(self, drag_node):
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
-            return True
-        return False
+        return bool(
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type == "group"
+        )
     
     def drop(self, drag_node, modify=True, flag=False):
         if not self.can_drop(drag_node):
