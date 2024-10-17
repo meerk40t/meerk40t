@@ -27,14 +27,14 @@ class Coolants:
         cool_id = cool_id.lower()
         if cool_id in ("popup", "gcode_m7", "gcode_m8"):
             # builtin...
-            return
+            return 0
         to_be_deleted = []
         for idx, cool in enumerate(self._coolants):
             if cool_id == cool["id"]:
                 to_be_deleted.insert(0, idx)
         for idx in to_be_deleted:
             self._coolants.pop(idx)
-
+        return len(to_be_deleted)
 
     def register_coolant_method(
         self, cool_id, cool_function, config_function=None, label=None, constraints=None
@@ -162,12 +162,8 @@ class Coolants:
         for cool in self._coolants:
             relevant = True
             if cool["constraints"]:
-                relevant = False
                 allowed = cool["constraints"].split(",")
-                for candidate in allowed:
-                    if candidate.lower() in devname:
-                        relevant = True
-                        break
+                relevant = any(candidate.lower() in devname for candidate in allowed)
             if not relevant:
                 # Skipped as not relevant...
                 continue
@@ -194,10 +190,9 @@ class Coolants:
                 if device in cool["devices"]:
                     found = cool["function"]
                     break
-            else:
-                if cool["id"] == coolant.lower():
-                    found = cool["function"]
-                    break
+            elif cool["id"] == coolant.lower():
+                found = cool["function"]
+                break
 
         return found
 
@@ -208,10 +203,9 @@ class Coolants:
                 if device in cool["devices"]:
                     found = cool
                     break
-            else:
-                if cool["id"] == coolant.lower():
-                    found = cool
-                    break
+            elif cool["id"] == coolant.lower():
+                found = cool
+                break
 
         return found
 
@@ -241,8 +235,8 @@ class Coolants:
         def update(choice_dict):
             _ = self.kernel.translation
             devname = device.name.lower()
-            choices = list()
-            display = list()
+            choices = []
+            display = []
             choices.append("")
             display.append(_("Nothing"))
             for cool in self._coolants:
