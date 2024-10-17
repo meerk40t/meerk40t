@@ -20,7 +20,7 @@ HEADER_TEXT = (
     + "who sincerely hoped his contributions would be but\n"
     + "the barest trickle that becomes a raging river."
 )
-HEADER_TEXT_2 = "Since early 2024 jpirnay has taken on the role of lead developer trying to fill in some awfully large shoes."
+HEADER_TEXT_2 = "Since early 2024 jpirnay has taken on the role of lead developer\ntrying to fill in some awfully large shoes."
 
 EULOGY_TEXT = (
     "MeerK40t is the result of an incredible piece of work by David Olsen aka Tatarize.\n"
@@ -63,9 +63,7 @@ class AboutPanel(wx.Panel):
         hsizer_pic_info = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_pic_iver = wx.BoxSizer(wx.VERTICAL)
         vsizer_pic_iver.Add(self.bitmap_button_1, 0, 0, 0)
-        fontsize = 10
-        if system() == "Darwin":
-            fontsize = 16
+        fontsize = 16 if system() == "Darwin" else 10
         self.meerk40t_about_version_text.SetFont(
             wx.Font(
                 fontsize,
@@ -1462,13 +1460,12 @@ class DavidPanel(ScrolledPanel):
         self.david_picture.SetSize(self.david_picture.GetBestSize())
         self.david_header = wx.StaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
         eulogy:str = _(EULOGY_TEXT)
-        from platform import system as _sys
-        if _sys() == "Darwin":
+        if system() == "Darwin":
             # MacOS does not wrap labels around, so we need do it ourselves
             splitted = eulogy.split("\n")
             lines = []
+            LINELEN = 45
             for l in splitted:
-                LINELEN = 45
                 words = l.split()
                 start = ""
                 for w in words:
@@ -1482,7 +1479,7 @@ class DavidPanel(ScrolledPanel):
                             start = ""
                     else:
                         if start:
-                            start += " " + w
+                            start += f" {w}"
                         else:
                             start = w
                 if start:
@@ -1498,10 +1495,8 @@ class DavidPanel(ScrolledPanel):
 
 
     def __do_layout(self):
-        # begin wxGlade: About.__do_layout
-        fontsize = 10
-        if system() == "Darwin":
-            fontsize = 16
+        fontsize = 16 if system() == "Darwin" else 10
+
         self.david_header.SetFont(
             wx.Font(
                 8,
@@ -1974,7 +1969,7 @@ class About(MWindow):
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
             | wx.TAB_TRAVERSAL
-            | (wx.RESIZE_BORDER if _sys() != "Darwin" else 0),
+            | (wx.RESIZE_BORDER if system() != "Darwin" else 0),
             **kwds,
         )
         self.notebook_main = wx.aui.AuiNotebook(

@@ -18,13 +18,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Poboy 0.0.1\n"
 
-# äöüÄÖÜ
-# German translations for MEERK40T.
-# This file is distributed under the same license as the MEERK40T project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
-# Updates in 2022 by JP
-#
-
 #: meerk40t/grbl/plugin.py:30 meerk40t/kernelserver.py:13
 #: meerk40t/lihuiyu/device.py:656
 msgid "port to listen on."
@@ -4485,8 +4478,16 @@ msgstr ""
 "Mithilfe bei diesem Projekt ist jederzeit willkommen.\n"
 "Herzlichen Dank für vergangene und künftige Hilfe.\n"
 "Dieses Programm ist v.a. das Werk von Tatarize,\n"
-"der hofft, dass seine Arbeit am Ende ein kleiner\n"
+"der hoffte, dass seine Arbeit am Ende ein kleiner\n"
 "Teil eines viel größeren Werks sein wird."
+
+#: meerk40t/gui/about.py:23
+msgid ""
+"Since early 2024 jpirnay has taken on the role of lead developer\n"
+"trying to fill in some awfully large shoes."
+msgstr ""
+"Seit Anfang 2024 hat jpirnay die Rolle des Chefentwicklers übernommen\n"
+"und muss dabei in sehr große Fußstapfen treten."
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
