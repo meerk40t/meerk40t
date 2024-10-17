@@ -71,9 +71,18 @@ class Undo:
             if len(self._undo_stack) == 0:
                 # Stack is entirely empty.
                 return False
-            self._undo_index -= 1
+            # print (f"Index: {self._undo_index} / {len(self._undo_stack)}")
+            to_be_restored = self._undo_index - 1     
+            if self._undo_index == len(self._undo_stack) - 1 and self._undo_stack[self._undo_index].message != "Last status":
+                # We store the current state
+                self._undo_stack.append(
+                    UndoState(self.tree.backup_tree(), message="Last status"),
+                )
+                self._undo_index = to_be_restored + 1
+            else:
+                self._undo_index = to_be_restored
             try:
-                undo = self._undo_stack[self._undo_index]
+                undo = self._undo_stack[to_be_restored]
             except IndexError:
                 # Invalid? Reset to bottom of stack
                 self._undo_index = 0
