@@ -33,6 +33,19 @@ from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import Length
 
+"""
+The time to compile does outweigh the benefit...
+try:
+    from numba import jit
+except Exception as e:
+    # Jit does not exist, add a dummy decorator and continue.
+    # print (f"Encountered error: {e}")
+    def jit(*args, **kwargs):
+        def inner(func):
+            return func
+
+        return inner
+"""
 
 class CutPlanningFailedError(Exception):
     pass
@@ -883,7 +896,6 @@ def is_inside(inner, outer, tolerance=0):
         matrix.post_scale(sx, sy)
         matrix.post_translate(dx, dy)
         geom.transform(matrix)
-        # print (f"Just as a check: {raster.bounding_box} vs. {geom.bbox()}")
         return geom
 
     # We still consider a path to be inside another path if it is
@@ -917,21 +929,18 @@ def is_inside(inner, outer, tolerance=0):
     #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
     #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
     #     )
-    if outer.bounding_box[0] > inner.bounding_box[0] + tolerance:
-        # outer minx > inner minx (is not contained)
+    if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
+        # outer minx > inner maxx (is not contained)
         return False
-    if outer.bounding_box[1] > inner.bounding_box[1] + tolerance:
-        # outer miny > inner miny (is not contained)
+    if outer.bounding_box[1] > inner.bounding_box[3] + tolerance:
+        # outer miny > inner maxy (is not contained)
         return False
-    if outer.bounding_box[2] < inner.bounding_box[2] - tolerance:
-        # outer maxx < inner maxx (is not contained)
+    if outer.bounding_box[2] < inner.bounding_box[0] - tolerance:
+        # outer maxx < inner minx (is not contained)
         return False
-    if outer.bounding_box[3] < inner.bounding_box[3] - tolerance:
+    if outer.bounding_box[3] < inner.bounding_box[1] - tolerance:
         # outer maxy < inner maxy (is not contained)
         return False
-    if outer.bounding_box == inner.bounding_box:
-        if outer == inner:  # This is the same object.
-            return False
 
     # Inner bbox is entirely inside outer bbox,
     # however that does not mean that inner is actually inside outer
@@ -978,7 +987,59 @@ def is_inside(inner, outer, tolerance=0):
         q = out_cut.sb.points_in_polygon(points)
         return q.all()
 
-    return sb_code(outer, outer_path, inner, inner_path)
+    def other_code(outer, outer_path, inner, inner_path):
+        # The time to compile is outweighing the benefits...
+        # @jit(nopython=True)
+        def ray_tracing(x, y, poly, tolerance):
+            def sq_length(a, b):
+                return a * a + b * b
+            
+            tolerance_square = tolerance * tolerance
+            n = len(poly)
+            inside = False
+            xints = 0
+
+            p1x, p1y = poly[0]
+            old_sq_dist = sq_length(p1x - x, p1y - y)
+            for i in range(n+1):
+                p2x, p2y = poly[i % n]
+                new_sq_dist = sq_length(p2x - x, p2y - y)
+                # We are approximating the edge to an extremely thin ellipse and see 
+                # whether our point is on that ellipse
+                reldist = (
+                    old_sq_dist + new_sq_dist + 
+                    2.0 * np.sqrt(old_sq_dist * new_sq_dist) - 
+                    sq_length(p2x - p1x, p2y - p1y)
+                )
+                if reldist < tolerance_square:
+                    return True
+                
+                if y > min(p1y,p2y):
+                    if y <= max(p1y,p2y):
+                        if x <= max(p1x,p2x):
+                            if p1y != p2y:
+                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                            if p1x == p2x or x <= xints:
+                                inside = not inside
+                p1x, p1y = p2x, p2y
+                old_sq_dist = new_sq_dist
+            return inside
+        
+        geom1 = Geomstr.svg(inner_path.d())
+        geom2 = Geomstr.svg(outer_path.d())        
+        points = np.array(list((p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance = 10)))
+        vertices = np.array(list((p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance = 10)))
+        return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
+
+    # from time import perf_counter
+    # t0 = perf_counter()
+    # res1 = sb_code(outer, outer_path, inner, inner_path)
+    # t1 = perf_counter()
+    # res2 = other_code(outer, outer_path, inner, inner_path)
+    # t2 = perf_counter()
+    # print (f"Tolerance: {tolerance}, sb={res1} in {t1 - t0:.3f}s, other={res2} in {t2 - t1:.3f}s")
+    return other_code(outer, outer_path, inner, inner_path)
+    # return sb_code(outer, outer_path, inner, inner_path)
     # return vm_code(outer, outer_path, inner, inner_path)
 
 
