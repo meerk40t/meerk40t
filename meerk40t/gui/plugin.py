@@ -383,7 +383,7 @@ and a wxpython version <= 4.1.1."""
                 image = None
             from ..main import APPLICATION_VERSION
             from platform import system
-            if system() == "Windows":
+            if system() in ("Windows", "Darwin"):
                 kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
                 kernel.busyinfo.change(msg=_("Load main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
