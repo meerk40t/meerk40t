@@ -470,9 +470,9 @@ class CutPlan:
             if isinstance(pitem, (tuple, list)):
                 for cut in pitem:
                     if isinstance(cut, (tuple, list)):
-                        self.channel(f"  {type(cut).__name__}: {len(cut)} items")
+                        self.channel(f"  {type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items")
                     else:
-                        self.channel(f"  {type(cut).__name__}: --childless--")
+                        self.channel(f"  {type(pitem).__name__}: {type(cut).__name__}: --childless--")
 
             elif hasattr(pitem, "children"):
                 self.channel(
