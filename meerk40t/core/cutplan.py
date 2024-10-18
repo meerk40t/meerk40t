@@ -22,7 +22,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..svgelements import Group, Polygon, Matrix, Path
+from ..svgelements import Group, Matrix, Path, Polygon
 from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
@@ -94,7 +94,7 @@ class CutPlan:
             # Executing command can add a command, complete them all.
             commands = self.commands[:]
             self.commands.clear()
-            for command in commands:                
+            for command in commands:
                 command()
                 self._debug_me(f"At end of {command.__name__}")
 
@@ -475,7 +475,9 @@ class CutPlan:
                         self.channel(f"  {type(cut).__name__}: --childless--")
 
             elif hasattr(pitem, "children"):
-                self.channel(f"  {type(pitem).__name__}: {len(pitem.children)} children")
+                self.channel(
+                    f"  {type(pitem).__name__}: {len(pitem.children)} children"
+                )
             else:
                 self.channel(f"  {type(pitem).__name__}: --childless--")
 
@@ -601,9 +603,10 @@ class CutPlan:
 
     def combine_effects(self):
         """
-        Will browse through the cutcode entries grouping everything together 
+        Will browse through the cutcode entries grouping everything together
         that as a common 'source' attribute
         """
+
         def update_group_sequence(group):
             if len(group) == 0:
                 return
@@ -630,19 +633,23 @@ class CutPlan:
             grouping = {}
             l_pitem = len(pitem)
             for idx, cut in enumerate(pitem):
-                total += 1 
+                total += 1
                 if busy.shown and total % 50 == 0:
                     busy.change(
-                        msg=_("Combine effect primitives") + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})", keep=1
+                        msg=_("Combine effect primitives")
+                        + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})",
+                        keep=1,
                     )
-                    busy.show()            
+                    busy.show()
                 if not isinstance(cut, CutGroup) or cut.origin is None:
                     continue
                 if cut.origin not in grouping:
                     # First instance
                     grouping[cut.origin] = idx
                     if self.channel:
-                        self.channel (f"New group: {cut.origin} - items at start: {len(cut)}")
+                        self.channel(
+                            f"New group: {cut.origin} - items at start: {len(cut)}"
+                        )
                     group_count += 1
                 else:
                     mastercut = grouping[cut.origin]
@@ -655,14 +662,14 @@ class CutPlan:
                     to_be_deleted.append(idx)
                     combined += 1
             for key, item in grouping.items():
-                # Reestablish 
+                # Reestablish
                 update_group_sequence(pitem[item])
                 if self.channel:
                     self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
             for p in reversed(to_be_deleted):
                 pitem.pop(p)
         if self.channel:
-            self.channel (f"Combined: {combined}, groups: {group_count}")
+            self.channel(f"Combined: {combined}, groups: {group_count}")
 
     def optimize_travel_2opt(self):
         """
@@ -781,7 +788,7 @@ class CutPlan:
                     )
                     c = self.plan[i]
                 if last is not None:
-                    c._start_x, c._start_y = last                    
+                    c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
                     kernel=self.context.kernel,
@@ -938,6 +945,7 @@ def is_inside(inner, outer, tolerance=0):
     @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
+
     def convex_geometry(raster) -> Geomstr:
         dx = raster.bounding_box[0]
         dy = raster.bounding_box[1]
@@ -1199,7 +1207,9 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
         for outer in closed_groups:
-            channel(f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements")
+            channel(
+                f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements"
+            )
 
     return context
 
