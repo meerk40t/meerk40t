@@ -88,12 +88,15 @@ class CutPlan:
         @return:
         """
         # Using copy of commands, so commands can add ops.
+        self._debug_me("At start of execute")
+
         while self.commands:
             # Executing command can add a command, complete them all.
             commands = self.commands[:]
             self.commands.clear()
-            for command in commands:
+            for command in commands:                
                 command()
+                self._debug_me(f"At end of {command.__name__}")
 
     def final(self):
         """
@@ -416,10 +419,9 @@ class CutPlan:
                     cc.original_op = blob.original_op
                     cc.pass_index = blob.pass_index
                     last_item = cc
-                    yield last_item
                 else:
                     last_item = blob
-                    yield last_item
+                yield last_item
 
     def _should_merge(self, context, last_item, current_item):
         """
@@ -459,6 +461,25 @@ class CutPlan:
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
         return True  # No reason these should not be merged.
+
+    def _debug_me(self, message):
+        if not self.channel:
+            return
+        self.channel(f"Plan at {message}")
+        for pitem in self.plan:
+            if isinstance(pitem, (tuple, list)):
+                for cut in pitem:
+                    if isinstance(cut, (tuple, list)):
+                        self.channel(f"  {type(cut).__name__}: {len(cut)} items")
+                    else:
+                        self.channel(f"  {type(cut).__name__}: --childless--")
+
+            elif hasattr(pitem, "children"):
+                self.channel(f"  {type(pitem).__name__}: {len(pitem.children)} children")
+            else:
+                self.channel(f"  {type(pitem).__name__}: --childless--")
+
+        self.channel("------------")
 
     def geometry(self):
         """
@@ -583,6 +604,17 @@ class CutPlan:
         Will browse through the cutcode entries grouping everything together 
         that as a common 'source' attribute
         """
+        def update_logic(group):
+            if len(group) == 0:
+                return
+            glen = len(group)
+            for i, cut_obj in enumerate(group):
+                cut_obj.first = i == 0
+                cut_obj.last = i == glen - 1
+                next_idx = i + 1 if i < glen - 1 else 0
+                cut_obj.next = group[next_idx]
+                cut_obj.previous = group[i - 1]
+
         busy = self.context.kernel.busyinfo
         _ = self.context.kernel.translation
         if busy.shown:
@@ -619,15 +651,14 @@ class CutPlan:
                     to_be_deleted.append(idx)
                     combined += 1
             for key, item in grouping.items():
+                # Reestablish 
+                update_logic(pitem[item])
                 if self.channel:
                     self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
             for p in reversed(to_be_deleted):
                 pitem.pop(p)
         if self.channel:
             self.channel (f"Combined: {combined}, groups: {group_count}")
-            for pitem in self.plan:
-                for cut in pitem:
-                    self.channel(f"{type(cut).__name__}: {len(cut)} items")
 
     def optimize_travel_2opt(self):
         """
@@ -746,7 +777,7 @@ class CutPlan:
                     )
                     c = self.plan[i]
                 if last is not None:
-                    c._start_x, c._start_y = last
+                    c._start_x, c._start_y = last                    
                 self.plan[i] = short_travel_cutcode(
                     c,
                     kernel=self.context.kernel,
@@ -1190,7 +1221,6 @@ def short_travel_cutcode(
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
-
     curr = context.start
     if curr is None:
         curr = 0
