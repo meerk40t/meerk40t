@@ -118,6 +118,8 @@ class LaserPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetHelpText("laserpanel")
         self.context.root.setting(bool, "laserpane_arm", True)
 
@@ -162,7 +164,7 @@ class LaserPanel(wx.Panel):
         self.button_start.SetBitmap(
             icons8_gas_industry.GetBitmap(
                 resize=self.icon_size,
-                color=wx.WHITE,
+                color=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT),
                 keepalpha=True,
                 force_darkmode=True,
             )
@@ -695,6 +697,8 @@ class JobPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
@@ -816,6 +820,8 @@ class OptimizePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))

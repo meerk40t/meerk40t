@@ -32,6 +32,8 @@ class GRBLControllerPanel(wx.Panel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetHelpText("grblcontoller")
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.iconsize = 0.75 * get_default_icon_size()

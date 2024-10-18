@@ -25,6 +25,9 @@ class JogMovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+
         jog_panel = Jog(self, wx.ID_ANY, context=context)
         drag_panel = Drag(self, wx.ID_ANY, context=context)
         self.panels = [jog_panel, drag_panel]
@@ -56,6 +59,8 @@ class ProjectPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetSize((400, 300))
 
         sizer_buttons = wx.BoxSizer(wx.VERTICAL)

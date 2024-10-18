@@ -48,28 +48,44 @@ class Themes(Service):
         tp = self._theme_properties
         # Just a scaffold, will be extended later
         # tp["button"] = wx.Button
-        tp["pause_bg"] = wx.Colour(200, 200, 0)
+        tp["pause_bg"] = (
+            wx.Colour(87, 87, 0) if self._dark else wx.Colour(200, 200, 0)
+        )
         # wx.Colour("ORANGE") if self._dark else wx.Colour("YELLOW")
-        tp["pause_fg"] = wx.Colour("BLACK")
+        tp["pause_fg"] = (
+            wx.WHITE if self._dark else wx.BLACK
+        )
         # Start Button
         tp["start_bg"] = wx.Colour(0, 127, 0)
-        tp["start_fg"] = wx.Colour("WHITE")
+        tp["start_fg"] = (
+            wx.Colour("DARK SLATE GREY") if self._dark else wx.WHITE
+        )
         tp["start_bg_inactive"] = (
             wx.Colour("DARK SLATE GREY") if self._dark else wx.Colour(0, 127, 0)
         )
         tp["start_fg_focus"] = wx.BLACK
+
         # Stop button
+        tp["stop_bg_inactive"] = wx.Colour("#7F0000")
         tp["stop_bg"] = wx.Colour(127, 0, 0)  # red
-        tp["stop_fg"] = wx.Colour("WHITE")
-        tp["stop_fg_focus"] = wx.BLACK
+        tp["stop_fg"] = (
+            wx.WHITE if self._dark else wx.BLACK
+        )
+        tp["stop_fg_focus"] = (
+            wx.BLACK if self._dark else wx.WHITE
+        )
 
         tp["arm_bg"] = wx.Colour(0, 127, 0)  # green
-        tp["arm_fg"] = wx.WHITE
+        tp["arm_fg"] = (
+            wx.WHITE if self._dark else wx.BLACK
+        )
         tp["arm_bg_inactive"] = (
             # wx.Colour("MAROON") if self._dark else wx.Colour("PALE_GREEN")
             wx.Colour(127, 0, 0)
         )
-        tp["arm_fg_focus"] = wx.BLACK
+        tp["arm_fg_focus"] = (
+            wx.BLACK if self._dark else wx.WHITE
+        )
 
         if buggy_darwin:
             for key, item in tp.items():
