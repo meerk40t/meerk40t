@@ -90,6 +90,8 @@ class MeerK40tScenePanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.scene = ScenePanel(
             self.context,
             self,

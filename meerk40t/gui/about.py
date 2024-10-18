@@ -48,9 +48,15 @@ class AboutPanel(wx.Panel):
 
         name = self.context.kernel.name
         version = self.context.kernel.version
+<<<<<<< HEAD
+        self.meerk40t_about_version_text.SetLabelText(f"{name}\nv{version}")
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+=======
         # msg = f"{name}\nv{version}"
         msg = f"v{version}"
         self.meerk40t_about_version_text.SetLabelText(msg)
+>>>>>>> e9b8bb0f23566e9dd6e9a30df5e81eb6ede2e89e
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
@@ -82,6 +88,7 @@ class AboutPanel(wx.Panel):
             wx.ID_ANY,
             _(HEADER_TEXT) + "\n" + _(HEADER_TEXT_2),
         )
+        #self.meerk40t_about_text_header.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUTEXT))
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
                 fontsize,
@@ -157,7 +164,11 @@ class AboutPanel(wx.Panel):
                 "Segoe UI",
             )
         )
+<<<<<<< HEAD
+        #self.meerk40t_about_text.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUTEXT))
+=======
         vsizer_main.AddSpacer(5)
+>>>>>>> e9b8bb0f23566e9dd6e9a30df5e81eb6ede2e89e
         vsizer_main.Add(meerk40t_about_text, 4, wx.EXPAND, 0)
         self.SetSizer(vsizer_main)
         self.Layout()
@@ -169,6 +180,8 @@ class DavidPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
         from wx.lib.embeddedimage import PyEmbeddedImage
 
@@ -1538,6 +1551,8 @@ class InformationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.os_version = wx.TextCtrl(
@@ -1634,6 +1649,8 @@ class ComponentPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.list_preview = wxListCtrl(
             self,
             wx.ID_ANY,
