@@ -559,6 +559,9 @@ class CutPlan:
         if not has_cutcode:
             return
 
+        if context.opt_effect_combine:
+            self.commands.append(self.combine_effects)
+
         if context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
         ):
@@ -574,6 +577,57 @@ class CutPlan:
             pass
         if context.opt_remove_overlap:
             pass
+
+    def combine_effects(self):
+        """
+        Will browse through the cutcode entries grouping everything together 
+        that as a common 'source' attribute
+        """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Combine effect primitives"), keep=1)
+            busy.show()
+        to_be_deleted = []
+        combined = 0
+        l_plan = len(self.plan)
+        total = -1
+        group_count = 0
+        for plan_idx, pitem in enumerate(self.plan):
+            # We don't combine across plan boundaries
+            grouping = {}
+            l_pitem = len(pitem)
+            for idx, cut in enumerate(pitem):
+                total += 1 
+                if busy.shown and total % 50 == 0:
+                    busy.change(
+                        msg=_("Combine effect primitives") + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})", keep=1
+                    )
+                    busy.show()            
+                if not isinstance(cut, CutGroup) or cut.origin is None:
+                    continue
+                if cut.origin not in grouping:
+                    # First instance
+                    grouping[cut.origin] = idx
+                    if self.channel:
+                        self.channel (f"New group: {cut.origin} - items at start: {len(cut)}")
+                    group_count += 1
+                else:
+                    mastercut = grouping[cut.origin]
+                    pitem[mastercut].extend(cut)
+                    cut.clear()
+                    to_be_deleted.append(idx)
+                    combined += 1
+            for key, item in grouping.items():
+                if self.channel:
+                    self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
+            for p in reversed(to_be_deleted):
+                pitem.pop(p)
+        if self.channel:
+            self.channel (f"Combined: {combined}, groups: {group_count}")
+            for pitem in self.plan:
+                for cut in pitem:
+                    self.channel(f"{type(cut).__name__}: {len(cut)} items")
 
     def optimize_travel_2opt(self):
         """

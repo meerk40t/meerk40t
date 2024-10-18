@@ -351,24 +351,30 @@ class CutOpNode(Node, Parameters):
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
+        from time import perf_counter_ns
+
         settings = self.derive()
-        if "native_mm" in settings:
-            factor = settings["native_mm"] / UNITS_PER_MM
-        else:
-            factor = 1
+        factor = settings["native_mm"] / UNITS_PER_MM if "native_mm" in settings else 1
         for node in self.children:
+            pathlist = []
+            origin = None
             if node.type == "reference":
                 node = node.node
             if hasattr(node, "hidden") and node.hidden:
                 continue
             if node.type == "elem image":
                 box = node.bbox()
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
+                pathlist.append(
+                    (
+                        None,
+                        Path(
+                            Polygon(
+                                (box[0], box[1]),
+                                (box[0], box[3]),
+                                (box[2], box[3]),
+                                (box[2], box[1]),                            
+                            )
+                        )
                     )
                 )
             elif hasattr(node, "final_geometry"):
@@ -376,29 +382,40 @@ class CutOpNode(Node, Parameters):
                 # like tabs, dots/dashes applied to the element
                 path = node.final_geometry(unitfactor = factor).as_path()
                 path.approximate_arcs_with_cubics()
+                pathlist.append( (f"{node.display_label()}_{perf_counter_ns}", path) )
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+                pathlist.append( (None, path) )
             elif node.type.startswith("effect"):
-                path = node.as_geometry().as_path()
+                if hasattr(node, "as_geometries"):
+                    pathlist.extend(
+                        (f"hatch_{idx}_{perf_counter_ns()}", effect_geom.as_path()) 
+                        for idx, effect_geom in enumerate(list(node.as_geometries()))
+                    )
+                else:
+                    pathlist.append( (None, node.as_geometry().as_path()) )
             elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
+                pathlist.append( (None, path) )
             try:
                 stroke = node.stroke
             except AttributeError:
                 # ImageNode does not have a stroke.
                 stroke = None
-            yield from path_to_cutobjects(
-                path,
-                settings=settings,
-                closed_distance=closed_distance,
-                passes=passes,
-                original_op=self.type,
-                color=stroke,
-                kerf=self.kerf * self._device_factor,
-                offset_routine=self.offset_routine,
-            )
+            for origin, path in pathlist:
+                yield from path_to_cutobjects(
+                    path,
+                    settings=settings,
+                    closed_distance=closed_distance,
+                    passes=passes,
+                    original_op=self.type,
+                    color=stroke,
+                    kerf=self.kerf * self._device_factor,
+                    offset_routine=self.offset_routine,
+                    origin=origin,
+                )

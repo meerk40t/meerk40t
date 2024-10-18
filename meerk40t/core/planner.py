@@ -256,6 +256,19 @@ def plugin(kernel, lifecycle=None):
                 "hidden": True,
             },
             {
+                "attr": "opt_effect_combine",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Don't break down effects"),
+                "tip": (
+                    _("Active: effects like hatches are dealt with as a bigger shape") + "\n" + 
+                    _("Inactive: every single line segment will be dealt with individually.")
+                ),
+                "page": "Optimisations",
+                "section": "_20_Reducing Movements",
+            },
+            {
                 "attr": "opt_reduce_details",
                 "object": context,
                 "default": False,
