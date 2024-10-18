@@ -48,15 +48,13 @@ class AboutPanel(wx.Panel):
 
         name = self.context.kernel.name
         version = self.context.kernel.version
-<<<<<<< HEAD
+
         self.meerk40t_about_version_text.SetLabelText(f"{name}\nv{version}")
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
-=======
-        # msg = f"{name}\nv{version}"
+
         msg = f"v{version}"
         self.meerk40t_about_version_text.SetLabelText(msg)
->>>>>>> e9b8bb0f23566e9dd6e9a30df5e81eb6ede2e89e
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
@@ -164,11 +162,7 @@ class AboutPanel(wx.Panel):
                 "Segoe UI",
             )
         )
-<<<<<<< HEAD
-        #self.meerk40t_about_text.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUTEXT))
-=======
         vsizer_main.AddSpacer(5)
->>>>>>> e9b8bb0f23566e9dd6e9a30df5e81eb6ede2e89e
         vsizer_main.Add(meerk40t_about_text, 4, wx.EXPAND, 0)
         self.SetSizer(vsizer_main)
         self.Layout()
