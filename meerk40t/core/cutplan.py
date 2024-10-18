@@ -22,7 +22,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..svgelements import Group, Polygon, Matrix
+from ..svgelements import Group, Polygon, Matrix, Path
 from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
@@ -604,7 +604,7 @@ class CutPlan:
         Will browse through the cutcode entries grouping everything together 
         that as a common 'source' attribute
         """
-        def update_logic(group):
+        def update_group_sequence(group):
             if len(group) == 0:
                 return
             glen = len(group)
@@ -646,13 +646,17 @@ class CutPlan:
                     group_count += 1
                 else:
                     mastercut = grouping[cut.origin]
+                    path1 = pitem[mastercut].path
+                    path2 = cut.path
+                    path = path1 + path2
                     pitem[mastercut].extend(cut)
+                    pitem[mastercut].path = path
                     cut.clear()
                     to_be_deleted.append(idx)
                     combined += 1
             for key, item in grouping.items():
                 # Reestablish 
-                update_logic(pitem[item])
+                update_group_sequence(pitem[item])
                 if self.channel:
                     self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
             for p in reversed(to_be_deleted):
@@ -1167,11 +1171,11 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             if is_inside(inner, outer, tolerance):
                 constrained = True
                 if outer.contains is None:
-                    outer.contains = list()
+                    outer.contains = []
                 outer.contains.append(inner)
 
                 if inner.inside is None:
-                    inner.inside = list()
+                    inner.inside = []
                 inner.inside.append(outer)
 
     context.constrained = constrained
@@ -1194,6 +1198,9 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             f"Inner paths identified in {time() - start_time:.3f} elapsed seconds: {constrained} "
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
+        for outer in closed_groups:
+            channel(f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements")
+
     return context
 
 
@@ -1222,11 +1229,7 @@ def short_travel_cutcode(
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
     curr = context.start
-    if curr is None:
-        curr = 0
-    else:
-        curr = complex(curr[0], curr[1])
-
+    curr = 0 if curr is None else complex(curr[0], curr[1])
     cutcode_len = 0
     for c in context.flat():
         cutcode_len += 1
@@ -1542,7 +1545,7 @@ def inner_selection_cutcode(
     iterations = 0
     while True:
         c = list(context.candidate(grouped_inner=grouped_inner))
-        if len(c) == 0:
+        if not c:
             break
         for o in c:
             o.burns_done += 1
