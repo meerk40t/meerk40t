@@ -118,8 +118,6 @@ class TreePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         # Define Tree
         self.wxtree = wxTreeCtrl(
             self,
@@ -136,9 +134,6 @@ class TreePanel(wx.Panel):
         self.SetHelpText(
             "tree"
         )  # That will be used for all controls in this window, unless stated differently
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        if res:
-            self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
 
         self.setup_warn_panel()
 
@@ -152,6 +147,8 @@ class TreePanel(wx.Panel):
         self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree")
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
     def setup_warn_panel(self):
         def fix_unassigned_create(event):
