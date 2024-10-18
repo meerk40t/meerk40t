@@ -303,16 +303,11 @@ class EngraveOpNode(Node, Parameters):
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        from time import perf_counter_ns
-
-        settings = self.derive()
-        factor = settings["native_mm"] / UNITS_PER_MM if "native_mm" in settings else 1
-        for node in self.children:
+        def get_pathlist(node, factor):
+            from time import perf_counter_ns
             pathlist = []
             if node.type == "reference":
                 node = node.node
-            if getattr(node, "hidden", False):
-                continue
             if node.type == "elem image":
                 box = node.bbox()
                 pathlist.append(
@@ -323,7 +318,7 @@ class EngraveOpNode(Node, Parameters):
                                 (box[0], box[1]),
                                 (box[0], box[3]),
                                 (box[2], box[3]),
-                                (box[2], box[1]),
+                                (box[2], box[1]),                            
                             )
                         )
                     )
@@ -331,7 +326,6 @@ class EngraveOpNode(Node, Parameters):
             elif hasattr(node, "final_geometry"):
                 # This will deliver all relevant effects
                 # like tabs, dots/dashes applied to the element
-
                 path = node.final_geometry(unitfactor = factor).as_path()
                 path.approximate_arcs_with_cubics()
                 pathlist.append( (f"{node.display_label()}_{perf_counter_ns}", path) )
@@ -347,13 +341,20 @@ class EngraveOpNode(Node, Parameters):
                     )
                 else:
                     pathlist.append( (None, node.as_geometry().as_path()) )
-            elif node.type not in self._allowed_elements_dnd:
-                # These aren't valid.
-                continue
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
                 pathlist.append( (None, path) )
+            return pathlist
+
+        settings = self.derive()
+        factor = settings["native_mm"] / UNITS_PER_MM if "native_mm" in settings else 1
+        for node in self.children:
+            if hasattr(node, "hidden") and node.hidden or node.type not in self._allowed_elements_dnd:
+                continue
+
+            pathlist = get_pathlist(node, factor)
+
             try:
                 stroke = node.stroke
             except AttributeError:
