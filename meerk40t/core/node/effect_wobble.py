@@ -380,7 +380,7 @@ class WobbleEffectNode(Node, Suppressable):
     
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an effect node - irrelevant for others...
-        if self.can_drop(drag_node):
+        if not self.can_drop(drag_node):
             return False
         if drag_node.type.startswith("effect"):
             if modify:
