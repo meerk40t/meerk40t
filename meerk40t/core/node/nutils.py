@@ -18,6 +18,7 @@ def path_to_cutobjects(
     color=None,
     kerf=0,
     offset_routine=None,
+    origin=None,
 ):
     source = path
     if kerf != 0 and offset_routine is not None:
@@ -44,6 +45,7 @@ def path_to_cutobjects(
             settings=settings,
             passes=passes,
             color=color,
+            origin=origin,
         )
         group.path = sp
         group.original_op = original_op
