@@ -260,7 +260,7 @@ def plugin(kernel, lifecycle=None):
                 "object": context,
                 "default": True,
                 "type": bool,
-                "label": _("Don't break down effects"),
+                "label": _("Keep effect lines together"),
                 "tip": (
                     _("Active: effects like hatches are dealt with as a bigger shape") + "\n" + 
                     _("Inactive: every single line segment will be dealt with individually.")
