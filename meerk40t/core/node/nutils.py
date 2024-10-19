@@ -7,7 +7,7 @@ from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier
-
+from meerk40t.tools.geomstr import Geomstr
 
 def path_to_cutobjects(
     path,
@@ -48,6 +48,7 @@ def path_to_cutobjects(
             origin=origin,
         )
         group.path = sp
+        group._geometry = Geomstr.svg(sp.d())
         group.original_op = original_op
         for seg in sp:
             if isinstance(seg, Move):

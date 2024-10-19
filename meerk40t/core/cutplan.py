@@ -609,6 +609,7 @@ class CutPlan:
         Will browse through the cutcode entries grouping everything together
         that as a common 'source' attribute
         """
+        from time import perf_counter
 
         def update_group_sequence(group):
             if len(group) == 0:
@@ -620,7 +621,12 @@ class CutPlan:
                 next_idx = i + 1 if i < glen - 1 else 0
                 cut_obj.next = group[next_idx]
                 cut_obj.previous = group[i - 1]
+            group.path = group._geometry.as_path()
 
+        tseq = 0
+        tdel = 0
+        tpath = 0
+        t_start = perf_counter()
         busy = self.context.kernel.busyinfo
         _ = self.context.kernel.translation
         if busy.shown:
@@ -637,7 +643,7 @@ class CutPlan:
             l_pitem = len(pitem)
             for idx, cut in enumerate(pitem):
                 total += 1
-                if busy.shown and total % 50 == 0:
+                if busy.shown and total % 100 == 0:
                     busy.change(
                         msg=_("Combine effect primitives")
                         + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})",
@@ -656,24 +662,33 @@ class CutPlan:
                     group_count += 1
                 else:
                     mastercut = grouping[cut.origin]
-                    path1 = pitem[mastercut].path
-                    path2 = cut.path
-                    path = path1 + path2
+                    ta = perf_counter()
+                    # We just extend the geometry and do the path conversion at the end
+                    geom = cut._geometry
+                    tb = perf_counter()
+                    tpath += tb - ta
                     pitem[mastercut].skip = True
                     pitem[mastercut].extend(cut)
-                    pitem[mastercut].path = path
+                    pitem[mastercut]._geometry.append(geom)
                     cut.clear()
                     to_be_deleted.append(idx)
                     combined += 1
+            t1 = perf_counter()
             for key, item in grouping.items():
                 # Reestablish
                 update_group_sequence(pitem[item])
                 if self.channel:
                     self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
+            t2 = perf_counter()
             for p in reversed(to_be_deleted):
                 pitem.pop(p)
+            t3 = perf_counter()
+            tseq += t2 - t1
+            tdel += t3 - t2
+        t_end = perf_counter()
         if self.channel:
             self.channel(f"Combined: {combined}, groups: {group_count}")
+            self.channel(f"Overall time: {t_end-t_start:.2f}s, sequence:{tseq:.2f}s, deletion: {tdel:.2f}s, path: {tpath:.2f}s")
 
     def optimize_travel_2opt(self):
         """
@@ -1380,9 +1395,8 @@ def short_travel_cutcode(
         curr = complex(end[0], end[1])
         ordered.append(c)
     # print (f"Now we have {len(ordered)} items in list")
-    for c in unordered:
-        # As these are reversed, we reverse again...
-        ordered.insert(0, c)
+    # As these are reversed, we reverse again...
+    ordered.extend(reversed(unordered))
     # print (f"And after extension {len(ordered)} items in list")
     # for c in ordered:
     #     print (f"{type(c).__name__} - {len(c) if isinstance(c, (list, tuple)) else '-childless-'}")
