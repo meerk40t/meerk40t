@@ -376,7 +376,8 @@ class CutOpNode(Node, Parameters):
                 # like tabs, dots/dashes applied to the element
                 path = node.final_geometry(unitfactor = factor).as_path()
                 path.approximate_arcs_with_cubics()
-                pathlist.append( (f"{node.display_label()}_{perf_counter_ns()}", path) )
+                # pathlist.append( (f"{node.display_label()}_{perf_counter_ns()}", path) )
+                pathlist.append( (None, path) )
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
