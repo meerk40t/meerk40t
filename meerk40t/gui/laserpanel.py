@@ -177,7 +177,6 @@ class LaserPanel(wx.Panel):
         self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
         self.button_start.SetForegroundColour(self.context.themes.get("start_fg"))
         self.button_start.SetFocusColour(self.context.themes.get("start_fg_focus"))
-        # self.button_start.SetDisabledBackgroundColour(wx.Colour("FOREST GREEN"))
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
