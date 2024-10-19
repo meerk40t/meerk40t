@@ -473,9 +473,13 @@ class CutPlan:
                 if debug_level > 0:
                     for cut in pitem:
                         if isinstance(cut, (tuple, list)):
-                            self.channel(f"--{type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items")
+                            self.channel(
+                                f"--{type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items"
+                            )
                         else:
-                            self.channel(f"--{type(pitem).__name__}: {type(cut).__name__}: --childless--")
+                            self.channel(
+                                f"--{type(pitem).__name__}: {type(cut).__name__}: --childless--"
+                            )
 
             elif hasattr(pitem, "children"):
                 self.channel(
@@ -609,7 +613,6 @@ class CutPlan:
         Will browse through the cutcode entries grouping everything together
         that as a common 'source' attribute
         """
-        from time import perf_counter
 
         def update_group_sequence(group):
             if len(group) == 0:
@@ -623,10 +626,6 @@ class CutPlan:
                 cut_obj.previous = group[i - 1]
             group.path = group._geometry.as_path()
 
-        tseq = 0
-        tdel = 0
-        tpath = 0
-        t_start = perf_counter()
         busy = self.context.kernel.busyinfo
         _ = self.context.kernel.translation
         if busy.shown:
@@ -662,33 +661,23 @@ class CutPlan:
                     group_count += 1
                 else:
                     mastercut = grouping[cut.origin]
-                    ta = perf_counter()
                     # We just extend the geometry and do the path conversion at the end
                     geom = cut._geometry
-                    tb = perf_counter()
-                    tpath += tb - ta
                     pitem[mastercut].skip = True
                     pitem[mastercut].extend(cut)
                     pitem[mastercut]._geometry.append(geom)
                     cut.clear()
                     to_be_deleted.append(idx)
                     combined += 1
-            t1 = perf_counter()
             for key, item in grouping.items():
                 # Reestablish
                 update_group_sequence(pitem[item])
                 if self.channel:
                     self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
-            t2 = perf_counter()
             for p in reversed(to_be_deleted):
                 pitem.pop(p)
-            t3 = perf_counter()
-            tseq += t2 - t1
-            tdel += t3 - t2
-        t_end = perf_counter()
         if self.channel:
             self.channel(f"Combined: {combined}, groups: {group_count}")
-            self.channel(f"Overall time: {t_end-t_start:.2f}s, sequence:{tseq:.2f}s, deletion: {tdel:.2f}s, path: {tpath:.2f}s")
 
     def optimize_travel_2opt(self):
         """
@@ -1259,12 +1248,12 @@ def short_travel_cutcode(
         channel(f"Length at start: {start_length:.0f} steps")
     unordered = []
     context = copy(cutcontext)
-    for idx in range(len(context) -1, -1, -1):
+    for idx in range(len(context) - 1, -1, -1):
         c = context[idx]
         if isinstance(c, CutGroup) and c.skip:
             unordered.append(c)
             context.pop(idx)
-    
+
     curr = context.start
     curr = 0 if curr is None else complex(curr[0], curr[1])
 
