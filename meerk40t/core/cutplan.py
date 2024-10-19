@@ -463,16 +463,19 @@ class CutPlan:
         return True  # No reason these should not be merged.
 
     def _debug_me(self, message):
+        debug_level = 0
         if not self.channel:
             return
         self.channel(f"Plan at {message}")
         for pitem in self.plan:
             if isinstance(pitem, (tuple, list)):
-                for cut in pitem:
-                    if isinstance(cut, (tuple, list)):
-                        self.channel(f"  {type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items")
-                    else:
-                        self.channel(f"  {type(pitem).__name__}: {type(cut).__name__}: --childless--")
+                self.channel(f"-{type(pitem).__name__}: {len(pitem)} items")
+                if debug_level > 0:
+                    for cut in pitem:
+                        if isinstance(cut, (tuple, list)):
+                            self.channel(f"--{type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items")
+                        else:
+                            self.channel(f"--{type(pitem).__name__}: {type(cut).__name__}: --childless--")
 
             elif hasattr(pitem, "children"):
                 self.channel(
@@ -656,6 +659,7 @@ class CutPlan:
                     path1 = pitem[mastercut].path
                     path2 = cut.path
                     path = path1 + path2
+                    pitem[mastercut].skip = True
                     pitem[mastercut].extend(cut)
                     pitem[mastercut].path = path
                     cut.clear()
@@ -1215,7 +1219,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
 
 
 def short_travel_cutcode(
-    context: CutCode,
+    cutcontext: CutCode,
     kernel=None,
     channel=None,
     complete_path: Optional[bool] = False,
@@ -1233,13 +1237,22 @@ def short_travel_cutcode(
     checks.
     """
     if channel:
-        start_length = context.length_travel(True)
+        start_length = cutcontext.length_travel(True)
         start_time = time()
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
+    unordered = []
+    context = copy(cutcontext)
+    for idx in range(len(context) -1, -1, -1):
+        c = context[idx]
+        if isinstance(c, CutGroup) and c.skip:
+            unordered.append(c)
+            context.pop(idx)
+    
     curr = context.start
     curr = 0 if curr is None else complex(curr[0], curr[1])
+
     cutcode_len = 0
     for c in context.flat():
         cutcode_len += 1
@@ -1252,7 +1265,7 @@ def short_travel_cutcode(
         _ = kernel.translation
     else:
         busy = None
-    # print (f"Cutcode-Len={cutcode_len}")
+    # print (f"Cutcode-Len={cutcode_len}, unordered: {len(unordered)}")
     while True:
         current_pass += 1
         if current_pass % 50 == 0 and busy and busy.shown:
@@ -1366,8 +1379,15 @@ def short_travel_cutcode(
         end = c.end
         curr = complex(end[0], end[1])
         ordered.append(c)
-    if context.start is not None:
-        ordered._start_x, ordered._start_y = context.start
+    # print (f"Now we have {len(ordered)} items in list")
+    for c in unordered:
+        # As these are reversed, we reverse again...
+        ordered.insert(0, c)
+    # print (f"And after extension {len(ordered)} items in list")
+    # for c in ordered:
+    #     print (f"{type(c).__name__} - {len(c) if isinstance(c, (list, tuple)) else '-childless-'}")
+    if cutcontext.start is not None:
+        ordered._start_x, ordered._start_y = cutcontext.start
     else:
         ordered._start_x = 0
         ordered._start_y = 0

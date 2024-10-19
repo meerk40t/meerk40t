@@ -20,6 +20,7 @@ class CutGroup(list, CutObject, ABC):
         closed=False,
         color=None,
         origin=None,
+        skip=False
     ):
         list.__init__(self, children)
         CutObject.__init__(
@@ -29,6 +30,7 @@ class CutGroup(list, CutObject, ABC):
         self.constrained = constrained
         self.burn_started = False
         self.origin = origin
+        self.skip = skip 
 
     def __copy__(self):
         return CutGroup(self.parent, self)
