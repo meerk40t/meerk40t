@@ -805,6 +805,7 @@ class CutPlan:
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=grouped_inner,
+                    hatch_optimize=self.context.opt_effect_optimize,
                 )
                 last = self.plan[i].end
 
@@ -1230,6 +1231,7 @@ def short_travel_cutcode(
     channel=None,
     complete_path: Optional[bool] = False,
     grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
 ):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
@@ -1385,6 +1387,11 @@ def short_travel_cutcode(
         curr = complex(end[0], end[1])
         ordered.append(c)
     # print (f"Now we have {len(ordered)} items in list")
+    if hatch_optimize:
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                unordered[idx] = short_travel_cutcode(context=c, kernel=kernel, complete_path=False, grouped_inner=False, channel=channel)
     # As these are reversed, we reverse again...
     ordered.extend(reversed(unordered))
     # print (f"And after extension {len(ordered)} items in list")
