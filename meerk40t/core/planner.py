@@ -271,7 +271,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_effect_optimize",
                 "object": context,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Optimize internally"),
                 "tip": (
