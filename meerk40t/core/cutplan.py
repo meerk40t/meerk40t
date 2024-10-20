@@ -638,6 +638,8 @@ class CutPlan:
         group_count = 0
         for plan_idx, pitem in enumerate(self.plan):
             # We don't combine across plan boundaries
+            if not isinstance(pitem, CutGroup):
+                continue
             grouping = {}
             l_pitem = len(pitem)
             for idx, cut in enumerate(pitem):
@@ -1223,7 +1225,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
 
 
 def short_travel_cutcode(
-    cutcontext: CutCode,
+    context: CutCode,
     kernel=None,
     channel=None,
     complete_path: Optional[bool] = False,
@@ -1241,13 +1243,12 @@ def short_travel_cutcode(
     checks.
     """
     if channel:
-        start_length = cutcontext.length_travel(True)
+        start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
     unordered = []
-    context = copy(cutcontext)
     for idx in range(len(context) - 1, -1, -1):
         c = context[idx]
         if isinstance(c, CutGroup) and c.skip:
@@ -1389,8 +1390,8 @@ def short_travel_cutcode(
     # print (f"And after extension {len(ordered)} items in list")
     # for c in ordered:
     #     print (f"{type(c).__name__} - {len(c) if isinstance(c, (list, tuple)) else '-childless-'}")
-    if cutcontext.start is not None:
-        ordered._start_x, ordered._start_y = cutcontext.start
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
     else:
         ordered._start_x = 0
         ordered._start_y = 0
