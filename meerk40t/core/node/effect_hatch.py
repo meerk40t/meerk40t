@@ -1,3 +1,4 @@
+import itertools
 from copy import copy
 from math import sqrt
 
@@ -266,6 +267,32 @@ class HatchEffectNode(Node, Suppressable):
                 )
             )
         return path
+
+    def as_geometries(self, **kws):
+        """
+        Calculates the hatch effect geometries and returns the geometries 
+        for each pass and child object individually. 
+        The pass index is the number of copies of this geometry whereas the
+        internal loops value is rotated each pass by the angle-delta.
+
+        @param kws:
+        @return:
+        """
+        outlines = [
+            node.as_geometry(**kws)
+            for node in self.affected_children()
+            if hasattr(node, "as_geometry")
+        ]
+        if self._distance is None:
+            self.recalculate()
+        for p in range(self.loops):
+            for o in outlines:
+                yield Geomstr.hatch(
+                    o,
+                    distance=self._distance,
+                    angle=self._angle + p * self._angle_delta,
+                )
+
 
     def set_interim(self):
         self.empty_cache()

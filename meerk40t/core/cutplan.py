@@ -22,7 +22,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..svgelements import Group, Polygon, Matrix
+from ..svgelements import Group, Matrix, Path, Polygon
 from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
@@ -101,12 +101,15 @@ class CutPlan:
         @return:
         """
         # Using copy of commands, so commands can add ops.
+        self._debug_me("At start of execute")
+
         while self.commands:
             # Executing command can add a command, complete them all.
             commands = self.commands[:]
             self.commands.clear()
             for command in commands:
                 command()
+                self._debug_me(f"At end of {command.__name__}")
 
     def final(self):
         """
@@ -429,10 +432,9 @@ class CutPlan:
                     cc.original_op = blob.original_op
                     cc.pass_index = blob.pass_index
                     last_item = cc
-                    yield last_item
                 else:
                     last_item = blob
-                    yield last_item
+                yield last_item
 
     def _should_merge(self, context, last_item, current_item):
         """
@@ -472,6 +474,34 @@ class CutPlan:
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
         return True  # No reason these should not be merged.
+
+    def _debug_me(self, message):
+        debug_level = 0
+        if not self.channel:
+            return
+        self.channel(f"Plan at {message}")
+        for pitem in self.plan:
+            if isinstance(pitem, (tuple, list)):
+                self.channel(f"-{type(pitem).__name__}: {len(pitem)} items")
+                if debug_level > 0:
+                    for cut in pitem:
+                        if isinstance(cut, (tuple, list)):
+                            self.channel(
+                                f"--{type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items"
+                            )
+                        else:
+                            self.channel(
+                                f"--{type(pitem).__name__}: {type(cut).__name__}: --childless--"
+                            )
+
+            elif hasattr(pitem, "children"):
+                self.channel(
+                    f"  {type(pitem).__name__}: {len(pitem.children)} children"
+                )
+            else:
+                self.channel(f"  {type(pitem).__name__}: --childless--")
+
+        self.channel("------------")
 
     def geometry(self):
         """
@@ -572,6 +602,9 @@ class CutPlan:
         if not has_cutcode:
             return
 
+        if context.opt_effect_combine:
+            self.commands.append(self.combine_effects)
+
         if context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
         ):
@@ -587,6 +620,87 @@ class CutPlan:
             pass
         if context.opt_remove_overlap:
             pass
+
+    def combine_effects(self):
+        """
+        Will browse through the cutcode entries grouping everything together
+        that as a common 'source' attribute
+        """
+
+        def update_group_sequence(group):
+            if len(group) == 0:
+                return
+            glen = len(group)
+            for i, cut_obj in enumerate(group):
+                cut_obj.first = i == 0
+                cut_obj.last = i == glen - 1
+                next_idx = i + 1 if i < glen - 1 else 0
+                cut_obj.next = group[next_idx]
+                cut_obj.previous = group[i - 1]
+            group.path = group._geometry.as_path()
+
+        def update_busy_info(busy, idx, l_pitem, plan_idx, l_plan):
+            busy.change(
+                msg=_("Combine effect primitives")
+                + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})",
+                keep=1,
+            )
+            busy.show()
+
+        def process_plan_item(pitem, busy, total, plan_idx, l_plan):
+            grouping = {}
+            l_pitem = len(pitem)
+            to_be_deleted = []
+            combined = 0
+            for idx, cut in enumerate(pitem):
+                total += 1
+                if busy.shown and total % 100 == 0:
+                    update_busy_info(busy, idx, l_pitem, plan_idx, l_plan)
+                if not isinstance(cut, CutGroup) or cut.origin is None:
+                    continue
+                combined += process_cut(cut, grouping, pitem, idx, to_be_deleted)
+            return grouping, to_be_deleted, combined, total
+
+        def process_cut(cut, grouping, pitem, idx, to_be_deleted):
+            if cut.origin not in grouping:
+                grouping[cut.origin] = idx
+                return 0
+            mastercut = grouping[cut.origin]
+            geom = cut._geometry
+            pitem[mastercut].skip = True
+            pitem[mastercut].extend(cut)
+            pitem[mastercut]._geometry.append(geom)
+            cut.clear()
+            to_be_deleted.append(idx)
+            return 1
+
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Combine effect primitives"), keep=1)
+            busy.show()
+        to_be_deleted = []
+        combined = 0
+        l_plan = len(self.plan)
+        total = -1
+        group_count = 0
+        for plan_idx, pitem in enumerate(self.plan):
+            # We don't combine across plan boundaries
+            if not isinstance(pitem, CutGroup):
+                continue
+            grouping, item_to_delete, item_combined, total = process_plan_item(pitem, busy, total, plan_idx, l_plan)
+            to_be_deleted.extend(item_to_delete)
+            combined += item_combined
+            group_count += len(grouping)
+
+            for key, item in grouping.items():
+                update_group_sequence(pitem[item])
+
+            for p in reversed(to_be_deleted):
+                pitem.pop(p)
+
+        if self.channel:
+            self.channel(f"Combined: {combined}, groups: {group_count}")
 
     def optimize_travel_2opt(self):
         """
@@ -712,6 +826,7 @@ class CutPlan:
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=grouped_inner,
+                    hatch_optimize=self.context.opt_effect_optimize,
                 )
                 last = self.plan[i].end
 
@@ -862,6 +977,7 @@ def is_inside(inner, outer, tolerance=0):
     @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
+
     def convex_geometry(raster) -> Geomstr:
         dx = raster.bounding_box[0]
         dy = raster.bounding_box[1]
@@ -1143,11 +1259,11 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             if is_inside(inner, outer, tolerance):
                 constrained = True
                 if outer.contains is None:
-                    outer.contains = list()
+                    outer.contains = []
                 outer.contains.append(inner)
 
                 if inner.inside is None:
-                    inner.inside = list()
+                    inner.inside = []
                 inner.inside.append(outer)
 
     context.constrained = constrained
@@ -1170,6 +1286,11 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             f"Inner paths identified in {time() - start_time:.3f} elapsed seconds: {constrained} "
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
+        for outer in closed_groups:
+            channel(
+                f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements"
+            )
+
     return context
 
 
@@ -1179,6 +1300,7 @@ def short_travel_cutcode(
     channel=None,
     complete_path: Optional[bool] = False,
     grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
 ):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
@@ -1197,12 +1319,15 @@ def short_travel_cutcode(
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
+    unordered = []
+    for idx in range(len(context) - 1, -1, -1):
+        c = context[idx]
+        if isinstance(c, CutGroup) and c.skip:
+            unordered.append(c)
+            context.pop(idx)
 
     curr = context.start
-    if curr is None:
-        curr = 0
-    else:
-        curr = complex(curr[0], curr[1])
+    curr = 0 if curr is None else complex(curr[0], curr[1])
 
     cutcode_len = 0
     for c in context.flat():
@@ -1216,7 +1341,7 @@ def short_travel_cutcode(
         _ = kernel.translation
     else:
         busy = None
-    # print (f"Cutcode-Len={cutcode_len}")
+    # print (f"Cutcode-Len={cutcode_len}, unordered: {len(unordered)}")
     while True:
         current_pass += 1
         if current_pass % 50 == 0 and busy and busy.shown:
@@ -1330,6 +1455,17 @@ def short_travel_cutcode(
         end = c.end
         curr = complex(end[0], end[1])
         ordered.append(c)
+    # print (f"Now we have {len(ordered)} items in list")
+    if hatch_optimize:
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                unordered[idx] = short_travel_cutcode(context=c, kernel=kernel, complete_path=False, grouped_inner=False, channel=channel)
+    # As these are reversed, we reverse again...
+    ordered.extend(reversed(unordered))
+    # print (f"And after extension {len(ordered)} items in list")
+    # for c in ordered:
+    #     print (f"{type(c).__name__} - {len(c) if isinstance(c, (list, tuple)) else '-childless-'}")
     if context.start is not None:
         ordered._start_x, ordered._start_y = context.start
     else:
@@ -1519,7 +1655,7 @@ def inner_selection_cutcode(
     iterations = 0
     while True:
         c = list(context.candidate(grouped_inner=grouped_inner))
-        if len(c) == 0:
+        if not c:
             break
         for o in c:
             o.burns_done += 1

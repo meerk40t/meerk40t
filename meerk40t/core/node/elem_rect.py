@@ -139,7 +139,7 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
 
     def final_geometry(self, **kws) -> Geomstr:
         """
-        This will resolve and apply all effektcs like tabs and dashes/dots
+        This will resolve and apply all effects like tabs and dashes/dots
         """
         unit_factor = kws.get("unitfactor", 1)
         x = self.x
