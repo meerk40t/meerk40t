@@ -626,6 +626,41 @@ class CutPlan:
                 cut_obj.previous = group[i - 1]
             group.path = group._geometry.as_path()
 
+        def update_busy_info(busy, idx, l_pitem, plan_idx, l_plan):
+            busy.change(
+                msg=_("Combine effect primitives")
+                + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})",
+                keep=1,
+            )
+            busy.show()
+
+        def process_plan_item(pitem, busy, total, plan_idx, l_plan):
+            grouping = {}
+            l_pitem = len(pitem)
+            to_be_deleted = []
+            combined = 0
+            for idx, cut in enumerate(pitem):
+                total += 1
+                if busy.shown and total % 100 == 0:
+                    update_busy_info(busy, idx, l_pitem, plan_idx, l_plan)
+                if not isinstance(cut, CutGroup) or cut.origin is None:
+                    continue
+                combined += process_cut(cut, grouping, pitem, idx, to_be_deleted)
+            return grouping, to_be_deleted, combined, total
+
+        def process_cut(cut, grouping, pitem, idx, to_be_deleted):
+            if cut.origin not in grouping:
+                grouping[cut.origin] = idx
+                return 0
+            mastercut = grouping[cut.origin]
+            geom = cut._geometry
+            pitem[mastercut].skip = True
+            pitem[mastercut].extend(cut)
+            pitem[mastercut]._geometry.append(geom)
+            cut.clear()
+            to_be_deleted.append(idx)
+            return 1
+
         busy = self.context.kernel.busyinfo
         _ = self.context.kernel.translation
         if busy.shown:
@@ -640,44 +675,17 @@ class CutPlan:
             # We don't combine across plan boundaries
             if not isinstance(pitem, CutGroup):
                 continue
-            grouping = {}
-            l_pitem = len(pitem)
-            for idx, cut in enumerate(pitem):
-                total += 1
-                if busy.shown and total % 100 == 0:
-                    busy.change(
-                        msg=_("Combine effect primitives")
-                        + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})",
-                        keep=1,
-                    )
-                    busy.show()
-                if not isinstance(cut, CutGroup) or cut.origin is None:
-                    continue
-                if cut.origin not in grouping:
-                    # First instance
-                    grouping[cut.origin] = idx
-                    if self.channel:
-                        self.channel(
-                            f"New group: {cut.origin} - items at start: {len(cut)}"
-                        )
-                    group_count += 1
-                else:
-                    mastercut = grouping[cut.origin]
-                    # We just extend the geometry and do the path conversion at the end
-                    geom = cut._geometry
-                    pitem[mastercut].skip = True
-                    pitem[mastercut].extend(cut)
-                    pitem[mastercut]._geometry.append(geom)
-                    cut.clear()
-                    to_be_deleted.append(idx)
-                    combined += 1
+            grouping, item_to_delete, item_combined, total = process_plan_item(pitem, busy, total, plan_idx, l_plan)
+            to_be_deleted.extend(item_to_delete)
+            combined += item_combined
+            group_count += len(grouping)
+
             for key, item in grouping.items():
-                # Reestablish
                 update_group_sequence(pitem[item])
-                if self.channel:
-                    self.channel(f"Group: {key} - items at end: {len(pitem[item])}")
+
             for p in reversed(to_be_deleted):
                 pitem.pop(p)
+
         if self.channel:
             self.channel(f"Combined: {combined}, groups: {group_count}")
 
