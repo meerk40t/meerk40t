@@ -22,8 +22,7 @@ class ElemcountPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
         # Shall we display id / label?
         self.text_elements = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
@@ -62,6 +61,7 @@ class GroupPropertiesPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         self.node = node
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=node)
@@ -123,6 +123,7 @@ class FilePropertiesPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         self.node = node
         self.text_filename = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)

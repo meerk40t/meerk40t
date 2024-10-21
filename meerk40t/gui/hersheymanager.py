@@ -2,6 +2,7 @@ import os
 
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -23,12 +24,14 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
-    wxToggleButton,
+    wxListBox,
     wxListCtrl,
+    wxStaticBitmap,
+    wxStaticText,
+    wxToggleButton,
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
-from meerk40t.core.units import Length
 
 _ = wx.GetTranslation
 
@@ -57,6 +60,7 @@ class FontGlyphPicker(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.font = font
         self.icon_size = 32
         mainsizer = wx.BoxSizer(wx.VERTICAL)
@@ -158,11 +162,8 @@ class FontGlyphPicker(wx.Dialog):
         def prepare_bitmap(geom, final_icon_width, final_icon_height, as_stroke=False):
             edge = 1
             strokewidth = 1
-            wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-            if self.context.themes.dark:
-                strcol = wx.WHITE
-            else:
-                strcol = wx.BLACK
+            wincol = self.context.themes.get("win_bg")
+            strcol = self.context.themes.get("win_fg")
 
             spen = wx.Pen()
             sbrush = wx.Brush()
@@ -352,6 +353,7 @@ class LineTextPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(float, "last_font_size", float(Length("20px")))
         self.context.setting(str, "last_font", "")
 
@@ -454,14 +456,14 @@ class LineTextPropertyPanel(wx.Panel):
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
         )
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
@@ -725,6 +727,7 @@ class PanelFontSelect(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -750,14 +753,14 @@ class PanelFontSelect(wx.Panel):
         )
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
         sizer_fonts.Add(sizer_checker, 0, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
@@ -805,7 +808,7 @@ class PanelFontSelect(wx.Panel):
         ):
             btn.SetMaxSize(dip_size(self, icon_size + 4, -1))
 
-        lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
+        lbl_spacer = wxStaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
         self.SetSizer(mainsizer)
@@ -946,6 +949,7 @@ class PanelFontManager(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("vectortext")
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
@@ -1001,10 +1005,10 @@ class PanelFontManager(wx.Panel):
         sizer_fonts = StaticBoxSizer(self, wx.ID_ANY, _("Fonts"), wx.VERTICAL)
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
@@ -1017,7 +1021,7 @@ class PanelFontManager(wx.Panel):
         self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         sizer_buttons.Add(self.btn_delete, 0, wx.EXPAND, 0)
 
-        lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
+        lbl_spacer = wxStaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
         self.btn_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))

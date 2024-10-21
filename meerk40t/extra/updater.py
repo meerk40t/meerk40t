@@ -490,7 +490,7 @@ def plugin(kernel, lifecycle):
                         import wx
 
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-                        from meerk40t.gui.wxutils import dip_size, wxButton
+                        from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticTexts
 
                         has_wx = True
                     except ImportError:
@@ -509,16 +509,18 @@ def plugin(kernel, lifecycle):
                                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                             )
                             # contents
+                            kernel.themes.set_window_colors(dlg)
+
                             sizer = wx.BoxSizer(wx.VERTICAL)
 
-                            label = wx.StaticText(dlg, wx.ID_ANY, header)
+                            label = wxStaticText(dlg, wx.ID_ANY, header)
                             sizer.Add(label, 0, wx.EXPAND, 0)
                             info = wx.TextCtrl(
                                 dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
                             )
                             info.SetValue(content)
                             sizer.Add(info, 1, wx.EXPAND, 0)
-                            label = wx.StaticText(dlg, wx.ID_ANY, footer)
+                            label = wxStaticText(dlg, wx.ID_ANY, footer)
                             sizer.Add(label, 0, wx.EXPAND, 0)
                             btnsizer = wx.StdDialogButtonSizer()
                             btn = wxButton(dlg, wx.ID_OK)

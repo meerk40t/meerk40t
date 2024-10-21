@@ -19,6 +19,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("newlycontroller")
 
         font = wx.Font(

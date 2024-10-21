@@ -6,7 +6,7 @@ for a GRBL import / blob conversion
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.wxutils import wxButton
+from meerk40t.gui.wxutils import wxButton, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -56,6 +56,8 @@ class DialogOptions:
         parent_win = wx.Dialog(
             parentid, wx.ID_ANY, title=title, style=wx.CAPTION | wx.RESIZE_BORDER
         )
+        self.context.themes.set_window_colors(parent_win)
+
         cpanel = ChoicePropertyPanel(
             parent_win,
             context=self.context,
@@ -67,7 +69,7 @@ class DialogOptions:
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         if intro is not None and intro != "":
-            intro_label = wx.StaticText(parent_win, id=wx.ID_ANY, label=intro)
+            intro_label = wxStaticText(parent_win, id=wx.ID_ANY, label=intro)
             sizer_main.Add(intro_label, 0, wx.EXPAND, 0)
         sizer_main.Add(cpanel, 1, wx.EXPAND, 0)
         sizer_button = wx.BoxSizer(wx.HORIZONTAL)

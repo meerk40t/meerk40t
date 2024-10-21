@@ -13,6 +13,8 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
 )
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
@@ -123,6 +125,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.listeners = list()
         self.entries_per_column = entries_per_column
         if choices is None:
@@ -398,7 +401,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
                     img = c.get("icon", None)
                     if img is not None:
-                        icon = wx.StaticBitmap(self, wx.ID_ANY, bitmap=img)
+                        icon = wxStaticBitmap(self, wx.ID_ANY, bitmap=img)
                         last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                         last_box.AddSpacer(5)
                 else:
@@ -413,7 +416,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 msgs = label.split("\n")
                 controls = []
                 for lbl in msgs:
-                    control = wx.StaticText(self, label=lbl)
+                    control = wxStaticText(self, label=lbl)
                     current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == bool and data_style == "button":
                 # This is just a signal to the outside world.
@@ -721,7 +724,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if label != "":
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
-                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
+                    label_text = wxStaticText(self, id=wx.ID_ANY, label=label + " ")
                     # label_text.SetMinSize(dip_size(self, -1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -778,7 +781,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if label != "":
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
-                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
+                    label_text = wxStaticText(self, id=wx.ID_ANY, label=label + " ")
                     # label_text.SetMinSize(dip_size(self, -1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 if ctrl_width > 0:
@@ -826,19 +829,19 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return check
 
                 bit_sizer = wx.BoxSizer(wx.VERTICAL)
-                label_text = wx.StaticText(
+                label_text = wxStaticText(
                     self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
                 )
                 bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
                 if mask is not None:
-                    label_text = wx.StaticText(
+                    label_text = wxStaticText(
                         self,
                         wx.ID_ANY,
                         _("mask") + " ",
                         style=wx.ALIGN_CENTRE_HORIZONTAL,
                     )
                     bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
-                label_text = wx.StaticText(
+                label_text = wxStaticText(
                     self, wx.ID_ANY, _("value") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL
                 )
                 bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
@@ -848,7 +851,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 for b in range(bits):
                     # Label
                     bit_sizer = wx.BoxSizer(wx.VERTICAL)
-                    label_text = wx.StaticText(
+                    label_text = wxStaticText(
                         self, wx.ID_ANY, str(b), style=wx.ALIGN_CENTRE_HORIZONTAL
                     )
                     bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
@@ -931,7 +934,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
-                color_info = wx.StaticText(self, wx.ID_ANY, label)
+                color_info = wxStaticText(self, wx.ID_ANY, label)
                 control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
 
                 control.Bind(
@@ -1168,7 +1171,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                     if label != "":
-                        label_text = wx.StaticText(self, id=wx.ID_ANY, label=label)
+                        label_text = wxStaticText(self, id=wx.ID_ANY, label=label)
                         control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
                 if data_type == int:
@@ -1382,7 +1385,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 continue
 
             if trailer and control_sizer:
-                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=f" {trailer}")
+                trailer_text = wxStaticText(self, id=wx.ID_ANY, label=f" {trailer}")
                 control_sizer.Add(trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
             if control is None:
@@ -1566,7 +1569,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
-    
+
     def on_close(self, event):
         # We should not need this, but better safe than sorry
         event.Skip()

@@ -6,7 +6,7 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
-
+from meerk40t.gui.wxutils import wxStaticBitmap
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -59,7 +59,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.buttonsize_x = self.iconsize
         self.buttonsize_y = min(self.iconsize, self.height)
         self.ClearItems()
-        self.btn_prev = wx.StaticBitmap(
+        self.btn_prev = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
@@ -125,7 +125,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 mylist[idx] = None
 
         for op in oplist:
-            btn = wx.StaticBitmap(
+            btn = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=(self.buttonsize_x, self.buttonsize_y),
@@ -158,7 +158,7 @@ class DefaultOperationWidget(StatusBarWidget):
             self.Add(btn, 0, wx.EXPAND, 0)
             self.SetActive(btn, False)
 
-        self.btn_next = wx.StaticBitmap(
+        self.btn_next = wxStaticBitmap(
             parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
@@ -178,7 +178,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
-        self.btn_matman = wx.StaticBitmap(
+        self.btn_matman = wxStaticBitmap(
             parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),

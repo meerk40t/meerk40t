@@ -13,6 +13,7 @@ class RuidaOperationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.parent = args[0]
         self.operation = node
 

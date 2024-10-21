@@ -16,6 +16,7 @@ class ScenePanel(wx.Panel):
         self.scene_panel = wx.Window(self, wx.ID_ANY)
         self.scene = context.open_as("module/Scene", scene_name, self, pane=parent)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.scene_panel.SetDoubleBuffered(True)
 
         # The scene buffer is the updated image that is drawn to screen.

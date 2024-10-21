@@ -164,6 +164,7 @@ class ConsolePanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("notes")
         font = self.get_font()
         self.text_entry = wx.TextCtrl(
@@ -304,7 +305,8 @@ class ConsolePanel(wx.ScrolledWindow):
         return self.style
 
     def background_color(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        return self.context.themes.get("win_bg")
+        # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
 
     @property
     def is_dark(self):

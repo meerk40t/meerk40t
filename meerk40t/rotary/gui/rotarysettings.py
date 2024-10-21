@@ -9,7 +9,7 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icon_rotary
 from meerk40t.gui.mwindow import MWindow
 
-# from meerk40t.gui.wxutils import wxButton, wxCheckBox
+# from meerk40t.gui.wxutils import wxButton, wxCheckBox, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -136,16 +136,16 @@ _ = wx.GetTranslation
 #         # sizer_main.Add((20, 20), 0, 0, 0)
 #         # sizer_main.Add(self.checkbox_rotary_loop, 0, 0, 0)
 #         # sizer_steps.Add(self.text_rotary_rotation, 0, 0, 0)
-#         # label_steps = wx.StaticText(self, wx.ID_ANY, _("steps"))
+#         # label_steps = wxStaticText(self, wx.ID_ANY, _("steps"))
 #         # sizer_steps.Add(label_steps, 0, 0, 0)
 #         # sizer_main.Add(sizer_steps, 0, wx.EXPAND, 0)
 #         # sizer_20.Add(self.checkbox_rotary_roller, 0, 0, 0)
 #         # sizer_20.Add(self.text_rotary_roller_circumference, 0, 0, 0)
-#         # label_mm = wx.StaticText(self, wx.ID_ANY, _("mm"))
+#         # label_mm = wxStaticText(self, wx.ID_ANY, _("mm"))
 #         # sizer_20.Add(label_mm, 0, 0, 0)
 #         # sizer_main.Add(sizer_20, 0, wx.EXPAND, 0)
 #         # sizer_circumference.Add(self.text_rotary_object_circumference, 0, 0, 0)
-#         # label_mm2 = wx.StaticText(self, wx.ID_ANY, _("mm"))
+#         # label_mm2 = wxStaticText(self, wx.ID_ANY, _("mm"))
 #         # sizer_circumference.Add(label_mm2, 0, 0, 0)
 #         # sizer_main.Add(sizer_circumference, 0, wx.EXPAND, 0)
 #         self.SetSizer(sizer_main)

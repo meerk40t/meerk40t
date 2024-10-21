@@ -7,14 +7,14 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_paint_brush,
     icon_paint_brush_green,
     icon_warning,
 )
-from meerk40t.gui.wxutils import dip_size
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -282,6 +282,8 @@ class Warnings:
             pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
+        self.context.themes.set_window_colors(dlg)
+
         # contents
         sizer = wx.BoxSizer(wx.VERTICAL)
         l_hi = _("Critical")
@@ -295,7 +297,7 @@ class Warnings:
         if warn_level > 1:
             l_low += " " + msg
 
-        label1 = wx.StaticText(dlg, wx.ID_ANY, l_hi)
+        label1 = wxStaticText(dlg, wx.ID_ANY, l_hi)
         sizer.Add(label1, 0, wx.EXPAND, 0)
         info_hi = wx.TextCtrl(
             dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
@@ -303,7 +305,7 @@ class Warnings:
         info_hi.SetValue(txt_critical)
         sizer.Add(info_hi, 1, wx.EXPAND, 0)
 
-        label2 = wx.StaticText(dlg, wx.ID_ANY, l_mid)
+        label2 = wxStaticText(dlg, wx.ID_ANY, l_mid)
         sizer.Add(label2, 0, wx.EXPAND, 0)
         info_mid = wx.TextCtrl(
             dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
@@ -311,7 +313,7 @@ class Warnings:
         info_mid.SetValue(txt_mid)
         sizer.Add(info_mid, 1, wx.EXPAND, 0)
 
-        label3 = wx.StaticText(dlg, wx.ID_ANY, l_low)
+        label3 = wxStaticText(dlg, wx.ID_ANY, l_low)
         sizer.Add(label3, 0, wx.EXPAND, 0)
         info_low = wx.TextCtrl(
             dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
@@ -336,7 +338,7 @@ class Warnings:
         sizer.Add(panel, 1, wx.EXPAND, 0)
 
         btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(dlg, wx.ID_OK)
+        btn = wxButton(dlg, wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
         # btn = wx.Button(dlg, wx.ID_CANCEL)

@@ -1,6 +1,7 @@
 from copy import copy
 from math import tau
 from time import perf_counter
+
 import wx
 
 from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
@@ -8,7 +9,13 @@ from meerk40t.fill.patterns import LivingHinges
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_hinges
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
 
@@ -36,6 +43,7 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.debug_counter = 0
         self.SetHelpText("hinges")
         self.hinge_generator = LivingHinges(
@@ -78,7 +86,7 @@ class HingePanel(wx.Panel):
             359,
             style=wx.SL_HORIZONTAL,
         )
-        self.slider_rotate_label = wx.StaticText(self, wx.ID_ANY, "0°")
+        self.slider_rotate_label = wxStaticText(self, wx.ID_ANY, "0°")
         self.slider_rotate_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
@@ -95,7 +103,7 @@ class HingePanel(wx.Panel):
             _FACTOR,
             style=wx.SL_HORIZONTAL,
         )
-        self.slider_width_label = wx.StaticText(
+        self.slider_width_label = wxStaticText(
             self, wx.ID_ANY, f"{_default/_FACTOR:.1%}"
         )
         self.slider_width_label.SetFont(
@@ -112,7 +120,7 @@ class HingePanel(wx.Panel):
             _FACTOR,
             style=wx.SL_HORIZONTAL,
         )
-        self.slider_height_label = wx.StaticText(
+        self.slider_height_label = wxStaticText(
             self, wx.ID_ANY, f"{_default/_FACTOR:.1%}"
         )
         self.slider_height_label.SetFont(
@@ -129,7 +137,7 @@ class HingePanel(wx.Panel):
             int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )
-        self.slider_offx_label = wx.StaticText(self, wx.ID_ANY)
+        self.slider_offx_label = wxStaticText(self, wx.ID_ANY)
         self.slider_offx_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
@@ -144,7 +152,7 @@ class HingePanel(wx.Panel):
             int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )
-        self.slider_offy_label = wx.StaticText(self, wx.ID_ANY)
+        self.slider_offy_label = wxStaticText(self, wx.ID_ANY)
         self.slider_offy_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
@@ -319,7 +327,7 @@ class HingePanel(wx.Panel):
         hsizer_pattern = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_pattern, 0, wx.EXPAND, 0)
 
-        label_pattern = wx.StaticText(self, wx.ID_ANY, _("Pattern:"))
+        label_pattern = wxStaticText(self, wx.ID_ANY, _("Pattern:"))
         label_pattern.SetMinSize(dip_size(self, 90, -1))
         hsizer_pattern.Add(label_pattern, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -331,7 +339,7 @@ class HingePanel(wx.Panel):
         hsizer_pattern.Add(self.button_default, 0, wx.EXPAND, 0)
 
         hsizer_rotate = wx.BoxSizer(wx.HORIZONTAL)
-        label_rotate = wx.StaticText(self, wx.ID_ANY, _("Rotation:"))
+        label_rotate = wxStaticText(self, wx.ID_ANY, _("Rotation:"))
         label_rotate.SetMinSize(dip_size(self, 90, -1))
         hsizer_rotate.Add(label_rotate, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         ro_width = wx.BoxSizer(wx.VERTICAL)
@@ -347,7 +355,7 @@ class HingePanel(wx.Panel):
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellwidth, 1, wx.EXPAND, 0)
 
-        label_cell_width = wx.StaticText(self, wx.ID_ANY, _("Cell-Width:"))
+        label_cell_width = wxStaticText(self, wx.ID_ANY, _("Cell-Width:"))
         label_cell_width.SetMinSize(dip_size(self, 90, -1))
         hsizer_cellwidth.Add(label_cell_width, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -366,7 +374,7 @@ class HingePanel(wx.Panel):
         hsizer_cellheight = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellheight, 1, wx.EXPAND, 0)
 
-        label_cell_height = wx.StaticText(self, wx.ID_ANY, _("Cell-Height:"))
+        label_cell_height = wxStaticText(self, wx.ID_ANY, _("Cell-Height:"))
         label_cell_height.SetMinSize(dip_size(self, 90, -1))
         hsizer_cellheight.Add(label_cell_height, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -385,7 +393,7 @@ class HingePanel(wx.Panel):
         hsizer_offsetx = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_offsetx, 1, wx.EXPAND, 0)
 
-        label_offset_x = wx.StaticText(self, wx.ID_ANY, _("Offset X:"))
+        label_offset_x = wxStaticText(self, wx.ID_ANY, _("Offset X:"))
         label_offset_x.SetMinSize(dip_size(self, 90, -1))
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -402,7 +410,7 @@ class HingePanel(wx.Panel):
         hsizer_offsety = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_offsety, 0, wx.EXPAND, 0)
 
-        label_offset_y = wx.StaticText(self, wx.ID_ANY, _("Offset Y:"))
+        label_offset_y = wxStaticText(self, wx.ID_ANY, _("Offset Y:"))
         label_offset_y.SetMinSize(dip_size(self, 90, -1))
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 

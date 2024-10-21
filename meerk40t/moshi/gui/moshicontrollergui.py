@@ -8,7 +8,13 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -22,6 +28,7 @@ class MoshiControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        context.themes.set_window_colors(self)
         self.context = context.device
         self.SetHelpText("moshicontroller")
 
@@ -210,33 +217,33 @@ class MoshiControllerPanel(wx.Panel):
         sizer_usb_settings.Add(sizer_23, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_usb_settings, 0, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("Byte 0"))
+        label_1 = wxStaticText(self, wx.ID_ANY, _("Byte 0"))
         byte0sizer.Add(label_1, 0, 0, 0)
         byte_data_status.Add(byte0sizer, 1, wx.EXPAND, 0)
         byte1sizer.Add(self.text_byte_1, 0, 0, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Byte 1"))
+        label_2 = wxStaticText(self, wx.ID_ANY, _("Byte 1"))
         byte1sizer.Add(label_2, 0, 0, 0)
         byte1sizer.Add(self.text_desc, 0, 0, 0)
         byte_data_status.Add(byte1sizer, 1, wx.EXPAND, 0)
         byte2sizer.Add(self.text_byte_2, 0, 0, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, _("Byte 2"))
+        label_3 = wxStaticText(self, wx.ID_ANY, _("Byte 2"))
         byte2sizer.Add(label_3, 0, 0, 0)
         byte_data_status.Add(byte2sizer, 1, wx.EXPAND, 0)
         byte3sizer.Add(self.text_byte_3, 0, 0, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, _("Byte 3"))
+        label_4 = wxStaticText(self, wx.ID_ANY, _("Byte 3"))
         byte3sizer.Add(label_4, 0, 0, 0)
         byte_data_status.Add(byte3sizer, 1, wx.EXPAND, 0)
         byte4sizer.Add(self.text_byte_4, 0, 0, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, _("Byte 4"))
+        label_5 = wxStaticText(self, wx.ID_ANY, _("Byte 4"))
         byte4sizer.Add(label_5, 0, 0, 0)
         byte_data_status.Add(byte4sizer, 1, wx.EXPAND, 0)
         byte5sizer.Add(self.text_byte_5, 0, 0, 0)
-        label_18 = wx.StaticText(self, wx.ID_ANY, _("Byte 5"))
+        label_18 = wxStaticText(self, wx.ID_ANY, _("Byte 5"))
         byte5sizer.Add(label_18, 0, 0, 0)
         byte_data_status.Add(byte5sizer, 1, wx.EXPAND, 0)
         packet_count.Add(byte_data_status, 0, wx.EXPAND, 0)
         sizer_1.Add(packet_count, 0, 0, 0)
-        label_6 = wx.StaticText(self, wx.ID_ANY, "")
+        label_6 = wxStaticText(self, wx.ID_ANY, "")
         sizer_show_usb_log.Add(label_6, 10, wx.EXPAND, 0)
         sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
         sizer_1.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)

@@ -17,6 +17,7 @@ class AutoExecPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("autoexec")
         self.pane = pane
         self.text_autoexec = wx.TextCtrl(

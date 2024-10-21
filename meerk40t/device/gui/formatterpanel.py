@@ -43,6 +43,7 @@ class FormatterPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("formatter")
 
         self.data = {}

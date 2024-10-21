@@ -242,8 +242,6 @@ class StatusBarWidget(BasicHSizer):
         if cnt == 0:
             return
         if cnt == 1:
-            # dummylbl = wx.StaticText(self.parent, wx.ID_ANY, "")
-            # self.Add(dummylbl, 0, 0, 0)
             self.PrependSpacer(5)
 
         # Standard action to show or hide, can be redefined

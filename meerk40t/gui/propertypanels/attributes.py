@@ -11,6 +11,8 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxStaticBitmap,
+    wxStaticText,
     wxToggleButton,
 )
 from meerk40t.svgelements import Color
@@ -33,6 +35,7 @@ class ColorPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.callback = callback
         if attribute is None:
             attribute = "stroke"
@@ -59,7 +62,7 @@ class ColorPanel(wx.Panel):
         ]
         self.last_col_idx = len(self.bgcolors) - 1
         for i in range(len(self.bgcolors)):
-            self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
+            self.underliner.append(wxStaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
             self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
             # self.lbl_color[i].SetMinSize(dip_size(self, -1, 20))
@@ -239,6 +242,7 @@ class IdPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         # Shall we display id / label?
         self.showid = showid
@@ -260,9 +264,9 @@ class IdPanel(wx.Panel):
         self.sizer_label.Add(h_label_sizer, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
-        self.icon_display = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_display = wxStaticBitmap(self, wx.ID_ANY)
         self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
-        self.icon_hidden = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_hidden = wxStaticBitmap(self, wx.ID_ANY)
         self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
         self.icon_hidden.SetBitmap(
             mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE)
@@ -457,6 +461,7 @@ class LinePropPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
@@ -524,8 +529,8 @@ class LinePropPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.tab_length.SetMaxSize(dip_size(self, 100, -1))
-        label1 = wx.StaticText(self, wx.ID_ANY, _("Tab-Length"))
-        label2 = wx.StaticText(self, wx.ID_ANY, _("Tabs"))
+        label1 = wxStaticText(self, wx.ID_ANY, _("Tab-Length"))
+        label2 = wxStaticText(self, wx.ID_ANY, _("Tabs"))
         self.sizer_tabs = StaticBoxSizer(
             self, wx.ID_ANY, _("Tabs/Bridges"), wx.HORIZONTAL
         )
@@ -735,13 +740,14 @@ class StrokeWidthPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         s_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Stroke-Width"), wx.HORIZONTAL)
         main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
         # Plus one combobox + value field for stroke width
-        strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
+        strokewidth_label = wxStaticText(self, wx.ID_ANY, label=_("Width:"))
         self.text_width = TextCtrl(
             self,
             wx.ID_ANY,
@@ -903,6 +909,7 @@ class PositionSizePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.text_x = TextCtrl(
             self,
@@ -1165,6 +1172,7 @@ class PreventChangePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.check_lock = wxCheckBox(self, wx.ID_ANY, _("Lock element"))
         self.__set_properties()
@@ -1232,6 +1240,7 @@ class RoundedRectPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.fonts = []
 

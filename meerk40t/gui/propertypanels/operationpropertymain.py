@@ -9,6 +9,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -34,6 +35,7 @@ class LayerSettingPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
 
         layer_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Layer:"), wx.HORIZONTAL)
@@ -352,6 +354,7 @@ class SpeedPpiPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
 
         self.context.device.setting(bool, "use_percent_for_power_display", False)
@@ -377,7 +380,7 @@ class SpeedPpiPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
             nonzero=True,
         )
-        self.trailer_speed = wx.StaticText(self, id=wx.ID_ANY)
+        self.trailer_speed = wxStaticText(self, id=wx.ID_ANY)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
         speed_sizer.Add(self.trailer_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -394,7 +397,7 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.trailer_power = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
+        self.trailer_power = wxStaticText(self, id=wx.ID_ANY, label=_("/1000"))
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
         self.power_sizer.Add(self.trailer_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -626,6 +629,7 @@ class PassesPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         self.has_kerf = False
 
@@ -650,7 +654,7 @@ class PassesPanel(wx.Panel):
                 + "as a placeholder for another part (eg inlays)."
             )
         )
-        self.kerf_label = wx.StaticText(self, wx.ID_ANY, "")
+        self.kerf_label = wxStaticText(self, wx.ID_ANY, "")
         self.sizer_kerf.Add(self.text_kerf, 1, wx.EXPAND, 0)
         self.sizer_kerf.Add(self.kerf_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 

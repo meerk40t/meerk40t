@@ -8,10 +8,13 @@ from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     dip_size,
+    wxBitmapButton,
     wxButton,
     wxCheckBox,
+    wxListBox,
     wxRadioBox,
     wxToggleButton,
+    wxStaticText,
 )
 
 from ...svgelements import Color
@@ -73,10 +76,9 @@ class FontHistory(wx.Panel):
     def __init__(self, *args, context=None, textbox=None, callback=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.FONTHISTORY = 4
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.last_font = []
         self.callback = callback
         self.textbox = textbox
@@ -86,7 +88,7 @@ class FontHistory(wx.Panel):
 
         for i in range(self.FONTHISTORY):
             self.last_font.append(
-                wx.StaticText(
+                wxStaticText(
                     self,
                     wx.ID_ANY,
                     _("<empty>"),
@@ -155,11 +157,10 @@ class TextVariables(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.textbox = textbox
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
-        self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
+        self.lb_variables = wxListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
         sizer_h_variables = StaticBoxSizer(
             self,
@@ -184,14 +185,13 @@ class TextPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.renderer = LaserRender(self.context)
         self.SetHelpText("textproperty")
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
-        self.label_fonttest = wx.StaticText(
+        self.label_fonttest = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
         )
         self.label_fonttest.SetMinSize(dip_size(self, -1, 90))
@@ -205,7 +205,7 @@ class TextPropertyPanel(ScrolledPanel):
                 "Segoe UI",
             )
         )
-        self.button_choose_font = wx.BitmapButton(
+        self.button_choose_font = wxBitmapButton(
             self, wx.ID_ANY, icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.panel_id = IdPanel(
@@ -392,12 +392,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.rb_align = wxRadioBox(
             self,
             wx.ID_ANY,
-            "",
-            wx.DefaultPosition,
-            wx.DefaultSize,
-            align_options,
-            len(align_options),
-            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+            label="",
+            choices=align_options,
         )
         self.rb_align.SetToolTip(
             _("Define where to place the origin (i.e. current mouse position)")
@@ -435,6 +431,8 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_main.Add(sizer_anchor, 0, wx.EXPAND, 0)
 
         self.notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self.context.themes.set_window_colors(self.notebook)
+
         page_main = wx.Panel(self.notebook, wx.ID_ANY)
         sizer_page_main = wx.BoxSizer(wx.VERTICAL)
         self.panel_fill.Reparent(page_main)
