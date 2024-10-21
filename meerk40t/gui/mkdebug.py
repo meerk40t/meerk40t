@@ -332,13 +332,13 @@ class DebugColorPanel(ScrolledPanel):
                     sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
                     count = 0
 
-                col = wx.SystemSettings().GetColour(getattr(wx, prop))
+                col:wx.Colour = wx.SystemSettings().GetColour(getattr(wx, prop))
                 infosizer = wx.BoxSizer(wx.VERTICAL)
                 box = wx.StaticBitmap(
                     self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
                 )
                 box.SetBackgroundColour(col)
-                box.SetToolTip(prop)
+                box.SetToolTip(f"{prop}: {col.GetAsString()}")
                 lbl = wx.StaticText(self, wx.ID_ANY, prop[len(pattern) :])
                 lbl.SetFont(font)
                 lbl.SetMinSize(wx.Size(75, -1))
