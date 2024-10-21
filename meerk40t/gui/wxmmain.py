@@ -30,7 +30,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
-from meerk40t.gui.wxutils import wxButton
+from meerk40t.gui.wxutils import wxButton, wxStaticText
 from meerk40t.kernel import Job, get_safe_path, lookup_listener, signal_listener
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
@@ -4905,12 +4905,12 @@ class MeerK40t(MWindow):
             options_1 = (_("Default"), _("Left Edge"), _("Center"), _("Right Edge"))
             options_2 = (_("Default"), _("Top Edge"), _("Center"), _("Bottom Edge"))
             sizer = wx.BoxSizer(wx.VERTICAL)
-            label = wx.StaticText(
+            label = wxStaticText(
                 dlg, wx.ID_ANY, _("Where do you want to place the content of the file?")
             )
             sizer.Add(label, 0, wx.EXPAND, 0)
             s1 = wx.BoxSizer(wx.HORIZONTAL)
-            lbl1 = wx.StaticText(dlg, wx.ID_ANY, _("Horizontal:"))
+            lbl1 = wxStaticText(dlg, wx.ID_ANY, _("Horizontal:"))
             combo1 = wx.ComboBox(
                 dlg, wx.ID_ANY, choices=options_1, style=wx.CB_DROPDOWN | wx.CB_READONLY
             )
@@ -4918,7 +4918,7 @@ class MeerK40t(MWindow):
             s1.Add(lbl1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
             s1.Add(combo1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             s2 = wx.BoxSizer(wx.HORIZONTAL)
-            lbl2 = wx.StaticText(dlg, wx.ID_ANY, _("Vertical:"))
+            lbl2 = wxStaticText(dlg, wx.ID_ANY, _("Vertical:"))
             combo2 = wx.ComboBox(
                 dlg, wx.ID_ANY, choices=options_2, style=wx.CB_DROPDOWN | wx.CB_READONLY
             )

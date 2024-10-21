@@ -6,7 +6,13 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -117,11 +123,11 @@ class TCPController(MWindow):
         info_right = StaticBoxSizer(
             self, wx.ID_ANY, label=_("Connection"), orientation=wx.HORIZONTAL
         )
-        label_8 = wx.StaticText(self, wx.ID_ANY, _("Address"))
+        label_8 = wxStaticText(self, wx.ID_ANY, _("Address"))
         info_right.Add(label_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.Add(self.text_ip_host, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.AddSpacer(20)
-        label_9 = wx.StaticText(self, wx.ID_ANY, _("Port"))
+        label_9 = wxStaticText(self, wx.ID_ANY, _("Port"))
         info_right.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.Add(self.text_port, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -134,7 +140,7 @@ class TCPController(MWindow):
         )
         buffer_sizer.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
 
-        label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))
+        label_12 = wxStaticText(self, wx.ID_ANY, _("Buffer Size: "))
         total_write_buffer = wx.BoxSizer(wx.HORIZONTAL)
         left_buffer = wx.BoxSizer(wx.HORIZONTAL)
         right_buffer = wx.BoxSizer(wx.HORIZONTAL)
@@ -142,7 +148,7 @@ class TCPController(MWindow):
         left_buffer.Add(self.text_buffer_length, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         total_write_buffer.Add(left_buffer, 1, wx.EXPAND, 0)
 
-        label_13 = wx.StaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
+        label_13 = wxStaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
         right_buffer.Add(label_13, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         right_buffer.Add(self.text_buffer_max, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         total_write_buffer.Add(right_buffer, 1, wx.EXPAND, 0)

@@ -9,7 +9,6 @@ import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Length
-from meerk40t.gui.themes import color_distance
 
 _ = wx.GetTranslation
 
@@ -202,7 +201,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                     sizer = wx.BoxSizer(wx.VERTICAL)
                     fields = []
                     for prompt in prompts:
-                        label = wx.StaticText(dlg, wx.ID_ANY, prompt["prompt"])
+                        label = wxStaticText(dlg, wx.ID_ANY, prompt["prompt"])
                         sizer.Add(label, 0, wx.EXPAND, 0)
                         dtype = prompt["type"]
                         if dtype == bool:
@@ -463,7 +462,7 @@ def create_menu(gui, node, elements):
 # GUI CONTROL OVERRIDES
 ##############
 def set_color_according_to_theme(control, background, foreground):
-    win = control.GetParent()
+    win = control
     while win is not None:
         if hasattr(win, "context") and hasattr(win.context, "themes"):
             if background:
@@ -1110,16 +1109,6 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
 
-    # def Layout(self):
-    #     bg_col = self.parent.GetBackgroundColour()
-    #     fg_col = self.parent.GetForegroundColour()
-    #     for ctrl in self.Children:
-    #         if hasattr(ctrl, "GetForegroundColour"):
-    #             c = ctrl.GetForegroundColour()
-    #             if color_distance(c, bg_col) < color_distance(c, fg_col):
-    #                 ctrl.SetForegroundColour(fg_col)
-    #     super().Layout()
-
 class ScrolledPanel(SP):
     """
     We sometimes delete things fast enough that they call _SetupAfter when dead and crash.
@@ -1142,8 +1131,6 @@ class wxListCtrl(wx.ListCtrl):
     ):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         self.context = context
-        if self.context:
-            self.context.themes.set_window_colors(self)
         self.list_name = list_name
         # The resize event is never triggered, so tap into the parent...
         # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)
@@ -1419,9 +1406,9 @@ class wxRadioBox(StaticBoxSizer):
             ctrl.SetBackgroundColour(wc)
 
 class wxStaticText(wx.StaticText):
-    def __init__(*args, **kwargs):
-        super().init(*args, **kwargs)
-        set_color_according_to_theme("label_bg", "label_fg")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_color_according_to_theme(self, "label_bg", "label_fg")
 
 ##############
 # GUI KEYSTROKE FUNCTIONS

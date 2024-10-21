@@ -13,6 +13,7 @@ from meerk40t.gui.wxutils import (
     TextCtrl,
     dip_size,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.kernel import signal_listener
 
@@ -118,7 +119,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_buffer.Add(self.text_buffer_length, 1, wx.EXPAND, 0)
 
-        label_14 = wx.StaticText(self, wx.ID_ANY, "/")
+        label_14 = wxStaticText(self, wx.ID_ANY, "/")
         sizer_buffer.Add(label_14, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.spin_packet_buffer_max = wx.SpinCtrl(

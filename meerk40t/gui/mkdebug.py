@@ -19,6 +19,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxRadioBox,
     wxStaticBitmap,
+    wxStaticText,
     wxToggleButton,
 )
 from meerk40t.svgelements import Color
@@ -127,7 +128,7 @@ class ShutdownPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
-        info = wx.StaticText(
+        info = wxStaticText(
             self,
             wx.ID_ANY,
             (
@@ -339,7 +340,7 @@ class DebugColorPanel(ScrolledPanel):
                 )
                 box.SetBackgroundColour(col)
                 box.SetToolTip(f"{prop}: {col.GetAsString()}")
-                lbl = wx.StaticText(self, wx.ID_ANY, prop[len(pattern) :])
+                lbl = wxStaticText(self, wx.ID_ANY, prop[len(pattern) :])
                 lbl.SetFont(font)
                 lbl.SetMinSize(wx.Size(75, -1))
                 infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
@@ -431,7 +432,7 @@ class DebugColorPanel(ScrolledPanel):
             )
             box.SetBackgroundColour(col)
             box.SetToolTip(entry)
-            lbl = wx.StaticText(self, wx.ID_ANY, entry)
+            lbl = wxStaticText(self, wx.ID_ANY, entry)
             lbl.SetFont(font)
             lbl.SetMinSize(wx.Size(75, -1))
             infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
@@ -469,7 +470,7 @@ class DebugIconPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        lbl = wx.StaticText(self, wx.ID_ANY, "Pick icon")
+        lbl = wxStaticText(self, wx.ID_ANY, "Pick icon")
 
         self.icon_list = list()
         for entry in dir(mkicons):
@@ -533,7 +534,7 @@ class DebugWindowPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        lbl = wx.StaticText(self, wx.ID_ANY, "Pick Window")
+        lbl = wxStaticText(self, wx.ID_ANY, "Pick Window")
 
         self.window_list = []
         for find in self.context.kernel.find("window/"):

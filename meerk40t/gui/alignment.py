@@ -26,6 +26,7 @@ from ..gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticText,
 )
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
@@ -40,10 +41,10 @@ class InfoPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
-        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_info_main = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
         self.image_default = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)

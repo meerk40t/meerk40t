@@ -29,6 +29,7 @@ from .wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxStaticText,
 )
 
 _ = wx.GetTranslation
@@ -451,21 +452,21 @@ class BasicOpPanel(wx.Panel):
         info_sizer.Add(self.check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="A")
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label="A")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Active"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="S")
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label="S")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Show"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="C")
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label="C")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
@@ -473,7 +474,7 @@ class BasicOpPanel(wx.Panel):
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         unit = " [%]" if self.use_percent else ""
-        header = wx.StaticText(
+        header = wxStaticText(
             self.op_panel, wx.ID_ANY, label=_("Power {unit}").format(unit=unit)
         )
         self.context.themes.set_window_colors(header)
@@ -481,7 +482,7 @@ class BasicOpPanel(wx.Panel):
         header.SetMaxSize(dip_size(self, 70, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
         self.context.themes.set_window_colors(header)
         header.SetMaxSize(dip_size(self, 30, -1))
         header.SetMaxSize(dip_size(self, 70, -1))
@@ -647,7 +648,7 @@ class BasicOpPanel(wx.Panel):
                     t_speed.Enable(False)
                 t_speed.SetActionRoutine(on_speed(op, t_speed))
 
-                header = wx.StaticText(
+                header = wxStaticText(
                     self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
                 )
                 header.SetToolTip(

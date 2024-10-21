@@ -8,7 +8,7 @@ from meerk40t.gui.icons import (
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
-from meerk40t.gui.wxutils import TextCtrl, dip_size, wxCheckBox
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxCheckBox, wxStaticText
 from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -88,15 +88,15 @@ class WarningPanel(wx.Panel):
             image = wx.StaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=20))
 
-            label1 = wx.StaticText(
+            label1 = wxStaticText(
                 self, id=wx.ID_ANY, label=_(entry["op"].capitalize())
             )
 
-            label2 = wx.StaticText(
+            label2 = wxStaticText(
                 self, id=wx.ID_ANY, label=_(entry["attr"].capitalize())
             )
 
-            label3 = wx.StaticText(self, id=wx.ID_ANY, label="<")
+            label3 = wxStaticText(self, id=wx.ID_ANY, label="<")
             chk1 = wxCheckBox(self, id=wx.ID_ANY, label="")
             chk1.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_min"] = chk1
@@ -117,7 +117,7 @@ class WarningPanel(wx.Panel):
             chk1.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, False))
             ctrl1.SetActionRoutine(self.on_text_limit(ctrl1, entry, False))
 
-            label4 = wx.StaticText(self, id=wx.ID_ANY, label=">")
+            label4 = wxStaticText(self, id=wx.ID_ANY, label=">")
             chk2 = wxCheckBox(self, id=wx.ID_ANY, label="")
             chk2.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_max"] = chk2
@@ -138,7 +138,7 @@ class WarningPanel(wx.Panel):
             chk2.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, True))
             ctrl2.SetActionRoutine(self.on_text_limit(ctrl2, entry, True))
 
-            label5 = wx.StaticText(self, id=wx.ID_ANY, label=unit1)
+            label5 = wxStaticText(self, id=wx.ID_ANY, label=unit1)
 
             # Store the corresponding attribute for later updates
             label5.attribute = entry["attr"]
@@ -158,7 +158,7 @@ class WarningPanel(wx.Panel):
 
         hsizer.Layout()
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        infolabel = wx.StaticText(
+        infolabel = wxStaticText(
             self,
             id=wx.ID_ANY,
             label=_(

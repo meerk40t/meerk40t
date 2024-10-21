@@ -10,7 +10,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
-from meerk40t.gui.wxutils import wxCheckBox
+from meerk40t.gui.wxutils import wxCheckBox, wxStaticText
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -35,7 +35,7 @@ class SimpleInfoWidget(StatusBarWidget):
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
 
-        self.info_text = wx.StaticText(self.parent, wx.ID_ANY, label="")
+        self.info_text = wxStaticText(self.parent, wx.ID_ANY, label="")
         if self.fontsize is not None:
             self.info_text.SetFont(
                 wx.Font(

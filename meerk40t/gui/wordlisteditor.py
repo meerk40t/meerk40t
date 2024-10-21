@@ -4,6 +4,7 @@ import re
 import wx
 from wx import aui
 
+from ..extra.encode_detect import EncodingDetectFile
 from ..kernel import signal_listener
 from .icons import (
     get_default_icon_size,
@@ -16,8 +17,15 @@ from .icons import (
     icons8_paste,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox, wxListCtrl
-from ..extra.encode_detect import EncodingDetectFile
+from .wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxListCtrl,
+    wxRadioBox,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -167,7 +175,7 @@ class WordlistPanel(wx.Panel):
         sizer_index_left = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grid_left.Add(sizer_index_left, 0, wx.EXPAND, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
+        label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
         sizer_index_left.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.cbo_Index = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -202,7 +210,7 @@ class WordlistPanel(wx.Panel):
         sizer_edit_wordlist_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_edit_content_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
+        dummylabel = wxStaticText(self, wx.ID_ANY, " ")
         sizer_index_left.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_index_left.Add(
             sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
@@ -289,14 +297,14 @@ class WordlistPanel(wx.Panel):
         sizer_edit_content_buttons.Add(self.btn_edit_content_paste, 0, wx.EXPAND, 0)
 
         sizer_index_right = wx.BoxSizer(wx.HORIZONTAL)
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for field:"))
+        label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for field:"))
         sizer_index_right.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.cbo_index_single = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_right.Add(self.cbo_index_single, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
+        dummylabel = wxStaticText(self, wx.ID_ANY, " ")
         sizer_index_right.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_index_right.Add(
             sizer_edit_content_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
@@ -338,7 +346,7 @@ class WordlistPanel(wx.Panel):
         sizer_exit.Add(self.check_autosave, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.check_autosave.SetValue(self.context.wordlist_autosave)
 
-        self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_message = wxStaticText(self, wx.ID_ANY, "")
         sizer_exit.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_lower = wx.BoxSizer(wx.HORIZONTAL)
@@ -733,7 +741,7 @@ class ImportPanel(wx.Panel):
         sizer_csv = wx.BoxSizer(wx.HORIZONTAL)
         info_box.Add(sizer_csv, 1, wx.EXPAND, 0)
 
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("Import CSV-File"))
+        label_1 = wxStaticText(self, wx.ID_ANY, _("Import CSV-File"))
         sizer_csv.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY, "")

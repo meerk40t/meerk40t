@@ -46,7 +46,13 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
-from meerk40t.gui.wxutils import wxBitmapButton, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxBitmapButton,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -1337,7 +1343,7 @@ class MovePanel(wx.Panel):
             label += "\n" + _("Current: ") + f"{x.length_mm}, {y.length_mm}"
             btn.SetToolTip(label)
 
-        self.label_pos = wx.StaticText(self, wx.ID_ANY, "---")
+        self.label_pos = wxStaticText(self, wx.ID_ANY, "---")
         self.__set_properties()
         self.__do_layout()
 
@@ -1383,13 +1389,13 @@ class MovePanel(wx.Panel):
         )
         button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
+        label_9 = wxStaticText(self, wx.ID_ANY, "X:")
         self.text_position_x.SetMinSize(dip_size(self, 45, -1))
         self.text_position_y.SetMinSize(dip_size(self, 45, -1))
         h_x_sizer.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
-        label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
+        label_10 = wxStaticText(self, wx.ID_ANY, "Y:")
         h_y_sizer.Add(label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
@@ -1583,7 +1589,7 @@ class PulsePanel(wx.Panel):
         sizer_5 = StaticBoxSizer(self, wx.ID_ANY, _("Short Pulse:"), wx.HORIZONTAL)
         sizer_5.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_5.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
+        label_4 = wxStaticText(self, wx.ID_ANY, _(" ms"))
         sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(sizer_5)
         sizer_5.Fit(self)
@@ -1619,8 +1625,8 @@ class PulsePanel(wx.Panel):
 #         self.button_navigate_resize = wxBitmapButton(
 #             self, wx.ID_ANY, icons8_compress.GetBitmap(resize=32)
 #         )
-#         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-#         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+#         self.label_9 = wxStaticText(self, wx.ID_ANY, _("Width:"))
+#         self.label_10 = wxStaticText(self, wx.ID_ANY, _("Height:"))
 
 #         self.text_width = TextCtrl(
 #             self,

@@ -11,6 +11,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxStaticText,
     wxToggleButton,
 )
 from meerk40t.svgelements import Color
@@ -527,8 +528,8 @@ class LinePropPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.tab_length.SetMaxSize(dip_size(self, 100, -1))
-        label1 = wx.StaticText(self, wx.ID_ANY, _("Tab-Length"))
-        label2 = wx.StaticText(self, wx.ID_ANY, _("Tabs"))
+        label1 = wxStaticText(self, wx.ID_ANY, _("Tab-Length"))
+        label2 = wxStaticText(self, wx.ID_ANY, _("Tabs"))
         self.sizer_tabs = StaticBoxSizer(
             self, wx.ID_ANY, _("Tabs/Bridges"), wx.HORIZONTAL
         )
@@ -745,7 +746,7 @@ class StrokeWidthPanel(wx.Panel):
         s_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Stroke-Width"), wx.HORIZONTAL)
         main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
         # Plus one combobox + value field for stroke width
-        strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
+        strokewidth_label = wxStaticText(self, wx.ID_ANY, label=_("Width:"))
         self.text_width = TextCtrl(
             self,
             wx.ID_ANY,

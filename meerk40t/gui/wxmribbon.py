@@ -24,14 +24,20 @@ from wx import aui
 from meerk40t.gui.icons import (
     get_default_icon_size,
     icon_add_new,
-    icon_trash,
     icon_edit,
+    icon_trash,
     icons8_down,
     icons8_opened_folder,
     icons8_up,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticText,
+)
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -1366,25 +1372,25 @@ class RibbonEditor(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         line1 = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(dlg, wx.ID_ANY, _("Label"))
+        label1 = wxStaticText(dlg, wx.ID_ANY, _("Label"))
         txt_label = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["label"])
         line1.Add(label1, 0, wx.EXPAND, 0)
         line1.Add(txt_label, 1, wx.EXPAND, 0)
 
         line2 = wx.BoxSizer(wx.HORIZONTAL)
-        label2 = wx.StaticText(dlg, wx.ID_ANY, _("Tooltip"))
+        label2 = wxStaticText(dlg, wx.ID_ANY, _("Tooltip"))
         txt_tip = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["tip"])
         line2.Add(label2, 0, wx.EXPAND, 0)
         line2.Add(txt_tip, 1, wx.EXPAND, 0)
 
         line3 = wx.BoxSizer(wx.HORIZONTAL)
-        label3 = wx.StaticText(dlg, wx.ID_ANY, _("Action left click"))
+        label3 = wxStaticText(dlg, wx.ID_ANY, _("Action left click"))
         txt_action_left = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["action_left"])
         line3.Add(label3, 0, wx.EXPAND, 0)
         line3.Add(txt_action_left, 1, wx.EXPAND, 0)
 
         line4 = wx.BoxSizer(wx.HORIZONTAL)
-        label4 = wx.StaticText(dlg, wx.ID_ANY, _("Action right click"))
+        label4 = wxStaticText(dlg, wx.ID_ANY, _("Action right click"))
         txt_action_right = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["action_right"])
         line4.Add(label4, 0, wx.EXPAND, 0)
         line4.Add(txt_action_right, 1, wx.EXPAND, 0)
@@ -1395,7 +1401,7 @@ class RibbonEditor(wx.Panel):
             _("When at least two elemente selected"),
         )
         line5 = wx.BoxSizer(wx.HORIZONTAL)
-        label5 = wx.StaticText(dlg, wx.ID_ANY, _("Rule to enable"))
+        label5 = wxStaticText(dlg, wx.ID_ANY, _("Rule to enable"))
         combo_enable = wx.ComboBox(
             dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -1410,7 +1416,7 @@ class RibbonEditor(wx.Panel):
         line5.Add(combo_enable, 1, wx.EXPAND, 0)
 
         line6 = wx.BoxSizer(wx.HORIZONTAL)
-        label6 = wx.StaticText(dlg, wx.ID_ANY, _("Rule to display"))
+        label6 = wxStaticText(dlg, wx.ID_ANY, _("Rule to display"))
         combo_visible = wx.ComboBox(
             dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -1435,7 +1441,7 @@ class RibbonEditor(wx.Panel):
                     icon_list.append(icon)
 
         line7 = wx.BoxSizer(wx.HORIZONTAL)
-        label7 = wx.StaticText(dlg, wx.ID_ANY, _("Icon"))
+        label7 = wxStaticText(dlg, wx.ID_ANY, _("Icon"))
         combo_icon = wx.ComboBox(
             dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )

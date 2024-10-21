@@ -17,6 +17,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxRadioBox,
+    wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
@@ -38,10 +39,10 @@ class KerfPanel(wx.Panel):
         self.SetHelpText("kerf")
         self.text_speed = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_speed.set_range(0, 1000)
-        self.label_speed = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_speed = wxStaticText(self, wx.ID_ANY, "")
         self.text_power = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_power.set_range(0, 1000)
-        self.label_power = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_power = wxStaticText(self, wx.ID_ANY, "")
         self.set_power_info()
         self.set_speed_info()
 
@@ -125,33 +126,33 @@ class KerfPanel(wx.Panel):
         hline_type = wx.BoxSizer(wx.HORIZONTAL)
         hline_type.Add(self.radio_pattern, 0, wx.EXPAND, 0)
         hline_count = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        self.info_distance = wx.StaticText(self, wx.ID_ANY, "")
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Count:"))
+        self.info_distance = wxStaticText(self, wx.ID_ANY, "")
         size_it(mylbl, 85)
         hline_count.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.spin_count, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.info_distance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Minimum:"))
         size_it(mylbl, 85)
         hline_min.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min.Add(self.text_min, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Maximum:"))
         size_it(mylbl, 85)
         hline_max.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max.Add(self.text_max, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Size:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Size:"))
         size_it(mylbl, 85)
         hline_dim.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim.Add(self.text_dim, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Delta:"))
         size_it(mylbl, 85)
         hline_delta.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta.Add(self.text_delta, 1, wx.ALIGN_CENTER_VERTICAL, 0)

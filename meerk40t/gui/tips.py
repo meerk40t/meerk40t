@@ -23,7 +23,7 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size, wxButton, wxCheckBox
+from .wxutils import dip_size, wxButton, wxCheckBox, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -84,7 +84,7 @@ class TipPanel(wx.Panel):
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
-        self.label_position = wx.StaticText(
+        self.label_position = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
         )
 

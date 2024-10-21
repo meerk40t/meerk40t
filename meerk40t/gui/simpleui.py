@@ -14,7 +14,7 @@ from ..core.exceptions import BadFileError
 from .icons import get_default_icon_size, icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
 from .navigationpanels import Drag, Jog
-from .wxutils import StaticBoxSizer, wxButton
+from .wxutils import StaticBoxSizer, wxButton, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -70,14 +70,14 @@ class ProjectPanel(wx.Panel):
         )
         info_panel = StaticBoxSizer(self, wx.ID_ANY, "Project-Information", wx.VERTICAL)
         line1 = wx.BoxSizer(wx.HORIZONTAL)
-        lbl = wx.StaticText(self, wx.ID_ANY, "File:")
+        lbl = wxStaticText(self, wx.ID_ANY, "File:")
         lbl.SetMinSize(wx.Size(70, -1))
         self.info_file = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         line1.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         line1.Add(self.info_file, 1, wx.EXPAND, 0)
 
         line2 = wx.BoxSizer(wx.HORIZONTAL)
-        lbl = wx.StaticText(self, wx.ID_ANY, "Content:")
+        lbl = wxStaticText(self, wx.ID_ANY, "Content:")
         lbl.SetMinSize(wx.Size(70, -1))
         self.info_elements = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         self.info_operations = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
@@ -86,7 +86,7 @@ class ProjectPanel(wx.Panel):
         line2.Add(self.info_operations, 1, wx.EXPAND, 0)
 
         line3 = wx.BoxSizer(wx.HORIZONTAL)
-        lbl = wx.StaticText(self, wx.ID_ANY, "Status:")
+        lbl = wxStaticText(self, wx.ID_ANY, "Status:")
         lbl.SetMinSize(wx.Size(70, -1))
         self.info_status = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         line3.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)

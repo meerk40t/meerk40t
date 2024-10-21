@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icon_instruct_square,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox, wxStaticText
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -54,7 +54,7 @@ class LaserToolPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10.Add(sizer_1, 1, wx.EXPAND, 0)
 
-        label_1 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("A"))
+        label_1 = wxStaticText(self.nb_circle, wx.ID_ANY, _("A"))
         sizer_1.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_circle_1 = wxButton(self.nb_circle, wx.ID_ANY, _("Use position"))
@@ -66,13 +66,13 @@ class LaserToolPanel(wx.Panel):
         # How big should graphics become?
         desired_height = 6 * self.btn_set_circle_1.Size[1]
 
-        self.lbl_pos_1 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_1 = wxStaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_1.Add(self.lbl_pos_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10.Add(sizer_2, 1, wx.EXPAND, 0)
 
-        label_2 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("B"))
+        label_2 = wxStaticText(self.nb_circle, wx.ID_ANY, _("B"))
         sizer_2.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_circle_2 = wxButton(self.nb_circle, wx.ID_ANY, _("Use position"))
@@ -81,13 +81,13 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_2.Add(self.btn_set_circle_2, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_2 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_2 = wxStaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_2.Add(self.lbl_pos_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10.Add(sizer_3, 1, wx.EXPAND, 0)
 
-        label_3 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("C"))
+        label_3 = wxStaticText(self.nb_circle, wx.ID_ANY, _("C"))
         sizer_3.Add(label_3, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_circle_3 = wxButton(self.nb_circle, wx.ID_ANY, _("Use position"))
@@ -96,7 +96,7 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_3.Add(self.btn_set_circle_3, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_3 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_3 = wxStaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_3.Add(self.lbl_pos_3, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         img_instruction_1 = wx.StaticBitmap(
@@ -146,7 +146,7 @@ class LaserToolPanel(wx.Panel):
         sizer_5a = wx.BoxSizer(wx.HORIZONTAL)
         sizer_rect_vert.Add(sizer_5a, 1, wx.EXPAND, 0)
 
-        label_corner_1 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("Corner 1"))
+        label_corner_1 = wxStaticText(self.nb_rectangle, wx.ID_ANY, _("Corner 1"))
         sizer_5a.Add(label_corner_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_rect_1 = wxButton(self.nb_rectangle, wx.ID_ANY, _("Use position"))
@@ -155,13 +155,13 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_5a.Add(self.btn_set_rect_1, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_7 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_7 = wxStaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_5a.Add(self.lbl_pos_7, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_6a = wx.BoxSizer(wx.HORIZONTAL)
         sizer_rect_vert.Add(sizer_6a, 1, wx.EXPAND, 0)
 
-        label_corner_2 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("Corner 2"))
+        label_corner_2 = wxStaticText(self.nb_rectangle, wx.ID_ANY, _("Corner 2"))
         sizer_6a.Add(label_corner_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_rect_2 = wxButton(self.nb_rectangle, wx.ID_ANY, _("Use position"))
@@ -170,7 +170,7 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_6a.Add(self.btn_set_rect_2, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_8 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_8 = wxStaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_6a.Add(self.lbl_pos_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.img_instruction_2 = wx.StaticBitmap(
@@ -215,7 +215,7 @@ class LaserToolPanel(wx.Panel):
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(sizer_5, 1, wx.EXPAND, 0)
 
-        label_4 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side A 1"))
+        label_4 = wxStaticText(self.nb_square, wx.ID_ANY, _("Side A 1"))
         label_4.SetMinSize(dip_size(self.nb_square, 45, -1))
         sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -225,13 +225,13 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_5.Add(self.btn_set_square_1, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_4 = wx.StaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_4 = wxStaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
         sizer_5.Add(self.lbl_pos_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(sizer_6, 1, wx.EXPAND, 0)
 
-        label_5 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side A 2"))
+        label_5 = wxStaticText(self.nb_square, wx.ID_ANY, _("Side A 2"))
         label_5.SetMinSize(dip_size(self.nb_square, 45, -1))
         sizer_6.Add(label_5, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -241,13 +241,13 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_6.Add(self.btn_set_square_2, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_5 = wx.StaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_5 = wxStaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
         sizer_6.Add(self.lbl_pos_5, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(sizer_7, 1, wx.EXPAND, 0)
 
-        label_6 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side B"))
+        label_6 = wxStaticText(self.nb_square, wx.ID_ANY, _("Side B"))
         label_6.SetMinSize(dip_size(self.nb_square, 45, -1))
         sizer_7.Add(label_6, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -257,13 +257,13 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_7.Add(self.btn_set_square_3, 0, wx.EXPAND, 0)
 
-        self.lbl_pos_6 = wx.StaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
+        self.lbl_pos_6 = wxStaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
         sizer_7.Add(self.lbl_pos_6, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         size_width = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(size_width, 1, wx.EXPAND, 0)
 
-        label_wd = wx.StaticText(self.nb_square, wx.ID_ANY, _("Dimension"))
+        label_wd = wxStaticText(self.nb_square, wx.ID_ANY, _("Dimension"))
         size_width.Add(label_wd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_width = wx.TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)

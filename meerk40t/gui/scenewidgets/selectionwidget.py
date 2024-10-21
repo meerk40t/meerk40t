@@ -36,6 +36,7 @@ from meerk40t.gui.wxutils import (
     matrix_scale,
     wxButton,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
@@ -2228,7 +2229,7 @@ class RefAlign(wx.Dialog):
 
         sizer_ref_align = wx.BoxSizer(wx.VERTICAL)
 
-        label_1 = wx.StaticText(
+        label_1 = wxStaticText(
             self,
             wx.ID_ANY,
             _("Move the selection into the reference object and scale the elements."),

@@ -20,6 +20,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxListCtrl,
+    wxStaticText,
 )
 from meerk40t.svgelements import Matrix
 
@@ -128,7 +129,7 @@ class CropPanel(wx.Panel):
         self.check_enable_crop = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.button_reset = wxButton(self, wx.ID_ANY, _("Reset"))
 
-        self.label_info = wx.StaticText(self, wx.ID_ANY, "--")
+        self.label_info = wxStaticText(self, wx.ID_ANY, "--")
 
         self.slider_left = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
@@ -242,13 +243,13 @@ class CropPanel(wx.Panel):
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bottom = wx.BoxSizer(wx.HORIZONTAL)
 
-        lbl_left = wx.StaticText(self, wx.ID_ANY, _("Left"))
+        lbl_left = wxStaticText(self, wx.ID_ANY, _("Left"))
         lbl_left.SetMinSize(dip_size(self, 60, -1))
-        lbl_right = wx.StaticText(self, wx.ID_ANY, _("Right"))
+        lbl_right = wxStaticText(self, wx.ID_ANY, _("Right"))
         lbl_right.SetMinSize(dip_size(self, 60, -1))
-        lbl_bottom = wx.StaticText(self, wx.ID_ANY, _("Bottom"))
+        lbl_bottom = wxStaticText(self, wx.ID_ANY, _("Bottom"))
         lbl_bottom.SetMinSize(dip_size(self, 60, -1))
-        lbl_top = wx.StaticText(self, wx.ID_ANY, _("Top"))
+        lbl_top = wxStaticText(self, wx.ID_ANY, _("Top"))
         lbl_top.SetMinSize(dip_size(self, 60, -1))
 
         self.text_left.SetMaxSize(dip_size(self, 60, -1))
@@ -788,7 +789,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_turn = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_turn, 0, wx.EXPAND, 0)
 
-        label_turn = wx.StaticText(self, wx.ID_ANY, _("Turnpolicy"))
+        label_turn = wxStaticText(self, wx.ID_ANY, _("Turnpolicy"))
         label_turn.SetMinSize(dip_size(self, 70, -1))
         sizer_turn.Add(label_turn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.turn_choices = [
@@ -824,7 +825,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_turd = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_turd, 0, wx.EXPAND, 0)
 
-        label_turd = wx.StaticText(self, wx.ID_ANY, _("Despeckle"))
+        label_turd = wxStaticText(self, wx.ID_ANY, _("Despeckle"))
         label_turd.SetMinSize(dip_size(self, 70, -1))
         sizer_turd.Add(label_turd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -837,7 +838,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_alphamax = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_alphamax, 0, wx.EXPAND, 0)
 
-        label_alphamax = wx.StaticText(self, wx.ID_ANY, _("Corners"))
+        label_alphamax = wxStaticText(self, wx.ID_ANY, _("Corners"))
         label_alphamax.SetMinSize(dip_size(self, 70, -1))
         sizer_alphamax.Add(label_alphamax, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -852,7 +853,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_opticurve = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_opticurve, 0, wx.EXPAND, 0)
 
-        label_opticurve = wx.StaticText(self, wx.ID_ANY, _("Simplify"))
+        label_opticurve = wxStaticText(self, wx.ID_ANY, _("Simplify"))
         label_opticurve.SetMinSize(dip_size(self, 70, -1))
         sizer_opticurve.Add(label_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -868,7 +869,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_opttolerance = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_opttolerance, 0, wx.EXPAND, 0)
 
-        label_opttolerance = wx.StaticText(self, wx.ID_ANY, _("Tolerance"))
+        label_opttolerance = wxStaticText(self, wx.ID_ANY, _("Tolerance"))
         label_opttolerance.SetMinSize(dip_size(self, 70, -1))
         sizer_opttolerance.Add(label_opttolerance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -884,7 +885,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_blacklevel = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_blacklevel, 0, wx.EXPAND, 0)
 
-        label_blacklevel = wx.StaticText(self, wx.ID_ANY, _("Black-Level"))
+        label_blacklevel = wxStaticText(self, wx.ID_ANY, _("Black-Level"))
         label_blacklevel.SetMinSize(dip_size(self, 70, -1))
         sizer_blacklevel.Add(label_blacklevel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -900,7 +901,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.button_vector = wxButton(self, wx.ID_ANY, _("Vectorize"))
         sizer_buttons.Add(self.button_vector, 0, 0, 0)
 
-        label_spacer = wx.StaticText(self, wx.ID_ANY, " ")
+        label_spacer = wxStaticText(self, wx.ID_ANY, " ")
         sizer_buttons.Add(label_spacer, 1, 0, 0)
 
         self.button_generate = wxButton(self, wx.ID_ANY, _("Preview"))

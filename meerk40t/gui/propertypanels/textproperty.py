@@ -13,6 +13,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxRadioBox,
     wxToggleButton,
+    wxStaticText,
 )
 
 from ...svgelements import Color
@@ -190,7 +191,7 @@ class TextPropertyPanel(ScrolledPanel):
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
-        self.label_fonttest = wx.StaticText(
+        self.label_fonttest = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
         )
         self.label_fonttest.SetMinSize(dip_size(self, -1, 90))

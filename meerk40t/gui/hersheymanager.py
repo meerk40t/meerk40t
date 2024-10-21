@@ -2,6 +2,7 @@ import os
 
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -23,12 +24,12 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
-    wxToggleButton,
     wxListCtrl,
+    wxStaticText,
+    wxToggleButton,
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
-from meerk40t.core.units import Length
 
 _ = wx.GetTranslation
 
@@ -805,7 +806,7 @@ class PanelFontSelect(wx.Panel):
         ):
             btn.SetMaxSize(dip_size(self, icon_size + 4, -1))
 
-        lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
+        lbl_spacer = wxStaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
         self.SetSizer(mainsizer)
@@ -1018,7 +1019,7 @@ class PanelFontManager(wx.Panel):
         self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         sizer_buttons.Add(self.btn_delete, 0, wx.EXPAND, 0)
 
-        lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
+        lbl_spacer = wxStaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
         self.btn_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))

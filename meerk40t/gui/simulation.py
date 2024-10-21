@@ -1,9 +1,9 @@
 import math
 import platform
+from time import perf_counter, sleep
 
 import wx
 
-from time import perf_counter, sleep
 from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode.cubiccut import CubicCut
@@ -49,7 +49,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxStaticText
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -1173,12 +1173,12 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_speed_options.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
 
-        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed") + " ")
+        label_playback_speed = wxStaticText(self, wx.ID_ANY, _("Playback Speed") + " ")
         sizer_pb_speed.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_pb_speed.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
 
         sizer_display = wx.BoxSizer(wx.HORIZONTAL)
-        label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
+        label_playback_mode = wxStaticText(self, wx.ID_ANY, _("Mode") + " ")
         sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Make sure it has about textbox size, otherwise too narrow
         self.radio_cut.SetMinSize(dip_size(self, -1, 23))
