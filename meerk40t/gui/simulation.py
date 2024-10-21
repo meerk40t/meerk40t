@@ -74,6 +74,8 @@ class OperationsPanel(wx.Panel):
         else:
             self.plan_name = self.cutplan.name
         self.list_operations = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
+        self.context.themes.set_window_colors(self.list_operations)
+
         self.text_operation_param = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
@@ -476,6 +478,7 @@ class CutcodePanel(wx.Panel):
         self.list_cutcode = wx.ListBox(
             self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE
         )
+        self.context.themes.set_window_colors(self.list_cutcode)
         self.last_selected = []
         self.display_highlighted_only = False
         # self.text_operation_param = wx.TextCtrl(

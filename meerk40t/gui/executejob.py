@@ -35,6 +35,8 @@ class PlannerPanel(wx.Panel):
         self.combo_device.SetSelection(index)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
+        for ctrl in (self.list_operations, self.list_command):
+            self.context.themes.set_window_colors(ctrl)
 
         choices = self.context.lookup("choices/optimize")  # [:7]
         self.panel_optimize = ChoicePropertyPanel(

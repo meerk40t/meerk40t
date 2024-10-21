@@ -158,6 +158,7 @@ class TextVariables(wx.Panel):
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
+        self.context.themes.set_window_colors(self.lb_variables)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
         sizer_h_variables = StaticBoxSizer(
             self,

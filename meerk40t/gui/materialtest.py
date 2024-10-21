@@ -60,6 +60,7 @@ class SaveLoadPanel(wx.Panel):
         self.list_slots = wx.ListBox(
             self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE
         )
+        self.context.themes.set_window_colors(self.list_slots)
         self.list_slots.SetToolTip(_("Select an entry to reload"))
         sizer_main.Add(sizer_name, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_slots, 1, wx.EXPAND, 0)

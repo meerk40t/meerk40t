@@ -9,6 +9,7 @@ import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Length
+from meerk40t.gui.themes import color_distance
 
 _ = wx.GetTranslation
 
@@ -935,6 +936,8 @@ class wxTreeCtrl(wx.TreeCtrl):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        self.SetForegroundColour(self.GetParent().GetForegroundColour())
+        self.SetBackgroundColour(self.GetParent().GetBackgroundColour())
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -1075,6 +1078,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         self.sbox = wx.StaticBox(parent, id, label=label)
         self.sbox.SetMinSize(dip_size(self, 50, 50))
         super().__init__(self.sbox, orientation)
+        self.parent = parent
 
     def Show(self, show=True):
         self.sbox.Show(show)
@@ -1085,6 +1089,15 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
 
+    def Layout(self):
+        bg_col = self.parent.GetBackgroundColour()
+        fg_col = self.parent.GetForegroundColour()
+        for ctrl in self.Children:
+            if hasattr(ctrl, "GetForegroundColour"):
+                c = ctrl.GetForegroundColour()
+                if color_distance(c, bg_col) < color_distance(c, fg_col):
+                    ctrl.SetForegroundColour(fg_col)
+        super().Layout()
 
 class ScrolledPanel(SP):
     """
@@ -1108,7 +1121,8 @@ class wxListCtrl(wx.ListCtrl):
     ):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         self.context = context
-        self.context.themes.set_window_colors(self)
+        if self.context:
+            self.context.themes.set_window_colors(self)
         self.list_name = list_name
         # The resize event is never triggered, so tap into the parent...
         # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)

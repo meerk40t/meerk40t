@@ -700,7 +700,7 @@ class RibbonEditor(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.context.themes.set_window_color(self)
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("ribboneditor")
         self.ribbon_identifier = "primary"
 
@@ -729,9 +729,12 @@ class RibbonEditor(wx.Panel):
         sizer_ribbons.Add(self.combo_ribbons, 0, wx.EXPAND, 0)
         sizer_ribbons.Add(self.check_labels, 0, wx.EXPAND, 0)
         self.list_pages = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.context.themes.set_window_colors(self.list_pages)
+
         self.text_param_page = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
 
         self.list_panels = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.context.themes.set_window_colors(self.list_panels)
         bsize = dip_size(self, 30, 30)
         self.button_add_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
         self.button_del_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
@@ -765,6 +768,7 @@ class RibbonEditor(wx.Panel):
         )
 
         self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.context.themes.set_window_colors(self.list_options)
         self.button_add_panel = wxButton(self, wx.ID_ANY, _("Add to page"))
         self.button_apply = wxButton(self, wx.ID_ANY, _("Apply"))
         self.button_reset = wxButton(self, wx.ID_ANY, _("Reset to Default"))
