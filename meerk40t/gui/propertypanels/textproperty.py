@@ -11,6 +11,7 @@ from meerk40t.gui.wxutils import (
     wxBitmapButton,
     wxButton,
     wxCheckBox,
+    wxListBox,
     wxRadioBox,
     wxToggleButton,
     wxStaticText,
@@ -159,8 +160,7 @@ class TextVariables(wx.Panel):
         self.context.themes.set_window_colors(self)
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
-        self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
-        self.context.themes.set_window_colors(self.lb_variables)
+        self.lb_variables = wxListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
         sizer_h_variables = StaticBoxSizer(
             self,

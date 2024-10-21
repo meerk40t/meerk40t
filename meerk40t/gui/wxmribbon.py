@@ -36,6 +36,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxListBox,
     wxStaticText,
 )
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
@@ -734,13 +735,11 @@ class RibbonEditor(wx.Panel):
 
         sizer_ribbons.Add(self.combo_ribbons, 0, wx.EXPAND, 0)
         sizer_ribbons.Add(self.check_labels, 0, wx.EXPAND, 0)
-        self.list_pages = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.context.themes.set_window_colors(self.list_pages)
+        self.list_pages = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
 
         self.text_param_page = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
 
-        self.list_panels = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.context.themes.set_window_colors(self.list_panels)
+        self.list_panels = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         bsize = dip_size(self, 30, 30)
         self.button_add_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
         self.button_del_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
@@ -773,8 +772,7 @@ class RibbonEditor(wx.Panel):
             icons8_down.GetBitmap(resize=iconsize, buffer=1)
         )
 
-        self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.context.themes.set_window_colors(self.list_options)
+        self.list_options = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         self.button_add_panel = wxButton(self, wx.ID_ANY, _("Add to page"))
         self.button_apply = wxButton(self, wx.ID_ANY, _("Apply"))
         self.button_reset = wxButton(self, wx.ID_ANY, _("Reset to Default"))
@@ -814,8 +812,7 @@ class RibbonEditor(wx.Panel):
         sizer_buttons = StaticBoxSizer(
             self, wx.ID_ANY, _("User-defined buttons"), wx.VERTICAL
         )
-        self.list_buttons = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.context.themes.set_window_colors(self.list_buttons)
+        self.list_buttons = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         sizer_button_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
         self.button_add_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)

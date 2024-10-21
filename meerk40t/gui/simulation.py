@@ -49,7 +49,14 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxStaticText
+from .wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxListBox,
+    wxStaticText,
+)
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -475,10 +482,9 @@ class CutcodePanel(wx.Panel):
 
         self.cutcode = cutcode
         self.plan_name = plan_name
-        self.list_cutcode = wx.ListBox(
+        self.list_cutcode = wxListBox(
             self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE
         )
-        self.context.themes.set_window_colors(self.list_cutcode)
         self.last_selected = []
         self.display_highlighted_only = False
         # self.text_operation_param = wx.TextCtrl(

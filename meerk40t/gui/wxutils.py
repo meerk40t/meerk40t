@@ -1410,6 +1410,11 @@ class wxStaticText(wx.StaticText):
         super().__init__(*args, **kwargs)
         set_color_according_to_theme(self, "label_bg", "label_fg")
 
+class wxListBox(wx.ListBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
+
 ##############
 # GUI KEYSTROKE FUNCTIONS
 ##############

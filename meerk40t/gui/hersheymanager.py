@@ -24,6 +24,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxListBox,
     wxListCtrl,
     wxStaticText,
     wxToggleButton,
@@ -454,7 +455,7 @@ class LineTextPropertyPanel(wx.Panel):
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
         )
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
@@ -751,7 +752,7 @@ class PanelFontSelect(wx.Panel):
         )
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
@@ -1003,7 +1004,7 @@ class PanelFontManager(wx.Panel):
         sizer_fonts = StaticBoxSizer(self, wx.ID_ANY, _("Fonts"), wx.VERTICAL)
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
