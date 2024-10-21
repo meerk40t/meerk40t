@@ -911,6 +911,8 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.SetHelpText("jog")
         context.setting(float, "button_repeat", 0.5)
         context.setting(bool, "button_accelerate", True)
@@ -1265,6 +1267,9 @@ class MovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+
         self.SetHelpText("move")
         iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_move_to = wx.BitmapButton(
@@ -1542,6 +1547,9 @@ class PulsePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+
         self.SetHelpText("pulse")
         iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_pulse = wx.BitmapButton(
@@ -1846,6 +1854,9 @@ class Transform(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+
         self.SetHelpText("transform")
         self.icon_size = None
         self.resize_factor = None
@@ -2401,6 +2412,9 @@ class JogDistancePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+
         self.SetHelpText("jog")
         self.text_jog_amount = TextCtrl(
             self,
@@ -2448,6 +2462,8 @@ class NavigationPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 

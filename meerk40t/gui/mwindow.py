@@ -41,6 +41,8 @@ class MWindow(wx.Frame, Module):
         self.Bind(wx.EVT_SIZE, self.on_change_window, self)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
     def restore_aspect(self, honor_initial_values=False):
         width = self._start_width
