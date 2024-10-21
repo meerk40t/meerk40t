@@ -381,15 +381,16 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             try:
-                from meerk40t.gui.icons import icon_meerk40t
-                image = icon_meerk40t.GetBitmap(resize=400)
+                flag = kernel.themes.dark
+                import meerk40t.gui.icons as icons
+                icons.DARKMODE = flag
+                image = icons.icon_meerk40t.GetBitmap(resize=400)
             except ImportError:
                 image = None
             from ..main import APPLICATION_VERSION
             from platform import system
-            if system() in ("Windows", "Darwin"):
-                kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
-                kernel.busyinfo.change(msg=_("Load main module"), keep=1)
+            kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
+            kernel.busyinfo.change(msg=_("Load main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
             @kernel.console_command(
