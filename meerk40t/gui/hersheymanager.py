@@ -26,6 +26,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxListBox,
     wxListCtrl,
+    wxStaticBitmap,
     wxStaticText,
     wxToggleButton,
 )
@@ -462,7 +463,7 @@ class LineTextPropertyPanel(wx.Panel):
         )
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
@@ -759,7 +760,7 @@ class PanelFontSelect(wx.Panel):
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
         sizer_fonts.Add(sizer_checker, 0, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
@@ -1007,7 +1008,7 @@ class PanelFontManager(wx.Panel):
         self.list_fonts = wxListBox(self, wx.ID_ANY)
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 

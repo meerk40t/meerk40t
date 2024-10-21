@@ -17,6 +17,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxRadioBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -174,7 +175,7 @@ class KerfPanel(wx.Panel):
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."
         )
-        info_pic = wx.StaticBitmap(
+        info_pic = wxStaticBitmap(
             self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE)
         )
         info_label = wx.TextCtrl(

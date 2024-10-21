@@ -13,6 +13,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import Context
@@ -400,7 +401,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
                     img = c.get("icon", None)
                     if img is not None:
-                        icon = wx.StaticBitmap(self, wx.ID_ANY, bitmap=img)
+                        icon = wxStaticBitmap(self, wx.ID_ANY, bitmap=img)
                         last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                         last_box.AddSpacer(5)
                 else:

@@ -10,7 +10,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
-from meerk40t.gui.wxutils import wxCheckBox, wxStaticText
+from meerk40t.gui.wxutils import wxCheckBox, wxStaticBitmap, wxStaticText
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -45,7 +45,7 @@ class SimpleInfoWidget(StatusBarWidget):
                     wx.FONTWEIGHT_NORMAL,
                 )
             )
-        self.btn_next = wx.StaticBitmap(
+        self.btn_next = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
             bitmap=icons8_up.GetBitmap(resize=20),

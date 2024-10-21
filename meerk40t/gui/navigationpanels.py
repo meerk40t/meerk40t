@@ -50,6 +50,7 @@ from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     TextCtrl,
     dip_size,
+    wxStaticBitmap,
     wxBitmapButton,
     wxStaticText,
 )
@@ -1305,7 +1306,7 @@ class MovePanel(wx.Panel):
         def_pt = self.text_position_x.GetFont().GetPointSize()
         def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
-            btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
+            btn = wxStaticBitmap(self, wx.ID_ANY, size=def_size)
             icon = EmptyIcon(
                 size=def_dim, msg=str(idx + 1), ptsize=def_pt, color=wx.LIGHT_GREY
             )
@@ -2054,23 +2055,23 @@ class Transform(wx.Panel):
 
         matrix_sizer = wx.BoxSizer(wx.HORIZONTAL)
         col_sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
-        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
-        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
+        col_sizer_1.Add(wxStaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
+        col_sizer_1.Add(wxStaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
+        col_sizer_1.Add(wxStaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
 
         # Add some labels to make textboxes clearer to understand
         col_sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
+        col_sizer_2.Add(wxStaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
         col_sizer_2.Add(self.text_a, 0, wx.EXPAND, 0)  # Scale X
         col_sizer_2.Add(self.text_d, 0, wx.EXPAND, 0)  # Scale Y
 
         col_sizer_3 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
+        col_sizer_3.Add(wxStaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
         col_sizer_3.Add(self.text_c, 0, wx.EXPAND, 0)  # Skew X
         col_sizer_3.Add(self.text_b, 0, wx.EXPAND, 0)  # Skew Y
 
         col_sizer_4 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_4.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
+        col_sizer_4.Add(wxStaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
         col_sizer_4.Add(self.text_e, 0, wx.EXPAND, 0)  # Translate X
         col_sizer_4.Add(self.text_f, 0, wx.EXPAND, 0)  # Translate Y
 

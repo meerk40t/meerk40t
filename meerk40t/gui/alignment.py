@@ -26,6 +26,7 @@ from ..gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from ..kernel import signal_listener
@@ -46,13 +47,13 @@ class InfoPanel(wx.Panel):
         self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
         self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -1208,12 +1209,12 @@ class ArrangementPanel(wx.Panel):
 
         sizer_gaps_x = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_x.Add(
-            wx.StaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
+            wxStaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_x.Add(self.txt_gap_x, 1, wx.EXPAND, 0)
         sizer_gaps_y = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_y.Add(
-            wx.StaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
+            wxStaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_y.Add(self.txt_gap_y, 1, wx.EXPAND, 0)
         sizer_gaps_xy = StaticBoxSizer(self, wx.ID_ANY, _("Gaps:"), wx.VERTICAL)

@@ -51,10 +51,12 @@ from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import (
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
     wxListBox,
+    wxListCtrl,
     wxStaticText,
 )
 from .zmatrix import ZMatrix
@@ -80,10 +82,10 @@ class OperationsPanel(wx.Panel):
             self.plan_name = ""
         else:
             self.plan_name = self.cutplan.name
-        self.list_operations = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
+        self.list_operations = wxListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
         self.context.themes.set_window_colors(self.list_operations)
 
-        self.text_operation_param = wx.TextCtrl(
+        self.text_operation_param = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         self.check_decompile = wxCheckBox(self, wx.ID_ANY, "D")

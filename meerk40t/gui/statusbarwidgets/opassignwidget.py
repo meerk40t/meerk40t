@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import wxCheckBox
+from meerk40t.gui.wxutils import wxCheckBox, wxStaticBitmap
 from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
@@ -114,7 +114,7 @@ class OperationAssignWidget(StatusBarWidget):
         super().GenerateControls(parent, panelidx, identifier, context)
 
         for __ in range(self.MAXBUTTONS):
-            btn = wx.StaticBitmap(
+            btn = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=(self.buttonsize, self.buttonsize),

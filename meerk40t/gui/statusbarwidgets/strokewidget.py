@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.wxutils import wxCheckBox
+from meerk40t.gui.wxutils import wxCheckBox, wxStaticBitmap, wxStaticText
 
 from .statusbarwidget import StatusBarWidget
 
@@ -33,7 +33,7 @@ class ColorWidget(StatusBarWidget):
         )
         self.button_color = []
         for idx in range(len(colors)):
-            wx_button = wx.StaticBitmap(
+            wx_button = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=wx.Size(20, -1),
@@ -116,7 +116,7 @@ class StrokeWidget(StatusBarWidget):
         font_size = 7
 
         # Plus one combobox + value field for stroke width
-        self.strokewidth_label = wx.StaticText(
+        self.strokewidth_label = wxStaticText(
             self.parent, id=wx.ID_ANY, label=_("Stroke:")
         )
         self.strokewidth_label.SetFont(

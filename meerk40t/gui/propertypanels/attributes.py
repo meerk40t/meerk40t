@@ -11,6 +11,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxStaticBitmap,
     wxStaticText,
     wxToggleButton,
 )
@@ -61,7 +62,7 @@ class ColorPanel(wx.Panel):
         ]
         self.last_col_idx = len(self.bgcolors) - 1
         for i in range(len(self.bgcolors)):
-            self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
+            self.underliner.append(wxStaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
             self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
             # self.lbl_color[i].SetMinSize(dip_size(self, -1, 20))
@@ -263,9 +264,9 @@ class IdPanel(wx.Panel):
         self.sizer_label.Add(h_label_sizer, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
-        self.icon_display = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_display = wxStaticBitmap(self, wx.ID_ANY)
         self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
-        self.icon_hidden = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_hidden = wxStaticBitmap(self, wx.ID_ANY)
         self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
         self.icon_hidden.SetBitmap(
             mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE)

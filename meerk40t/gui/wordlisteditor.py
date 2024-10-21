@@ -24,6 +24,7 @@ from .wxutils import (
     wxCheckBox,
     wxListCtrl,
     wxRadioBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 
@@ -218,22 +219,22 @@ class WordlistPanel(wx.Panel):
         testsize = dip_size(self, 20, 20)
         icon_size = testsize[0]
 
-        self.btn_edit_wordlist_del = wx.StaticBitmap(
+        self.btn_edit_wordlist_del = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_wordlist_edit = wx.StaticBitmap(
+        self.btn_edit_wordlist_edit = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_add = wx.StaticBitmap(
+        self.btn_edit_content_add = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_del = wx.StaticBitmap(
+        self.btn_edit_content_del = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_edit = wx.StaticBitmap(
+        self.btn_edit_content_edit = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_paste = wx.StaticBitmap(
+        self.btn_edit_content_paste = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         # Circumvent a WXPython bug at high resolutions under Windows

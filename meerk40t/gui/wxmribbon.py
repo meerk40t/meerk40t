@@ -37,6 +37,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxListBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
@@ -741,10 +742,10 @@ class RibbonEditor(wx.Panel):
 
         self.list_panels = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         bsize = dip_size(self, 30, 30)
-        self.button_add_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_del_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_up_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_down_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_add_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_del_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_up_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_down_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
 
         testsize = dip_size(self, 20, 20)
         iconsize = testsize[0]
@@ -762,9 +763,9 @@ class RibbonEditor(wx.Panel):
             icons8_down.GetBitmap(resize=iconsize, buffer=1)
         )
 
-        self.button_del_panel = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_up_panel = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_down_panel = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_del_panel = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_up_panel = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_down_panel = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
 
         self.button_del_panel.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
         self.button_up_panel.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
@@ -815,11 +816,11 @@ class RibbonEditor(wx.Panel):
         self.list_buttons = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         sizer_button_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_add_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_del_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_edit_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_up_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_down_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_add_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_del_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_edit_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_up_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_down_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
 
         self.button_add_button.SetBitmap(icon_add_new.GetBitmap(resize=iconsize))
         self.button_del_button.SetBitmap(
@@ -1442,7 +1443,7 @@ class RibbonEditor(wx.Panel):
         combo_icon = wx.ComboBox(
             dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        preview = wx.StaticBitmap(dlg, wx.ID_ANY, size=dip_size(self, 30, 30))
+        preview = wxStaticBitmap(dlg, wx.ID_ANY, size=dip_size(self, 30, 30))
         if entry["icon"] in icon_list:
             combo_icon.SetValue(entry["icon"])
         line7.Add(label7, 0, wx.EXPAND, 0)

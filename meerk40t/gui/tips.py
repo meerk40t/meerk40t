@@ -23,7 +23,7 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size, wxButton, wxCheckBox, wxStaticText
+from .wxutils import dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -59,7 +59,7 @@ class TipPanel(wx.Panel):
         icon_size = dip_size(self, 25, 25)
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
+        self.image_tip = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(dip_size(self, 250, -1))
         self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
@@ -283,7 +283,7 @@ class TipPanel(wx.Panel):
             bmp = wx.Bitmap(image)
 
         try:
-            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
+            self.image_tip.SetScaleMode(wxStaticBitmap.Scale_None)
         except AttributeError:
             # Old version of wxpython
             pass

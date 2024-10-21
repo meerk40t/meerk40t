@@ -9,7 +9,13 @@ from meerk40t.gui.icons import (
     icon_instruct_square,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox, wxStaticText
+from meerk40t.gui.wxutils import (
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -99,7 +105,7 @@ class LaserToolPanel(wx.Panel):
         self.lbl_pos_3 = wxStaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_3.Add(self.lbl_pos_3, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        img_instruction_1 = wx.StaticBitmap(
+        img_instruction_1 = wxStaticBitmap(
             self.nb_circle,
             wx.ID_ANY,
             self.fitted_bitmap(icon_instruct_circle, desired_height),
@@ -173,7 +179,7 @@ class LaserToolPanel(wx.Panel):
         self.lbl_pos_8 = wxStaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_6a.Add(self.lbl_pos_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.img_instruction_2 = wx.StaticBitmap(
+        self.img_instruction_2 = wxStaticBitmap(
             self.nb_rectangle,
             wx.ID_ANY,
             self.fitted_bitmap(icon_instruct_rect, desired_height),
@@ -271,7 +277,7 @@ class LaserToolPanel(wx.Panel):
         self.txt_width.SetMinSize(dip_size(self.nb_square, 60, -1))
         size_width.Add(self.txt_width, 0, wx.EXPAND, 0)
 
-        self.img_instruction_3 = wx.StaticBitmap(
+        self.img_instruction_3 = wxStaticBitmap(
             self.nb_square,
             wx.ID_ANY,
             self.fitted_bitmap(icon_instruct_square, desired_height),

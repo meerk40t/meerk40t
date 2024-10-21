@@ -14,6 +14,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import signal_listener
@@ -33,13 +34,13 @@ class InfoPanel(wx.Panel):
         self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
         self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)

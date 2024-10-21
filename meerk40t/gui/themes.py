@@ -91,10 +91,11 @@ class Themes(Service):
         tp["list_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT)
         tp["label_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         tp["label_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_CAPTIONTEXT)
+        tp["highlight"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
 
         if self.dark and is_a_bright_color(tp["win_bg"]):
             base_bg = wx.Colour(23, 23, 23)
-            base_fg = wx.Colour(255, 255, 255, 0.847)
+            base_fg = wx.Colour(255, 255, 255, 216)
             tp["win_bg"] = base_bg
             tp["win_fg"] = base_fg
             tp["button_bg"] = wx.Colour(46, 46, 46)
@@ -105,6 +106,7 @@ class Themes(Service):
             tp["list_fg"] = base_fg
             tp["label_bg"] = base_bg
             tp["label_fg"] = base_fg
+            tp["highlight"] = wx.BLUE
 
         tp["pause_bg"] = (
             wx.Colour(87, 87, 0) if self._dark else wx.Colour(200, 200, 0)

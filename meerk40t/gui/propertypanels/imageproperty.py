@@ -20,6 +20,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxListCtrl,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.svgelements import Matrix
@@ -770,7 +771,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             HAS_VECTOR_ENGINE = True
         if not make_vector:
             main_sizer.Add(
-                wx.StaticText(
+                wxStaticText(
                     self, wx.ID_ANY, "No vector engine installed, you need potrace"
                 ),
                 1,
@@ -911,10 +912,10 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_preview = StaticBoxSizer(self, wx.ID_ANY, _("Preview"), wx.VERTICAL)
         main_sizer.Add(sizer_preview, 2, wx.EXPAND, 0)
 
-        self.bitmap_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
+        self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
         sizer_preview.Add(self.bitmap_preview, 1, wx.EXPAND, 0)
 
-        self.vector_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
+        self.vector_preview = wxStaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
         sizer_preview.Add(self.vector_preview, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)

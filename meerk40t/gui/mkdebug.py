@@ -335,7 +335,7 @@ class DebugColorPanel(ScrolledPanel):
 
                 col:wx.Colour = wx.SystemSettings().GetColour(getattr(wx, prop))
                 infosizer = wx.BoxSizer(wx.VERTICAL)
-                box = wx.StaticBitmap(
+                box = wxStaticBitmap(
                     self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
                 )
                 box.SetBackgroundColour(col)
@@ -427,7 +427,7 @@ class DebugColorPanel(ScrolledPanel):
 
             col = wx.Colour(entry)
             infosizer = wx.BoxSizer(wx.VERTICAL)
-            box = wx.StaticBitmap(
+            box = wxStaticBitmap(
                 self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
             )
             box.SetBackgroundColour(col)
@@ -489,7 +489,7 @@ class DebugIconPanel(wx.Panel):
         choose_sizer.Add(self.combo_icons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
-        self.icon_show = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_show = wxStaticBitmap(self, wx.ID_ANY)
         self.context.themes.set_window_colors(self.icon_show)
         sizer_main.Add(self.icon_show, 1, wx.EXPAND, 0)
         sizer_main.Fit(self)
@@ -569,7 +569,7 @@ class DebugWindowPanel(wx.Panel):
             self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=25)
         )
         slider_left = wx.Slider(self, wx.ID_ANY, value=0, minValue=0, maxValue=100)
-        static_left = wx.StaticBitmap(
+        static_left = wxStaticBitmap(
             self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
         )
         left_side.Add(cb_left, 0, 0, 0)

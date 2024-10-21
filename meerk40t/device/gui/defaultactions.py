@@ -16,7 +16,7 @@ from meerk40t.gui.icons import (
     icons8_home_filled,
     icons8_up,
 )
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxListCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxListCtrl, wxStaticBitmap
 
 _ = wx.GetTranslation
 
@@ -72,13 +72,13 @@ class DefaultActionPanel(wx.Panel):
 
         iconsize = dip_size(self, 30, 20)
         bmpsize = min(iconsize[0], iconsize[1])
-        self.option_list = wx.ListCtrl(
+        self.option_list = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_LIST,
         )
 
-        self.text_param_option = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_param_option = TextCtrl(self, wx.ID_ANY)
 
         self.button_add_prepend = wxButton(self, wx.ID_ANY, _("Add to Job Start"))
         self.button_add_append = wxButton(self, wx.ID_ANY, _("Add to Job End"))
@@ -92,9 +92,9 @@ class DefaultActionPanel(wx.Panel):
             self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL, context=self.context,
         )
         self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
-        self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
-        self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
-        self.button_down_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_del_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_up_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_down_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_del_prepend.SetBitmap(
             icon_trash.GetBitmap(resize=bmpsize, buffer=1)
         )
@@ -103,9 +103,9 @@ class DefaultActionPanel(wx.Panel):
             icons8_down.GetBitmap(resize=bmpsize, buffer=1)
         )
 
-        self.button_del_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
-        self.button_up_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
-        self.button_down_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_del_append = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_up_append = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_down_append = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_del_append.SetBitmap(icon_trash.GetBitmap(resize=bmpsize, buffer=1))
         self.button_up_append.SetBitmap(icons8_up.GetBitmap(resize=bmpsize, buffer=1))
         self.button_down_append.SetBitmap(

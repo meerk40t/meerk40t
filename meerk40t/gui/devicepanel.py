@@ -9,6 +9,7 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxListCtrl,
     wxStaticText,
+    wxTreeCtrl,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -48,9 +49,7 @@ class SelectDevice(wx.Dialog):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Filter")), wx.HORIZONTAL
-        )
+        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Filter"), wx.HORIZONTAL)
         sizer_main.Add(sizer_3, 0, wx.EXPAND, 0)
 
         label_filter = wxStaticText(self, wx.ID_ANY, _("Device:"))
@@ -59,7 +58,7 @@ class SelectDevice(wx.Dialog):
         self.text_filter = wx.TextCtrl(self, wx.ID_ANY, "")
         sizer_3.Add(self.text_filter, 0, wx.EXPAND, 0)
 
-        self.tree_devices = wx.TreeCtrl(
+        self.tree_devices = wxTreeCtrl(
             self,
             wx.ID_ANY,
             style=wx.BORDER_SUNKEN

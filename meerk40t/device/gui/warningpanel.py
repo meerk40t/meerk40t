@@ -8,7 +8,13 @@ from meerk40t.gui.icons import (
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
-from meerk40t.gui.wxutils import TextCtrl, dip_size, wxCheckBox, wxStaticText
+from meerk40t.gui.wxutils import (
+    TextCtrl,
+    dip_size,
+    wxCheckBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -85,7 +91,7 @@ class WarningPanel(wx.Panel):
                 else:
                     unit1 = "mm/s"
             idx += 1
-            image = wx.StaticBitmap(self, id=wx.ID_ANY)
+            image = wxStaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=20))
 
             label1 = wxStaticText(

@@ -29,6 +29,7 @@ from .wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 
@@ -501,7 +502,7 @@ class BasicOpPanel(wx.Panel):
                     info = info[0] + ": " + op.display_label()
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 self.operation_sizer.Add(op_sizer, 0, wx.EXPAND, 0)
-                btn = wx.StaticBitmap(
+                btn = wxStaticBitmap(
                     self.op_panel,
                     id=wx.ID_ANY,
                     size=(BUTTONSIZE, BUTTONSIZE),
@@ -570,7 +571,7 @@ class BasicOpPanel(wx.Panel):
                     showflag = False
                 c_show.Enable(showflag)
 
-                c_cool = wx.StaticBitmap(self.op_panel, id=wx.ID_ANY)
+                c_cool = wxStaticBitmap(self.op_panel, id=wx.ID_ANY)
                 c_cool.SetMinSize(dip_size(self, 20, -1))
                 c_cool.SetMaxSize(dip_size(self, 20, -1))
 

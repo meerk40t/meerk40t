@@ -88,7 +88,7 @@ class FontHistory(wx.Panel):
 
         for i in range(self.FONTHISTORY):
             self.last_font.append(
-                wx.StaticText(
+                wxStaticText(
                     self,
                     wx.ID_ANY,
                     _("<empty>"),
