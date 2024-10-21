@@ -18800,3 +18800,43 @@ msgstr "Speichere das veränderte Bild"
 #: meerk40t/core/elements/element_treeops.py:4108
 msgid "Remove the keyhole-link between image and shape"
 msgstr "Entferne den Schlüsselloch-Effekt"
+
+#: meerk40t/core/elements/elements.py:206
+msgid "Legacy Classify"
+msgstr "Alte Klassifizierung-Logik"
+
+#: meerk40t/core/elements/elements.py:421
+msgid "Reuse existing"
+msgstr "Bestehende nutzen"
+
+#: meerk40t/gui/wxmeerk40t.py:1023
+msgid "Force Darkmode"
+msgstr "Dunklen Modus erzwingen"
+
+#: meerk40t/gui/wxmeerk40t.py:1024
+msgid "Will force MeerK40t to start in darkmode despite the system settings"
+msgstr "Meerk40t wird im dunklen Modus starten, unabhängig von den System-Einstellungen"
+
+#: meerk40t/core/planner.py:263
+msgid "Keep effect lines together"
+msgstr "Hatch-Linien zusammen lassen"
+
+#: meerk40t/core/planner.py:265
+msgid "Active: effects like hatches are dealt with as a bigger shape"
+msgstr "Aktiv: Hatch-Linien werden getrennt von den anderen Elementen als Einheit behandelt"
+
+#: meerk40t/core/planner.py:266
+msgid "Inactive: every single line segment will be dealt with individually."
+msgstr "Inaktiv: jede einzelne Hatch-Linie wird mit optimiert."
+
+#: meerk40t/core/planner.py:276
+msgid "Optimize internally"
+msgstr "Intern optimieren"
+
+#: meerk40t/core/planner.py:278
+msgid "Active: hatch lines will be optimized internally"
+msgstr "Aktiv: Hatch-Linien werden untereinander optimiert."
+
+#: meerk40t/core/planner.py:279
+msgid "Inactive: hatch lines will be burnt sequentially."
+msgstr "Inaktiv: Hatch-Linien werden nacheinander gebrannt."
