@@ -1002,38 +1002,6 @@ class wxToggleButton(wx.ToggleButton):
         super().SetToolTip(self._tool_tip)
 
 
-class wxRadioBox(wx.RadioBox):
-    """
-    This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
-    otherwise do not show.
-    """
-
-    def __init__(
-        self,
-        *args,
-        **kwargs,
-    ):
-        self._tool_tip = None
-        super().__init__(*args, **kwargs)
-        if platform.system() == "Linux":
-
-            def on_mouse_over_check(ctrl):
-                def mouse(event=None):
-                    ctrl.SetToolTip(self._tool_tip)
-                    event.Skip()
-
-                return mouse
-
-            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
-        col = self.GetParent().GetForegroundColour()
-        self.SetForegroundColour(col)
-        for w in self.Children:
-            print(w)
-            w.SetForegroundColour(col)
-
-    def SetToolTip(self, tooltip):
-        self._tool_tip = tooltip
-        super().SetToolTip(self._tool_tip)
 
 
 class wxStaticBitmap(wx.StaticBitmap):
@@ -1075,10 +1043,19 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         *args,
         **kwargs,
     ):
+        if label is None:
+            label = ""
         self.sbox = wx.StaticBox(parent, id, label=label)
         self.sbox.SetMinSize(dip_size(self, 50, 50))
         super().__init__(self.sbox, orientation)
         self.parent = parent
+
+    @property
+    def Id(self):
+        return self.sbox.Id
+
+    def GetId(self):
+        return self.Id
 
     def Show(self, show=True):
         self.sbox.Show(show)
@@ -1277,6 +1254,126 @@ class HoverButton(wxButton):
     #     if event.Leaving():
     #         self.on_leave(event)
     #     event.Skip()
+
+
+class wxRadioBox(StaticBoxSizer):
+    """
+    This class recreates the functionality of a wx.RadioBox, as this class does not recognize / honor parent color values, so a manual darkmode logic fails
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        id=None,
+        label=None,
+        choices=None,
+        majorDimension = 0,
+        style=0,
+        *args,
+        **kwargs,
+    ):
+        self.parent = parent
+        self.choices = choices
+        self._children = []
+        self._labels = []
+        self._tool_tip = None
+        super().__init__(parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL)
+        if majorDimension == 0 or style==wx.RA_SPECIFY_ROWS:
+            majorDimension = 1000
+        container = None
+        for idx, c in enumerate(self.choices):
+            if idx % majorDimension == 0:
+                if container is not None and label is not None:
+                    self._labels.append(wx.StaticText(parent, wx.ID_ANY, label))
+                    container.Add(self._labels[-1], 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                container = wx.BoxSizer(wx.HORIZONTAL)
+                self.Add(container, 0, wx.EXPAND, 0)
+            st = 0
+            if idx == 0:
+                st = wx.RB_GROUP
+
+            radio_option = wx.RadioButton(parent, wx.ID_ANY, label=c, style=st)
+            container.Add(radio_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            self._children.append(radio_option)
+        if label is not None:
+            self._labels.append(wx.StaticText(parent, wx.ID_ANY, label))
+            container.Add(self._labels[-1], 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+            for ctrl in self._children:
+                ctrl.Bind(wx.EVT_MOTION, on_mouse_over_check(ctrl))
+
+        for ctrl in self._children:
+            ctrl.Bind(wx.EVT_RADIOBUTTON, self.on_radio)
+
+        col_b = self.GetParent().GetBackgroundColour()
+        col_f = self.GetParent().GetForegroundColour()
+        for ctrl in self._children + self._labels:
+            ctrl.SetForegroundColour(col_f)
+            ctrl.SetBackgroundColour(col_b)
+
+    @property
+    def Children(self):
+        return self._children
+
+    def GetParent(self):
+        return self.parent
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        for ctrl in self._children:
+            ctrl.SetToolTip(self._tool_tip)
+
+    def Select(self, n):
+        self.SetSelection(n)
+
+    def SetSelection(self, n):
+        for idx, ctrl in enumerate(self._children):
+            ctrl.SetValue(idx == n)
+
+    def GetSelection(self):
+        for idx, ctrl in enumerate(self._children):
+            if ctrl.GetValue():
+                return idx
+        return -1
+
+    def Disable(self):
+        self.Enable(False)
+
+    def Enable(self, flag):
+        for ctrl in self._children:
+            ctrl.Enable(flag)
+
+    def Hide(self):
+        self.Show(False)
+
+    def Show(self, flag):
+        for ctrl in self._children + self._labels:
+            ctrl.Show(flag)
+
+    def on_radio(self, orgevent):
+        #
+        event = orgevent.Clone()
+        event.SetEventType(wx.wxEVT_RADIOBOX)
+        event.SetId(self.Id)
+        event.SetEventObject(self)
+        event.Int = self.GetSelection()
+        wx.PostEvent(self.parent, event)
+
+    def SetForegroundColour(self, wc):
+        for ctrl in self._children + self._labels:
+            ctrl.SetForegroundColour(wc)
+
+    def SetBackgroundColour(self, wc):
+        for ctrl in self._children + self._labels:
+            ctrl.SetBackgroundColour(wc)
 
 
 ##############
