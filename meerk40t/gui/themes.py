@@ -72,7 +72,7 @@ class Themes(Service):
         self._theme = "system"
         res1 = wx.SystemSettings().GetAppearance().IsDark()
         res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        print (f"wx claims: {res1}, we think: {res2}, overload: {self.force_dark}")
+        # print (f"wx claims: {res1}, we think: {res2}, overload: {self.force_dark}")
         self._dark = res1 or res2 or self.force_dark
         from platform import system
 
@@ -84,11 +84,30 @@ class Themes(Service):
         # tp["button"] = wx.Button
         tp["win_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         tp["win_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        tp["button_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        tp["button_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        tp["text_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        tp["text_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        tp["list_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOX)
+        tp["list_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT)
+        tp["label_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        tp["label_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_CAPTIONTEXT)
+
         print (tp["win_bg"].GetAsString())
         if self.dark and is_a_bright_color(tp["win_bg"]):
             print ("Reset colors to b/w")
-            tp["win_bg"] = wx.BLACK
-            tp["win_fg"] = wx.WHITE
+            base_bg = wx.Colour(23, 23, 23)
+            base_fg = wx.Colour(255, 255, 255, 0.847)
+            tp["win_bg"] = base_bg
+            tp["win_fg"] = base_fg
+            tp["button_bg"] = wx.Colour(46, 46, 46)
+            tp["button_fg"] = base_fg
+            tp["text_bg"] = base_bg
+            tp["text_fg"] = base_fg
+            tp["list_bg"] = base_bg
+            tp["list_fg"] = base_fg
+            tp["label_bg"] = base_bg
+            tp["label_fg"] = base_fg
 
         tp["pause_bg"] = (
             wx.Colour(87, 87, 0) if self._dark else wx.Colour(200, 200, 0)
