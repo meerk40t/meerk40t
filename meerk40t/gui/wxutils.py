@@ -1377,6 +1377,10 @@ class wxRadioBox(StaticBoxSizer):
     def Disable(self):
         self.Enable(False)
 
+    def EnableItem(self, n, flag):
+        if 0 <= n < len(self._children):
+            self._children[n].Enable(flag)
+
     def Enable(self, flag):
         for ctrl in self._children:
             ctrl.Enable(flag)
