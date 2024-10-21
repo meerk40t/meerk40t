@@ -292,6 +292,15 @@ class MeerK40t(MWindow):
         self._pane_captions = dict()
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
+        bg_col = self.context.themes.get("win_bg")
+        fg_col = self.context.themes.get("win_fg")
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_ACTIVE_CAPTION_COLOUR, bg_col)
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_ACTIVE_CAPTION_TEXT_COLOUR, fg_col)
+
+        bg_col = self.context.themes.get("inactive_bg")
+        fg_col = self.context.themes.get("inactive_fg")
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_INACTIVE_CAPTION_COLOUR, bg_col)
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR, fg_col)
 
         self.__set_panes()
         self.__set_commands()
