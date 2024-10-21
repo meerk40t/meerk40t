@@ -163,6 +163,7 @@ class RuidaConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.context.themes.set_window_colors(self.notebook_main)
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         options = (("bed_dim", "Ruida"),)

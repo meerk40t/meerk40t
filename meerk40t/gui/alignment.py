@@ -1555,6 +1555,7 @@ class Alignment(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.context.themes.set_window_colors(self.notebook_main)
         self.scene = getattr(self.context.root, "mainscene", None)
         self.panel_align = AlignmentPanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene

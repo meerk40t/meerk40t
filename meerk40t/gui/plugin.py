@@ -319,7 +319,11 @@ and a wxpython version <= 4.1.1."""
 
         from meerk40t.gui.busy import BusyInfo
 
-        kernel.busyinfo = BusyInfo(startup=kernel.themes.set_window_colors)
+        kargs = {}
+        if kernel.themes.dark:
+            kargs["bgcolor"] = kernel.themes.get("win_bg")
+            kargs["fgcolor"] = kernel.themes.get("win_fg")
+        kernel.busyinfo = BusyInfo(**kargs)
 
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)

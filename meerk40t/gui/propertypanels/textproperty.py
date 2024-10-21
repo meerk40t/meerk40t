@@ -433,6 +433,8 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_main.Add(sizer_anchor, 0, wx.EXPAND, 0)
 
         self.notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self.context.themes.set_window_colors(self.notebook)
+
         page_main = wx.Panel(self.notebook, wx.ID_ANY)
         sizer_page_main = wx.BoxSizer(wx.VERTICAL)
         self.panel_fill.Reparent(page_main)

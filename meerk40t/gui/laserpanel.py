@@ -59,6 +59,7 @@ def register_panel_laser(window, context):
         | wx.aui.AUI_NB_TAB_MOVE
         | wx.aui.AUI_NB_BOTTOM,
     )
+    context.themes.set_window_colors(notebook)
     pane = (
         aui.AuiPaneInfo()
         .Right()

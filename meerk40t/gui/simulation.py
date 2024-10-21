@@ -862,6 +862,8 @@ class SimulationPanel(wx.Panel, Job):
         )
 
         self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
+        self.context.themes.set_window_colors(self.panel_optimize)
+
         self.subpanel_optimize.Reparent(self.panel_optimize)
         self.subpanel_operations.Reparent(self.panel_optimize)
         self.subpanel_cutcode.Reparent(self.panel_optimize)

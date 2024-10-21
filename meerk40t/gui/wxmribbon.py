@@ -809,6 +809,7 @@ class RibbonEditor(wx.Panel):
             self, wx.ID_ANY, _("User-defined buttons"), wx.VERTICAL
         )
         self.list_buttons = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.context.themes.set_window_colors(self.list_buttons)
         sizer_button_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
         self.button_add_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)

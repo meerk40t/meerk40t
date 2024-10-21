@@ -30,6 +30,7 @@ class PropertyWindow(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.context.themes.set_window_colors(self.notebook_main)
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
@@ -103,7 +104,7 @@ class PropertyWindow(MWindow):
                 if callable(p):
                     prio = p(node)
                 else:
-                    prio = p 
+                    prio = p
             return prio
 
         # Are the new nodes identical to the displayed ones?

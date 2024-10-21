@@ -87,6 +87,7 @@ def register_panel_tree(window, context):
         | wx.aui.AUI_NB_TAB_SPLIT
         | wx.aui.AUI_NB_TAB_MOVE,
     )
+    context.themes.set_window_colors(notetab)
 
     pane = (
         aui.AuiPaneInfo()
