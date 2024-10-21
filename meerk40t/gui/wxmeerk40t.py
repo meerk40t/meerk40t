@@ -1023,6 +1023,7 @@ class wxMeerK40t(wx.App, Module):
                 "label": _("Force Darkmode"),
                 "tip": _("Will force MeerK40t to start in darkmode despite the system settings"),
                 "page": "Start",
+                "signals": "restart",
             },
         ]
         kernel.register_choices("preferences", choices)
