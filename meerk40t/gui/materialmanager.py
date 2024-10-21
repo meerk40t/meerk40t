@@ -2788,8 +2788,8 @@ class AboutPanel(wx.Panel):
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         font = wx.Font(
-            10,
-            wx.FONTFAMILY_TELETYPE,
+            16,
+            wx.FONTFAMILY_DEFAULT,
             wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL,
         )
