@@ -944,6 +944,37 @@ class wxTreeCtrl(wx.TreeCtrl):
         super().SetToolTip(self._tool_tip)
 
 
+class wxBitmapButton(wx.BitmapButton):
+    """
+    This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        self.SetBackgroundColour(self.GetParent().GetBackgroundColour())
+        self.SetForegroundColour(self.GetParent().GetForegroundColour())
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
 class wxButton(wx.Button):
     """
     This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that

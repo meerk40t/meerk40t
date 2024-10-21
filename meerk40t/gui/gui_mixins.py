@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
     icon_paint_brush_green,
     icon_warning,
 )
-from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.wxutils import wxButton, dip_size
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
@@ -338,7 +338,7 @@ class Warnings:
         sizer.Add(panel, 1, wx.EXPAND, 0)
 
         btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(dlg, wx.ID_OK)
+        btn = wxButton(dlg, wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
         # btn = wx.Button(dlg, wx.ID_CANCEL)

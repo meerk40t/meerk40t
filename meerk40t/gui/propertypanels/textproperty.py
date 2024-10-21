@@ -8,6 +8,7 @@ from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     dip_size,
+    wxBitmapButton,
     wxButton,
     wxCheckBox,
     wxRadioBox,
@@ -203,7 +204,7 @@ class TextPropertyPanel(ScrolledPanel):
                 "Segoe UI",
             )
         )
-        self.button_choose_font = wx.BitmapButton(
+        self.button_choose_font = wxBitmapButton(
             self, wx.ID_ANY, icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.panel_id = IdPanel(
@@ -390,12 +391,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.rb_align = wxRadioBox(
             self,
             wx.ID_ANY,
-            "",
-            wx.DefaultPosition,
-            wx.DefaultSize,
-            align_options,
-            len(align_options),
-            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+            label="",
+            choices=align_options,
         )
         self.rb_align.SetToolTip(
             _("Define where to place the origin (i.e. current mouse position)")

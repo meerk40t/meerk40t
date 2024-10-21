@@ -19,7 +19,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import wxButton, wxCheckBox, wxListCtrl
+from meerk40t.gui.wxutils import wxButton, wxBitmapButton, wxCheckBox, wxListCtrl
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
@@ -81,15 +81,15 @@ class CameraPanel(wx.Panel, Job):
         self.last_frame_index = -1
 
         if not pane:
-            self.button_update = wx.BitmapButton(
+            self.button_update = wxBitmapButton(
                 self, wx.ID_ANY, icons8_camera.GetBitmap(resize=get_default_icon_size())
             )
-            self.button_export = wx.BitmapButton(
+            self.button_export = wxBitmapButton(
                 self,
                 wx.ID_ANY,
                 icons8_image_in_frame.GetBitmap(resize=get_default_icon_size()),
             )
-            self.button_reconnect = wx.BitmapButton(
+            self.button_reconnect = wxBitmapButton(
                 self,
                 wx.ID_ANY,
                 icons8_connected.GetBitmap(resize=get_default_icon_size()),
@@ -106,7 +106,7 @@ class CameraPanel(wx.Panel, Job):
                 120,
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
-            self.button_detect = wx.BitmapButton(
+            self.button_detect = wxBitmapButton(
                 self,
                 wx.ID_ANY,
                 icons8_detective.GetBitmap(resize=get_default_icon_size()),

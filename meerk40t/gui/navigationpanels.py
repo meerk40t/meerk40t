@@ -46,7 +46,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import wxBitmapButton, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -394,18 +394,18 @@ class Drag(wx.Panel):
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
-        self.button_align_corner_top_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_corner_top_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_center = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_corner_bottom_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_corner_bottom_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_first_position = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_trace_hull = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_trace_quick = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_top_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_top_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_center = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_bottom_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_bottom_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_first_position = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_trace_hull = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_trace_quick = wxBitmapButton(self, wx.ID_ANY)
         self.bg_color = self.button_align_corner_top_left.BackgroundColour
         self.__set_properties()
         self.__do_layout()
@@ -921,18 +921,18 @@ class Jog(wx.Panel):
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
-        self.button_navigate_up_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_up_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_home = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_down_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_down_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_unlock = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_lock = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_confine = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_home = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_unlock = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_lock = wxBitmapButton(self, wx.ID_ANY)
+        self.button_confine = wxBitmapButton(self, wx.ID_ANY)
         self.__set_properties()
         self.__do_layout()
 
@@ -1271,7 +1271,7 @@ class MovePanel(wx.Panel):
 
         self.SetHelpText("move")
         iconsize = 0.5 * get_default_icon_size()
-        self.button_navigate_move_to = wx.BitmapButton(
+        self.button_navigate_move_to = wxBitmapButton(
             self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=iconsize)
         )
         units = self.context.units_name
@@ -1550,7 +1550,7 @@ class PulsePanel(wx.Panel):
 
         self.SetHelpText("pulse")
         iconsize = 0.5 * get_default_icon_size()
-        self.button_navigate_pulse = wx.BitmapButton(
+        self.button_navigate_pulse = wxBitmapButton(
             self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=iconsize)
         )
         self.spin_pulse_duration = wx.SpinCtrl(
@@ -1616,7 +1616,7 @@ class PulsePanel(wx.Panel):
 #         self.mainsizer = StaticBoxSizer(
 #             self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
 #         )
-#         self.button_navigate_resize = wx.BitmapButton(
+#         self.button_navigate_resize = wxBitmapButton(
 #             self, wx.ID_ANY, icons8_compress.GetBitmap(resize=32)
 #         )
 #         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
@@ -1858,15 +1858,15 @@ class Transform(wx.Panel):
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
-        self.button_scale_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_scale_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_reset = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_rotate_ccw = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_rotate_cw = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_scale_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_scale_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_reset = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_rotate_ccw = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_rotate_cw = wxBitmapButton(self, wx.ID_ANY)
         self.text_a = TextCtrl(
             self,
             wx.ID_ANY,
