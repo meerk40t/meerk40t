@@ -36,7 +36,7 @@ class BlobPropertyPanel(ScrolledPanel):
         self.text_blob = wx.TextCtrl(
             self, id=wx.ID_ANY, value="", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.option_view.Bind(wx.EVT_RADIOBOX, self.on_option_view)
+        self.Bind(wx.EVT_RADIOBOX, self.on_option_view, self.option_view)
         self.__set_properties()
         self.__do_layout()
 

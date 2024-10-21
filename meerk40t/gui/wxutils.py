@@ -1316,9 +1316,6 @@ class wxRadioBox(StaticBoxSizer):
         container = None
         for idx, c in enumerate(self.choices):
             if idx % majorDimension == 0:
-                if container is not None and label is not None:
-                    self._labels.append(wx.StaticText(parent, wx.ID_ANY, label))
-                    container.Add(self._labels[-1], 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 container = wx.BoxSizer(wx.HORIZONTAL)
                 self.Add(container, 0, wx.EXPAND, 0)
             st = 0
@@ -1328,9 +1325,6 @@ class wxRadioBox(StaticBoxSizer):
             radio_option = wx.RadioButton(parent, wx.ID_ANY, label=c, style=st)
             container.Add(radio_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             self._children.append(radio_option)
-        if label is not None:
-            self._labels.append(wx.StaticText(parent, wx.ID_ANY, label))
-            container.Add(self._labels[-1], 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         if platform.system() == "Linux":
 
@@ -1392,6 +1386,9 @@ class wxRadioBox(StaticBoxSizer):
         for ctrl in self._children + self._labels:
             ctrl.Show(flag)
 
+    def Bind(self, event_type, routine):
+        self.parent.Bind(event_type, routine, self)
+        
     def on_radio(self, orgevent):
         #
         event = orgevent.Clone()
