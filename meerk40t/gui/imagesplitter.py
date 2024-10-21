@@ -14,6 +14,8 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
 )
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
@@ -26,18 +28,19 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.context.themes.set_window_colors(self)
+        self.lbl_info_main = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -143,6 +146,7 @@ class SplitterPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("imagesplit")
         self.scene = scene
         # Amount of currently selected
@@ -172,13 +176,13 @@ class SplitterPanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
-        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_info = wxStaticText(self, wx.ID_ANY, "")
         self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
             icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
         )
 
-        lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
+        lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
             self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
@@ -288,6 +292,7 @@ class KeyholePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("keyhole")
         self.scene = scene
         # Amount of currently selected
@@ -320,7 +325,7 @@ class KeyholePanel(wx.Panel):
             icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size())
         )
 
-        lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
+        lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
             self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
@@ -456,6 +461,12 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...

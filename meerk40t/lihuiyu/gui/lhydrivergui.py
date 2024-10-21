@@ -13,6 +13,7 @@ from meerk40t.gui.wxutils import (
     TextCtrl,
     dip_size,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.kernel import signal_listener
 
@@ -118,7 +119,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_buffer.Add(self.text_buffer_length, 1, wx.EXPAND, 0)
 
-        label_14 = wx.StaticText(self, wx.ID_ANY, "/")
+        label_14 = wxStaticText(self, wx.ID_ANY, "/")
         sizer_buffer.Add(label_14, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.spin_packet_buffer_max = wx.SpinCtrl(
@@ -396,6 +397,12 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         panel_config = ChoicePropertyPanel(

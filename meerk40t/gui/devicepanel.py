@@ -3,7 +3,14 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxListCtrl
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxListCtrl,
+    wxStaticText,
+    wxTreeCtrl,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -37,24 +44,21 @@ class SelectDevice(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetTitle(_("Select Device"))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Filter")), wx.HORIZONTAL
-        )
+        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Filter"), wx.HORIZONTAL)
         sizer_main.Add(sizer_3, 0, wx.EXPAND, 0)
 
-        label_filter = wx.StaticText(self, wx.ID_ANY, _("Device:"))
+        label_filter = wxStaticText(self, wx.ID_ANY, _("Device:"))
         sizer_3.Add(label_filter, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.text_filter = wx.TextCtrl(self, wx.ID_ANY, "")
         sizer_3.Add(self.text_filter, 0, wx.EXPAND, 0)
 
-        self.tree_devices = wx.TreeCtrl(
+        self.tree_devices = wxTreeCtrl(
             self,
             wx.ID_ANY,
             style=wx.BORDER_SUNKEN
@@ -69,7 +73,7 @@ class SelectDevice(wx.Dialog):
             + "\n"
             + _("You can as well search for your device at the top of this screen.")
         )
-        self.label_info = wx.StaticText(
+        self.label_info = wxStaticText(
             self,
             wx.ID_ANY,
             self.no_msg,
@@ -172,8 +176,7 @@ class DevicePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("devices")
 
         sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Your Devices"), wx.VERTICAL)
@@ -613,8 +616,6 @@ class DeviceManager(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))
         self.Layout()
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.restore_aspect()
 
     @staticmethod

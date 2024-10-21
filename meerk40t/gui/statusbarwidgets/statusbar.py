@@ -1,6 +1,7 @@
 import wx
 
 from meerk40t.gui.icons import icons8_circled_right
+from meerk40t.gui.wxutils import wxStaticBitmap
 
 _ = wx.GetTranslation
 
@@ -16,6 +17,7 @@ class CustomStatusBar(wx.StatusBar):
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
+        self.context.themes.set_window_colors(self)
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
@@ -31,7 +33,7 @@ class CustomStatusBar(wx.StatusBar):
             # small bitmap buttons. It reserves an extent around the
             # bitmap and tries to reduce the size, which leads to a lot of
             # unwanted messages plus some very unwanted X-Windows crash...
-            btn = wx.StaticBitmap(
+            btn = wxStaticBitmap(
                 self,
                 id=wx.ID_ANY,
                 bitmap=icons8_circled_right.GetBitmap(resize=btn_size, buffer=1),

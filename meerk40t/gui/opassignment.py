@@ -44,6 +44,7 @@ class OperationAssignPanel(wx.Panel):
         self.iconsize = 20
         self.buttonsize = self.iconsize + 10
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.MAXBUTTONS = 24
         self.hover = 0
         self.buttons = []

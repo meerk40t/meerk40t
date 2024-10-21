@@ -26,6 +26,7 @@ from meerk40t.gui.wxutils import (
     disable_window,
     wxButton,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -59,6 +60,14 @@ def register_panel_laser(window, context):
         | wx.aui.AUI_NB_TAB_MOVE
         | wx.aui.AUI_NB_BOTTOM,
     )
+    # ARGGH, the color setting via the ArtProvider does only work
+    # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+    context.themes.set_window_colors(notebook)
+    bg_std = context.themes.get("win_bg")
+    bg_active = context.themes.get("highlight")
+    notebook.GetArtProvider().SetColour(bg_std)
+    notebook.GetArtProvider().SetActiveColour(bg_active)
+
     pane = (
         aui.AuiPaneInfo()
         .Right()
@@ -118,8 +127,7 @@ class LaserPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("laserpanel")
         self.context.root.setting(bool, "laserpane_arm", True)
 
@@ -254,7 +262,7 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.rotary_indicator = wx.StaticText(
+        self.rotary_indicator = wxStaticText(
             self, wx.ID_ANY, _("Rotary active"), style=wx.ALIGN_CENTRE_HORIZONTAL
         )
         bg_color = self.context.themes.get("pause_bg")
@@ -284,8 +292,8 @@ class LaserPanel(wx.Panel):
 
         self.sizer_power = wx.BoxSizer(wx.HORIZONTAL)
         sizer_manipulate.Add(self.sizer_power, 0, wx.EXPAND, 0)
-        lb_power = wx.StaticText(self, wx.ID_ANY, _("Power"))
-        self.label_power = wx.StaticText(self, wx.ID_ANY, "0%")
+        lb_power = wxStaticText(self, wx.ID_ANY, _("Power"))
+        self.label_power = wxStaticText(self, wx.ID_ANY, "0%")
         self.slider_power = wx.Slider(
             self, wx.ID_ANY, value=10, minValue=1, maxValue=20
         )
@@ -300,8 +308,8 @@ class LaserPanel(wx.Panel):
 
         self.sizer_speed = wx.BoxSizer(wx.HORIZONTAL)
         sizer_manipulate.Add(self.sizer_speed, 0, wx.EXPAND, 0)
-        lb_speed = wx.StaticText(self, wx.ID_ANY, _("Speed"))
-        self.label_speed = wx.StaticText(self, wx.ID_ANY, "0%")
+        lb_speed = wxStaticText(self, wx.ID_ANY, _("Speed"))
+        self.label_speed = wxStaticText(self, wx.ID_ANY, "0%")
         self.slider_size = 20
         self.slider_speed = wx.Slider(
             self, wx.ID_ANY, value=10, minValue=1, maxValue=20
@@ -696,8 +704,7 @@ class JobPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
@@ -819,8 +826,7 @@ class OptimizePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))

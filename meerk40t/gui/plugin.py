@@ -85,8 +85,8 @@ and a wxpython version <= 4.1.1."""
         kernel.register("module/Scene", Scene)
 
         from meerk40t.gui.themes import Themes
-
-        kernel.add_service("themes", Themes(kernel))
+        force_dark = kernel_root.setting(bool, "force_dark", False)
+        kernel.add_service("themes", Themes(kernel, force_dark=force_dark))
 
     elif lifecycle == "boot":
         kernel_root = kernel.root
@@ -239,7 +239,7 @@ and a wxpython version <= 4.1.1."""
                     _("Which warning severity level do you want to recognize") + "\n" +
                     _("Critical: might damage your laser (e.g. laserhead bumping into rail)") + "\n" +
                     _("Normal: might ruin your burn (e.g. unassigned=unburnt elements)") + "\n" +
-                    _("Low: I hope you know what your doing (e.g. disabled operations)") 
+                    _("Low: I hope you know what your doing (e.g. disabled operations)")
                 ),
                 "page": "Gui",
                 "section": "Warning-Indicator",
@@ -319,7 +319,11 @@ and a wxpython version <= 4.1.1."""
 
         from meerk40t.gui.busy import BusyInfo
 
-        kernel.busyinfo = BusyInfo()
+        kargs = {}
+        if kernel.themes.dark:
+            kargs["bgcolor"] = kernel.themes.get("win_bg")
+            kargs["fgcolor"] = kernel.themes.get("win_fg")
+        kernel.busyinfo = BusyInfo(**kargs)
 
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)
@@ -377,15 +381,16 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             try:
-                from meerk40t.gui.icons import icon_meerk40t
-                image = icon_meerk40t.GetBitmap(resize=400)
+                flag = kernel.themes.dark
+                import meerk40t.gui.icons as icons
+                icons.DARKMODE = flag
+                image = icons.icon_meerk40t.GetBitmap(resize=400)
             except ImportError:
                 image = None
             from ..main import APPLICATION_VERSION
             from platform import system
-            if system() in ("Windows", "Darwin"):
-                kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
-                kernel.busyinfo.change(msg=_("Load main module"), keep=1)
+            kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
+            kernel.busyinfo.change(msg=_("Load main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
             @kernel.console_command(

@@ -196,10 +196,12 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                     _("Parameters"),
                     style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                 ) as dlg:
+                    gui.context.themes.set_window_colors(dlg)
+
                     sizer = wx.BoxSizer(wx.VERTICAL)
                     fields = []
                     for prompt in prompts:
-                        label = wx.StaticText(dlg, wx.ID_ANY, prompt["prompt"])
+                        label = wxStaticText(dlg, wx.ID_ANY, prompt["prompt"])
                         sizer.Add(label, 0, wx.EXPAND, 0)
                         dtype = prompt["type"]
                         if dtype == bool:
@@ -459,6 +461,18 @@ def create_menu(gui, node, elements):
 ##############
 # GUI CONTROL OVERRIDES
 ##############
+def set_color_according_to_theme(control, background, foreground):
+    win = control
+    while win is not None:
+        if hasattr(win, "context") and hasattr(win.context, "themes"):
+            if background:
+                if col := win.context.themes.get(background):
+                    control.SetBackgroundColour(col)
+            if foreground:
+                if col := win.context.themes.get(foreground):
+                    control.SetForegroundColour(col)
+            break
+        win = win.GetParent()
 
 
 class TextCtrl(wx.TextCtrl):
@@ -550,6 +564,7 @@ class TextCtrl(wx.TextCtrl):
         self.SetMinSize(dip_size(self, _MIN_WIDTH, -1))
         if limited:
             self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
+        set_color_according_to_theme(self, "text_bg", "text_fg")
 
     def validate_widths(self):
         minpattern = "0000"
@@ -904,6 +919,7 @@ class wxCheckBox(wx.CheckBox):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "text_bg", "text_fg")
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -933,6 +949,37 @@ class wxTreeCtrl(wx.TreeCtrl):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "list_bg", "list_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxBitmapButton(wx.BitmapButton):
+    """
+    This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -962,6 +1009,7 @@ class wxButton(wx.Button):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -991,35 +1039,7 @@ class wxToggleButton(wx.ToggleButton):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
-
-    def SetToolTip(self, tooltip):
-        self._tool_tip = tooltip
-        super().SetToolTip(self._tool_tip)
-
-
-class wxRadioBox(wx.RadioBox):
-    """
-    This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
-    otherwise do not show.
-    """
-
-    def __init__(
-        self,
-        *args,
-        **kwargs,
-    ):
-        self._tool_tip = None
-        super().__init__(*args, **kwargs)
-        if platform.system() == "Linux":
-
-            def on_mouse_over_check(ctrl):
-                def mouse(event=None):
-                    ctrl.SetToolTip(self._tool_tip)
-                    event.Skip()
-
-                return mouse
-
-            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -1028,7 +1048,7 @@ class wxRadioBox(wx.RadioBox):
 
 class wxStaticBitmap(wx.StaticBitmap):
     """
-    This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
+    This class wraps around wx.StaticBitmap and creates a series of mouse over tool tips to permit Linux tooltips that
     otherwise do not show.
     """
 
@@ -1049,6 +1069,7 @@ class wxStaticBitmap(wx.StaticBitmap):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -1065,9 +1086,19 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         *args,
         **kwargs,
     ):
+        if label is None:
+            label = ""
         self.sbox = wx.StaticBox(parent, id, label=label)
         self.sbox.SetMinSize(dip_size(self, 50, 50))
         super().__init__(self.sbox, orientation)
+        self.parent = parent
+
+    @property
+    def Id(self):
+        return self.sbox.Id
+
+    def GetId(self):
+        return self.Id
 
     def Show(self, show=True):
         self.sbox.Show(show)
@@ -1077,7 +1108,6 @@ class StaticBoxSizer(wx.StaticBoxSizer):
 
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
-
 
 class ScrolledPanel(SP):
     """
@@ -1106,6 +1136,7 @@ class wxListCtrl(wx.ListCtrl):
         # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)
         parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, parent)
         parent.Bind(wx.EVT_LIST_COL_END_DRAG, self.proxy_col_resized, self)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
 
     def save_column_widths(self):
         if self.context is None or self.list_name is None:
@@ -1205,6 +1236,7 @@ class HoverButton(wxButton):
         self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave)
         # self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
 
     def SetFocusColour(self, color):
         self._focus_color = wx.Colour(color)
@@ -1256,6 +1288,133 @@ class HoverButton(wxButton):
     #         self.on_leave(event)
     #     event.Skip()
 
+
+class wxRadioBox(StaticBoxSizer):
+    """
+    This class recreates the functionality of a wx.RadioBox, as this class does not recognize / honor parent color values, so a manual darkmode logic fails
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        id=None,
+        label=None,
+        choices=None,
+        majorDimension = 0,
+        style=0,
+        *args,
+        **kwargs,
+    ):
+        self.parent = parent
+        self.choices = choices
+        self._children = []
+        self._labels = []
+        self._tool_tip = None
+        super().__init__(parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL)
+        if majorDimension == 0 or style==wx.RA_SPECIFY_ROWS:
+            majorDimension = 1000
+        container = None
+        for idx, c in enumerate(self.choices):
+            if idx % majorDimension == 0:
+                container = wx.BoxSizer(wx.HORIZONTAL)
+                self.Add(container, 0, wx.EXPAND, 0)
+            st = 0
+            if idx == 0:
+                st = wx.RB_GROUP
+
+            radio_option = wx.RadioButton(parent, wx.ID_ANY, label=c, style=st)
+            container.Add(radio_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            self._children.append(radio_option)
+
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+            for ctrl in self._children:
+                ctrl.Bind(wx.EVT_MOTION, on_mouse_over_check(ctrl))
+
+        for ctrl in self._children:
+            ctrl.Bind(wx.EVT_RADIOBUTTON, self.on_radio)
+
+        for ctrl in self._children + self._labels:
+            set_color_according_to_theme(ctrl, "text_bg", "text_fg")
+
+    @property
+    def Children(self):
+        return self._children
+
+    def GetParent(self):
+        return self.parent
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        for ctrl in self._children:
+            ctrl.SetToolTip(self._tool_tip)
+
+    def Select(self, n):
+        self.SetSelection(n)
+
+    def SetSelection(self, n):
+        for idx, ctrl in enumerate(self._children):
+            ctrl.SetValue(idx == n)
+
+    def GetSelection(self):
+        for idx, ctrl in enumerate(self._children):
+            if ctrl.GetValue():
+                return idx
+        return -1
+
+    def Disable(self):
+        self.Enable(False)
+
+    def EnableItem(self, n, flag):
+        if 0 <= n < len(self._children):
+            self._children[n].Enable(flag)
+
+    def Enable(self, flag):
+        for ctrl in self._children:
+            ctrl.Enable(flag)
+
+    def Hide(self):
+        self.Show(False)
+
+    def Show(self, flag):
+        for ctrl in self._children + self._labels:
+            ctrl.Show(flag)
+
+    def Bind(self, event_type, routine):
+        self.parent.Bind(event_type, routine, self)
+        
+    def on_radio(self, orgevent):
+        #
+        event = orgevent.Clone()
+        event.SetEventType(wx.wxEVT_RADIOBOX)
+        event.SetId(self.Id)
+        event.SetEventObject(self)
+        event.Int = self.GetSelection()
+        wx.PostEvent(self.parent, event)
+
+    def SetForegroundColour(self, wc):
+        for ctrl in self._children + self._labels:
+            ctrl.SetForegroundColour(wc)
+
+    def SetBackgroundColour(self, wc):
+        for ctrl in self._children + self._labels:
+            ctrl.SetBackgroundColour(wc)
+
+class wxStaticText(wx.StaticText):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_color_according_to_theme(self, "label_bg", "label_fg")
+
+class wxListBox(wx.ListBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
 
 ##############
 # GUI KEYSTROKE FUNCTIONS

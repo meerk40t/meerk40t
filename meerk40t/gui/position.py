@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import get_default_icon_size, icons8_compress
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxCheckBox
+from meerk40t.gui.wxutils import wxBitmapButton, StaticBoxSizer, TextCtrl, dip_size, wxCheckBox
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -34,8 +34,7 @@ class PositionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("position")
         self.small = small
 
@@ -75,8 +74,8 @@ class PositionPanel(wx.Panel):
         else:
             resize_param = 0.75 * get_default_icon_size()
 
-        self.button_execute = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_param = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_execute = wxBitmapButton(self, wx.ID_ANY)
+        self.button_param = wxBitmapButton(self, wx.ID_ANY)
         self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
             self,

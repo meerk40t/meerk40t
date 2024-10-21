@@ -15,11 +15,12 @@ from wx import aui
 #     from wx import richtext
 # except ImportError:
 #     pass
+from meerk40t.gui.themes import Themes
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.gui.wxutils import wxButton
+from meerk40t.gui.wxutils import wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
@@ -119,8 +120,7 @@ class ActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.button_go = wxButton(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
@@ -149,9 +149,6 @@ class ActionPanel(wx.Panel):
         self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
         # Initial resize
         self.resize_button()
-        
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
     def on_button_go_click(self, event):
         if self.action is not None:
@@ -217,8 +214,7 @@ class GoPanel(ActionPanel):
             *args,
             **kwds,
         )
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.click_time = 0
         self.was_mouse = False
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
@@ -446,12 +442,9 @@ class wxMeerK40t(wx.App, Module):
         #     res = wx.SystemSettings().GetAppearance().IsDark()
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        icons.DARKMODE = res
-        icons.icon_r = 230
-        icons.icon_g = 230
-        icons.icon_b = 230
         Module.__init__(self, context, path)
+        theme = Themes(kernel=context._kernel)
+        icons.DARKMODE = theme.dark
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
@@ -1022,6 +1015,16 @@ class wxMeerK40t(wx.App, Module):
                 "tip": _("Allow only a single instance of MeerK40t."),
                 "page": "Start",
             },
+            {
+                "attr": "force_dark",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Force Darkmode"),
+                "tip": _("Will force MeerK40t to start in darkmode despite the system settings"),
+                "page": "Start",
+                "signals": "restart",
+            },
         ]
         kernel.register_choices("preferences", choices)
 
@@ -1250,7 +1253,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         # contents
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        label = wx.StaticText(dlg, wx.ID_ANY, header)
+        label = wxStaticText(dlg, wx.ID_ANY, header)
         sizer.Add(label, 1, wx.EXPAND, 0)
         info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
         info.SetValue(body)

@@ -18,6 +18,7 @@ class ConfigurationUdp(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_13 = StaticBoxSizer(self, wx.ID_ANY, _("UDP Settings"), wx.HORIZONTAL)
 
@@ -53,6 +54,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -161,6 +163,12 @@ class RuidaConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         options = (("bed_dim", "Ruida"),)

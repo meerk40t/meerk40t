@@ -19,6 +19,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxRadioBox,
     wxStaticBitmap,
+    wxStaticText,
     wxToggleButton,
 )
 from meerk40t.svgelements import Color
@@ -126,7 +127,8 @@ class ShutdownPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        info = wx.StaticText(
+        self.context.themes.set_window_colors(self)
+        info = wxStaticText(
             self,
             wx.ID_ANY,
             (
@@ -226,6 +228,7 @@ class DebugTreePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.lb_selected = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
         self.lb_emphasized = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
         self.txt_first = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
@@ -313,6 +316,7 @@ class DebugColorPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         count = 1000
@@ -329,14 +333,14 @@ class DebugColorPanel(ScrolledPanel):
                     sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
                     count = 0
 
-                col = wx.SystemSettings().GetColour(getattr(wx, prop))
+                col:wx.Colour = wx.SystemSettings().GetColour(getattr(wx, prop))
                 infosizer = wx.BoxSizer(wx.VERTICAL)
-                box = wx.StaticBitmap(
+                box = wxStaticBitmap(
                     self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
                 )
                 box.SetBackgroundColour(col)
-                box.SetToolTip(prop)
-                lbl = wx.StaticText(self, wx.ID_ANY, prop[len(pattern) :])
+                box.SetToolTip(f"{prop}: {col.GetAsString()}")
+                lbl = wxStaticText(self, wx.ID_ANY, prop[len(pattern) :])
                 lbl.SetFont(font)
                 lbl.SetMinSize(wx.Size(75, -1))
                 infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
@@ -423,12 +427,12 @@ class DebugColorPanel(ScrolledPanel):
 
             col = wx.Colour(entry)
             infosizer = wx.BoxSizer(wx.VERTICAL)
-            box = wx.StaticBitmap(
+            box = wxStaticBitmap(
                 self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
             )
             box.SetBackgroundColour(col)
             box.SetToolTip(entry)
-            lbl = wx.StaticText(self, wx.ID_ANY, entry)
+            lbl = wxStaticText(self, wx.ID_ANY, entry)
             lbl.SetFont(font)
             lbl.SetMinSize(wx.Size(75, -1))
             infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
@@ -459,12 +463,14 @@ class DebugIconPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.icon = None
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        lbl = wx.StaticText(self, wx.ID_ANY, "Pick icon")
+        lbl = wxStaticText(self, wx.ID_ANY, "Pick icon")
 
         self.icon_list = list()
         for entry in dir(mkicons):
@@ -483,7 +489,8 @@ class DebugIconPanel(wx.Panel):
         choose_sizer.Add(self.combo_icons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
-        self.icon_show = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_show = wxStaticBitmap(self, wx.ID_ANY)
+        self.context.themes.set_window_colors(self.icon_show)
         sizer_main.Add(self.icon_show, 1, wx.EXPAND, 0)
         sizer_main.Fit(self)
         self.combo_icons.Bind(wx.EVT_COMBOBOX, self.on_combo)
@@ -500,7 +507,7 @@ class DebugIconPanel(wx.Panel):
                 if isinstance(obj, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
                     imgs = self.icon_show.Size
                     ms = min(imgs[0], imgs[1])
-                    bmp = obj.GetBitmap(resize=ms)
+                    bmp = obj.GetBitmap(resize=ms, force_darkmode=self.context.themes.dark)
                     self.icon_show.SetBitmap(bmp)
 
     def pane_show(self, *args):
@@ -521,15 +528,16 @@ class DebugWindowPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.icon = None
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        lbl = wx.StaticText(self, wx.ID_ANY, "Pick Window")
+        lbl = wxStaticText(self, wx.ID_ANY, "Pick Window")
 
-        self.window_list = list()
-        for i, find in enumerate(self.context.kernel.find("window/")):
+        self.window_list = []
+        for find in self.context.kernel.find("window/"):
             value, name, suffix = find
             self.window_list.append(suffix)
 
@@ -553,7 +561,7 @@ class DebugWindowPanel(wx.Panel):
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
         text_left = wx.TextCtrl(self, wx.ID_ANY, "")
-        check_left = wx.CheckBox(self, wx.ID_ANY, label="Checkbox")
+        check_left = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_left = wx.Button(self, wx.ID_ANY, "A button")
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
         radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
@@ -561,7 +569,7 @@ class DebugWindowPanel(wx.Panel):
             self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=25)
         )
         slider_left = wx.Slider(self, wx.ID_ANY, value=0, minValue=0, maxValue=100)
-        static_left = wx.StaticBitmap(
+        static_left = wxStaticBitmap(
             self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
         )
         left_side.Add(cb_left, 0, 0, 0)

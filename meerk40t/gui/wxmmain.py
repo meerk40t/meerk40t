@@ -30,7 +30,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
-from meerk40t.gui.wxutils import wxButton
+from meerk40t.gui.wxutils import wxButton, wxStaticText
 from meerk40t.kernel import Job, get_safe_path, lookup_listener, signal_listener
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
@@ -241,6 +241,7 @@ class MeerK40t(MWindow):
         width, height = wx.DisplaySize()
 
         super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
+
         # We do this very early to allow resizing events to do their thing...
         self.restore_aspect(honor_initial_values=True)
         try:
@@ -291,6 +292,15 @@ class MeerK40t(MWindow):
         self._pane_captions = dict()
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
+        bg_col = self.context.themes.get("win_bg")
+        fg_col = self.context.themes.get("win_fg")
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_ACTIVE_CAPTION_COLOUR, bg_col)
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_ACTIVE_CAPTION_TEXT_COLOUR, fg_col)
+
+        bg_col = self.context.themes.get("inactive_bg")
+        fg_col = self.context.themes.get("inactive_fg")
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_INACTIVE_CAPTION_COLOUR, bg_col)
+        self._mgr.GetArtProvider().SetColour(aui.AUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR, fg_col)
 
         self.__set_panes()
         self.__set_commands()
@@ -3275,8 +3285,8 @@ class MeerK40t(MWindow):
         #     res = wx.SystemSettings().GetAppearance().IsDark()
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        return res
+        # return res
+        return self.context.themes.dark
 
     def __kernel_initialize(self):
         context = self.context
@@ -3287,7 +3297,7 @@ class MeerK40t(MWindow):
             "theme", help=_("Theming information and assignments"), hidden=True
         )
         def theme(command, channel, _, **kwargs):
-            channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
+            channel(str(context.themes.get("win_bg")))
 
         context.setting(str, "file0", None)
         context.setting(str, "file1", None)
@@ -4899,16 +4909,17 @@ class MeerK40t(MWindow):
                 pos=wx.DefaultPosition,
                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
             )
+            self.context.themes.set_window_colors(dlg)
             # contents
             options_1 = (_("Default"), _("Left Edge"), _("Center"), _("Right Edge"))
             options_2 = (_("Default"), _("Top Edge"), _("Center"), _("Bottom Edge"))
             sizer = wx.BoxSizer(wx.VERTICAL)
-            label = wx.StaticText(
+            label = wxStaticText(
                 dlg, wx.ID_ANY, _("Where do you want to place the content of the file?")
             )
             sizer.Add(label, 0, wx.EXPAND, 0)
             s1 = wx.BoxSizer(wx.HORIZONTAL)
-            lbl1 = wx.StaticText(dlg, wx.ID_ANY, _("Horizontal:"))
+            lbl1 = wxStaticText(dlg, wx.ID_ANY, _("Horizontal:"))
             combo1 = wx.ComboBox(
                 dlg, wx.ID_ANY, choices=options_1, style=wx.CB_DROPDOWN | wx.CB_READONLY
             )
@@ -4916,7 +4927,7 @@ class MeerK40t(MWindow):
             s1.Add(lbl1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
             s1.Add(combo1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             s2 = wx.BoxSizer(wx.HORIZONTAL)
-            lbl2 = wx.StaticText(dlg, wx.ID_ANY, _("Vertical:"))
+            lbl2 = wxStaticText(dlg, wx.ID_ANY, _("Vertical:"))
             combo2 = wx.ComboBox(
                 dlg, wx.ID_ANY, choices=options_2, style=wx.CB_DROPDOWN | wx.CB_READONLY
             )

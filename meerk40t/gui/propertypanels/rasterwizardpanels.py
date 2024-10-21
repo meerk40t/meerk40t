@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 
 """
 Establishes property panels for some image operations
-The priority of appearance is defined dynamically based 
+The priority of appearance is defined dynamically based
 on the order within the node operations
 
 """
@@ -39,8 +39,7 @@ class ContrastPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_contrast = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -190,8 +189,7 @@ class HalftonePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_halftone = wxCheckBox(self, wx.ID_ANY, "Enable")
@@ -368,7 +366,7 @@ class ToneCurvePanel(wx.Panel):
                 if n.get("name") == prop:
                     return base_priority + idx + 1
         return base_priority
-    
+
     @staticmethod
     def accepts(node):
         if not hasattr(node, "as_image"):
@@ -382,8 +380,7 @@ class ToneCurvePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self._tone_panel_buffer = None
@@ -407,7 +404,7 @@ class ToneCurvePanel(wx.Panel):
 
         self.graph_brush = wx.Brush()
         self.graph_pen = wx.Pen()
-        c = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        c = self.context.themes.get("win_bg")
         self.graph_brush.SetColour(c)
         self.graph_pen.SetColour(wx.Colour(255 - c[0], 255 - c[1], 255 - c[2]))
         self.graph_pen.SetWidth(5)
@@ -577,8 +574,7 @@ class SharpenPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_sharpen = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -771,8 +767,7 @@ class GammaPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_gamma = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -882,8 +877,7 @@ class EdgePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -951,8 +945,7 @@ class AutoContrastPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))

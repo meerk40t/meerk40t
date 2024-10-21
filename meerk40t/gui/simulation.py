@@ -1,9 +1,9 @@
 import math
 import platform
+from time import perf_counter, sleep
 
 import wx
 
-from time import perf_counter, sleep
 from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode.cubiccut import CubicCut
@@ -49,7 +49,16 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from .wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxListBox,
+    wxListCtrl,
+    wxStaticText,
+)
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -66,16 +75,17 @@ class OperationsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         self.cutplan = cutplan
         if self.cutplan is None:
             self.plan_name = ""
         else:
             self.plan_name = self.cutplan.name
-        self.list_operations = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
-        self.text_operation_param = wx.TextCtrl(
+        self.list_operations = wxListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
+        self.context.themes.set_window_colors(self.list_operations)
+
+        self.text_operation_param = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         self.check_decompile = wxCheckBox(self, wx.ID_ANY, "D")
@@ -470,12 +480,11 @@ class CutcodePanel(wx.Panel):
         self.parent = args[0]
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         self.cutcode = cutcode
         self.plan_name = plan_name
-        self.list_cutcode = wx.ListBox(
+        self.list_cutcode = wxListBox(
             self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE
         )
         self.last_selected = []
@@ -791,8 +800,7 @@ class SimulationPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("simulate")
 
         self.retries = 0
@@ -862,6 +870,8 @@ class SimulationPanel(wx.Panel, Job):
         )
 
         self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
+        self.context.themes.set_window_colors(self.panel_optimize)
+
         self.subpanel_optimize.Reparent(self.panel_optimize)
         self.subpanel_operations.Reparent(self.panel_optimize)
         self.subpanel_cutcode.Reparent(self.panel_optimize)
@@ -1171,12 +1181,12 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_speed_options.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
 
-        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed") + " ")
+        label_playback_speed = wxStaticText(self, wx.ID_ANY, _("Playback Speed") + " ")
         sizer_pb_speed.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_pb_speed.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
 
         sizer_display = wx.BoxSizer(wx.HORIZONTAL)
-        label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
+        label_playback_mode = wxStaticText(self, wx.ID_ANY, _("Mode") + " ")
         sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Make sure it has about textbox size, otherwise too narrow
         self.radio_cut.SetMinSize(dip_size(self, -1, 23))

@@ -4,6 +4,7 @@ from math import isinf, isnan
 from pathlib import Path
 
 import wx
+
 # import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
@@ -14,7 +15,13 @@ from meerk40t.gui.icons import (
     icons8_route,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import HoverButton, wxButton, wxListCtrl, EditableListCtrl
+from meerk40t.gui.wxutils import (
+    EditableListCtrl,
+    HoverButton,
+    wxButton,
+    wxListCtrl,
+    wxStaticText,
+)
 from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -82,8 +89,7 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("spooler")
 
         self.selected_device = selected_device
@@ -137,7 +143,7 @@ class SpoolerPanel(wx.Panel):
             list_name="list_spoolerjobs",
         )
 
-        self.info_label = wx.StaticText(
+        self.info_label = wxStaticText(
             self.win_bottom, wx.ID_ANY, _("Completed jobs:")
         )
         self.button_clear_history = wxButton(
@@ -1161,7 +1167,7 @@ class SpoolerPanel(wx.Panel):
     def update_queue(self):
         if self.shown:
             self.on_device_update(None)
-    
+
     def pane_show(self):
         self.list_job_history.load_column_widths()
         self.list_job_spool.load_column_widths()

@@ -15,6 +15,7 @@ _ = wx.GetTranslation
 class BalorConfiguration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)
+        window_context = self.context
         self.context = self.context.device
         self.SetHelpText("balorconfig")
         _icon = wx.NullIcon
@@ -29,8 +30,17 @@ class BalorConfiguration(MWindow):
             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
             | wx.aui.AUI_NB_SCROLL_BUTTONS
             | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            | wx.aui.AUI_NB_TAB_MOVE
+            | wx.aui.AUI_NB_TOP,
         )
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         options = (
             ("balor", "Balor"),

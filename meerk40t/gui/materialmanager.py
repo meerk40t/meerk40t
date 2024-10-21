@@ -24,13 +24,14 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
+    EditableListCtrl,
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
-    EditableListCtrl,
+    wxStaticText,
 )
 from meerk40t.kernel.kernel import get_safe_path
 from meerk40t.kernel.settings import Settings
@@ -46,6 +47,7 @@ class ImportDialog(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY)
         self.btn_file = wxButton(self, wx.ID_ANY, "...")
         self.check_consolidate = wxCheckBox(
@@ -87,10 +89,10 @@ class ImportDialog(wx.Dialog):
         )
 
         lens_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label_old = wx.StaticText(self, wx.ID_ANY, _("Old:"))
-        unit_old = wx.StaticText(self, wx.ID_ANY, "mm")
-        label_new = wx.StaticText(self, wx.ID_ANY, _("New:"))
-        unit_new = wx.StaticText(self, wx.ID_ANY, "mm")
+        label_old = wxStaticText(self, wx.ID_ANY, _("Old:"))
+        unit_old = wxStaticText(self, wx.ID_ANY, "mm")
+        label_new = wxStaticText(self, wx.ID_ANY, _("New:"))
+        unit_new = wxStaticText(self, wx.ID_ANY, "mm")
         lens_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         lens_param_sizer.Add(self.txt_lens_old, 0, 0, 0)
         lens_param_sizer.Add(unit_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -110,10 +112,10 @@ class ImportDialog(wx.Dialog):
         )
 
         wattage_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label_old = wx.StaticText(self, wx.ID_ANY, _("Old:"))
-        unit_old = wx.StaticText(self, wx.ID_ANY, "W")
-        label_new = wx.StaticText(self, wx.ID_ANY, _("New:"))
-        unit_new = wx.StaticText(self, wx.ID_ANY, "W")
+        label_old = wxStaticText(self, wx.ID_ANY, _("Old:"))
+        unit_old = wxStaticText(self, wx.ID_ANY, "W")
+        label_new = wxStaticText(self, wx.ID_ANY, _("New:"))
+        unit_new = wxStaticText(self, wx.ID_ANY, "W")
         wattage_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         wattage_param_sizer.Add(self.txt_wattage_old, 0, 0, 0)
         wattage_param_sizer.Add(unit_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -263,6 +265,7 @@ class MaterialPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.op_data = self.context.elements.op_data
         self.SetHelpText("materialmanager")
         self.parent_panel = None
@@ -304,7 +307,7 @@ class MaterialPanel(ScrolledPanel):
         filter_box = StaticBoxSizer(
             self, wx.ID_ANY, _("Filter Materials"), wx.HORIZONTAL
         )
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
+        label_1 = wxStaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_material = wx.ComboBox(
@@ -314,13 +317,13 @@ class MaterialPanel(ScrolledPanel):
 
         filter_box.Add(self.txt_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Thickness"))
+        label_2 = wxStaticText(self, wx.ID_ANY, _("Thickness"))
         filter_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_thickness = TextCtrl(self, wx.ID_ANY, "", limited=True)
         filter_box.Add(self.txt_thickness, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_3 = wx.StaticText(self, wx.ID_ANY, _("Laser"))
+        label_3 = wxStaticText(self, wx.ID_ANY, _("Laser"))
         filter_box.Add(label_3, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.laser_choices = [
@@ -426,7 +429,7 @@ class MaterialPanel(ScrolledPanel):
             ctrl.SetMinSize(dip_size(self, minsize, -1))
             ctrl.SetMaxSize(dip_size(self, maxsize, -1))
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Title"))
+        label = wxStaticText(self, wx.ID_ANY, _("Title"))
         # size_it(label, 60, 100)
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_title = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -449,7 +452,7 @@ class MaterialPanel(ScrolledPanel):
         self.btn_expand.SetMaxSize(dip_size(self, 25, 25))
         box1.Add(self.btn_expand, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Material"))
+        label = wxStaticText(self, wx.ID_ANY, _("Material"))
         size_it(label, 60, 100)
         box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         # self.txt_entry_material = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -459,13 +462,13 @@ class MaterialPanel(ScrolledPanel):
 
         box2.Add(self.txt_entry_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Thickness"))
+        label = wxStaticText(self, wx.ID_ANY, _("Thickness"))
         size_it(label, 60, 100)
         box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_thickness = TextCtrl(self, wx.ID_ANY, "", limited=True)
         box2.Add(self.txt_entry_thickness, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Laser"))
+        label = wxStaticText(self, wx.ID_ANY, _("Laser"))
         size_it(label, 60, 100)
         box3.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -478,7 +481,7 @@ class MaterialPanel(ScrolledPanel):
         box3.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         box3.AddSpacer(20)
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Id"))
+        label = wxStaticText(self, wx.ID_ANY, _("Id"))
         size_it(label, 60, 100)
         box3.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_section = TextCtrl(
@@ -490,7 +493,7 @@ class MaterialPanel(ScrolledPanel):
         )
         box3.Add(self.txt_entry_section, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Power"))
+        label = wxStaticText(self, wx.ID_ANY, _("Power"))
         size_it(label, 60, 100)
         box4.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_power = TextCtrl(
@@ -499,12 +502,12 @@ class MaterialPanel(ScrolledPanel):
             "",
             limited=True,
         )
-        unit = wx.StaticText(self, wx.ID_ANY, _("W"))
+        unit = wxStaticText(self, wx.ID_ANY, _("W"))
         box4.Add(self.txt_entry_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         box4.Add(unit, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         box4.AddSpacer(20)
 
-        label = wx.StaticText(self, wx.ID_ANY, _("Lens-Size"))
+        label = wxStaticText(self, wx.ID_ANY, _("Lens-Size"))
         size_it(label, 60, 100)
         box4.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_lens = TextCtrl(
@@ -513,7 +516,7 @@ class MaterialPanel(ScrolledPanel):
             "",
             limited=True,
         )
-        unit = wx.StaticText(self, wx.ID_ANY, _("mm"))
+        unit = wxStaticText(self, wx.ID_ANY, _("mm"))
         box4.Add(self.txt_entry_lens, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         box4.Add(unit, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -2760,8 +2763,9 @@ class ImportPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        label = wx.StaticText(self, wx.ID_ANY, "UNDER CONSTRUCTION")
+        label = wxStaticText(self, wx.ID_ANY, "UNDER CONSTRUCTION")
         main_sizer.Add(label, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
 
@@ -2775,6 +2779,7 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None
@@ -2783,8 +2788,8 @@ class AboutPanel(wx.Panel):
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         font = wx.Font(
-            10,
-            wx.FONTFAMILY_TELETYPE,
+            16,
+            wx.FONTFAMILY_DEFAULT,
             wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL,
         )
@@ -2820,8 +2825,18 @@ class MaterialManager(MWindow):
             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
             | wx.aui.AUI_NB_SCROLL_BUTTONS
             | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            | wx.aui.AUI_NB_TAB_MOVE
+            | wx.aui.AUI_NB_BOTTOM,
         )
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_library, _("Library"))
         # self.notebook_main.AddPage(self.panel_import, _("Import"))

@@ -1,13 +1,19 @@
 import datetime
+from platform import system
 
 import wx
-
-from platform import system
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
-from .wxutils import dip_size, ScrolledPanel, StaticBoxSizer, wxButton, wxListCtrl
+from .wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxListCtrl,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -37,8 +43,7 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150, force_lightmode=True)
@@ -56,7 +61,7 @@ class AboutPanel(wx.Panel):
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
-        self.meerk40t_about_version_text = wx.StaticText(self, wx.ID_ANY, "MeerK40t")
+        self.meerk40t_about_version_text = wxStaticText(self, wx.ID_ANY, "MeerK40t")
         # end wxGlade
 
     def __do_layout(self):
@@ -79,7 +84,7 @@ class AboutPanel(wx.Panel):
         vsizer_pic_iver.Add(self.meerk40t_about_version_text, 0, 0, 0)
         hsizer_pic_info.Add(vsizer_pic_iver, 0, wx.EXPAND, 0)
         hsizer_pic_info.AddSpacer(5)
-        self.meerk40t_about_text_header = wx.StaticText(
+        self.meerk40t_about_text_header = wxStaticText(
             self,
             wx.ID_ANY,
             _(HEADER_TEXT) + "\n" + _(HEADER_TEXT_2),
@@ -114,7 +119,7 @@ class AboutPanel(wx.Panel):
             "inspectionsbybob",
             "jondale",
         ]
-        meerk40t_about_text = wx.StaticText(
+        meerk40t_about_text = wxStaticText(
             self,
             wx.ID_ANY,
             _("Thanks go out to...\n")
@@ -172,8 +177,7 @@ class DavidPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         from wx.lib.embeddedimage import PyEmbeddedImage
 
@@ -1463,7 +1467,7 @@ class DavidPanel(ScrolledPanel):
             self, wx.ID_ANY, david_olsen.GetBitmap()
         )
         self.david_picture.SetSize(self.david_picture.GetBestSize())
-        self.david_header = wx.StaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
+        self.david_header = wxStaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
         eulogy:str = _(EULOGY_TEXT)
         if system() == "Darwin":
             # MacOS does not wrap labels around, so we need do it ourselves
@@ -1490,7 +1494,7 @@ class DavidPanel(ScrolledPanel):
                 if start:
                     lines.append(start)
             eulogy = "\n".join(lines)
-        self.david_text = wx.StaticText(
+        self.david_text = wxStaticText(
             self,
             wx.ID_ANY,
             eulogy,
@@ -1543,8 +1547,7 @@ class InformationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.os_version = wx.TextCtrl(
@@ -1641,8 +1644,7 @@ class ComponentPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.list_preview = wxListCtrl(
             self,
             wx.ID_ANY,
@@ -1962,7 +1964,7 @@ class ComponentPanel(ScrolledPanel):
 
     def pane_show(self):
         self.list_preview.load_column_widths()
-    
+
     def pane_hide(self):
         self.list_preview.save_column_widths()
 
@@ -1989,6 +1991,12 @@ class About(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)
