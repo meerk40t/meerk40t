@@ -1186,8 +1186,12 @@ class wxListCtrl(wx.ListCtrl):
         total = gap
         last = 0
         for col in range(self.GetColumnCount()):
-            last = self.GetColumnWidth(col)
-            total += last
+            try:
+                last = self.GetColumnWidth(col)
+                total += last
+            except Exception as e:
+                # print(f"Strange, crashed for column {col} of {self.GetColumnCount()}: {e}")
+                return False
         # print(f"{self.list_name}, cols={self.GetColumnCount()}, available={list_width}, used={total}")
         if total < list_width:
             col = self.GetColumnCount() - 1
@@ -1197,7 +1201,7 @@ class wxListCtrl(wx.ListCtrl):
             try:
                 self.SetColumnWidth(col, last + (list_width - total))
             except Exception as e:
-                print(f"Something strange happened while resizing the last columns for {self.list_name}: {e}")
+                # print(f"Something strange happened while resizing the last columns for {self.list_name}: {e}")
                 return False
             return True
         return False
