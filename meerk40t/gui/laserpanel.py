@@ -39,6 +39,7 @@ def register_panel_laser(window, context):
     optimize_panel = OptimizePanel(window, wx.ID_ANY, context=context)
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
+    context.themes.set_window_colors(jog_drag)
     jog_drag.SetupScrolling()
     jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)

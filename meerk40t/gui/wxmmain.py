@@ -3276,8 +3276,8 @@ class MeerK40t(MWindow):
         #     res = wx.SystemSettings().GetAppearance().IsDark()
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        return res
+        # return res
+        return self.context.themes.dark
 
     def __kernel_initialize(self):
         context = self.context
@@ -3288,7 +3288,7 @@ class MeerK40t(MWindow):
             "theme", help=_("Theming information and assignments"), hidden=True
         )
         def theme(command, channel, _, **kwargs):
-            channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
+            channel(str(context.themes.get("win_bg")))
 
         context.setting(str, "file0", None)
         context.setting(str, "file1", None)

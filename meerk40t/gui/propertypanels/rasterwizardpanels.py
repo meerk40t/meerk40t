@@ -404,7 +404,7 @@ class ToneCurvePanel(wx.Panel):
 
         self.graph_brush = wx.Brush()
         self.graph_pen = wx.Pen()
-        c = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        c = self.context.themes.get("win_bg")
         self.graph_brush.SetColour(c)
         self.graph_pen.SetColour(wx.Colour(255 - c[0], 255 - c[1], 255 - c[2]))
         self.graph_pen.SetWidth(5)

@@ -37,8 +37,9 @@ def is_a_dark_color(c1):
     return color_distance(c1, wx.BLACK) < color_distance(c1, wx.WHITE)
 
 class Themes(Service):
-    def __init__(self, kernel, index=None, *args, **kwargs):
+    def __init__(self, kernel, index=None, force_dark=False, *args, **kwargs):
         Service.__init__(self, kernel, "themes" if index is None else f"themes{index}")
+        self.force_dark = force_dark
         self.registered_themes = {
             "system": self.load_system_default,
         }
@@ -71,12 +72,8 @@ class Themes(Service):
         self._theme = "system"
         res1 = wx.SystemSettings().GetAppearance().IsDark()
         res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        print (f"wx claims: {res1}, we think: {res2}")
-        try:
-            self._dark = wx.SystemSettings().GetAppearance().IsDark()
-        except AttributeError:
-            self._dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        self._dark = True
+        print (f"wx claims: {res1}, we think: {res2}, overload: {self.force_dark}")
+        self._dark = res1 or res2 or self.force_dark
         from platform import system
 
         buggy_darwin = bool(system() == "Darwin" and not self._dark)

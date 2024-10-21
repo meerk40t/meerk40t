@@ -66,8 +66,6 @@ class TCPController(MWindow):
         self.SetIcon(_icon)
         # For whatever reason the windows backgroundcolor is a dark grey,
         # not sure why but, we just set it back to standard value
-        col = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        self.SetBackgroundColour(col)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
@@ -175,7 +173,7 @@ class TCPController(MWindow):
     def on_tcp_status(self, origin, state):
         self.text_status.SetValue(str(state))
         self.state = state
-        if state == "uninitialized" or state == "disconnected":
+        if state in ["uninitialized", "disconnected"]:
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(

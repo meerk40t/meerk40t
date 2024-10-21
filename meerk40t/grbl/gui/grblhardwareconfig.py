@@ -113,7 +113,8 @@ class GrblHardwareProperties(ScrolledPanel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
-
+        if context is not None:
+            context.themes.set_window_colors(self)
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
 
         chart = EditableListCtrl(

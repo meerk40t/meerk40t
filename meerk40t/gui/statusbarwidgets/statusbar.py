@@ -16,6 +16,7 @@ class CustomStatusBar(wx.StatusBar):
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
+        self.context.themes.set_window_colors(self)
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)

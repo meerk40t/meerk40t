@@ -85,8 +85,8 @@ and a wxpython version <= 4.1.1."""
         kernel.register("module/Scene", Scene)
 
         from meerk40t.gui.themes import Themes
-
-        kernel.add_service("themes", Themes(kernel))
+        force_dark = kernel_root.setting(bool, "force_dark", False)
+        kernel.add_service("themes", Themes(kernel, force_dark=force_dark))
 
     elif lifecycle == "boot":
         kernel_root = kernel.root

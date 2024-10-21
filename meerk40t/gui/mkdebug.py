@@ -489,6 +489,7 @@ class DebugIconPanel(wx.Panel):
         sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.icon_show = wx.StaticBitmap(self, wx.ID_ANY)
+        self.context.themes.set_window_colors(self.icon_show)
         sizer_main.Add(self.icon_show, 1, wx.EXPAND, 0)
         sizer_main.Fit(self)
         self.combo_icons.Bind(wx.EVT_COMBOBOX, self.on_combo)
@@ -505,7 +506,7 @@ class DebugIconPanel(wx.Panel):
                 if isinstance(obj, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
                     imgs = self.icon_show.Size
                     ms = min(imgs[0], imgs[1])
-                    bmp = obj.GetBitmap(resize=ms)
+                    bmp = obj.GetBitmap(resize=ms, force_darkmode=self.context.themes.dark)
                     self.icon_show.SetBitmap(bmp)
 
     def pane_show(self, *args):
@@ -526,6 +527,7 @@ class DebugWindowPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.icon = None
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -533,8 +535,8 @@ class DebugWindowPanel(wx.Panel):
 
         lbl = wx.StaticText(self, wx.ID_ANY, "Pick Window")
 
-        self.window_list = list()
-        for i, find in enumerate(self.context.kernel.find("window/")):
+        self.window_list = []
+        for find in self.context.kernel.find("window/"):
             value, name, suffix = find
             self.window_list.append(suffix)
 
@@ -558,7 +560,7 @@ class DebugWindowPanel(wx.Panel):
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
         text_left = wx.TextCtrl(self, wx.ID_ANY, "")
-        check_left = wx.CheckBox(self, wx.ID_ANY, label="Checkbox")
+        check_left = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_left = wx.Button(self, wx.ID_ANY, "A button")
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
         radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))

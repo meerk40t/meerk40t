@@ -115,6 +115,7 @@ class BasicOpPanel(wx.Panel):
         self.btn_config.Bind(wx.EVT_BUTTON, self.on_config)
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.op_panel = ScrolledPanel(self, wx.ID_ANY)
+        self.context.themes.set_window_colors(self.op_panel)
         self.op_panel.SetupScrolling()
         self.operation_sizer = None
         classif_sizer = StaticBoxSizer(
@@ -433,7 +434,7 @@ class BasicOpPanel(wx.Panel):
         except RuntimeError:
             return
         self.operation_sizer = StaticBoxSizer(
-            self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL
+            self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL, context=self.context,
         )
         self.op_panel.SetSizer(self.operation_sizer)
         elements = self.context.elements
@@ -451,37 +452,39 @@ class BasicOpPanel(wx.Panel):
         self.check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label="A")
+        self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Active"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label="S")
+        self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Show"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label="C")
+        self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Coolant"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        if self.use_percent:
-            unit = " [%]"
-        else:
-            unit = ""
+        unit = " [%]" if self.use_percent else ""
         header = wx.StaticText(
             self.op_panel, wx.ID_ANY, label=_("Power {unit}").format(unit=unit)
         )
+        self.context.themes.set_window_colors(header)
         header.SetMaxSize(dip_size(self, 30, -1))
         header.SetMaxSize(dip_size(self, 70, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
+        self.context.themes.set_window_colors(header)
         header.SetMaxSize(dip_size(self, 30, -1))
         header.SetMaxSize(dip_size(self, 70, -1))
-
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.operation_sizer.Add(info_sizer, 0, wx.EXPAND, 0)
@@ -603,10 +606,7 @@ class BasicOpPanel(wx.Panel):
                 t_power.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(t_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if hasattr(op, "power"):
-                    if op.power is not None:
-                        sval = op.power
-                    else:
-                        sval = 0
+                    sval = op.power if op.power is not None else 0
                     if self.use_percent:
                         t_power.SetValue(f"{sval / 10:.0f}")
                         unit = "%"
@@ -633,10 +633,7 @@ class BasicOpPanel(wx.Panel):
                 t_speed.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(t_speed, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if hasattr(op, "speed"):
-                    if op.speed is not None:
-                        sval = op.speed
-                    else:
-                        sval = 0
+                    sval = op.speed if op.speed is not None else 0
                     if self.use_mm_min:
                         t_speed.SetValue(f"{sval * 60:.0f}")
                         unit = "mm/min"

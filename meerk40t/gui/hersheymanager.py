@@ -159,11 +159,8 @@ class FontGlyphPicker(wx.Dialog):
         def prepare_bitmap(geom, final_icon_width, final_icon_height, as_stroke=False):
             edge = 1
             strokewidth = 1
-            wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-            if self.context.themes.dark:
-                strcol = wx.WHITE
-            else:
-                strcol = wx.BLACK
+            wincol = self.context.themes.get("win_bg")
+            strcol = self.context.themes.get("win_fg")
 
             spen = wx.Pen()
             sbrush = wx.Brush()
