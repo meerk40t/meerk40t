@@ -26,6 +26,7 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
         self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
         self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
@@ -143,6 +144,7 @@ class SplitterPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("imagesplit")
         self.scene = scene
         # Amount of currently selected
@@ -288,6 +290,7 @@ class KeyholePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("keyhole")
         self.scene = scene
         # Amount of currently selected

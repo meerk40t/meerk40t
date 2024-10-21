@@ -123,6 +123,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.listeners = list()
         self.entries_per_column = entries_per_column
         if choices is None:
@@ -1566,7 +1567,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
-    
+
     def on_close(self, event):
         # We should not need this, but better safe than sorry
         event.Skip()

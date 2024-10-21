@@ -700,8 +700,7 @@ class RibbonEditor(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_color(self)
         self.SetHelpText("ribboneditor")
         self.ribbon_identifier = "primary"
 
@@ -1358,6 +1357,7 @@ class RibbonEditor(wx.Panel):
             _("Edit Button"),
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
+        self.context.themes.set_window_colors(dlg)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         line1 = wx.BoxSizer(wx.HORIZONTAL)

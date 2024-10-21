@@ -37,6 +37,7 @@ class SaveLoadPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.callback = None
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer_main)
@@ -175,6 +176,7 @@ class TemplatePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("testpattern")
         self.storage = storage
         self.callback = None

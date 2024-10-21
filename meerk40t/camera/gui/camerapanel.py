@@ -58,6 +58,7 @@ class CameraPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.gui = gui
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("camera")
         self.index = index
         self.cam_device_link = {}
@@ -441,7 +442,7 @@ class CamInterfaceWidget(Widget):
                 this_w = width
                 this_h = height
                 return handler
-            
+
             def enable_aspect(*args):
                 self.cam.camera.aspect = not self.cam.camera.aspect
                 self.scene.widget_root.set_aspect(self.cam.camera.aspect)
@@ -594,7 +595,7 @@ class CamInterfaceWidget(Widget):
                         id=item.GetId(),
                      )
                 menu.AppendSubMenu(resmen, _("Set camera resolution..."))
-                
+
 
             item = menu.Append(wx.ID_ANY, _("Open CameraInterface"), "")
             self.cam.Bind(
@@ -868,7 +869,7 @@ class CameraInterface(MWindow):
     def create_menu(self, append):
         def identify_cameras(event=None):
             self.context("camdetect\n")
-        
+
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
         self.Bind(wx.EVT_MENU, self.panel.reset_fisheye, id=item.GetId())
@@ -1052,6 +1053,7 @@ class CameraURIPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.get_context("camera")
+        context.themes.set_window_colors(self)
         if index is None:
             index = 0
         self.index = index
@@ -1186,7 +1188,7 @@ class CameraURIPanel(wx.Panel):
     def on_tree_popup_clear(self, index):
         def delete(event):
             if self.context.kernel.yesno(
-                _("Do you really want to delete all entries?"), 
+                _("Do you really want to delete all entries?"),
                 caption=_("URI-Manager")
             ):
                 self.context.uris.clear()

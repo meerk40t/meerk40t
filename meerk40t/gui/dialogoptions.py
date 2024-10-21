@@ -56,6 +56,8 @@ class DialogOptions:
         parent_win = wx.Dialog(
             parentid, wx.ID_ANY, title=title, style=wx.CAPTION | wx.RESIZE_BORDER
         )
+        self.context.themes.set_window_colors(parent_win)
+
         cpanel = ChoicePropertyPanel(
             parent_win,
             context=self.context,

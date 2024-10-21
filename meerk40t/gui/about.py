@@ -37,8 +37,7 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         self.bitmap_button_1 = wx.BitmapButton(
             self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150, force_lightmode=True)
@@ -172,8 +171,7 @@ class DavidPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         from wx.lib.embeddedimage import PyEmbeddedImage
 
@@ -1543,8 +1541,7 @@ class InformationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.os_version = wx.TextCtrl(
@@ -1641,8 +1638,7 @@ class ComponentPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.list_preview = wxListCtrl(
             self,
             wx.ID_ANY,
@@ -1962,7 +1958,7 @@ class ComponentPanel(ScrolledPanel):
 
     def pane_show(self):
         self.list_preview.load_column_widths()
-    
+
     def pane_hide(self):
         self.list_preview.save_column_widths()
 

@@ -22,6 +22,7 @@ class MoshiControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        context.themes.set_window_colors(self)
         self.context = context.device
         self.SetHelpText("moshicontroller")
 

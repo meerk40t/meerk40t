@@ -239,7 +239,7 @@ and a wxpython version <= 4.1.1."""
                     _("Which warning severity level do you want to recognize") + "\n" +
                     _("Critical: might damage your laser (e.g. laserhead bumping into rail)") + "\n" +
                     _("Normal: might ruin your burn (e.g. unassigned=unburnt elements)") + "\n" +
-                    _("Low: I hope you know what your doing (e.g. disabled operations)") 
+                    _("Low: I hope you know what your doing (e.g. disabled operations)")
                 ),
                 "page": "Gui",
                 "section": "Warning-Indicator",
@@ -319,7 +319,7 @@ and a wxpython version <= 4.1.1."""
 
         from meerk40t.gui.busy import BusyInfo
 
-        kernel.busyinfo = BusyInfo()
+        kernel.busyinfo = BusyInfo(startup=kernel.themes.set_window_colors)
 
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)

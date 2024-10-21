@@ -241,6 +241,7 @@ class MeerK40t(MWindow):
         width, height = wx.DisplaySize()
 
         super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
+
         # We do this very early to allow resizing events to do their thing...
         self.restore_aspect(honor_initial_values=True)
         try:
@@ -4899,6 +4900,7 @@ class MeerK40t(MWindow):
                 pos=wx.DefaultPosition,
                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
             )
+            self.context.themes.set_window_colors(dlg)
             # contents
             options_1 = (_("Default"), _("Left Edge"), _("Center"), _("Right Edge"))
             options_2 = (_("Default"), _("Top Edge"), _("Center"), _("Bottom Edge"))

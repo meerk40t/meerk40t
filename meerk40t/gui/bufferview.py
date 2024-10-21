@@ -12,6 +12,7 @@ class BufferViewPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_info = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE

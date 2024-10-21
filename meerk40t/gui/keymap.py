@@ -15,8 +15,7 @@ class KeymapPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.list_index = []
 
         self.list_keymap = wxListCtrl(

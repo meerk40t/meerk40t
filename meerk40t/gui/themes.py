@@ -1,10 +1,40 @@
 """
 Basic Module to provide infmoration about the GUI
 """
+from math import sqrt
 import wx
 
 from meerk40t.kernel import Service
 
+
+def color_distance(c1:wx.Colour, c2:wx.Colour) -> bool:
+    """
+    Rather than naive Euclidean distance we use Compuphase's Redmean color distance.
+    https://www.compuphase.com/cmetric.htm
+
+    It's computationally simple, and empirical tests finds it to be on par with LabDE2000.
+
+    :param c1: first color
+    :param c2: second color
+    :return: square of color distance
+    """
+    red_mean = int((c1.red + c2.red) / 2.0)
+    r = c1.red - c2.red
+    g = c1.green - c2.green
+    b = c1.blue - c2.blue
+    sq_dist =  (
+        (((512 + red_mean) * r * r) >> 8)
+        + (4 * g * g)
+        + (((767 - red_mean) * b * b) >> 8)
+    )
+    print (f"Distance from {c1.GetAsString()} to {c2.GetAsString()} = {sqrt(sq_dist)}")
+    return sqrt(sq_dist)
+
+def is_a_bright_color(c1):
+    return color_distance(c1, wx.BLACK) > color_distance(c1, wx.WHITE)
+
+def is_a_dark_color(c1):
+    return color_distance(c1, wx.BLACK) < color_distance(c1, wx.WHITE)
 
 class Themes(Service):
     def __init__(self, kernel, index=None, *args, **kwargs):
@@ -39,7 +69,14 @@ class Themes(Service):
 
     def load_system_default(self):
         self._theme = "system"
-        self._dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        res1 = wx.SystemSettings().GetAppearance().IsDark()
+        res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        print (f"wx claims: {res1}, we think: {res2}")
+        try:
+            self._dark = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            self._dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        self._dark = True
         from platform import system
 
         buggy_darwin = bool(system() == "Darwin" and not self._dark)
@@ -48,6 +85,14 @@ class Themes(Service):
         tp = self._theme_properties
         # Just a scaffold, will be extended later
         # tp["button"] = wx.Button
+        tp["win_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        tp["win_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        print (tp["win_bg"].GetAsString())
+        if self.dark and is_a_bright_color(tp["win_bg"]):
+            print ("Reset colors to b/w")
+            tp["win_bg"] = wx.BLACK
+            tp["win_fg"] = wx.WHITE
+
         tp["pause_bg"] = (
             wx.Colour(87, 87, 0) if self._dark else wx.Colour(200, 200, 0)
         )
@@ -80,3 +125,8 @@ class Themes(Service):
                     # System default
                     tp[key] = None
             tp["pause_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+
+    def set_window_colors(self, win:wx.Window):
+        tp = self._theme_properties
+        win.SetBackgroundColour(tp["win_bg"])
+        win.SetForegroundColour(tp["win_fg"])

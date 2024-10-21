@@ -15,6 +15,7 @@ class RegBranchPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.text_elements = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.button_visible = wx.Button(self, wx.ID_ANY, _("Toggle"))

@@ -66,8 +66,7 @@ class OperationsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         self.cutplan = cutplan
         if self.cutplan is None:
@@ -470,8 +469,7 @@ class CutcodePanel(wx.Panel):
         self.parent = args[0]
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
 
         self.cutcode = cutcode
         self.plan_name = plan_name
@@ -791,8 +789,7 @@ class SimulationPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("simulate")
 
         self.retries = 0

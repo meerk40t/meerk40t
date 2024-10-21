@@ -126,6 +126,7 @@ class ShutdownPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         info = wx.StaticText(
             self,
             wx.ID_ANY,
@@ -226,6 +227,7 @@ class DebugTreePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.lb_selected = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
         self.lb_emphasized = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
         self.txt_first = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
@@ -313,6 +315,7 @@ class DebugColorPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         count = 1000
@@ -459,6 +462,8 @@ class DebugIconPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.icon = None
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)

@@ -37,8 +37,7 @@ class SelectDevice(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetTitle(_("Select Device"))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -172,8 +171,7 @@ class DevicePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("devices")
 
         sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Your Devices"), wx.VERTICAL)
@@ -613,8 +611,6 @@ class DeviceManager(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))
         self.Layout()
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.restore_aspect()
 
     @staticmethod

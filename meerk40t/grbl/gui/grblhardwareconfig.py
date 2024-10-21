@@ -21,8 +21,7 @@ class GrblIoButtons(wx.Panel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.chart = chart
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)

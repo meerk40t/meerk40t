@@ -196,6 +196,8 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                     _("Parameters"),
                     style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                 ) as dlg:
+                    gui.context.themes.set_window_colors(dlg)
+
                     sizer = wx.BoxSizer(wx.VERTICAL)
                     fields = []
                     for prompt in prompts:
@@ -1020,6 +1022,11 @@ class wxRadioBox(wx.RadioBox):
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        col = self.GetParent().GetForegroundColour()
+        self.SetForegroundColour(col)
+        for w in self.Children:
+            print(w)
+            w.SetForegroundColour(col)
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -1101,6 +1108,7 @@ class wxListCtrl(wx.ListCtrl):
     ):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.list_name = list_name
         # The resize event is never triggered, so tap into the parent...
         # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)

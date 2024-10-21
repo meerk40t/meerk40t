@@ -46,6 +46,7 @@ class ImportDialog(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY)
         self.btn_file = wxButton(self, wx.ID_ANY, "...")
         self.check_consolidate = wxCheckBox(
@@ -263,6 +264,7 @@ class MaterialPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.op_data = self.context.elements.op_data
         self.SetHelpText("materialmanager")
         self.parent_panel = None
@@ -2760,6 +2762,7 @@ class ImportPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         label = wx.StaticText(self, wx.ID_ANY, "UNDER CONSTRUCTION")
         main_sizer.Add(label, 0, wx.EXPAND, 0)
@@ -2775,6 +2778,7 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None

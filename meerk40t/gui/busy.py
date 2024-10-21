@@ -38,6 +38,11 @@ class BusyInfo:
         self.panel = None
         self.text = None
         self.image = None
+        if "startup" in kwds:
+            try:
+                kwds["startup"](self)
+            except AttributeError:
+                pass
         self.update_keywords(kwds)
 
     def update_keywords(self, kwds):

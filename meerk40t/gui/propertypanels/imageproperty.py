@@ -42,6 +42,7 @@ class KeyholePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.button_release = wxButton(self, wx.ID_ANY, _("Remove keyhole"))
         self.__set_properties()
@@ -112,6 +113,7 @@ class CropPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self._width = None
         self._height = None
@@ -415,7 +417,7 @@ class CropPanel(wx.Panel):
     def _setbounds(self):
         if self.op is None:
             return
-       
+
         self.op["bounds"][0] = self.cropleft
         self.op["bounds"][2] = self._width - self.cropright
         self.op["bounds"][1] = self.croptop
@@ -505,6 +507,7 @@ class ImageModificationPanel(ScrolledPanel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.scripts = []
         choices = []
@@ -754,6 +757,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # self.vector_lock = threading.Lock()
@@ -1152,6 +1156,7 @@ class ImagePropertyPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.subpanels = list()
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -1355,7 +1360,7 @@ class ImagePropertyPanel(ScrolledPanel):
     def __set_properties(self):
         self.check_keep_size.SetToolTip(
             _("Enabled: Keep size and amend internal resolution") + "\n" +
-            _("Disabled: Keep internal resolution and change size") 
+            _("Disabled: Keep internal resolution and change size")
         )
         self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))

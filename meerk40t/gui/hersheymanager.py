@@ -57,6 +57,7 @@ class FontGlyphPicker(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.font = font
         self.icon_size = 32
         mainsizer = wx.BoxSizer(wx.VERTICAL)
@@ -352,6 +353,7 @@ class LineTextPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(float, "last_font_size", float(Length("20px")))
         self.context.setting(str, "last_font", "")
 
@@ -725,6 +727,7 @@ class PanelFontSelect(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -946,6 +949,7 @@ class PanelFontManager(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("vectortext")
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)

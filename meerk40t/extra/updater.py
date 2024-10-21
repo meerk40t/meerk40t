@@ -509,6 +509,8 @@ def plugin(kernel, lifecycle):
                                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                             )
                             # contents
+                            kernel.themes.set_window_colors(dlg)
+
                             sizer = wx.BoxSizer(wx.VERTICAL)
 
                             label = wx.StaticText(dlg, wx.ID_ANY, header)

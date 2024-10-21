@@ -25,6 +25,7 @@ class WarningPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("warning")
 
         self.op_id = ("cut", "engrave", "raster", "image", "dots", "hatch")

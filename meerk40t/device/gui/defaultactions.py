@@ -33,6 +33,8 @@ class DefaultActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.SetHelpText("defaultactions")
 
         self.standards = (

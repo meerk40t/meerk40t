@@ -34,6 +34,7 @@ class LayerSettingPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
 
         layer_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Layer:"), wx.HORIZONTAL)
@@ -352,6 +353,7 @@ class SpeedPpiPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
 
         self.context.device.setting(bool, "use_percent_for_power_display", False)
@@ -626,6 +628,7 @@ class PassesPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         self.has_kerf = False
 

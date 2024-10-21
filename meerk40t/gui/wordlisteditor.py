@@ -45,8 +45,7 @@ class WordlistMiniPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("wordlist")
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -145,8 +144,7 @@ class WordlistPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("wordlist")
         self.parent_panel = None
         self.wlist = self.context.elements.mywordlist
@@ -537,7 +535,7 @@ class WordlistPanel(wx.Panel):
         wsize = self.grid_content.GetSize()
         self.grid_content.SetColumnWidth(0, wsize[0] - 10)
         self.grid_content.resize_columns()
-        
+
         self.cbo_index_single.Set(choices)
         if selidx >= 0:
             self.cbo_index_single.SetSelection(selidx)
@@ -728,8 +726,7 @@ class ImportPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent_panel = None
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.wlist = self.context.elements.mywordlist
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("Import CSV"), wx.VERTICAL)
@@ -863,8 +860,7 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None

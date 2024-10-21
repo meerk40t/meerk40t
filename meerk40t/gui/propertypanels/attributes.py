@@ -33,6 +33,7 @@ class ColorPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.callback = callback
         if attribute is None:
             attribute = "stroke"
@@ -239,6 +240,7 @@ class IdPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         # Shall we display id / label?
         self.showid = showid
@@ -457,6 +459,7 @@ class LinePropPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
@@ -735,6 +738,7 @@ class StrokeWidthPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -903,6 +907,7 @@ class PositionSizePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.text_x = TextCtrl(
             self,
@@ -1165,6 +1170,7 @@ class PreventChangePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.check_lock = wxCheckBox(self, wx.ID_ANY, _("Lock element"))
         self.__set_properties()
@@ -1232,6 +1238,7 @@ class RoundedRectPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.fonts = []
 

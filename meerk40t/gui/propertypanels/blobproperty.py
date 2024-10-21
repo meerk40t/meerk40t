@@ -15,6 +15,7 @@ class BlobPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         self.hex_content = ""
         self.ascii_content = ""

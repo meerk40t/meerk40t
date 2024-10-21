@@ -39,8 +39,7 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.context.themes.set_window_colors(self)
         self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
         self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
         self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
@@ -188,6 +187,7 @@ class AlignmentPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("alignment")
         self.scene = scene
         # Amount of currently selected
@@ -392,6 +392,7 @@ class DistributionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("distribute")
         self.scene = scene
         # Amount of currently selected
@@ -1098,6 +1099,7 @@ class ArrangementPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("arrangement")
         self.scene = scene
         # Amount of currently selected

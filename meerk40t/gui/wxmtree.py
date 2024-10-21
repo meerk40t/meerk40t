@@ -118,6 +118,7 @@ class TreePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         # Define Tree
         self.wxtree = wxTreeCtrl(
             self,
@@ -147,8 +148,6 @@ class TreePanel(wx.Panel):
         self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree")
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
     def setup_warn_panel(self):
         def fix_unassigned_create(event):
@@ -1922,7 +1921,7 @@ class ShadowTree:
         for item in self.wxtree.GetSelections():
             node = self.wxtree.GetItemData(item)
             if node is not None and node.is_draggable():
-                self.dragging_nodes.append(node) 
+                self.dragging_nodes.append(node)
 
         if len(self.dragging_nodes) == 0:
             # print ("Dragging_nodes was empty")

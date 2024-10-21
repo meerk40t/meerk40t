@@ -11,6 +11,7 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        context.themes.set_window_colors(self)
         self.context = context.device
         self.checkbox_vector_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")

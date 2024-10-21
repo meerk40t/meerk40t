@@ -18,6 +18,7 @@ class ConfigurationUdp(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_13 = StaticBoxSizer(self, wx.ID_ANY, _("UDP Settings"), wx.HORIZONTAL)
 
@@ -53,6 +54,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
 

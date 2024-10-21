@@ -282,6 +282,8 @@ class Warnings:
             pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
+        self.context.themes.set_window_colors(dlg)
+
         # contents
         sizer = wx.BoxSizer(wx.VERTICAL)
         l_hi = _("Critical")

@@ -33,6 +33,7 @@ class PlacementPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetHelpText("placement")
@@ -1149,6 +1150,7 @@ class PlacementParameterPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         self.panels = []
 
