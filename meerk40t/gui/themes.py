@@ -27,7 +27,7 @@ def color_distance(c1:wx.Colour, c2:wx.Colour) -> bool:
         + (4 * g * g)
         + (((767 - red_mean) * b * b) >> 8)
     )
-    print (f"Distance from {c1.GetAsString()} to {c2.GetAsString()} = {sqrt(sq_dist)}")
+    # print (f"Distance from {c1.GetAsString()} to {c2.GetAsString()} = {sqrt(sq_dist)}")
     return sqrt(sq_dist)
 
 def is_a_bright_color(c1):
@@ -81,7 +81,6 @@ class Themes(Service):
         self._theme_properties = dict()
         tp = self._theme_properties
         # Just a scaffold, will be extended later
-        # tp["button"] = wx.Button
         tp["win_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         tp["win_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
         tp["button_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
@@ -93,9 +92,7 @@ class Themes(Service):
         tp["label_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         tp["label_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_CAPTIONTEXT)
 
-        print (tp["win_bg"].GetAsString())
         if self.dark and is_a_bright_color(tp["win_bg"]):
-            print ("Reset colors to b/w")
             base_bg = wx.Colour(23, 23, 23)
             base_fg = wx.Colour(255, 255, 255, 0.847)
             tp["win_bg"] = base_bg
