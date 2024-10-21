@@ -60,7 +60,14 @@ def register_panel_laser(window, context):
         | wx.aui.AUI_NB_TAB_MOVE
         | wx.aui.AUI_NB_BOTTOM,
     )
+    # ARGGH, the color setting via the ArtProvider does only work
+    # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
     context.themes.set_window_colors(notebook)
+    bg_std = context.themes.get("win_bg")
+    bg_active = context.themes.get("highlight")
+    notebook.GetArtProvider().SetColour(bg_std)
+    notebook.GetArtProvider().SetActiveColour(bg_active)
+
     pane = (
         aui.AuiPaneInfo()
         .Right()

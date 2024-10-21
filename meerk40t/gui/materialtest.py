@@ -1607,9 +1607,16 @@ class TemplateTool(MWindow):
             style=aui.AUI_NB_TAB_EXTERNAL_MOVE
             | aui.AUI_NB_SCROLL_BUTTONS
             | aui.AUI_NB_TAB_SPLIT
-            | aui.AUI_NB_TAB_MOVE,
+            | aui.AUI_NB_TAB_MOVE
+            | aui.AUI_NB_BOTTOM,
         )
-        self.context.themes.set_window_colors(self.notebook_main)
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
 

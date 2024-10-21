@@ -79,15 +79,22 @@ def register_panel_tree(window, context):
         mycontext = context
         return handler
 
+    # ARGGH, the color setting via the ArtProvider does only work
+    # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
     notetab = wx.aui.AuiNotebook(
         window,
         wx.ID_ANY,
         style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
         | wx.aui.AUI_NB_SCROLL_BUTTONS
         | wx.aui.AUI_NB_TAB_SPLIT
-        | wx.aui.AUI_NB_TAB_MOVE,
+        | wx.aui.AUI_NB_TAB_MOVE
+        | wx.aui.AUI_NB_BOTTOM,
     )
     context.themes.set_window_colors(notetab)
+    bg_std = context.themes.get("win_bg")
+    bg_active = context.themes.get("highlight")
+    notetab.GetArtProvider().SetColour(bg_std)
+    notetab.GetArtProvider().SetActiveColour(bg_active)
 
     pane = (
         aui.AuiPaneInfo()
