@@ -28,6 +28,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.d2 = complex(0, 0)
         self.d3 = complex(0, 0)
         self.d4 = complex(0, 0)
+        self._interim = False
 
         Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{element_type} - ({children})"
@@ -202,14 +203,40 @@ class WarpEffectNode(Node, FunctionalParameter):
         outlines.transform3x3(self.perspective_matrix)
         return outlines
 
+    def set_interim(self):
+        self.empty_cache()
+        self._interim = True
+
+    def altered(self, *args, **kwargs):
+        self._interim = False
+        super().altered()
+
     def modified(self):
         self.altered()
+
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
+        if node is self:
+            return
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
+        if node is self:
+            return
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
     def can_drop(self, drag_node):
         if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or drag_node.type.startswith("op "):
             return True
         return False
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an effect node - irrelevant for others...
         if not self.can_drop(drag_node):
