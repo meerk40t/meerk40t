@@ -1314,6 +1314,7 @@ class wxRadioBox(StaticBoxSizer):
         self._children = []
         self._labels = []
         self._tool_tip = None
+        self._help = None
         super().__init__(parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL)
         if majorDimension == 0 or style==wx.RA_SPECIFY_ROWS:
             majorDimension = 1000
@@ -1392,7 +1393,7 @@ class wxRadioBox(StaticBoxSizer):
 
     def Bind(self, event_type, routine):
         self.parent.Bind(event_type, routine, self)
-        
+
     def on_radio(self, orgevent):
         #
         event = orgevent.Clone()
@@ -1410,6 +1411,11 @@ class wxRadioBox(StaticBoxSizer):
         for ctrl in self._children + self._labels:
             ctrl.SetBackgroundColour(wc)
 
+    def SetHelpText(self, help):
+        self._help = help
+
+    def GetHelpText(self):
+        return self._help
 class wxStaticText(wx.StaticText):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
