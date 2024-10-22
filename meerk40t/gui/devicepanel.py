@@ -117,7 +117,7 @@ class SelectDevice(wx.Dialog):
         tree_root = tree.AddRoot(_("Devices"))
         self.dev_infos = list(self.context.find("dev_info"))
         self.dev_infos.sort(
-            key=lambda e: str(e[0].get("family_priority", 0))
+            key=lambda e: str(e[0].get("family", 0))
             + "_"
             + str(e[0].get("priority", 0)),
             reverse=True,
@@ -136,7 +136,6 @@ class SelectDevice(wx.Dialog):
                 parent_item = tree.AppendItem(tree_root, family)
             device_item = tree.AppendItem(parent_item, info)
             tree.SetItemData(device_item, index)
-        tree.ExpandAll()
 
     def on_text_filter(self, event):
         self.filter = self.text_filter.GetValue()
