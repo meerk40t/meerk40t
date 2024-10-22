@@ -1502,6 +1502,17 @@ class MeerK40t(MWindow):
             kernel.register("registered_effects/WobbleCircleR", eff)
         """
 
+        def exec_in_undo_scope(scope, command):
+            def handler(*args):
+                with kernel.elements.undoscope(scope):
+                    kernel.elements(command)
+            return handler
+
+        def exec(command):
+            def handler(*args):
+                kernel.elements(command)
+            return handler
+
         def run_job(*args):
             busy = kernel.busyinfo
             context = kernel.root
@@ -1717,7 +1728,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_cursor,
                 "tip": _("Regular selection tool"),
                 "help": "select",
-                "action": lambda v: kernel.elements("tool none\n"),
+                "action": exec("tool none\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "none",
@@ -1730,7 +1741,7 @@ class MeerK40t(MWindow):
         #         "label": _("Node Edit"),
         #         "icon": icons8_node_edit,
         #         "tip": _("Edit nodes of a polyline/path-object"),
-        #         "action": lambda v: kernel.elements("tool nodemove\n"),
+        #         "action": exec("tool nodemove\n"),
         #         "group": "tool",
         #         "size": bsize_normal,
         #         "identifier": "nodemove",
@@ -1764,7 +1775,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_node_edit,
                 "tip": _("Edit nodes of a polyline/path-object"),
                 "help": "nodeedit",
-                "action": lambda v: kernel.elements("tool edit\n"),
+                "action": exec("tool edit\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "edit",
@@ -1778,7 +1789,7 @@ class MeerK40t(MWindow):
                 "icon": icon_tabs,
                 "tip": _("Edit tabs/bridges of an object"),
                 "help": "tabedit",
-                "action": lambda v: kernel.elements("tool tabedit\n"),
+                "action": exec("tool tabedit\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "tabedit",
@@ -1790,16 +1801,8 @@ class MeerK40t(MWindow):
         effects = list(kernel.lookup_all("registered_effects"))
         # Sort according to categories....
         effects.sort(key=lambda v: v[4])
-        sub_effects = list()
+        sub_effects = []
         first_hatch = None
-
-        def action(command):
-            local_command = command
-
-            def routine(*args):
-                exec_in_undo_scope("Apply effect", f"{local_command}\n")
-
-            return routine
 
         for idx, hatch in enumerate(effects):
             if len(hatch) < 4:
@@ -1825,8 +1828,8 @@ class MeerK40t(MWindow):
                 "icon": icon,
                 "tip": tip,
                 "help": "hatches",
-                "action": action(cmd),
-                "action_right": lambda v: exec_in_undo_scope("Remove effect", "effect-remove\n"),
+                "action": exec_in_undo_scope("Apply effect", f"{cmd}\n"),
+                "action_right": exec_in_undo_scope("Remove effect", "effect-remove\n"),
                 "rule_enabled": lambda cond: contains_an_element(),
             }
             sub_effects.append(hdict)
@@ -1836,7 +1839,7 @@ class MeerK40t(MWindow):
         #     "label": _("Remove hatch"),
         #     "icon": icon_nohatch,
         #     "tip": _("Remove the effect"),
-        #     "action": lambda v: kernel.elements("effect-remove\n"),
+        #     "action": exec("effect-remove\n"),
         #     "rule_enabled": lambda cond: contains_an_element(),
         # }
         # sub_effects.append(hdict)
@@ -1847,8 +1850,8 @@ class MeerK40t(MWindow):
             "icon": sub_effects[0]["icon"],
             "tip": sub_effects[0]["tip"],
             "help": "hatches",
-            "action": action(first_hatch),
-            "action_right": lambda v: exec_in_undo_scope("Remove effect", "effect-remove\n"),
+            "action": exec_in_undo_scope("Apply effect", f"{first_hatch}\n"),
+            "action_right": exec_in_undo_scope("Remove effect", "effect-remove\n"),
             "size": bsize_normal,
             "rule_enabled": lambda cond: contains_an_element(),
         }
@@ -1866,7 +1869,7 @@ class MeerK40t(MWindow):
                 "label": _("Set Position"),
                 "icon": icons8_place_marker,
                 "tip": _("Set position to given location"),
-                "action": lambda v: kernel.elements("tool relocate\n"),
+                "action": exec("tool relocate\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "relocate",
@@ -1880,7 +1883,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_user_location,
                 "tip": _("Add a job starting point to the scene"),
                 "help": "placement",
-                "action": lambda v: kernel.elements("tool placement\n"),
+                "action": exec("tool placement\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "placement",
@@ -1894,7 +1897,7 @@ class MeerK40t(MWindow):
                 "icon": icon_line,
                 "tip": _("Add a simple line element"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool line\n"),
+                "action": exec("tool line\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "line",
@@ -1908,7 +1911,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_circle,
                 "tip": _("Add a circle element"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool circle\n"),
+                "action": exec("tool circle\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "circle",
@@ -1922,7 +1925,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_ellipse,
                 "tip": _("Add an ellipse element"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool ellipse\n"),
+                "action": exec("tool ellipse\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "ellipse",
@@ -1936,7 +1939,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_rectangular,
                 "tip": _("Add a rectangular element"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool rect\n"),
+                "action": exec("tool rect\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "rect",
@@ -1952,7 +1955,7 @@ class MeerK40t(MWindow):
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool polygon\n"),
+                "action": exec("tool polygon\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "polygon",
@@ -1968,7 +1971,7 @@ class MeerK40t(MWindow):
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool polyline\n"),
+                "action": exec("tool polyline\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "polyline",
@@ -1982,7 +1985,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_point,
                 "tip": _("Add point to the scene"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool point\n"),
+                "action": exec("tool point\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "point",
@@ -1998,7 +2001,7 @@ class MeerK40t(MWindow):
                     "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool vector\n"),
+                "action": exec("tool vector\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "vector",
@@ -2012,7 +2015,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_pencil_drawing,
                 "tip": _("Add a free-drawing element"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool draw\n"),
+                "action": exec("tool draw\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "draw",
@@ -2026,7 +2029,7 @@ class MeerK40t(MWindow):
                 "icon": icon_bmap_text,
                 "tip": _("Add a text element"),
                 "help": "basicshapes",
-                "action": lambda v: kernel.elements("tool text\n"),
+                "action": exec("tool text\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "text",
@@ -2040,7 +2043,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_delete,
                 "tip": _("Delete selected items"),
                 "help": "basicediting",
-                "action": lambda v: exec_in_undo_scope("Delete", "tree selected delete\n"),
+                "action": exec_in_undo_scope("Delete", "tree selected delete\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
             },
@@ -2052,7 +2055,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_scissors,
                 "tip": _("Cut selected elements"),
                 "help": "basicediting",
-                "action": lambda v: kernel.elements("clipboard cut\n"),
+                "action": exec("clipboard cut\n"),
                 "size": bsize_small,
                 "identifier": "editcut",
                 "rule_enabled": lambda cond: len(
@@ -2068,7 +2071,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_copy,
                 "tip": _("Copy selected elements to clipboard"),
                 "help": "basicediting",
-                "action": lambda v: kernel.elements("clipboard copy\n"),
+                "action": exec("clipboard copy\n"),
                 "size": bsize_small,
                 "identifier": "editcopy",
                 "rule_enabled": lambda cond: len(
@@ -2095,7 +2098,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_paste,
                 "tip": _("Paste elements from clipboard"),
                 "help": "basicediting",
-                "action": lambda v: kernel.elements(
+                "action": exec(
                     "clipboard paste -dx 3mm -dy 3mm\n"
                 ),
                 "size": bsize_small,
@@ -2110,7 +2113,7 @@ class MeerK40t(MWindow):
         #         "label": _("Duplicate"),
         #         "icon": icon_duplicate,
         #         "tip": _("Duplicate selected elements"),
-        #         "action": lambda v: kernel.elements("element copy --dx=3mm --dy=3mm\n"),
+        #         "action": exec("element copy --dx=3mm --dy=3mm\n"),
         #         "size": bsize_small,
         #         "identifier": "editduplicate",
         #         "rule_enabled": lambda cond: len(
@@ -2133,10 +2136,6 @@ class MeerK40t(MWindow):
                 s += "\n" + _(t)
             return s
 
-        def exec_in_undo_scope(scope, command):
-            with kernel.elements.undoscope(scope):
-                kernel.elements(command)
-
         kernel.register(
             "button/undo/Undo",
             {
@@ -2144,7 +2143,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_undo,
                 "tip": undo_tip,
                 "help": "basicediting",
-                "action": lambda v: kernel.elements("undo\n"),
+                "action": exec("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_undo(),
@@ -2157,7 +2156,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_redo,
                 "tip": redo_tip,
                 "help": "basicediting",
-                "action": lambda v: kernel.elements("redo\n"),
+                "action": exec("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_redo(),
@@ -2173,7 +2172,7 @@ class MeerK40t(MWindow):
                     "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "help": "measure",
-                "action": lambda v: kernel.elements("tool measure\n"),
+                "action": exec("tool measure\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "measure",
@@ -2190,7 +2189,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_flip_vertical,
                 "tip": _("Flip the selected element vertically"),
                 "help": "flip",
-                "action": lambda v: exec_in_undo_scope("Flip", "scale 1 -1\n"),
+                "action": exec_in_undo_scope("Flip", "scale 1 -1\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2205,7 +2204,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_flip_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
                 "help": "flip",
-                "action": lambda v: exec_in_undo_scope("Mirror", "scale -1 1\n"),
+                "action": exec_in_undo_scope("Mirror", "scale -1 1\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2220,7 +2219,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rotate_right,
                 "tip": _("Rotate the selected element clockwise by 90 deg"),
                 "help": "flip",
-                "action": lambda v: exec_in_undo_scope("Rotate", "rotate 90deg\n"),
+                "action": exec_in_undo_scope("Rotate", "rotate 90deg\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2235,7 +2234,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rotate_left,
                 "tip": _("Rotate the selected element counterclockwise by 90 deg"),
                 "help": "flip",
-                "action": lambda v: exec_in_undo_scope("Rotate", "rotate -90deg\n"),
+                "action": exec_in_undo_scope("Rotate", "rotate -90deg\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2250,7 +2249,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_union,
                 "tip": _("Create a union of the selected elements"),
                 "help": "cag",
-                "action": lambda v: exec_in_undo_scope("Union", "element union\n"),
+                "action": exec_in_undo_scope("Union", "element union\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2265,7 +2264,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_subtract,
                 "tip": _("Create a difference of the selected elements"),
                 "help": "cag",
-                "action": lambda v: exec_in_undo_scope("Difference", "element difference\n"),
+                "action": exec_in_undo_scope("Difference", "element difference\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2280,7 +2279,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_xor,
                 "tip": _("Create a xor of the selected elements"),
                 "help": "cag",
-                "action": lambda v: exec_in_undo_scope("Xor", "element xor\n"),
+                "action": exec_in_undo_scope("Xor", "element xor\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2295,7 +2294,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_common,
                 "tip": _("Create a intersection of the selected elements"),
                 "help": "cag",
-                "action": lambda v: exec_in_undo_scope("Intersection", "element intersection\n"),
+                "action": exec_in_undo_scope("Intersection", "element intersection\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2439,10 +2438,10 @@ class MeerK40t(MWindow):
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements(
+                "action": exec(
                     f"align push {align_mode} individual left pop\n"
                 ),
-                "action_right": lambda v: kernel.elements(
+                "action_right": exec(
                     "align push bed group left pop\n"
                 ),
                 "size": bsize_small,
@@ -2550,8 +2549,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} right\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group right\n"),
+                "action": exec_in_undo_scope("Align", f"align {align_mode} right\n"),
+                "action_right": exec_in_undo_scope("Align", "align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2568,8 +2567,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} top\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group top\n"),
+                "action": exec_in_undo_scope("Align", f"align {align_mode} top\n"),
+                "action_right": exec_in_undo_scope("Align", "align bed group top\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2586,8 +2585,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} bottom\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group bottom\n"),
+                "action": exec_in_undo_scope("Align", f"align {align_mode} bottom\n"),
+                "action_right": exec_in_undo_scope("Align", "align bed group bottom\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2604,8 +2603,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} centerh\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group centerh\n"),
+                "action": exec_in_undo_scope("Align", f"align {align_mode} centerh\n"),
+                "action_right": exec_in_undo_scope("Align", "align bed group centerh\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2622,8 +2621,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} centerv\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group centerv\n"),
+                "action": exec_in_undo_scope("Align", f"align {align_mode} centerv\n"),
+                "action_right": exec_in_undo_scope("Align", "align bed group centerv\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2642,8 +2641,8 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", "align spaceh\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align spaceh2\n"),
+                "action": exec_in_undo_scope("Align", "align spaceh\n"),
+                "action_right": exec_in_undo_scope("Align", "align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2662,8 +2661,8 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "help": "alignment",
-                "action": lambda v: exec_in_undo_scope("Align", "align spacev\n"),
-                "action_right": lambda v: exec_in_undo_scope("Align", "align spacev2\n"),
+                "action": exec_in_undo_scope("Align", "align spacev\n"),
+                "action_right": exec_in_undo_scope("Align", "align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
