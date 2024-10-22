@@ -2550,7 +2550,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements(f"align {align_mode} right\n"),
+                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} right\n"),
                 "action_right": lambda v: exec_in_undo_scope("Align", "align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
