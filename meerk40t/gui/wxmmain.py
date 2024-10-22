@@ -1797,7 +1797,7 @@ class MeerK40t(MWindow):
             local_command = command
 
             def routine(*args):
-                kernel.elements(f"{local_command}\n")
+                exec_in_undo_scope("Apply effect", f"{local_command}\n")
 
             return routine
 
@@ -1826,7 +1826,7 @@ class MeerK40t(MWindow):
                 "tip": tip,
                 "help": "hatches",
                 "action": action(cmd),
-                "action_right": lambda v: kernel.elements("effect-remove\n"),
+                "action_right": lambda v: exec_in_undo_scope("Remove effect", "effect-remove\n"),
                 "rule_enabled": lambda cond: contains_an_element(),
             }
             sub_effects.append(hdict)
@@ -1848,7 +1848,7 @@ class MeerK40t(MWindow):
             "tip": sub_effects[0]["tip"],
             "help": "hatches",
             "action": action(first_hatch),
-            "action_right": lambda v: kernel.elements("effect-remove\n"),
+            "action_right": lambda v: exec_in_undo_scope("Remove effect", "effect-remove\n"),
             "size": bsize_normal,
             "rule_enabled": lambda cond: contains_an_element(),
         }
@@ -2040,7 +2040,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_delete,
                 "tip": _("Delete selected items"),
                 "help": "basicediting",
-                "action": lambda v: kernel.elements("tree selected delete\n"),
+                "action": lambda v: exec_in_undo_scope("Delete", "tree selected delete\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
             },
@@ -2133,6 +2133,10 @@ class MeerK40t(MWindow):
                 s += "\n" + _(t)
             return s
 
+        def exec_in_undo_scope(scope, command):
+            with kernel.elements.undoscope(scope):
+                kernel.elements(command)
+
         kernel.register(
             "button/undo/Undo",
             {
@@ -2186,7 +2190,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_flip_vertical,
                 "tip": _("Flip the selected element vertically"),
                 "help": "flip",
-                "action": lambda v: kernel.elements("scale 1 -1\n"),
+                "action": lambda v: exec_in_undo_scope("Flip", "scale 1 -1\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2201,7 +2205,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_flip_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
                 "help": "flip",
-                "action": lambda v: kernel.elements("scale -1 1\n"),
+                "action": lambda v: exec_in_undo_scope("Mirror", "scale -1 1\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2216,7 +2220,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rotate_right,
                 "tip": _("Rotate the selected element clockwise by 90 deg"),
                 "help": "flip",
-                "action": lambda v: kernel.elements("rotate 90deg\n"),
+                "action": lambda v: exec_in_undo_scope("Rotate", "rotate 90deg\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2231,7 +2235,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rotate_left,
                 "tip": _("Rotate the selected element counterclockwise by 90 deg"),
                 "help": "flip",
-                "action": lambda v: kernel.elements("rotate -90deg\n"),
+                "action": lambda v: exec_in_undo_scope("Rotate", "rotate -90deg\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2246,7 +2250,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_union,
                 "tip": _("Create a union of the selected elements"),
                 "help": "cag",
-                "action": lambda v: kernel.elements("element union\n"),
+                "action": lambda v: exec_in_undo_scope("Union", "element union\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2261,7 +2265,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_subtract,
                 "tip": _("Create a difference of the selected elements"),
                 "help": "cag",
-                "action": lambda v: kernel.elements("element difference\n"),
+                "action": lambda v: exec_in_undo_scope("Difference", "element difference\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2276,7 +2280,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_xor,
                 "tip": _("Create a xor of the selected elements"),
                 "help": "cag",
-                "action": lambda v: kernel.elements("element xor\n"),
+                "action": lambda v: exec_in_undo_scope("Xor", "element xor\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2291,7 +2295,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_common,
                 "tip": _("Create a intersection of the selected elements"),
                 "help": "cag",
-                "action": lambda v: kernel.elements("element intersection\n"),
+                "action": lambda v: exec_in_undo_scope("Intersection", "element intersection\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2547,7 +2551,7 @@ class MeerK40t(MWindow):
                 ),
                 "help": "alignment",
                 "action": lambda v: kernel.elements(f"align {align_mode} right\n"),
-                "action_right": lambda v: kernel.elements("align bed group right\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2564,8 +2568,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements(f"align {align_mode} top\n"),
-                "action_right": lambda v: kernel.elements("align bed group top\n"),
+                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} top\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group top\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2582,8 +2586,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements(f"align {align_mode} bottom\n"),
-                "action_right": lambda v: kernel.elements("align bed group bottom\n"),
+                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} bottom\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group bottom\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2600,8 +2604,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements(f"align {align_mode} centerh\n"),
-                "action_right": lambda v: kernel.elements("align bed group centerh\n"),
+                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} centerh\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group centerh\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2618,8 +2622,8 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": lambda v: kernel.elements(f"align {align_mode} centerv\n"),
-                "action_right": lambda v: kernel.elements("align bed group centerv\n"),
+                "action": lambda v: exec_in_undo_scope("Align", f"align {align_mode} centerv\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align bed group centerv\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2638,8 +2642,8 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align spaceh\n"),
-                "action_right": lambda v: kernel.elements("align spaceh2\n"),
+                "action": lambda v: exec_in_undo_scope("Align", "align spaceh\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2658,8 +2662,8 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "help": "alignment",
-                "action": lambda v: kernel.elements("align spacev\n"),
-                "action_right": lambda v: kernel.elements("align spacev2\n"),
+                "action": lambda v: exec_in_undo_scope("Align", "align spacev\n"),
+                "action_right": lambda v: exec_in_undo_scope("Align", "align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
