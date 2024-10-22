@@ -1503,12 +1503,24 @@ class MeerK40t(MWindow):
         """
 
         def exec_in_undo_scope(scope, command):
+            """
+            Handle commands by passing them to kernel elements.
+            This function serves as a command handler that takes a command string
+            and forwards them to the kernel's elements execution method on a call.
+            Addtionally it wraps the command in an undoscope statement to
+            make the undo action easier to read and to contain.
+            """
             def handler(*args):
                 with kernel.elements.undoscope(scope):
                     kernel.elements(command)
             return handler
 
-        def exec(command):
+        def exec_plain(command):
+            """
+            Handle commands by passing them to kernel elements.
+            This function serves as a command handler that takes a command string
+            and forwards them to the kernel's elements execution method on a call.
+            """
             def handler(*args):
                 kernel.elements(command)
             return handler
@@ -1728,7 +1740,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_cursor,
                 "tip": _("Regular selection tool"),
                 "help": "select",
-                "action": exec("tool none\n"),
+                "action": exec_plain("tool none\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "none",
@@ -1775,7 +1787,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_node_edit,
                 "tip": _("Edit nodes of a polyline/path-object"),
                 "help": "nodeedit",
-                "action": exec("tool edit\n"),
+                "action": exec_plain("tool edit\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "edit",
@@ -1789,7 +1801,7 @@ class MeerK40t(MWindow):
                 "icon": icon_tabs,
                 "tip": _("Edit tabs/bridges of an object"),
                 "help": "tabedit",
-                "action": exec("tool tabedit\n"),
+                "action": exec_plain("tool tabedit\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "tabedit",
@@ -1869,7 +1881,7 @@ class MeerK40t(MWindow):
                 "label": _("Set Position"),
                 "icon": icons8_place_marker,
                 "tip": _("Set position to given location"),
-                "action": exec("tool relocate\n"),
+                "action": exec_plain("tool relocate\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "relocate",
@@ -1883,7 +1895,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_user_location,
                 "tip": _("Add a job starting point to the scene"),
                 "help": "placement",
-                "action": exec("tool placement\n"),
+                "action": exec_plain("tool placement\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "placement",
@@ -1897,7 +1909,7 @@ class MeerK40t(MWindow):
                 "icon": icon_line,
                 "tip": _("Add a simple line element"),
                 "help": "basicshapes",
-                "action": exec("tool line\n"),
+                "action": exec_plain("tool line\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "line",
@@ -1911,7 +1923,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_circle,
                 "tip": _("Add a circle element"),
                 "help": "basicshapes",
-                "action": exec("tool circle\n"),
+                "action": exec_plain("tool circle\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "circle",
@@ -1925,7 +1937,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_ellipse,
                 "tip": _("Add an ellipse element"),
                 "help": "basicshapes",
-                "action": exec("tool ellipse\n"),
+                "action": exec_plain("tool ellipse\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "ellipse",
@@ -1939,7 +1951,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_rectangular,
                 "tip": _("Add a rectangular element"),
                 "help": "basicshapes",
-                "action": exec("tool rect\n"),
+                "action": exec_plain("tool rect\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "rect",
@@ -1955,7 +1967,7 @@ class MeerK40t(MWindow):
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "help": "basicshapes",
-                "action": exec("tool polygon\n"),
+                "action": exec_plain("tool polygon\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "polygon",
@@ -1971,7 +1983,7 @@ class MeerK40t(MWindow):
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "help": "basicshapes",
-                "action": exec("tool polyline\n"),
+                "action": exec_plain("tool polyline\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "polyline",
@@ -1985,7 +1997,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_point,
                 "tip": _("Add point to the scene"),
                 "help": "basicshapes",
-                "action": exec("tool point\n"),
+                "action": exec_plain("tool point\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "point",
@@ -2001,7 +2013,7 @@ class MeerK40t(MWindow):
                     "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
                 "help": "basicshapes",
-                "action": exec("tool vector\n"),
+                "action": exec_plain("tool vector\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "vector",
@@ -2015,7 +2027,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_pencil_drawing,
                 "tip": _("Add a free-drawing element"),
                 "help": "basicshapes",
-                "action": exec("tool draw\n"),
+                "action": exec_plain("tool draw\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "draw",
@@ -2029,7 +2041,7 @@ class MeerK40t(MWindow):
                 "icon": icon_bmap_text,
                 "tip": _("Add a text element"),
                 "help": "basicshapes",
-                "action": exec("tool text\n"),
+                "action": exec_plain("tool text\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "text",
@@ -2055,7 +2067,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_scissors,
                 "tip": _("Cut selected elements"),
                 "help": "basicediting",
-                "action": exec("clipboard cut\n"),
+                "action": exec_plain("clipboard cut\n"),
                 "size": bsize_small,
                 "identifier": "editcut",
                 "rule_enabled": lambda cond: len(
@@ -2071,7 +2083,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_copy,
                 "tip": _("Copy selected elements to clipboard"),
                 "help": "basicediting",
-                "action": exec("clipboard copy\n"),
+                "action": exec_plain("clipboard copy\n"),
                 "size": bsize_small,
                 "identifier": "editcopy",
                 "rule_enabled": lambda cond: len(
@@ -2098,7 +2110,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_paste,
                 "tip": _("Paste elements from clipboard"),
                 "help": "basicediting",
-                "action": exec(
+                "action": exec_plain(
                     "clipboard paste -dx 3mm -dy 3mm\n"
                 ),
                 "size": bsize_small,
@@ -2143,7 +2155,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_undo,
                 "tip": undo_tip,
                 "help": "basicediting",
-                "action": exec("undo\n"),
+                "action": exec_plain("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_undo(),
@@ -2156,7 +2168,7 @@ class MeerK40t(MWindow):
                 "icon": icon_mk_redo,
                 "tip": redo_tip,
                 "help": "basicediting",
-                "action": exec("redo\n"),
+                "action": exec_plain("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_redo(),
@@ -2172,7 +2184,7 @@ class MeerK40t(MWindow):
                     "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "help": "measure",
-                "action": exec("tool measure\n"),
+                "action": exec_plain("tool measure\n"),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "measure",
@@ -2438,10 +2450,10 @@ class MeerK40t(MWindow):
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
                 "help": "alignment",
-                "action": exec(
+                "action": exec_plain(
                     f"align push {align_mode} individual left pop\n"
                 ),
-                "action_right": exec(
+                "action_right": exec_plain(
                     "align push bed group left pop\n"
                 ),
                 "size": bsize_small,
