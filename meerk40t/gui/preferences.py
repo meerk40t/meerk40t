@@ -549,8 +549,7 @@ class Preferences(MWindow):
             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
             | wx.aui.AUI_NB_SCROLL_BUTTONS
             | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE
-            | wx.aui.AUI_NB_BOTTOM,
+            | wx.aui.AUI_NB_TAB_MOVE,
         )
         # ARGGH, the color setting via the ArtProvider does only work
         # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
