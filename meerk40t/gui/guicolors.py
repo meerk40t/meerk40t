@@ -50,16 +50,20 @@ default_color = {
     "grid3": "#A0A0A080",
     "guide3": "#A0A0A080",
 }
+
 # Laserology proposed the following values:
+def to_hex(col):
+    return hex(col.RGBA).replace("0x", "#")
+
 default_colors_dark= {
-    "grid": wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER),
-    "guide": wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT),
-    "background": "#282C57",     
-    "bed": wx.SYS_COLOUR_MENU,
-    "grid2": wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER),
-    "guide2": wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT),
-    "grid3": wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER),
-    "guide3": wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT),
+    "grid": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "guide": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "background": "#282C57",
+    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)),
+    "grid2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "guide2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "grid3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "guide3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
 }
 
 def base_color(item):
