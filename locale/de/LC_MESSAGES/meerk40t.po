@@ -18840,3 +18840,53 @@ msgstr "Aktiv: Hatch-Linien werden untereinander optimiert."
 #: meerk40t/core/planner.py:279
 msgid "Inactive: hatch lines will be burnt sequentially."
 msgstr "Inaktiv: Hatch-Linien werden nacheinander gebrannt."
+
+#: meerk40t/newly/gui/operationproperties.py:29
+msgid "Advanced Acceleration"
+msgstr "Beschleunigung"
+
+#: meerk40t/newly/gui/operationproperties.py:30
+msgid "Set acceleration value for this operation"
+msgstr "Setze Beschleunigungswerte für diesen Arbeitsablauf"
+
+#: meerk40t/newly/gui/newlyconfig.py:41
+msgid "Newly"
+msgstr "Newly"
+
+#: meerk40t/newly/gui/newlyconfig.py:43
+msgid "Global"
+msgstr "Global"
+
+#: meerk40t/newly/gui/newlyconfig.py:60
+msgid "Raster Chart"
+msgstr "Raster-Chart"
+
+#: meerk40t/gui/propertypanels/attributes.py:1412
+msgid "Auto-Hide"
+msgstr "Automatisches Verbergen"
+
+#: meerk40t/gui/propertypanels/attributes.py:1413
+msgid "Autohide children"
+msgstr "Elemente verbergen"
+
+#: meerk40t/gui/propertypanels/attributes.py:1416
+msgid "Toggle the adoption behaviour of the effect."
+msgstr "Schaltet das Verhalten des Effektes um."
+
+#: meerk40t/gui/propertypanels/attributes.py:1418
+msgid "Active: Added children will be automatically hidden, so only the result of the effect will be seen/burned"
+msgstr "Aktiv: Enthaltene Elemente werden ausgeblendet, nur das Ergebnis des Effekts wird angezeigt/gebrannt"
+
+#: meerk40t/gui/propertypanels/attributes.py:1420
+msgid "Inactive: Added children remain unchanged, so both the child and the result of the effect will be seen/burned"
+msgstr "Inaktiv: Enthaltene Elemente bleiben unverändert, sowohl das Element als auch das Ergebnis des Elements werden angezeigt/gebrannt"
+
+#: meerk40t/gui/propertypanels/warpproperty.py:66
+msgid "Instructions:"
+msgstr "Hilfe:"
+
+#: meerk40t/gui/propertypanels/warpproperty.py:68
+msgid "Use the finger tool to modify the containing shape of the warped children"
+msgstr ""
+"Benutze das Finger-Werkzeug, um die umgebende Form\n"
+"um die enthaltenen Elemente zu verändern."
