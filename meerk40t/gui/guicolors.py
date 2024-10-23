@@ -59,13 +59,13 @@ def to_hex(col:wx.Colour):
     return s
 
 default_colors_dark= {
-    "grid": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "grid": "#6B6B6B",
     "guide": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
-    "background": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
-    "bed": "#282C57",
-    "grid2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "background": "#282C57",
+    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)),
+    "grid2": "#6B6B6B",
     "guide2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
-    "grid3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "grid3": "#6B6B6B",
     "guide3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
 }
 
