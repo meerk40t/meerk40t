@@ -192,12 +192,12 @@ class GuiColors(Service):
         for key in default_color:
             setattr(self, key, random_color())
 
-    def set_default_colors(self):
+    def set_default_colors(self, brighter=False):
         """
         Reset all colors to default values...
         """
         for key, value in default_color.items():
             setattr(self, key, value)
-        if self._kernel.root.themes.dark:
+        if self._kernel.root.themes.dark and brighter:
             for key, value in default_colors_dark.items():
                 setattr(self, key, value)
