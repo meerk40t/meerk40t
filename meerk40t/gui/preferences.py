@@ -807,7 +807,6 @@ class Preferences(MWindow):
             self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
             self.panel_color.reload()
-            self.context.signal("restart")
 
     @property
     def color_reset_brighter(self):
@@ -822,7 +821,6 @@ class Preferences(MWindow):
             self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
             self.panel_color.reload()
-            self.context.signal("restart")
 
     @property
     def preset_classify_manual(self):
