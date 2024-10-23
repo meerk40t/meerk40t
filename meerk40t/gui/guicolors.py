@@ -52,14 +52,17 @@ default_color = {
 }
 
 # Laserology proposed the following values:
-def to_hex(col):
-    return hex(col.RGBA).replace("0x", "#")
+def to_hex(col:wx.Colour):
+    def plain(num:int):
+        return hex(num)[2:4]
+    s = f"#{plain(col.red)}{plain(col.green)}{plain(col.blue)}{plain(col.alpha)}"
+    return s
 
 default_colors_dark= {
     "grid": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
     "guide": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
-    "background": "#282C57",
-    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)),
+    "background": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "bed": "#282C57",
     "grid2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
     "guide2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
     "grid3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
@@ -88,10 +91,9 @@ class GuiColors(Service):
         Service.__init__(self, kernel, "colors")
         _ = kernel.translation
         for key, value in default_color.items():
+            if self._kernel.root.themes.dark and key in default_colors_dark:
+                value = default_colors_dark[key]
             self.setting(str, key, value)
-        if self._kernel.root.themes.dark:
-            for key, value in default_colors_dark.items():
-                setattr(self, key, value)
 
         self.sanity_check()
 
