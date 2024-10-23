@@ -6,6 +6,7 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     EmptyIcon,
     icon_console,
+    icon_distort,
     icon_effect_hatch,
     icon_effect_wobble,
     icon_external,
@@ -61,7 +62,7 @@ class FormatterPanel(wx.Panel):
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
-            "effect warp": icon_effect_wobble,
+            "effect warp": icon_distort,
             "file": icons8_file,
             "group": icons8_group_objects,
             "elem point": icon_points,
