@@ -366,9 +366,11 @@ class TimerButtons:
                 self.timer.Start(int(self.interval * 1000))
 
     def on_button_lost(self, event=None):
+        event.Skip()
         self.stop_timer(action=False)
 
     def on_button_down(self, event=None):
+        event.Skip()
         self.stop_timer(action=False)
         if event is None:
             return
@@ -377,6 +379,7 @@ class TimerButtons:
 
     def on_button_up(self, event=None):
         # That consumes the event and a wx.EVT_BUTTON will not be raised
+        event.Skip()
         self.stop_timer(action=True)
 
     def on_button_click(self, event=None):
@@ -384,6 +387,7 @@ class TimerButtons:
         # (i.e. return, space) while the button has focus
         if event is None:
             return
+        event.Skip()
         button = event.GetEventObject()
         self.active_button = button
         self.stop_timer(action=True)
@@ -942,7 +946,6 @@ class Jog(wx.Panel):
         self.button_confine = wxBitmapButton(self, wx.ID_ANY)
         self.__set_properties()
         self.__do_layout()
-
         self.timer = TimerButtons(self)
         self.timer.add_button(self.button_navigate_down, self.jog_down)
         self.timer.add_button(self.button_navigate_left, self.jog_left)
