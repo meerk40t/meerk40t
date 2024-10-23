@@ -40,7 +40,7 @@ class HatchEffectNode(Node, Suppressable):
                     kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
 
-        self._formatter = "{element_type} - {distance} {angle} ({children})"
+        self._formatter = "{element_type} {id} - {distance} {angle} ({children})"
 
         if label is None:
             self.label = "Hatch"

@@ -4,7 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Length
 from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox
-from .attributes import ColorPanel, IdPanel
+from .attributes import ColorPanel, IdPanel, AutoHidePanel
 
 _ = wx.GetTranslation
 
@@ -56,10 +56,15 @@ class WobblePropertyPanel(ScrolledPanel):
         # )
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Wobble:"), wx.VERTICAL)
-
+        self.panels = []
         # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
+        self.panels.append(panel_id)
+
+        panel_hide = AutoHidePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
+        main_sizer.Add(panel_hide, 1, wx.EXPAND, 0)
+        self.panels.append(panel_hide)
 
         panel_stroke = ColorPanel(
             self,
@@ -71,6 +76,7 @@ class WobblePropertyPanel(ScrolledPanel):
             node=self.node,
         )
         main_sizer.Add(panel_stroke, 1, wx.EXPAND, 0)
+        self.panels.append(panel_stroke)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_radius = StaticBoxSizer(
@@ -166,6 +172,8 @@ class WobblePropertyPanel(ScrolledPanel):
         return node.type in ("effect wobble",)
 
     def set_widgets(self, node):
+        for panel in self.panels:
+            panel.set_widgets(node)
         self.node = node
         if self.node is None or not self.accepts(node):
             self.Hide()

@@ -21,6 +21,7 @@ class HatchPropertyPanel(ScrolledPanel):
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
         self.node = node
+        self.panels = []
         self.SetHelpText("hatches")
 
         self._Buffer = None
@@ -30,7 +31,7 @@ class HatchPropertyPanel(ScrolledPanel):
         # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
-
+        self.panels.append(panel_id)
         panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
@@ -41,6 +42,7 @@ class HatchPropertyPanel(ScrolledPanel):
             node=self.node,
         )
         main_sizer.Add(panel_stroke, 1, wx.EXPAND, 0)
+        self.panels.append(panel_stroke)
 
         # panel_fill = ColorPanel(
         #     self,
@@ -176,6 +178,8 @@ class HatchPropertyPanel(ScrolledPanel):
         return node.type in ("effect hatch",)
 
     def set_widgets(self, node):
+        for panel in self.panels:
+            panel.set_widgets(node)
         self.node = node
         if self.node is None or not self.accepts(node):
             self.Hide()
