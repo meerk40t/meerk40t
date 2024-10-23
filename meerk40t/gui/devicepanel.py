@@ -111,13 +111,27 @@ class SelectDevice(wx.Dialog):
         self.Layout()
         self.populate_tree()
 
+    # Used for proper sorting in the device add menu.
+    sort_family_name = {
+      _("K-Series CO2-Laser"): 99,
+      _("Ortur Diode-Laser"): 98,
+      _("Longer Diode-Laser"): 97,
+      _("Newly CO2-Laser"): 96,
+      _("Generic UV-Laser"): 95,
+      _("Generic CO2-Laser"): 94,
+      _("Generic Fibre-Laser"): 93,
+      _("Generic Diode-Laser"): 92,
+      _("Generic"): 91,
+    }
+
     def populate_tree(self):
         tree = self.tree_devices
         tree.DeleteAllItems()
         tree_root = tree.AddRoot(_("Devices"))
         self.dev_infos = list(self.context.find("dev_info"))
+
         self.dev_infos.sort(
-            key=lambda e: str(e[0].get("family_priority", 0))
+            key=lambda e: str(self.sort_family_name[e[0].get("family", 0)])
             + "_"
             + str(e[0].get("priority", 0)),
             reverse=True,
@@ -136,7 +150,6 @@ class SelectDevice(wx.Dialog):
                 parent_item = tree.AppendItem(tree_root, family)
             device_item = tree.AppendItem(parent_item, info)
             tree.SetItemData(device_item, index)
-        tree.ExpandAll()
 
     def on_text_filter(self, event):
         self.filter = self.text_filter.GetValue()

@@ -35,8 +35,7 @@ def plugin(kernel, lifecycle=None):
                     + "The most recent and popular revision version is 6C6879-LASER-M2:9."
                 ),
                 "priority": 99,
-                "family": _("CO2-Laser"),
-                "family_priority": 99,
+                "family": _("K-Series CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -66,8 +65,7 @@ def plugin(kernel, lifecycle=None):
                     + "The M3Nano Plus variation replaces the A4988 stepper motor chips with TMC stepper motor chips."
                 ),
                 "priority": 90,
-                "family": _("CO2-Laser"),
-                "family_priority": 99,
+                "family": _("K-Series CO2-Laser"),
                 "choices": [
                     {
                         "attr": "board",
