@@ -83,6 +83,7 @@ from .propertypanels.rasterwizardpanels import (
 from .propertypanels.textproperty import TextPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 from .propertypanels.wobbleproperty import WobblePropertyPanel
+from .propertypanels.warpproperty import WarpPropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
@@ -868,6 +869,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/HatchEffectNode/HatchProperty", HatchPropertyPanel)
         kernel.register("property/WobbleEffectNode/WobbleProperty", WobblePropertyPanel)
+        kernel.register("property/WarpEffectNode/WarpProperty", WarpPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)

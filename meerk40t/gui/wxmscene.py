@@ -500,6 +500,10 @@ class MeerK40tScenePanel(wx.Panel):
                     self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
+                if aspect == "unsetbright":  # reset all
+                    self.widget_scene.colors.set_default_colors(brighter=True)
+                    self.context.signal("theme", True)
+                    return "scene", data
                 if aspect == "random":  # reset all
                     self.widget_scene.colors.set_random_colors()
                     self.context.signal("theme", True)

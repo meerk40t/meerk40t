@@ -716,6 +716,17 @@ class Preferences(MWindow):
                 "section": "_ZZ_",
             }
         )
+        if self.window_context.themes.dark:
+            color_choices.append(
+                {
+                    "attr": "color_reset_brighter",
+                    "object": self,
+                    "type": bool,
+                    "style": "button",
+                    "label": _("Reset Colors to brighter defaults"),
+                    "section": "_ZZ_",
+                }
+            )
 
         self.panel_color = ChoicePropertyPanel(
             self,
@@ -793,6 +804,21 @@ class Preferences(MWindow):
         if value:
             # We are resetting all GUI.colors
             self.context("scene color unset\n")
+            self.context.root.label_display_color = "#ff0000ff"
+            self.context.signal("theme", True)
+            self.panel_color.reload()
+            self.context.signal("restart")
+
+    @property
+    def color_reset_brighter(self):
+        # Not relevant
+        return False
+
+    @color_reset.setter
+    def color_reset_brighter(self, value):
+        if value:
+            # We are resetting all GUI.colors
+            self.context("scene color unsetbright\n")
             self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
             self.panel_color.reload()

@@ -412,7 +412,7 @@ class IdPanel(wx.Panel):
             "op dots": mkicons.icon_points,
             "effect hatch": mkicons.icon_effect_hatch,
             "effect wobble": mkicons.icon_effect_wobble,
-            "effect warp": mkicons.icon_effect_wobble,
+            "effect warp": mkicons.icon_distort,
             "place current": mkicons.icons8_home_filled,
             "place point": mkicons.icons8_home_filled,
             "elem point": mkicons.icon_points,
@@ -1399,3 +1399,57 @@ class RoundedRectPanel(wx.Panel):
         else:
             self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
             self.slider_y.Enable(True)
+
+class AutoHidePanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.node = node
+
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Auto-Hide"), wx.HORIZONTAL)
+        self.check_autohide = wxCheckBox(self, wx.ID_ANY, _("Autohide children"))
+        main_sizer.Add(self.check_autohide, 1, wx.EXPAND, 0)
+        self.check_autohide.SetToolTip(
+            _("Toggle the adoption behaviour of the effect.")
+            + "\n"
+            + _("Active: Added children will be automatically hidden, so only the result of the effect will be seen/burned")
+            + "\n"
+            + _("Inactive: Added children remain unchanged, so both the child and the result of the effect will be seen/burned")
+        )
+        self.check_autohide.Bind(wx.EVT_CHECKBOX, self.on_autohide)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
+        self.Layout()
+        self.set_widgets(self.node)
+
+    def on_autohide(self, event):
+        if self.node is None:
+            return
+        flag = self.check_autohide.GetValue()
+        self.node.autohide = flag
+        for e in self.node.children:
+            if hasattr(e, "hidden"):
+                e.hidden = flag
+        self.context.signal("refresh_scene", "Scene")
+        self.context.signal("element_property_update", self.node.children)
+
+    def accepts(self, node):
+        return hasattr(node, "autohide")
+
+    def set_widgets(self, node):
+        self.node = node
+        if node is None:
+            self.check_autohide.SetValue(False)
+            self.check_autohide.Enable(False)
+        else:
+            self.check_autohide.SetValue(self.node.autohide)
+            self.check_autohide.Enable(True)
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
