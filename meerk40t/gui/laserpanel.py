@@ -9,6 +9,7 @@ from meerk40t.gui.icons import (
     icon_closed_door,
     icon_open_door,
     icon_update_plan,
+    icons8_computer_support,
     icons8_delete,
     icons8_emergency_stop_button,
     icons8_gas_industry,
@@ -26,6 +27,7 @@ from meerk40t.gui.wxutils import (
     disable_window,
     wxButton,
     wxCheckBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -146,7 +148,9 @@ class LaserPanel(wx.Panel):
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
         )
-        self.btn_config_laser = wxButton(self, wx.ID_ANY, "*")
+        ss = dip_size(self, 23, 23)
+        self.btn_config_laser = wxButton(self, wx.ID_ANY, size=ss)
+        self.btn_config_laser.SetBitmap(icons8_computer_support.GetBitmap(resize=ss[0]))
         self.btn_config_laser.SetToolTip(
             _("Opens device-specific configuration window")
         )
@@ -157,10 +161,7 @@ class LaserPanel(wx.Panel):
         ):
             self.btn_config_laser.Enable(False)
         self.sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
-        if platform.system() == "Windows":
-            minsize = 20
-        else:
-            minsize = 30
+        minsize = 32
         self.btn_config_laser.SetMinSize(dip_size(self, minsize, -1))
         self.sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
 
@@ -343,7 +344,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
         self.Bind(wx.EVT_SLIDER, self.on_slider_power, self.slider_power)
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
-        self.Bind(wx.EVT_BUTTON, self.on_config_button, self.btn_config_laser)
+        # self.btn_config_laser.Bind(wx.EVT_LEFT_DOWN, self.on_config_button)
+        self.btn_config_laser.Bind(wx.EVT_BUTTON, self.on_config_button)
         # end wxGlade
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
