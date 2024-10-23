@@ -33,9 +33,9 @@ default_color = {
     "manipulation": "#A07FA0",
     "manipulation_handle": "#A07FA0",
     "laserpath": "#FF000040",
-    "grid": wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER),
-    "guide": wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT),
-    "background": "#282C57",
+    "grid": "#A0A0A080",
+    "guide": "#000000",
+    "background": "#7F7F7F",
     "magnetline": "#A0A0FF60",
     "snap_visible": "#A0A0A040",
     "snap_closeup": "#00FF00A0",
@@ -44,13 +44,27 @@ default_color = {
     "selection3": "#FF0000",
     "measure_line": "#0000FF80",
     "measure_text": "#FF000060",
-    "bed": wx.SYS_COLOUR_MENU,
-    "grid2": wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER),
-    "guide2": wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT),
-    "grid3": wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER),
-    "guide3": wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT),
+    "bed": "#FFFFFF",
+    "grid2": "#A0A0A080",
+    "guide2": "#000000",
+    "grid3": "#A0A0A080",
+    "guide3": "#A0A0A080",
 }
 
+# Laserology proposed the following values:
+def to_hex(col):
+    return hex(col.RGBA).replace("0x", "#")
+
+default_colors_dark= {
+    "grid": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "guide": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "background": "#282C57",
+    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)),
+    "grid2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "guide2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "grid3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVEBORDER)),
+    "guide3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+}
 
 def base_color(item):
     """
@@ -73,8 +87,12 @@ class GuiColors(Service):
     def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "colors")
         _ = kernel.translation
-        for key in default_color:
-            self.setting(str, key, default_color[key])
+        for key, value in default_color.items():
+            self.setting(str, key, value)
+        if self._kernel.root.themes.dark:
+            for key, value in default_colors_dark.items():
+                setattr(self, key, value)
+
         self.sanity_check()
 
     def __getattr__(self, item):
@@ -178,5 +196,8 @@ class GuiColors(Service):
         """
         Reset all colors to default values...
         """
-        for key in default_color:
-            setattr(self, key, default_color[key])
+        for key, value in default_color.items():
+            setattr(self, key, value)
+        if self._kernel.root.themes.dark:
+            for key, value in default_colors_dark.items():
+                setattr(self, key, value)

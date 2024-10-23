@@ -1557,7 +1557,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Set the tool tip if 'tip' is available
                 control.SetToolTip(tip)
             _help = c.get("help")
-            if _help:
+            if _help and hasattr(control, "SetHelpText"):
                 control.SetHelpText(_help)
             last_page = this_page
             last_section = this_section
