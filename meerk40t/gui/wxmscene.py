@@ -497,11 +497,11 @@ class MeerK40tScenePanel(wx.Panel):
             else:
                 color_key = f"color_{aspect}"
                 if aspect == "unset":  # reset all
-                    self.widget_scene.colors.set_default_colors(brighter=True)
+                    self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
                 if aspect == "unsetbright":  # reset all
-                    self.widget_scene.colors.set_default_colors()
+                    self.widget_scene.colors.set_default_colors(brighter=True)
                     self.context.signal("theme", True)
                     return "scene", data
                 if aspect == "random":  # reset all

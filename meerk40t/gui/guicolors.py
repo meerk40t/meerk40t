@@ -198,6 +198,6 @@ class GuiColors(Service):
         """
         for key, value in default_color.items():
             setattr(self, key, value)
-        if self._kernel.root.themes.dark and brighter:
+        if self._kernel.root.themes.dark and not brighter:
             for key, value in default_colors_dark.items():
                 setattr(self, key, value)
