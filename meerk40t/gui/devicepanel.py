@@ -64,7 +64,7 @@ class SelectDevice(wx.Dialog):
             style=wx.BORDER_SUNKEN
             | wx.TR_HAS_BUTTONS
             | wx.TR_HIDE_ROOT
-            | wx.TR_NO_BUTTONS
+            | wx.TR_LINES_AT_ROOT
             | wx.TR_SINGLE,
         )
         sizer_main.Add(self.tree_devices, 3, wx.EXPAND, 0)
@@ -150,6 +150,7 @@ class SelectDevice(wx.Dialog):
                 parent_item = tree.AppendItem(tree_root, family)
             device_item = tree.AppendItem(parent_item, info)
             tree.SetItemData(device_item, index)
+        # tree.ExpandAll()
 
     def on_text_filter(self, event):
         self.filter = self.text_filter.GetValue()
@@ -163,6 +164,8 @@ class SelectDevice(wx.Dialog):
         item = event.GetItem()
         if item:
             try:
+                if not tree.IsExpanded(item):
+                    tree.ExpandAllChildren(item)
                 index = tree.GetItemData(item)
                 if index is not None and 0 <= index < len(self.dev_infos):
                     obj = self.dev_infos[index][0]
@@ -181,6 +184,15 @@ class SelectDevice(wx.Dialog):
     def on_dclick(self, event):
         if self.device_type:
             self.EndModal(self.GetAffirmativeId())
+        else:
+            item = self.tree_devices.GetFocusedItem()
+            if not item:
+                return
+            if self.tree_devices.ItemHasChildren(item):
+                if self.tree_devices.IsExpanded(item):
+                    self.tree_devices.CollapseAllChildren(item)
+                else:
+                    self.tree_devices.ExpandAllChildren(item)
 
 
 class DevicePanel(wx.Panel):
