@@ -274,7 +274,7 @@ class MaterialPanel(ScrolledPanel):
         self._active_operation = None
         self.no_reload = False
         self.share_ready = False
-
+        self.state_images = wx.ImageList()
         # Categorisation
         # 0 = Material (thickness), 1 = Lasertype (Material), 2 = Thickness (Material)
         self.categorisation = 0
@@ -396,17 +396,10 @@ class MaterialPanel(ScrolledPanel):
             "op hatch": ("Hatch", icon_hatch, 0),
             "generic": ("Generic", icons8_console, 0),
         }
-        self.state_images = wx.ImageList()
-        self.state_images.Create(width=25, height=25)
         for key in self.opinfo:
             info = self.opinfo[key]
-            image_id = self.state_images.Add(
-                bitmap=info[1].GetBitmap(resize=(25, 25), noadjustment=True)
-            )
-            info = (info[0], info[1], image_id)
+            info = (info[0], info[1])
             self.opinfo[key] = info
-
-        self.list_preview.AssignImageList(self.state_images, wx.IMAGE_LIST_SMALL)
 
         param_box = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.VERTICAL)
 
@@ -1969,6 +1962,40 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+
+        def get_key(op_type, op_color):
+            return f"{op_type}-{str(op_color)}"
+        
+        def populate_images() -> dict:
+            iconsize = 30
+            self.state_images.Destroy()
+            self.state_images = wx.ImageList()
+            self.state_images.Create(width=iconsize, height=iconsize)
+            image_dict = {}
+            if self.active_material is not None:
+                for subsection in self.op_data.derivable(self.active_material):
+                    optype = self.op_data.read_persistent(str, subsection, "type", "")
+                    if optype is None or optype == "":
+                        continue
+                    opcolor = self.op_data.read_persistent(str, subsection, "color", "")
+                    if opcolor:
+                        opc = Color(opcolor)
+                    else:
+                        opc = None
+                    key = get_key(optype, opc)
+                    if key in image_dict:
+                        continue
+                    try:
+                        info = self.opinfo[optype]
+                    except KeyError:
+                        info = self.opinfo["generic"]
+                    bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=opc)
+                    image_id = self.state_images.Add(bitmap=bmap)
+                    image_dict[key] = image_id
+
+            self.list_preview.AssignImageList(self.state_images, wx.IMAGE_LIST_SMALL)
+            return image_dict
+
         self._balor = False
         for obj, name, sname in self.context.find("dev_info"):
             if obj is not None and "balor" in sname.lower():
@@ -1977,6 +2004,7 @@ class MaterialPanel(ScrolledPanel):
 
         self.list_preview.Freeze()
         self.list_preview.DeleteAllItems()
+        icon_dict = populate_images()
         self.operation_list.clear()
         secdesc = ""
         thickness = ""
@@ -2042,7 +2070,7 @@ class MaterialPanel(ScrolledPanel):
                     info = self.opinfo[optype]
                 except KeyError:
                     info = self.opinfo["generic"]
-                    info = (optype, info[1], info[2])
+                    info = (optype, info[1])
                 if command:
                     if oplabel:
                         oplabel += " "
@@ -2050,20 +2078,15 @@ class MaterialPanel(ScrolledPanel):
                         oplabel = ""
                     oplabel += f"({command})"
                 self.list_preview.SetItem(list_id, 1, info[0])
-                if opc:
-                    bgcol = wx.Colour(opc.red, opc.green, opc.blue)
-                    if Color.distance(opc, "black") > Color.distance(opc, "white"):
-                        fgcol = wx.BLACK
-                    else:
-                        fgcol = wx.WHITE
-                    self.list_preview.SetItemBackgroundColour(list_id, bgcol)
-                    self.list_preview.SetItemTextColour(list_id, fgcol)
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
                 self.list_preview.SetItem(list_id, 4, power)
                 self.list_preview.SetItem(list_id, 5, speed)
                 self.list_preview.SetItem(list_id, 6, frequency)
-                self.list_preview.SetItemImage(list_id, info[2])
+                key = get_key(optype, opc)
+                if key in icon_dict:
+                    imgid = icon_dict[key]
+                    self.list_preview.SetItemImage(list_id, imgid)
                 self.list_preview.SetItemData(list_id, idx - 1)
                 self.operation_list[subsection] = (optype, opid, oplabel, power, speed)
         self.list_preview.Thaw()
@@ -2084,18 +2107,6 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_note.SetValue(note)
         self.combo_entry_type.SetSelection(ltype)
         self.list_preview.resize_columns()
-        # wd4 = self.list_preview.GetColumnWidth(4)
-        # wd5 = self.list_preview.GetColumnWidth(5)
-        # wd6 = self.list_preview.GetColumnWidth(6)
-        # if self.is_balor and wd6 == 0:
-        #     wd = int((wd4 + wd5) / 3)
-        #     for col in range(4, 7):
-        #         self.list_preview.SetColumnWidth(col, wd)
-        # elif not self.is_balor and wd6 != 0:
-        #     self.list_preview.SetColumnWidth(6, 0)
-        #     wd = int((wd4 + wd5 + wd6) / 2)
-        #     for col in range(4, 6):
-        #         self.list_preview.SetColumnWidth(col, wd)
 
     def on_preview_selection(self, event):
         event.Skip()
