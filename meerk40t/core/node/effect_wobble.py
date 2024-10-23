@@ -22,6 +22,7 @@ class WobbleEffectNode(Node, Suppressable):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
+        self.autohide = True
         self.wobble_radius = "1.5mm"
         self.wobble_interval = "0.1mm"
         self.wobble_speed = 50
@@ -37,7 +38,7 @@ class WobbleEffectNode(Node, Suppressable):
                 else:
                     kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
-        self._formatter = "{element_type} - {type} {radius} ({children})"
+        self._formatter = "{element_type} {id} - {type} {radius} ({children})"
 
         if label is None:
             self.label = "Wobble"
@@ -72,12 +73,16 @@ class WobbleEffectNode(Node, Suppressable):
         Node.notify_attached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = True
         self.altered()
 
     def notify_detached(self, node=None, **kwargs):
         Node.notify_detached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = False
         self.altered()
 
     def notify_modified(self, node=None, **kwargs):
@@ -109,6 +114,11 @@ class WobbleEffectNode(Node, Suppressable):
             self.set_interim()
         else:
             self.altered()
+
+    def append_child(self, new_child):
+        if self.autohide and hasattr(new_child, "hidden"):
+            new_child.hidden = True
+        return super().append_child(new_child)
 
     @property
     def radius(self):

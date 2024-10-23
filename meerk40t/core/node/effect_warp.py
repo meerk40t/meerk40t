@@ -20,6 +20,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
+        self.autohide = True
         self.p1 = complex(0, 0)
         self.p2 = complex(0, 0)
         self.p3 = complex(0, 0)
@@ -31,7 +32,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         self._interim = False
 
         Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
-        self._formatter = "{element_type} - ({children})"
+        self._formatter = "{element_type} {id} - ({children})"
 
         if label is None:
             self.label = "Warp"
@@ -93,6 +94,8 @@ class WarpEffectNode(Node, FunctionalParameter):
         Node.notify_attached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = True
         self.altered()
         self.set_bounds_parameters()
 
@@ -100,6 +103,8 @@ class WarpEffectNode(Node, FunctionalParameter):
         Node.notify_detached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = False
         self.altered()
         self.set_bounds_parameters()
 
@@ -127,6 +132,11 @@ class WarpEffectNode(Node, FunctionalParameter):
             self.altered()
             self.set_bounds_parameters()
 
+    def append_child(self, new_child):
+        if self.autohide and hasattr(new_child, "hidden"):
+            new_child.hidden = True
+        return super().append_child(new_child)
+    
     def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
         Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
