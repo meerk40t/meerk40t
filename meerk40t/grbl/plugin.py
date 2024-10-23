@@ -175,7 +175,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "provider": "provider/device/grbl",
                 "friendly_name": _("Longer Ray5 (GRBL)"),
-                "extended_info": _("Longer-branded 10w/20w grbl diode laser."),
+                "extended_info": _("Longer-branded 5w/10w/20w grbl diode laser.\nMake sure you verify your bed size! This machine has several upgrade kits."),
                 "priority": 21,
                 "family": _("Longer Diode-Laser"),
                 "choices": [
