@@ -62,7 +62,7 @@ default_colors_dark= {
     "grid": "#6B6B6B",
     "guide": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
     "background": "#282C57",
-    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)),
+    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)),
     "grid2": "#6B6B6B",
     "guide2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
     "grid3": "#6B6B6B",
