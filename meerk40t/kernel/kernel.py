@@ -2824,35 +2824,36 @@ class Kernel(Settings):
                 "Darwin": "/System/Library/Sounds/Ping.aiff",
                 "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
             }
-            default_snd = system_sound.get(OS_NAME, "")
-            sys_snd = self.root.setting(str, "beep_soundfile", default_snd)
-            if sys_snd and not os.path.exists(sys_snd):
-                sys_snd = ""
+
+            # Handle sound file validation once upfront
+            sys_snd = self.root.setting(str, "beep_soundfile", system_sound.get(OS_NAME, ""))
+            use_default = not sys_snd or not os.path.exists(sys_snd)
+
+            import subprocess
+
+            # Platform-specific sound playing with reduced nesting
             if OS_NAME == "Windows":
                 try:
                     import winsound
-                    if sys_snd:
-                        winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
-                    else:
+                    if use_default:
                         for x in range(5):
                             winsound.Beep(2000, 100)
-                except Exception as e:
+                    else:
+                        winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
+                except Exception:
                     pass
-            elif OS_NAME == "Darwin":  # Mac
-                if sys_snd:
-                    os.system(f"afplay {sys_snd}")
-
+            elif OS_NAME == "Darwin":
+                if not use_default:
+                    subprocess.run(f"afplay {sys_snd}", shell=False)
             elif OS_NAME == "Linux":
-                if sys_snd:
-                    player = "play"
-                    # player =" gst-play-1.0"
-                    rc = os.system(f"{player} {sys_snd}")
+                if not use_default:
+                    subprocess.run(f"play {sys_snd}", shell=False)
+                    # os.system(f"play {sys_snd}")
                 else:
-                    print("\a")  # Beep.
-                    os.system('say "Ding"')
-
-            else:  # Assuming other linux like system
-                print("\a")  # Beep.
+                    print("\a")  # Beep
+                    subprocess.run('say "Ding"', shell=False)
+            else:
+                print("\a")  # Beep
 
         @self.console_argument(
             "sleeptime", type=float, help=_("Wait time in seconds"), default=1
