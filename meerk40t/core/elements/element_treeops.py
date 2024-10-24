@@ -2128,7 +2128,13 @@ def init_tree(kernel):
     )
     def add_hatch_to_op(node, pos=None, **kwargs):
         with self.undoscope("Add hatch"):
-            node.add("effect hatch")
+            old_children = list(node.children)
+            effect = node.add("effect hatch")
+            for e in old_children:
+                if e is effect:
+                    continue
+                if e.type in elem_ref_nodes:
+                    effect.append_child(e)
         self.signal("updateop_tree")
 
     ## @tree_separate_before()
