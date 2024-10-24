@@ -626,8 +626,9 @@ class VectorIcon:
             geom = Geomstr.svg(e)
             color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
+            bb = geom.bbox()
+            m_x, m_y, p_w, p_h = bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1]
             fill_paths.append((gp, color, attrib))
-            m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
                 min_y = m_y
@@ -644,10 +645,11 @@ class VectorIcon:
             e = s_entry[2]
             attrib = s_entry[3]
             geom = Geomstr.svg(e)
+            bb = geom.bbox()
+            m_x, m_y, p_w, p_h = bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1]
             color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
             stroke_paths.append((gp, color, attrib))
-            m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
                 min_y = m_y
@@ -658,7 +660,6 @@ class VectorIcon:
                 min_y = min(min_y, m_y)
                 max_x = max(max_x, m_x + p_w)
                 max_y = max(max_y, m_y + p_h)
-
         path_width = max_x - min_x
         path_height = max_y - min_y
 
@@ -687,16 +688,19 @@ class VectorIcon:
         from meerk40t.svgelements import Matrix
 
         matrix = Matrix()
-        matrix.post_translate(
+        tx = (
             -min_x
             + self.edge
             + stroke_buffer
-            + (final_icon_width - width_scaled) / 2 / scale_x,
+            + (final_icon_width - width_scaled) / 2 / scale_x
+        )
+        ty = (
             -min_y
             + self.edge
             + stroke_buffer
-            + (final_icon_height - height_scaled) / 2 / scale_x,
+            + (final_icon_height - height_scaled) / 2 / scale_x
         )
+        matrix.post_translate(tx, ty)
         matrix.post_scale(scale_x, scale_y)
         if scale_y < 0:
             matrix.pre_translate(0, -height_scaled)
