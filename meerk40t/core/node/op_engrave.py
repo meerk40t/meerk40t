@@ -255,14 +255,17 @@ class EngraveOpNode(Node, Parameters):
         if not self.valid_node_for_reference(node):
             # We could raise a ValueError but that will break things...
             return
-        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
-        node._references.append(ref)
-        if (
+        if first_is_effect :=  (
             len(self._children) > 0 and
-            self._children[0] is not ref and
             self._children[0].type.startswith("effect ")
         ):
-            self._children[0].append_child(ref)
+            effect = self._children[0]
+        else:
+            effect = None
+        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        node._references.append(ref)
+        if first_is_effect:
+            effect.append_child(ref)
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
