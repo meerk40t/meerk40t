@@ -350,6 +350,11 @@ class HatchEffectNode(Node, Suppressable):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
+            # If we drag an operation to this node,
+            # then we will reverse the game, but we will take the operations color
+            if hasattr(drag_node, "color") and drag_node.color is not None:
+                self.stroke = drag_node.color
+
             return drag_node.drop(self, modify=modify, flag=flag)
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,
