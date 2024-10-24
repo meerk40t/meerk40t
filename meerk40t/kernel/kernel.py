@@ -2822,7 +2822,7 @@ class Kernel(Settings):
             system_sound = {
                 "Windows": r"c:\Windows\Media\Alarm01.wav",
                 "Darwin": "/System/Library/Sounds/Ping.aiff",
-                "Linux": "",
+                "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
             }
             default_snd = system_sound.get(OS_NAME, "")
             sys_snd = self.root.setting(str, "beep_soundfile", default_snd)
@@ -2837,7 +2837,6 @@ class Kernel(Settings):
                         for x in range(5):
                             winsound.Beep(2000, 100)
                 except Exception as e:
-                    print (e)
                     pass
             elif OS_NAME == "Darwin":  # Mac
                 if sys_snd:
@@ -2845,7 +2844,9 @@ class Kernel(Settings):
 
             elif OS_NAME == "Linux":
                 if sys_snd:
-                    os.system(f"play {sys_snd}")
+                    player = "play"
+                    # player =" gst-play-1.0"
+                    rc = os.system(f"{player} {sys_snd}")
                 else:
                     print("\a")  # Beep.
                     os.system('say "Ding"')
