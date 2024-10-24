@@ -5,7 +5,7 @@ from math import sqrt
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.units import Angle, Length
-from meerk40t.svgelements import Color
+from meerk40t.svgelements import Color, Point
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
@@ -178,6 +178,14 @@ class HatchEffectNode(Node, Suppressable):
     def preprocess(self, context, matrix, plan):
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
+        # Let's establish the angle
+        p1:Point = matrix.point_in_matrix_space((0, 0))
+        p2:Point = matrix.point_in_matrix_space((1, 0))
+        angle = p1.angle_to(p2)
+        self._angle -= angle
+        # from math import tau
+        # print(f"Angle: {angle} - {angle/tau * 360:.1f}°")
+
         # for c in self._children:
         #     c.matrix *= matrix
 
@@ -270,8 +278,8 @@ class HatchEffectNode(Node, Suppressable):
 
     def as_geometries(self, **kws):
         """
-        Calculates the hatch effect geometries and returns the geometries 
-        for each pass and child object individually. 
+        Calculates the hatch effect geometries and returns the geometries
+        for each pass and child object individually.
         The pass index is the number of copies of this geometry whereas the
         internal loops value is rotated each pass by the angle-delta.
 
@@ -309,7 +317,7 @@ class HatchEffectNode(Node, Suppressable):
         if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or drag_node.type.startswith("op "):
             return True
         return False
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an effect node - irrelevant for others...
         if not self.can_drop(drag_node):
