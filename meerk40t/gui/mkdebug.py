@@ -495,6 +495,12 @@ class DebugIconPanel(wx.Panel):
         sizer_main.Fit(self)
         self.combo_icons.Bind(wx.EVT_COMBOBOX, self.on_combo)
         self.Layout()
+        if self.icon_list:
+            wx.CallAfter(self.show_first)
+
+    def show_first(self):
+        self.combo_icons.SetSelection(0)
+        self.on_combo(None)
 
     def on_combo(self, event):
         idx = self.combo_icons.GetSelection()
