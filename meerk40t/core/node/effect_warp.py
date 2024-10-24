@@ -136,7 +136,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         if self.autohide and hasattr(new_child, "hidden"):
             new_child.hidden = True
         return super().append_child(new_child)
-    
+
     def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
         Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
@@ -333,6 +333,8 @@ class WarpEffectNode(Node, FunctionalParameter):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
+            if hasattr(drag_node, "color") and drag_node.color is not None:
+                self.stroke = drag_node.color
             return drag_node.drop(self, modify=modify, flag=flag)
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,

@@ -387,7 +387,7 @@ class WobbleEffectNode(Node, Suppressable):
         if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or drag_node.type.startswith("op "):
             return True
         return False
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an effect node - irrelevant for others...
         if not self.can_drop(drag_node):
@@ -420,6 +420,8 @@ class WobbleEffectNode(Node, Suppressable):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
+            if hasattr(drag_node, "color") and drag_node.color is not None:
+                self.stroke = drag_node.color
             return drag_node.drop(self, modify=modify, flag=flag)
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,

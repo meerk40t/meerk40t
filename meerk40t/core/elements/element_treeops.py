@@ -2120,6 +2120,46 @@ def init_tree(kernel):
             not self.update_statusbar_on_material_load
         )
 
+    @tree_submenu(_("Add effect"))
+    @tree_operation(
+        _("Add hatch effect"),
+        node_type=("op cut", "op engrave"),
+        help=_("Add an hatch effect to the operation"),
+        grouping="OPS_40_ADDITION",
+    )
+    def add_hatch_to_op(node, pos=None, **kwargs):
+        with self.undoscope("Add hatch"):
+            old_children = list(node.children)
+            effect = node.add("effect hatch")
+            effect.stroke = node.color
+            for e in old_children:
+                if e is effect:
+                    continue
+                if e.type in elem_ref_nodes:
+                    effect.append_child(e)
+        self.signal("element_property_update", [effect])
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Add effect"))
+    @tree_operation(
+        _("Add wobble effect"),
+        node_type=("op cut", "op engrave"),
+        help=_("Add a wobble effect to the operation"),
+        grouping="OPS_40_ADDITION",
+    )
+    def add_wobble_to_op(node, pos=None, **kwargs):
+        with self.undoscope("Add wobble"):
+            old_children = list(node.children)
+            effect = node.add("effect wobble")
+            effect.stroke = node.color
+            for e in old_children:
+                if e is effect:
+                    continue
+                if e.type in elem_ref_nodes:
+                    effect.append_child(e)
+        self.signal("element_property_update", [effect])
+        self.signal("updateop_tree")
+
     ## @tree_separate_before()
     @tree_submenu(_("Append operation"))
     @tree_operation(
@@ -2159,7 +2199,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append operation"))
     @tree_operation(
-        _("Append Hatch"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
+        _("Append new Hatch"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
     )
     def append_operation_hatch(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):

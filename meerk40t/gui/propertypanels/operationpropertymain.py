@@ -254,6 +254,11 @@ class LayerSettingPanel(wx.Panel):
                 and len(self.operation.children) > 0
                 and (candidate_fill or candidate_stroke)
             ):
+                changed = []
+                for e in self.operation.children:
+                    if e.type.startswith("effect "):
+                        e.stroke = self.operation.color
+                        changed.append(e)
                 dlg = wx.MessageDialog(
                     None,
                     message=_(
@@ -265,8 +270,9 @@ class LayerSettingPanel(wx.Panel):
                 response = dlg.ShowModal()
                 dlg.Destroy()
                 if response == wx.ID_YES:
-                    changed = []
                     for refnode in self.operation.children:
+                        if refnode in changed:
+                            continue
                         if hasattr(refnode, "node"):
                             cnode = refnode.node
                         else:
@@ -282,9 +288,9 @@ class LayerSettingPanel(wx.Panel):
 
                         if add_to_change:
                             changed.append(cnode)
-                    if len(changed) > 0:
-                        self.context.elements.signal("element_property_update", changed)
-                        self.context.elements.signal("refresh_scene", "Scene")
+                if len(changed) > 0:
+                    self.context.elements.signal("element_property_update", changed)
+                    self.context.elements.signal("refresh_scene", "Scene")
 
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"

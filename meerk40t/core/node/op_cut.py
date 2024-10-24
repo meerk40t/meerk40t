@@ -283,6 +283,26 @@ class CutOpNode(Node, Parameters):
                     return True, self.stopop, feedback
         return False, False, None
 
+    def add_reference(self, node=None, pos=None, **kwargs):
+        # is the very first child an effect node?
+        # if yes then we will put that reference under this one
+        if node is None:
+            return
+        if not self.valid_node_for_reference(node):
+            # We could raise a ValueError but that will break things...
+            return
+        if first_is_effect :=  (
+            len(self._children) > 0 and
+            self._children[0].type.startswith("effect ")
+        ):
+            effect = self._children[0]
+        else:
+            effect = None
+        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        node._references.append(ref)
+        if first_is_effect:
+            effect.append_child(ref)
+
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         hexa = self.settings.get("hex_color")

@@ -10862,7 +10862,7 @@ msgid "Append Cut"
 msgstr "追加切割"
 
 #: meerk40t/core/elements/element_treeops.py:1408
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr "追加填充"
 
 #: meerk40t/core/elements/element_treeops.py:1414
