@@ -13002,6 +13002,10 @@ msgstr "Benutzerdefinierte Gittergröße"
 msgid "Reset Colors to Default"
 msgstr "Farben auf Standard"
 
+#: meerk40t/gui/preferences.py:726
+msgid "Reset Colors to brighter defaults"
+msgstr "Farben auf (helleren) Standard"
+
 msgid "Design"
 msgstr "Elemente"
 
@@ -18890,3 +18894,77 @@ msgid "Use the finger tool to modify the containing shape of the warped children
 msgstr ""
 "Benutze das Finger-Werkzeug, um die umgebende Form\n"
 "um die enthaltenen Elemente zu verändern."
+
+#: meerk40t/balormk/plugin.py:31
+msgid "Fibre-Laser (JCZ-Controller) (Non-MOPA)"
+msgstr "Faser-Laser (JCZ-Controller) (ohne MOPA)"
+
+#: meerk40t/balormk/plugin.py:36 meerk40t/balormk/plugin.py:60 meerk40t/gui/devicepanel.py:122
+msgid "Generic Fibre-Laser"
+msgstr "Generischer Fser-Laser"
+
+#: meerk40t/balormk/plugin.py:53
+msgid "Fibre-Laser (JCZ-Controller) (MOPA)"
+msgstr "Faser-Laser (JCZ-Controller) (MOPA)"
+
+#: meerk40t/balormk/plugin.py:81
+msgid "CO2 (JCZ-Controller)"
+msgstr "CO2 (JCZ-Controller)"
+
+#: meerk40t/balormk/plugin.py:90 meerk40t/moshi/plugin.py:31 meerk40t/gui/devicepanel.py:121
+msgid "Generic CO2-Laser"
+msgstr "Generischer CO2-Laser"
+
+#: meerk40t/balormk/plugin.py:107
+msgid "UV (JCZ-Controller)"
+msgstr "UV (JCZ-Controller)"
+
+#: meerk40t/balormk/plugin.py:116 meerk40t/gui/devicepanel.py:120
+msgid "Generic UV-Laser"
+msgstr "Generischer UV-Laser"
+
+#: meerk40t/grbl/plugin.py:38 meerk40t/gui/devicepanel.py:123
+msgid "Generic Diode-Laser"
+msgstr "Generischer Dioden-Laser"
+
+#: meerk40t/grbl/plugin.py:85
+msgid "K40 CO2 (GRBL-Controller)"
+msgstr "K40 CO2 Laser (mit GRBL-Controller)"
+
+#: meerk40t/grbl/plugin.py:88 meerk40t/ruida/plugin.py:30 meerk40t/lihuiyu/plugin.py:38 meerk40t/lihuiyu/plugin.py:68 meerk40t/gui/devicepanel.py:116
+msgid "K-Series CO2-Laser"
+msgstr "K-Serie CO2-Laser"
+
+#: meerk40t/grbl/plugin.py:150 meerk40t/gui/devicepanel.py:117
+msgid "Ortur Diode-Laser"
+msgstr "Ortur Dioden-Laser"
+
+#: meerk40t/grbl/plugin.py:177
+msgid "Longer Ray5 (GRBL)"
+msgstr "Longer Ray5 (GRBL)"
+
+#: meerk40t/grbl/plugin.py:178
+msgid "Longer-branded 5w/10w/20w grbl diode laser.\nMake sure you verify your bed size! This machine has several upgrade kits."
+msgstr ""
+"GRBL Dioden-Laser der Marke Longer (5W/10W/20W)\n"
+"Bitte Bettgröße überprüfen und einstellen! Diese Maschine hat diverse Erweiterungskits."
+
+#: meerk40t/grbl/plugin.py:180 meerk40t/gui/devicepanel.py:118
+msgid "Longer Diode-Laser"
+msgstr "Longer Dioden-Laser"
+
+#: meerk40t/lihuiyu/plugin.py:30
+msgid "K40-CO2-Laser (m2nano-Board) (Green/Blue)"
+msgstr "K40-CO2-Laser (m2nano-Board) (Grün/Blau)"
+
+#: meerk40t/lihuiyu/plugin.py:60
+msgid "K40-CO2-Laser (m3nano-Board) (Purple/Blue)"
+msgstr "K40-CO2-Laser (m3nano-Board) (Violett/Blau)"
+
+#: meerk40t/moshi/plugin.py:24
+msgid "CO2-Laser (Moshi-Board)"
+msgstr "CO2-Laser (Moshi-Board)"
+
+#: meerk40t/balormk/gui/gui.py:99
+msgid "Live Hull"
+msgstr "Live-Hüllkurve"
