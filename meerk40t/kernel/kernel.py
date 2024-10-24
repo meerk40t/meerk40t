@@ -2819,19 +2819,36 @@ class Kernel(Settings):
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
             OS_NAME = platform.system()
+            system_sound = {
+                "Windows": r"c:\Windows\Media\Alarm01.wav",
+                "Darwin": "/System/Library/Sounds/Ping.aiff",
+                "Linux": "",
+            }
+            default_snd = system_sound.get(OS_NAME, "")
+            sys_snd = self.root.setting(str, "beep_soundfile", default_snd)
+            if sys_snd and not os.path.exists(sys_snd):
+                sys_snd = ""
             if OS_NAME == "Windows":
                 try:
                     import winsound
-
-                    for x in range(5):
-                        winsound.Beep(2000, 100)
-                except Exception:
+                    if sys_snd:
+                        winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
+                    else:
+                        for x in range(5):
+                            winsound.Beep(2000, 100)
+                except Exception as e:
+                    print (e)
                     pass
             elif OS_NAME == "Darwin":  # Mac
-                os.system("afplay /System/Library/Sounds/Ping.aiff")
+                if sys_snd:
+                    os.system(f"afplay {sys_snd}")
+
             elif OS_NAME == "Linux":
-                print("\a")  # Beep.
-                os.system('say "Ding"')
+                if sys_snd:
+                    os.system(f"play {sys_snd}")
+                else:
+                    print("\a")  # Beep.
+                    os.system('say "Ding"')
 
             else:  # Assuming other linux like system
                 print("\a")  # Beep.

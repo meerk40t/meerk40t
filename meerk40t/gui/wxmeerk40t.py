@@ -1007,6 +1007,10 @@ class wxMeerK40t(wx.App, Module):
 
             register_widget_icon(kernel.root)
 
+        wildcard = "Sound-Files|*.wav;*.mp3;*.ogg|All files|*.*"
+        if platform.system() == "Darwin":
+            wildcard = f"System-Sounds|*.aiff|{wildcard}"
+
         choices = [
             {
                 "attr": "single_instance_only",
@@ -1027,6 +1031,17 @@ class wxMeerK40t(wx.App, Module):
                 "page": "Start",
                 "signals": "restart",
             },
+            {
+                "attr": "beep_soundfile",
+                "object": context.root,
+                "type": str,
+                "default": "",
+                "style": "file",
+                "wildcard": wildcard,
+                "label": _("Soundfile"),
+                "tip": _("Define the soundfile MeerK40t will play when the 'beep' command is issued"),
+                "page": "Start",
+            }
         ]
         kernel.register_choices("preferences", choices)
 
