@@ -1008,8 +1008,15 @@ class wxMeerK40t(wx.App, Module):
             register_widget_icon(kernel.root)
 
         wildcard = "Sound-Files|*.wav;*.mp3;*.ogg|All files|*.*"
-        if platform.system() == "Darwin":
+        OS_NAME = platform.system()
+        if OS_NAME == "Darwin":   
             wildcard = f"System-Sounds|*.aiff|{wildcard}"
+        system_sound = {
+            "Windows": r"c:\Windows\Media\Alarm01.wav",
+            "Darwin": "/System/Library/Sounds/Ping.aiff",
+            "Linux": "",
+        }
+        default_snd = system_sound.get(OS_NAME, "")
 
         choices = [
             {
@@ -1035,7 +1042,7 @@ class wxMeerK40t(wx.App, Module):
                 "attr": "beep_soundfile",
                 "object": context.root,
                 "type": str,
-                "default": "",
+                "default": default_snd,
                 "style": "file",
                 "wildcard": wildcard,
                 "label": _("Soundfile"),
