@@ -679,7 +679,6 @@ class CutPlan:
         if busy.shown:
             busy.change(msg=_("Combine effect primitives"), keep=1)
             busy.show()
-        to_be_deleted = []
         combined = 0
         l_plan = len(self.plan)
         total = -1
@@ -688,8 +687,7 @@ class CutPlan:
             # We don't combine across plan boundaries
             if not isinstance(pitem, CutGroup):
                 continue
-            grouping, item_to_delete, item_combined, total = process_plan_item(pitem, busy, total, plan_idx, l_plan)
-            to_be_deleted.extend(item_to_delete)
+            grouping, to_be_deleted, item_combined, total = process_plan_item(pitem, busy, total, plan_idx, l_plan)
             combined += item_combined
             group_count += len(grouping)
 
@@ -1109,7 +1107,7 @@ def is_inside(inner, outer, tolerance=0):
         def ray_tracing(x, y, poly, tolerance):
             def sq_length(a, b):
                 return a * a + b * b
-            
+
             tolerance_square = tolerance * tolerance
             n = len(poly)
             inside = False
@@ -1120,16 +1118,16 @@ def is_inside(inner, outer, tolerance=0):
             for i in range(n+1):
                 p2x, p2y = poly[i % n]
                 new_sq_dist = sq_length(p2x - x, p2y - y)
-                # We are approximating the edge to an extremely thin ellipse and see 
+                # We are approximating the edge to an extremely thin ellipse and see
                 # whether our point is on that ellipse
                 reldist = (
-                    old_sq_dist + new_sq_dist + 
-                    2.0 * np.sqrt(old_sq_dist * new_sq_dist) - 
+                    old_sq_dist + new_sq_dist +
+                    2.0 * np.sqrt(old_sq_dist * new_sq_dist) -
                     sq_length(p2x - p1x, p2y - p1y)
                 )
                 if reldist < tolerance_square:
                     return True
-                
+
                 if y > min(p1y,p2y):
                     if y <= max(p1y,p2y):
                         if x <= max(p1x,p2x):
@@ -1140,9 +1138,9 @@ def is_inside(inner, outer, tolerance=0):
                 p1x, p1y = p2x, p2y
                 old_sq_dist = new_sq_dist
             return inside
-        
+
         geom1 = Geomstr.svg(inner_path.d())
-        geom2 = Geomstr.svg(outer_path.d())        
+        geom2 = Geomstr.svg(outer_path.d())
         points = np.array(list((p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance = 10)))
         vertices = np.array(list((p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance = 10)))
         return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
