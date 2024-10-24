@@ -3,6 +3,7 @@ import inspect
 import os
 import platform
 import re
+import subprocess
 import threading
 import time
 from datetime import datetime
@@ -2820,19 +2821,15 @@ class Kernel(Settings):
         def beep(channel, _, **kwargs):
             OS_NAME = platform.system()
             system_sound = {
-                "Windows": r"c:\Windows\Media\Alarm01.wav",
+                "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
                 "Darwin": "/System/Library/Sounds/Ping.aiff",
                 "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
             }
 
-            # Handle sound file validation once upfront
             sys_snd = self.root.setting(str, "beep_soundfile", system_sound.get(OS_NAME, ""))
             use_default = not sys_snd or not os.path.exists(sys_snd)
 
-            import subprocess
-
-            # Platform-specific sound playing with reduced nesting
-            if OS_NAME == "Windows":
+            def _play_windows():
                 try:
                     import winsound
                     if use_default:
@@ -2842,18 +2839,24 @@ class Kernel(Settings):
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
                 except Exception:
                     pass
-            elif OS_NAME == "Darwin":
+
+            def _play_darwin():
+                cmd = system_sound['Darwin'] if use_default else sys_snd
+                subprocess.run(['afplay', cmd], shell=False)
+
+            def _play_linux():
                 if not use_default:
-                    subprocess.run(f"afplay {sys_snd}", shell=False)
-            elif OS_NAME == "Linux":
-                if not use_default:
-                    subprocess.run(f"play {sys_snd}", shell=False)
-                    # os.system(f"play {sys_snd}")
+                    subprocess.run(['play', sys_snd], shell=False)
                 else:
-                    print("\a")  # Beep
-                    subprocess.run('say "Ding"', shell=False)
-            else:
-                print("\a")  # Beep
+                    print("\a")
+                    subprocess.run(['say', 'Ding'], shell=False)
+
+            players = {
+                "Windows": _play_windows,
+                "Darwin": _play_darwin,
+                "Linux": _play_linux,
+            }
+            players.get(OS_NAME, lambda: print("\a"))()
 
         @self.console_argument(
             "sleeptime", type=float, help=_("Wait time in seconds"), default=1
