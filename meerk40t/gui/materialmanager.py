@@ -6,6 +6,7 @@ They are stored in the operations.cfg file in the meerk40t working directory
 
 import os
 import xml.etree.ElementTree as ET
+from platform import system
 
 import wx
 
@@ -1143,19 +1144,22 @@ class MaterialPanel(ScrolledPanel):
                 busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
 
                 to_delete = False
+                prim_key = entry[sort_key_primary].replace("_", " ") if entry[sort_key_primary] else _("No " + sort_key_primary)
                 if keytype == 0:
                     to_delete = True
                 elif (
                     keytype == 1 and
-                    entry[sort_key_primary].replace("_", " ") == primary
+                    prim_key == primary
                 ):
                     to_delete = True
                 elif (
                     keytype == 2 and
-                    entry[sort_key_primary].replace("_", " ") == primary and
-                    entry[sort_key_secondary].replace("_", " ") == secondary
+                    prim_key == primary and
+                    prim_key == secondary
                 ):
                     to_delete = True
+
+                # print (f"Keytype={keytype}, primary: {prim_key} vs {primary}, secondary: {entry[sort_key_secondary].replace('_', ' ')} vs {secondary} -> {to_delete}")
 
                 if to_delete:
                     material = entry["section"]
@@ -1961,7 +1965,7 @@ class MaterialPanel(ScrolledPanel):
 
         def get_key(op_type, op_color):
             return f"{op_type}-{str(op_color)}"
-        
+
         def populate_images() -> dict:
             COLORFUL_BACKGROUND = True
             iconsize = 30
@@ -1987,6 +1991,8 @@ class MaterialPanel(ScrolledPanel):
                     except KeyError:
                         info = self.opinfo["generic"]
                     if COLORFUL_BACKGROUND:
+                        if opc is None:
+                            opc = Color("black")
                         fgcol = wx.BLACK if Color.distance(opc, "black") > Color.distance(opc, "white") else wx.WHITE
                         forced_bg = (opc.red, opc.green, opc.blue, opc.alpha)
                         bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=fgcol, forced_background=forced_bg)
@@ -2799,8 +2805,9 @@ class AboutPanel(wx.Panel):
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        fsize = 16 if system() == "Darwin" else 10
         font = wx.Font(
-            16,
+            fsize,
             wx.FONTFAMILY_DEFAULT,
             wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL,
