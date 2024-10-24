@@ -61,7 +61,9 @@ class HatchEffectNode(Node, Suppressable):
         self._angle = None
         self._angle_delta = 0
         self._effect = True
-        self.recalculate()
+        self._child_geometries = []
+        self._geometries = []
+        self.recalculate("init")
 
     @property
     def implied_stroke_width(self):
@@ -74,37 +76,51 @@ class HatchEffectNode(Node, Suppressable):
         nd = self.node_dict
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        return HatchEffectNode(**nd)
+        node = HatchEffectNode(**nd)
+        node._distance = self._distance
+        node._angle = self._angle
+        node._angle_delta= self._angle_delta
+        node.recalculate("copy")
+        node._child_geometries = list(self._child_geometries)
+        node._geometries = list(self._geometries)
+        return node
+
+    # def copy_children_as_real(self, copy_node):
+    #     print ("Copy children started")
+    #     super().copy_children_as_real(copy_node)
+    #     self._child_geometries = list(copy_node._child_geometries)
+    #     self._geometries = list(copy_node._geometries)
+    #     print ("Copy children ended")
 
     def scaled(self, sx, sy, ox, oy, interim=False):
         if interim:
             self.set_interim()
         else:
-            self.altered()
+            self.altered(source="scaled")
 
     def notify_attached(self, node=None, **kwargs):
         Node.notify_attached(self, node=node, **kwargs)
         if node is self:
             return
-        self.altered()
+        self.altered(source="attached")
 
     def notify_detached(self, node=None, **kwargs):
         Node.notify_detached(self, node=node, **kwargs)
         if node is self:
             return
-        self.altered()
+        self.altered(source="detached")
 
     def notify_modified(self, node=None, **kwargs):
         Node.notify_modified(self, node=node, **kwargs)
         if node is self:
             return
-        self.altered()
+        self.altered(source="notify_modify")
 
     def notify_altered(self, node=None, **kwargs):
         Node.notify_altered(self, node=node, **kwargs)
         if node is self:
             return
-        self.altered()
+        self.altered("notify_altered")
 
     def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
         Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
@@ -113,7 +129,7 @@ class HatchEffectNode(Node, Suppressable):
         if interim:
             self.set_interim()
         else:
-            self.altered()
+            self.altered("notify_scaled")
 
     def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
         Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
@@ -122,7 +138,7 @@ class HatchEffectNode(Node, Suppressable):
         if interim:
             self.set_interim()
         else:
-            self.altered()
+            self.altered("notify_translated")
 
     @property
     def angle(self):
@@ -131,7 +147,7 @@ class HatchEffectNode(Node, Suppressable):
     @angle.setter
     def angle(self, value):
         self.hatch_angle = value
-        self.recalculate()
+        self.recalculate("angle")
 
     @property
     def delta(self):
@@ -140,7 +156,7 @@ class HatchEffectNode(Node, Suppressable):
     @delta.setter
     def delta(self, value):
         self.hatch_angle_delta = value
-        self.recalculate()
+        self.recalculate("delta")
 
     @property
     def distance(self):
@@ -149,13 +165,14 @@ class HatchEffectNode(Node, Suppressable):
     @distance.setter
     def distance(self, value):
         self.hatch_distance = value
-        self.recalculate()
+        self.recalculate("distance")
 
-    def recalculate(self):
+    def recalculate(self, source):
         """
         Ensure that the properties for distance, angle and angle_delta are in usable units.
         @return:
         """
+        print (f"Recalculate was called from {source}")
         h_dist = self.hatch_distance
         h_angle = self.hatch_angle
         h_angle_delta = self.hatch_angle_delta
@@ -174,12 +191,16 @@ class HatchEffectNode(Node, Suppressable):
         # transformed_vector = self.matrix.transform_vector([0, distance_y])
         transformed_vector = [0, distance_y]
         self._distance = abs(complex(transformed_vector[0], transformed_vector[1]))
+        self._geometries.clear()
 
     def preprocess(self, context, matrix, plan):
+        print (f"Preprocess called with {matrix}")
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
-        # for c in self._children:
-        #     c.matrix *= matrix
+        for geom in self._child_geometries:
+            geom.transform(matrix)
+        for geom in self._geometries:
+            geom.transform(matrix)
 
         self.set_dirty_bounds()
 
@@ -246,52 +267,37 @@ class HatchEffectNode(Node, Suppressable):
         @param kws:
         @return:
         """
-        outlines = Geomstr()
-        for node in self.affected_children():
-            try:
-                outlines.append(node.as_geometry(**kws))
-            except AttributeError:
-                # If direct children lack as_geometry(), do nothing.
-                pass
-        if self._interim:
-            return outlines
-        path = Geomstr()
         if self._distance is None:
-            self.recalculate()
-        for p in range(self.loops):
-            path.append(
-                Geomstr.hatch(
-                    outlines,
-                    distance=self._distance,
-                    angle=self._angle + p * self._angle_delta,
-                )
-            )
+            self.recalculate("as_geometry-distance")
+        self.get_outlines()
+        self.get_hatch()
+        if self._interim:
+            outlines = Geomstr()
+            for geom in self._child_geometries:
+                outlines.append(geom)
+            return outlines
+
+        path = Geomstr()
+        for geom in self._geometries:
+            path.append(geom)
         return path
 
     def as_geometries(self, **kws):
         """
-        Calculates the hatch effect geometries and returns the geometries 
-        for each pass and child object individually. 
+        Calculates the hatch effect geometries and returns the geometries
+        for each pass and child object individually.
         The pass index is the number of copies of this geometry whereas the
         internal loops value is rotated each pass by the angle-delta.
 
         @param kws:
         @return:
         """
-        outlines = [
-            node.as_geometry(**kws)
-            for node in self.affected_children()
-            if hasattr(node, "as_geometry")
-        ]
+        print ("as geometries was called")
         if self._distance is None:
-            self.recalculate()
-        for p in range(self.loops):
-            for o in outlines:
-                yield Geomstr.hatch(
-                    o,
-                    distance=self._distance,
-                    angle=self._angle + p * self._angle_delta,
-                )
+            self.recalculate(("as_geometries - distance"))
+        self.get_outlines()
+        self.get_hatch()
+        yield from self._geometries
 
 
     def set_interim(self):
@@ -300,16 +306,46 @@ class HatchEffectNode(Node, Suppressable):
 
     def altered(self, *args, **kwargs):
         self._interim = False
+        print(f"altered: {kwargs.get('source', '')}")
+        self._child_geometries.clear()
+        self._geometries.clear()
         super().altered()
 
+    def get_outlines(self):
+        if len(self._child_geometries):
+            return
+        print ("Need to recalculate outlines")
+        # Invalidate hatch too
+        self._geometries.clear()
+        self._child_geometries = [
+            node.as_geometry()
+            for node in self.affected_children()
+            if hasattr(node, "as_geometry")
+        ]
+
+    def get_hatch(self):
+        if len(self._geometries):
+            return
+        print ("Need to recalculate hatch")
+        self._geometries.clear()
+        for p in range(self.loops):
+            for o in self._child_geometries:
+                self._geometries.append(
+                    Geomstr.hatch(
+                        o,
+                        distance=self._distance,
+                        angle=self._angle + p * self._angle_delta,
+                    )
+                )
+
     def modified(self):
-        self.altered()
+        self.altered(source="modified")
 
     def can_drop(self, drag_node):
         if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or drag_node.type.startswith("op "):
             return True
         return False
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an effect node - irrelevant for others...
         if not self.can_drop(drag_node):
@@ -321,7 +357,7 @@ class HatchEffectNode(Node, Suppressable):
                 else:
                     self.swap_node(drag_node)
                 drag_node.altered()
-                self.altered()
+                self.altered(source="drag1")
             return True
         if hasattr(drag_node, "as_geometry"):
             # Dragging element onto operation adds that element to the op.
@@ -330,7 +366,7 @@ class HatchEffectNode(Node, Suppressable):
                     self.add_reference(drag_node)
                 else:
                     self.append_child(drag_node)
-                self.altered()
+                self.altered(source="drag2")
             return True
         elif drag_node.type == "reference":
             if modify:
@@ -351,6 +387,6 @@ class HatchEffectNode(Node, Suppressable):
                     return False
                 else:
                     self.append_child(drag_node)
-                self.altered()
+                self.altered(source="dragfile")
             return True
         return False
