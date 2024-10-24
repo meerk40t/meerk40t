@@ -730,63 +730,14 @@ class TemplatePanel(wx.Panel):
 
         if "balor" in self.context.device.path:
             balor_choices = [
-                ("frequency", None, _("Frequency"), "kHz", False, True),
-                (
-                    "rapid_speed",
-                    preset_balor_rapid,
-                    _("Rapid Speed"),
-                    "mm/s",
-                    False,
-                    True,
-                ),
-                (
-                    "delay_laser_on",
-                    preset_balor_timings,
-                    _("Laser On Delay"),
-                    "µs",
-                    False,
-                    False,
-                ),
-                (
-                    "delay_laser_off",
-                    preset_balor_timings,
-                    _("Laser Off Delay"),
-                    "µs",
-                    False,
-                    False,
-                ),
-                (
-                    "delay_polygon",
-                    preset_balor_timings,
-                    _("Polygon Delay"),
-                    "µs",
-                    False,
-                    False,
-                ),
-                (
-                    "wobble_radius",
-                    preset_balor_wobble,
-                    _("Wobble Radius"),
-                    "mm",
-                    True,
-                    True,
-                ),
-                (
-                    "wobble_interval",
-                    preset_balor_wobble,
-                    _("Wobble Interval"),
-                    "mm",
-                    True,
-                    True,
-                ),
-                (
-                    "wobble_speed",
-                    preset_balor_wobble,
-                    _("Wobble Speed Multiplier"),
-                    "x",
-                    False,
-                    True,
-                ),
+                ("frequency", None, _("Frequency"), "kHz", False, True, None),
+                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True, None,),
+                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False, None,),
+                ("delay_laser_off", preset_balor_timings, _("Laser Off Delay"), "µs", False, False, None,),
+                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False, None,),
+                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True, None,),
+                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True, None,),
+                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True, None,),
             ]
             if self.context.device.pulse_width_enabled:
                 balor_choices.append(
@@ -796,12 +747,16 @@ class TemplatePanel(wx.Panel):
                         _("Pulse Width"),
                         "ns",
                         False,
-                        True,
+                        True, 
+                        None,
                     )
                 )
 
             for entry in balor_choices:
                 self.parameters.append(entry)
+        # for p in self.parameters:
+        #     if len(p) != 7:
+        #         print (f"No good: {p}")
         choices = []
         for entry in self.parameters:
             choices.append(entry[2])
