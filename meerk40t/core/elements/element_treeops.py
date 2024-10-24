@@ -2130,11 +2130,13 @@ def init_tree(kernel):
         with self.undoscope("Add hatch"):
             old_children = list(node.children)
             effect = node.add("effect hatch")
+            effect.stroke = node.color
             for e in old_children:
                 if e is effect:
                     continue
                 if e.type in elem_ref_nodes:
                     effect.append_child(e)
+        self.signal("element_property_update", [effect])
         self.signal("updateop_tree")
 
     ## @tree_separate_before()
