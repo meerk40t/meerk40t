@@ -1007,6 +1007,21 @@ class wxMeerK40t(wx.App, Module):
 
             register_widget_icon(kernel.root)
 
+        wildcard = "Sound-Files|*.wav;*.mp3;*.ogg|All files|*.*"
+        OS_NAME = platform.system()
+        addon = ""
+        if OS_NAME == "Darwin":   
+            wildcard = f"System-Sounds|*.aiff|{wildcard}"
+        elif OS_NAME == "Linux":   
+            wildcard = f"System-Sounds|*.oga;*.wav;*.mp3|{wildcard}"
+            addon = "\n" + _("This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first.")
+        system_sound = {
+            "Windows": r"c:\Windows\Media\Alarm01.wav",
+            "Darwin": "/System/Library/Sounds/Ping.aiff",
+            "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
+        }
+        default_snd = system_sound.get(OS_NAME, "")
+
         choices = [
             {
                 "attr": "single_instance_only",
@@ -1027,6 +1042,17 @@ class wxMeerK40t(wx.App, Module):
                 "page": "Start",
                 "signals": "restart",
             },
+            {
+                "attr": "beep_soundfile",
+                "object": context.root,
+                "type": str,
+                "default": default_snd,
+                "style": "file",
+                "wildcard": wildcard,
+                "label": _("Soundfile"),
+                "tip": _("Define the soundfile MeerK40t will play when the 'beep' command is issued") + addon,
+                "page": "Start",
+            }
         ]
         kernel.register_choices("preferences", choices)
 

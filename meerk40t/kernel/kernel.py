@@ -3,6 +3,7 @@ import inspect
 import os
 import platform
 import re
+import subprocess
 import threading
 import time
 from datetime import datetime
@@ -2819,22 +2820,43 @@ class Kernel(Settings):
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
             OS_NAME = platform.system()
-            if OS_NAME == "Windows":
+            system_sound = {
+                "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
+                "Darwin": "/System/Library/Sounds/Ping.aiff",
+                "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
+            }
+
+            sys_snd = self.root.setting(str, "beep_soundfile", system_sound.get(OS_NAME, ""))
+            use_default = not sys_snd or not os.path.exists(sys_snd)
+
+            def _play_windows():
                 try:
                     import winsound
-
-                    for x in range(5):
-                        winsound.Beep(2000, 100)
+                    if use_default:
+                        for x in range(5):
+                            winsound.Beep(2000, 100)
+                    else:
+                        winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
                 except Exception:
                     pass
-            elif OS_NAME == "Darwin":  # Mac
-                os.system("afplay /System/Library/Sounds/Ping.aiff")
-            elif OS_NAME == "Linux":
-                print("\a")  # Beep.
-                os.system('say "Ding"')
 
-            else:  # Assuming other linux like system
-                print("\a")  # Beep.
+            def _play_darwin():
+                cmd = system_sound['Darwin'] if use_default else sys_snd
+                subprocess.run(['afplay', cmd], shell=False)
+
+            def _play_linux():
+                if not use_default:
+                    subprocess.run(['play', sys_snd], shell=False)
+                else:
+                    print("\a")
+                    subprocess.run(['say', 'Ding'], shell=False)
+
+            players = {
+                "Windows": _play_windows,
+                "Darwin": _play_darwin,
+                "Linux": _play_linux,
+            }
+            players.get(OS_NAME, lambda: print("\a"))()
 
         @self.console_argument(
             "sleeptime", type=float, help=_("Wait time in seconds"), default=1
