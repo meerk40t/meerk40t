@@ -3269,6 +3269,27 @@ msgstr "Füge Schneiden hinzu"
 msgid "Add Hatch"
 msgstr "Füge Gitter hinzu"
 
+msgid "Add hatch"
+msgstr "Füge Hatch hinzu"
+
+msgid "Add wobble"
+msgstr "Füge Wobble hinzu"
+
+msgid "Add effect"
+msgstr "Füge Effekt hinzu"
+
+msgid "Add hatch effect"
+msgstr "Füge Hatch-Effekt hinzu"
+
+msgid "Add an hatch effect to the operation"
+msgstr "Fügt einen Hatch-Effekt (Linien-Füllung) zum Arbeitsablauf hinzu"
+
+msgid "Add wobble effect"
+msgstr "Füge Wobble-Effekt hinzu"
+
+msgid "Add a wobble effect to the operation"
+msgstr "Fügt einen Wobble-Effekt (Kontour-Folger) zum Arbeitsablauf hinzu"
+
 #: meerk40t/core/elements.py:7487
 msgid "Add Dots"
 msgstr "Füge Einzelpunkt hinzu"
