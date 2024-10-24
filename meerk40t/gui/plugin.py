@@ -430,4 +430,10 @@ and a wxpython version <= 4.1.1."""
             if kernel.busyinfo.shown:
                 kernel.busyinfo.change(msg=_("Finishing GUI"), keep=1)
             kernel.signal("started", "/", "")
-            meerk40tgui.MainLoop()
+            try:
+                meerk40tgui.MainLoop()
+            except AssertionError as e:
+                # Under Darwin we have every now and then at program end a 
+                # wx._core.wxAssertionError: ... in DoScreenToClient(): TopLevel Window missing
+                print (f"MeerK40t encountered an error at shutdown: {e}")
+                pass
