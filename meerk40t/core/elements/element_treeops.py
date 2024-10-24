@@ -2120,6 +2120,7 @@ def init_tree(kernel):
             not self.update_statusbar_on_material_load
         )
 
+    @tree_submenu(_("Add effect"))
     @tree_operation(
         _("Add hatch effect"),
         node_type=("op cut", "op engrave"),
@@ -2139,6 +2140,7 @@ def init_tree(kernel):
         self.signal("element_property_update", [effect])
         self.signal("updateop_tree")
 
+    @tree_submenu(_("Add effect"))
     @tree_operation(
         _("Add wobble effect"),
         node_type=("op cut", "op engrave"),
