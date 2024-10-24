@@ -388,18 +388,14 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.resize_columns()
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
-            "op cut": ("Cut", icons8_laser_beam, 0),
-            "op raster": ("Raster", icons8_direction, 0),
-            "op image": ("Image", icons8_image, 0),
-            "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
-            "op dots": ("Dots", icon_points, 0),
-            "op hatch": ("Hatch", icon_hatch, 0),
-            "generic": ("Generic", icons8_console, 0),
+            "op cut": ("Cut", icons8_laser_beam),
+            "op raster": ("Raster", icons8_direction),
+            "op image": ("Image", icons8_image),
+            "op engrave": ("Engrave", icons8_laserbeam_weak),
+            "op dots": ("Dots", icon_points),
+            "op hatch": ("Hatch", icon_hatch),
+            "generic": ("Generic", icons8_console),
         }
-        for key in self.opinfo:
-            info = self.opinfo[key]
-            info = (info[0], info[1])
-            self.opinfo[key] = info
 
         param_box = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.VERTICAL)
 
@@ -2070,7 +2066,6 @@ class MaterialPanel(ScrolledPanel):
                     info = self.opinfo[optype]
                 except KeyError:
                     info = self.opinfo["generic"]
-                    info = (optype, info[1])
                 if command:
                     if oplabel:
                         oplabel += " "
