@@ -3002,7 +3002,7 @@ msgstr "Anexar Gravação"
 msgid "Append Cut"
 msgstr "Anexar Corte"
 #: meerk40t/core/elements.py:7202
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr "Anexar Hachura"
 
 #: meerk40t/core/elements.py:7207

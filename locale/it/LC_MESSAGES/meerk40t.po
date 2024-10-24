@@ -3066,7 +3066,7 @@ msgid "Append Cut"
 msgstr "Aggiungi Taglio"
 
 #: meerk40t/core/elements.py:7202
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr "Aggiungi Trama"
 
 #: meerk40t/core/elements.py:7207

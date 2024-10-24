@@ -10995,7 +10995,7 @@ msgid "Append Cut"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1408
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1414

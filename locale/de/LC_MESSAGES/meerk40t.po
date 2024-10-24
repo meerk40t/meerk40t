@@ -3072,7 +3072,7 @@ msgid "Append Cut"
 msgstr "Füge 'Schneiden' hinzu"
 
 #: meerk40t/core/elements.py:7202
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr "Füge 'Gitter' hinzu"
 
 #: meerk40t/core/elements.py:7207
