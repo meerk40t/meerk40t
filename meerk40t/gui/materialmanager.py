@@ -1963,6 +1963,7 @@ class MaterialPanel(ScrolledPanel):
             return f"{op_type}-{str(op_color)}"
         
         def populate_images() -> dict:
+            COLORFUL_BACKGROUND = True
             iconsize = 30
             self.state_images.Destroy()
             self.state_images = wx.ImageList()
@@ -1985,7 +1986,12 @@ class MaterialPanel(ScrolledPanel):
                         info = self.opinfo[optype]
                     except KeyError:
                         info = self.opinfo["generic"]
-                    bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=opc)
+                    if COLORFUL_BACKGROUND:
+                        fgcol = wx.BLACK if Color.distance(opc, "black") > Color.distance(opc, "white") else wx.WHITE
+                        forced_bg = (opc.red, opc.green, opc.blue, opc.alpha)
+                        bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=fgcol, forced_background=forced_bg)
+                    else:
+                        bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=opc)
                     image_id = self.state_images.Add(bitmap=bmap)
                     image_dict[key] = image_id
 
