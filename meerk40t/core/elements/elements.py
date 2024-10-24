@@ -2274,13 +2274,13 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
-        op_treatment = (
-            drop_node.type in op_parent_nodes and (
-                not drag_node.has_ancestor("branch reg") or
-                (drag_node.has_ancestor("branch reg") and self.allow_reg_to_op_dragging)
-            )
-        )
         for drag_node in data:
+            op_treatment = (
+                drop_node.type in op_parent_nodes and (
+                    not drag_node.has_ancestor("branch reg") or
+                    (drag_node.has_ancestor("branch reg") and self.allow_reg_to_op_dragging)
+                )
+            )
             if drop_node is drag_node:
                 # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
