@@ -360,6 +360,10 @@ class LineTextPropertyPanel(wx.Panel):
         self.node = node
         self.fonts = []
 
+        import platform
+        # We neeed this to avoid a crash under Linux when textselection is called too quickly
+        self._islinux = platform.system() == "Linux"
+
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
         sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
@@ -711,10 +715,17 @@ class LineTextPropertyPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
+    def select_text(self):
+        self.text_text.SetFocus()
+        self.text_text.SelectAll()
+
     def signal(self, signalstr, myargs):
         if signalstr == "textselect" and self.IsShown():
-            self.text_text.SetFocus()
-            self.text_text.SelectAll()
+            # This can crash for completely unknown reasons under Linux!
+            if self._islinux:
+                wx.CallLater(500, self.select_text)
+            else:
+                self.select_text()
 
 
 class PanelFontSelect(wx.Panel):
