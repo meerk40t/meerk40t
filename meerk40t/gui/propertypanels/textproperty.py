@@ -1,10 +1,10 @@
 import platform
-from time import sleep
 
 import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
+from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
@@ -14,13 +14,11 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxListBox,
     wxRadioBox,
-    wxToggleButton,
     wxStaticText,
+    wxToggleButton,
 )
+from meerk40t.svgelements import Color
 
-from ...svgelements import Color
-from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
-from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
@@ -189,6 +187,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.context.themes.set_window_colors(self)
         self.renderer = LaserRender(self.context)
         self.SetHelpText("textproperty")
+        # We neeed this to avoid a crash under Linux when textselection is called too quickly
+        self._islinux = platform.system() == "Linux"
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
@@ -729,13 +729,10 @@ class TextPropertyPanel(ScrolledPanel):
         if signal == "textselect" and self.IsShown():
             # This can crash for completely unknown reasons under Linux!
             # Hypothesis: you can't focus / SelectStuff if the control is not yet shown.
-            attempts = 0
-            while attempts < 5 and not self.text_text.IsFocusable():
-                attempts += 1
-                sleep(0.5)
-            if self.text_text.IsFocusable():
-                self.text_text.SelectAll()
-                self.text_text.SetFocus()
+            if self._islinux:
+                return
+            self.text_text.SelectAll()
+            self.text_text.SetFocus()
 
 
 class TextProperty(MWindow):
