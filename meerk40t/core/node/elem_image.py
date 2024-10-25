@@ -317,12 +317,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
     def can_drop(self, drag_node):
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or 
-            hasattr(drag_node, "as_image") or 
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
             drag_node.type.startswith("op") or
             drag_node.type in ("file", "group")
         )
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):
@@ -469,12 +469,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (
-            MemoryError,
-            Image.DecompressionBombError,
-            ValueError,
-            ZeroDivisionError,
-        ) as e:
+        except Exception as e:
             # Memory error if creating requires too much memory.
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
