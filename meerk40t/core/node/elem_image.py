@@ -54,7 +54,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self.overscan = None
         self.direction = None
         self.dpi = 500
-        self.operations = list()
+        self.operations = []
         self.invert = None
         self.dither = True
         self.dither_type = "Floyd-Steinberg"
@@ -493,7 +493,21 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
     def _convert_image_to_grayscale(self, image):
         # Convert image to L type.
-        if image.mode != "L":
+        if image.mode == "I":
+            from PIL import Image
+            # Load the 32-bit signed grayscale image
+            img = np.array(image, dtype=np.int32)
+
+            # No need to reshape the image to its original dimensions
+            # img = img.reshape((image.width, image.height))
+
+            # Normalize the image to the range 0-255
+            img_normalized = ((img - img.min()) / (img.max() - img.min()) * 255).astype(np.uint8)
+
+            # Convert the NumPy array to a Pillow Image
+            img_pil = Image.fromarray(img_normalized)
+            image = img_pil.convert("L")
+        elif image.mode != "L":
             # Precalculate RGB for L conversion.
             # if self.red is None:
             #     self.red = 1
@@ -626,35 +640,33 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     pass
             elif name == "tone":
                 try:
-                    if op["enable"] and op["values"] is not None:
-                        if image.mode == "L":
-                            image = image.convert("P")
-                            tone_values = op["values"]
-                            if op["type"] == "spline":
-                                spline = ImageNode.spline(tone_values)
-                            else:
-                                tone_values = [q for q in tone_values if q is not None]
-                                spline = ImageNode.line(tone_values)
-                            if len(spline) < 256:
-                                spline.extend([255] * (256 - len(spline)))
-                            if len(spline) > 256:
-                                spline = spline[:256]
-                            image = image.point(spline)
-                            if image.mode != "L":
-                                image = image.convert("L")
+                    if op["enable"] and op["values"] is not None and image.mode == "L":
+                        image = image.convert("P")
+                        tone_values = op["values"]
+                        if op["type"] == "spline":
+                            spline = ImageNode.spline(tone_values)
+                        else:
+                            tone_values = [q for q in tone_values if q is not None]
+                            spline = ImageNode.line(tone_values)
+                        if len(spline) < 256:
+                            spline.extend([255] * (256 - len(spline)))
+                        if len(spline) > 256:
+                            spline = spline[:256]
+                        image = image.point(spline)
+                        if image.mode != "L":
+                            image = image.convert("L")
                 except KeyError:
                     pass
             elif name == "contrast":
                 try:
-                    if op["enable"]:
-                        if op["contrast"] is not None and op["brightness"] is not None:
-                            contrast = ImageEnhance.Contrast(image)
-                            c = (op["contrast"] + 128.0) / 128.0
-                            image = contrast.enhance(c)
+                    if op["enable"] and (op["contrast"] is not None and op["brightness"] is not None):
+                        contrast = ImageEnhance.Contrast(image)
+                        c = (op["contrast"] + 128.0) / 128.0
+                        image = contrast.enhance(c)
 
-                            brightness = ImageEnhance.Brightness(image)
-                            b = (op["brightness"] + 128.0) / 128.0
-                            image = brightness.enhance(b)
+                        brightness = ImageEnhance.Brightness(image)
+                        b = (op["brightness"] + 128.0) / 128.0
+                        image = brightness.enhance(b)
                 except KeyError:
                     pass
             elif name == "gamma":
@@ -774,8 +786,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         image = self.image
 
         transparent_mask = self._get_transparent_mask(image)
-
-        image = self._convert_image_to_grayscale(self.opaque_image)
+        opaque = self.opaque_image
+        image = self._convert_image_to_grayscale(opaque)
 
         image = self._apply_mask(image, transparent_mask)
 
@@ -908,10 +920,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             image = self.image
         if self._keyhole_geometry is not None:
             # Let's check whether the keyhole dimensions match
-            if self._keyhole_image is not None:
-                if self._keyhole_image.width != image.width or self._keyhole_image.height != image.height:
-                    # print ("Need to recalculate")
-                    self._keyhole_image = None
+            if self._keyhole_image is not None and (self._keyhole_image.width != image.width or self._keyhole_image.height != image.height):
+                self._keyhole_image = None
             if self._keyhole_image is None:
                 actualized_matrix = self._actualized_matrix
                 # We can't render something with the usual suspects ie laserrender.render
