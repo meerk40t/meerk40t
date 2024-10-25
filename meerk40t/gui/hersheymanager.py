@@ -1,5 +1,5 @@
 import os
-
+from time import sleep
 import wx
 
 from meerk40t.core.units import Length
@@ -715,17 +715,20 @@ class LineTextPropertyPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
-    def select_text(self):
-        self.text_text.SetFocus()
-        self.text_text.SelectAll()
 
     def signal(self, signalstr, myargs):
         if signalstr == "textselect" and self.IsShown():
             # This can crash for completely unknown reasons under Linux!
-            if self._islinux:
-                wx.CallLater(500, self.select_text)
-            else:
-                self.select_text()
+            # Hypothesis: you can't focus / SelectStuff if the control is not yet shown.
+            attempts = 0
+            while attempts < 5 and not self.text_text.IsFocusable():
+                print (f"Attempt #{attempts} - still waiting")
+                attempts += 1
+                sleep(0.5)
+
+            if self.text_text.IsFocusable():
+                self.text_text.SelectAll()
+                self.text_text.SetFocus()
 
 
 class PanelFontSelect(wx.Panel):

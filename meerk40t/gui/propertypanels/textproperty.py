@@ -1,4 +1,5 @@
 import platform
+from time import sleep
 
 import wx
 
@@ -726,8 +727,15 @@ class TextPropertyPanel(ScrolledPanel):
 
     def signal(self, signal, *args):
         if signal == "textselect" and self.IsShown():
-            self.text_text.SelectAll()
-            self.text_text.SetFocus()
+            # This can crash for completely unknown reasons under Linux!
+            # Hypothesis: you can't focus / SelectStuff if the control is not yet shown.
+            attempts = 0
+            while attempts < 5 and not self.text_text.IsFocusable():
+                attempts += 1
+                sleep(0.5)
+            if self.text_text.IsFocusable():
+                self.text_text.SelectAll()
+                self.text_text.SetFocus()
 
 
 class TextProperty(MWindow):
