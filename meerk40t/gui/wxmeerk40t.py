@@ -7,6 +7,10 @@ from datetime import datetime
 import wx
 from wx import aui
 
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
+
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
 #     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
@@ -16,9 +20,6 @@ from wx import aui
 # except ImportError:
 #     pass
 from meerk40t.gui.themes import Themes
-from meerk40t.gui.consolepanel import Console
-from meerk40t.gui.navigationpanels import Navigation
-from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.gui.wxutils import wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
@@ -29,6 +30,7 @@ from ..tools.kerftest import KerfTool
 from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
+from .autoexec import AutoExec
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -49,7 +51,6 @@ from .lasertoolpanel import LaserTool
 from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
 from .notes import Notes
-from .autoexec import AutoExec
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.blobproperty import BlobPropertyPanel
@@ -58,13 +59,13 @@ from .propertypanels.gotoproperty import GotoPropertyPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.imageproperty import (
+    ContourPanel,
     ImageModificationPanel,
     ImagePropertyPanel,
     ImageVectorisationPanel,
 )
 from .propertypanels.inputproperty import InputPropertyPanel
 from .propertypanels.opbranchproperties import OpBranchPanel
-from .propertypanels.regbranchproperties import RegBranchPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.pathproperty import PathPropertyPanel
@@ -80,10 +81,11 @@ from .propertypanels.rasterwizardpanels import (
     SharpenPanel,
     ToneCurvePanel,
 )
+from .propertypanels.regbranchproperties import RegBranchPanel
 from .propertypanels.textproperty import TextPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
-from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .propertypanels.warpproperty import WarpPropertyPanel
+from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
@@ -893,6 +895,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register(
             "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
         )
+        kernel.register(
+            "property/ImageNode/ImageContour", ContourPanel
+        )
 
         kernel.register("window/Console", Console)
         if (
@@ -1010,9 +1015,9 @@ class wxMeerK40t(wx.App, Module):
         wildcard = "Sound-Files|*.wav;*.mp3;*.ogg|All files|*.*"
         OS_NAME = platform.system()
         addon = ""
-        if OS_NAME == "Darwin":   
+        if OS_NAME == "Darwin":
             wildcard = f"System-Sounds|*.aiff|{wildcard}"
-        elif OS_NAME == "Linux":   
+        elif OS_NAME == "Linux":
             wildcard = f"System-Sounds|*.oga;*.wav;*.mp3|{wildcard}"
             addon = "\n" + _("This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first.")
         system_sound = {
