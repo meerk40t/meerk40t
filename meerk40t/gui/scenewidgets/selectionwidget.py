@@ -1621,6 +1621,10 @@ class MoveWidget(Widget):
                     dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
                 # Find the minimum distance and its corresponding indices
                 min_dist = np.min(dist)
+                if np.isnan(min_dist):
+                    # print (f"Encountered the infamous bug: {p1} {p2}")
+                    # Still need an example when that happens
+                    return None, 0, 0
                 min_indices = np.argwhere(dist == min_dist)
 
                 # Return the coordinates of the two points
@@ -1702,7 +1706,7 @@ class MoveWidget(Widget):
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
-                    if dist < gap:
+                    if dist is not None and dist < gap:
                         did_snap_to_point = True
                         dx = pt1.real - pt2.real
                         dy = pt1.imag - pt2.imag
@@ -1737,7 +1741,7 @@ class MoveWidget(Widget):
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                    if dist < gap:
+                    if dist is not None and dist < gap:
                         did_snap_to_point = True
                         dx = pt1[0] - pt2[0]
                         dy = pt1[1] - pt2[1]

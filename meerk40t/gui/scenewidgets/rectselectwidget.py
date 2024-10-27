@@ -267,6 +267,8 @@ class RectSelectWidget(Widget):
 
                     # Find the minimum distance and its corresponding indices
                     min_dist = np.min(dist)
+                    if np.isnan(min_dist):
+                        return None, 0, 0
                     min_indices = np.argwhere(dist == min_dist)
 
                     # Return the coordinates of the two points
@@ -345,7 +347,7 @@ class RectSelectWidget(Widget):
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
-                        if dist < gap:
+                        if dist is not None and dist < gap:
                             did_snap_to_point = True
                             dx = pt1.real - pt2.real
                             dy = pt1.imag - pt2.imag
@@ -380,7 +382,7 @@ class RectSelectWidget(Widget):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                        if dist < gap:
+                        if dist is not None and dist < gap:
                             # did_snap_to_point = True
                             dx = pt1[0] - pt2[0]
                             dy = pt1[1] - pt2[1]
