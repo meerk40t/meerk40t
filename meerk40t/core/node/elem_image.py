@@ -452,7 +452,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         from PIL import Image, ImageDraw
         while self._processing:
-            # print ("Waiting...")
+            print ("Waiting...")
             time.sleep(0.05)
 
         if step_x is None:
@@ -474,7 +474,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
             # ZeroDivide if inverting the processed matrix cannot happen because image is a line
-            # print (f"Shit, crashed with {e}")
+            print (f"Shit, crashed with {e}")
             self._process_image_failed = True
             self._processing = False
         self.updated()
