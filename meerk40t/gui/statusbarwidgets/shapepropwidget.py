@@ -259,6 +259,7 @@ class PositionWidget(StatusBarWidget):
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
+        self.context.setting(bool, "lock_active", True)
         self._needs_generation = False
         self.xy_lbl = wxStaticText(self.parent, wx.ID_ANY, label=_("X, Y"))
         self.node = None
@@ -367,7 +368,8 @@ class PositionWidget(StatusBarWidget):
         )
 
         self._lock_ratio = True
-        self.lock_ratio = True
+        self.lock_ratio =  self.context.lock_active
+
 
     @property
     def units_name(self):
@@ -384,6 +386,9 @@ class PositionWidget(StatusBarWidget):
             self.button_lock_ratio.SetBitmap(self.bitmap_locked)
         else:
             self.button_lock_ratio.SetBitmap(self.bitmap_unlocked)
+        if self.context.lock_active != value:
+            self.context.lock_active = value
+            self.context.signal("lock_active")
 
     # Position icon routines
     def calculate_icons(self, bmap_size):
@@ -744,3 +749,5 @@ class PositionWidget(StatusBarWidget):
     def Signal(self, signal, *args):
         if signal in ("emphasized", "modified", "modified", "element_property_update"):
             self.GenerateInfos()
+        if signal == "lock_active":
+            self.lock_ratio = self.context.lock_active

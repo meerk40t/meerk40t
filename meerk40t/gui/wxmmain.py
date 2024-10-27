@@ -4602,6 +4602,10 @@ class MeerK40t(MWindow):
     def on_def_ops(self, origin, *args):
         self.main_statusbar.Signal("default_operations")
 
+    @signal_listener("lock_active")
+    def on_lock_active(self, origin, *args):
+        self.main_statusbar.Signal("lock_active")
+
     @signal_listener("snap_grid")
     @signal_listener("snap_points")
     def on_sig_snap(self, origin, *args):
