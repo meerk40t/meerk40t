@@ -1958,7 +1958,7 @@ def plugin(kernel, lifecycle=None):
         if threshold is None:
             # We are on pixel level
             threshold = 0.25
-
+        channel(f"Contouring: {minimal:.2f} <= area <= {maximal:.2f}, inverting: {'No' if dontinvert else 'Yes'}, threshold: {threshold:.2f}, inner: {'No' if ignoreinner else 'Yes'}")
         data_out = list()
 
         remembered_dithers = list()
@@ -1994,6 +1994,7 @@ def plugin(kernel, lifecycle=None):
                     # Use Douglas-Peucker instead
                     geom = geom.simplify(threshold)
                 geom.transform(inode.active_matrix)
+                print (f"Applying matrix: {inode.active_matrix}")
 
                 node = context.elements.elem_branch.add(
                     geometry=geom,
