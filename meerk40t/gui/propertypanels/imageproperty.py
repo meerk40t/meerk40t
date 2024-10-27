@@ -3,13 +3,13 @@ from copy import copy
 from PIL import Image, ImageOps, ImageEnhance
 
 import wx
-
+from meerk40t.kernel.kernel import Job
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_INCH
 
-# from meerk40t.gui.icons import icons8_image
+# from meerk40t.gui.icons import icon_ignore
 # from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import (
     IdPanel,
@@ -92,10 +92,19 @@ class ContourPanel(wx.Panel):
         self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
         self.button_create = wxButton(self, wx.ID_ANY, _("Generate"))
         self.preview_image = wxStaticBitmap(self, wx.ID_ANY)
+        self.label_info = wxStaticText(self, wx.ID_ANY)
+        self.update_job = Job(
+            process=self.refresh_preview_job,
+            job_name="imageprop_contour",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
+
         self.image = None
         self.matrix = None
         self.contours = []
-        self.auto_update = True
+        self.auto_update = self.context.setting(bool, "contour_autoupdate", True)
         self._changed = True
         self.make_raster =  self.context.lookup("render-op/make_raster")
         self.parameters = {}
@@ -116,6 +125,9 @@ class ContourPanel(wx.Panel):
         self.slider_contrast_brightness.Bind(wx.EVT_SLIDER, self.on_slider_contrast_brightness)
         self.slider_contrast_contrast.Bind(wx.EVT_SLIDER, self.on_slider_contrast_contrast)
         self.radio_method.Bind(wx.EVT_RADIOBOX, self.on_control_update)
+        self.radio_simplify.Bind(wx.EVT_RADIOBOX, self.on_control_update)
+        self.text_minimum.SetActionRoutine(self.on_control_update)
+        self.text_maximum.SetActionRoutine(self.on_control_update)
         self.Bind(wx.EVT_SIZE, self.on_resize)
 
     def __do_layout(self):
@@ -127,6 +139,7 @@ class ContourPanel(wx.Panel):
         sizer_main.Add(sizer_right, 2, wx.EXPAND, 0)
 
         sizer_right.Add(self.preview_image, 1, wx.EXPAND, 0)
+        sizer_right.Add(self.label_info, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         sizer_param_picture = StaticBoxSizer(
             self, wx.ID_ANY, _("Image:"), wx.VERTICAL
@@ -162,15 +175,22 @@ class ContourPanel(wx.Panel):
         sizer_param_contour = StaticBoxSizer(
             self, wx.ID_ANY, _("Parameters:"), wx.VERTICAL
         )
-        minmax_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wxStaticText(self, wx.ID_ANY, _("Minimal size:"))
-        label2 = wxStaticText(self, wx.ID_ANY, _("Minimal size:"))
-        minmax_sizer.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        minmax_sizer.Add(self.text_minimum, 1, wx.EXPAND, 0)
-        minmax_sizer.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        minmax_sizer.Add(self.text_maximum, 1, wx.EXPAND, 0)
 
+        min_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Minimal size:"), wx.HORIZONTAL)
+        label1 = wxStaticText(self, wx.ID_ANY, "%")
+        min_sizer.Add(self.text_minimum, 1, wx.EXPAND, 0)
+        min_sizer.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        max_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Maximal size:"), wx.HORIZONTAL)
+        label2 = wxStaticText(self, wx.ID_ANY, "%")
+        max_sizer.Add(self.text_maximum, 1, wx.EXPAND, 0)
+        max_sizer.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        minmax_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        minmax_sizer.Add(min_sizer, 1, wx.EXPAND, 0)
+        minmax_sizer.Add(max_sizer, 1, wx.EXPAND, 0)
         sizer_param_contour.Add(minmax_sizer, 0, wx.EXPAND, 0)
+
         sizer_param_contour.Add(self.check_inner, 0, wx.EXPAND, 0)
         sizer_param_contour.Add(self.radio_simplify, 0, wx.EXPAND, 0)
         sizer_param_contour.Add(self.radio_method, 0, wx.EXPAND, 0)
@@ -185,36 +205,35 @@ class ContourPanel(wx.Panel):
         sizer_left.Add(sizer_param_contour, 0, wx.EXPAND, 0)
         sizer_left.Add(sizer_param_update, 0, wx.EXPAND, 0)
         sizer_left.Add(self.button_create, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.check_auto.SetValue(self.auto_update)
+        self.button_update.Enable(not self.auto_update)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
-        self.set_widgets(self.node)
 
     def __set_properties(self):
-        self.button_create.SetToolTip(
-            _(
-                "Creates the recognized contour elements / placements"
-            )
-        )
+        self.button_create.SetToolTip(_("Creates the recognized contour elements / placements"))
         self.check_enable_contrast.SetToolTip(_("Enable Contrast"))
         self.check_enable_contrast.SetValue(False)
         self.button_reset_contrast.SetToolTip(_("Reset Contrast"))
         self.slider_contrast_contrast.SetToolTip(_("Contrast amount"))
-        self.text_contrast_contrast.SetToolTip(
-            _("Contrast the lights and darks by how much?")
-        )
+        self.text_contrast_contrast.SetToolTip(_("Contrast the lights and darks by how much?"))
         self.slider_contrast_brightness.SetToolTip(_("Brightness amount"))
-        self.text_contrast_brightness.SetToolTip(
-            _("Make the image how much more bright?")
-        )
+        self.text_contrast_brightness.SetToolTip(_("Make the image how much more bright?"))
+        self.text_minimum.SetToolTip(_("What is the minimal size of objects (as percentage of the overall area)?"))
+        self.text_maximum.SetToolTip(_("What is the maximal size of objects (as percentage of the overall area)?"))
+        self.check_inner.SetToolTip(_("Do you want to recognize objects inside of another object?"))
+        self.radio_method.SetToolTip(_("Do you want to create the contour itself or the minimal rectangle enclosing it?"))
+        self.radio_simplify.SetToolTip(_("Do you want to create the contour itself or the minimal rectangle enclosing it?"))
+
         self.slider_contrast_brightness.SetMaxSize(wx.Size(200, -1))
         self.slider_contrast_contrast.SetMaxSize(wx.Size(200, -1))
         self.text_contrast_brightness.SetMaxSize(wx.Size(50, -1))
         self.text_contrast_contrast.SetMaxSize(wx.Size(50, -1))
+        self.text_minimum.SetValue("2")
+        self.text_maximum.SetValue("95")
         self.reset_contrast()
-        self.check_auto.SetValue(self.auto_update)
-        self.button_update.Enable(not self.auto_update)
 
     def pane_hide(self):
         pass
@@ -229,10 +248,8 @@ class ContourPanel(wx.Panel):
     def set_widgets(self, node):
         self.node = node
         if self.node is None:
-            self.Hide()
             return
         self.refresh_preview()
-        self.Show()
 
     def reset_contrast(self):
         contrast = 0
@@ -273,6 +290,8 @@ class ContourPanel(wx.Panel):
 
     def on_auto_check(self, event):
         self.auto_update = self.check_auto.GetValue()
+        self.context.contour_autoupdate = self.auto_update
+
         self.button_update.Enable(not self.auto_update)
         if self.auto_update:
             self.refresh_preview()
@@ -291,12 +310,12 @@ class ContourPanel(wx.Panel):
         self._changed = True
         self.refresh_preview()
 
-    def on_control_update(self, event):
+    def on_control_update(self, event=None):
         self._changed = True
         if self.auto_update and self.IsShown():
             self.refresh_preview()
 
-    def refresh_preview(self):
+    def refresh_preview_job(self):
         if self.make_raster is None or not self._changed:
             return
         self.gather_parameters()
@@ -304,6 +323,9 @@ class ContourPanel(wx.Panel):
         self.calculate_contours()
         self.display_contours()
         self._changed = False
+
+    def refresh_preview(self):
+        self.context.schedule(self.update_job)
 
     def gather_parameters(self):
         self.parameters["img_invert"] = self.check_invert.GetValue()
@@ -316,11 +338,11 @@ class ContourPanel(wx.Panel):
         try:
             self.parameters["cnt_minimum"] = float(self.text_minimum.GetValue())
         except ValueError:
-            self.parameters["cnt_minimum"] = 0.5
+            self.parameters["cnt_minimum"] = 2
         try:
             self.parameters["cnt_maximum"] = float(self.text_maximum.GetValue())
         except ValueError:
-            self.parameters["cnt_maximum"] = 80
+            self.parameters["cnt_maximum"] = 95
         self.parameters["cnt_simplify"] = self.radio_simplify.GetSelection()
         # We are on pixel level
         self.parameters["cnt_threshold"] = 0.25
@@ -333,9 +355,24 @@ class ContourPanel(wx.Panel):
                 image = self.node.image.convert("L")
             self.matrix = self.node.matrix
         else:
+            reapply = False
+            if remembered_dither := self.node.dither:
+                reapply = True
+                self.node.dither = False
+                self.node.update(None)
+
             image = self.node.active_image
+            if image is None:
+                if reapply:
+                    self.node.dither = remembered_dither
+                self.image = None
+                return
             self.matrix = self.node.active_matrix
-        print (f"Image-Size: {image.width}x{image.height}")
+            if reapply:
+                self.node.dither = remembered_dither
+                self.node.update(None)
+
+        self.label_info.SetLabel(f"{image.width}x{image.height}")
         if self.parameters["img_invert"]:
             image = ImageOps.invert(image)
         if self.parameters["img_usecontrast"]:
@@ -349,24 +386,28 @@ class ContourPanel(wx.Panel):
         self.image = image
 
     def calculate_contours(self):
+        import time
         self.contours.clear()
+        if self.image is None:
+            return
+        t_a = time.perf_counter()
         if self.parameters["cnt_method"] == 0:
             self.contours = img_to_polygons(
                 self.image,
-                minimal=0.5,
-                maximal=80,
+                minimal=self.parameters["cnt_minimum"],
+                maximal=self.parameters["cnt_maximum"],
                 ignoreinner=self.parameters["cnt_ignoreinner"],
-                needs_invert=False,
+                needs_invert=True,
             )
         else:
             self.contours = img_to_rectangles(
                 self.image,
-                minimal=0.5,
-                maximal=80,
+                minimal=self.parameters["cnt_minimum"],
+                maximal=self.parameters["cnt_maximum"],
                 ignoreinner=self.parameters["cnt_ignoreinner"],
-                needs_invert=False,
+                needs_invert=True,
             )
-        for geom in self.contours:
+        for idx, geom in enumerate(self.contours):
             simple = self.parameters["cnt_simplify"]
             # We are on pixel level
             threshold = self.parameters["cnt_threshold"]
@@ -377,8 +418,11 @@ class ContourPanel(wx.Panel):
                 # Use Douglas-Peucker instead
                 geom = geom.simplify(threshold)
             geom.transform(self.matrix)
+            self.contours[idx] = geom
 
-        print (f"Contours generated: {len(self.contours)}")
+        t_b = time.perf_counter()
+
+        self.label_info.SetLabel (f"Contours generated: {len(self.contours)} in {t_b-t_a:.2f} sec")
 
     def on_resize(self, event):
         event.Skip()
@@ -388,7 +432,10 @@ class ContourPanel(wx.Panel):
     def display_contours(self):
         if self.make_raster is None:
             return
-        copynode = ImageNode(image=self.image, matrix=self.node.matrix, dither=False, prevent_crop=True)
+        if self.image is None:
+            self.preview_image.SetBitmap(wx.NullBitmap)
+            return
+        copynode = ImageNode(image=self.image, matrix=self.matrix, dither=False, prevent_crop=True)
         data = [copynode]
         for idx, geom in enumerate(self.contours):
             node = PathNode(
