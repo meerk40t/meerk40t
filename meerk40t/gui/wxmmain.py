@@ -4603,7 +4603,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.Signal("default_operations")
 
     @signal_listener("lock_active")
-    def on_def_ops(self, origin, *args):
+    def on_lock_active(self, origin, *args):
         self.main_statusbar.Signal("lock_active")
 
     @signal_listener("snap_grid")
