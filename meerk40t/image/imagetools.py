@@ -1994,7 +1994,7 @@ def plugin(kernel, lifecycle=None):
                     # Use Douglas-Peucker instead
                     geom = geom.simplify(threshold)
                 geom.transform(inode.active_matrix)
-                print (f"Applying matrix: {inode.active_matrix}")
+                # print (f"Applying matrix: {inode.active_matrix}")
 
                 node = context.elements.elem_branch.add(
                     geometry=geom,
