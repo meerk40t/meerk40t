@@ -68,7 +68,10 @@ class PositionPanel(wx.Panel):
         self.text_w.SetMinSize(dip_size(self, 60, 23))
         self.text_h.SetMinSize(dip_size(self, 60, 23))
         self.chk_individually = wxCheckBox(self, wx.ID_ANY, _("Individ."))
+        # Remember last lock dimension status
+        self.context.setting(bool, "lock_active", True)
         self.chk_lock = wxCheckBox(self, wx.ID_ANY, _("Keep ratio"))
+        self.chk_lock.SetValue(context.lock_active)
         if self.small:
             resize_param = 0.5 * get_default_icon_size()
         else:
@@ -160,6 +163,7 @@ class PositionPanel(wx.Panel):
         self.context.listen("emphasized", self._update_position)
         self.context.listen("modified", self._update_position)
         self.context.listen("altered", self._update_position)
+        self.context.listen("lock_active", self._on_lock_active)
         self._update_position(True)
         # To get an update about translation / scaling
         # updates to an element we have two options....
@@ -171,6 +175,7 @@ class PositionPanel(wx.Panel):
         self.context.unlisten("emphasized", self._update_position)
         self.context.unlisten("modified", self._update_position)
         self.context.unlisten("altered", self._update_position)
+        self.context.unlisten("lock_active", self._on_lock_active)
         # Option 1: plug yourself to the rootnode update
         # self.context.elements.unlisten_tree(self)
 
@@ -405,8 +410,7 @@ class PositionPanel(wx.Panel):
         event.Skip()
         do_xy = self.position_x != self.org_x or self.position_y != self.org_y
         do_wh = self.position_w != self.org_w or self.position_h != self.org_h
-        individually = self.chk_individually.GetValue()
-        if individually:
+        if self.chk_individually.GetValue():
             if do_wh:
                 self.execute_wh_changes(False)
             if do_xy:
@@ -426,7 +430,11 @@ class PositionPanel(wx.Panel):
         self.update_position(True)
 
     def on_chk_lock(self, event):
-        self.position_aspect_ratio = self.chk_lock.GetValue()
+        flag = self.chk_lock.GetValue()
+        self.position_aspect_ratio = flag
+        if self.context.lock_active != flag:
+            self.context.lock_active = flag
+            self.context.signal("lock_active")
 
     def on_text_w_enter(self):
         if self.text_w.is_changed:
@@ -692,3 +700,7 @@ class PositionPanel(wx.Panel):
     def on_combo_box_units(self, event):
         self.position_units = self.choices[self.combo_box_units.GetSelection()]
         self.update_position(True)
+
+    def _on_lock_active(self, *args):
+        if self.chk_lock.GetValue() != self.context.lock_active:
+            self.chk_lock.SetValue(self.context.lock_active)

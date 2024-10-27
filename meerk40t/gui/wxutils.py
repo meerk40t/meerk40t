@@ -1040,6 +1040,23 @@ class wxToggleButton(wx.ToggleButton):
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
         set_color_according_to_theme(self, "button_bg", "button_fg")
+        self.bitmap_toggled = None
+        self.bitmap_untoggled = None
+
+    def update_button(self, value):
+        # We just act as a man in the middle
+        if value is None:
+            value = self.GetValue()
+        if value:
+            if self.bitmap_toggled is not None:
+                self.SetBitmap(self.bitmap_toggled)
+        else:
+            if self.bitmap_untoggled is not None:
+                self.SetBitmap(self.bitmap_untoggled)
+
+    def SetValue(self, value):
+        super().SetValue(value)
+        self.update_button(value)
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip

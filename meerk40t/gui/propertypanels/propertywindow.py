@@ -204,34 +204,32 @@ class PropertyWindow(MWindow):
             if self.channel:
                 self.channel(f"Took {t2-t1:.2f} seconds to load")
 
+    def propagate_signal(self, signal, *args):
+        myargs = list(args)
+        for p in self.panel_instances:
+            if hasattr(p, "signal"):
+                p.signal(signal, myargs)
+
+    @signal_listener("lock_active")
+    def on_tool_locksignal(self, origin, *args):
+        self.propagate_signal("lock_active", args)
+
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
-        myargs = [i for i in args]
-        if len(args) > 0 and args[0] == "Scene":
-            for p in self.panel_instances:
-                if hasattr(p, "signal"):
-                    p.signal("refresh_scene", myargs)
+        if args and args[0] == "Scene":
+            self.propagate_signal("refresh_scene", args)
 
     @signal_listener("modified_by_tool")
     def on_tool_modified(self, origin, *args):
-        myargs = [i for i in args]
-        for p in self.panel_instances:
-            if hasattr(p, "signal"):
-                p.signal("modified_by_tool", myargs)
+        self.propagate_signal("modified_by_tool", args)
 
     @signal_listener("nodetype")
     def on_nodetype(self, origin, *args):
-        myargs = [i for i in args]
-        for p in self.panel_instances:
-            if hasattr(p, "signal"):
-                p.signal("nodetype", myargs)
+        self.propagate_signal("nodetype", args)
 
     @signal_listener("textselect")
     def on_textselect(self, origin, *args):
-        myargs = [i for i in args]
-        for p in self.panel_instances:
-            if hasattr(p, "signal"):
-                p.signal("textselect", myargs)
+        self.propagate_signal("textselect", args)
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):

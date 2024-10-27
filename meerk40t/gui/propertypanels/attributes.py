@@ -940,14 +940,18 @@ class PositionSizePanel(wx.Panel):
             check="length",
             nonzero=True,
         )
+        self.context.setting(bool, "lock_active", True)
         self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
-        self.btn_lock_ratio.SetValue(True)
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
             resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
         )
         self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
             resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
         )
+        self.btn_lock_ratio.bitmap_toggled = self.bitmap_locked
+        self.btn_lock_ratio.bitmap_untoggled = self.bitmap_unlocked
+        self.btn_lock_ratio.SetValue(self.context.lock_active)
+
         self.__set_properties()
         self.__do_layout()
 
@@ -977,8 +981,6 @@ class PositionSizePanel(wx.Panel):
         self.btn_lock_ratio.SetToolTip(
             _("Lock the ratio of width / height to the original values")
         )
-        # Set Bitmap
-        self.on_toggle_ratio(None)
 
         sizer_opt.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
@@ -1028,6 +1030,9 @@ class PositionSizePanel(wx.Panel):
                 self.set_widgets(self.node)
         elif signalstr == "modified_by_tool":
             self.set_widgets(self.node)
+        elif signalstr == "lock_active":
+            if self.btn_lock_ratio.GetValue() != self.context.lock_active:
+                self.btn_lock_ratio.SetValue(self.context.lock_active)
 
     def _set_widgets_hidden(self):
         self.text_x.SetValue("")
@@ -1148,10 +1153,10 @@ class PositionSizePanel(wx.Panel):
             self.context.elements.signal("refresh_scene", "Scene")
 
     def on_toggle_ratio(self, event):
-        if self.btn_lock_ratio.GetValue():
-            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
-        else:
-            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
+        self.btn_lock_ratio.update_button(None)
+        if self.context.lock_active != self.btn_lock_ratio.GetValue():
+            self.context.lock_active = self.btn_lock_ratio.GetValue()
+            self.context.signal("lock_active")
 
     def on_text_x_enter(self):
         self.translate_it()
