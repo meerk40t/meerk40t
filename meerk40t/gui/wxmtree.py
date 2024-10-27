@@ -469,14 +469,12 @@ class TreePanel(wx.Panel):
             if isinstance(nodes, (tuple, list)):
                 # All Standard nodes first
                 for node in nodes:
-                    if node is not None and node._item is not None:
-                        if node.type.startswith("elem "):
-                            self.shadow_tree.set_icon(node, force=True)
+                    if node is not None and node._item is not None and node.type.startswith("elem "):
+                        self.shadow_tree.set_icon(node, force=True)
                 # Then all others
                 for node in nodes:
-                    if node is not None and node._item is not None:
-                        if not node.type.startswith("elem "):
-                            self.shadow_tree.set_icon(node, force=True)
+                    if node is not None and node._item is not None and not node.type.startswith("elem "):
+                        self.shadow_tree.set_icon(node, force=True)
                 # Show the first node, but if that's the root node then ignore stuff
                 node = nodes[0] if len(nodes) > 0 else None
             else:
