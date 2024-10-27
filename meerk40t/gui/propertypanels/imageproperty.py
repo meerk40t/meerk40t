@@ -108,6 +108,7 @@ class ContourPanel(wx.Panel):
         self._changed = True
         self.make_raster =  self.context.lookup("render-op/make_raster")
         self.parameters = {}
+        self._pane_is_active = False
         self.__set_properties()
         self.__do_layout()
         self.__do_logic()
@@ -238,6 +239,14 @@ class ContourPanel(wx.Panel):
     def pane_hide(self):
         pass
 
+    def pane_deactive(self):
+        self._pane_is_active = False
+
+    def pane_active(self):
+        self._pane_is_active = True
+        if self.auto_update and self.IsShown():
+            self.refresh_preview()
+
     def pane_show(self):
         if self.auto_update and self.IsShown():
             self.refresh_preview()
@@ -325,7 +334,8 @@ class ContourPanel(wx.Panel):
         self._changed = False
 
     def refresh_preview(self):
-        self.context.schedule(self.update_job)
+        if self._pane_is_active:
+            self.context.schedule(self.update_job)
 
     def gather_parameters(self):
         self.parameters["img_invert"] = self.check_invert.GetValue()
