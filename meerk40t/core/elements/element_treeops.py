@@ -1060,7 +1060,7 @@ def init_tree(kernel):
     def remove_all_placements(node, **kwargs):
         data = list()
         for n in list(self.ops()):
-            if n.type in ("place point", "plcae_current"):
+            if n.type in ("place point", "place current"):
                 data.append(n)
         if not data:
             return

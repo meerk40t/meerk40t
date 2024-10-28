@@ -396,11 +396,6 @@ class ContourPanel(wx.Panel):
                 ref_y = (ny + my) / 2
                 rotation_angle = 0
                 place_corner = 4
-            elif method == 2: # center - unrotated
-                ref_x = (nx + mx) / 2
-                ref_y = (ny + my) / 2
-                rotation_angle = 0
-                place_corner = 4
             elif method == 3: # center - rotated
                 ref_x = (nx + mx) / 2
                 ref_y = (ny + my) / 2
@@ -523,7 +518,7 @@ class ContourPanel(wx.Panel):
             return
         t_a = time.perf_counter()
 
-        if method:=self.parameters["cnt_method"] == 0:
+        if (method:=self.parameters["cnt_method"]) == 0:
             self.contours = img_to_polygons(
                 self.image,
                 minimal=self.parameters["cnt_minimum"],
