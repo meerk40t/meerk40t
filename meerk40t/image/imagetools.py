@@ -74,7 +74,7 @@ def img_to_polygons(
                     ly = ry
                 geom.close()
                 matrix = Matrix()
-                geom_list.append( geom )
+                geom_list.append( (geom, 100 * area / (width * height)) )
 
     return geom_list
 
@@ -95,7 +95,7 @@ def img_to_rectangles(
         from PIL import ImageOps
     except ImportError:
         return list()
-    geom_list = list()
+    geom_list = []
 
     # Convert the image to grayscale
     img = node_image.convert("L")
@@ -137,7 +137,8 @@ def img_to_rectangles(
         geom.line(start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1]))
         geom.line(start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1]))
         geom.line(start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1]))
-        geom_list.append( geom )
+        # Geometry plus enclosed area
+        geom_list.append( (geom, 100 * area / (width * height)) )
 
     return geom_list
 
@@ -1979,14 +1980,15 @@ def plugin(kernel, lifecycle=None):
                 continue
             # Extract polygons from the image
             if rectangles:
-                geometries = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                geometries, contour_areas = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
                 msg = "Bounding"
             else:
-                geometries = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                geometries, contour_areas = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
                 msg = "Contour"
             pidx = 0
-            for geom in geometries:
+            for (geom, c_info) in geometries:
                 pidx += 1
+                channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
                 if simplified:
                     # Let's try Visvalingam line simplification
                     geom = geom.simplify_geometry(threshold=threshold)
