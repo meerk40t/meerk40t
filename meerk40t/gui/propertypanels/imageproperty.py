@@ -45,7 +45,7 @@ class ContourPanel(wx.Panel):
     def accepts(node):
         return hasattr(node, "as_image")
 
-    def __init__(self, *args, context=None, node=None, **kwds):
+    def __init__(self, *args, context=None, node=None, simplified=False, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -69,6 +69,9 @@ class ContourPanel(wx.Panel):
         )
         self.check_invert = wxCheckBox(self, wx.ID_ANY, _("Invert"))
         self.check_original = wxCheckBox(self, wx.ID_ANY, _("Original picture"))
+
+        if simplified:
+            self.check_original.Hide()
 
         self.text_minimum = TextCtrl(
             self, wx.ID_ANY, "", limited=True, check="float"
@@ -321,7 +324,7 @@ class ContourPanel(wx.Panel):
             self.refresh_preview()
 
     def on_creation(self, event):
-        for idx, geom in enumerate(self.contours):
+        for idx, (geom, area) in enumerate(self.contours):
             node = PathNode(
                 geometry = geom,
                 stroke=Color("blue"),
