@@ -2735,7 +2735,7 @@ def init_tree(kernel):
         if not data:
             return
         try:
-            bounds = Node.union_bounds(data, attr="paint_bounds")
+            bounds = Node.union_bounds(data, attr="paint_bounds", ignore_hidden=True)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
         except TypeError:

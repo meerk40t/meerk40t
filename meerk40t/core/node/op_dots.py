@@ -73,7 +73,7 @@ class DotsOpNode(Node, Parameters):
     def can_drop(self, drag_node):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.has_ancestor("branch reg"):
-            # Will be dealt with in elements - 
+            # Will be dealt with in elements -
             # we don't implement a more sophisticated routine here
             return False
         if hasattr(drag_node, "as_geometry") and drag_node.type in self._allowed_elements_dnd:
@@ -85,7 +85,7 @@ class DotsOpNode(Node, Parameters):
             return True
         elif drag_node.type in ("file", "group"):
             return any(drag_node.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
-        return False    
+        return False
 
     def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an op node - irrelevant for others...
@@ -283,3 +283,15 @@ class DotsOpNode(Node, Parameters):
                 settings=settings,
                 passes=passes,
             )
+
+    @property
+    def bounds(self):
+        if not self._bounds_dirty:
+            return self._bounds
+
+        self._bounds = None
+        if self.output:
+            if self._children:
+                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+            self._bounds_dirty = False
+        return self._bounds
