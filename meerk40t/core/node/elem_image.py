@@ -606,13 +606,30 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 continue
             if name == "crop":
                 try:
+                    # The dimensions of the image could have already be changed,
+                    # so we recalculate the edges based on the original image size
                     if op["enable"] and op["bounds"] is not None:
                         crop = op["bounds"]
-                        left = int(crop[0])
-                        upper = int(crop[1])
-                        right = int(crop[2])
-                        lower = int(crop[3])
+                        left_gap = int(crop[0])
+                        top_gap = int(crop[1])
+                        right_gap = self.image.width - int(crop[2])
+                        bottom_gap = self.image.height - int(crop[3])
+
                         w, h = image.size
+                        left = left_gap
+                        upper = top_gap
+                        right = image.width - right_gap
+                        lower = image.height - bottom_gap
+
+                        if left >= w:
+                            left = w - 1
+                        if upper >= h:
+                            upper = h
+                        if right <= left:
+                            right = left + 1
+                        if lower <= upper:
+                            lower = upper + 1
+
                         overall_left += left
                         overall_top += upper
                         overall_right -= w - right
