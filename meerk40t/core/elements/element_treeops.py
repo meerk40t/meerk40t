@@ -1051,6 +1051,24 @@ def init_tree(kernel):
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
 
+    @tree_operation(
+        _("Remove all placements"),
+        node_type=("place point", "place current"),
+        help=_("Remove this and all other placements"),
+        grouping="10_OPS_DELETION",
+    )
+    def remove_all_placements(node, **kwargs):
+        data = list()
+        for n in list(self.ops()):
+            if n.type in ("place point", "plcae_current"):
+                data.append(n)
+        if not data:
+            return
+        with self.undoscope("Remove placements"):
+            self.remove_operations(data)
+        self.signal("rebuild_tree")
+        self.signal("refresh_scene", "Scene")
+
 
     # ---- Burn Direction
     def get_direction_values():
