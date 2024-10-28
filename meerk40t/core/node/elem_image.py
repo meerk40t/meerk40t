@@ -452,7 +452,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         from PIL import Image, ImageDraw
         while self._processing:
-            # print ("Waiting...")
             time.sleep(0.05)
 
         if step_x is None:
