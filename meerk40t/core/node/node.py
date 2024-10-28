@@ -581,10 +581,10 @@ class Node:
 
     def is_draggable(self):
         return True
-    
+
     def can_drop(self, drag_node):
         return False
-    
+
     def would_accept_drop(self, drag_nodes):
         # drag_nodes can be a single node or a list of nodes
         # drag_nodes can be a single node or a list of nodes
@@ -1337,7 +1337,7 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     @staticmethod
-    def union_bounds(nodes, bounds=None, attr="bounds"):
+    def union_bounds(nodes, bounds=None, attr="bounds", ignore_locked=True, ignore_hidden=False):
         """
         Returns the union of the node list given, optionally unioned the given bounds value
 
@@ -1351,7 +1351,9 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            if e.lock:
+            if ignore_locked and e.lock:
+                continue
+            if ignore_hidden and getattr(e, "hidden", False):
                 continue
             box = getattr(e, attr, None)
             if box is None:
