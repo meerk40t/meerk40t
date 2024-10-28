@@ -2012,6 +2012,38 @@ def plugin(kernel, lifecycle=None):
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
+    @context.console_command(
+        "background",
+        help=_("use the image as bed background"),
+        input_type=(None, "image"),
+        output_type=None,
+    )
+    def image_background(
+        command,
+        channel,
+        _,
+        data=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(e for e in context.elements.flat(emphasized=True) if e.type == "elem image")
+        if len(data) == 0:
+            channel("No image provided")
+            return
+        image = None
+        for node in data:
+            if hasattr(node, "image"):
+                if node.image.mode == "I":
+                    continue
+                image = node.image.convert("L")
+                break
+        if image is None:
+            channel("No valid image provided")
+            return
+
+        width, height = image.size
+        newimage = image.convert("RGB")
+        context.signal("background", (width, height, newimage.tobytes()))
 
 class RasterScripts:
     """

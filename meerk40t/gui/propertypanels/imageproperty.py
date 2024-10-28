@@ -1,7 +1,7 @@
 # import threading
 from copy import copy
 from PIL import Image, ImageOps, ImageEnhance
-
+import numpy as np
 import wx
 from meerk40t.kernel.kernel import Job
 from meerk40t.core.node.node import Node
@@ -93,7 +93,16 @@ class ContourPanel(wx.Panel):
 
         self.check_auto = wxCheckBox(self, wx.ID_ANY, _("Automatic update"))
         self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
-        self.button_create = wxButton(self, wx.ID_ANY, _("Generate"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Generate contours"))
+        self.button_create_placement = wxButton(self, wx.ID_ANY, _("Generate placements"))
+        placement_choices = (
+            _("Edge (prefer short side)"),
+            _("Edge (prefer long side)"),
+            _("Center (unrotated)"),
+            _("Center (rotated)"),
+        )
+        self.combo_placement = wx.ComboBox(self, wx.ID_ANY, choices=placement_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+
         self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.label_info = wxStaticText(self, wx.ID_ANY)
         self.list_contours = wxListCtrl(
@@ -114,7 +123,7 @@ class ContourPanel(wx.Panel):
         self.contours = []
         self.auto_update = self.context.setting(bool, "contour_autoupdate", True)
         self._changed = True
-        self.make_raster =  self.context.lookup("render-op/make_raster")
+        self.make_raster = self.context.lookup("render-op/make_raster")
         self.parameters = {}
         self._pane_is_active = False
         self.__set_properties()
@@ -127,6 +136,7 @@ class ContourPanel(wx.Panel):
         self.check_original.Bind(wx.EVT_CHECKBOX, self.on_control_update)
         self.button_update.Bind(wx.EVT_BUTTON, self.on_refresh)
         self.button_create.Bind(wx.EVT_BUTTON, self.on_creation)
+        self.button_create_placement.Bind(wx.EVT_BUTTON, self.on_creation_placement)
         self.button_reset_contrast.Bind(wx.EVT_BUTTON, self.on_button_reset_contrast)
         self.check_invert.Bind(wx.EVT_CHECKBOX, self.on_control_update)
         self.check_inner.Bind(wx.EVT_CHECKBOX, self.on_control_update)
@@ -203,8 +213,8 @@ class ContourPanel(wx.Panel):
         sizer_param_contour.Add(minmax_sizer, 0, wx.EXPAND, 0)
 
         sizer_param_contour.Add(self.check_inner, 0, wx.EXPAND, 0)
-        sizer_param_contour.Add(self.radio_simplify, 0, wx.EXPAND, 0)
         sizer_param_contour.Add(self.radio_method, 0, wx.EXPAND, 0)
+        sizer_param_contour.Add(self.radio_simplify, 0, wx.EXPAND, 0)
 
         sizer_param_update = StaticBoxSizer(
             self, wx.ID_ANY, _("Update:"), wx.HORIZONTAL
@@ -212,17 +222,29 @@ class ContourPanel(wx.Panel):
         sizer_param_update.Add(self.check_auto, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_param_update.Add(self.button_update, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        sizer_generation = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_generation.Add(self.button_create, 0, wx.EXPAND, 0)
+        sizer_generation.Add(self.button_create_placement, 0, wx.EXPAND, 0)
+        sizer_generation.Add(self.combo_placement, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         sizer_left.Add(sizer_param_picture, 0, wx.EXPAND, 0)
         sizer_left.Add(sizer_param_contour, 0, wx.EXPAND, 0)
         sizer_left.Add(sizer_param_update, 0, wx.EXPAND, 0)
-        sizer_left.Add(self.button_create, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_left.Add(sizer_generation, 0, wx.EXPAND, 0)
         sizer_left.Add(self.label_info, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.check_auto.SetValue(self.auto_update)
-        self.button_update.Enable(not self.auto_update)
 
+        self.__do_defaults()
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
+
+    def __do_defaults(self):
+        self.check_auto.SetValue(self.auto_update)
+        self.button_update.Enable(not self.auto_update)
+        last_val = self.context.setting(int, "contour_placement", 1) # Long side is default preference
+        if last_val < 0 or last_val >= self.combo_placement.GetCount():
+            last_val = 0
+        self.combo_placement.SetSelection(last_val)
 
     def __set_properties(self):
         self.button_create.SetToolTip(_("Creates the recognized contour elements / placements"))
@@ -237,7 +259,7 @@ class ContourPanel(wx.Panel):
         self.text_maximum.SetToolTip(_("What is the maximal size of objects (as percentage of the overall area)?"))
         self.check_inner.SetToolTip(_("Do you want to recognize objects inside of another object?"))
         self.radio_method.SetToolTip(_("Do you want to create the contour itself or the minimal rectangle enclosing it?"))
-        self.radio_simplify.SetToolTip(_("Do you want to create the contour itself or the minimal rectangle enclosing it?"))
+        self.radio_simplify.SetToolTip(_("Shall we try to reduce the number of points for the created contour?"))
 
         self.slider_contrast_brightness.SetMaxSize(wx.Size(200, -1))
         self.slider_contrast_contrast.SetMaxSize(wx.Size(200, -1))
@@ -256,17 +278,18 @@ class ContourPanel(wx.Panel):
 
     def pane_hide(self):
         self.list_contours.save_column_widths()
+        self.context.contour_placement = self.combo_placement.GetSelection()
 
     def pane_deactive(self):
         self._pane_is_active = False
 
     def pane_active(self):
         self._pane_is_active = True
-        if self.auto_update and self.IsShown():
+        if self.auto_update and self._pane_is_active:
             self.refresh_preview()
 
     def pane_show(self):
-        if self.auto_update and self.IsShown():
+        if self.auto_update and self._pane_is_active:
             self.refresh_preview()
 
     def _set_widgets_hidden(self):
@@ -333,13 +356,83 @@ class ContourPanel(wx.Panel):
             self.context.elements.elem_branch.add_node(node)
         self.context.elements.signal("refresh_scene", "Scene")
 
+    def on_creation_placement(self, event):
+
+        def get_place_parameters(geom, method):
+            points = list(geom.as_points())
+            nx = None
+            mx = None
+            ny = None
+            my = None
+            for pt in points:
+                if nx is None:
+                    nx = pt.real
+                    mx = pt.real
+                    ny = pt.imag
+                    my = pt.imag
+                else:
+                    nx = min(nx, pt.real)
+                    mx = max(mx, pt.real)
+                    ny = min(ny, pt.imag)
+                    my = max(my, pt.imag)
+
+            # The geometry points are order in such a way,
+            # that the point with the smallest X-value comes first and then follows the rectangle clockwise
+            side1 = geom.distance(points[0], points[1])
+            side2 = geom.distance(points[1], points[2])
+            if method in (0, 1):
+                if method == 0:
+                # If the preference is for a long side then our reference point is pt0 if side1 is long and pt1 if side1 is short
+                    refidx = 0 if side1 < side2 else 1
+                else:
+                    # If the preference is for a short side then our reference point is pt1 if side1 is long and pt0 if side1 is short
+                    refidx = 1 if side1 < side2 else 0
+                ref_x = points[refidx].real
+                ref_y = points[refidx].imag
+                rotation_angle = geom.angle(points[refidx], points[refidx+1])
+                place_corner = 0
+            elif method == 2: # center - unrotated
+                ref_x = (nx + mx) / 2
+                ref_y = (ny + my) / 2
+                rotation_angle = 0
+                place_corner = 4
+            elif method == 3: # center - rotated
+                ref_x = (nx + mx) / 2
+                ref_y = (ny + my) / 2
+                rotation_angle = geom.angle(points[0], points[1])
+                place_corner = 4
+            return ref_x, ref_y, rotation_angle, place_corner
+
+        method = self.combo_placement.GetSelection()
+        if method < 0:
+            return
+        for idx, (geom, area) in enumerate(self.contours):
+            ref_x, ref_y, rotation_angle, place_corner = get_place_parameters(geom, method)
+            self.context.elements.op_branch.add(
+                type="place point",
+                label=f"Contour #{idx+1}",
+                x=ref_x,
+                y=ref_y,
+                rotation=rotation_angle,
+                corner=place_corner
+            )
+
+        self.context.elements.signal("refresh_scene")
+
     def on_refresh(self, event):
         self._changed = True
         self.refresh_preview()
 
     def on_control_update(self, event=None):
         self._changed = True
-        if self.auto_update and self.IsShown():
+        # The following controls will only be used
+        # if we have surrounding rectangles selected
+        flag = self.radio_method.GetSelection() == 0
+        for ctrl in (self.radio_simplify,):
+            ctrl.Enable(flag)
+        for ctrl in (self.button_create_placement, self.combo_placement):
+            ctrl.Enable(not flag)
+        if self.auto_update and self._pane_is_active:
             self.refresh_preview()
 
     def refresh_preview_job(self):
@@ -424,7 +517,8 @@ class ContourPanel(wx.Panel):
         if self.image is None:
             return
         t_a = time.perf_counter()
-        if self.parameters["cnt_method"] == 0:
+
+        if (method:=self.parameters["cnt_method"]) == 0:
             self.contours = img_to_polygons(
                 self.image,
                 minimal=self.parameters["cnt_minimum"],
@@ -442,15 +536,16 @@ class ContourPanel(wx.Panel):
             )
         self.list_contours.DeleteAllItems()
         for idx, (geom, area) in enumerate(self.contours):
-            simple = self.parameters["cnt_simplify"]
-            # We are on pixel level
-            threshold = self.parameters["cnt_threshold"]
-            if simple==1:
-                # Let's try Visvalingam line simplification
-                geom = geom.simplify_geometry(threshold=threshold)
-            elif simple==2:
-                # Use Douglas-Peucker instead
-                geom = geom.simplify(threshold)
+            if method == 0:
+                simple = self.parameters["cnt_simplify"]
+                # We are on pixel level
+                threshold = self.parameters["cnt_threshold"]
+                if simple==1:
+                    # Let's try Visvalingam line simplification
+                    geom = geom.simplify_geometry(threshold=threshold)
+                elif simple==2:
+                    # Use Douglas-Peucker instead
+                    geom = geom.simplify(threshold)
             geom.transform(self.matrix)
             self.contours[idx] = (geom, area)
             list_id = self.list_contours.InsertItem(
@@ -470,7 +565,7 @@ class ContourPanel(wx.Panel):
 
     def on_resize(self, event):
         event.Skip()
-        if self.auto_update and self.IsShown():
+        if self.auto_update and self._pane_is_active:
             idx = self.list_contours.GetFirstSelected()
             self.display_contours(highlight_index=idx)
 
@@ -1238,6 +1333,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         # self.vector_lock = threading.Lock()
         # self.alive = True
         # Only display if we have a vector engine
+        self._pane_is_active = False
         make_vector = self.context.kernel.lookup("render-op/make_vector")
         if make_vector:
             global HAS_VECTOR_ENGINE
@@ -1427,10 +1523,11 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.set_images(True)
 
     def pane_active(self):
+        self._pane_is_active = True
         self.set_images(True)
 
     def pane_deactive(self):
-        pass
+        self._pane_is_active = False
 
     def on_changes(self, event):
         # self._need_updates = True
@@ -1468,7 +1565,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                     img = background
             return img
 
-        if not self.IsShown():
+        if not self._pane_is_active:
             return
         if self.node is None or self.node.image is None:
             self.wximage = wx.NullBitmap
@@ -1499,7 +1596,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         make_vector = self.context.kernel.lookup("render-op/make_vector")
         make_raster = self.context.kernel.lookup("render-op/make_raster")
         # while self.alive:
-        if not self.IsShown():
+        if not self._pane_is_active:
             return
         self.wxvector = wx.NullBitmap
 
