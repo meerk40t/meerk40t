@@ -91,8 +91,13 @@ class ContourPanel(wx.Panel):
         self.check_auto = wxCheckBox(self, wx.ID_ANY, _("Automatic update"))
         self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
         self.button_create = wxButton(self, wx.ID_ANY, _("Generate"))
-        self.preview_image = wxStaticBitmap(self, wx.ID_ANY)
+        self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.label_info = wxStaticText(self, wx.ID_ANY)
+        self.list_contours = wxListCtrl(
+            self, wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_contours",
+        )
         self.update_job = Job(
             process=self.refresh_preview_job,
             job_name="imageprop_contour",
@@ -130,6 +135,8 @@ class ContourPanel(wx.Panel):
         self.text_minimum.SetActionRoutine(self.on_control_update)
         self.text_maximum.SetActionRoutine(self.on_control_update)
         self.Bind(wx.EVT_SIZE, self.on_resize)
+        self.list_contours.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_selection)
+        self.list_contours.Bind(wx.EVT_LIST_COL_CLICK, self.on_list_selection)
 
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
@@ -139,8 +146,8 @@ class ContourPanel(wx.Panel):
         sizer_main.Add(sizer_left, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_right, 2, wx.EXPAND, 0)
 
-        sizer_right.Add(self.preview_image, 1, wx.EXPAND, 0)
-        sizer_right.Add(self.label_info, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_right.Add(self.bitmap_preview, 4, wx.EXPAND, 0)
+        sizer_right.Add(self.list_contours, 1, wx.EXPAND, 0)
 
         sizer_param_picture = StaticBoxSizer(
             self, wx.ID_ANY, _("Image:"), wx.VERTICAL
@@ -206,6 +213,7 @@ class ContourPanel(wx.Panel):
         sizer_left.Add(sizer_param_contour, 0, wx.EXPAND, 0)
         sizer_left.Add(sizer_param_update, 0, wx.EXPAND, 0)
         sizer_left.Add(self.button_create, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_left.Add(self.label_info, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.check_auto.SetValue(self.auto_update)
         self.button_update.Enable(not self.auto_update)
 
@@ -232,12 +240,19 @@ class ContourPanel(wx.Panel):
         self.slider_contrast_contrast.SetMaxSize(wx.Size(200, -1))
         self.text_contrast_brightness.SetMaxSize(wx.Size(50, -1))
         self.text_contrast_contrast.SetMaxSize(wx.Size(50, -1))
+
+        self.list_contours.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
+        self.list_contours.AppendColumn(
+            _("Area"), format=wx.LIST_FORMAT_LEFT, width=100
+        )
+        self.list_contours.resize_columns()
+
         self.text_minimum.SetValue("2")
         self.text_maximum.SetValue("95")
         self.reset_contrast()
 
     def pane_hide(self):
-        pass
+        self.list_contours.save_column_widths()
 
     def pane_deactive(self):
         self._pane_is_active = False
@@ -327,6 +342,12 @@ class ContourPanel(wx.Panel):
     def refresh_preview_job(self):
         if self.make_raster is None or not self._changed:
             return
+        # That job may come too late, when the panel has already be destroyed,
+        # so just a simple check:
+        try:
+            _dummy = self.check_invert.GetValue()
+        except RuntimeError:
+            return
         self.gather_parameters()
         self.update_image()
         self.calculate_contours()
@@ -382,7 +403,6 @@ class ContourPanel(wx.Panel):
                 self.node.dither = remembered_dither
                 self.node.update(None)
 
-        self.label_info.SetLabel(f"{image.width}x{image.height}")
         if self.parameters["img_invert"]:
             image = ImageOps.invert(image)
         if self.parameters["img_usecontrast"]:
@@ -417,7 +437,8 @@ class ContourPanel(wx.Panel):
                 ignoreinner=self.parameters["cnt_ignoreinner"],
                 needs_invert=True,
             )
-        for idx, geom in enumerate(self.contours):
+        self.list_contours.DeleteAllItems()
+        for idx, (geom, area) in enumerate(self.contours):
             simple = self.parameters["cnt_simplify"]
             # We are on pixel level
             threshold = self.parameters["cnt_threshold"]
@@ -428,34 +449,45 @@ class ContourPanel(wx.Panel):
                 # Use Douglas-Peucker instead
                 geom = geom.simplify(threshold)
             geom.transform(self.matrix)
-            self.contours[idx] = geom
+            self.contours[idx] = (geom, area)
+            list_id = self.list_contours.InsertItem(
+                self.list_contours.GetItemCount(), f"#{idx + 1}"
+            )
+            self.list_contours.SetItem(list_id, 1, f"{area:.2f}%")
+
 
         t_b = time.perf_counter()
 
-        self.label_info.SetLabel (f"Contours generated: {len(self.contours)} in {t_b-t_a:.2f} sec")
+        self.label_info.SetLabel (
+            _("Contours generated: {count} in {duration}").format(
+                count=len(self.contours),
+                duration=f"{t_b-t_a:.2f} sec"
+            )
+        )
 
     def on_resize(self, event):
         event.Skip()
         if self.auto_update and self.IsShown():
-            self.display_contours()
+            idx = self.list_contours.GetFirstSelected()
+            self.display_contours(highlight_index=idx)
 
-    def display_contours(self):
+    def display_contours(self, highlight_index = -1):
         if self.make_raster is None:
             return
         if self.image is None:
-            self.preview_image.SetBitmap(wx.NullBitmap)
+            self.bitmap_preview.SetBitmap(wx.NullBitmap)
             return
         copynode = ImageNode(image=self.image, matrix=self.matrix, dither=False, prevent_crop=True)
         data = [copynode]
-        for idx, geom in enumerate(self.contours):
+        for idx, (geom, area) in enumerate(self.contours):
             node = PathNode(
                 geometry = geom,
-                stroke=Color("blue"),
-                label=f"Contour {self.node.display_label()} #{idx+1}",
+                stroke=Color("red") if highlight_index==idx else Color("blue"),
+                label=f"Contour {self.node.display_label()} #{idx+1} [{area:.2f}%]",
             )
             data.append(node)
         bounds = Node.union_bounds(data, attr="bounds")
-        width, height = self.preview_image.GetClientSize()
+        width, height = self.bitmap_preview.GetClientSize()
         bit_map = self.make_raster(
             data,
             bounds,
@@ -464,7 +496,12 @@ class ContourPanel(wx.Panel):
             bitmap=True,
             keep_ratio=True,
         )
-        self.preview_image.SetBitmap(bit_map)
+        self.bitmap_preview.SetBitmap(bit_map)
+
+    def on_list_selection(self, event):
+        idx = self.list_contours.GetFirstSelected()
+        self.display_contours(highlight_index=idx)
+
 
 class KeyholePanel(wx.Panel):
     name = _("Keyhole")
