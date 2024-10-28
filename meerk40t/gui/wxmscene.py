@@ -3,13 +3,16 @@ import random
 import time
 
 import wx
+from PIL import Image
 from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.propertypanels.imageproperty import ContourPanel
 from meerk40t.gui.scene.scenepanel import ScenePanel
 
 # from meerk40t.gui.scenewidgets.affinemover import AffineMover
@@ -45,9 +48,9 @@ from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
+from meerk40t.gui.toolwidgets.tooltabedit import TabEditTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
-from meerk40t.gui.toolwidgets.tooltabedit import TabEditTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
@@ -82,6 +85,42 @@ def register_panel_scene(window, context):
 
     window.on_pane_create(pane)
     context.register("pane/scene", pane)
+
+
+class ContourDetectionDialog(wx.Dialog):
+    def __init__(self, parent, context, node):
+        super().__init__(
+            parent, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        )
+        self.context = context
+        self._init_ui(node)
+        self._start_dialog()
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+
+    def _init_ui(self, node):
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel = ContourPanel(
+            self, wx.ID_ANY, context=self.context, node=node, simplified=True
+        )
+        main_sizer.Add(panel, 1, wx.EXPAND, 0)
+        buttons = self.CreateStdDialogButtonSizer(wx.OK)
+        main_sizer.Add(buttons, 0, wx.EXPAND, 0)
+        panel.pane_active()
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def _start_dialog(self):
+        win_wd = self.context.setting(int, "win_bgcontour_width", 700)
+        win_ht = self.context.setting(int, "win_bgcontour_height", 500)
+        self.SetSize(win_wd, win_ht)
+        self.CenterOnParent()
+
+    def on_close(self, event):
+        # Save window size for next time
+        event.Skip()
+        win_wd, win_ht = self.GetSize()
+        self.context.win_bgcontour_width = win_wd
+        self.context.win_bgcontour_height = win_ht
 
 
 class MeerK40tScenePanel(wx.Panel):
@@ -1154,10 +1193,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.request_refresh()
 
         def recognize_background_contours(event=None):
-            from meerk40t.gui.propertypanels.imageproperty import ContourPanel
-            from meerk40t.core.node.elem_image import ImageNode
-            from PIL import Image
-
             def image_from_bitmap(myBitmap):
                 wx_image = myBitmap.ConvertToImage()
                 myPilImage = Image.new(
@@ -1168,40 +1203,35 @@ class MeerK40tScenePanel(wx.Panel):
 
             if not self.widget_scene.has_background:
                 return
-            # We build a dummy imageNode
+            # We build a dummy imageNode, so we fetch the background,
+            # calculate the required transformation matrix and pass
+            # it on to one of the standard image node property dialogs
+
             background = self.widget_scene.active_background
             if background is None:
                 return
             background_image = image_from_bitmap(background)
-            dlg = wx.Dialog(
-                self, wx.ID_ANY,
-                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-            )
-            main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+            # Calculate scaling matrix
             sx = float(Length(self.context.device.view.width)) / background_image.width
-            sy = float(Length(self.context.device.view.height)) / background_image.height
+            sy = (
+                float(Length(self.context.device.view.height)) / background_image.height
+            )
+            matrix = Matrix(f"scale({sx},{sy})")
             # print (f"Image dimension: {background_image.width} x {background_image.height} pixel")
             # print (f"View-Size: {float(Length(self.context.device.view.width))} x {float(Length(self.context.device.view.height))}")
-            matrix = Matrix(f"scale({sx},{sy})")
             # print (f"Matrix: {matrix}")
 
-            node = ImageNode(image=background_image, matrix=matrix, dither=False, prevent_crop=True, dpi=500)
+            node = ImageNode(
+                image=background_image,
+                matrix=matrix,
+                dither=False,
+                prevent_crop=True,
+                dpi=500,
+            )
             # print (f"Node-Dimensions: {node.bbox()}")
-            panel = ContourPanel(dlg, wx.ID_ANY, context=self.context, node=node, simplified=True)
-            main_sizer.Add(panel, 1, wx.EXPAND, 0)
-            buttons = dlg.CreateStdDialogButtonSizer(wx.OK)
-            main_sizer.Add(buttons, 0, wx.EXPAND, 0)
-            panel.pane_active()
-            dlg.SetSizer(main_sizer)
-            dlg.Layout()
-            win_wd = self.context.setting(int, "win_bgcontour_width", 700)
-            win_ht = self.context.setting(int, "win_bgcontour_height", 500)
-            dlg.SetSize(win_wd, win_ht)
-            dlg.CenterOnParent()
-            res = dlg.ShowModal()
-            win_wd, win_ht = dlg.GetSize()
-            self.context.win_bgcontour_width = win_wd
-            self.context.win_bgcontour_height = win_ht
+            dlg = ContourDetectionDialog(self, self.context, node)
+            dlg.ShowModal()
             dlg.Destroy()
 
         def stop_auto_update(event=None):
