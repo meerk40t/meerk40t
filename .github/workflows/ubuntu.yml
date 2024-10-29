@@ -39,7 +39,7 @@ jobs:
         pip install ezdxf
         pip install pyserial
         pip install bitarray
-        pip install scipy
+        # pip install scipy
         pip install numba
         pip install --no-cache-dir opencv-python-headless==4.5.3.56
         pip install meerk40t-camera
