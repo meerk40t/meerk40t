@@ -18989,3 +18989,127 @@ msgstr "CO2-Laser (Moshi-Board)"
 #: meerk40t/balormk/gui/gui.py:99
 msgid "Live Hull"
 msgstr "Live-Hüllkurve"
+
+#: meerk40t/core/elements/element_treeops.py:1055
+msgid "Remove all placements"
+msgstr "Entferne Jobstartpunkte"
+
+#: meerk40t/core/elements/element_treeops.py:1057
+msgid "Remove this and all other placements"
+msgstr "Löscht diesen und allen anderen Jobstartpunkte"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:41
+msgid "Contour recognition"
+msgstr "Umriss-Erkennung"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:71
+msgid "Original picture"
+msgstr "Original-Bild"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:82
+msgid "Ignore inner"
+msgstr "Innere Bereiche ignorieren"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:85
+msgid "Contour simplification"
+msgstr "Umriss vereinfachen"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:86
+msgid "None"
+msgstr "Keine"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:86
+msgid "Visvalingam"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:86
+msgid "Douglas-Peucker"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/imageproperty.py:90
+msgid "Detection Method"
+msgstr "Erkennungsmethode"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:91
+msgid "Polygons"
+msgstr "Umriss"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:91
+msgid "Bounding rectangles"
+msgstr "Einschließendes Rechteck"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:94
+msgid "Automatic update"
+msgstr "Aotmatische Aktualisierung"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:96
+msgid "Generate contours"
+msgstr "Erzeuge Umrisse"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:97
+msgid "Generate placements"
+msgstr "Erzeuge Jobstartpunkte"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:99
+msgid "Edge (prefer short side)"
+msgstr "Eckpunkt kurze Seite"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:100
+msgid "Edge (prefer long side)"
+msgstr "Eckpunkt (lange Seite)"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:101
+msgid "Center (unrotated)"
+msgstr "Zentrum (regulär)"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:102
+msgid "Center (rotated)"
+msgstr "Zentrum (rotiert)"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:166
+msgid "Image:"
+msgstr "Bild:"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:197
+msgid "Parameters:"
+msgstr "Parameter:"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:200
+msgid "Minimal size:"
+msgstr "Minimale Größe:"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:205
+msgid "Maximal size:"
+msgstr "Maximale Größe:"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:220
+msgid "Update:"
+msgstr "Aktualisieren"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:250
+msgid "Creates the recognized contour elements / placements"
+msgstr "Erzeugt die erkannten Umrisse/Jobstartpunkte"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:258
+msgid "What is the minimal size of objects (as percentage of the overall area)?"
+msgstr "Was ist die minimal zu berücksichtigende Größe (% der Gesamtfläche)?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:259
+msgid "What is the maximal size of objects (as percentage of the overall area)?"
+msgstr "Was ist die maximal zu berücksichtigende Größe (% der Gesamtfläche)?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:260
+msgid "Do you want to recognize objects inside of another object?"
+msgstr "Sollen Objekte innerhalb von anderen Objekte erkannt werden?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:261
+msgid "Do you want to create the contour itself or the minimal rectangle enclosing it?"
+msgstr "Soll der Umriss selbst oder das kleinste einschließende Rechteck erzeugt werden?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:262
+msgid "Shall we try to reduce the number of points for the created contour?"
+msgstr "Soll die Anzahl der einzelne Punkte auf dem Umriss verringert werden?"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:562
+msgid "Contours generated: {count} in {duration}"
+msgstr "{count} Umrisse erzeugt in {duration}"
