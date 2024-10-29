@@ -1053,9 +1053,11 @@ class ShadowTree:
                     # A timer can update after the tree closes.
                     return
 
-        if branch_elems_item := self.elements.get(type="branch elems")._item:
+        branch_elems_item = self.elements.get(type="branch elems")._item
+        if branch_elems_item:
             self.wxtree.Expand(branch_elems_item)
-        if branch_reg_item := self.elements.get(type="branch reg")._item:
+        branch_reg_item = self.elements.get(type="branch reg")._item
+        if branch_reg_item:
             self.wxtree.Expand(branch_reg_item)
         self.context.elements.signal("warn_state_update")
         self.freeze_tree(False)
