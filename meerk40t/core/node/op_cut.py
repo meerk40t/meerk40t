@@ -378,7 +378,7 @@ class CutOpNode(Node, Parameters):
         """Generator of cutobjects for a particular operation."""
 
         def get_pathlist(node, factor):
-            from time import perf_counter_ns
+            from time import perf_counter
 
             pathlist = []
             if node.type == "reference":
@@ -403,7 +403,6 @@ class CutOpNode(Node, Parameters):
                 # like tabs, dots/dashes applied to the element
                 path = node.final_geometry(unitfactor=factor).as_path()
                 path.approximate_arcs_with_cubics()
-                # pathlist.append( (f"{node.display_label()}_{perf_counter_ns()}", path) )
                 pathlist.append((None, path))
             elif node.type == "elem path":
                 path = abs(node.path)
@@ -411,8 +410,9 @@ class CutOpNode(Node, Parameters):
                 pathlist.append((None, path))
             elif node.type.startswith("effect"):
                 if hasattr(node, "as_geometries"):
+                    time_indicator = f"{perf_counter():.5f}".replace(".", "")
                     pathlist.extend(
-                        (f"hatch_{idx}_{perf_counter_ns()}", effect_geom.as_path())
+                        (f"hatch_{idx}_{time_indicator}", effect_geom.as_path())
                         for idx, effect_geom in enumerate(list(node.as_geometries()))
                     )
                 else:
