@@ -291,13 +291,11 @@ class CutOpNode(Node, Parameters):
         if not self.valid_node_for_reference(node):
             # We could raise a ValueError but that will break things...
             return
-        if first_is_effect :=  (
+        first_is_effect =  (
             len(self._children) > 0 and
             self._children[0].type.startswith("effect ")
-        ):
-            effect = self._children[0]
-        else:
-            effect = None
+        )
+        effect = self._children[0] if first_is_effect else None
         ref = self.add(node=node, type="reference", pos=pos, **kwargs)
         node._references.append(ref)
         if first_is_effect:

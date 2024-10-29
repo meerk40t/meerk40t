@@ -466,10 +466,12 @@ def set_color_according_to_theme(control, background, foreground):
     while win is not None:
         if hasattr(win, "context") and hasattr(win.context, "themes"):
             if background:
-                if col := win.context.themes.get(background):
+                col = win.context.themes.get(background)
+                if col:
                     control.SetBackgroundColour(col)
             if foreground:
-                if col := win.context.themes.get(foreground):
+                col = win.context.themes.get(foreground)
+                if col:
                     control.SetForegroundColour(col)
             break
         win = win.GetParent()

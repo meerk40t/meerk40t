@@ -483,7 +483,8 @@ class ContourPanel(wx.Panel):
             self.matrix = self.node.matrix
         else:
             reapply = False
-            if remembered_dither := self.node.dither:
+            remembered_dither = self.node.dither
+            if remembered_dither:
                 reapply = True
                 self.node.dither = False
                 self.node.update(None)
@@ -518,7 +519,8 @@ class ContourPanel(wx.Panel):
             return
         t_a = time.perf_counter()
 
-        if (method:=self.parameters["cnt_method"]) == 0:
+        method = self.parameters["cnt_method"]
+        if method == 0:
             self.contours = img_to_polygons(
                 self.image,
                 minimal=self.parameters["cnt_minimum"],
