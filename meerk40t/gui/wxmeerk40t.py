@@ -1038,16 +1038,6 @@ class wxMeerK40t(wx.App, Module):
                 "page": "Start",
             },
             {
-                "attr": "force_dark",
-                "object": context.root,
-                "default": False,
-                "type": bool,
-                "label": _("Force Darkmode"),
-                "tip": _("Will force MeerK40t to start in darkmode despite the system settings"),
-                "page": "Start",
-                "signals": "restart",
-            },
-            {
                 "attr": "beep_soundfile",
                 "object": context.root,
                 "type": str,
