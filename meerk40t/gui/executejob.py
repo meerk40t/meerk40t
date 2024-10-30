@@ -5,7 +5,12 @@ from meerk40t.kernel import signal_listener
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
-from .wxutils import disable_window, wxButton, wxListBox
+from .wxutils import (
+    disable_window, 
+    wxButton, 
+    wxComboBox,
+    wxListBox,
+)
 
 _ = wx.GetTranslation
 
@@ -29,7 +34,7 @@ class PlannerPanel(wx.Panel):
                 break
         spools = [s.label for s in self.available_devices]
 
-        self.combo_device = wx.ComboBox(
+        self.combo_device = wxComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)

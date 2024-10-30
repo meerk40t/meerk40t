@@ -15,6 +15,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticText,
 )
 from meerk40t.kernel import signal_listener
@@ -74,7 +75,7 @@ class HingePanel(wx.Panel):
         self.text_origin_y = TextCtrl(self, wx.ID_ANY, "")
         self.text_width = TextCtrl(self, wx.ID_ANY, "")
         self.text_height = TextCtrl(self, wx.ID_ANY, "")
-        self.combo_style = wx.ComboBox(
+        self.combo_style = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
         self.button_default = wxButton(self, wx.ID_ANY, "D")

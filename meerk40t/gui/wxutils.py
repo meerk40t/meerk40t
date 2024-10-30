@@ -927,6 +927,35 @@ class wxCheckBox(wx.CheckBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+class wxComboBox(wx.ComboBox):
+    """
+    This class wraps around wx.ComboBox and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "text_bg", "text_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
 
 class wxTreeCtrl(wx.TreeCtrl):
     """

@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Length
-from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox
+from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox, wxComboBox
 from .attributes import ColorPanel, IdPanel, AutoHidePanel
 
 _ = wx.GetTranslation
@@ -127,7 +127,7 @@ class WobblePropertyPanel(ScrolledPanel):
         main_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.fills = list(self.context.match("wobble", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
+        self.combo_fill_style = wxComboBox(
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)

@@ -17,6 +17,7 @@ from meerk40t.gui.wxutils import (
     TextCtrl,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxRadioBox,
     wxStaticBitmap,
     wxStaticText,
@@ -479,7 +480,7 @@ class DebugIconPanel(wx.Panel):
                 s = getattr(mkicons, entry)
                 if isinstance(s, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
                     self.icon_list.append(entry)
-        self.combo_icons = wx.ComboBox(
+        self.combo_icons = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.icon_list,
@@ -547,7 +548,7 @@ class DebugWindowPanel(wx.Panel):
             value, name, suffix = find
             self.window_list.append(suffix)
 
-        self.combo_windows = wx.ComboBox(
+        self.combo_windows = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.window_list,
@@ -566,8 +567,8 @@ class DebugWindowPanel(wx.Panel):
             choices=("Option 1", "Option 2", "Option 3"),
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        text_left = TextCtrl(self, wx.ID_ANY, "")
-        check_left = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
+        text_left = wx.TextCtrl(self, wx.ID_ANY, "")
+        check_left = wx.CheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_left = wx.Button(self, wx.ID_ANY, "A button")
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
         radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
@@ -575,7 +576,7 @@ class DebugWindowPanel(wx.Panel):
             self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=25)
         )
         slider_left = wx.Slider(self, wx.ID_ANY, value=0, minValue=0, maxValue=100)
-        static_left = wxStaticBitmap(
+        static_left = wx.StaticBitmap(
             self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
         )
         left_side.Add(cb_left, 0, 0, 0)

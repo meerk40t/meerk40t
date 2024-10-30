@@ -10,7 +10,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox, wxComboBox
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
@@ -63,7 +63,7 @@ class OperationAssignPanel(wx.Panel):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.cbo_apply_color = wx.ComboBox(
+        self.cbo_apply_color = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,

@@ -9,7 +9,6 @@ import wx
 from PIL import Image
 from wx import aui
 
-from meerk40t.main import APPLICATION_NAME
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.gui_mixins import FormatPainter, Warnings
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
@@ -30,26 +29,24 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
-from meerk40t.gui.wxutils import wxButton, wxStaticText, TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, wxButton, wxComboBox, wxStaticText
 from meerk40t.kernel import Job, get_safe_path, lookup_listener, signal_listener
+from meerk40t.main import APPLICATION_NAME
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
+    icon_air_off,
+    icon_air_on,
     icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
     icon_cag_union,
     icon_cag_xor,
     icon_closed_door,
-    icon_air_on,
-    icon_air_off,
-    icon_open_door,
     icon_effect_wobble,
     icon_hatch,
-    icons8_comments,
-    icons8_circled_play,
     icon_line,
     icon_meerk40t,
     icon_mk_align_bottom,
@@ -64,12 +61,15 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
+    icon_open_door,
     icon_power_button,
     icon_tabs,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
+    icons8_circled_play,
     icons8_circled_right,
+    icons8_comments,
     icons8_copy,
     icons8_curly_brackets,
     icons8_cursor,
@@ -4942,7 +4942,7 @@ class MeerK40t(MWindow):
             sizer.Add(label, 0, wx.EXPAND, 0)
             s1 = wx.BoxSizer(wx.HORIZONTAL)
             lbl1 = wxStaticText(dlg, wx.ID_ANY, _("Horizontal:"))
-            combo1 = wx.ComboBox(
+            combo1 = wxComboBox(
                 dlg, wx.ID_ANY, choices=options_1, style=wx.CB_DROPDOWN | wx.CB_READONLY
             )
             combo1.SetSelection(0)
@@ -4950,7 +4950,7 @@ class MeerK40t(MWindow):
             s1.Add(combo1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             s2 = wx.BoxSizer(wx.HORIZONTAL)
             lbl2 = wxStaticText(dlg, wx.ID_ANY, _("Vertical:"))
-            combo2 = wx.ComboBox(
+            combo2 = wxComboBox(
                 dlg, wx.ID_ANY, choices=options_2, style=wx.CB_DROPDOWN | wx.CB_READONLY
             )
             combo2.SetSelection(0)

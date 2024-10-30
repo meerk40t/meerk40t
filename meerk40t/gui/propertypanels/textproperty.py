@@ -13,6 +13,7 @@ from meerk40t.gui.wxutils import (
     wxBitmapButton,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListBox,
     wxRadioBox,
     wxStaticText,
@@ -26,11 +27,11 @@ from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePan
 _ = wx.GetTranslation
 
 
-class PromptingComboBox(wx.ComboBox):
+class PromptingComboBox(wxComboBox):
     def __init__(self, parent, choices=None, style=0, **kwargs):
         if choices is None:
             choices = []
-        wx.ComboBox.__init__(
+        wxComboBox.__init__(
             self,
             parent,
             wx.ID_ANY,

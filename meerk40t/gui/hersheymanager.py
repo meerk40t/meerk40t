@@ -24,6 +24,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListBox,
     wxListCtrl,
     wxStaticBitmap,
@@ -1047,7 +1048,7 @@ class PanelFontManager(wx.Panel):
             _("Hershey Fonts - #2"),
             _("Autocad-SHX-Fonts"),
         ]
-        self.combo_webget = wx.ComboBox(
+        self.combo_webget = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,

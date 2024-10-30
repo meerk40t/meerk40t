@@ -11,7 +11,14 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
-from .wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxRadioBox
+from .wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxComboBox,
+    wxRadioBox,
+)
 
 _ = wx.GetTranslation
 
@@ -107,7 +114,7 @@ class PreferencesLanguagePanel(wx.Panel):
             language_name
             for language_code, language_name, language_index in supported_languages
         ]
-        self.combo_language = wx.ComboBox(
+        self.combo_language = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
         self.combo_language.SetToolTip(
@@ -360,7 +367,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
             self, wx.ID_ANY, _("SVG Pixel Per Inch"), wx.HORIZONTAL
         )
 
-        self.combo_svg_ppi = wx.ComboBox(
+        self.combo_svg_ppi = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[

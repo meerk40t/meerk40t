@@ -23,6 +23,7 @@ from .wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListCtrl,
     wxRadioBox,
     wxStaticBitmap,
@@ -179,7 +180,7 @@ class WordlistPanel(wx.Panel):
 
         label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
         sizer_index_left.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.cbo_Index = wx.ComboBox(
+        self.cbo_Index = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_left.Add(self.cbo_Index, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -301,7 +302,7 @@ class WordlistPanel(wx.Panel):
         sizer_index_right = wx.BoxSizer(wx.HORIZONTAL)
         label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for field:"))
         sizer_index_right.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.cbo_index_single = wx.ComboBox(
+        self.cbo_index_single = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_right.Add(self.cbo_index_single, 1, wx.ALIGN_CENTER_VERTICAL, 0)

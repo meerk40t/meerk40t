@@ -28,6 +28,7 @@ from meerk40t.gui.wxutils import (
     disable_window,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticBitmap,
     wxStaticText,
 )
@@ -143,7 +144,7 @@ class LaserPanel(wx.Panel):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
 
-        self.combo_devices = wx.ComboBox(
+        self.combo_devices = wxComboBox(
             self, wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(

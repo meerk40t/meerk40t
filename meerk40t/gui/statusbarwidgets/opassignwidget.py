@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import wxCheckBox, wxStaticBitmap
+from meerk40t.gui.wxutils import wxCheckBox, wxComboBox, wxStaticBitmap
 from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
@@ -32,7 +32,7 @@ class OperationAssignOptionWidget(StatusBarWidget):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.combo_apply_color = wx.ComboBox(
+        self.combo_apply_color = wxComboBox(
             self.parent,
             wx.ID_ANY,
             choices=choices,

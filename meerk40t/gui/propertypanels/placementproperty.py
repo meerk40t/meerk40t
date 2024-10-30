@@ -15,6 +15,7 @@ from meerk40t.gui.wxutils import (
     set_ctrl_value,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticText,
 )
 from meerk40t.kernel import signal_listener
@@ -281,7 +282,7 @@ class PlacementPanel(wx.Panel):
             self, wx.ID_ANY, _("Orientation:"), wx.HORIZONTAL
         )
         info_corner = wxStaticText(self, wx.ID_ANY, _("Corner:"))
-        self.combo_corner = wx.ComboBox(
+        self.combo_corner = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[
@@ -302,7 +303,7 @@ class PlacementPanel(wx.Panel):
         self.corner_sizer.Add(info_corner, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.corner_sizer.Add(self.combo_corner, 1, wx.EXPAND, 0)
         info_orientation = wxStaticText(self, wx.ID_ANY, _("Orientation:"))
-        self.combo_orientation = wx.ComboBox(
+        self.combo_orientation = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[
@@ -340,7 +341,7 @@ class PlacementPanel(wx.Panel):
         )
         choices = [e[0] for e in self.shape_information]
 
-        self.combo_shape = wx.ComboBox(
+        self.combo_shape = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         ttip = _("Please provide some data about the intended tiling")

@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.wxutils import TextCtrl, wxCheckBox, wxStaticBitmap, wxStaticText
+from meerk40t.gui.wxutils import TextCtrl, wxCheckBox, wxComboBox, wxStaticBitmap, wxStaticText
 
 from .statusbarwidget import StatusBarWidget
 
@@ -142,7 +142,7 @@ class StrokeWidget(StatusBarWidget):
         self.spin_width.SetMaxSize(wx.Size(80, -1))
 
         self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
-        self.combo_units = wx.ComboBox(
+        self.combo_units = wxComboBox(
             self.parent,
             wx.ID_ANY,
             choices=self.unit_choices,

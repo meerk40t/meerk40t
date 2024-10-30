@@ -101,7 +101,7 @@ class ContourPanel(wx.Panel):
             _("Center (unrotated)"),
             _("Center (rotated)"),
         )
-        self.combo_placement = wx.ComboBox(self, wx.ID_ANY, choices=placement_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_placement = wxComboBox(self, wx.ID_ANY, choices=placement_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
 
         self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.label_info = wxStaticText(self, wx.ID_ANY)
@@ -1088,7 +1088,7 @@ class ImageModificationPanel(ScrolledPanel):
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))
-        self.combo_scripts = wx.ComboBox(
+        self.combo_scripts = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN
         )
         self.combo_scripts.SetSelection(0)
@@ -1373,7 +1373,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             "Majority",
             "Random",
         ]
-        self.combo_turnpolicy = wx.ComboBox(
+        self.combo_turnpolicy = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.turn_choices,
@@ -1780,7 +1780,7 @@ class ImagePropertyPanel(ScrolledPanel):
             "Sierra2",
             "Sierra-2-4a",
         ]
-        self.combo_dither = wx.ComboBox(
+        self.combo_dither = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.choices,
@@ -1788,7 +1788,7 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.check_enable_depthmap = wxCheckBox(self, wx.ID_ANY, _("Depthmap"))
         resolutions = list((f"{2**p} - {p}bit" for p in range(8, 1, -1)))
-        self.combo_depthmap = wx.ComboBox(
+        self.combo_depthmap = wxComboBox(
             self,
             wx.ID_ANY,
             choices=resolutions,
@@ -1803,7 +1803,7 @@ class ImagePropertyPanel(ScrolledPanel):
         #     self.op_choices.append(_("Apply: {script}").format(script=op))
         #     self.image_ops.append(op)
 
-        # self.combo_operations = wx.ComboBox(
+        # self.combo_operations = wxComboBox(
         #     self,
         #     wx.ID_ANY,
         #     choices=self.op_choices,

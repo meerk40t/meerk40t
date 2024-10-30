@@ -32,6 +32,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticText,
 )
 from meerk40t.kernel.kernel import get_safe_path
@@ -311,7 +312,7 @@ class MaterialPanel(ScrolledPanel):
         label_1 = wxStaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_material = wx.ComboBox(
+        self.txt_material = wxComboBox(
             self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
         )
         # self.txt_material = TextCtrl(self, wx.ID_ANY, "", limited=True)
@@ -336,7 +337,7 @@ class MaterialPanel(ScrolledPanel):
         for e in dev_infos:
             self.laser_choices.append(e[0][0])
 
-        self.combo_lasertype = wx.ComboBox(
+        self.combo_lasertype = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.laser_choices,
@@ -446,7 +447,7 @@ class MaterialPanel(ScrolledPanel):
         size_it(label, 60, 100)
         box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         # self.txt_entry_material = TextCtrl(self, wx.ID_ANY, "")
-        self.txt_entry_material = wx.ComboBox(
+        self.txt_entry_material = wxComboBox(
             self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
         )
 
@@ -463,7 +464,7 @@ class MaterialPanel(ScrolledPanel):
         box3.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         choices = self.laser_choices  # [1:]
-        self.combo_entry_type = wx.ComboBox(
+        self.combo_entry_type = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_entry_type.SetMaxSize(dip_size(self, 110, -1))

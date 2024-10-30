@@ -12,6 +12,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxRadioBox,
     wxStaticBitmap,
     wxStaticText,
@@ -595,7 +596,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wx.ComboBox(
+                control = wxComboBox(
                     self,
                     wx.ID_ANY,
                     choices=choice_list,
@@ -693,7 +694,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         data = c.get("default")
                     display_list.insert(0, str(data))
                     choice_list.insert(0, str(data))
-                control = wx.ComboBox(
+                control = wxComboBox(
                     self,
                     wx.ID_ANY,
                     choices=display_list,
@@ -739,7 +740,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wx.ComboBox(
+                control = wxComboBox(
                     self,
                     wx.ID_ANY,
                     choices=choice_list,

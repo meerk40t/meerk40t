@@ -37,6 +37,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListBox,
     wxStaticBitmap,
     wxStaticText,
@@ -730,7 +731,7 @@ class RibbonEditor(wx.Panel):
         )
 
         choices = [v for v in self.context._ribbons]
-        self.combo_ribbons = wx.ComboBox(
+        self.combo_ribbons = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Show the Ribbon Labels"))
@@ -1401,7 +1402,7 @@ class RibbonEditor(wx.Panel):
         )
         line5 = wx.BoxSizer(wx.HORIZONTAL)
         label5 = wxStaticText(dlg, wx.ID_ANY, _("Rule to enable"))
-        combo_enable = wx.ComboBox(
+        combo_enable = wxComboBox(
             dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         if entry["enable"] == "selected2":
@@ -1416,7 +1417,7 @@ class RibbonEditor(wx.Panel):
 
         line6 = wx.BoxSizer(wx.HORIZONTAL)
         label6 = wxStaticText(dlg, wx.ID_ANY, _("Rule to display"))
-        combo_visible = wx.ComboBox(
+        combo_visible = wxComboBox(
             dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         if entry["visible"] == "selected2":
@@ -1441,7 +1442,7 @@ class RibbonEditor(wx.Panel):
 
         line7 = wx.BoxSizer(wx.HORIZONTAL)
         label7 = wxStaticText(dlg, wx.ID_ANY, _("Icon"))
-        combo_icon = wx.ComboBox(
+        combo_icon = wxComboBox(
             dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         preview = wxStaticBitmap(dlg, wx.ID_ANY, size=dip_size(self, 30, 30))
