@@ -101,7 +101,7 @@ class ContourPanel(wx.Panel):
             _("Center (unrotated)"),
             _("Center (rotated)"),
         )
-        self.combo_placement = wx.ComboBox(self, wx.ID_ANY, choices=placement_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_placement = wxComboBox(self, wx.ID_ANY, choices=placement_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
 
         self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.label_info = wxStaticText(self, wx.ID_ANY)
@@ -716,10 +716,10 @@ class CropPanel(wx.Panel):
         self.slider_bottom = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_left = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_right = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_top = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_bottom = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_left = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_right = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_top = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_bottom = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -1088,7 +1088,7 @@ class ImageModificationPanel(ScrolledPanel):
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))
-        self.combo_scripts = wx.ComboBox(
+        self.combo_scripts = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN
         )
         self.combo_scripts.SetSelection(0)
@@ -1373,7 +1373,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             "Majority",
             "Random",
         ]
-        self.combo_turnpolicy = wx.ComboBox(
+        self.combo_turnpolicy = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.turn_choices,
@@ -1780,7 +1780,7 @@ class ImagePropertyPanel(ScrolledPanel):
             "Sierra2",
             "Sierra-2-4a",
         ]
-        self.combo_dither = wx.ComboBox(
+        self.combo_dither = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.choices,
@@ -1788,7 +1788,7 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.check_enable_depthmap = wxCheckBox(self, wx.ID_ANY, _("Depthmap"))
         resolutions = list((f"{2**p} - {p}bit" for p in range(8, 1, -1)))
-        self.combo_depthmap = wx.ComboBox(
+        self.combo_depthmap = wxComboBox(
             self,
             wx.ID_ANY,
             choices=resolutions,
@@ -1803,7 +1803,7 @@ class ImagePropertyPanel(ScrolledPanel):
         #     self.op_choices.append(_("Apply: {script}").format(script=op))
         #     self.image_ops.append(op)
 
-        # self.combo_operations = wx.ComboBox(
+        # self.combo_operations = wxComboBox(
         #     self,
         #     wx.ID_ANY,
         #     choices=self.op_choices,
@@ -1816,23 +1816,23 @@ class ImagePropertyPanel(ScrolledPanel):
         self.slider_grayscale_red = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_red = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_grayscale_red = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_grayscale_green = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_green = wx.TextCtrl(
+        self.text_grayscale_green = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_grayscale_blue = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_blue = wx.TextCtrl(
+        self.text_grayscale_blue = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_grayscale_lightness = wx.Slider(
             self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_lightness = wx.TextCtrl(
+        self.text_grayscale_lightness = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 

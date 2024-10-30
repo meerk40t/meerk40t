@@ -19,9 +19,11 @@ from .icons import (
 from .mwindow import MWindow
 from .wxutils import (
     StaticBoxSizer,
+    TextCtrl, 
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListCtrl,
     wxRadioBox,
     wxStaticBitmap,
@@ -178,7 +180,7 @@ class WordlistPanel(wx.Panel):
 
         label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
         sizer_index_left.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.cbo_Index = wx.ComboBox(
+        self.cbo_Index = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_left.Add(self.cbo_Index, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -300,7 +302,7 @@ class WordlistPanel(wx.Panel):
         sizer_index_right = wx.BoxSizer(wx.HORIZONTAL)
         label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for field:"))
         sizer_index_right.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.cbo_index_single = wx.ComboBox(
+        self.cbo_index_single = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_right.Add(self.cbo_index_single, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -314,7 +316,7 @@ class WordlistPanel(wx.Panel):
         sizer_grid_right.Add(sizer_index_right, 0, wx.EXPAND, 0)
         sizer_grid_right.Add(self.grid_content, 1, wx.EXPAND, 0)
 
-        self.txt_pattern = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_pattern = TextCtrl(self, wx.ID_ANY, "")
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_buttons.Add(self.txt_pattern, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -745,7 +747,7 @@ class ImportPanel(wx.Panel):
         label_1 = wxStaticText(self, wx.ID_ANY, _("Import CSV-File"))
         sizer_csv.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_filename = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_filename = TextCtrl(self, wx.ID_ANY, "")
         sizer_csv.Add(self.txt_filename, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_fileDialog = wxButton(self, wx.ID_ANY, "...")
@@ -772,7 +774,7 @@ class ImportPanel(wx.Panel):
         sizer_header.Add(self.rbox_header, 1, wx.EXPAND, 0)
         info_box.Add(sizer_header, 0, wx.EXPAND)
 
-        self.text_preview = wx.TextCtrl(
+        self.text_preview = TextCtrl(
             self, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
 
@@ -874,7 +876,7 @@ class AboutPanel(wx.Panel):
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None
         s = self.context.asset("wordlist_howto")
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         font = wx.Font(

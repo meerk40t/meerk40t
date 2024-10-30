@@ -10,6 +10,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
@@ -272,7 +273,7 @@ class LaserToolPanel(wx.Panel):
         label_wd = wxStaticText(self.nb_square, wx.ID_ANY, _("Dimension"))
         size_width.Add(label_wd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_width = wx.TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)
+        self.txt_width = TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)
         self.txt_width.SetToolTip(_("Extension of the square to create"))
         self.txt_width.SetMinSize(dip_size(self.nb_square, 60, -1))
         size_width.Add(self.txt_width, 0, wx.EXPAND, 0)

@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText
+from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
 from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -63,7 +63,7 @@ class GRBLControllerPanel(wx.Panel):
         static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
 
-        self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+        self.data_exchange = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
         self.data_exchange.SetMinSize(dip_size(self, -1, 100))
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
@@ -109,7 +109,7 @@ class GRBLControllerPanel(wx.Panel):
         sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0
         sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
 
-        self.gcode_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.gcode_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.gcode_text.SetToolTip(_("Enter a Gcode-Command and send it to the laser"))
         self.gcode_text.SetFocus()
         sizer_1.Add(self.gcode_text, 0, wx.EXPAND, 0)

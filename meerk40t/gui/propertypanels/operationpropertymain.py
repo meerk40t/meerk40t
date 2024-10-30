@@ -8,6 +8,7 @@ from meerk40t.gui.wxutils import (
     set_ctrl_value,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxRadioBox,
     wxStaticText,
 )
@@ -112,7 +113,7 @@ class LayerSettingPanel(wx.Panel):
         ):
             layer_sizer.Add(h_classify_sizer, 1, wx.EXPAND, 0)
 
-        # self.combo_type = wx.ComboBox(
+        # self.combo_type = wxComboBox(
         #     self,
         #     wx.ID_ANY,
         #     choices=["Engrave", "Cut", "Raster", "Image", "Hatch", "Dots"],
@@ -668,7 +669,7 @@ class PassesPanel(wx.Panel):
             self, wx.ID_ANY, _("Coolant:"), wx.HORIZONTAL
         )
         cool_choices = [_("No changes"), _("Turn on"), _("Turn off")]
-        self.combo_coolant = wx.ComboBox(
+        self.combo_coolant = wxComboBox(
             self,
             wx.ID_ANY,
             choices=cool_choices,
@@ -855,10 +856,10 @@ class InfoPanel(wx.Panel):
             self, wx.ID_ANY, _("Est. burn-time:"), wx.HORIZONTAL
         )
 
-        self.text_children = wx.TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
+        self.text_children = TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
         self.text_children.SetMinSize(dip_size(self, 25, -1))
         self.text_children.SetMaxSize(dip_size(self, 55, -1))
-        self.text_time = wx.TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
+        self.text_time = TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
         self.text_time.SetMinSize(dip_size(self, 55, -1))
         self.text_time.SetMaxSize(dip_size(self, 100, -1))
         self.text_children.SetToolTip(
@@ -1372,7 +1373,7 @@ class RasterSettingsPanel(wx.Panel):
         sizer_4 = StaticBoxSizer(self, wx.ID_ANY, _("Direction:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
 
-        self.combo_raster_direction = wx.ComboBox(
+        self.combo_raster_direction = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[

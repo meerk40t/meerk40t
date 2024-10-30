@@ -32,7 +32,9 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticText,
+    wxTreeCtrl,
 )
 from meerk40t.kernel.kernel import get_safe_path
 from meerk40t.kernel.settings import Settings
@@ -49,17 +51,17 @@ class ImportDialog(wx.Dialog):
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
-        self.txt_filename = wx.TextCtrl(self, wx.ID_ANY)
+        self.txt_filename = TextCtrl(self, wx.ID_ANY)
         self.btn_file = wxButton(self, wx.ID_ANY, "...")
         self.check_consolidate = wxCheckBox(
             self, wx.ID_ANY, _("Consolidate same thickness for material")
         )
         self.check_lens = wxCheckBox(self, wx.ID_ANY, _("Compensate Lens-Sizes"))
-        self.txt_lens_old = wx.TextCtrl(self, wx.ID_ANY)
-        self.txt_lens_new = wx.TextCtrl(self, wx.ID_ANY)
+        self.txt_lens_old = TextCtrl(self, wx.ID_ANY)
+        self.txt_lens_new = TextCtrl(self, wx.ID_ANY)
         self.check_wattage = wxCheckBox(self, wx.ID_ANY, _("Compensate Power-Levels"))
-        self.txt_wattage_old = wx.TextCtrl(self, wx.ID_ANY)
-        self.txt_wattage_new = wx.TextCtrl(self, wx.ID_ANY)
+        self.txt_wattage_old = TextCtrl(self, wx.ID_ANY)
+        self.txt_wattage_new = TextCtrl(self, wx.ID_ANY)
         self.btn_ok = wxButton(self, wx.ID_OK, _("OK"))
         self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
 
@@ -311,7 +313,7 @@ class MaterialPanel(ScrolledPanel):
         label_1 = wxStaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_material = wx.ComboBox(
+        self.txt_material = wxComboBox(
             self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
         )
         # self.txt_material = TextCtrl(self, wx.ID_ANY, "", limited=True)
@@ -336,7 +338,7 @@ class MaterialPanel(ScrolledPanel):
         for e in dev_infos:
             self.laser_choices.append(e[0][0])
 
-        self.combo_lasertype = wx.ComboBox(
+        self.combo_lasertype = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.laser_choices,
@@ -352,7 +354,7 @@ class MaterialPanel(ScrolledPanel):
         result_box = StaticBoxSizer(
             self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL
         )
-        self.tree_library = wx.TreeCtrl(
+        self.tree_library = wxTreeCtrl(
             self,
             wx.ID_ANY,
             style=wx.BORDER_SUNKEN | wx.TR_HAS_BUTTONS
@@ -367,6 +369,7 @@ class MaterialPanel(ScrolledPanel):
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
             context=self.context, list_name="list_materialmanager"
         )
+        
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
         self.list_preview.AppendColumn(
             _("Operation"),
@@ -422,7 +425,7 @@ class MaterialPanel(ScrolledPanel):
         label = wxStaticText(self, wx.ID_ANY, _("Title"))
         # size_it(label, 60, 100)
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.txt_entry_title = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_entry_title = TextCtrl(self, wx.ID_ANY, "")
         box1.Add(self.txt_entry_title, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wxButton(self, wx.ID_ANY, _("Set"))
@@ -445,8 +448,8 @@ class MaterialPanel(ScrolledPanel):
         label = wxStaticText(self, wx.ID_ANY, _("Material"))
         size_it(label, 60, 100)
         box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        # self.txt_entry_material = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.txt_entry_material = wx.ComboBox(
+        # self.txt_entry_material = TextCtrl(self, wx.ID_ANY, "")
+        self.txt_entry_material = wxComboBox(
             self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
         )
 
@@ -463,7 +466,7 @@ class MaterialPanel(ScrolledPanel):
         box3.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         choices = self.laser_choices  # [1:]
-        self.combo_entry_type = wx.ComboBox(
+        self.combo_entry_type = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_entry_type.SetMaxSize(dip_size(self, 110, -1))
@@ -510,7 +513,7 @@ class MaterialPanel(ScrolledPanel):
         box4.Add(self.txt_entry_lens, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         box4.Add(unit, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_entry_note = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+        self.txt_entry_note = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
         self.txt_entry_note.SetMinSize(dip_size(self, -1, 2 * 23))
         self.box_extended.Add(self.txt_entry_note, 0, wx.EXPAND, 0)
 
@@ -2802,7 +2805,7 @@ class AboutPanel(wx.Panel):
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None
         s = self.context.asset("material_howto")
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         fsize = 16 if system() == "Darwin" else 10

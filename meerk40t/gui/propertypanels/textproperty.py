@@ -8,10 +8,12 @@ from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxBitmapButton,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListBox,
     wxRadioBox,
     wxStaticText,
@@ -25,11 +27,11 @@ from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePan
 _ = wx.GetTranslation
 
 
-class PromptingComboBox(wx.ComboBox):
+class PromptingComboBox(wxComboBox):
     def __init__(self, parent, choices=None, style=0, **kwargs):
         if choices is None:
             choices = []
-        wx.ComboBox.__init__(
+        wxComboBox.__init__(
             self,
             parent,
             wx.ID_ANY,
@@ -190,7 +192,7 @@ class TextPropertyPanel(ScrolledPanel):
         # We neeed this to avoid a crash under Linux when textselection is called too quickly
         self._islinux = platform.system() == "Linux"
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
         self.label_fonttest = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE

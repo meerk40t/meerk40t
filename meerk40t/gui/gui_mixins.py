@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icon_paint_brush_green,
     icon_warning,
 )
-from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText
+from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
 
 _ = wx.GetTranslation
 
@@ -299,7 +299,7 @@ class Warnings:
 
         label1 = wxStaticText(dlg, wx.ID_ANY, l_hi)
         sizer.Add(label1, 0, wx.EXPAND, 0)
-        info_hi = wx.TextCtrl(
+        info_hi = TextCtrl(
             dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_hi.SetValue(txt_critical)
@@ -307,7 +307,7 @@ class Warnings:
 
         label2 = wxStaticText(dlg, wx.ID_ANY, l_mid)
         sizer.Add(label2, 0, wx.EXPAND, 0)
-        info_mid = wx.TextCtrl(
+        info_mid = TextCtrl(
             dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_mid.SetValue(txt_mid)
@@ -315,7 +315,7 @@ class Warnings:
 
         label3 = wxStaticText(dlg, wx.ID_ANY, l_low)
         sizer.Add(label3, 0, wx.EXPAND, 0)
-        info_low = wx.TextCtrl(
+        info_low = TextCtrl(
             dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_low.SetValue(txt_low)

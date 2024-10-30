@@ -23,10 +23,12 @@ from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     disable_window,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticBitmap,
     wxStaticText,
 )
@@ -142,7 +144,7 @@ class LaserPanel(wx.Panel):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
 
-        self.combo_devices = wx.ComboBox(
+        self.combo_devices = wxComboBox(
             self, wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(
@@ -732,7 +734,7 @@ class JobPanel(wx.Panel):
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self.text_plan = wx.TextCtrl(
+        self.text_plan = TextCtrl(
             self, wx.ID_ANY, _("--- Empty ---"), style=wx.TE_READONLY
         )
         sizer_source.Add(self.text_plan, 2, 0, 0)

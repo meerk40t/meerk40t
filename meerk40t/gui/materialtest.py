@@ -18,6 +18,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListBox,
     wxStaticText,
 )
@@ -45,7 +46,7 @@ class SaveLoadPanel(wx.Panel):
         self.SetSizer(sizer_main)
         sizer_name = wx.BoxSizer(wx.HORIZONTAL)
         lbl_info = wxStaticText(self, wx.ID_ANY, _("Template-Name"))
-        self.txt_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_name = TextCtrl(self, wx.ID_ANY, "")
         self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
         self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
         self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
@@ -210,7 +211,7 @@ class TemplatePanel(wx.Panel):
 
         LABEL_WIDTH = 115
 
-        self.combo_ops = wx.ComboBox(
+        self.combo_ops = wxComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.images = []
@@ -231,7 +232,7 @@ class TemplatePanel(wx.Panel):
                     label += "(" + node.display_label() + ")"
                 self.image_labels.append(label)
 
-        self.combo_images = wx.ComboBox(
+        self.combo_images = wxComboBox(
             self,
             id=wx.ID_ANY,
             choices=self.image_labels,
@@ -246,7 +247,7 @@ class TemplatePanel(wx.Panel):
         self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Labels"))
         self.check_values = wxCheckBox(self, wx.ID_ANY, _("Values"))
 
-        self.combo_param_1 = wx.ComboBox(
+        self.combo_param_1 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.spin_count_1 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
@@ -259,7 +260,7 @@ class TemplatePanel(wx.Panel):
         self.unit_param_1a = wxStaticText(self, wx.ID_ANY, "")
         self.unit_param_1b = wxStaticText(self, wx.ID_ANY, "")
 
-        self.combo_color_1 = wx.ComboBox(
+        self.combo_color_1 = wxComboBox(
             self,
             wx.ID_ANY,
             choices=color_choices,
@@ -267,7 +268,7 @@ class TemplatePanel(wx.Panel):
         )
         self.check_color_direction_1 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
-        self.combo_param_2 = wx.ComboBox(
+        self.combo_param_2 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.spin_count_2 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
@@ -280,7 +281,7 @@ class TemplatePanel(wx.Panel):
         self.unit_param_2a = wxStaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wxStaticText(self, wx.ID_ANY, "")
 
-        self.combo_color_2 = wx.ComboBox(
+        self.combo_color_2 = wxComboBox(
             self,
             wx.ID_ANY,
             choices=color_choices,
@@ -476,7 +477,7 @@ class TemplatePanel(wx.Panel):
             "by creating a testpattern that varies two different parameters."
         )
 
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())

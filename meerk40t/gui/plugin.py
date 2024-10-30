@@ -77,8 +77,7 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
         from meerk40t.gui.themes import Themes
-        force_dark = kernel_root.setting(bool, "force_dark", False)
-        kernel.add_service("themes", Themes(kernel, force_dark=force_dark))
+        kernel.add_service("themes", Themes(kernel))
 
         from meerk40t.gui.guicolors import GuiColors
         kernel.add_service("colors", GuiColors(kernel))

@@ -8,7 +8,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -32,7 +32,7 @@ class BalorControllerPanel(wx.ScrolledWindow):
         self.service = self.context.device
         self._buffer = ""
         self._buffer_lock = threading.Lock()
-        self.text_usb_log = wx.TextCtrl(
+        self.text_usb_log = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.text_usb_log.SetFont(font)

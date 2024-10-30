@@ -21,7 +21,7 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 #     pass
 from meerk40t.gui.themes import Themes
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.gui.wxutils import wxButton, wxStaticText
+from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
@@ -1038,16 +1038,6 @@ class wxMeerK40t(wx.App, Module):
                 "page": "Start",
             },
             {
-                "attr": "force_dark",
-                "object": context.root,
-                "default": False,
-                "type": bool,
-                "label": _("Force Darkmode"),
-                "tip": _("Will force MeerK40t to start in darkmode despite the system settings"),
-                "page": "Start",
-                "signals": "restart",
-            },
-            {
                 "attr": "beep_soundfile",
                 "object": context.root,
                 "type": str,
@@ -1288,7 +1278,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
         label = wxStaticText(dlg, wx.ID_ANY, header)
         sizer.Add(label, 1, wx.EXPAND, 0)
-        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        info = TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
         info.SetValue(body)
         sizer.Add(info, 5, wx.EXPAND, 0)
         btnsizer = wx.StdDialogButtonSizer()

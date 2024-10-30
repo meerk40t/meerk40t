@@ -11,9 +11,11 @@ from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticText,
 )
 from meerk40t.kernel import signal_listener
@@ -69,11 +71,11 @@ class HingePanel(wx.Panel):
         self.last_show_event = 0
         self._Buffer = None
 
-        self.text_origin_x = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_origin_y = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_height = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.combo_style = wx.ComboBox(
+        self.text_origin_x = TextCtrl(self, wx.ID_ANY, "")
+        self.text_origin_y = TextCtrl(self, wx.ID_ANY, "")
+        self.text_width = TextCtrl(self, wx.ID_ANY, "")
+        self.text_height = TextCtrl(self, wx.ID_ANY, "")
+        self.combo_style = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
         self.button_default = wxButton(self, wx.ID_ANY, "D")
@@ -90,7 +92,7 @@ class HingePanel(wx.Panel):
         self.slider_rotate_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_rotate = wx.TextCtrl(
+        self.text_rotate = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
 
@@ -109,7 +111,7 @@ class HingePanel(wx.Panel):
         self.slider_width_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_cell_width = wx.TextCtrl(
+        self.text_cell_width = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         self.slider_height = wx.Slider(
@@ -126,7 +128,7 @@ class HingePanel(wx.Panel):
         self.slider_height_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_cell_height = wx.TextCtrl(
+        self.text_cell_height = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         self.slider_offset_x = wx.Slider(
@@ -141,7 +143,7 @@ class HingePanel(wx.Panel):
         self.slider_offx_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_cell_offset_x = wx.TextCtrl(
+        self.text_cell_offset_x = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         self.slider_offset_y = wx.Slider(
@@ -156,7 +158,7 @@ class HingePanel(wx.Panel):
         self.slider_offy_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_cell_offset_y = wx.TextCtrl(
+        self.text_cell_offset_y = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         # Slider times ten
@@ -810,7 +812,7 @@ class HingePanel(wx.Panel):
                 except ValueError:
                     self.in_change_event = False
                     return
-            elif isinstance(origin, wx.TextCtrl):
+            elif isinstance(origin, TextCtrl):
                 newvalue = origin.GetValue().strip().lower()
                 # Some basic checks:
                 # a) Empty?

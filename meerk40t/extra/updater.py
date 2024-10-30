@@ -490,7 +490,7 @@ def plugin(kernel, lifecycle):
                         import wx
 
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-                        from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticTexts
+                        from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
 
                         has_wx = True
                     except ImportError:
@@ -515,7 +515,7 @@ def plugin(kernel, lifecycle):
 
                             label = wxStaticText(dlg, wx.ID_ANY, header)
                             sizer.Add(label, 0, wx.EXPAND, 0)
-                            info = wx.TextCtrl(
+                            info = TextCtrl(
                                 dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
                             )
                             info.SetValue(content)

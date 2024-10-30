@@ -25,7 +25,7 @@ class TCPController(MWindow):
 
         self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_status = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_ip_host = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="empty"
         )
@@ -38,8 +38,8 @@ class TCPController(MWindow):
         self.text_port.lower_limit_err = 0
         self.text_port.upper_limit_err = 65535
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
-        self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_buffer_length = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_buffer_max = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()

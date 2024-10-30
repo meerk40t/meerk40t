@@ -29,6 +29,7 @@ from .wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticBitmap,
     wxStaticText,
 )
@@ -74,7 +75,7 @@ class BasicOpPanel(wx.Panel):
             _("Op inherits color"),
             _("Elem inherits color"),
         ]
-        self.combo_apply_color = wx.ComboBox(
+        self.combo_apply_color = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,

@@ -19,7 +19,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import wxButton, wxBitmapButton, wxCheckBox, wxListCtrl
+from meerk40t.gui.wxutils import TextCtrl, wxButton, wxBitmapButton, wxCheckBox, wxListCtrl
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
@@ -1064,7 +1064,7 @@ class CameraURIPanel(wx.Panel):
             context=self.context, list_name="list_camerauri",
         )
         self.button_add = wxButton(self, wx.ID_ANY, _("Add URI"))
-        self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_uri = TextCtrl(self, wx.ID_ANY, "")
 
         self.__set_properties()
         self.__do_layout()

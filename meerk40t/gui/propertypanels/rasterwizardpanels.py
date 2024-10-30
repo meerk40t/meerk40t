@@ -3,7 +3,7 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -47,13 +47,13 @@ class ContrastPanel(wx.Panel):
         self.slider_contrast_contrast = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_contrast_contrast = wx.TextCtrl(
+        self.text_contrast_contrast = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_contrast_brightness = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_contrast_brightness = wx.TextCtrl(
+        self.text_contrast_brightness = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -198,19 +198,19 @@ class HalftonePanel(wx.Panel):
         self.slider_halftone_sample = wx.Slider(
             self, wx.ID_ANY, 10, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_halftone_sample = wx.TextCtrl(
+        self.text_halftone_sample = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_halftone_angle = wx.Slider(
             self, wx.ID_ANY, 22, 0, 90, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_halftone_angle = wx.TextCtrl(
+        self.text_halftone_angle = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_halftone_oversample = wx.Slider(
             self, wx.ID_ANY, 2, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_halftone_oversample = wx.TextCtrl(
+        self.text_halftone_oversample = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -582,19 +582,19 @@ class SharpenPanel(wx.Panel):
         self.slider_sharpen_percent = wx.Slider(
             self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_sharpen_percent = wx.TextCtrl(
+        self.text_sharpen_percent = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_sharpen_radius = wx.Slider(
             self, wx.ID_ANY, 20, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_sharpen_radius = wx.TextCtrl(
+        self.text_sharpen_radius = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_sharpen_threshold = wx.Slider(
             self, wx.ID_ANY, 6, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_sharpen_threshold = wx.TextCtrl(
+        self.text_sharpen_threshold = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -775,7 +775,7 @@ class GammaPanel(wx.Panel):
         self.slider_gamma_factor = wx.Slider(
             self, wx.ID_ANY, 100, 0, 500, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_gamma_factor = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_gamma_factor = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()

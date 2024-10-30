@@ -475,16 +475,16 @@ class LinePropPanel(wx.Panel):
         }
         linestylechoices = [_(e) for e in self.dash_patterns]
         linestylechoices.append(_("User defined"))
-        self.combo_cap = wx.ComboBox(
+        self.combo_cap = wxComboBox(
             self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_join = wx.ComboBox(
+        self.combo_join = wxComboBox(
             self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_fill = wx.ComboBox(
+        self.combo_fill = wxComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_linestyle = wx.ComboBox(
+        self.combo_linestyle = wxComboBox(
             self,
             wx.ID_ANY,
             choices=linestylechoices,
@@ -759,7 +759,7 @@ class StrokeWidthPanel(wx.Panel):
         self.text_width.SetMaxSize(dip_size(self, 100, -1))
 
         self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
-        self.combo_units = wx.ComboBox(
+        self.combo_units = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.unit_choices,

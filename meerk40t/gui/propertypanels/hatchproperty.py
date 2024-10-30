@@ -117,7 +117,7 @@ class HatchPropertyPanel(ScrolledPanel):
         main_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.fills = list(self.context.match("hatch", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
+        self.combo_fill_style = wxComboBox(
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)

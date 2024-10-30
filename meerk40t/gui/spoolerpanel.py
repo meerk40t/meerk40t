@@ -19,6 +19,7 @@ from meerk40t.gui.wxutils import (
     EditableListCtrl,
     HoverButton,
     wxButton,
+    wxComboBox,
     wxListCtrl,
     wxStaticText,
 )
@@ -110,7 +111,7 @@ class SpoolerPanel(wx.Panel):
         self.splitter.SetMinimumPaneSize(50)
         self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
         self.splitter.SetSashPosition(self.context.spooler_sash_position)
-        self.combo_device = wx.ComboBox(
+        self.combo_device = wxComboBox(
             self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(0)  # All by default...

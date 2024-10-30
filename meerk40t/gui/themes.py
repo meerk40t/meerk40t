@@ -37,15 +37,34 @@ def is_a_dark_color(c1):
     return color_distance(c1, wx.BLACK) < color_distance(c1, wx.WHITE)
 
 class Themes(Service):
-    def __init__(self, kernel, index=None, force_dark=False, *args, **kwargs):
+    def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(self, kernel, "themes" if index is None else f"themes{index}")
-        self.force_dark = force_dark
+        _ = wx.GetTranslation
+        choices = [
+            {
+                "attr": "forced_theme",
+                "object": kernel.root,
+                "default": "default",
+                "type": str,
+                "label": _("UI-Colours"),
+                "style": "option",
+                "choices": ("default", "dark", "light"),
+                "display": (_("System"), _("Dark"), _("Light")),
+                "tip": _("Will force MeerK40t to start in dark/lightmode despite the system settings"),
+                "page": "Start",
+                "signals": "restart",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
+
+        self.forced_theme = kernel.root.forced_theme
+
         self.registered_themes = {
             "system": self.load_system_default,
         }
         self._theme = None
         self._dark = False
-        self._theme_properties = dict()
+        self._theme_properties = {}
         self.theme = "system"
 
     @property
@@ -70,15 +89,20 @@ class Themes(Service):
 
     def load_system_default(self):
         self._theme = "system"
-        res1 = wx.SystemSettings().GetAppearance().IsDark()
-        res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         # print (f"wx claims: {res1}, we think: {res2}, overload: {self.force_dark}")
-        self._dark = res1 or res2 or self.force_dark
+        if self.forced_theme == "dark":
+            self._dark = True
+        elif self.forced_theme == "light":
+            self._dark = False
+        else:
+            res1 = wx.SystemSettings().GetAppearance().IsDark()
+            res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+            self._dark = res1 or res2
         from platform import system
 
-        buggy_darwin = bool(system() == "Darwin" and not self._dark)
+        buggy_darwin = system() == "Darwin" and not self._dark
 
-        self._theme_properties = dict()
+        self._theme_properties = {}
         tp = self._theme_properties
         # Just a scaffold, will be extended later
         tp["win_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
@@ -94,7 +118,25 @@ class Themes(Service):
         tp["highlight"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
         tp["inactive_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         tp["inactive_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTIONTEXT)
+        # for key, col in tp.items():
+        #     print (f'tp["{key}"] = wx.Colour({col.red}, {col.green}, {col.blue}, {col.alpha})')
 
+        if not self.dark and is_a_dark_color(tp["win_bg"]):
+            base_bg = wx.Colour(255, 255, 255)
+            base_fg = wx.Colour(0, 0, 0)
+            tp["win_bg"] = base_bg
+            tp["win_fg"] = base_fg
+            tp["button_bg"] = wx.Colour(240, 240, 240, 255)
+            tp["button_fg"] = base_fg
+            tp["text_bg"] = base_bg
+            tp["text_fg"] = base_fg
+            tp["list_bg"] = base_bg
+            tp["list_fg"] = base_fg
+            tp["label_bg"] = base_bg
+            tp["label_fg"] = base_fg
+            tp["highlight"] = wx.Colour(0, 120, 215, 255)
+            tp["inactive_bg"] = wx.Colour(191, 205, 219, 255)
+            tp["inactive_fg"] = base_fg        
         if self.dark and is_a_bright_color(tp["win_bg"]):
             base_bg = wx.Colour(23, 23, 23)
             base_fg = wx.Colour(255, 255, 255, 216)

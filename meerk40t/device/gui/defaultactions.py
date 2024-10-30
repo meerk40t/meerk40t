@@ -86,12 +86,12 @@ class DefaultActionPanel(wx.Panel):
         self.prepend_list = wxListCtrl(
             self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL, context=self.context,
         )
-        self.text_param_prepend = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_param_prepend = TextCtrl(self, wx.ID_ANY)
 
         self.append_list = wxListCtrl(
             self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL, context=self.context,
         )
-        self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_param_append = TextCtrl(self, wx.ID_ANY)
         self.button_del_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_up_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_down_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)

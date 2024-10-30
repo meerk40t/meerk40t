@@ -24,11 +24,13 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxListBox,
     wxListCtrl,
     wxStaticBitmap,
     wxStaticText,
     wxToggleButton,
+    TextCtrl,
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
@@ -77,7 +79,7 @@ class FontGlyphPicker(wx.Dialog):
         self.images = wx.ImageList()
         self.images.Create(width=self.icon_size, height=self.icon_size)
         self.list_glyphs.AssignImageList(self.images, wx.IMAGE_LIST_SMALL)
-        self.txt_result = wx.TextCtrl(self, wx.ID_ANY)
+        self.txt_result = TextCtrl(self, wx.ID_ANY)
         mainsizer.Add(self.list_glyphs, 1, wx.EXPAND, 0)
         mainsizer.Add(self.txt_result, 0, wx.EXPAND, 0)
 
@@ -366,7 +368,7 @@ class LineTextPropertyPanel(wx.Panel):
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
         sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
-        self.text_text = wx.TextCtrl(
+        self.text_text = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
         )
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
@@ -964,7 +966,7 @@ class PanelFontManager(wx.Panel):
 
         self.font_infos = []
 
-        self.text_info = wx.TextCtrl(
+        self.text_info = TextCtrl(
             self,
             wx.ID_ANY,
             _(
@@ -986,7 +988,7 @@ class PanelFontManager(wx.Panel):
         )
         mainsizer.Add(sizer_directory, 0, wx.EXPAND, 0)
 
-        self.text_fontdir = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_fontdir = TextCtrl(self, wx.ID_ANY, "")
         sizer_directory.Add(self.text_fontdir, 1, wx.EXPAND, 0)
         self.text_fontdir.SetToolTip(
             _(
@@ -1046,7 +1048,7 @@ class PanelFontManager(wx.Panel):
             _("Hershey Fonts - #2"),
             _("Autocad-SHX-Fonts"),
         ]
-        self.combo_webget = wx.ComboBox(
+        self.combo_webget = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,

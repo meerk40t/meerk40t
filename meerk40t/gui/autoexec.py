@@ -7,7 +7,7 @@ from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_circled_play
 from .mwindow import MWindow
-from .wxutils import wxCheckBox, wxButton, dip_size
+from .wxutils import wxCheckBox, wxButton, dip_size, TextCtrl
 
 _ = wx.GetTranslation
 
@@ -20,7 +20,7 @@ class AutoExecPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
         self.SetHelpText("autoexec")
         self.pane = pane
-        self.text_autoexec = wx.TextCtrl(
+        self.text_autoexec = TextCtrl(
             self,
             wx.ID_ANY,
             "",

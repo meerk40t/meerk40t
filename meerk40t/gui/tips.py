@@ -23,7 +23,7 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
+from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -61,7 +61,7 @@ class TipPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(dip_size(self, 250, -1))
-        self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
+        self.no_image_message = TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
                 "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
@@ -70,7 +70,7 @@ class TipPanel(wx.Panel):
         self.no_image_message.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
         # self.image_tip.SetSize(wx.Size(250, -1))
-        self.text_tip = wx.TextCtrl(
+        self.text_tip = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
