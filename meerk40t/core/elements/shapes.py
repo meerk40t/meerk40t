@@ -848,7 +848,9 @@ def init_commands(kernel):
         self.validate_selected_area()
 
     @self.console_option("douglas", "d", type=bool, action="store_true", default=False)
-    @self.console_option("visvalingam", "v", type=bool, action="store_true", default=False)
+    @self.console_option(
+        "visvalingam", "v", type=bool, action="store_true", default=False
+    )
     @self.console_option(
         "tolerance",
         "t",
@@ -859,7 +861,15 @@ def init_commands(kernel):
         "simplify", input_type=("elements", None), output_type="elements"
     )
     def simplify_path(
-        command, channel, _, data=None, tolerance=None, douglas=None, visvalingam=None, post=None, **kwargs
+        command,
+        channel,
+        _,
+        data=None,
+        tolerance=None,
+        douglas=None,
+        visvalingam=None,
+        post=None,
+        **kwargs,
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
