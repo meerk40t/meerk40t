@@ -120,9 +120,7 @@ class EngraveOpNode(Node, Parameters):
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return any(
-                drag_node.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes)
-            )
+            return any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
