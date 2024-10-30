@@ -1272,6 +1272,7 @@ class EditableListCtrl(wxListCtrl, listmix.TextEditMixin):
         """Constructor"""
         wxListCtrl.__init__(self, parent=parent, ID=ID, pos=pos, size=size, style=style, context=context, list_name=list_name)
         listmix.TextEditMixin.__init__(self)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
 
 
 class HoverButton(wxButton):

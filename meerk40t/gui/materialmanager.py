@@ -34,6 +34,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxComboBox,
     wxStaticText,
+    wxTreeCtrl,
 )
 from meerk40t.kernel.kernel import get_safe_path
 from meerk40t.kernel.settings import Settings
@@ -353,7 +354,7 @@ class MaterialPanel(ScrolledPanel):
         result_box = StaticBoxSizer(
             self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL
         )
-        self.tree_library = wx.TreeCtrl(
+        self.tree_library = wxTreeCtrl(
             self,
             wx.ID_ANY,
             style=wx.BORDER_SUNKEN | wx.TR_HAS_BUTTONS
@@ -368,6 +369,7 @@ class MaterialPanel(ScrolledPanel):
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
             context=self.context, list_name="list_materialmanager"
         )
+        
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
         self.list_preview.AppendColumn(
             _("Operation"),
