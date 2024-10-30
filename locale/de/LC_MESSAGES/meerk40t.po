@@ -19113,3 +19113,39 @@ msgstr "Soll die Anzahl der einzelne Punkte auf dem Umriss verringert werden?"
 #: meerk40t/gui/propertypanels/imageproperty.py:562
 msgid "Contours generated: {count} in {duration}"
 msgstr "{count} Umrisse erzeugt in {duration}"
+
+#: meerk40t/gui/wxmscene.py:1304
+msgid "Detect contours on background"
+msgstr "Erkenne Umrisse auf Kamera-Hintergrund"
+
+#: meerk40t/gui/themes.py:49
+msgid "UI-Colours"
+msgstr "Farbschema"
+
+#: meerk40t/gui/themes.py:52
+msgid "System"
+msgstr "System"
+
+#: meerk40t/gui/themes.py:52
+msgid "Dark"
+msgstr "Dunkel"
+
+#: meerk40t/gui/themes.py:52
+msgid "Light"
+msgstr "Hell"
+
+#: meerk40t/gui/themes.py:53
+msgid "Will force MeerK40t to start in dark/lightmode despite the system settings"
+msgstr "Das zwingt MeerK40t im dunklen/hellen Mode zu starten, unabhängig von den Systemeinstellungen"
+
+#: meerk40t/gui/wxmeerk40t.py:1022
+msgid "This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first."
+msgstr "Dies nutzt das 'play' Kommando, welches Teil des sox Paket ist,\nevtl. muss dieses mit 'sudo apt install sox' installiert werden."
+
+#: meerk40t/gui/wxmeerk40t.py:1047
+msgid "Soundfile"
+msgstr "Sounddatei"
+
+#: meerk40t/gui/wxmeerk40t.py:1048
+msgid "Define the soundfile MeerK40t will play when the 'beep' command is issued"
+msgstr "Legt die Sounddatei fest, die MeerK40t beim 'beep' Kommando abspielt"
