@@ -48,6 +48,8 @@ class ImageOpNode(Node, Parameters):
         self.stopop = True
         self.label = "Image"
         self.overrule_dpi = False
+        self._allowed_elements_dnd = ("elem image",)
+        self._allowed_elements = ("elem image",)
 
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
@@ -112,15 +114,15 @@ class ImageOpNode(Node, Parameters):
             # Will be dealt with in elements -
             # we don't implement a more sophisticated routine here
             return False
-        if hasattr(drag_node, "as_image") and drag_node.type in self._allowed_elements_dnd:
+        if hasattr(drag_node, "as_image"):
             return True
-        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+        elif drag_node.type == "reference" and hasattr(drag_node.node, "as_image"):
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return any(drag_node.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+            return any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
