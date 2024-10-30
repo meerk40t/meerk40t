@@ -1796,15 +1796,16 @@ def init_commands(kernel):
             data = list(data)
         elements_nodes = []
         elems = []
+        groups= []
         for node in data:
             node_label = node.label
-            node_attributes = []
+            node_attributes = {}
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
-                    node_attributes.append([attrib, oldval])
+                    node_attributes[attrib] = oldval
             group_node = node.replace_node(type="group", label=node_label)
-
+            groups.append(group_node)
             try:
                 if hasattr(node, "final_geometry"):
                     geometry = node.final_geometry()
@@ -1817,13 +1818,20 @@ def init_commands(kernel):
             for subpath in geometry.as_subpaths():
                 subpath.ensure_proper_subpaths()
                 idx += 1
-                subnode = group_node.add(geometry=subpath, type="elem path", label=f"{node_label}-{idx}")
-                for item in node_attributes:
-                    setattr(subnode, item[0], item[1])
+                subnode = group_node.add(
+                    geometry=subpath, 
+                    type="elem path", 
+                    label=f"{node_label}-{idx}",
+                    stroke=node_attributes.get("stroke", None),
+                    fill=node_attributes.get("fill", None),
+                )
+                for key, value in node_attributes.items():
+                    setattr(subnode, key, value)
 
                 elems.append(subnode)
             elements_nodes.append(group_node)
         post.append(classify_new(elems))
+        self.signal("element_property_reload", groups)
         return "elements", elements_nodes
 
     # --------------------------- END COMMANDS ------------------------------
