@@ -19,7 +19,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import wxButton, wxBitmapButton, wxCheckBox, wxListCtrl
+from meerk40t.gui.wxutils import TextCtrl, wxButton, wxBitmapButton, wxCheckBox, wxListCtrl
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
