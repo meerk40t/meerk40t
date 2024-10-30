@@ -89,14 +89,14 @@ class Themes(Service):
 
     def load_system_default(self):
         self._theme = "system"
-        res1 = wx.SystemSettings().GetAppearance().IsDark()
-        res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         # print (f"wx claims: {res1}, we think: {res2}, overload: {self.force_dark}")
         if self.forced_theme == "dark":
             self._dark = True
-        elif self.forced_theme == "dark":
+        elif self.forced_theme == "light":
             self._dark = False
         else:
+            res1 = wx.SystemSettings().GetAppearance().IsDark()
+            res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
             self._dark = res1 or res2
         from platform import system
 
@@ -118,11 +118,25 @@ class Themes(Service):
         tp["highlight"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
         tp["inactive_bg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         tp["inactive_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTIONTEXT)
-        for key, col in tp.items():
-            print (f'tp["{key}"] = wx.Colour({col.red}, {col.green}, {col.blue}, {col.alpha})')
+        # for key, col in tp.items():
+        #     print (f'tp["{key}"] = wx.Colour({col.red}, {col.green}, {col.blue}, {col.alpha})')
 
         if not self.dark and is_a_dark_color(tp["win_bg"]):
-            base_bg = wx.Colour()
+            base_bg = wx.Colour(255, 255, 255)
+            base_fg = wx.Colour(0, 0, 0)
+            tp["win_bg"] = base_bg
+            tp["win_fg"] = base_fg
+            tp["button_bg"] = wx.Colour(240, 240, 240, 255)
+            tp["button_fg"] = base_fg
+            tp["text_bg"] = base_bg
+            tp["text_fg"] = base_fg
+            tp["list_bg"] = base_bg
+            tp["list_fg"] = base_fg
+            tp["label_bg"] = base_bg
+            tp["label_fg"] = base_fg
+            tp["highlight"] = wx.Colour(0, 120, 215, 255)
+            tp["inactive_bg"] = wx.Colour(191, 205, 219, 255)
+            tp["inactive_fg"] = base_fg        
         if self.dark and is_a_bright_color(tp["win_bg"]):
             base_bg = wx.Colour(23, 23, 23)
             base_fg = wx.Colour(255, 255, 255, 216)
