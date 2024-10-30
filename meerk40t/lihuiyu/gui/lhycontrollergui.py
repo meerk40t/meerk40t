@@ -14,6 +14,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
@@ -42,30 +43,30 @@ class LihuiyuControllerPanel(ScrolledPanel):
             connectivity = f"Network: {self.context.address}:{self.context.port}"
         else:
             connectivity = "USB"
-        self.text_connection_status = wx.TextCtrl(
+        self.text_connection_status = TextCtrl(
             self, wx.ID_ANY, connectivity, style=wx.TE_READONLY
         )
         # self.button_controller_control = wxButton(
         #     self, wx.ID_ANY, _("Start Controller")
         # )
         # self.button_controller_control.function = lambda: self.context("start\n")
-        # self.text_controller_status = wx.TextCtrl(
+        # self.text_controller_status = TextCtrl(
         #     self, wx.ID_ANY, "", style=wx.TE_READONLY
         # )
-        self.packet_count_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.rejected_packet_count_text = wx.TextCtrl(
+        self.packet_count_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.rejected_packet_count_text = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_packet_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_2 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_packet_info = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_0 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_1 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_desc = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_2 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_3 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_4 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_5 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.checkbox_show_usb_log = wxCheckBox(self, wx.ID_ANY, _("Show USB Log"))
-        self.text_usb_log = wx.TextCtrl(
+        self.text_usb_log = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.button_clear_stats = wxButton(self, wx.ID_ANY, _("Reset\nstatistics"))

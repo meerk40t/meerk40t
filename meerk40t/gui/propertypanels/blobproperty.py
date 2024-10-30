@@ -3,7 +3,7 @@ import wx
 from meerk40t.core.node.blobnode import BlobNode
 from meerk40t.gui.icons import icons8_vector
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, wxRadioBox
+from meerk40t.gui.wxutils import ScrolledPanel, wxRadioBox, TextCtrl
 
 from .attributes import IdPanel
 
@@ -33,7 +33,7 @@ class BlobPropertyPanel(ScrolledPanel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.option_view.SetSelection(0)
-        self.text_blob = wx.TextCtrl(
+        self.text_blob = TextCtrl(
             self, id=wx.ID_ANY, value="", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.Bind(wx.EVT_RADIOBOX, self.on_option_view, self.option_view)

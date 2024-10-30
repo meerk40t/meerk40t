@@ -30,7 +30,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
-from meerk40t.gui.wxutils import wxButton, wxStaticText
+from meerk40t.gui.wxutils import wxButton, wxStaticText, TextCtrl
 from meerk40t.kernel import Job, get_safe_path, lookup_listener, signal_listener
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
@@ -251,7 +251,7 @@ class MeerK40t(MWindow):
             pass
         # print(self.GetDPIScaleFactor())
         # What is the standardsize of a textbox?
-        testbox = wx.TextCtrl(self, wx.ID_ANY)
+        testbox = TextCtrl(self, wx.ID_ANY)
         tb_size = testbox.Size
         testbox.Destroy()
         factor = 4 * tb_size[1] / 100.0

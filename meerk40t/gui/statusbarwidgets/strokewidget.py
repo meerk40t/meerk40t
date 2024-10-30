@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.wxutils import wxCheckBox, wxStaticBitmap, wxStaticText
+from meerk40t.gui.wxutils import TextCtrl, wxCheckBox, wxStaticBitmap, wxStaticText
 
 from .statusbarwidget import StatusBarWidget
 
@@ -127,7 +127,7 @@ class StrokeWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self.spin_width = wx.TextCtrl(
+        self.spin_width = TextCtrl(
             self.parent, id=wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
         )
         self.spin_width.SetFont(

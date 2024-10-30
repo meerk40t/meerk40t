@@ -1064,7 +1064,7 @@ class CameraURIPanel(wx.Panel):
             context=self.context, list_name="list_camerauri",
         )
         self.button_add = wxButton(self, wx.ID_ANY, _("Add URI"))
-        self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_uri = TextCtrl(self, wx.ID_ANY, "")
 
         self.__set_properties()
         self.__do_layout()

@@ -33,6 +33,7 @@ from meerk40t.gui.icons import (
 from meerk40t.gui.ribbon import RibbonBarPanel
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
@@ -738,7 +739,7 @@ class RibbonEditor(wx.Panel):
         sizer_ribbons.Add(self.check_labels, 0, wx.EXPAND, 0)
         self.list_pages = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
 
-        self.text_param_page = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
+        self.text_param_page = TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
 
         self.list_panels = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         bsize = dip_size(self, 30, 30)
@@ -1371,25 +1372,25 @@ class RibbonEditor(wx.Panel):
 
         line1 = wx.BoxSizer(wx.HORIZONTAL)
         label1 = wxStaticText(dlg, wx.ID_ANY, _("Label"))
-        txt_label = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["label"])
+        txt_label = TextCtrl(dlg, wx.ID_ANY, value=entry["label"])
         line1.Add(label1, 0, wx.EXPAND, 0)
         line1.Add(txt_label, 1, wx.EXPAND, 0)
 
         line2 = wx.BoxSizer(wx.HORIZONTAL)
         label2 = wxStaticText(dlg, wx.ID_ANY, _("Tooltip"))
-        txt_tip = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["tip"])
+        txt_tip = TextCtrl(dlg, wx.ID_ANY, value=entry["tip"])
         line2.Add(label2, 0, wx.EXPAND, 0)
         line2.Add(txt_tip, 1, wx.EXPAND, 0)
 
         line3 = wx.BoxSizer(wx.HORIZONTAL)
         label3 = wxStaticText(dlg, wx.ID_ANY, _("Action left click"))
-        txt_action_left = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["action_left"])
+        txt_action_left = TextCtrl(dlg, wx.ID_ANY, value=entry["action_left"])
         line3.Add(label3, 0, wx.EXPAND, 0)
         line3.Add(txt_action_left, 1, wx.EXPAND, 0)
 
         line4 = wx.BoxSizer(wx.HORIZONTAL)
         label4 = wxStaticText(dlg, wx.ID_ANY, _("Action right click"))
-        txt_action_right = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["action_right"])
+        txt_action_right = TextCtrl(dlg, wx.ID_ANY, value=entry["action_right"])
         line4.Add(label4, 0, wx.EXPAND, 0)
         line4.Add(txt_action_right, 1, wx.EXPAND, 0)
 

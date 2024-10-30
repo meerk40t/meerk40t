@@ -1,8 +1,8 @@
 import wx
 
-from ..icons import icons8_comments
-from ..mwindow import MWindow
-
+from meerk40t.gui.icons import icons8_comments
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import TextCtrl
 _ = wx.GetTranslation
 
 
@@ -36,8 +36,8 @@ class ConsolePropertiesPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         self.console_operation = node
-        # self.command_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.command_text = wx.TextCtrl(
+        # self.command_name = TextCtrl(self, wx.ID_ANY, "")
+        self.command_text = TextCtrl(
             self,
             wx.ID_ANY,
             "Command text",

@@ -178,7 +178,7 @@ class KerfPanel(wx.Panel):
         info_pic = wxStaticBitmap(
             self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE)
         )
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())

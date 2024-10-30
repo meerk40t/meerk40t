@@ -45,7 +45,7 @@ class SaveLoadPanel(wx.Panel):
         self.SetSizer(sizer_main)
         sizer_name = wx.BoxSizer(wx.HORIZONTAL)
         lbl_info = wxStaticText(self, wx.ID_ANY, _("Template-Name"))
-        self.txt_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_name = TextCtrl(self, wx.ID_ANY, "")
         self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
         self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
         self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
@@ -476,7 +476,7 @@ class TemplatePanel(wx.Panel):
             "by creating a testpattern that varies two different parameters."
         )
 
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())

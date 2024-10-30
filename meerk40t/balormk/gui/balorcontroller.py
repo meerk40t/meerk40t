@@ -32,7 +32,7 @@ class BalorControllerPanel(wx.ScrolledWindow):
         self.service = self.context.device
         self._buffer = ""
         self._buffer_lock = threading.Lock()
-        self.text_usb_log = wx.TextCtrl(
+        self.text_usb_log = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.text_usb_log.SetFont(font)

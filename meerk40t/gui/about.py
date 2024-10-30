@@ -13,6 +13,7 @@ from .wxutils import (
     wxButton,
     wxListCtrl,
     wxStaticText,
+    TextCtrl,
 )
 
 _ = wx.GetTranslation
@@ -1548,9 +1549,9 @@ class InformationPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
-        self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.os_version = wx.TextCtrl(
+        self.mk_version = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.config_path = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.os_version = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         self.os_version.SetMinSize(wx.Size(-1, 5 * 25))

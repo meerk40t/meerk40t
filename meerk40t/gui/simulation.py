@@ -489,7 +489,7 @@ class CutcodePanel(wx.Panel):
         )
         self.last_selected = []
         self.display_highlighted_only = False
-        # self.text_operation_param = wx.TextCtrl(
+        # self.text_operation_param = TextCtrl(
         #     self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         # )
         # self.text_operation_param.SetToolTip(
@@ -887,45 +887,45 @@ class SimulationPanel(wx.Panel, Job):
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
-        self.text_distance_laser = wx.TextCtrl(
+        self.text_distance_laser = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_distance_travel = wx.TextCtrl(
+        self.text_distance_travel = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_distance_total = wx.TextCtrl(
+        self.text_distance_total = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_extra = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_distance_laser_step = wx.TextCtrl(
+        self.text_time_laser = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_travel = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_extra = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_total = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_distance_laser_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_distance_travel_step = wx.TextCtrl(
+        self.text_distance_travel_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_distance_total_step = wx.TextCtrl(
+        self.text_distance_total_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_laser_step = wx.TextCtrl(
+        self.text_time_laser_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_travel_step = wx.TextCtrl(
+        self.text_time_travel_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_extra_step = wx.TextCtrl(
+        self.text_time_extra_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_total_step = wx.TextCtrl(
+        self.text_time_total_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.button_play = wxButton(self, wx.ID_ANY, "")
         self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
-        self.text_playback_speed = wx.TextCtrl(
+        self.text_playback_speed = TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
         self.radio_cut = wx.RadioButton(self, wx.ID_ANY, _("Steps"))

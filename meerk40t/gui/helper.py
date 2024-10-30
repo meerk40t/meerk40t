@@ -11,7 +11,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.wxutils import wxCheckBox  # , wxButton
+from meerk40t.gui.wxutils import wxCheckBox, TextCtrl  # , wxButton
 from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
@@ -49,7 +49,7 @@ class HelperPanel(wx.Panel):
         self.context = context
         self.context.themes.set_window_colors(self)
         self._lock_updates = None
-        self.text_info = wx.TextCtrl(
+        self.text_info = TextCtrl(
             self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.check_allow = wxCheckBox(self, wx.ID_ANY, _("Display control-information"))

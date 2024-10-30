@@ -207,7 +207,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         if dtype == bool:
                             control = wxCheckBox(dlg, wx.ID_ANY)
                         else:
-                            control = wx.TextCtrl(dlg, wx.ID_ANY)
+                            control = TextCtrl(dlg, wx.ID_ANY)
                             control.SetMaxSize(dip_size(dlg, 75, -1))
                         fields.append(control)
                         sizer.Add(control, 0, wx.EXPAND, 0)

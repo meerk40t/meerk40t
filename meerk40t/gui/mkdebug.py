@@ -229,9 +229,9 @@ class DebugTreePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
-        self.lb_selected = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
-        self.lb_emphasized = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
-        self.txt_first = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.lb_selected = TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.lb_emphasized = TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.txt_first = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -566,7 +566,7 @@ class DebugWindowPanel(wx.Panel):
             choices=("Option 1", "Option 2", "Option 3"),
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        text_left = wx.TextCtrl(self, wx.ID_ANY, "")
+        text_left = TextCtrl(self, wx.ID_ANY, "")
         check_left = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_left = wx.Button(self, wx.ID_ANY, "A button")
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")

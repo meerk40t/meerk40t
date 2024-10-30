@@ -855,10 +855,10 @@ class InfoPanel(wx.Panel):
             self, wx.ID_ANY, _("Est. burn-time:"), wx.HORIZONTAL
         )
 
-        self.text_children = wx.TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
+        self.text_children = TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
         self.text_children.SetMinSize(dip_size(self, 25, -1))
         self.text_children.SetMaxSize(dip_size(self, 55, -1))
-        self.text_time = wx.TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
+        self.text_time = TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
         self.text_time.SetMinSize(dip_size(self, 55, -1))
         self.text_time.SetMaxSize(dip_size(self, 100, -1))
         self.text_children.SetToolTip(

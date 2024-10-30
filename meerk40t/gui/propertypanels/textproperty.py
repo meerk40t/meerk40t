@@ -8,6 +8,7 @@ from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxBitmapButton,
     wxButton,
@@ -190,7 +191,7 @@ class TextPropertyPanel(ScrolledPanel):
         # We neeed this to avoid a crash under Linux when textselection is called too quickly
         self._islinux = platform.system() == "Linux"
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
         self.label_fonttest = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE

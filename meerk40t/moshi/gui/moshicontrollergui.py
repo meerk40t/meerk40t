@@ -10,6 +10,7 @@ from meerk40t.gui.icons import (
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
@@ -33,33 +34,33 @@ class MoshiControllerPanel(wx.Panel):
         self.SetHelpText("moshicontroller")
 
         self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
-        self.text_connection_status = wx.TextCtrl(
+        self.text_connection_status = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.checkbox_mock_usb = wxCheckBox(
             self, wx.ID_ANY, _("Mock USB Connection Mode")
         )
-        self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_device_index = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
-        self.text_device_address = wx.TextCtrl(
+        self.text_device_address = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
-        self.text_device_bus = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_device_bus = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
-        self.text_device_version = wx.TextCtrl(
+        self.text_device_version = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
-        self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_2 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_0 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_1 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_desc = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_2 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_3 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_4 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_byte_5 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.checkbox_show_usb_log = wxCheckBox(self, wx.ID_ANY, _("Show USB Log"))
-        self.text_usb_log = wx.TextCtrl(
+        self.text_usb_log = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
 

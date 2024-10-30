@@ -716,10 +716,10 @@ class CropPanel(wx.Panel):
         self.slider_bottom = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_left = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_right = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_top = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_bottom = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_left = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_right = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_top = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_bottom = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -1816,23 +1816,23 @@ class ImagePropertyPanel(ScrolledPanel):
         self.slider_grayscale_red = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_red = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_grayscale_red = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_grayscale_green = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_green = wx.TextCtrl(
+        self.text_grayscale_green = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_grayscale_blue = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_blue = wx.TextCtrl(
+        self.text_grayscale_blue = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_grayscale_lightness = wx.Slider(
             self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_lightness = wx.TextCtrl(
+        self.text_grayscale_lightness = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 

@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.wxutils import StaticBoxSizer, wxButton
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, wxButton
 from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
 
 _ = wx.GetTranslation
@@ -17,7 +17,7 @@ class RegBranchPanel(wx.Panel):
         self.context = context
         self.context.themes.set_window_colors(self)
         self.node = node
-        self.text_elements = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_elements = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.button_visible = wxButton(self, wx.ID_ANY, _("Toggle"))
         self.button_visible.SetToolTip(_("Toggle visibility of regmarks"))
         self.button_move_back = wxButton(self, wx.ID_ANY, _("Move all back"))

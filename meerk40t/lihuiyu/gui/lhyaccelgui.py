@@ -5,6 +5,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxCheckBox,
     wxStaticText,
@@ -20,20 +21,20 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         context.themes.set_window_colors(self)
         self.context = context.device
         self.checkbox_vector_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
-        self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
-        self.text_vector_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
-        self.text_vector_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
-        self.text_vector_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
+        self.text_vector_accel_1 = TextCtrl(self, wx.ID_ANY, "25.4")
+        self.text_vector_accel_2 = TextCtrl(self, wx.ID_ANY, "60")
+        self.text_vector_accel_3 = TextCtrl(self, wx.ID_ANY, "127")
+        self.text_vector_accel_4 = TextCtrl(self, wx.ID_ANY, _("infinity"))
         self.checkbox_vraster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
-        self.text_vraster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
-        self.text_vraster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
-        self.text_vraster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
-        self.text_vraster_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
+        self.text_vraster_accel_1 = TextCtrl(self, wx.ID_ANY, "25.4")
+        self.text_vraster_accel_2 = TextCtrl(self, wx.ID_ANY, "60")
+        self.text_vraster_accel_3 = TextCtrl(self, wx.ID_ANY, "127")
+        self.text_vraster_accel_4 = TextCtrl(self, wx.ID_ANY, _("infinity"))
         self.checkbox_raster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
-        self.text_raster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
-        self.text_raster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "127")
-        self.text_raster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "320")
-        self.text_raster_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
+        self.text_raster_accel_1 = TextCtrl(self, wx.ID_ANY, "25.4")
+        self.text_raster_accel_2 = TextCtrl(self, wx.ID_ANY, "127")
+        self.text_raster_accel_3 = TextCtrl(self, wx.ID_ANY, "320")
+        self.text_raster_accel_4 = TextCtrl(self, wx.ID_ANY, _("infinity"))
 
         self.__set_properties()
         self.__do_layout()
