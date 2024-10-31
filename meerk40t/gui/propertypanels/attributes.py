@@ -11,6 +11,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxStaticBitmap,
     wxStaticText,
     wxToggleButton,
