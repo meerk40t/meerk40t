@@ -62,7 +62,8 @@ class PropertyWindow(MWindow):
         for p in self.panel_instances:
             try:
                 p.pane_hide()
-            except AttributeError:
+            except (AttributeError, RuntimeError):
+                # We don't have one or the underlying pane has already been destroyed
                 pass
             self.remove_module_delegate(p)
         self.panel_instances.clear()
