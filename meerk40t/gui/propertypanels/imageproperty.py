@@ -280,7 +280,11 @@ class ContourPanel(wx.Panel):
 
     def pane_hide(self):
         self.list_contours.save_column_widths()
-        self.context.contour_placement = self.combo_placement.GetSelection()
+        try:
+            self.context.contour_placement = self.combo_placement.GetSelection()
+        except RuntimeError:
+            # Might have already been deleted...
+            pass
 
     def pane_deactive(self):
         self._pane_is_active = False
