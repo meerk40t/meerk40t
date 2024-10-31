@@ -4,19 +4,20 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.gui.wxutils import dip_size, matrix_scale
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 _ = wx.GetTranslation
 
 
 class SimpleCheckbox:
-    def __init__(self, index, scene, x, y, trailer):
+    def __init__(self, index, scene, x, y, trailer, magnification=1):
         self.identifier = index
         self._value = False
         self.scene = scene
         self.x = x
         self.y = y
+        self.magnification = magnification
         self.pt_offset = 5
         if trailer is None:
             trailer = ""
@@ -40,7 +41,7 @@ class SimpleCheckbox:
         """
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         mypen = wx.Pen(wx.LIGHT_GREY)
         linewidth = 1 / s
@@ -75,7 +76,7 @@ class SimpleCheckbox:
                 ]
             )
         if self.trailer:
-            font_size = 8 / s
+            font_size = 8 * self.magnification / s
             if font_size < 1.0:
                 font_size = 1.0
             try:
@@ -102,13 +103,13 @@ class SimpleCheckbox:
 
     def hit(self, xpos, ypos):
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         inside = bool(abs(self.x - xpos) <= offset and abs(self.y - ypos) <= offset)
         return inside
 
 
 class SimpleSlider:
-    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
+    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer, magnification=1):
         self.identifier = index
         self._minimum = min(minimum, maximum)
         self._maximum = max(minimum, maximum)
@@ -122,6 +123,7 @@ class SimpleSlider:
         self.width = width
         self.ptx = x
         self.pty = y
+        self.magnification = magnification
         self.pt_offset = 5
         if trailer is None:
             trailer = ""
@@ -168,7 +170,7 @@ class SimpleSlider:
         """
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
 
         mypen = wx.Pen(wx.LIGHT_GREY)
         gcmat = gc.GetTransform()
@@ -213,7 +215,7 @@ class SimpleSlider:
             if not self.trailer.startswith("%"):
                 symbol += " "
             symbol += _(self.trailer)
-        font_size = 10 / s
+        font_size = 10 * self.magnification / s
         if font_size < 1.0:
             font_size = 1.0
         try:
@@ -234,13 +236,14 @@ class SimpleSlider:
         (t_width, t_height) = gc.GetTextExtent(symbol)
         x = self.x + self.width + 1.5 * offset
         y = self.y - t_height / 2
+        # print(f"y={y}, self.y={self.y}, height={t_height}, label='{symbol}', font_size={font_size}")
         gc.DrawText(symbol, int(x), int(y))
 
         gc.PopState()
 
     def hit(self, xpos, ypos):
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         inside = bool(abs(self.ptx - xpos) <= offset and abs(self.pty - ypos) <= offset)
         return inside
 
@@ -263,10 +266,12 @@ class ParameterTool(ToolWidget):
         self.point_index = -1
         self.slider_index = -1
         self.read_functions()
+        # Establish the scaling function of the underlying GUI
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
         self.pt_offset = 5
         self.is_hovering = False
         self.pin_box = None
-        self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"))
+        self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"), magnification=self.magnification)
         self.pinned = False
         self.is_moving = False
         self.slider_size = 200
@@ -295,7 +300,7 @@ class ParameterTool(ToolWidget):
         if len(self.sliders) == 0:
             return
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         width = self.slider_size / s
         if self.pinned:
             x = offset
@@ -356,7 +361,7 @@ class ParameterTool(ToolWidget):
                         if len(gui_info) > 2:
                             maxval = gui_info[2]
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info
+                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info, magnification=self.magnification
                 )
                 self.sliders.append(slider)
                 slider.value = parameters[idx + 1]
@@ -378,7 +383,7 @@ class ParameterTool(ToolWidget):
                             maxval = gui_info[2]
                 info = "% " + info
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info
+                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info, magnification=self.magnification
                 )
                 self.sliders.append(slider)
                 slider.value = int(100.0 * parameters[idx + 1])
@@ -456,7 +461,7 @@ class ParameterTool(ToolWidget):
         self.update_and_draw_sliders(gc)
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         mypen = wx.Pen(wx.RED)
         linewidth = 1 / s
         try:
@@ -497,7 +502,7 @@ class ParameterTool(ToolWidget):
             Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
 
-        offset = 5
+        offset = self.magnification * 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
         self.is_moving = False
