@@ -18922,7 +18922,7 @@ msgstr "Faser-Laser (JCZ-Controller) (ohne MOPA)"
 
 #: meerk40t/balormk/plugin.py:36 meerk40t/balormk/plugin.py:60 meerk40t/gui/devicepanel.py:122
 msgid "Generic Fibre-Laser"
-msgstr "Generischer Fser-Laser"
+msgstr "Generischer Faser-Laser"
 
 #: meerk40t/balormk/plugin.py:53
 msgid "Fibre-Laser (JCZ-Controller) (MOPA)"
