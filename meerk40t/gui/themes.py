@@ -189,5 +189,8 @@ class Themes(Service):
 
     def set_window_colors(self, win:wx.Window):
         tp = self._theme_properties
-        win.SetBackgroundColour(tp["win_bg"])
-        win.SetForegroundColour(tp["win_fg"])
+        try:
+            win.SetBackgroundColour(tp["win_bg"])
+            win.SetForegroundColour(tp["win_fg"])
+        except Exception as e:
+            print (f"I would have crashed to set the window-colors: {tp['win_bg']} / {tp['win_fg']}: {e}")
