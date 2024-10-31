@@ -151,6 +151,7 @@ class ContourPanel(wx.Panel):
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.list_contours.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_selection)
         self.list_contours.Bind(wx.EVT_LIST_COL_CLICK, self.on_list_selection)
+        self.list_contours.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
 
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
@@ -448,6 +449,7 @@ class ContourPanel(wx.Panel):
         self.gather_parameters()
         self.update_image()
         self.calculate_contours()
+        self.populate_list()
         self.display_contours()
         self._changed = False
 
@@ -537,7 +539,6 @@ class ContourPanel(wx.Panel):
                 ignoreinner=self.parameters["cnt_ignoreinner"],
                 needs_invert=True,
             )
-        self.list_contours.DeleteAllItems()
         for idx, (geom, area) in enumerate(self.contours):
             if method == 0:
                 simple = self.parameters["cnt_simplify"]
@@ -551,11 +552,6 @@ class ContourPanel(wx.Panel):
                     geom = geom.simplify(threshold)
             geom.transform(self.matrix)
             self.contours[idx] = (geom, area)
-            list_id = self.list_contours.InsertItem(
-                self.list_contours.GetItemCount(), f"#{idx + 1}"
-            )
-            self.list_contours.SetItem(list_id, 1, f"{area:.2f}%")
-
 
         t_b = time.perf_counter()
 
@@ -572,6 +568,73 @@ class ContourPanel(wx.Panel):
             idx = self.list_contours.GetFirstSelected()
             self.display_contours(highlight_index=idx)
 
+    def on_right_click(self, event):
+        def activity(comparison):
+            to_be_deleted = []
+            for idx, (geom, area) in enumerate(self.contours):
+                if comparison(idx, area):
+                    to_be_deleted.append(idx)
+            for idx in reversed(to_be_deleted):
+                self.contours.pop(idx)
+            self.populate_list()
+            self.display_contours()
+
+        def delete_this_one(index):
+            def handler(event):
+                def logic(idx, area):
+                    return idx == index
+                activity(logic)
+            return handler
+
+        def delete_all_others(index):
+            def handler(event):
+                def logic(idx, area):
+                    return idx != index
+                activity(logic)
+
+            return handler
+
+        def delete_all_smaller(index):
+            def handler(event):
+                def logic(idx, area):
+                    return area < this_area
+                this_area = self.contours[index][1]
+                activity(logic)
+
+            return handler
+
+        def delete_all_bigger(index):
+            def handler(event):
+                def logic(idx, area):
+                    return area > this_area
+                this_area = self.contours[index][1]
+                activity(logic)
+
+            return handler
+
+        index = self.list_contours.GetFirstSelected()
+        if index < 0:
+            return
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, _("Delete this contour"), )
+        self.Bind(wx.EVT_MENU, delete_this_one(index), item)
+        item = menu.Append(wx.ID_ANY, _("Delete all others"), )
+        self.Bind(wx.EVT_MENU, delete_all_others(index), item)
+        item = menu.Append(wx.ID_ANY, _("Delete all bigger"), )
+        self.Bind(wx.EVT_MENU, delete_all_bigger(index), item)
+        item = menu.Append(wx.ID_ANY, _("Delete all smaller"), )
+        self.Bind(wx.EVT_MENU, delete_all_smaller(index), item)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def populate_list(self):
+        self.list_contours.DeleteAllItems()
+        for idx, (geom, area) in enumerate(self.contours):
+            list_id = self.list_contours.InsertItem(
+                self.list_contours.GetItemCount(), f"#{idx + 1}"
+            )
+            self.list_contours.SetItem(list_id, 1, f"{area:.2f}%")
+
     def display_contours(self, highlight_index = -1):
         if self.make_raster is None:
             return
@@ -584,6 +647,7 @@ class ContourPanel(wx.Panel):
             node = PathNode(
                 geometry = geom,
                 stroke=Color("red") if highlight_index==idx else Color("blue"),
+                fill=Color("yellow") if highlight_index==idx else None,
                 label=f"Contour {self.node.display_label()} #{idx+1} [{area:.2f}%]",
             )
             data.append(node)
@@ -602,7 +666,6 @@ class ContourPanel(wx.Panel):
     def on_list_selection(self, event):
         idx = self.list_contours.GetFirstSelected()
         self.display_contours(highlight_index=idx)
-
 
 class KeyholePanel(wx.Panel):
     name = _("Keyhole")
