@@ -2,6 +2,7 @@
 Basic Module to provide infmoration about the GUI
 """
 from math import sqrt
+from platform import system
 import wx
 
 from meerk40t.kernel import Service
@@ -40,22 +41,26 @@ class Themes(Service):
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(self, kernel, "themes" if index is None else f"themes{index}")
         _ = wx.GetTranslation
-        choices = [
-            {
-                "attr": "forced_theme",
-                "object": kernel.root,
-                "default": "default",
-                "type": str,
-                "label": _("UI-Colours"),
-                "style": "option",
-                "choices": ("default", "dark", "light"),
-                "display": (_("System"), _("Dark"), _("Light")),
-                "tip": _("Will force MeerK40t to start in dark/lightmode despite the system settings"),
-                "page": "Start",
-                "signals": "restart",
-            },
-        ]
-        kernel.register_choices("preferences", choices)
+        if system() == "Darwin":
+            kernel.root.setting(str, "forced_theme", "default")
+            kernel.root.forced_theme = "default"
+        else:
+            choices = [
+                {
+                    "attr": "forced_theme",
+                    "object": kernel.root,
+                    "default": "default",
+                    "type": str,
+                    "label": _("UI-Colours"),
+                    "style": "option",
+                    "choices": ("default", "dark", "light"),
+                    "display": (_("System"), _("Dark"), _("Light")),
+                    "tip": _("Will force MeerK40t to start in dark/lightmode despite the system settings"),
+                    "page": "Start",
+                    "signals": "restart",
+                },
+            ]
+            kernel.register_choices("preferences", choices)
 
         self.forced_theme = kernel.root.forced_theme
 
@@ -89,7 +94,6 @@ class Themes(Service):
 
     def load_system_default(self):
         self._theme = "system"
-        # print (f"wx claims: {res1}, we think: {res2}, overload: {self.force_dark}")
         if self.forced_theme == "dark":
             self._dark = True
         elif self.forced_theme == "light":
@@ -98,9 +102,6 @@ class Themes(Service):
             res1 = wx.SystemSettings().GetAppearance().IsDark()
             res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
             self._dark = res1 or res2
-        from platform import system
-
-        buggy_darwin = system() == "Darwin" and not self._dark
 
         self._theme_properties = {}
         tp = self._theme_properties
@@ -120,39 +121,40 @@ class Themes(Service):
         tp["inactive_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTIONTEXT)
         # for key, col in tp.items():
         #     print (f'tp["{key}"] = wx.Colour({col.red}, {col.green}, {col.blue}, {col.alpha})')
-
-        if not self.dark and is_a_dark_color(tp["win_bg"]):
-            base_bg = wx.Colour(255, 255, 255)
-            base_fg = wx.Colour(0, 0, 0)
-            tp["win_bg"] = base_bg
-            tp["win_fg"] = base_fg
-            tp["button_bg"] = wx.Colour(240, 240, 240, 255)
-            tp["button_fg"] = base_fg
-            tp["text_bg"] = base_bg
-            tp["text_fg"] = base_fg
-            tp["list_bg"] = base_bg
-            tp["list_fg"] = base_fg
-            tp["label_bg"] = base_bg
-            tp["label_fg"] = base_fg
-            tp["highlight"] = wx.Colour(0, 120, 215, 255)
-            tp["inactive_bg"] = wx.Colour(191, 205, 219, 255)
-            tp["inactive_fg"] = base_fg        
-        if self.dark and is_a_bright_color(tp["win_bg"]):
-            base_bg = wx.Colour(23, 23, 23)
-            base_fg = wx.Colour(255, 255, 255, 216)
-            tp["win_bg"] = base_bg
-            tp["win_fg"] = base_fg
-            tp["button_bg"] = wx.Colour(46, 46, 46)
-            tp["button_fg"] = base_fg
-            tp["text_bg"] = base_bg
-            tp["text_fg"] = base_fg
-            tp["list_bg"] = base_bg
-            tp["list_fg"] = base_fg
-            tp["label_bg"] = base_bg
-            tp["label_fg"] = base_fg
-            tp["highlight"] = wx.BLUE
-            tp["inactive_bg"] = wx.Colour(46, 46, 46)
-            tp["inactive_fg"] = base_fg
+        if system() != "Darwin":
+            # Alas, Darwin does not properly support overloading of colors...
+            if not self.dark and is_a_dark_color(tp["win_bg"]):
+                base_bg = wx.Colour(255, 255, 255)
+                base_fg = wx.Colour(0, 0, 0)
+                tp["win_bg"] = base_bg
+                tp["win_fg"] = base_fg
+                tp["button_bg"] = wx.Colour(240, 240, 240, 255)
+                tp["button_fg"] = base_fg
+                tp["text_bg"] = base_bg
+                tp["text_fg"] = base_fg
+                tp["list_bg"] = base_bg
+                tp["list_fg"] = base_fg
+                tp["label_bg"] = base_bg
+                tp["label_fg"] = base_fg
+                tp["highlight"] = wx.Colour(0, 120, 215, 255)
+                tp["inactive_bg"] = wx.Colour(191, 205, 219, 255)
+                tp["inactive_fg"] = base_fg        
+            if self.dark and is_a_bright_color(tp["win_bg"]):
+                base_bg = wx.Colour(23, 23, 23)
+                base_fg = wx.Colour(255, 255, 255, 216)
+                tp["win_bg"] = base_bg
+                tp["win_fg"] = base_fg
+                tp["button_bg"] = wx.Colour(46, 46, 46)
+                tp["button_fg"] = base_fg
+                tp["text_bg"] = base_bg
+                tp["text_fg"] = base_fg
+                tp["list_bg"] = base_bg
+                tp["list_fg"] = base_fg
+                tp["label_bg"] = base_bg
+                tp["label_fg"] = base_fg
+                tp["highlight"] = wx.Colour(0, 0, 255)
+                tp["inactive_bg"] = wx.Colour(46, 46, 46)
+                tp["inactive_fg"] = base_fg
 
         tp["pause_bg"] = (
             wx.Colour(87, 87, 0) if self._dark else wx.Colour(200, 200, 0)
@@ -180,17 +182,8 @@ class Themes(Service):
         tp["arm_bg_inactive"] = wx.Colour(145, 2, 0)
         tp["arm_fg_focus"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
-        if buggy_darwin:
-            for key, item in tp.items():
-                if isinstance(item, wx.Colour):
-                    # System default
-                    tp[key] = None
-            tp["pause_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
 
     def set_window_colors(self, win:wx.Window):
         tp = self._theme_properties
-        try:
-            win.SetBackgroundColour(tp["win_bg"])
-            win.SetForegroundColour(tp["win_fg"])
-        except Exception as e:
-            print (f"I would have crashed to set the window-colors: {tp['win_bg']} / {tp['win_fg']}: {e}")
+        win.SetBackgroundColour(tp["win_bg"])
+        win.SetForegroundColour(tp["win_fg"])
