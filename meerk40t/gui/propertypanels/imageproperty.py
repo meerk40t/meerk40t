@@ -573,61 +573,46 @@ class ContourPanel(wx.Panel):
             self.display_contours(highlight_index=idx)
 
     def on_right_click(self, event):
-        def activity(comparison):
-            to_be_deleted = []
-            for idx, (geom, area) in enumerate(self.contours):
-                if comparison(idx, area):
-                    to_be_deleted.append(idx)
-            for idx in reversed(to_be_deleted):
-                self.contours.pop(idx)
-            self.populate_list()
-            self.display_contours()
 
-        def delete_this_one(index):
+        def compare_contour(operation, index, this_area, idx, area):
+            if operation == 'this':
+                return idx == index
+            elif operation == 'others':
+                return idx != index
+            elif operation == 'smaller':
+                return area < this_area
+            elif operation == 'bigger':
+                return area > this_area
+            return False
+
+        def delete_contours(operation, index):
             def handler(event):
-                def logic(idx, area):
-                    return idx == index
-                activity(logic)
-            return handler
-
-        def delete_all_others(index):
-            def handler(event):
-                def logic(idx, area):
-                    return idx != index
-                activity(logic)
-
-            return handler
-
-        def delete_all_smaller(index):
-            def handler(event):
-                def logic(idx, area):
-                    return area < this_area
                 this_area = self.contours[index][1]
-                activity(logic)
-
-            return handler
-
-        def delete_all_bigger(index):
-            def handler(event):
-                def logic(idx, area):
-                    return area > this_area
-                this_area = self.contours[index][1]
-                activity(logic)
-
+                to_be_deleted = [
+                    idx for idx, (_, area) in enumerate(self.contours)
+                    if compare_contour(operation, index, this_area, idx, area)
+                ]
+                for idx in reversed(to_be_deleted):
+                    self.contours.pop(idx)
+                self.populate_list()
+                self.display_contours()
             return handler
 
         index = self.list_contours.GetFirstSelected()
         if index < 0:
             return
         menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, _("Delete this contour"), )
-        self.Bind(wx.EVT_MENU, delete_this_one(index), item)
-        item = menu.Append(wx.ID_ANY, _("Delete all others"), )
-        self.Bind(wx.EVT_MENU, delete_all_others(index), item)
-        item = menu.Append(wx.ID_ANY, _("Delete all bigger"), )
-        self.Bind(wx.EVT_MENU, delete_all_bigger(index), item)
-        item = menu.Append(wx.ID_ANY, _("Delete all smaller"), )
-        self.Bind(wx.EVT_MENU, delete_all_smaller(index), item)
+        operations = [
+            ('this', _("Delete this contour")),
+            ('others', _("Delete all others")),
+            ('bigger', _("Delete all bigger")),
+            ('smaller', _("Delete all smaller"))
+        ]
+
+        for op, label in operations:
+            item = menu.Append(wx.ID_ANY, label)
+            self.Bind(wx.EVT_MENU, delete_contours(op, index), item)
+
         self.PopupMenu(menu)
         menu.Destroy()
 
