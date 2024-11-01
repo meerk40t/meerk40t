@@ -1,4 +1,5 @@
 import os
+from PIL import Image, ImageOps
 from meerk40t.svgelements import Color, Matrix, Path
 from meerk40t.kernel.kernel import get_safe_path
 from meerk40t.tools.geomstr import Geomstr
@@ -85,6 +86,7 @@ def plugin(kernel, lifecycle=None):
             help=_("set foreground color (default Black)"),
         )
         @kernel.console_option("original", "o", type=bool, action="store_true")
+        @kernel.console_option("invert", "i", type=bool, action="store_true")
         @kernel.console_command(
             "vtrace",
             help=_("return paths around image"),
@@ -98,6 +100,7 @@ def plugin(kernel, lifecycle=None):
             data=None,
             color=None,
             original=False,
+            invert=False,
             **kwargs,
         ):
             elements = kernel.root.elements
@@ -120,6 +123,8 @@ def plugin(kernel, lifecycle=None):
                     dy = (bb[3] - bb[1]) * ih / ah
                     bb = (bb[0], bb[1], bb[0] + dx, bb[1] + dy )
                     image = node.image
+                if invert:
+                    image = ImageOps.invert(image.convert("L"))
                 channel(f"Processing {'original' if original else 'modified'} image with {image.width}x{image.height} pixels")
                 svgdata = make_vector(
                     image=image,
