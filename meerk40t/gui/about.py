@@ -1774,6 +1774,25 @@ class ComponentPanel(ScrolledPanel):
             entry[2] = status
             self.content.append(entry)
 
+        def get_vtrace():
+            entry = ["vtracer", "", "", "https://pypi.org/project/vtracer/"]
+            try:
+                import vtracer
+
+                # for e in vars(vtracer):
+                #     print (f"var {e} - {getattr(vtracer, e)}")
+                try:
+                    info = vtracer.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
         def get_ezdxf():
             entry = ["ezdxf", "", "", "https://ezdxf.readthedocs.io/en/stable/"]
             try:
@@ -1943,6 +1962,7 @@ class ComponentPanel(ScrolledPanel):
         get_numpy()
         get_pillow()
         get_potrace()
+        get_vtrace()
         get_ezdxf()
         get_pyusb()
         get_pyserial()
