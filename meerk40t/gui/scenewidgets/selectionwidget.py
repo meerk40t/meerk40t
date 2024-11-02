@@ -33,6 +33,7 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     create_menu_for_node,
+    gcmatrix_fullscale,
     matrix_scale,
     wxButton,
     wxCheckBox,
@@ -232,14 +233,7 @@ class BorderWidget(Widget):
             # (even if they are dotted on a microscopic level)
             # To circumvent this issue, we scale the gc back
             gc.PushState()
-            gcmat = gc.GetTransform()
-            mat_param = gcmat.Get()
-            sx = mat_param[0]
-            sy = mat_param[3]
-            if sx == 0:
-                sx = 1
-            if sy == 0:
-                sy = 1
+            sx, sy = gcmatrix_fullscale(gc)
             gc.Scale(1 / sx, 1 / sy)
 
             # Create a copy of the pen

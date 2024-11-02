@@ -16,7 +16,7 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.gui.wxutils import matrix_scale, gcmatrix_fullscale
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 
@@ -438,14 +438,7 @@ class RectSelectWidget(Widget):
         # (even if they are dotted on a microscopic level)
         # To circumvent this issue, we scale the gc back
         gc.PushState()
-        gcmat = gc.GetTransform()
-        mat_param = gcmat.Get()
-        sx = mat_param[0]
-        sy = mat_param[3]
-        if sx == 0:
-            sx = 1
-        if sy == 0:
-            sy = 1
+        sx, sy = gcmatrix_fullscale(gc)
         gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
@@ -468,14 +461,7 @@ class RectSelectWidget(Widget):
         # (even if they are dotted on a microscopic level)
         # To circumvent this issue, we scale the gc back
         gc.PushState()
-        gcmat = gc.GetTransform()
-        mat_param = gcmat.Get()
-        sx = mat_param[0]
-        sy = mat_param[3]
-        if sx == 0:
-            sx = 1
-        if sy == 0:
-            sy = 1
+        sx, sy = gcmatrix_fullscale(gc)
         # print (f"sx={sx}, sy={sy}")
         gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
