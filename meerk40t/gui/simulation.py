@@ -53,7 +53,7 @@ from .wxutils import (
     StaticBoxSizer,
     TextCtrl,
     dip_size,
-    gcmatrix_scale,
+    get_gc_scale,
     wxButton,
     wxCheckBox,
     wxListBox,
@@ -2091,7 +2091,7 @@ class SimulationTravelWidget(Widget):
             pos = self.pos[-1]
         if pos < 0:
             return
-        gcscale = gcmatrix_scale(gc)
+        gcscale = get_gc_scale(gc)
         if gcscale == 0:
             gcscale = 1
         linewidth = 1 / gcscale

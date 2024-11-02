@@ -25,7 +25,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.gui.wxutils import get_matrix_scale
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -333,7 +333,7 @@ class EditTool(ToolWidget):
                 pass  # Exceeds 32 bit signed integer.
 
         matrix = self.scene.widget_root.scene_widget.matrix
-        linewidth = 1.0 / matrix_scale(matrix)
+        linewidth = 1.0 / get_matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         set_width_pen(self.pen, linewidth)

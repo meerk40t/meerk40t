@@ -20,7 +20,7 @@ _ = wx.GetTranslation
 ##############
 
 
-def matrix_scale(matrix):
+def get_matrix_scale(matrix):
     # We usually use the value_scale_x to establish a pixel size
     # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
     # For a rotated scene this crashes, so we need to take
@@ -35,7 +35,7 @@ def matrix_scale(matrix):
         res = 1
     return res
 
-def matrix_fullscale(matrix):
+def get_matrix_full_scale(matrix):
     # We usually use the value_scale_x to establish a pixel size
     # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
     # For a rotated scene this crashes, so we need to take
@@ -54,7 +54,7 @@ def matrix_fullscale(matrix):
         resy = 1
     return resx, resy
 
-def gcmatrix_scale(gc):
+def get_gc_scale(gc):
     gcmat = gc.GetTransform()
     mat_param = gcmat.Get()
     testmatrix = Matrix(
@@ -65,9 +65,9 @@ def gcmatrix_scale(gc):
         mat_param[4], 
         mat_param[5], 
     )
-    return matrix_scale(testmatrix)
+    return get_matrix_scale(testmatrix)
 
-def gcmatrix_fullscale(gc):
+def get_gc_full_scale(gc):
     gcmat = gc.GetTransform()
     mat_param = gcmat.Get()
     testmatrix = Matrix(
@@ -78,7 +78,7 @@ def gcmatrix_fullscale(gc):
         mat_param[4], 
         mat_param[5], 
     )
-    return matrix_fullscale(testmatrix)
+    return get_matrix_full_scale(testmatrix)
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """

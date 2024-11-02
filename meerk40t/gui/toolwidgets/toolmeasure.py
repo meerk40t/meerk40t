@@ -3,7 +3,7 @@ from math import atan2, cos, sin, sqrt, tau
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.wxutils import matrix_scale, gcmatrix_scale
+from meerk40t.gui.wxutils import get_matrix_scale, get_gc_scale
 
 from .toolpointlistbuilder import PointListTool
 
@@ -36,7 +36,7 @@ class MeasureTool(PointListTool):
     def draw_points(self, gc, points):
         if not self.point_series:
             return
-        mat_fact = gcmatrix_scale(gc)
+        mat_fact = get_gc_scale(gc)
         try:
             font_size = 10.0 / mat_fact
         except ZeroDivisionError:

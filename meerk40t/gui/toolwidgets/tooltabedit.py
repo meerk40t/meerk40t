@@ -11,7 +11,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import gcmatrix_scale
+from meerk40t.gui.wxutils import get_gc_scale
 
 _ = wx.GetTranslation
 
@@ -80,7 +80,7 @@ class SimpleSlider:
         offset = self.pt_offset / s
 
         mypen = wx.Pen(wx.LIGHT_GREY)
-        sx = gcmatrix_scale(gc)
+        sx = get_gc_scale(gc)
         linewidth = 1 / sx
         try:
             mypen.SetWidth(linewidth)

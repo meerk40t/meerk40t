@@ -9,7 +9,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
 )
-from meerk40t.gui.wxutils import gcmatrix_scale
+from meerk40t.gui.wxutils import get_gc_scale
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Ellipse
 
@@ -43,7 +43,7 @@ class CircleTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            mat_fact = gcmatrix_scale(gc)
+            mat_fact = get_gc_scale(gc)
             pixel = 1.0 / mat_fact
             cx = self.p1.real
             cy = self.p1.imag
