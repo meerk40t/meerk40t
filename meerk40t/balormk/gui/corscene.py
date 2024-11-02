@@ -16,6 +16,7 @@ import wx
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_detective
 from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.wxutils import get_gc_scale
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.scene.widget import Widget
@@ -771,11 +772,7 @@ class CorFileWidget(Widget):
         """
         Draws the background on the scene.
         """
-        matrix = gc.GetTransform().Get()
-        # mat.a mat.d
-        mat_fact = max(matrix[0], matrix[3])
-        if mat_fact == 0:
-            mat_fact = 1
+        mat_fact = get_gc_scale(gc)
         try:
             linewidth = 2.0 / mat_fact
         except ZeroDivisionError:

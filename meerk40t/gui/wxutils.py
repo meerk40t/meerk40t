@@ -8,6 +8,7 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
+from meerk40t.svgelements import Matrix
 from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Length
 
 _ = wx.GetTranslation
@@ -19,7 +20,7 @@ _ = wx.GetTranslation
 ##############
 
 
-def matrix_scale(matrix):
+def get_matrix_scale(matrix):
     # We usually use the value_scale_x to establish a pixel size
     # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
     # For a rotated scene this crashes, so we need to take
@@ -34,6 +35,50 @@ def matrix_scale(matrix):
         res = 1
     return res
 
+def get_matrix_full_scale(matrix):
+    # We usually use the value_scale_x to establish a pixel size
+    # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
+    # For a rotated scene this crashes, so we need to take
+    # that into consideration, so let's look at the
+    # distance from (1, 0) to (0, 0) and call this our scale
+    from math import sqrt
+
+    x0, y0 = matrix.point_in_matrix_space((0, 0))
+    x1, y1 = matrix.point_in_matrix_space((1, 0))
+    resx = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if resx < 1e-8:
+        resx = 1
+    x1, y1 = matrix.point_in_matrix_space((0, 1))
+    resy = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if resy < 1e-8:
+        resy = 1
+    return resx, resy
+
+def get_gc_scale(gc):
+    gcmat = gc.GetTransform()
+    mat_param = gcmat.Get()
+    testmatrix = Matrix(
+        mat_param[0], 
+        mat_param[1], 
+        mat_param[2], 
+        mat_param[3], 
+        mat_param[4], 
+        mat_param[5], 
+    )
+    return get_matrix_scale(testmatrix)
+
+def get_gc_full_scale(gc):
+    gcmat = gc.GetTransform()
+    mat_param = gcmat.Get()
+    testmatrix = Matrix(
+        mat_param[0], 
+        mat_param[1], 
+        mat_param[2], 
+        mat_param[3], 
+        mat_param[4], 
+        mat_param[5], 
+    )
+    return get_matrix_full_scale(testmatrix)
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """

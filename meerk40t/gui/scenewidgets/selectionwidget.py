@@ -33,7 +33,8 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     create_menu_for_node,
-    matrix_scale,
+    get_gc_full_scale,
+    get_matrix_scale,
     wxButton,
     wxCheckBox,
     wxStaticText,
@@ -232,14 +233,7 @@ class BorderWidget(Widget):
             # (even if they are dotted on a microscopic level)
             # To circumvent this issue, we scale the gc back
             gc.PushState()
-            gcmat = gc.GetTransform()
-            mat_param = gcmat.Get()
-            sx = mat_param[0]
-            sy = mat_param[3]
-            if sx == 0:
-                sx = 1
-            if sy == 0:
-                sy = 1
+            sx, sy = get_gc_full_scale(gc)
             gc.Scale(1 / sx, 1 / sy)
 
             # Create a copy of the pen
@@ -1640,7 +1634,7 @@ class MoveWidget(Widget):
                 and not "shift" in modifiers
                 and b is not None
             ):
-                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
                 # We gather all points of non-selected elements,
                 # but only those that lie within the boundaries
                 # of the selected area
@@ -1722,7 +1716,7 @@ class MoveWidget(Widget):
                 and not did_snap_to_point
             ):
                 # t1 = perf_counter()
-                gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
                 # Check for corner points + center:
                 selected_points = (
                     (b[0], b[1]),

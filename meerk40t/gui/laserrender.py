@@ -39,6 +39,7 @@ from ..tools.geomstr import (  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image
 from .zmatrix import ZMatrix
+from meerk40t.gui.wxutils import get_gc_scale
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -560,11 +561,8 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
-        gcmat = gc.GetTransform()
-        mat_param = gcmat.Get()
-        gcscale = max(mat_param[0], mat_param[3])
-        if gcscale == 0:
-            gcscale = 1
+        gcscale = get_gc_scale(gc)
+        # print (f"Scale: {gcscale} - {mat_param}")
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
         highlight_pen = wx.Pen(wx_color)
@@ -628,10 +626,7 @@ class LaserRender:
                     cut.offset_x + x, cut.offset_y + y
                 )  # Adjust image xy
                 gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-                _mat_param = gc.GetTransform().Get()
-                _gcscale = max(_mat_param[0], _mat_param[3])
-                if _gcscale == 0:
-                    _gcscale = 1
+                _gcscale = get_gc_scale(gc)
                 try:
                     cache = cut._cache
                     cache_id = cut._cache_id

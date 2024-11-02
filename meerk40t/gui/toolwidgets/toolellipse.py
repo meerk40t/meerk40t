@@ -8,6 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.gui.wxutils import get_gc_scale
 
 _ = wx.GetTranslation
 
@@ -29,10 +30,7 @@ class EllipseTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            matrix = gc.GetTransform().Get()
-            mat_fact = max(matrix[0], matrix[3])
-            if mat_fact == 0:
-                mat_fact = 1
+            mat_fact = get_gc_scale(gc)
             pixel = 1.0 / mat_fact
             # print (f"1 Px = {pixel}, sx = {matrix[0]}")
             if self.creation_mode == 1:
