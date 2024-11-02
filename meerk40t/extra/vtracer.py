@@ -79,12 +79,7 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("render-op/make_vector2", make_vector)
 
-        @kernel.console_option(
-            "color",
-            "C",
-            type=Color,
-            help=_("set foreground color (default Black)"),
-        )
+        @kernel.console_option("color", "c", type=bool, action="store_true")        
         @kernel.console_option("original", "o", type=bool, action="store_true")
         @kernel.console_option("invert", "i", type=bool, action="store_true")
         @kernel.console_command(
@@ -98,7 +93,7 @@ def plugin(kernel, lifecycle=None):
             channel, 
             _,             
             data=None,
-            color=None,
+            color=False,
             original=False,
             invert=False,
             **kwargs,
@@ -108,26 +103,17 @@ def plugin(kernel, lifecycle=None):
                 data = [node for node in elements.flat(emphasized=True) if hasattr(node, "active_image")]
             if len(data) == 0:
                 channel("No image selected")
-            if color is None:
-                color = Color("black")
-
+            cmode = "color" if color else "binary"
             for node in data:
                 bb = node.bounds
                 image = node.active_image
                 if original:
-                    iw = node.image.width
-                    ih = node.image.height
-                    aw = image.width
-                    ah = image.height
-                    dx = (bb[2] - bb[0]) * iw / aw
-                    dy = (bb[3] - bb[1]) * ih / ah
-                    bb = (bb[0], bb[1], bb[0] + dx, bb[1] + dy )
                     image = node.image
                 if invert:
                     image = ImageOps.invert(image.convert("L"))
                 channel(f"Processing {'original' if original else 'modified'} image with {image.width}x{image.height} pixels")
                 svgdata = make_vector(
-                    image=image,
+                    image=image, colormode=cmode
                 )
                 directory = get_safe_path(kernel.name, create=True)
                 filename = os.path.join(directory, "vtrace_temp.svg")
