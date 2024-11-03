@@ -46,14 +46,14 @@ class ContourPanel(wx.Panel):
     def accepts(node):
         return hasattr(node, "as_image")
 
-    def __init__(self, *args, context=None, node=None, simplified=False, **kwds):
+    def __init__(self, *args, context=None, node=None, simplified=False, direct_mode=False, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
         self.node = node
-
+        self.direct_mode = direct_mode
         self.check_enable_contrast = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.button_reset_contrast = wxButton(self, wx.ID_ANY, _("Reset"))
         self.slider_contrast_contrast = wx.Slider(
@@ -276,6 +276,8 @@ class ContourPanel(wx.Panel):
 
         self.text_minimum.SetValue("2")
         self.text_maximum.SetValue("95")
+        self.radio_method.SetSelection(0)
+        self.radio_simplify.SetSelection(0)
         self.reset_contrast()
 
     def pane_hide(self):
@@ -459,8 +461,13 @@ class ContourPanel(wx.Panel):
 
     def refresh_preview(self):
         if self._pane_is_active:
-            self.context.schedule(self.update_job)
-
+            if self.direct_mode:
+                self.update_job()
+            else:
+                self.context.schedule(self.update_job)
+        else:
+            print ("Wasnt active")
+            
     def gather_parameters(self):
         self.parameters["img_invert"] = self.check_invert.GetValue()
         self.parameters["img_original"] = self.check_original.GetValue()

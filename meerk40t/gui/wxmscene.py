@@ -100,7 +100,7 @@ class ContourDetectionDialog(wx.Dialog):
     def _init_ui(self, node):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         panel = ContourPanel(
-            self, wx.ID_ANY, context=self.context, node=node, simplified=True
+            self, wx.ID_ANY, context=self.context, node=node, simplified=True, direct_mode=True,
         )
         main_sizer.Add(panel, 1, wx.EXPAND, 0)
         buttons = self.CreateStdDialogButtonSizer(wx.OK)
