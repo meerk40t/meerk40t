@@ -1467,6 +1467,10 @@ class wxRadioBox(StaticBoxSizer):
                 return idx
         return -1
 
+    def GetStringSelection(self):
+        idx = self.GetSelection()
+        return None if idx < 0 else self.choices[idx]
+
     def Disable(self):
         self.Enable(False)
 
