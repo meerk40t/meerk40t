@@ -362,6 +362,7 @@ class ContourPanel(wx.Panel):
                 label=f"Contour {self.node.display_label()} #{idx+1}",
             )
             self.context.elements.elem_branch.add_node(node)
+            # print (f"Having added: {node.display_label()}")
         self.context.elements.signal("refresh_scene", "Scene")
 
     def on_creation_placement(self, event):
@@ -465,9 +466,7 @@ class ContourPanel(wx.Panel):
                 self.update_job()
             else:
                 self.context.schedule(self.update_job)
-        else:
-            print ("Wasnt active")
-            
+
     def gather_parameters(self):
         self.parameters["img_invert"] = self.check_invert.GetValue()
         self.parameters["img_original"] = self.check_original.GetValue()
