@@ -95,7 +95,6 @@ class ContourDetectionDialog(wx.Dialog):
         self.context = context
         self._init_ui(node)
         self._start_dialog()
-        self.Bind(wx.EVT_CLOSE, self.on_close)
 
     def _init_ui(self, node):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -115,9 +114,8 @@ class ContourDetectionDialog(wx.Dialog):
         self.SetSize(win_wd, win_ht)
         self.CenterOnParent()
 
-    def on_close(self, event):
+    def end_dialog(self):
         # Save window size for next time
-        event.Skip()
         win_wd, win_ht = self.GetSize()
         self.context.win_bgcontour_width = win_wd
         self.context.win_bgcontour_height = win_ht
@@ -1233,6 +1231,7 @@ class MeerK40tScenePanel(wx.Panel):
             # print (f"Node-Dimensions: {node.bbox()}")
             dlg = ContourDetectionDialog(self, self.context, node)
             dlg.ShowModal()
+            dlg.end_dialog()
             dlg.Destroy()
 
         def stop_auto_update(event=None):
