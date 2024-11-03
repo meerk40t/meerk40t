@@ -121,6 +121,7 @@ class ContourDetectionDialog(wx.Dialog):
         win_wd, win_ht = self.GetSize()
         self.context.win_bgcontour_width = win_wd
         self.context.win_bgcontour_height = win_ht
+        self.context.signal("refresh_scene", "Scene")
 
 
 class MeerK40tScenePanel(wx.Panel):
