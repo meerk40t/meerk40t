@@ -1253,10 +1253,15 @@ class ChoicePropertyPanel(ScrolledPanel):
                     nonzero=nonzero,
                 )
                 if isinstance(data, Length):
+                    if not data._preferred_units:
+                        data._preferred_units = "mm"
                     if not data._digits:
                         if data._preferred_units in ("mm", "cm", "in", "inch"):
                             data._digits = 4
-                control.SetValue(str(data))
+                    display_value = data.preferred_length
+                else:
+                    display_value = str(data)
+                control.SetValue(display_value)
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
@@ -1540,6 +1545,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if float(data) != float(Length(ctrl.GetValue())):
                             update_needed = True
                         if update_needed:
+                            if not isinstance(data, str):
+                                data = Length(data).length_mm
                             ctrl.SetValue(str(data))
                     elif dtype == Angle:
                         if ctrl.GetValue() != str(data):
