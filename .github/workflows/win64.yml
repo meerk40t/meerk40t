@@ -21,7 +21,8 @@ jobs:
       with:
         python-version: 3.10
         # This won't work on outdate windows versions like win7
-
+        architecture: x86
+        # 32-bit architecture required for libusb to connect properly
     - name: Install dependencies
       run: |
         pip install opencv-python-headless<=4.8.1.78
@@ -46,7 +47,7 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
-        python3 ./waf distclean all --target-arch=64bit
+        python3 ./waf distclean all --target-arch=32bit
         cd ..
         pip3 install .
         cd ..
@@ -74,7 +75,7 @@ jobs:
         ##move external_plugins.unused external_plugins.py
         ##cd ..
         cd dist
-        move MeerK40t.exe MeerK40t-win64.exe
+        move MeerK40t.exe MeerK40t-all.exe
 
     - name: Upload Release Assets
       id: release
@@ -82,4 +83,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t-win64.exe
+          dist/MeerK40t-all.exe
