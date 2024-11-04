@@ -957,18 +957,19 @@ class RibbonBarPanel(wx.Control):
             try:
                 buf = self._set_buffer()
                 dc = wx.MemoryDC()
+                dc.SelectObject(buf)
+                if self._layout_dirty:
+                    self.art.layout(dc, self)
+                    self._layout_dirty = False
+                self.art.paint_main(dc, self)
+                dc.SelectObject(wx.NullBitmap)
+                del dc
+                self._paint_dirty = False
             except (RuntimeError, AssertionError):
+                pass
                 # Shutdown error
-                return
-            dc.SelectObject(buf)
-            if self._layout_dirty:
-                self.art.layout(dc, self)
-                self._layout_dirty = False
-            self.art.paint_main(dc, self)
-            dc.SelectObject(wx.NullBitmap)
-            del dc
-            self._paint_dirty = False
-            self._redraw_lock.release()
+            finally:
+                self._redraw_lock.release()
 
         self.Refresh()  # Paint buffer on screen.
 
