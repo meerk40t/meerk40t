@@ -818,11 +818,7 @@ class RibbonBarPanel(wx.Control):
 
     # Preparation for individual page visibility
     def visible_pages(self):
-        count = 0
-        for p in self.pages:
-            if p.visible:
-                count += 1
-        return count
+        return sum(1 for p in self.pages if p.visible)
 
     def first_page(self):
         # returns the first visible page
@@ -881,10 +877,7 @@ class RibbonBarPanel(wx.Control):
             return
 
     def SetToolTip(self, message):
-        if callable(message):
-            self._tooltip = message()
-        else:
-            self._tooltip = message
+        self._tooltip = message() if callable(message) else message
         if message == "":
             self.stop_tooltip_job()
             super().SetToolTip(message)
@@ -953,22 +946,22 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
-        try:
-            buf = self._set_buffer()
-            dc = wx.MemoryDC()
-        except (RuntimeError, AssertionError):
-            # Shutdown error
-            return
-        dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
+            try:
+                buf = self._set_buffer()
+                dc = wx.MemoryDC()
+            except (RuntimeError, AssertionError, wx.wxAssertionError):
+                # Shutdown error
+                return
+            dc.SelectObject(buf)
             if self._layout_dirty:
                 self.art.layout(dc, self)
                 self._layout_dirty = False
             self.art.paint_main(dc, self)
             self._redraw_lock.release()
             self._paint_dirty = False
-        dc.SelectObject(wx.NullBitmap)
-        del dc
+            dc.SelectObject(wx.NullBitmap)
+            del dc
 
         self.Refresh()  # Paint buffer on screen.
 
@@ -1004,7 +997,7 @@ class RibbonBarPanel(wx.Control):
                 width = 1
             if height <= 0:
                 height = 1
-            result = bool(width >= height)
+            result = width >= height
 
         return result
 
@@ -1102,17 +1095,17 @@ class RibbonBarPanel(wx.Control):
             item = menu.Append(wx.ID_ANY, _("Colorscheme"))
             item.Enable(False)
             item = menu.Append(wx.ID_ANY, _("System Default"), "", wx.ITEM_CHECK)
-            item.Check(bool(c_mode == COLOR_MODE_DEFAULT))
+            item.Check(c_mode == COLOR_MODE_DEFAULT)
             top.Bind(
                 wx.EVT_MENU, lambda v: set_color(COLOR_MODE_DEFAULT), id=item.GetId()
             )
             item = menu.Append(wx.ID_ANY, _("Colored"), "", wx.ITEM_CHECK)
-            item.Check(bool(c_mode == COLOR_MODE_COLOR))
+            item.Check(c_mode == COLOR_MODE_COLOR)
             top.Bind(
                 wx.EVT_MENU, lambda v: set_color(COLOR_MODE_COLOR), id=item.GetId()
             )
             item = menu.Append(wx.ID_ANY, _("Black"), "", wx.ITEM_CHECK)
-            item.Check(bool(c_mode == COLOR_MODE_DARK))
+            item.Check(c_mode == COLOR_MODE_DARK)
             top.Bind(wx.EVT_MENU, lambda v: set_color(COLOR_MODE_DARK), id=item.GetId())
             item = menu.AppendSeparator()
             haslabel = self.art.show_labels
@@ -1180,8 +1173,7 @@ class RibbonBarPanel(wx.Control):
             if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
-                for button in panel.buttons:
-                    yield button
+                yield from panel.buttons
 
     def apply_enable_rules(self):
         """
@@ -1401,10 +1393,8 @@ class Art:
                     self._paint_tab(dc, page)
         else:
             self.current_page = ribbon.first_page()
-        if self.current_page is not None:
-            if self.current_page.position is None:
-                # print("Was dirty...")
-                self.layout(dc, self.parent)
+        if self.current_page is not None and self.current_page.position is None:
+            self.layout(dc, self.parent)
 
         for page in ribbon.pages:
             if page is not self.current_page or not page.visible:
@@ -1443,11 +1433,7 @@ class Art:
                     img_h -= int(ptsize * 1.35)
 
                 button.get_bitmaps(min(w, img_h))
-                if button.enabled:
-                    bitmap = button.bitmap
-                else:
-                    bitmap = button.bitmap_disabled
-
+                bitmap = button.bitmap if button.enabled else button.bitmap_disabled
                 bitmap_width, bitmap_height = bitmap.Size
                 # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
                 #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
@@ -1485,7 +1471,7 @@ class Art:
                                 cont = False
                                 if i < len(label_text) - 1:
                                     nextword = label_text[i + 1]
-                                    test = word + " " + nextword
+                                    test = f"{word} {nextword}"
                                     tw, th = dc.GetTextExtent(test)
                                     if tw < w:
                                         word = test
@@ -1697,15 +1683,11 @@ class Art:
             img_h -= int(ptsize * 1.35)
 
         button.get_bitmaps(min(w, img_h))
-        if button.enabled:
-            bitmap = button.bitmap
-        else:
-            bitmap = button.bitmap_disabled
-
+        bitmap = button.bitmap if button.enabled else button.bitmap_disabled
         # Let's clip the output
-        dc.SetClippingRegion(int(x), int(y), int(w), int(h))
+        dc.SetClippingRegion(int(x), int(y), w, h)
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), self.rounded_radius)
+        dc.DrawRoundedRectangle(int(x), int(y), w, h, self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
         # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
         #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
@@ -1754,7 +1736,7 @@ class Art:
                         cont = False
                         if i < len(label_text) - 1:
                             nextword = label_text[i + 1]
-                            test = word + " " + nextword
+                            test = f"{word} {nextword}"
                             tw, th = dc.GetTextExtent(test)
                             if tw < w:
                                 word = test
@@ -1782,10 +1764,10 @@ class Art:
                     break
             if not wouldfit:
                 show_text = False
-                label_text = list()
+                label_text = []
         else:
             show_text = False
-            label_text = list()
+            label_text = []
         if show_text:
             # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
             text_edge = min(
@@ -1805,7 +1787,7 @@ class Art:
                     cont = False
                     if i < len(label_text) - 1:
                         nextword = label_text[i + 1]
-                        test = word + " " + nextword
+                        test = f"{word} {nextword}"
                         tw, th = dc.GetTextExtent(test)
                         if tw < w:
                             word = test
@@ -1960,17 +1942,9 @@ class Art:
             all_panel_vertical = max(panel_count, 1)
 
         # Calculate optimal width/height for just buttons.
-        button_width_across_panels = page_width
-        button_width_across_panels -= (
-            all_panel_horizontal - 1
-        ) * self.between_panel_buffer
-        button_width_across_panels -= 2 * self.page_panel_buffer
+        button_width_across_panels = page_width - (all_panel_horizontal - 1) * self.between_panel_buffer - 2 * self.page_panel_buffer
 
-        button_height_across_panels = page_height
-        button_height_across_panels -= (
-            all_panel_vertical - 1
-        ) * self.between_panel_buffer
-        button_height_across_panels -= 2 * self.page_panel_buffer
+        button_height_across_panels = page_height - (all_panel_vertical - 1) * self.between_panel_buffer - 2 * self.page_panel_buffer
 
         for p, panel in enumerate(page.panels):
             if p == 0:
@@ -2191,8 +2165,8 @@ class Art:
                 else:
                     y += self.between_button_buffer
             button.position = x, y, x + this_width, y + this_height
+            is_overflow = False
             if is_horizontal:
-                is_overflow = False
                 if x + this_width > panel.position[2]:
                     is_overflow = True
                     # Let's establish whether there is place for another row of icons underneath
@@ -2222,7 +2196,6 @@ class Art:
                     ppx, ppy, ppx1, ppy1 = panel.position
                     panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
             else:
-                is_overflow = False
                 if y + this_height > panel.position[3]:
                     is_overflow = True
                     # print(
