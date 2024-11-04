@@ -11,7 +11,7 @@ import os.path
 import sys
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.5202"
+APPLICATION_VERSION = "0.9.5300"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
