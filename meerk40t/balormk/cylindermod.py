@@ -1,7 +1,6 @@
 import math
 from functools import lru_cache
 
-
 class CylinderModifier:
     def __init__(self, wrapped_instance, service):
         self._wrapped_instance = wrapped_instance
@@ -23,29 +22,15 @@ class CylinderModifier:
         self.l_x = 0x8000
         self.l_y = 0x8000
 
-        @service.console_command(
-            "cylinder",
-            help="Cylinder base command",
-            output_type="cylinder",
-        )
-        def cylinder(command, channel, _, data=None, **kwargs):
-            channel(
-                f"Cylinder Mode X: {self.x_axis}, {self.x_axis_length}, concave: {self.x_concave}."
-            )
-            channel(
-                f"Cylinder Mode Y: {self.y_axis}, {self.y_axis_length}, concave: {self.y_concave}."
-            )
-            channel(
-                "Only x axis is used. Updates occur only when toggled off and on. Concave is unused."
-            )
-            return "cylinder", None
-
     @lru_cache(maxsize=1024)
     def convert(self, x, y):
         a = x - 0x8000
         r = self.r_x
         x_prime = r * math.sin(a / r)
-        return x_prime + 0x8000, y
+        a = y - 0x8000
+        r = self.r_y
+        y_prime = r * math.sin(a / r)
+        return x_prime + 0x8000, y_prime
 
     def mark(self, x, y, **kwargs):
         x, y = self.convert(x, y)
