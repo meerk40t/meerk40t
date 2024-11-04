@@ -970,8 +970,11 @@ class RibbonBarPanel(wx.Control):
                 # Shutdown error
             finally:
                 self._redraw_lock.release()
-
-        self.Refresh()  # Paint buffer on screen.
+        try:
+            self.Refresh()  # Paint buffer on screen.
+        except RuntimeError:
+            # Shutdown error
+            pass
 
     def prefer_horizontal(self):
         result = None
