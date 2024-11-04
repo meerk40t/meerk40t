@@ -523,6 +523,15 @@ class LihuiyuControllerPanel(ScrolledPanel):
                 )
                 result = dlg.ShowModal()
                 dlg.Destroy()
+            except NotImplementedError:
+                dlg = wx.MessageDialog(
+                    None,
+                    _("Connection Refused. See USB Log for detailed information.") + "\n" + _("You may run an incompatible version of libusb, have you tried the 32-bit version?"),
+                    _("Manual Connection"),
+                    wx.OK | wx.ICON_WARNING,
+                )
+                result = dlg.ShowModal()
+                dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("usb_disconnect\n")
 
