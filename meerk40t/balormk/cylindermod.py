@@ -26,11 +26,11 @@ class CylinderModifier:
     def convert(self, x, y):
         a = x - 0x8000
         r = self.r_x
-        x_prime = r * math.sin(a / r)
+        x_prime = a if r == 0 else r * math.sin(a / r)
         a = y - 0x8000
         r = self.r_y
-        y_prime = r * math.sin(a / r)
-        return x_prime + 0x8000, y_prime
+        y_prime = a if r == 0 else r * math.sin(a / r)
+        return x_prime + 0x8000, y_prime + 0x8000
 
     def mark(self, x, y, **kwargs):
         x, y = self.convert(x, y)

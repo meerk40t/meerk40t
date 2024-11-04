@@ -177,7 +177,7 @@ class CylinderCorrection:
         @service.console_argument("axis", type=str, help="Axis X or Y")
         @service.console_argument("diam", type=Length, help="Diameter of to be engraved object")
         @service.console_command("axis", help="Sets the to be used axis (X or Y)", input_type="cylinder", output_type="cylinder")
-        def cylinder_x_diameter(command, channel, _, data=None, axis=None, diam=None, **kwargs):
+        def cylinder_axis_parameter(command, channel, _, data=None, axis=None, diam=None, **kwargs):
             if axis is None:
                 channel("You need to provide X or Y as parameter to choose which axis to use")
             if diam is None:
