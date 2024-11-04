@@ -18311,8 +18311,20 @@ msgid "Ticked: When loading a file we will reuse an existing operation with the 
 msgstr "Aktiv: beim Laden einer Datei werden existierende Arbeitsabläufe mit den gleichen Eigenschaften wiederverwendet"
 
 #: meerk40t/core/elements/elements.py:428
-msgid "Unticked: We will add another operation aongside existing ones (always the case if properties differ)."
+msgid "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
 msgstr "Inktiv: beim Laden einer Datei werden neue Arbeitsabläufe neben den bestehenden angelegt (immer der Fall wenn Eigenschaften abweichen)"
+
+#: meerk40t/core/elements/elements.py:437
+msgid "Load hidden objects to regmarks"
+msgstr "Lade ausgeblendete Elemente in Registriermarken"
+
+#: meerk40t/core/elements/elements.py:440
+msgid "Ticked: When loading a file invisible elements will be loaded to the regmarks branch."
+msgstr "Aktiv: Beim Laden einer Datei werden ausgeblendete Elemente den Registriermarken zugeordnet."
+
+#: meerk40t/core/elements/elements.py:444
+msgid "Unticked: Invisible elements will be loaded as regular elements and will be hidden."
+msgstr "Inaktiv: Ausgeblendete Elemente werden den regulären Elementen zugeordnet und unterdrückt."
 
 #: meerk40t/core/elements/elements.py:4050
 msgid "File is Empty"
@@ -19149,3 +19161,19 @@ msgstr "Sounddatei"
 #: meerk40t/gui/wxmeerk40t.py:1048
 msgid "Define the soundfile MeerK40t will play when the 'beep' command is issued"
 msgstr "Legt die Sounddatei fest, die MeerK40t beim 'beep' Kommando abspielt"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:612
+msgid "Delete this contour"
+msgstr "Lösche diesen Umriss"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:613
+msgid "Delete all others"
+msgstr "Lösche alle andere"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:614
+msgid "Delete all bigger"
+msgstr "Lösche alle Größeren"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:615
+msgid "Delete all smaller"
+msgstr "Lösche alle Kleineren"
