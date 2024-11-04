@@ -19985,7 +19985,7 @@ msgid "Ticked: When loading a file we will reuse an existing operation with the 
 msgstr "Selezionato: Quando si carica un file, si riutilizza un'operazione esistente con le stesse proprietà principali."
 
 #: meerk40t/core/elements/elements.py:428
-msgid "Unticked: We will add another operation aongside existing ones (always the case if properties differ)."
+msgid "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
 msgstr "Deselezionato: Aggiungeremo un'altra operazione accanto a quelle esistenti (se le proprietà differiscono)"
 
 #: meerk40t/core/elements/elements.py:4050

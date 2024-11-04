@@ -424,7 +424,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n"
                 + _(
-                    "Unticked: We will add another operation aongside existing ones (always the case if properties differ)."
+                    "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
                 ),
                 "page": "Operations",
                 "section": "Loading",
