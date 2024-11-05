@@ -109,6 +109,7 @@ class RasterOpNode(Node, Parameters):
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
+        default_map["shift"] = f"±{self.shift}"
         default_map["percent"] = "100%"
         default_map["ppi"] = "default"
         if self.power is not None:
@@ -358,9 +359,14 @@ class RasterOpNode(Node, Parameters):
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
-        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        overscan = float(Length(self.settings.get("overscan", "0mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
+
+        shift = float(Length(self.settings.get("shift", "0mm")))
+        transformed_vector = matrix.transform_vector([0, shift])
+        self.shift = abs(complex(transformed_vector[0], transformed_vector[1]))
+
         if len(self.children) == 0:
             return
 
@@ -441,6 +447,9 @@ class RasterOpNode(Node, Parameters):
         if not isinstance(overscan, float):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
+        shift = self.shift
+        if not isinstance(shift, float):
+            shift = float(Length(shift))
 
         # Set variables by direction
         direction = self.raster_direction
@@ -519,6 +528,7 @@ class RasterOpNode(Node, Parameters):
                 start_minimum_y=start_minimum_y,
                 start_minimum_x=start_minimum_x,
                 overscan=overscan,
+                shift=shift,
                 settings=settings,
                 passes=passes,
             )
@@ -549,6 +559,7 @@ class RasterOpNode(Node, Parameters):
                     start_minimum_y=start_minimum_y,
                     start_minimum_x=start_minimum_x,
                     overscan=overscan,
+                    shift=shift,
                     settings=settings,
                     passes=passes,
                 )

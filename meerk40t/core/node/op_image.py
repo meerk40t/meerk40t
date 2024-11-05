@@ -97,6 +97,7 @@ class ImageOpNode(Node, Parameters):
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
+        default_map["shift"] = f"±{self.shift}"
         # print(self.dangerous, self.stopop, self.raster_direction)
         default_map["percent"] = "100%"
         default_map["ppi"] = "default"
@@ -269,9 +270,12 @@ class ImageOpNode(Node, Parameters):
         @param plan:
         @return:
         """
-        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        overscan = float(Length(self.settings.get("overscan", "0mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
+        shift = float(Length(self.settings.get("shift", "0mm")))
+        transformed_vector = matrix.transform_vector([0, shift])
+        self.shift = abs(complex(transformed_vector[0], transformed_vector[1]))
 
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm
@@ -328,6 +332,9 @@ class ImageOpNode(Node, Parameters):
             overscan = self.overscan
             if not isinstance(overscan, float):
                 overscan = float(Length(overscan))
+            shift = self.shift
+            if not isinstance(shift, float):
+                shift = float(Length(shift))
 
             # Set variables by direction
             if hasattr(image_node, "direction") and image_node.direction is not None:
@@ -456,6 +463,7 @@ class ImageOpNode(Node, Parameters):
                         start_minimum_y=start_on_top,
                         start_minimum_x=start_on_left,
                         overscan=overscan,
+                        shift=shift,
                         settings=settings,
                         passes=passes,
                         post_filter=image_filter,
@@ -489,6 +497,7 @@ class ImageOpNode(Node, Parameters):
                             start_minimum_y=start_on_top,
                             start_minimum_x=start_on_left,
                             overscan=overscan,
+                            shift=shift,
                             settings=settings,
                             passes=passes,
                             post_filter=image_filter,
@@ -511,6 +520,7 @@ class ImageOpNode(Node, Parameters):
                     start_minimum_y=start_on_top,
                     start_minimum_x=start_on_left,
                     overscan=overscan,
+                    shift=shift,
                     settings=settings,
                     passes=passes,
                 )
@@ -541,6 +551,7 @@ class ImageOpNode(Node, Parameters):
                     start_minimum_y=start_on_top,
                     start_minimum_x=start_on_left,
                     overscan=overscan,
+                    shift=shift,
                     settings=settings,
                     passes=passes,
                 )
