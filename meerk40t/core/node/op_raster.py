@@ -358,12 +358,16 @@ class RasterOpNode(Node, Parameters):
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
-
-        overscan = float(Length(self.settings.get("overscan", "0mm")))
+        try:
+            overscan = float(Length(self.overscan))
+        except ValueError:
+            overscan = 0
+        try:
+            shift = float(Length(self.shift))
+        except ValueError:
+            shift = 0
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-
-        shift = float(Length(self.settings.get("shift", "0mm")))
         transformed_vector = matrix.transform_vector([0, shift])
         self.shift = abs(complex(transformed_vector[0], transformed_vector[1]))
 
@@ -447,6 +451,7 @@ class RasterOpNode(Node, Parameters):
         if not isinstance(overscan, float):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
+        print (f"Rasterop: {overscan}")
         shift = self.shift
         if not isinstance(shift, float):
             shift = float(Length(shift))
@@ -454,8 +459,8 @@ class RasterOpNode(Node, Parameters):
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
-        start_minimum_x = False
-        start_minimum_y = False
+        start_minimum_x = True
+        start_minimum_y = True
         if direction == 0 or direction == 4:
             horizontal = True
             start_minimum_y = True

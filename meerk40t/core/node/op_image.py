@@ -270,10 +270,16 @@ class ImageOpNode(Node, Parameters):
         @param plan:
         @return:
         """
-        overscan = float(Length(self.settings.get("overscan", "0mm")))
+        try:
+            overscan = float(Length(self.overscan))
+        except ValueError:
+            overscan = 0
+        try:
+            shift = float(Length(self.shift))
+        except ValueError:
+            shift = 0
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-        shift = float(Length(self.settings.get("shift", "0mm")))
         transformed_vector = matrix.transform_vector([0, shift])
         self.shift = abs(complex(transformed_vector[0], transformed_vector[1]))
 
@@ -342,8 +348,8 @@ class ImageOpNode(Node, Parameters):
             else:
                 direction = self.raster_direction
             horizontal = False
-            start_on_left = False
-            start_on_top = False
+            start_on_left = True
+            start_on_top = True
             if direction in [0, 4]:
                 horizontal = True
                 start_on_top = True
