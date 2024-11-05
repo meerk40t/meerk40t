@@ -451,7 +451,6 @@ class RasterOpNode(Node, Parameters):
         if not isinstance(overscan, float):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
-        print (f"Rasterop: {overscan}")
         shift = self.shift
         if not isinstance(shift, float):
             shift = float(Length(shift))
