@@ -1985,7 +1985,6 @@ class SimulationWidget(Widget):
             else:
                 # We draw the cutcode up to a certain percentage
                 simcut = (self.sim.cutcode[idx], )
-                print (f"Residual: {residual}")
                 self.renderer.draw_cutcode(simcut, gc, 0, 0, self.raster_as_image, residual=residual)
 
             return
