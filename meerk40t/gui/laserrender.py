@@ -546,7 +546,12 @@ class LaserRender:
         self.draw_cutcode(cutcode, gc, x, y)
 
     def draw_cutcode(
-        self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0, raster_as_image: bool = True
+        self,
+        cutcode: CutCode,
+        gc: wx.GraphicsContext,
+        x: int = 0, y: int = 0,
+        raster_as_image: bool = True,
+        residual = None,
     ):
         """
         Draw cutcode object into wxPython graphics code.
@@ -667,19 +672,36 @@ class LaserRender:
                     gc.PopState()
                 else:
                     p.MoveToPoint(start[0] + x, start[1] + y)
-                    for px, py, pon in cut.plot.plot():
+                    todraw = list(cut.plot.plot())
+                    if residual is None:
+                        maxcount = -1
+                    else:
+                        maxcount = int(len(todraw) * residual)
+                    count = 0
+                    for px, py, pon in todraw:
                         if pon == 0:
                             p.MoveToPoint(px + x, py + y)
                         else:
                             p.AddLineToPoint(px + x, py + y)
-
+                        count += 1
+                        if 0 < maxcount < count:
+                            break
             elif isinstance(cut, PlotCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
-                for ox, oy, pon, px, py in cut.plot:
+                todraw = list(cut.plot)
+                if residual is None:
+                    maxcount = -1
+                else:
+                    maxcount = int(len(todraw) * residual)
+                count = 0
+                for ox, oy, pon, px, py in todraw:
                     if pon == 0:
                         p.MoveToPoint(px + x, py + y)
                     else:
                         p.AddLineToPoint(px + x, py + y)
+                    count += 1
+                    if 0 < maxcount < count:
+                        break
             elif isinstance(cut, DwellCut):
                 pass
             elif isinstance(cut, WaitCut):

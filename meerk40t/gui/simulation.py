@@ -1903,84 +1903,91 @@ class SimulationWidget(Widget):
         ends = []
         cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
         cutend = wx.Point2D(*self.sim.cutcode[idx].end)
-        if self.sim.statistics[idx]["type"] == "RasterCut" and self.raster_as_image:
-            # Rastercut object.
-            x = 0
-            y = 0
-            cut = self.sim.cutcode[idx]
-            image = cut.image
-            gc.PushState()
-            matrix = Matrix.scale(cut.step_x, cut.step_y)
-            matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-            try:
-                cache = cut._cache
-                cache_id = cut._cache_id
-            except AttributeError:
-                cache = None
-                cache_id = -1
-            if cache_id != id(image):
-                # Cached image is invalid.
-                cache = None
-            if cache is None:
-                # No valid cache. Generate.
-                cut._cache_width, cut._cache_height = image.size
+        if self.sim.statistics[idx]["type"] == "RasterCut":
+            if self.raster_as_image:
+                # Rastercut object.
+                x = 0
+                y = 0
+                cut = self.sim.cutcode[idx]
+                image = cut.image
+                gc.PushState()
+                matrix = Matrix.scale(cut.step_x, cut.step_y)
+                matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 try:
-                    cut._cache = self.renderer.make_thumbnail(image, maximum=5000)
-                except (MemoryError, RuntimeError):
-                    cut._cache = None
-                cut._cache_id = id(image)
-            # Set draw - constraint
-            if cut.horizontal:
-                if cut.start_minimum_y:
-                    # mode = "T2B"
-                    clip_w = cut._cache_width
-                    clip_h = int(residual * cut._cache_height)
-                    clip_x = 0
-                    clip_y = 0
+                    cache = cut._cache
+                    cache_id = cut._cache_id
+                except AttributeError:
+                    cache = None
+                    cache_id = -1
+                if cache_id != id(image):
+                    # Cached image is invalid.
+                    cache = None
+                if cache is None:
+                    # No valid cache. Generate.
+                    cut._cache_width, cut._cache_height = image.size
+                    try:
+                        cut._cache = self.renderer.make_thumbnail(image, maximum=5000)
+                    except (MemoryError, RuntimeError):
+                        cut._cache = None
+                    cut._cache_id = id(image)
+                # Set draw - constraint
+                if cut.horizontal:
+                    if cut.start_minimum_y:
+                        # mode = "T2B"
+                        clip_w = cut._cache_width
+                        clip_h = int(residual * cut._cache_height)
+                        clip_x = 0
+                        clip_y = 0
+                    else:
+                        # mode = "B2T"
+                        clip_w = cut._cache_width
+                        clip_h = int(residual * cut._cache_height)
+                        clip_x = 0
+                        clip_y = cut._cache_height - clip_h
                 else:
-                    # mode = "B2T"
-                    clip_w = cut._cache_width
-                    clip_h = int(residual * cut._cache_height)
-                    clip_x = 0
-                    clip_y = cut._cache_height - clip_h
-            else:
-                if cut.start_minimum_x:
-                    # mode = "L2R"
-                    clip_w = int(residual * cut._cache_width)
-                    clip_h = cut._cache_height
-                    clip_x = 0
-                    clip_y = 0
-                else:
-                    # mode = "R2L"
-                    clip_w = int(residual * cut._cache_width)
-                    clip_h = cut._cache_height
-                    clip_x = cut._cache_width - clip_w
-                    clip_y = 0
+                    if cut.start_minimum_x:
+                        # mode = "L2R"
+                        clip_w = int(residual * cut._cache_width)
+                        clip_h = cut._cache_height
+                        clip_x = 0
+                        clip_y = 0
+                    else:
+                        # mode = "R2L"
+                        clip_w = int(residual * cut._cache_width)
+                        clip_h = cut._cache_height
+                        clip_x = cut._cache_width - clip_w
+                        clip_y = 0
 
-            # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
-            # if msg != self.last_msg:
-            #     print (msg)
-            #     self.last_msg = msg
-            gc.Clip(clip_x, clip_y, clip_w, clip_h)
-            if cut._cache is not None:
-                # Cache exists and is valid.
-                gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
-                # gc.SetBrush(wx.RED_BRUSH)
-                # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
+                # if msg != self.last_msg:
+                #     print (msg)
+                #     self.last_msg = msg
+                gc.Clip(clip_x, clip_y, clip_w, clip_h)
+                if cut._cache is not None:
+                    # Cache exists and is valid.
+                    gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
+                    # gc.SetBrush(wx.RED_BRUSH)
+                    # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                else:
+                    # Image was too large to cache, draw a red rectangle instead.
+                    gc.SetBrush(wx.RED_BRUSH)
+                    gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                    gc.DrawBitmap(
+                        icons8_image.GetBitmap(),
+                        0,
+                        0,
+                        cut._cache_width,
+                        cut._cache_height,
+                    )
+                gc.ResetClip()
+                gc.PopState()
             else:
-                # Image was too large to cache, draw a red rectangle instead.
-                gc.SetBrush(wx.RED_BRUSH)
-                gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
-                gc.DrawBitmap(
-                    icons8_image.GetBitmap(),
-                    0,
-                    0,
-                    cut._cache_width,
-                    cut._cache_height,
-                )
-            gc.ResetClip()
-            gc.PopState()
+                # We draw the cutcode up to a certain percentage
+                simcut = (self.sim.cutcode[idx], )
+                print (f"Residual: {residual}")
+                self.renderer.draw_cutcode(simcut, gc, 0, 0, self.raster_as_image, residual=residual)
+
             return
             # # We draw a rectangle covering the raster area
             # spath = str(self.sim.cutcode[idx].path)
