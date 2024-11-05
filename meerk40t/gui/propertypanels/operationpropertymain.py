@@ -1502,8 +1502,8 @@ class RasterSettingsPanel(wx.Panel):
             self.text_dpi.Enable(True)
         if self.operation.overscan is not None:
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
-        if self.operation.shift is not None:
-            set_ctrl_value(self.text_shift, str(self.operation.shift))
+        if self.operation.shift_lines is not None:
+            set_ctrl_value(self.text_shift, str(self.operation.shift_lines))
         if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.bidirectional is not None:
@@ -1567,8 +1567,8 @@ class RasterSettingsPanel(wx.Panel):
         value = v.preferred_length
         if v._amount < 1e-10:
             value = 0
-        if self.operation.shift != value:
-            self.operation.shift = value
+        if self.operation.shift_lines != value:
+            self.operation.shift_lines = value
             self.context.elements.signal(
                 "element_property_reload", self.operation, "text_shift"
             )

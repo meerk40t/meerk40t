@@ -109,7 +109,7 @@ class RasterOpNode(Node, Parameters):
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
-        default_map["shift"] = f"±{self.shift}"
+        default_map["shift_lines"] = f"±{self.shift_lines}"
         default_map["percent"] = "100%"
         default_map["ppi"] = "default"
         if self.power is not None:
@@ -363,13 +363,13 @@ class RasterOpNode(Node, Parameters):
         except ValueError:
             overscan = 0
         try:
-            shift = float(Length(self.shift))
+            shift_lines = float(Length(self.shift_lines))
         except ValueError:
-            shift = 0
+            shift_lines = 0
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-        transformed_vector = matrix.transform_vector([0, shift])
-        self.shift = abs(complex(transformed_vector[0], transformed_vector[1]))
+        transformed_vector = matrix.transform_vector([0, shift_lines])
+        self.shift_lines = abs(complex(transformed_vector[0], transformed_vector[1]))
 
         if len(self.children) == 0:
             return
@@ -451,9 +451,9 @@ class RasterOpNode(Node, Parameters):
         if not isinstance(overscan, float):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
-        shift = self.shift
-        if not isinstance(shift, float):
-            shift = float(Length(shift))
+        shift_lines = self.shift_lines
+        if not isinstance(shift_lines, float):
+            shift_lines = float(Length(shift_lines))
 
         # Set variables by direction
         direction = self.raster_direction
@@ -532,7 +532,7 @@ class RasterOpNode(Node, Parameters):
                 start_minimum_y=start_minimum_y,
                 start_minimum_x=start_minimum_x,
                 overscan=overscan,
-                shift=shift,
+                shift_lines=shift_lines,
                 settings=settings,
                 passes=passes,
             )
@@ -563,7 +563,7 @@ class RasterOpNode(Node, Parameters):
                     start_minimum_y=start_minimum_y,
                     start_minimum_x=start_minimum_x,
                     overscan=overscan,
-                    shift=shift,
+                    shift_lines=shift_lines,
                     settings=settings,
                     passes=passes,
                 )

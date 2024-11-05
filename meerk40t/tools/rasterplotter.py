@@ -36,7 +36,7 @@ class RasterPlotter:
         offset_y=0,
         step_x=1,
         step_y=1,
-        shift=0,
+        shift_lines=0,
         filter=None,
     ):
         """
@@ -72,10 +72,10 @@ class RasterPlotter:
         self.skip_pixel = skip_pixel
         if horizontal:
             self.overscan = round(overscan / float(step_x))
-            self.shift = round(shift/ float(step_x))
+            self.shift_lines = round(shift_lines/ float(step_x))
         else:
             self.overscan = round(overscan / float(step_y))
-            self.shift = round(shift/ float(step_y))
+            self.shift_lines = round(shift_lines/ float(step_y))
         self.offset_x = offset_x
         self.offset_y = offset_y
         self.step_x = step_x
@@ -424,7 +424,7 @@ class RasterPlotter:
         """
         width = self.width
         unidirectional = not self.bidirectional
-        shift_value = 0 if unidirectional else self.shift
+        shift_value = 0 if unidirectional else self.shift_lines
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
@@ -502,7 +502,7 @@ class RasterPlotter:
         """
         height = self.height
         unidirectional = not self.bidirectional
-        shift_value = 0 if unidirectional else self.shift
+        shift_value = 0 if unidirectional else self.shift_lines
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
