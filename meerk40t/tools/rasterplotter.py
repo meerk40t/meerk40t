@@ -477,18 +477,20 @@ class RasterPlotter:
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
+            lasty = y
             # Stop the line in all cases:
+            gap = 0 if traveling_bottom else shift_value
             if last_pixel:
-                gap = 0 if traveling_bottom else shift_value
-                edge = upper_bound if traveling_bottom else lower_bound
-                yield edge + gap, y, 0
+                lasty = upper_bound if traveling_bottom else lower_bound
+                yield lasty + gap, y, 0
             # We are done and at the end of our scanline, so let's apply the overscan value
             if self.overscan:
-                gap = 0 if traveling_bottom else shift_value
-                yield x, y + shift_value + dy * self.overscan, 0
+                lasty = y + dy * self.overscan
+                yield x, lasty + gap, 0
             # Lets go to the next line, this may be shifted
             gap = shift_value if traveling_bottom else 0
-            yield next_x, next_y + gap, 0
+            if lasty != next_y:
+                yield next_x, next_y + gap, 0
             x = next_x
             y = next_y
             if not unidirectional:
@@ -562,23 +564,25 @@ class RasterPlotter:
                 return
             # We are done and at the end of our scanline, so let's apply the overscan value
             # Stop the line in all cases:
+            lastx = x
+            gap = 0 if traveling_right else shift_value
             if last_pixel:
-                gap = 0 if traveling_right else shift_value
-                edge = upper_bound if traveling_right else lower_bound
-                yield edge + gap, y, 0
+                lastx = upper_bound if traveling_right else lower_bound
+                yield lastx + gap, y, 0
                 # if line_counter < 5:
                 #     print (f"[{line_counter}-eol] {edge + gap}, {y}, {0}")
             if self.overscan:
-                gap = 0 if traveling_right else shift_value
-                yield x + gap + dx * self.overscan, y, 0
+                lastx = x + dx * self.overscan
+                yield lastx + gap, y, 0
                 # if line_counter < 5:
                 #     print (f"[{line_counter}-overscan] {x + gap + dx * self.overscan}, {y}, {0}")
             # Lets go to the next line, this may be shifted
+            yield lastx + gap, next_y, 0
             gap = shift_factor * shift_value if traveling_right else 0
             # if line_counter < 5:
             #     print (f"[{line_counter+1}-start] {next_x + gap}, {next_y}, {0}")
-
-            yield next_x + gap, next_y, 0
+            if lastx != next_x:
+                yield next_x + gap, next_y, 0
             x = next_x
             y = next_y
             if not unidirectional:
