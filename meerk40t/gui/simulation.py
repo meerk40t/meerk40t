@@ -809,6 +809,7 @@ class SimulationPanel(wx.Panel, Job):
         self.auto_clear = auto_clear
         # Display travel paths?
         self.display_travel = True
+        self.raster_as_image = True
 
         Job.__init__(self)
         self._playback_cuts = True
@@ -982,7 +983,9 @@ class SimulationPanel(wx.Panel, Job):
         # BUILD SCENE
         ##############
 
-        self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
+        self.sim_cutcode = SimulationWidget(self.widget_scene, self)
+        self.sim_cutcode.raster_as_image = self.raster_as_image
+        self.widget_scene.add_scenewidget(self.sim_cutcode)
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
         self.sim_travel.display = self.display_travel
         self.widget_scene.add_scenewidget(self.sim_travel)
@@ -1281,6 +1284,11 @@ class SimulationPanel(wx.Panel, Job):
         self.sim_travel.display = self.display_travel
         self.widget_scene.request_refresh()
 
+    def toggle_raster_display(self, event):
+        self.raster_as_image = not self.raster_as_image
+        self.sim_cutcode.raster_as_image = self.raster_as_image
+        self.widget_scene.request_refresh()
+
     def remove_background(self, event):
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "background", None
@@ -1435,6 +1443,14 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(wx.EVT_MENU, self.toggle_travel_display, id=id6.GetId())
         menu.Check(id6.GetId(), self.display_travel)
+        id7 = menu.Append(
+            wx.ID_ANY,
+            _("Raster as Image"),
+            _("Show picture as image / as all the lines needed"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_raster_display, id=id7.GetId())
+        menu.Check(id7.GetId(), self.raster_as_image)
 
         menu.AppendSeparator()
         self.Bind(
@@ -1866,6 +1882,7 @@ class SimulationWidget(Widget):
         self.sim = sim
         self.matrix.post_cat(~scene.context.device.view.matrix)
         self.last_msg = None
+        self.raster_as_image = True
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.sim.progress < 0:
@@ -1878,7 +1895,7 @@ class SimulationWidget(Widget):
             sim_cut = self.sim.cutcode[:idx]
         else:
             sim_cut = self.sim.cutcode
-        self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+        self.renderer.draw_cutcode(sim_cut, gc, 0, 0, self.raster_as_image)
         if residual <= 0:
             return
         # We draw interpolated lines to acknowledge we are in the middle of a cut operation
@@ -1886,7 +1903,7 @@ class SimulationWidget(Widget):
         ends = []
         cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
         cutend = wx.Point2D(*self.sim.cutcode[idx].end)
-        if self.sim.statistics[idx]["type"] == "RasterCut":
+        if self.sim.statistics[idx]["type"] == "RasterCut" and self.raster_as_image:
             # Rastercut object.
             x = 0
             y = 0
