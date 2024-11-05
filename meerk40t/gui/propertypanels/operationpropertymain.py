@@ -1308,8 +1308,9 @@ class RasterSettingsPanel(wx.Panel):
 
         raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Raster:"), wx.VERTICAL)
         param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
-        param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
+
+        sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
+        param_sizer.Add(sizer_dpi, 1, wx.EXPAND, 0)
         self.check_overrule_dpi = wxCheckBox(self, wx.ID_ANY)
         self.check_overrule_dpi.SetToolTip(_("Overrules image dpi settings and uses this value instead"))
         self.text_dpi = TextCtrl(
@@ -1351,24 +1352,37 @@ class RasterSettingsPanel(wx.Panel):
             + _("this can prevent your laser from stuttering.")
         )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
-        sizer_3.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
+        sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        sizer_6 = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
-        param_sizer.Add(sizer_6, 1, wx.EXPAND, 0)
-
-        raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
-
+        sizer_overscan = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
+        param_sizer.Add(sizer_overscan, 1, wx.EXPAND, 0)
         self.text_overscan = TextCtrl(
             self,
             wx.ID_ANY,
-            "1mm",
+            "0mm",
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_overscan.SetToolTip(_("Overscan amount"))
-        sizer_6.Add(self.text_overscan, 1, wx.EXPAND, 0)
+        self.text_overscan.SetToolTip(_("Overscan amount - padding that will be added at the end of a scanline to allow the laser to slow down"))
+        sizer_overscan.Add(self.text_overscan, 1, wx.EXPAND, 0)
+
+        sizer_shift = StaticBoxSizer(self, wx.ID_ANY, _("Inter-Line Shift:"), wx.HORIZONTAL)
+        self.text_shift = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "0mm",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_shift.SetToolTip(_("Shift between two lines in bidirectional mode"))
+        sizer_shift.Add(self.text_shift, 1, wx.EXPAND, 0)
+
+        param_sizer.Add(sizer_shift, 1, wx.EXPAND, 0)
+
+        raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
 
         sizer_4 = StaticBoxSizer(self, wx.ID_ANY, _("Direction:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
@@ -1449,6 +1463,7 @@ class RasterSettingsPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
+        self.text_shift.SetActionRoutine(self.on_text_shift)
 
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
@@ -1487,10 +1502,13 @@ class RasterSettingsPanel(wx.Panel):
             self.text_dpi.Enable(True)
         if self.operation.overscan is not None:
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
+        if self.operation.shift is not None:
+            set_ctrl_value(self.text_shift, str(self.operation.shift))
         if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
+        self.text_shift.Enable(bool(self.operation.bidirectional))
         self.Show()
 
     def on_overrule(self, event):
@@ -1536,6 +1554,25 @@ class RasterSettingsPanel(wx.Panel):
                 "element_property_reload", self.operation, "text_overscan"
             )
 
+    def on_text_shift(self):
+        try:
+            v = Length(
+                self.text_shift.GetValue(),
+                unitless=UNITS_PER_MM,
+                preferred_units="mm",
+                digits=4,
+            )
+        except ValueError:
+            return
+        value = v.preferred_length
+        if v._amount < 1e-10:
+            value = 0
+        if self.operation.shift != value:
+            self.operation.shift = value
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "text_shift"
+            )
+
     def on_combo_raster_direction(self, event=None):
         if (
             self.operation.raster_direction
@@ -1553,6 +1590,7 @@ class RasterSettingsPanel(wx.Panel):
         self.context.elements.signal(
             "element_property_reload", self.operation, "radio_direct"
         )
+        self.text_shift.Enable(bool(self.operation.bidirectional))
         event.Skip()
 
 
