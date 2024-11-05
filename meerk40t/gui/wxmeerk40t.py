@@ -162,7 +162,13 @@ class ActionPanel(wx.Panel):
             self.action_right()
 
     def resize_button(self):
-        size = self.button_go.Size
+        # The job might be called when the window is already destroyed
+        if self.context.kernel.is_shutdown:
+            return
+        try:
+            size = self.button_go.Size
+        except RuntimeError:
+            return
         minsize = min(size[0], size[1])
         # Leave some room at the edges,
         # for every 25 pixel 1 pixel at each side
