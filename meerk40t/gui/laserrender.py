@@ -619,6 +619,13 @@ class LaserRender:
                 )
             elif isinstance(cut, RasterCut):
                 # Rastercut object.
+                p.MoveToPoint(start[0] + x, start[1] + y)
+                for px, py, pon in cut.plot.plot():
+                    if pon == 0:
+                        p.MoveToPoint(px + x, py + y)
+                    else:
+                        p.AddLineToPoint(px + x, py + y)
+                continue
                 image = cut.image
                 gc.PushState()
                 matrix = Matrix.scale(cut.step_x, cut.step_y)
