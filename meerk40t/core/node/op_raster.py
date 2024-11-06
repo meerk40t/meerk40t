@@ -431,17 +431,20 @@ class RasterOpNode(Node, Parameters):
             image_node.process_image()
 
         if matrix.value_scale_y() < 0:
+            self.raster_preference_top = not self.raster_preference_top
             # Y is negative scale, flip raster_direction if needed
             if self.raster_direction == 0:
                 self.raster_direction = 1
             elif self.raster_direction == 1:
                 self.raster_direction = 0
         if matrix.value_scale_x() < 0:
+            self.raster_preference_left = not self.raster_preference_left
             # X is negative scale, flip raster_direction if needed
             if self.raster_direction == 2:
                 self.raster_direction = 3
             elif self.raster_direction == 3:
                 self.raster_direction = 2
+                self.raster_preference_top = False
 
         commands.append(make_image)
 
@@ -469,8 +472,8 @@ class RasterOpNode(Node, Parameters):
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
-        start_minimum_x = True
-        start_minimum_y = True
+        start_minimum_y = self.raster_preference_top > 0
+        start_minimum_x = self.raster_preference_left > 0
         if direction == 0 or direction == 4:
             horizontal = True
             start_minimum_y = True
