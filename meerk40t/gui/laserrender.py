@@ -672,7 +672,20 @@ class LaserRender:
                     gc.PopState()
                 else:
                     p.MoveToPoint(start[0] + x, start[1] + y)
-                    todraw = list(cut.plot.plot())
+                    try:
+                        cache = cut._cache
+                        cache_id = cut._cache_id
+                    except AttributeError:
+                        cache = None
+                        cache_id = -1
+                    if cache_id != "plot":
+                        # Cached plot is invalid.
+                        cache = None
+                    if cache is None:
+                        cache = list(cut.plot.plot())
+                        cut._cache = cache
+                        cut._cache_id = "plot"
+                    todraw = cache
                     if residual is None:
                         maxcount = -1
                     else:
