@@ -48,6 +48,7 @@ class RasterOpNode(Node, Parameters):
         self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = False
         self.label = "Raster"
+        self.cutoff_threshold = 0
 
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
@@ -57,6 +58,15 @@ class RasterOpNode(Node, Parameters):
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
+        if isinstance(self.cutoff_threshold, str):
+            s = self.cutoff_threshold
+            if s.endswith("%"):
+                s = s[:-1]
+            try:
+                self.cutoff_threshold = float(s)
+            except ValueError:
+                self.cutoff_threshold = 0
+
 
     def __repr__(self):
         return "RasterOp()"
@@ -112,6 +122,7 @@ class RasterOpNode(Node, Parameters):
         default_map["shift_lines"] = f"±{self.shift_lines}"
         default_map["percent"] = "100%"
         default_map["ppi"] = "default"
+        default_map["cutoff"] = "-" if self.cutoff_threshold is None else str(self.cutoff_threshold)
         if self.power is not None:
             default_map["percent"] = f"{self.power / 10.0:.0f}%"
             default_map["ppi"] = f"{self.power:.0f}"
@@ -518,6 +529,15 @@ class RasterOpNode(Node, Parameters):
                     (max_x, min_y),
                 )
             )
+            image_filter = None
+            if self.cutoff_threshold: # Given as percentage
+                threshold = self.cutoff_threshold / 100.0
+                def image_filter(pixel):
+                    # This threshold filter function is defined to set image pixels(white=255, black=0)
+                    # to a brightness value (white=0, black=1), additionally we apply a lowp pass filter
+                    # that sets all pixels to 0 if they are below the threshold.
+                    value = (255 - pixel) / 255.0
+                    return 0 if value <= threshold else value
 
             # Create Cut Object
             cut = RasterCut(
@@ -535,6 +555,7 @@ class RasterOpNode(Node, Parameters):
                 shift_lines=shift_lines,
                 settings=settings,
                 passes=passes,
+                post_filter=image_filter,
             )
             cut.path = path
             cut.original_op = self.type
