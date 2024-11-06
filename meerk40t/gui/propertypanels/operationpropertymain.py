@@ -1498,7 +1498,6 @@ class RasterSettingsPanel(wx.Panel):
             set_ctrl_value(self.text_shift, str(self.operation.shift_lines))
         if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
-        print(f"Direction: {self.operation.raster_direction}, combo={self.combo_raster_direction.GetSelection()}")
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.text_shift.Enable(bool(self.operation.bidirectional))
