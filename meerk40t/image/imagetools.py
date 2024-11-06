@@ -26,7 +26,7 @@ def img_to_polygons(
         import cv2
         from PIL import ImageOps
     except ImportError:
-        return list()
+        return ([], [])
     geom_list = list()
 
     # Convert the image to grayscale
@@ -94,7 +94,7 @@ def img_to_rectangles(
         import cv2
         from PIL import ImageOps
     except ImportError:
-        return list()
+        return ([], [])
     geom_list = []
 
     # Convert the image to grayscale
@@ -1928,9 +1928,10 @@ def plugin(kernel, lifecycle=None):
     ):
         try:
             import cv2
+            import PIL.ImageOps
             import time
         except ImportError:
-            channel("cv2 wasn't installed")
+            channel("cv2/Pillow weren't installed")
             return
 
         t0 = time.perf_counter()
@@ -1980,13 +1981,13 @@ def plugin(kernel, lifecycle=None):
                 continue
             # Extract polygons from the image
             if rectangles:
-                geometries, contour_areas = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                contours = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
                 msg = "Bounding"
             else:
-                geometries, contour_areas = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                contours = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
                 msg = "Contour"
             pidx = 0
-            for (geom, c_info) in geometries:
+            for (geom, c_info) in contours:
                 pidx += 1
                 channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
                 if simplified:
