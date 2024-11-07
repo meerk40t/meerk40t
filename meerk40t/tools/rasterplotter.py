@@ -42,6 +42,7 @@ class RasterPlotter:
         step_y=1,
         shift_lines=0,
         filter=None,
+        **kwargs,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
