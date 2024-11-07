@@ -518,74 +518,201 @@ class Warnings:
                     count += 1
             return flag, count
 
+        def has_low_dpis():
+            flag = False
+            count = 0
+            active = self.context.setting(bool, "warning_dpi", True)
+            if not active:
+                return flag, count
+            threshold = self.context.setting(float, "warning_dpi_low", 1.25)
+            if threshold is None:
+                threshold = 2
+            laserspot = getattr(self.context.device, "laserspot", "0.3mm")
+            try:
+                diameter = float(Length(laserspot))
+            except ValueError:
+                diameter = float(Length("0.3mm"))
+            for op in self.context.elements.ops():
+                if (
+                    hasattr(op, "output")
+                    and op.output
+                    and op.type in ("op raster", "op image")
+                    and op.children
+                ):
+                    if op.type == "op raster":
+                        step_x, step_y = self.context.device.view.dpi_to_steps(op.dpi)
+                        step_x *= self.context.device.view.native_scale_x
+                        step_y *= self.context.device.view.native_scale_y
+                        # print (f"Stepx={step_x:.1f}, stepy{step_y:.1f}, diameter={diameter:.1f}")
+                        if step_x >= threshold * diameter or step_y >= threshold * diameter:
+                            flag = True
+                            count += 1
+                            break
+                    elif op.type == "op image":
+                        useop = op.overrule_dpi and op.dpi
+                        for node in op.children:
+                            image_node = node.node if hasattr(node, "node") else node
+                            if getattr(image_node, "hidden", False):
+                                continue
+                            opdpi = op.dpi if useop else image_node.dpi
+                            step_x, step_y = self.context.device.view.dpi_to_steps(opdpi)
+                            step_x *= self.context.device.view.native_scale_x
+                            step_y *= self.context.device.view.native_scale_y
+                            # Get steps from individual images
+                            if step_x >= threshold * diameter or step_y >= threshold * diameter:
+                                flag = True
+                                count += 1
+                                break
+
+            return flag, count
+
+        def has_high_dpis():
+            flag = False
+            count = 0
+            threshold = self.context.setting(float, "warning_dpi_high", 0.25)
+            if threshold is None:
+                threshold = 0.25
+            laserspot = getattr(self.context.device, "laserspot", "0.3mm")
+            try:
+                diameter = float(Length(laserspot))
+            except ValueError:
+                diameter = float(Length("0.3mm"))
+            for op in self.context.elements.ops():
+                if (
+                    hasattr(op, "output")
+                    and op.output
+                    and op.type in ("op raster", "op image")
+                    and op.children
+                ):
+                    if op.type == "op raster":
+                        step_x, step_y = self.context.device.view.dpi_to_steps(op.dpi)
+                        step_x *= self.context.device.view.native_scale_x
+                        step_y *= self.context.device.view.native_scale_y
+                        if step_x <= threshold * diameter or step_y <= threshold * diameter:
+                            flag = True
+                            count += 1
+                            break
+                    elif op.type == "op image":
+                        useop = op.overrule_dpi and op.dpi
+                        for node in op.children:
+                            image_node = node.node if hasattr(node, "node") else node
+                            if getattr(image_node, "hidden", False):
+                                continue
+                            opdpi = op.dpi if useop else image_node.dpi
+                            step_x, step_y = self.context.device.view.dpi_to_steps(opdpi)
+                            step_x *= self.context.device.view.native_scale_x
+                            step_y *= self.context.device.view.native_scale_y
+                            if step_x <= threshold * diameter or step_y <= threshold * diameter:
+                                flag = True
+                                count += 1
+                                break
+
+            return flag, count
+
         self._concerns.clear()
-        max_speed = getattr(self.context.device, "max_vector_speed", None)
-        if has_ambitious_operations(max_speed, ("op cut", "op engrave")):
-            self._concerns.append(
-                (
-                    _("- Vector operations are too fast.")
-                    + "\n  "
-                    + _("Could lead to erratic stepper behaviour and incomplete burns."),
-                    CONCERN_CRITICAL
-                )
-            )
-        max_speed = getattr(self.context.device, "max_raster_speed", None)
-        if has_ambitious_operations(max_speed, ("op raster", "op image")):
-            self._concerns.append(
-                (
-                    _("- Raster operations are too fast.")
-                    + "\n  "
-                    + _("Could lead to erratic stepper behaviour and incomplete burns."),
-                    CONCERN_CRITICAL
-                )
-            )
-        if has_objects_outside():
-            self._concerns.append(
-                (
-                    _("- Elements are lying outside the burnable area.")
-                    + "\n  "
-                    + _("Could lead to the laserhead bumping into the rails."),
-                    CONCERN_CRITICAL
-                )
-            )
-        flag, info = has_close_to_edge_rasters()
-        if flag:
-            self._concerns.append(
-                (
-                    _("- Raster operations get very close to the edge.")
-                    + "\n  "
-                    + _("Could lead to the laserhead bumping into the rails.")
-                    + "\n  "
-                    + info,
-                    CONCERN_NORMAL
-                )
-            )
 
-        non_assigned, non_burn = self.context.elements.have_unburnable_elements()
-        if non_assigned:
-            self._concerns.append(
-                (
-                    _("- Elements aren't assigned to an operation and will not be burnt"),
-                    CONCERN_NORMAL
+        active = self.context.setting(bool, "warning_fastoperations", True)
+        if active:
+            max_speed = getattr(self.context.device, "max_vector_speed", None)
+            if has_ambitious_operations(max_speed, ("op cut", "op engrave")):
+                self._concerns.append(
+                    (
+                        _("- Vector operations are too fast.")
+                        + "\n  "
+                        + _("Could lead to erratic stepper behaviour and incomplete burns."),
+                        CONCERN_CRITICAL
+                    )
                 )
-            )
-        if non_burn:
-            self._concerns.append(
-                (
-                    _(
-                        "- Some operations containing elements aren't active, so some elements will not be burnt"
-                    ),
-                    CONCERN_LOW
+            max_speed = getattr(self.context.device, "max_raster_speed", None)
+            if has_ambitious_operations(max_speed, ("op raster", "op image")):
+                self._concerns.append(
+                    (
+                        _("- Raster operations are too fast.")
+                        + "\n  "
+                        + _("Could lead to erratic stepper behaviour and incomplete burns."),
+                        CONCERN_CRITICAL
+                    )
                 )
-            )
 
-        non_visible, info = has_hidden_elements()
-        if non_visible:
-            self._concerns.append(
-                (
-                    _("- Elements are hidden and will not be burnt") + f" ({info})\n",
-                    CONCERN_LOW
+        active = self.context.setting(bool, "warning_outside", True)
+        if active:
+            if has_objects_outside():
+                self._concerns.append(
+                    (
+                        _("- Elements are lying outside the burnable area.")
+                        + "\n  "
+                        + _("Could lead to the laserhead bumping into the rails."),
+                        CONCERN_CRITICAL
+                    )
                 )
-            )
+
+        active = self.context.setting(bool, "warning_closetoedge", True)
+        if active:
+            flag, info = has_close_to_edge_rasters()
+            if flag:
+                self._concerns.append(
+                    (
+                        _("- Raster operations get very close to the edge.")
+                        + "\n  "
+                        + _("Could lead to the laserhead bumping into the rails.")
+                        + "\n  "
+                        + info,
+                        CONCERN_NORMAL
+                    )
+                )
+
+        active = self.context.setting(bool, "warning_nonassigned", True)
+        if active:
+            non_assigned, non_burn = self.context.elements.have_unburnable_elements()
+            if non_assigned:
+                self._concerns.append(
+                    (
+                        _("- Elements aren't assigned to an operation and will not be burnt"),
+                        CONCERN_NORMAL
+                    )
+                )
+
+        active = self.context.setting(bool, "warning_opdisabled", True)
+        if active:
+            if non_burn:
+                self._concerns.append(
+                    (
+                        _(
+                            "- Some operations containing elements aren't active, so some elements will not be burnt"
+                        ),
+                        CONCERN_LOW
+                    )
+                )
+
+        active = self.context.setting(bool, "warning_hidden", True)
+        if active:
+            non_visible, info = has_hidden_elements()
+            if non_visible:
+                self._concerns.append(
+                    (
+                        _("- Elements are hidden and will not be burnt") + f" ({info})\n",
+                        CONCERN_LOW
+                    )
+                )
+
+        active = self.context.setting(bool, "warning_dpi", True)
+        if active:
+            low_dpis, info = has_low_dpis()
+            if low_dpis:
+                self._concerns.append(
+                    (
+                        _("- Raster/Images have a low dpi and lines will not overlap") + f" ({info})\n",
+                        CONCERN_LOW
+                    )
+                )
+
+            high_dpis, info = has_high_dpis()
+            if high_dpis:
+                self._concerns.append(
+                    (
+                        _("- Raster/Images have a high dpi and lines will overlap") + f" ({info})\n",
+                        CONCERN_LOW
+                    )
+                )
 
         self.context.signal("icons")

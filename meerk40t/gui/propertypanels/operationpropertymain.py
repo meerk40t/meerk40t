@@ -1503,18 +1503,20 @@ class RasterSettingsPanel(wx.Panel):
             self.context.signal(
                 "element_property_reload", self.operation, "text_dpi"
             )
+            self.context.signal("warn_state_update")
 
     def on_text_dpi(self):
         try:
             value = int(self.text_dpi.GetValue())
-            if self.operation.dpi != value:
-                self.operation.dpi = value
-                self.context.signal(
-                    "element_property_reload", self.operation, "text_dpi"
-                )
         except ValueError as e:
             # print (e)
-            pass
+            return
+        if self.operation.dpi != value:
+            self.operation.dpi = value
+            self.context.signal(
+                "element_property_reload", self.operation, "text_dpi"
+            )
+            self.context.signal("warn_state_update")
 
     def on_text_overscan(self):
         try:
