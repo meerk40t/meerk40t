@@ -546,7 +546,12 @@ class LaserRender:
         self.draw_cutcode(cutcode, gc, x, y)
 
     def draw_cutcode(
-        self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0
+        self,
+        cutcode: CutCode,
+        gc: wx.GraphicsContext,
+        x: int = 0, y: int = 0,
+        raster_as_image: bool = True,
+        residual = None,
     ):
         """
         Draw cutcode object into wxPython graphics code.
@@ -619,58 +624,97 @@ class LaserRender:
                 )
             elif isinstance(cut, RasterCut):
                 # Rastercut object.
-                image = cut.image
-                gc.PushState()
-                matrix = Matrix.scale(cut.step_x, cut.step_y)
-                matrix.post_translate(
-                    cut.offset_x + x, cut.offset_y + y
-                )  # Adjust image xy
-                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-                _gcscale = get_gc_scale(gc)
-                try:
-                    cache = cut._cache
-                    cache_id = cut._cache_id
-                except AttributeError:
-                    cache = None
-                    cache_id = -1
-                if cache_id != id(image):
-                    # Cached image is invalid.
-                    cache = None
-                if cache is None:
-                    # No valid cache. Generate.
-                    cut._cache_width, cut._cache_height = image.size
+                if raster_as_image:
+                    image = cut.image
+                    gc.PushState()
+                    matrix = Matrix.scale(cut.step_x, cut.step_y)
+                    matrix.post_translate(
+                        cut.offset_x + x, cut.offset_y + y
+                    )  # Adjust image xy
+                    gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                    _gcscale = get_gc_scale(gc)
                     try:
-                        cut._cache = self.make_thumbnail(image, maximum=5000)
-                    except (MemoryError, RuntimeError):
-                        cut._cache = None
-                    cut._cache_id = id(image)
-                if cut._cache is not None:
-                    # Cache exists and is valid.
-                    gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
-                    if cut.highlighted:
-                        # gc.SetBrush(wx.RED_BRUSH)
-                        self._penwidth(highlight_pen, 3 / _gcscale)
-                        gc.SetPen(highlight_pen)
+                        cache = cut._cache
+                        cache_id = cut._cache_id
+                    except AttributeError:
+                        cache = None
+                        cache_id = -1
+                    if cache_id != id(image):
+                        # Cached image is invalid.
+                        cache = None
+                    if cache is None:
+                        # No valid cache. Generate.
+                        cut._cache_width, cut._cache_height = image.size
+                        try:
+                            cut._cache = self.make_thumbnail(image, maximum=5000)
+                        except (MemoryError, RuntimeError):
+                            cut._cache = None
+                        cut._cache_id = id(image)
+                    if cut._cache is not None:
+                        # Cache exists and is valid.
+                        gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
+                        if cut.highlighted:
+                            # gc.SetBrush(wx.RED_BRUSH)
+                            self._penwidth(highlight_pen, 3 / _gcscale)
+                            gc.SetPen(highlight_pen)
+                            gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                    else:
+                        # Image was too large to cache, draw a red rectangle instead.
+                        gc.SetBrush(wx.RED_BRUSH)
                         gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                        gc.DrawBitmap(
+                            icons8_image.GetBitmap(),
+                            0,
+                            0,
+                            cut._cache_width,
+                            cut._cache_height,
+                        )
+                    gc.PopState()
                 else:
-                    # Image was too large to cache, draw a red rectangle instead.
-                    gc.SetBrush(wx.RED_BRUSH)
-                    gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
-                    gc.DrawBitmap(
-                        icons8_image.GetBitmap(),
-                        0,
-                        0,
-                        cut._cache_width,
-                        cut._cache_height,
-                    )
-                gc.PopState()
+                    p.MoveToPoint(start[0] + x, start[1] + y)
+                    try:
+                        cache = cut._cache
+                        cache_id = cut._cache_id
+                    except AttributeError:
+                        cache = None
+                        cache_id = -1
+                    if cache_id != "plot":
+                        # Cached plot is invalid.
+                        cache = None
+                    if cache is None:
+                        cache = list(cut.plot.plot())
+                        cut._cache = cache
+                        cut._cache_id = "plot"
+                    todraw = cache
+                    if residual is None:
+                        maxcount = -1
+                    else:
+                        maxcount = int(len(todraw) * residual)
+                    count = 0
+                    for px, py, pon in todraw:
+                        if pon == 0:
+                            p.MoveToPoint(px + x, py + y)
+                        else:
+                            p.AddLineToPoint(px + x, py + y)
+                        count += 1
+                        if 0 < maxcount < count:
+                            break
             elif isinstance(cut, PlotCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
-                for ox, oy, pon, px, py in cut.plot:
+                todraw = list(cut.plot)
+                if residual is None:
+                    maxcount = -1
+                else:
+                    maxcount = int(len(todraw) * residual)
+                count = 0
+                for ox, oy, pon, px, py in todraw:
                     if pon == 0:
                         p.MoveToPoint(px + x, py + y)
                     else:
                         p.AddLineToPoint(px + x, py + y)
+                    count += 1
+                    if 0 < maxcount < count:
+                        break
             elif isinstance(cut, DwellCut):
                 pass
             elif isinstance(cut, WaitCut):
