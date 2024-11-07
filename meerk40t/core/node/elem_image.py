@@ -319,8 +319,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         return bool(
             hasattr(drag_node, "as_geometry") or
             hasattr(drag_node, "as_image") or
-            drag_node.type.startswith("op") or
-            drag_node.type in ("file", "group")
+            drag_node.type in ("op image", "op raster", "file", "group")
         )
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -334,7 +333,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify, flag=flag)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):

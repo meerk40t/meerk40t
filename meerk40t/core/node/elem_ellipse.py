@@ -263,12 +263,12 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
     def can_drop(self, drag_node):
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or 
-            hasattr(drag_node, "as_image") or 
-            drag_node.type.startswith("op") or
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            (drag_node.type.startswith("op ") and drag_node.type != "op dots") or
             drag_node.type in ("file", "group")
         )
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):
@@ -277,13 +277,18 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        
+
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game, but we will take the operations color
-            if hasattr(drag_node, "color") and drag_node.color is not None:
-                self.stroke = drag_node.color
-            return drag_node.drop(self, modify=modify, flag=flag)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):
