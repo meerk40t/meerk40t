@@ -265,15 +265,6 @@ class Parameters:
         self.__dict__["overscan"] = value
 
     @property
-    def shift_lines(self):
-        return self.settings.get("shift_lines", "0mm")
-
-    @shift_lines.setter
-    def shift_lines(self, value):
-        self.settings["shift_lines"] = value
-        self.__dict__["shift_lines"] = value
-
-    @property
     def speed(self):
         speed = self.settings.get("speed")
         if speed is None:
