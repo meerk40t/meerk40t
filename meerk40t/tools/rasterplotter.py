@@ -16,10 +16,6 @@ The TOP, RIGHT, LEFT, BOTTOM combined give you the starting corner.
 
 The rasters can either be BIDIRECTIONAL or UNIDIRECTIONAL meaning they raster on both swings
 or only on forward swing.
-
-Please note that the plot created needs to be always orthogonal or strictly diagonal
-from point to point. So you can't 'jump' from (1, 1) to (2, 3) so you would need to
-use a (1, 1) -> (1, 3) -> (2, 3) sequence.
 """
 
 
@@ -40,7 +36,6 @@ class RasterPlotter:
         offset_y=0,
         step_x=1,
         step_y=1,
-        shift_lines=0,
         filter=None,
         **kwargs,
     ):
@@ -70,17 +65,15 @@ class RasterPlotter:
         self.width = width
         self.height = height
         self.horizontal = horizontal
-        self.start_minimum_x = start_minimum_x
         self.start_minimum_y = start_minimum_y
+        self.start_minimum_x = start_minimum_x
         self.bidirectional = bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
         if horizontal:
-            self.overscan = overscan / float(step_x)
-            self.shift_lines = shift_lines/ float(step_x)
+            self.overscan = round(overscan / float(step_x))
         else:
-            self.overscan = overscan / float(step_y)
-            self.shift_lines = shift_lines/ float(step_y)
+            self.overscan = round(overscan / float(step_y))
         self.offset_x = offset_x
         self.offset_y = offset_y
         self.step_x = step_x
@@ -88,9 +81,6 @@ class RasterPlotter:
         self.filter = filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
         self.final_x, self.final_y = self.calculate_last_pixel()
-        self._pixel_check = ""
-        self._last_x = None
-        self._last_y = None
 
     def px(self, x, y):
         """
@@ -400,8 +390,6 @@ class RasterPlotter:
         """
         Plot the values yielded by following the given raster plotter in the traversal defined.
         """
-        # print (f"Plot called: overscan: {self.overscan}, bidir={self.bidirectional}, start_x at min={self.start_minimum_x}, start_y at min={self.start_minimum_y}, dimension={self.width}x{self.height}")
-
         offset_x = self.offset_x
         offset_y = self.offset_y
         step_x = self.step_x
@@ -409,9 +397,6 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-        # for x in range(self.width):
-        #     for y in range(self.height):
-        #         print (f"[{x}, {y}] = {self.px(x, y)} vs {self.data[x, y]}")
         if self.use_integers:
             for x, y, on in self._plot_pixels():
                 yield int(round(offset_x + step_x * x)), int(
@@ -427,34 +412,6 @@ class RasterPlotter:
         else:
             yield from self._plot_vertical()
 
-    def reset_pixel_check(self):
-        self._last_x = None
-        self._last_y = None
-
-    def check_pixel_to_be_yielded(self, x, y, source=""):
-        origin = "Horizontal" if self.horizontal else "Vertical"
-        if self._last_x is None:
-            self._last_x = x
-            self._last_y = y
-            return True
-        total_dx = x - self._last_x
-        total_dy = y - self._last_y
-        # Prepare error message
-        message = f"{origin} {source}: must be uniformly diagonal or orthogonal: ({total_dx}, {total_dy}) is not. Last: {self._last_x}, {self._last_y}, this: {x}, {y}"
-        self._last_x = x
-        self._last_y = y
-        if total_dx == 0 and total_dy == 0:
-            return True
-        dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
-        dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-
-        if total_dy * dx != total_dx * dy:
-            # Check for cross-equality.
-            print(message)
-            return False
-
-        return True
-
     def _plot_vertical(self):
         """
         This code is for vertical rastering.
@@ -463,23 +420,18 @@ class RasterPlotter:
         """
         width = self.width
         unidirectional = not self.bidirectional
-        shift_value = 0 if unidirectional else self.shift_lines
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
 
-        shift_factor = 0 if self.start_minimum_y else 1
-        self.reset_pixel_check()
-        self.check_pixel_to_be_yielded(x, y + shift_factor * shift_value)
-        yield x, y + shift_factor * shift_value, 0
+        yield x, y, 0
         while 0 <= x < width:
             lower_bound = self.topmost_not_equal(x)
             if lower_bound is None:
                 x += dx
-                self.check_pixel_to_be_yielded(x, y + shift_value, "skipline")
-                yield x, y + shift_value, 0
+                yield x, y, 0
                 continue
             upper_bound = self.bottommost_not_equal(x)
             traveling_bottom = self.start_minimum_y if unidirectional else dy >= 0
@@ -490,24 +442,10 @@ class RasterPlotter:
             )
             if next_y is not None:
                 # If we have a next scanline, we must end after the last pixel of that scanline too.
-                upper_bound = max(next_y, upper_bound)
-                lower_bound = min(next_y, lower_bound)
-            last_pixel = 0
-            if upper_bound == lower_bound: # Just one pixel, but hey a pixel is a pixel
-                pixel = self.px(x, y)
-                last_pixel = 0 if pixel == skip_pixel else pixel
-                if last_pixel:
-                    if traveling_bottom:
-                        # Send half a pixel to make it register
-                        self.check_pixel_to_be_yielded(x , y, "1px")
-                        yield x, y, last_pixel
-                        yield x, y + 0.5, last_pixel
-                    else:
-                        self.check_pixel_to_be_yielded(x, y + shift_value, "1px")
-                        yield x, y + shift_value, last_pixel
-                        yield x, y + shift_value + 0.5, last_pixel
+                upper_bound = max(next_y, upper_bound) + self.overscan
+                lower_bound = min(next_y, lower_bound) - self.overscan
+
             if traveling_bottom:
-                # No shift from top to bottom
                 while y < upper_bound:
                     try:
                         pixel = self.px(x, y)
@@ -515,11 +453,11 @@ class RasterPlotter:
                         pixel = 0
                     y = self.nextcolor_bottom(x, y, upper_bound)
                     y = min(y, upper_bound)
-                    last_pixel = 0 if pixel == skip_pixel else pixel
-                    self.check_pixel_to_be_yielded(x, y, "v")
-                    yield x, y, last_pixel
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
             else:
-                # Optional shifting if bidirectional
                 while lower_bound < y:
                     try:
                         pixel = self.px(x, y)
@@ -527,38 +465,20 @@ class RasterPlotter:
                         pixel = 0
                     y = self.nextcolor_top(x, y, lower_bound)
                     y = max(y, lower_bound)
-                    last_pixel = 0 if pixel == skip_pixel else pixel
-                    self.check_pixel_to_be_yielded(x, y + shift_value, "^")
-                    yield x, y + shift_value, last_pixel
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
-            lasty = y
-            # Stop the line in all cases:
-            gap = 0 if traveling_bottom else shift_value
-            if last_pixel:
-                lasty = upper_bound if traveling_bottom else lower_bound
-                self.check_pixel_to_be_yielded(x, lasty + gap, "lineend")
-                yield x, lasty + gap, 0
-            # We are done and at the end of our scanline, so let's apply the overscan value
-            if self.overscan:
-                lasty = y + dy * self.overscan
-                self.check_pixel_to_be_yielded(x, lasty + gap, "overscan")
-                yield x, lasty + gap, 0
-            # Lets go to the next line, this may be shifted
-            self.check_pixel_to_be_yielded(next_x, lasty + gap, "nextline")
-            yield next_x, lasty + gap, 0
-
-            lasty += gap # For comparison
-            gap = shift_value if traveling_bottom else 0
-            if lasty != next_y + gap:
-                self.check_pixel_to_be_yielded(next_x, next_y + gap, "move2nexty")
-                yield next_x, next_y + gap, 0
+            yield next_x, y, 0
+            if y != next_y:
+                yield next_x, next_y, 0
             x = next_x
             y = next_y
-            if not unidirectional:
-                dy = -dy
+            dy = -dy
 
     def _plot_horizontal(self):
         """
@@ -568,24 +488,17 @@ class RasterPlotter:
         """
         height = self.height
         unidirectional = not self.bidirectional
-        shift_value = 0 if unidirectional else self.shift_lines
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-        shift_factor = 0 if self.start_minimum_x else 1
-
-        self.reset_pixel_check()
-        self.check_pixel_to_be_yielded(x + shift_factor * shift_value, y)
-        yield x + shift_factor * shift_value, y, 0
-        line_counter = 0
+        yield x, y, 0
         while 0 <= y < height:
             lower_bound = self.leftmost_not_equal(y)
             if lower_bound is None:
                 y += dy
-                self.check_pixel_to_be_yielded(x + shift_value, y, "skipline")
-                yield x + shift_value, y, 0
+                yield x, y, 0
                 continue
             upper_bound = self.rightmost_not_equal(y)
             traveling_right = self.start_minimum_x if unidirectional else dx >= 0
@@ -596,26 +509,10 @@ class RasterPlotter:
             )
             if next_x is not None:
                 # If we have a next scanline, we must end after the last pixel of that scanline too.
-                upper_bound = max(next_x, upper_bound)
-                lower_bound = min(next_x, lower_bound)
-
-            last_pixel = 0
-            if upper_bound == lower_bound: # Just one pixel, but hey a pixel is a pixel
-                pixel = self.px(x, y)
-                last_pixel = 0 if pixel == skip_pixel else pixel
-                if last_pixel:
-                    if traveling_right:
-                        # Send half a pixel to make it register
-                        self.check_pixel_to_be_yielded(x, y, "1px")
-                        yield x, y, last_pixel
-                        yield x + 0.5, y, last_pixel
-                    else:
-                        self.check_pixel_to_be_yielded(x + shift_value, y, "1px")
-                        yield x + shift_value, y, last_pixel
-                        yield x + shift_value + 0.5, y, last_pixel
+                upper_bound = max(next_x, upper_bound) + self.overscan
+                lower_bound = min(next_x, lower_bound) - self.overscan
 
             if traveling_right:
-                # No shift from left to right
                 while x < upper_bound:
                     try:
                         pixel = self.px(x, y)
@@ -623,11 +520,11 @@ class RasterPlotter:
                         pixel = 0
                     x = self.nextcolor_right(x, y, upper_bound)
                     x = min(x, upper_bound)
-                    last_pixel = 0 if pixel == skip_pixel else pixel
-                    self.check_pixel_to_be_yielded(x , y, ">")
-                    yield x, y, last_pixel
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
             else:
-                # Optional shifting if bidirectional
                 while lower_bound < x:
                     try:
                         pixel = self.px(x, y)
@@ -635,36 +532,17 @@ class RasterPlotter:
                         pixel = 0
                     x = self.nextcolor_left(x, y, lower_bound)
                     x = max(x, lower_bound)
-                    last_pixel = 0 if pixel == skip_pixel else pixel
-                    self.check_pixel_to_be_yielded(x + shift_value, y, "<")
-                    yield x + shift_value, y, last_pixel
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
-            # We are done and at the end of our scanline, so let's apply the overscan value
-            # Stop the line in all cases:
-            lastx = x
-            gap = 0 if traveling_right else shift_value
-            if last_pixel:
-                lastx = upper_bound if traveling_right else lower_bound
-                self.check_pixel_to_be_yielded(lastx + gap, y, "lineend")
-                yield lastx + gap, y, 0
-            if self.overscan:
-                lastx = x + dx * self.overscan
-                self.check_pixel_to_be_yielded(lastx + gap, y, "overscan")
-                yield lastx + gap, y, 0
-            # Lets go to the next line, this may be shifted
-            self.check_pixel_to_be_yielded(lastx + gap, next_y, "nextline")
-            yield lastx + gap, next_y, 0
-
-            lastx += gap # For comparison
-            gap = shift_value if traveling_right else 0
-            if lastx != next_x + gap:
-                self.check_pixel_to_be_yielded(next_x + gap, next_y, "move2nextx")
-                yield next_x + gap, next_y, 0
+            yield x, next_y, 0
+            if x != next_x:
+                yield next_x, next_y, 0
             x = next_x
             y = next_y
-            if not unidirectional:
-                dx = -dx
-            line_counter += 1
+            dx = -dx
