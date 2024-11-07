@@ -60,7 +60,7 @@ class RuidaDevice(Service):
                 "tip": _("Width of the laser bed."),
                 "nonzero": True,
                 "section": "_10_" + _("Configuration"),
-                "subsection": "_10_Bed Dimensions",
+                "subsection": "_10_Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -71,7 +71,18 @@ class RuidaDevice(Service):
                 "tip": _("Height of the laser bed."),
                 "nonzero": True,
                 "section": "_10_" + _("Configuration"),
-                "subsection": "_10_Bed Dimensions",
+                "subsection": "_10_Dimensions",
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",

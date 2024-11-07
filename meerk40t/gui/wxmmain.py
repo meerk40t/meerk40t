@@ -2919,7 +2919,19 @@ class MeerK40t(MWindow):
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(quit=False, **kwargs):
-            if len(gui.working_files) != 1:
+            # Can we save the file without asking?
+            clear_save = False
+            if len(gui.working_files) == 1:
+                pathname = gui.working_files[0]
+                version = "default"
+                kernel = self.context.kernel
+                for saver, save_name, sname in kernel.find("save"):
+                    for description, extension, mimetype, _version in saver.save_types():
+                        if pathname.lower().endswith(extension) and _version == version:
+                            clear_save = True
+                            break
+
+            if not clear_save:
                 if quit:
                     context(".dialog_save_as -q\n")
                 else:

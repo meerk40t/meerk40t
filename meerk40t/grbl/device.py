@@ -77,6 +77,16 @@ class GRBLDevice(Service, Status):
                 "nonzero": True,
             },
             {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
                 "attr": "scale_x",
                 "object": self,
                 "default": 1.000,

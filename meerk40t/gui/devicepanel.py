@@ -57,7 +57,7 @@ class SelectDevice(wx.Dialog):
         sizer_3.Add(label_filter, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.text_filter = TextCtrl(self, wx.ID_ANY, "")
-        sizer_3.Add(self.text_filter, 0, wx.EXPAND, 0)
+        sizer_3.Add(self.text_filter, 1, wx.EXPAND, 0)
 
         self.tree_devices = wxTreeCtrl(
             self,
