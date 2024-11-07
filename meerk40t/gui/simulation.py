@@ -809,8 +809,10 @@ class SimulationPanel(wx.Panel, Job):
         self.auto_clear = auto_clear
         # Display travel paths?
         self.display_travel = True
-        self.raster_as_image = True
+        self.raster_as_image = self.context.setting(bool, "raster_as_image", True)
+        self.laserspot_display = self.context.setting(bool, "laserspot_display", True)
         self.laserspot_width = None
+        self.calc_laser_spot_width()
 
         Job.__init__(self)
         self._playback_cuts = True
@@ -1288,11 +1290,12 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_raster_display(self, event):
         self.raster_as_image = not self.raster_as_image
+        self.context.raster_as_image = self.raster_as_image
         self.sim_cutcode.raster_as_image = self.raster_as_image
         self.widget_scene.request_refresh()
 
-    def toggle_laserspot(self, event):
-        if self.laserspot_width is None:
+    def calc_laser_spot_width(self):
+        if self.laserspot_display:
             spot_value = getattr(self.context.device, "laserspot", "0.3mm")
             try:
                 scale = 0.5 * (self.context.device.view.native_scale_x + self.context.device.view.native_scale_y)
@@ -1304,6 +1307,11 @@ class SimulationPanel(wx.Panel, Job):
             self.laserspot_width = spot_width
         else:
             self.laserspot_width = None
+
+    def toggle_laserspot(self, event):
+        self.laserspot_display = not self.laserspot_display
+        self.context.laserspot_display = self.laserspot_display
+        self.calc_laser_spot_width()
         self.sim_cutcode.laserspot_width = self.laserspot_width
         self.widget_scene.request_refresh()
 
@@ -1471,12 +1479,12 @@ class SimulationPanel(wx.Panel, Job):
         menu.Check(id7.GetId(), self.raster_as_image)
         id8 = menu.Append(
             wx.ID_ANY,
-            _("Simplify laser path"),
-            _("Show laser path as simple line / make it as wide as laserspot width"),
+            _("Simulate laser width"),
+            _("Show laser path as wide as laserspot width / as simple line"),
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_laserspot, id=id8.GetId())
-        menu.Check(id8.GetId(), self.laserspot_width is None)
+        menu.Check(id8.GetId(), self.laserspot_display)
 
         menu.AppendSeparator()
         self.Bind(

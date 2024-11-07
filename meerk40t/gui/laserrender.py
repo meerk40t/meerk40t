@@ -610,7 +610,7 @@ class LaserRender:
                     gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
                     if cut.highlighted:
                         # gc.SetBrush(wx.RED_BRUSH)
-                        self._penwidth(highlight_pen, 3 / _gcscale)
+                        self._penwidth(highlight_pen, 3 / gcscale)
                         gc.SetPen(highlight_pen)
                         gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:
@@ -734,6 +734,9 @@ class LaserRender:
 
         gcscale = get_gc_scale(gc)
         pixelwidth = establish_linewidth(gcscale, laserspot_width)
+        defaultwidth = 1 / gcscale
+        if defaultwidth > 0.25 * pixelwidth:
+            defaultwidth = 0
         # print (f"Scale: {gcscale} - {mat_param}")
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
@@ -754,19 +757,28 @@ class LaserRender:
             except AttributeError:
                 pass
             if c is not color:
-                color = c
-                last_point = None
                 if p is not None:
                     gc.StrokePath(p)
+                    if defaultwidth:
+                        self._penwidth(self.pen, defaultwidth)
+                        self.set_pen(gc, color, 192)
+                        gc.StrokePath(p)
                     del p
+                color = c
+                last_point = None
                 p = gc.CreatePath()
                 self._penwidth(self.pen, pixelwidth)
-                self.set_pen(gc, c, alpha=127)
+                alphavalue = 192 if laserspot_width is None else 64
+                self.set_pen(gc, c, alpha=alphavalue)
             if p is None:
                 p = gc.CreatePath()
             last_point = process_cut(cut, p, last_point)
         if p is not None:
             gc.StrokePath(p)
+            if defaultwidth:
+                self._penwidth(self.pen, defaultwidth)
+                self.set_pen(gc, c, 192)
+                gc.StrokePath(p)
             del p
 
     def cache_geomstr(self, node, gc):
