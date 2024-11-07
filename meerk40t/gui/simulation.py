@@ -1295,7 +1295,7 @@ class SimulationPanel(wx.Panel, Job):
         if self.laserspot_width is None:
             spot_value = getattr(self.context.device, "laserspot", "0.3mm")
             try:
-                scale = 0.5 + (self.context.device.view.native_scale_x + self.context.device.view.native_scale_y)
+                scale = 0.5 * (self.context.device.view.native_scale_x + self.context.device.view.native_scale_y)
                 spotwidth_in_scene = float(Length(spot_value))
                 spot_width = spotwidth_in_scene / scale
                 # print (f"Scale for device: {scale}, spot in scene: {spot_value} = {spotwidth_in_scene} -> {spot_width}")
