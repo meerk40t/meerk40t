@@ -135,9 +135,22 @@ class BalorDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Lens Size"),
                 "section": "_00_General",
+                "subsection": "_00_",
                 "priority": "20",
                 "nonzero": True,
                 # intentionally not bed_size
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_00_",
+                "priority": "20",
+                "nonzero": True,
             },
             {
                 "attr": "flip_x",
