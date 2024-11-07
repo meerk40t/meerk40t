@@ -48,7 +48,7 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 # _("Bed Dimensions")
-                "subsection": "_10_Bed Dimensions",
+                "subsection": "_10_Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -59,7 +59,18 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": "_10_Bed Dimensions",
+                "subsection": "_10_Dimensions",
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_30_" + _("Laser Parameters"),
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
             },
             {
                 "attr": "user_scale_x",
