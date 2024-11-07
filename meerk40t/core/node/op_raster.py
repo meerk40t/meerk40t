@@ -48,6 +48,7 @@ class RasterOpNode(Node, Parameters):
         self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = False
         self.label = "Raster"
+        self.algorithm = "floodfill"
         self.cutoff_threshold = 0
 
         # To which attributes do the classification color check respond
@@ -548,6 +549,7 @@ class RasterOpNode(Node, Parameters):
                 settings=settings,
                 passes=passes,
                 post_filter=image_filter,
+                algorithm=self.algorithm,
             )
             cut.path = path
             cut.original_op = self.type
@@ -578,6 +580,7 @@ class RasterOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
+                    algorithm=self.algorithm,
                 )
                 cut.path = path
                 cut.original_op = self.type

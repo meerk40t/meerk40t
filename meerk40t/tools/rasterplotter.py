@@ -25,6 +25,7 @@ class RasterPlotter:
         data,
         width,
         height,
+        algorithm="raster",
         horizontal=True,
         start_minimum_y=True,
         start_minimum_x=True,
@@ -64,6 +65,7 @@ class RasterPlotter:
         self.data = data
         self.width = width
         self.height = height
+        self.algorithm = algorithm
         self.horizontal = horizontal
         self.start_minimum_y = start_minimum_y
         self.start_minimum_x = start_minimum_x
@@ -399,20 +401,88 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
+        print (f"[{self.algorithm}] Data at (0,0) = {self.data[0, 0]} - pixel = {self.px(0, 0)} - skip = {self.skip_pixel}")
         if self.use_integers:
+            count = 0
             for x, y, on in self._plot_pixels():
+                if count < 10:
+                    print (x, y, on)
                 yield int(round(offset_x + step_x * x)), int(
                     round(offset_y + y * step_y)
                 ), on
+                count += 1
         else:
             for x, y, on in self._plot_pixels():
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
-        if self.horizontal:
-            yield from self._plot_horizontal()
+        if self.algorithm == "raster":
+            if self.horizontal:
+                yield from self._plot_horizontal()
+            else:
+                yield from self._plot_vertical()
+        elif self.algorithm == "floodfill":
+            yield from self._plot_floodfill()
         else:
-            yield from self._plot_vertical()
+            raise NotImplementedError(f"Unknown algorithm: {self.algorithm}")
+
+    def _plot_floodfill(self):
+        import numpy as np
+        import time
+        image = np.empty((self.width, self.height))
+        skip_color = self.skip_pixel  # Assuming white is represented by 255
+        t0 = time.perf_counter()
+        for x in range(self.width):
+            for y in range(self.height):
+                if self.filter is None:
+                    image[x, y] = self.data[x, y]
+                else:
+                    image[x, y] = self.filter(self.data[x, y])
+        print (image)
+        t1 = time.perf_counter()
+        print (f"Initialising + Filtering took {t1-t0:.2f}sec")
+        print (f"{image.shape[0]}x{image.shape[1]} vs {self.width}x{self.height} - skip pixel: {self.skip_pixel}")
+
+        def flood_fill(x, y):
+            contiguous_pixels = []
+            stack = [(x, y)]
+            while stack:
+                x, y = stack.pop()
+                if x < 0 or x >= self.width or y < 0 or y >= self.height:
+                    continue
+                if image[x, y] == skip_color:
+                    continue
+                contiguous_pixels.append((x, y, image[x, y]))
+                image[x, y] = skip_color
+                stack.extend([(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
+            return contiguous_pixels
+
+
+        for xx in range(self.width):
+            for yy in range(self.height):
+                if image[xx, yy] != skip_color:
+                    contiguous_pixels = flood_fill(xx, yy)
+                    print (f"Received {len(contiguous_pixels)} pixels starting from {xx}, {yy}")
+                    # Now we sort them by y and x, so that we can loop through it
+                    t0 = time.perf_counter()
+                    contiguous_pixels.sort(key=lambda item:f"{item[1]}-{item[0]}")
+                    t1 = time.perf_counter()
+                    print (f"Sorting took {t1-t0:.2f} sec")
+                    lastx = None
+                    lasty = None
+                    for x, y, on in contiguous_pixels:
+                        if lastx is None:
+                            yield x, y, 0
+                        else:
+                            if y != lasty:
+                                yield lastx, y, 0
+                                if x != lastx:
+                                    yield x, y, 0
+                        yield x, y, on
+                        lastx = x
+                        lasty = y
+                    if lastx:
+                        yield lastx, lasty, 0
 
     def _plot_vertical(self):
         """

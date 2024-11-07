@@ -47,6 +47,7 @@ class ImageOpNode(Node, Parameters):
         self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
         self.label = "Image"
+        self.algorithm = "raster"
         self.overrule_dpi = False
         self._allowed_elements_dnd = ("elem image",)
         self._allowed_elements = ("elem image",)
@@ -464,7 +465,8 @@ class ImageOpNode(Node, Parameters):
                         settings=settings,
                         passes=passes,
                         post_filter=image_filter,
-                        label=f"Pass {gray}: cutoff={skip_pixel}"
+                        label=f"Pass {gray}: cutoff={skip_pixel}",
+                        algorithm=self.algorithm,
                     )
                     cut.path = path
                     cut.original_op = self.type
@@ -497,7 +499,8 @@ class ImageOpNode(Node, Parameters):
                             settings=settings,
                             passes=passes,
                             post_filter=image_filter,
-                            label=f"Pass {gray}.2: cutoff={skip_pixel}"
+                            label=f"Pass {gray}.2: cutoff={skip_pixel}",
+                            algorithm=self.algorithm,
                         )
                         cut.path = path
                         cut.original_op = self.type
@@ -518,6 +521,7 @@ class ImageOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
+                    algorithm=self.algorithm,
                 )
                 cut.path = path
                 cut.original_op = self.type
@@ -548,6 +552,7 @@ class ImageOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
+                    algorithm=self.algorithm,
                 )
                 cut.path = path
                 cut.original_op = self.type

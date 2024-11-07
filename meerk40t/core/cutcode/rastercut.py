@@ -26,6 +26,8 @@ class RasterCut(CutObject):
         color=None,
         post_filter=None,
         label=None,
+        algorithm="raster",
+        **kwargs,
     ):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color, label=label,
@@ -40,6 +42,7 @@ class RasterCut(CutObject):
         self.step_x = step_x
         self.step_y = step_y
         # if False -> burn in one direction, if True -> burn back and forth
+        self.algorithm = algorithm
         self.bidirectional = bidirectional
         self.horizontal = horizontal
         self.start_minimum_y = start_minimum_y
@@ -66,6 +69,7 @@ class RasterCut(CutObject):
             data=image.load(),
             width=self.width,
             height=self.height,
+            algorithm=self.algorithm,
             horizontal=self.horizontal,
             start_minimum_y=self.start_minimum_y,
             start_minimum_x=self.start_minimum_x,
