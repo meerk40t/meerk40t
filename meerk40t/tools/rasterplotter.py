@@ -37,6 +37,7 @@ class RasterPlotter:
         step_x=1,
         step_y=1,
         filter=None,
+        **kwargs,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -69,6 +70,8 @@ class RasterPlotter:
         self.bidirectional = bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
+        # The overscan value isn't really used here any more
+        # The previous implementation just used the value to force a line end
         if horizontal:
             self.overscan = round(overscan / float(step_x))
         else:
@@ -101,7 +104,7 @@ class RasterPlotter:
 
         if all pixels skipped returns None
         """
-        for x in range(0, self.width):
+        for x in range(self.width):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
@@ -113,7 +116,7 @@ class RasterPlotter:
 
         if all pixels skipped returns None
         """
-        for y in range(0, self.height):
+        for y in range(self.height):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
@@ -441,8 +444,12 @@ class RasterPlotter:
             )
             if next_y is not None:
                 # If we have a next scanline, we must end after the last pixel of that scanline too.
-                upper_bound = max(next_y, upper_bound) + self.overscan
-                lower_bound = min(next_y, lower_bound) - self.overscan
+                upper_bound = max(next_y, upper_bound)
+                lower_bound = min(next_y, lower_bound)
+            if lower_bound == upper_bound:
+                # Me sure we have that pixel covered
+                pixel = self.px(x, lower_bound)
+                yield x, lower_bound, pixel
 
             if traveling_bottom:
                 while y < upper_bound:
@@ -456,6 +463,8 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
+                y = upper_bound
+                yield x, y, 0
             else:
                 while lower_bound < y:
                     try:
@@ -468,6 +477,8 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
+                y = lower_bound
+                yield x, y, 0
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
@@ -508,14 +519,19 @@ class RasterPlotter:
             )
             if next_x is not None:
                 # If we have a next scanline, we must end after the last pixel of that scanline too.
-                upper_bound = max(next_x, upper_bound) + self.overscan
-                lower_bound = min(next_x, lower_bound) - self.overscan
+                upper_bound = max(next_x, upper_bound)
+                lower_bound = min(next_x, lower_bound)
 
+            if lower_bound == upper_bound:
+                # Me sure we have that pixel covered
+                pixel = self.px(lower_bound, y)
+                yield lower_bound, y, pixel
             if traveling_right:
                 while x < upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
+                        # So we are beyond the given boundaries
                         pixel = 0
                     x = self.nextcolor_right(x, y, upper_bound)
                     x = min(x, upper_bound)
@@ -523,6 +539,9 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
+                # eol
+                x = upper_bound
+                yield x, y, 0
             else:
                 while lower_bound < x:
                     try:
@@ -535,10 +554,12 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
-
+                x = lower_bound
+                yield x, y, 0
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
+            # We jump to the next line
             yield x, next_y, 0
             if x != next_x:
                 yield next_x, next_y, 0

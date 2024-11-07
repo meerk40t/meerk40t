@@ -966,34 +966,26 @@ class PanelStartPreference(wx.Panel):
         self.context = context
         self.operation = node
 
-        sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Start Preference:"), wx.VERTICAL)
+        sizer_main = StaticBoxSizer(self, wx.ID_ANY, _("Start Preference:"), wx.VERTICAL)
 
-        self.slider_top = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
-        sizer_2.Add(self.slider_top, 0, wx.EXPAND, 0)
+        self.slider_pref_left = wx.Slider(self, wx.ID_ANY, 1, 0, 1)
+        sizer_main.Add(self.slider_pref_left, 0, wx.EXPAND, 0)
 
-        sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2.Add(sizer_7, 0, wx.EXPAND, 0)
+        sizer_top_display = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_top_display, 1, wx.EXPAND, 0)
 
-        self.slider_left = wx.Slider(self, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
-        sizer_7.Add(self.slider_left, 0, wx.EXPAND, 0)
+        self.slider_pref_top = wx.Slider(self, wx.ID_ANY, 1, 0, 1, style=wx.SL_VERTICAL)
+        sizer_top_display.Add(self.slider_pref_top, 0, wx.EXPAND, 0)
 
         self.display_panel = wx.Panel(self, wx.ID_ANY)
-        sizer_7.Add(self.display_panel, 1, wx.EXPAND, 0)
+        sizer_top_display.Add(self.display_panel, 1, wx.EXPAND, 0)
 
-        self.slider_right = wx.Slider(self, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
-        sizer_7.Add(self.slider_right, 0, 0, 0)
-
-        self.slider_bottom = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
-        sizer_2.Add(self.slider_bottom, 0, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_2)
+        self.SetSizer(sizer_main)
 
         self.Layout()
 
-        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_pref_left, self.slider_pref_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_pref_top, self.slider_pref_top)
         # end wxGlade
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
@@ -1017,18 +1009,6 @@ class PanelStartPreference(wx.Panel):
 
         self._Buffer = None
 
-        self.context.setting(bool, "developer_mode", False)
-        if not self.context.developer_mode:
-            # 0.6.1 freeze, drops.
-            self.slider_top.Enable(False)
-            self.slider_right.Enable(False)
-            self.slider_left.Enable(False)
-            self.slider_bottom.Enable(False)
-            self.toggle_sliders = False
-        else:
-            self.toggle_sliders = True
-            self._toggle_sliders()
-
     def pane_hide(self):
         pass
 
@@ -1037,10 +1017,8 @@ class PanelStartPreference(wx.Panel):
 
     # @signal_listener("element_property_reload")
     def on_element_property_reload(self, *args):
-        self._toggle_sliders()
-        self.raster_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.set_widgets(self.operation)
+        self._reload_display()
 
     def accepts(self, node):
         return node.type in (
@@ -1053,14 +1031,7 @@ class PanelStartPreference(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
-        if self.operation.raster_preference_top is not None:
-            self.slider_top.SetValue(self.operation.raster_preference_top + 1)
-        if self.operation.raster_preference_left is not None:
-            self.slider_left.SetValue(self.operation.raster_preference_left + 1)
-        if self.operation.raster_preference_right is not None:
-            self.slider_right.SetValue(self.operation.raster_preference_right + 1)
-        if self.operation.raster_preference_bottom is not None:
-            self.slider_bottom.SetValue(self.operation.raster_preference_bottom + 1)
+        self._toggle_sliders()
         self.Show()
 
     def on_display_paint(self, event=None):
@@ -1083,6 +1054,9 @@ class PanelStartPreference(wx.Panel):
     def on_size(self, event=None):
         self.Layout()
         self.set_buffer()
+        self.raster_lines = None
+        self.travel_lines = None
+        self.direction_lines = None
         wx.CallAfter(self.refresh_in_ui)
 
     def refresh_display(self):
@@ -1094,116 +1068,113 @@ class PanelStartPreference(wx.Panel):
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
 
-        right = True
-        top = True
+        from_left = self.operation.raster_preference_left > 0
+        from_top = self.operation.raster_preference_top > 0
 
         last = None
         direction = self.operation.raster_direction
-        r_start = list()
-        r_end = list()
-        t_start = list()
-        t_end = list()
-        d_start = list()
-        d_end = list()
+        # Rasterline Indicator
+        r_start = []
+        r_end = []
+        # Travel Indicator
+        t_start = []
+        t_end = []
+        # Direction Indicator
+        d_start = []
+        d_end = []
         factor = 3
         bidirectional = self.operation.bidirectional
-        dpi = self.operation.dpi
-        if dpi <= 1:
-            dpi = 1
+        dpi = max(1, self.operation.dpi)
 
-        if direction == 0 or direction == 1 or direction == 4:
-            # Direction Line
+        def dir_arrow_up_down(up: bool):
             d_start.append((w * 0.05, h * 0.05))
             d_end.append((w * 0.05, h * 0.95))
+            # Direction Arrow
+            d_start.append((w * 0.05, (h * 0.95) if up else (h * 0.05)))
+            d_end.append((w * 0.05 + 4, (h * 0.95 - 4) if up else (h * 0.05 + 4)))
+            d_start.append((w * 0.05, (h * 0.95) if up else (h * 0.05)))
+            d_end.append((w * 0.05 - 4, (h * 0.95 - 4) if up else (h * 0.05 + 4)))
+
+        def dir_arrow_left_right(left: bool):
+            # Direction Line
+            d_start.append((w * 0.05, h * 0.05))
+            d_end.append((w * 0.95, h * 0.05))
+            # Direction Arrow
+            d_start.append(((w * 0.95) if left else (w * 0.05), h * 0.05))
+            d_end.append(((w * 0.95 - 4) if left else (w * 0.05 + 4), h * 0.05 - 4))
+            d_start.append(((w * 0.95) if left else (w * 0.05), h * 0.05))
+            d_end.append(((w * 0.95 - 4) if left else (w * 0.05 + 4), h * 0.05 + 4))
+
+        if direction in (0, 1, 4): # Horizontal mode, raster will be built from top to bottom (or vice versa)
+            # Direction Line
             if direction == 1:
                 # Bottom to Top
-                if self.operation.raster_preference_bottom > 0:
-                    # if bottom preference is left
-                    right = False
-                # Direction Arrow
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 - 4, h * 0.05 + 4))
+                dir_arrow_up_down(False)
                 start = int(h * 0.9)
                 end = int(h * 0.1)
                 step = -1000 / dpi * factor
             else:
                 # Top to Bottom or Crosshatch
-                if self.operation.raster_preference_top > 0:
-                    # if top preference is left
-                    right = False
-                d_start.append((w * 0.05, h * 0.95))
-                d_end.append((w * 0.05 + 4, h * 0.95 - 4))
-                d_start.append((w * 0.05, h * 0.95))
-                d_end.append((w * 0.05 - 4, h * 0.95 - 4))
+                dir_arrow_up_down(True)
                 start = int(h * 0.1)
                 end = int(h * 0.9)
                 step = 1000 / dpi * factor
+            while abs(step) > abs(start - end):
+                step = step / 2
+
             pos = start
             while min(start, end) <= pos <= max(start, end):
-                # Primary Line Horizontal Raster
+                # Primary Line Horizontal Raster, no need to be fancy and be directional here...
                 r_start.append((w * 0.1, pos))
                 r_end.append((w * 0.9, pos))
 
-                # Arrow Segment
+                # Travel segment
                 if last is not None:
-                    # Travel Lines
+                    # Travel Lines, from end of last line to next
                     t_start.append((last[0], last[1]))
-                    t_end.append((w * 0.1 if right else w * 0.9, pos))
+                    t_end.append((w * 0.1 if from_left else w * 0.9, pos))
 
-                r_start.append((w * 0.9 if right else w * 0.1, pos))
-                r_end.append((w * 0.9 - 2 if right else w * 0.1 + 2, pos - 2))
+                # Arrow segment
+                r_start.append((w * 0.9 if from_left else w * 0.1, pos))
+                r_end.append((w * 0.9 - 2 if from_left else w * 0.1 + 2, pos - 2))
                 last = r_start[-1]
                 if bidirectional:
-                    right = not right
+                    from_left = not from_left
                 pos += step
-        if direction == 2 or direction == 3 or direction == 4:
-            # Direction Line
-            d_start.append((w * 0.05, h * 0.05))
-            d_end.append((w * 0.95, h * 0.05))
+        if direction in (2, 3, 4): # Vertical mode, raster will be built from left to right (or vice versa)
             if direction == 2:
                 # Right to Left
-                if self.operation.raster_preference_right > 0:
-                    # if right preference is bottom
-                    top = False
-                # Direction Arrow
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 + 4, h * 0.05 - 4))
+                dir_arrow_left_right(False)
                 start = int(w * 0.9)
                 end = int(w * 0.1)
                 step = -1000 / dpi * factor
             else:
                 # Left to Right or Crosshatch
-                if self.operation.raster_preference_left > 0:
-                    # if left preference is bottom
-                    top = False
-                d_start.append((w * 0.95, h * 0.05))
-                d_end.append((w * 0.95 - 4, h * 0.05 + 4))
-                d_start.append((w * 0.95, h * 0.05))
-                d_end.append((w * 0.95 - 4, h * 0.05 - 4))
+                dir_arrow_left_right(True)
                 start = int(w * 0.1)
                 end = int(w * 0.9)
                 step = 1000 / dpi * factor
+            while abs(step) > abs(start - end):
+                step = step / 2
             pos = start
             while min(start, end) <= pos <= max(start, end):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
                 r_end.append((pos, h * 0.9))
 
-                # Arrow Segment
+                # Travel Segment
                 if last is not None:
                     # Travel Lines
                     t_start.append((last[0], last[1]))
-                    t_end.append((pos, h * 0.1 if top else h * 0.9))
-                r_start.append((pos, h * 0.9 if top else h * 0.1))
-                r_end.append((pos - 2, (h * 0.9) - 2 if top else (h * 0.1) + 2))
+                    t_end.append((pos, h * 0.1 if from_top else h * 0.9))
+
+                # Arrow Segment
+                r_start.append((pos, h * 0.9 if from_top else h * 0.1))
+                r_end.append((pos - 2, (h * 0.9) - 2 if from_top else (h * 0.1) + 2))
 
                 last = r_start[-1]
                 if bidirectional:
-                    top = not top
+                    from_top = not from_top
                 pos += step
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
@@ -1246,55 +1217,51 @@ class PanelStartPreference(wx.Panel):
         self.display_panel.Update()
 
     def _toggle_sliders(self):
-        if self.toggle_sliders:
-            direction = self.operation.raster_direction
-            self.slider_top.Enable(False)
-            self.slider_right.Enable(False)
-            self.slider_left.Enable(False)
-            self.slider_bottom.Enable(False)
-            if direction == 0:
-                self.slider_top.Enable(True)
-            elif direction == 1:
-                self.slider_bottom.Enable(True)
-            elif direction == 2:
-                self.slider_right.Enable(True)
-            elif direction == 3:
-                self.slider_left.Enable(True)
-            elif direction == 4:
-                self.slider_top.Enable(True)
-                self.slider_left.Enable(True)
+        direction = self.operation.raster_direction
+        if direction in (2, 4):
+            # from top or cross
+            prefer_min_y = True
+        elif direction == 3:
+            prefer_min_y = False
+        else:
+            prefer_min_y = self.operation.raster_preference_top > 0
 
-    def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_top != self.slider_top.GetValue() - 1:
-            self.operation.raster_preference_top = self.slider_top.GetValue() - 1
+        if direction in (0, 4):
+            # from left or cross
+            prefer_min_x = True
+        elif direction == 1:
+            prefer_min_x = False
+        else:
+            prefer_min_x = self.operation.raster_preference_left > 0
+
+        self.slider_pref_left.Enable(direction in (0, 1))
+        self.slider_pref_top.Enable(direction in (2, 3))
+        self.slider_pref_left.SetValue(0 if prefer_min_x else 1)
+        self.slider_pref_top.SetValue(0 if prefer_min_y else 1)
+
+
+    def _reload_display(self):
+        self.raster_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+
+    def on_slider_pref_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        value = 1 if self.slider_pref_left.GetValue() == 0 else 0
+        if self.operation.raster_preference_left != value:
+            self.operation.raster_preference_left = value
+            self._reload_display()
             self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_top"
+                "element_property_update", self.operation, "slider_top"
             )
 
-    def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_left != self.slider_left.GetValue() - 1:
-            self.operation.raster_preference_left = self.slider_left.GetValue() - 1
+    def on_slider_pref_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        value = 1 if self.slider_pref_top.GetValue() == 0 else 0
+        if self.operation.raster_preference_top != value:
+            self.operation.raster_preference_top = value
+            self._reload_display()
             self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_left"
+                "element_property_update", self.operation, "slider_left"
             )
-
-    def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_right != self.slider_right.GetValue() - 1:
-            self.operation.raster_preference_right = self.slider_right.GetValue() - 1
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_right"
-            )
-
-    def on_slider_bottom(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_bottom != self.slider_bottom.GetValue() - 1:
-            self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_bottom"
-            )
-
-
 # end of class PanelStartPreference
 
 
@@ -1308,8 +1275,9 @@ class RasterSettingsPanel(wx.Panel):
 
         raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Raster:"), wx.VERTICAL)
         param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
-        param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
+
+        sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
+        param_sizer.Add(sizer_dpi, 1, wx.EXPAND, 0)
         self.check_overrule_dpi = wxCheckBox(self, wx.ID_ANY)
         self.check_overrule_dpi.SetToolTip(_("Overrules image dpi settings and uses this value instead"))
         self.text_dpi = TextCtrl(
@@ -1351,24 +1319,40 @@ class RasterSettingsPanel(wx.Panel):
             + _("this can prevent your laser from stuttering.")
         )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
-        sizer_3.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
+        sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        sizer_6 = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
-        param_sizer.Add(sizer_6, 1, wx.EXPAND, 0)
+        self.sizer_cutoff = StaticBoxSizer(self, wx.ID_ANY, _("Cutoff:"), wx.HORIZONTAL)
+        param_sizer.Add(self.sizer_cutoff, 1, wx.EXPAND, 0)
+        self.text_cutoff = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "0%",
+            limited=True,
+            check="percentage",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_cutoff.SetToolTip(
+            _("Usually every non-white pixel (even very light ones) will be burned.") + "\n" +
+            _("If you set this value to something different than 0%,") + "\n" +
+            _("then this defines the needed blackness level for a pixel to be burned.")
+        )
+        self.sizer_cutoff.Add(self.text_cutoff, 1, wx.EXPAND, 0)
 
-        raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
-
+        sizer_overscan = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
+        param_sizer.Add(sizer_overscan, 1, wx.EXPAND, 0)
         self.text_overscan = TextCtrl(
             self,
             wx.ID_ANY,
-            "1mm",
+            "0mm",
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_overscan.SetToolTip(_("Overscan amount"))
-        sizer_6.Add(self.text_overscan, 1, wx.EXPAND, 0)
+        self.text_overscan.SetToolTip(_("Padding that will be added at the end of a scanline to allow the laser to slow down"))
+        sizer_overscan.Add(self.text_overscan, 1, wx.EXPAND, 0)
+
+        raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
 
         sizer_4 = StaticBoxSizer(self, wx.ID_ANY, _("Direction:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
@@ -1441,13 +1425,14 @@ class RasterSettingsPanel(wx.Panel):
         self.panel_start = PanelStartPreference(
             self, wx.ID_ANY, context=context, node=node
         )
-        raster_sizer.Add(self.panel_start, 0, wx.EXPAND, 0)
+        raster_sizer.Add(self.panel_start, 1, wx.EXPAND, 0)
 
         self.SetSizer(raster_sizer)
 
         self.Layout()
         self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
+        self.text_cutoff.SetActionRoutine(self.on_text_cutoff)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
 
         self.Bind(
@@ -1475,6 +1460,13 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.dpi is not None:
             dpi = int(self.operation.dpi)
             set_ctrl_value(self.text_dpi, str(dpi))
+        if hasattr(self.operation, "cutoff_threshold"):
+            self.sizer_cutoff.ShowItems(True)
+
+            self.text_cutoff.SetValue(f"{self.operation.cutoff_threshold:.1f}%")
+        else:
+            self.sizer_cutoff.ShowItems(False)
+
         if hasattr(self.operation, "overrule_dpi"):
             self.check_overrule_dpi.Show(True)
             overrule = self.operation.overrule_dpi
@@ -1515,6 +1507,20 @@ class RasterSettingsPanel(wx.Panel):
         except ValueError as e:
             # print (e)
             pass
+
+    def on_text_cutoff(self):
+        s = self.text_cutoff.GetValue()
+        if s.endswith("%"):
+            s = s[:-1]
+        try:
+            value = float(s)
+        except ValueError:
+            value = 0
+        if self.operation.cutoff_threshold != value:
+            self.operation.cutoff_threshold = value
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "text_cutoff"
+            )
 
     def on_text_overscan(self):
         try:
@@ -1665,7 +1671,7 @@ class ParameterPanel(ScrolledPanel):
         self.raster_panel = RasterSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
-        param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
+        param_sizer.Add(self.raster_panel, 1, wx.EXPAND, 0)
         self.panels.append(self.raster_panel)
 
         self.dwell_panel = DwellSettingsPanel(

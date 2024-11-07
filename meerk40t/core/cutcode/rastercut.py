@@ -47,6 +47,7 @@ class RasterCut(CutObject):
         self.width, self.height = image.size
         self.inverted = inverted
         self.scan = overscan
+        # Only relevant for bidirectional mode
         if inverted:
             skip_pixel = 255
 
@@ -122,8 +123,8 @@ class RasterCut(CutObject):
             scan_distance = self.width * scan_stride
         else:
             scanlines = self.width
-            scan_stride = self.step_x
-            scan_step = self.step_y
+            scan_stride = self.step_y
+            scan_step = self.step_x
             scan_distance = self.height * scan_stride
         # Total scan-distance is pixel_distance plus overscan
         scan_distance += self.scan
