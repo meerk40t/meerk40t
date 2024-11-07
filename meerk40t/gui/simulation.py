@@ -810,6 +810,7 @@ class SimulationPanel(wx.Panel, Job):
         # Display travel paths?
         self.display_travel = True
         self.raster_as_image = True
+        self.laserspot_width = None
 
         Job.__init__(self)
         self._playback_cuts = True
@@ -985,6 +986,7 @@ class SimulationPanel(wx.Panel, Job):
 
         self.sim_cutcode = SimulationWidget(self.widget_scene, self)
         self.sim_cutcode.raster_as_image = self.raster_as_image
+        self.sim_cutcode.laserspot_width = self.laserspot_width
         self.widget_scene.add_scenewidget(self.sim_cutcode)
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
         self.sim_travel.display = self.display_travel
@@ -1289,6 +1291,22 @@ class SimulationPanel(wx.Panel, Job):
         self.sim_cutcode.raster_as_image = self.raster_as_image
         self.widget_scene.request_refresh()
 
+    def toggle_laserspot(self, event):
+        if self.laserspot_width is None:
+            spot_value = getattr(self.context.device, "laserspot", "0.3mm")
+            try:
+                scale = 0.5 + (self.context.device.view.native_scale_x + self.context.device.view.native_scale_y)
+                spotwidth_in_scene = float(Length(spot_value))
+                spot_width = spotwidth_in_scene / scale
+                # print (f"Scale for device: {scale}, spot in scene: {spot_value} = {spotwidth_in_scene} -> {spot_width}")
+            except ValueError:
+                spot_width = None
+            self.laserspot_width = spot_width
+        else:
+            self.laserspot_width = None
+        self.sim_cutcode.laserspot_width = self.laserspot_width
+        self.widget_scene.request_refresh()
+
     def remove_background(self, event):
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "background", None
@@ -1451,6 +1469,14 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(wx.EVT_MENU, self.toggle_raster_display, id=id7.GetId())
         menu.Check(id7.GetId(), self.raster_as_image)
+        id8 = menu.Append(
+            wx.ID_ANY,
+            _("Simplify laser path"),
+            _("Show laser path as simple line / make it as wide as laserspot width"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_laserspot, id=id8.GetId())
+        menu.Check(id8.GetId(), self.laserspot_width is None)
 
         menu.AppendSeparator()
         self.Bind(
@@ -1883,10 +1909,12 @@ class SimulationWidget(Widget):
         self.matrix.post_cat(~scene.context.device.view.matrix)
         self.last_msg = None
         self.raster_as_image = True
+        self.laserspot_width = None # 1 Pixel
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.sim.progress < 0:
             return
+        spot_width = self.laserspot_width
         residual = 0
         idx = 0
         if self.sim.progress < self.sim.max:
@@ -1895,7 +1923,7 @@ class SimulationWidget(Widget):
             sim_cut = self.sim.cutcode[:idx]
         else:
             sim_cut = self.sim.cutcode
-        self.renderer.draw_cutcode(sim_cut, gc, 0, 0, self.raster_as_image)
+        self.renderer.draw_cutcode(sim_cut, gc, 0, 0, self.raster_as_image, laserspot_width=spot_width)
         if residual <= 0:
             return
         # We draw interpolated lines to acknowledge we are in the middle of a cut operation
@@ -1985,7 +2013,7 @@ class SimulationWidget(Widget):
             else:
                 # We draw the cutcode up to a certain percentage
                 simcut = (self.sim.cutcode[idx], )
-                self.renderer.draw_cutcode(simcut, gc, 0, 0, self.raster_as_image, residual=residual)
+                self.renderer.draw_cutcode(simcut, gc, 0, 0, self.raster_as_image, residual=residual, laserspot_width=spot_width)
 
             return
             # # We draw a rectangle covering the raster area

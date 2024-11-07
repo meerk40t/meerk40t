@@ -552,6 +552,7 @@ class LaserRender:
         x: int = 0, y: int = 0,
         raster_as_image: bool = True,
         residual = None,
+        laserspot_width = None,
     ):
         """
         Draw cutcode object into wxPython graphics code.
@@ -578,10 +579,7 @@ class LaserRender:
         for cut in cutcode:
             if hasattr(cut, "visible") and getattr(cut, "visible") is False:
                 continue
-            if cut.highlighted:
-                c = highlight_color
-            else:
-                c = cut.color
+            c = highlight_color if cut.highlighted else cut.color
             if c is None:
                 c = 0
             try:
@@ -596,7 +594,17 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self._penwidth(self.pen, 1 / gcscale)
+                default_pix = 1 / gcscale
+                # print (gcscale, laserspot_width, 1/gcscale)
+                if laserspot_width is not None:
+                    pixelwidth = laserspot_width
+                else:
+                    pixelwidth = default_pix
+                # How many pixels should the laserspotwidth be like,
+                # in any case at least 1 pixel, as otherwise it
+                # wouldn't show up under Linux/Darwin
+                pixelwidth = max(default_pix, pixelwidth)
+                self._penwidth(self.pen, pixelwidth)
                 self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
@@ -678,13 +686,13 @@ class LaserRender:
                     except AttributeError:
                         cache = None
                         cache_id = -1
-                    if cache_id != "plot":
+                    if cache_id != "raster":
                         # Cached plot is invalid.
                         cache = None
                     if cache is None:
                         cache = list(cut.plot.plot())
                         cut._cache = cache
-                        cut._cache_id = "plot"
+                        cut._cache_id = "raster"
                     todraw = cache
                     if residual is None:
                         maxcount = -1
@@ -701,7 +709,20 @@ class LaserRender:
                             break
             elif isinstance(cut, PlotCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
-                todraw = list(cut.plot)
+                try:
+                    cache = cut._cache
+                    cache_id = cut._cache_id
+                except AttributeError:
+                    cache = None
+                    cache_id = -1
+                if cache_id != "plot":
+                    # Cached plot is invalid.
+                    cache = None
+                if cache is None:
+                    cache = list(cut.plot)
+                    cut._cache = cache
+                    cut._cache_id = "plot"
+                todraw = cache
                 if residual is None:
                     maxcount = -1
                 else:
