@@ -1588,6 +1588,20 @@ def plugin(kernel, lifecycle=None):
         post=None,
         **kwargs,
     ):
+        def org_bounds(node):
+            image_width, image_height = node.image.size
+            matrix = node.matrix
+            x0, y0 = matrix.point_in_matrix_space((0, 0))
+            x1, y1 = matrix.point_in_matrix_space((image_width - 1, image_height - 1))
+            x2, y2 = matrix.point_in_matrix_space((0, image_height - 1))
+            x3, y3 = matrix.point_in_matrix_space((image_width - 1, 0))
+            return (
+                min(x0, x1, x2, x3),
+                min(y0, y1, y2, y3),
+                max(x0, x1, x2, x3),
+                max(y0, y1, y2, y3),
+            )
+
         try:
             import cv2
         except ImportError:
@@ -1623,7 +1637,7 @@ def plugin(kernel, lifecycle=None):
                 continue
             if not hasattr(inode, "bounds"):
                 continue
-            bb = inode.bounds
+            bb = org_bounds(inode)
             ox = bb[0]
             oy = bb[1]
             coord_width = bb[2] - bb[0]
