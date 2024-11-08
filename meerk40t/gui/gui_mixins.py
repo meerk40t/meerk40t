@@ -550,7 +550,7 @@ class Warnings:
                         if compare(step_x, threshold * diameter) or compare(step_y, threshold * diameter):
                             flag = True
                             count += 1
-                            break
+                            # break
                     elif op.type == "op image":
                         useop = op.overrule_dpi and op.dpi
                         for node in op.children:
@@ -565,7 +565,7 @@ class Warnings:
                             if compare(step_x, threshold * diameter) or compare(step_y, threshold * diameter):
                                 flag = True
                                 count += 1
-                                break
+                                # break
 
             return flag, count
 
