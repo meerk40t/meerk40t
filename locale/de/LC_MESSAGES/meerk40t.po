@@ -19177,3 +19177,47 @@ msgstr "Lösche alle Größeren"
 #: meerk40t/gui/propertypanels/imageproperty.py:615
 msgid "Delete all smaller"
 msgstr "Lösche alle Kleineren"
+
+#: meerk40t/lihuiyu/gui/lhycontrollergui.py:529
+msgid "You may run an incompatible version of libusb, have you tried the 32-bit version?"
+msgstr "Es sieht so aus, als würde eine inkompatible version von libusb verwendet, haben Sie die 32-bit-Version versucht?"
+
+#: meerk40t/gui/simulation.py:1475
+msgid "Raster as Image"
+msgstr "Nutze Bildversion des Rasters"
+
+#: meerk40t/gui/simulation.py:1476
+msgid "Show picture as image / as all the lines needed"
+msgstr "Zeige das Raster als Bild / als Summe aller benötigten Linien"
+
+#: meerk40t/gui/simulation.py:1483
+msgid "Simulate laser width"
+msgstr "Laserbreite simulieren"
+
+#: meerk40t/gui/simulation.py:1484
+msgid "Show laser path as wide as laserspot width / as simple line"
+msgstr "Zeige den Laserpfad so breit wie der Laserpunkt an / als einfache Linie"
+
+#: meerk40t/gui/gui_mixins.py:661
+msgid "- Raster/Images have a low dpi and lines will not overlap"
+msgstr "- Raster/Bilder haben einen zu niedrigen DPI Wert und die einzelnen Linien haben einen zu großen Abstand"
+
+#: meerk40t/gui/gui_mixins.py:670
+msgid "- Raster/Images have a high dpi and lines will overlap"
+msgstr "- Raster/Bilder haben einen zu hohen DPI Wert und die einzelnen Linien überlappen stark"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1353
+msgid "Usually every non-white pixel (even very light ones) will be burned."
+msgstr "Normalerweise wird jeder nicht-weiße Pixel (auch sehr helle) gebrannt."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1354
+msgid "If you set this value to something different than 0%,"
+msgstr "Falls dieser Wert auf etwas anderes als 0% gesetzt wird,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1355
+msgid "then this defines the needed blackness level for a pixel to be burned."
+msgstr "dann definiert dies den minimalen Schwarz-Wert eines zu brennenden Pixels."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1369
+msgid "Padding that will be added at the end of a scanline to allow the laser to slow down"
+msgstr "Puffer der am Ende einer Linie hinzugefügt wird, damit der Laser abbremsen kann."
