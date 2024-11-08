@@ -422,15 +422,32 @@ class RasterOpNode(Node, Parameters):
             image_node.step_x = step_x
             image_node.step_y = step_y
             image_node.process_image()
-
-        if matrix.value_scale_y() < 0:
+        msx = matrix.value_scale_x()
+        msy = matrix.value_scale_y()
+        rotated = False
+        negative_scale_x = msx < 0
+        negative_scale_y = msy < 0
+        if msx == 0 and msy == 0:
+            # Rotated view
+            rotated = True
+            p1a = matrix.point_in_matrix_space((0, 0))
+            p2a = matrix.point_in_matrix_space((1, 0))
+            dx = p1a.x - p2a.x
+            dy = p1a.y - p2a.y
+            negative_scale_x = bool(dy < 0) if dx == 0 else bool(dx < 0)
+            negative_scale_y = False if dx == 0 else bool(dy < 0)
+        if rotated:
+            mapping = {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}
+            if self.raster_direction in mapping:
+                self.raster_direction = mapping[self.raster_direction]
+        if negative_scale_y:
             self.raster_preference_top = not self.raster_preference_top
             # Y is negative scale, flip raster_direction if needed
             if self.raster_direction == 0:
                 self.raster_direction = 1
             elif self.raster_direction == 1:
                 self.raster_direction = 0
-        if matrix.value_scale_x() < 0:
+        if negative_scale_x:
             self.raster_preference_left = not self.raster_preference_left
             # X is negative scale, flip raster_direction if needed
             if self.raster_direction == 2:
