@@ -808,7 +808,7 @@ class SimulationPanel(wx.Panel, Job):
         self.plan_name = plan_name
         self.auto_clear = auto_clear
         # Display travel paths?
-        self.display_travel = True
+        self.display_travel = self.context.setting(bool, "display_travel", True)
         self.raster_as_image = self.context.setting(bool, "raster_as_image", True)
         self.laserspot_display = self.context.setting(bool, "laserspot_display", True)
         self.laserspot_width = None
@@ -1285,6 +1285,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_travel_display(self, event):
         self.display_travel = not self.display_travel
+        self.context.display_travel = self.display_travel
         self.sim_travel.display = self.display_travel
         self.widget_scene.request_refresh()
 
