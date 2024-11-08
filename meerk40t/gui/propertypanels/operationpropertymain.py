@@ -30,6 +30,20 @@ _ = wx.GetTranslation
 # )
 
 
+def validate_raster_settings(node):
+    # Make sure things are properly set...
+    if node.raster_direction == 0:
+        node.raster_preference_top = 1
+    elif node.raster_direction == 1:
+        node.raster_preference_top = 0
+    elif node.raster_direction == 2:
+        node.raster_preference_left = 0
+    elif node.raster_direction == 3:
+        node.raster_preference_left = 1
+    elif node.raster_direction == 4:
+        node.raster_preference_top = 1
+        node.raster_preference_left = 1
+
 class LayerSettingPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -1031,7 +1045,9 @@ class PanelStartPreference(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
+        validate_raster_settings(self.operation)
         self._toggle_sliders()
+        self.refresh_display()
         self.Show()
 
     def on_display_paint(self, event=None):
@@ -1218,21 +1234,8 @@ class PanelStartPreference(wx.Panel):
 
     def _toggle_sliders(self):
         direction = self.operation.raster_direction
-        if direction in (2, 4):
-            # from top or cross
-            prefer_min_y = True
-        elif direction == 3:
-            prefer_min_y = False
-        else:
-            prefer_min_y = self.operation.raster_preference_top > 0
-
-        if direction in (0, 4):
-            # from left or cross
-            prefer_min_x = True
-        elif direction == 1:
-            prefer_min_x = False
-        else:
-            prefer_min_x = self.operation.raster_preference_left > 0
+        prefer_min_y = self.operation.raster_preference_top > 0
+        prefer_min_x = self.operation.raster_preference_left > 0
 
         self.slider_pref_left.Enable(direction in (0, 1))
         self.slider_pref_top.Enable(direction in (2, 3))
@@ -1550,6 +1553,8 @@ class RasterSettingsPanel(wx.Panel):
             != self.combo_raster_direction.GetSelection()
         ):
             self.operation.raster_direction = self.combo_raster_direction.GetSelection()
+            validate_raster_settings(self.operation)
+
             self.context.raster_direction = self.operation.raster_direction
             self.context.elements.signal(
                 "element_property_reload", self.operation, "combo_raster"
