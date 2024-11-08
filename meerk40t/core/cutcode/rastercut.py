@@ -117,15 +117,16 @@ class RasterCut(CutObject):
         """
 
         if self.horizontal:
+            pixels = self.width
             scanlines = self.height
             scan_step = self.step_y
             scan_stride = self.step_x
-            scan_distance = self.width * scan_stride
         else:
+            pixels = self.height
             scanlines = self.width
-            scan_stride = self.step_y
             scan_step = self.step_x
-            scan_distance = self.height * scan_stride
+            scan_stride = self.step_y
+        scan_distance = pixels * scan_stride
         # Total scan-distance is pixel_distance plus overscan
         scan_distance += self.scan
         if not self.bidirectional:

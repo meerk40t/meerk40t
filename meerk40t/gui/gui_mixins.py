@@ -528,7 +528,7 @@ class Warnings:
             if threshold is None:
                 threshold = 2
             # Compare function based on check type
-            compare = (lambda x, y: x >= y) if check_type == 'high' else (lambda x, y: x <= y)
+            compare = (lambda x, y: x >= y) if check_type == 'low' else (lambda x, y: x <= y)
 
             laserspot = getattr(self.context.device, "laserspot", "0.3mm")
             try:
