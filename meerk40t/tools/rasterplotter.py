@@ -452,6 +452,7 @@ class RasterPlotter:
                 yield x, lower_bound, pixel
 
             if traveling_bottom:
+                ly = lower_bound
                 while y < upper_bound:
                     try:
                         pixel = self.px(x, y)
@@ -459,13 +460,18 @@ class RasterPlotter:
                         pixel = 0
                     y = self.nextcolor_bottom(x, y, upper_bound)
                     y = min(y, upper_bound)
+                    # As we are ending at the boundary of a pixel
+                    # we need to add 0 as we are coming from the top
+                    # and need to look at the upper edge
                     if pixel == skip_pixel:
                         yield x, y, 0
                     else:
+                        ly = y
                         yield x, y, pixel
+                # jump to eol
                 y = upper_bound
-                yield x, y, 0
             else:
+                ly = upper_bound
                 while lower_bound < y:
                     try:
                         pixel = self.px(x, y)
@@ -473,12 +479,26 @@ class RasterPlotter:
                         pixel = 0
                     y = self.nextcolor_top(x, y, lower_bound)
                     y = max(y, lower_bound)
+                    # As we are ending at the boundary of a pixel
+                    # we need to add 1 as we are coming from the bottom
+                    # and need to look at the bottom edge
                     if pixel == skip_pixel:
-                        yield x, y, 0
+                        yield x, y + 1, 0
                     else:
-                        yield x, y, pixel
+                        ly = y + 1
+                        yield x, y + 1, pixel
+                # jump to eol
                 y = lower_bound
-                yield x, y, 0
+            # eol treatment
+            if ly != y:
+                # Didnt we reach the end? Then check the pixel
+                try:
+                    pixel = self.px(x, y)
+                except IndexError:
+                    pixel = 0
+                if pixel != skip_pixel:
+                    yield x, y, pixel
+            yield x, y, 0
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
@@ -523,10 +543,11 @@ class RasterPlotter:
                 lower_bound = min(next_x, lower_bound)
 
             if lower_bound == upper_bound:
-                # Me sure we have that pixel covered
+                # Make sure we have that pixel covered
                 pixel = self.px(lower_bound, y)
                 yield lower_bound, y, pixel
             if traveling_right:
+                lx = lower_bound
                 while x < upper_bound:
                     try:
                         pixel = self.px(x, y)
@@ -535,27 +556,46 @@ class RasterPlotter:
                         pixel = 0
                     x = self.nextcolor_right(x, y, upper_bound)
                     x = min(x, upper_bound)
+                    # As we are ending at the boundary of a pixel
+                    # we need to add 0 as we are coming from the left
+                    # and need to look at the left edge
                     if pixel == skip_pixel:
                         yield x, y, 0
                     else:
+                        lx = x
                         yield x, y, pixel
-                # eol
+                # jump to eol
                 x = upper_bound
-                yield x, y, 0
             else:
+                lx = upper_bound
                 while lower_bound < x:
+                    lx = x
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     x = self.nextcolor_left(x, y, lower_bound)
                     x = max(x, lower_bound)
+                    # As we are ending at the boundary of a pixel
+                    # we need to add 1 as we are coming from the right
+                    # and need to look at the right edge
                     if pixel == skip_pixel:
-                        yield x, y, 0
+                        yield x + 1, y, 0
                     else:
-                        yield x, y, pixel
+                        lx = x + 1
+                        yield x + 1, y, pixel
+                # jump to eol
                 x = lower_bound
-                yield x, y, 0
+            # eol treatment
+            if lx != x:
+                # Didnt we reach the end? Then check the pixel
+                try:
+                    pixel = self.px(x, y)
+                except IndexError:
+                    pixel = 0
+                if pixel != skip_pixel:
+                    yield x, y, pixel
+            yield x, y, 0
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
