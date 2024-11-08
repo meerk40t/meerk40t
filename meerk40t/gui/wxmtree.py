@@ -1305,6 +1305,8 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
+        self.do_not_select = True
+
         item = node._item
         if item is None:
             raise ValueError(f"Item was None for node {repr(node)}")
@@ -1323,6 +1325,8 @@ class ShadowTree:
             self.context.signal("element_property_update", informed)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)
+
+        self.do_not_select = False
 
     def safe_color(self, color_to_set):
         _hash = str(color_to_set)
