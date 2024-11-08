@@ -1076,6 +1076,9 @@ class PanelStartPreference(wx.Panel):
         wx.CallAfter(self.refresh_in_ui)
 
     def refresh_display(self):
+        if self._Buffer is None:
+            self.set_buffer()
+
         if not wx.IsMainThread():
             wx.CallAfter(self.refresh_in_ui)
         else:
@@ -1083,6 +1086,8 @@ class PanelStartPreference(wx.Panel):
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
+        if w<10 or h<10: # Ini initialisation phase and too small anyway...
+            return
 
         from_left = self.operation.raster_preference_left > 0
         from_top = self.operation.raster_preference_top > 0
@@ -1135,8 +1140,12 @@ class PanelStartPreference(wx.Panel):
                 start = int(h * 0.1)
                 end = int(h * 0.9)
                 step = 1000 / dpi * factor
+            if step == 0:
+                step = abs(start-end) / 10
             while abs(step) > abs(start - end):
-                step = step / 2
+                step /= 2
+            while abs(start - end) / abs(step) > 100:
+                step *= 2
 
             pos = start
             while min(start, end) <= pos <= max(start, end):
@@ -1170,8 +1179,13 @@ class PanelStartPreference(wx.Panel):
                 start = int(w * 0.1)
                 end = int(w * 0.9)
                 step = 1000 / dpi * factor
+            if step == 0:
+                step = abs(start-end) / 10
             while abs(step) > abs(start - end):
-                step = step / 2
+                step /= 2
+            while abs(start - end) / abs(step) > 100:
+                step *= 2
+
             pos = start
             while min(start, end) <= pos <= max(start, end):
                 # Primary Line Vertical Raster.
