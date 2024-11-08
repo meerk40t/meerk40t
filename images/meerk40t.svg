@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
    version="1.1"
-   width="95.566643mm"
-   height="88.002098mm"
-   viewBox="0 0 246573.16 227055.65"
+   width="96mm"
+   height="96mm"
+   viewBox="0 0 247691.27 247691.17"
    id="svg1"
-   sodipodi:docname="meerk40t00.svg"
-   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   sodipodi:docname="meerk40t.svg"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   inkscape:export-filename="meerk40t.png"
+   inkscape:export-xdpi="270.93332"
+   inkscape:export-ydpi="270.93332"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -44,20 +47,27 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="1.1569801"
-     inkscape:cx="121.00468"
-     inkscape:cy="48.83403"
-     inkscape:window-width="1920"
-     inkscape:window-height="991"
-     inkscape:window-x="-9"
-     inkscape:window-y="-9"
+     inkscape:zoom="2.3139602"
+     inkscape:cx="211.32602"
+     inkscape:cy="109.12029"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
      inkscape:window-maximized="1"
      inkscape:current-layer="g1" />
   <g
      inkscape:label="Ebene 1"
      label_display="False"
      id="g1"
-     transform="translate(-9618.6606,3867.2007)">
+     transform="translate(-9618.6602,14494.678)">
+    <rect
+       style="fill:#00ff00;stroke:none;stroke-width:1048.89;stroke-dasharray:524.443, 524.443"
+       id="rect1"
+       width="247691.22"
+       height="247691.22"
+       x="9618.6602"
+       y="-14494.678" />
     <path
        inkscape:original-d="M 0,0"
        inkscape:path-effect="#path-effect3"
@@ -213,7 +223,7 @@
      hex_color="#00000000"
      output="True"
      dwell_time="50.0"
-     transform="translate(-9618.6606,3867.2007)" />
+     transform="translate(-9618.6602,14494.678)" />
   <g
      type="op raster"
      lock="False"
@@ -231,7 +241,7 @@
      dwell_time="50.0"
      hex_color="#000000ff"
      references="path20 path19 path12 path1 path25 path26"
-     transform="translate(-9618.6606,3867.2007)" />
+     transform="translate(-9618.6602,14494.678)" />
   <g
      type="op engrave"
      label="Engrave ({percent}, {speed}mm/s)"
@@ -247,7 +257,7 @@
      hex_color="#0000ff00"
      output="True"
      dwell_time="50.0"
-     transform="translate(-9618.6606,3867.2007)" />
+     transform="translate(-9618.6602,14494.678)" />
   <g
      type="op engrave"
      lock="False"
@@ -263,7 +273,7 @@
      dwell_time="50.0"
      hex_color="#b3b3b3ff"
      references="path24"
-     transform="translate(-9618.6606,3867.2007)" />
+     transform="translate(-9618.6602,14494.678)" />
   <g
      type="op cut"
      label="Cut ({percent}, {speed}mm/s)"
@@ -279,5 +289,5 @@
      power="1000"
      hex_color="#ff000000"
      dwell_time="50.0"
-     transform="translate(-9618.6606,3867.2007)" />
+     transform="translate(-9618.6602,14494.678)" />
 </svg>
