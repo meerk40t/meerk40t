@@ -342,6 +342,26 @@ class View:
             self._matrix = Matrix.map(*self._source, *self._destination)
         return self._matrix
 
+    def get_sensible_dpi_values(self) -> list:
+        # Look for dpis beyond 100 where we have an integer step value.
+        # We assume for this exercise that the x-axis is good enough
+        candidates = []
+        unit_x = UNITS_PER_INCH
+        matrix = self.matrix
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        lastdpi = None
+        for steps in range(1, 100):
+            dpi = int(round(oneinch_x / steps, 0))
+            if dpi < 75:
+                break
+            if dpi>1000:
+                continue
+            if lastdpi is None or dpi % 25 < 5 or dpi % 33 < 3:
+                lastdpi = dpi
+                candidates.append(dpi)
+        # print (candidates)
+        return candidates
+
     def dpi_to_steps(self, dpi):
         """
         Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
