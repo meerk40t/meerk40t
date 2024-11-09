@@ -1305,6 +1305,12 @@ class RasterSettingsPanel(wx.Panel):
             check="int",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
         self.text_dpi.set_error_level(1, 100000)
         OPERATION_DPI_TOOLTIP = (
             _(

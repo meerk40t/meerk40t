@@ -1172,9 +1172,13 @@ class Node:
         destination_siblings = reference_sibling.parent.children
 
         source_siblings.remove(new_sibling)
-        reference_position = destination_siblings.index(reference_sibling)
-        if below:
-            reference_position += 1
+        try:
+            reference_position = destination_siblings.index(reference_sibling)
+            if below:
+                reference_position += 1
+        except ValueError:
+            # Not in list, we could have just removed it...
+            reference_position = 0
 
         new_sibling.notify_detached(new_sibling)
         destination_siblings.insert(reference_position, new_sibling)
