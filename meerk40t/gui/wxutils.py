@@ -58,12 +58,12 @@ def get_gc_scale(gc):
     gcmat = gc.GetTransform()
     mat_param = gcmat.Get()
     testmatrix = Matrix(
-        mat_param[0], 
-        mat_param[1], 
-        mat_param[2], 
-        mat_param[3], 
-        mat_param[4], 
-        mat_param[5], 
+        mat_param[0],
+        mat_param[1],
+        mat_param[2],
+        mat_param[3],
+        mat_param[4],
+        mat_param[5],
     )
     return get_matrix_scale(testmatrix)
 
@@ -71,12 +71,12 @@ def get_gc_full_scale(gc):
     gcmat = gc.GetTransform()
     mat_param = gcmat.Get()
     testmatrix = Matrix(
-        mat_param[0], 
-        mat_param[1], 
-        mat_param[2], 
-        mat_param[3], 
-        mat_param[4], 
-        mat_param[5], 
+        mat_param[0],
+        mat_param[1],
+        mat_param[2],
+        mat_param[3],
+        mat_param[4],
+        mat_param[5],
     )
     return get_matrix_full_scale(testmatrix)
 
@@ -596,6 +596,7 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
+        self._default_values = None
 
         # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
@@ -605,6 +606,7 @@ class TextCtrl(wx.TextCtrl):
             self.Bind(wx.EVT_KEY_UP, self.on_check)
         self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
@@ -673,6 +675,9 @@ class TextCtrl(wx.TextCtrl):
         or None in any other case
         """
         return self._event_generated
+
+    def set_default_values(self, def_values):
+        self._default_values = def_values
 
     def get_warn_status(self, txt):
         status = ""
@@ -828,6 +833,26 @@ class TextCtrl(wx.TextCtrl):
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status
+
+    def on_right_click(self, event):
+        def set_menu_value(to_be_set):
+            def handler(event):
+                self.SetValue(to_be_set)
+            return handler
+
+        if not self._default_values:
+            event.Skip()
+            return
+        menu = wx.Menu()
+        has_info = isinstance(self._default_values[0], (list, tuple))
+        item : wx.MenuItem = menu.Append(wx.ID_ANY, _("Default values..."), "")
+        item.Enable(False)
+        for info in self._default_values:
+            item = menu.Append(wx.ID_ANY, info[0] if has_info else info, info[1] if has_info else "")
+            self.Bind(wx.EVT_MENU, set_menu_value(info[0] if has_info else info), id=item.GetId())
+        self.PopupMenu(menu)
+        menu.Destroy()
+
 
     @property
     def warn_status(self):
