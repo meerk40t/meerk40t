@@ -238,7 +238,7 @@ def init_tree(kernel):
     #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
     #     print (info)
 
-"""
+    """
     # Code stub will crash if used
     # ----------------------------
 
@@ -283,7 +283,7 @@ def init_tree(kernel):
                 matrix=node.matrix,
                 type="elem image",
             )
-"""
+    """
 
     @tree_operation(
         _("Remove effect"), node_type=effect_nodes, help=_("Remove hatch/wobble"), grouping="10_ELEM_DELETION"
