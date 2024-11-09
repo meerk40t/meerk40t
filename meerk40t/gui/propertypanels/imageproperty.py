@@ -1694,7 +1694,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             xmin, ymin, xmax, ymax = bounds
             width = xmax - xmin
             height = ymax - ymin
-            dpi = 500
+            dpi = 250
             dots_per_units = dpi / UNITS_PER_INCH
             new_width = width * dots_per_units
             new_height = height * dots_per_units
@@ -1794,7 +1794,6 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.SetHelpText("imageproperty")
         self.subpanels.append(self.panel_id)
-
         self.text_dpi = TextCtrl(
             self,
             wx.ID_ANY,
@@ -1803,6 +1802,12 @@ class ImagePropertyPanel(ScrolledPanel):
             check="float",
             limited=True,
             nonzero=True,
+        )
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
         )
         self.check_keep_size = wxCheckBox(self, wx.ID_ANY, _("Keep size on change"))
         self.check_keep_size.SetValue(True)
