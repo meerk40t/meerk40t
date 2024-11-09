@@ -6,6 +6,8 @@
 name: Mark stale issues and pull requests
 
 on:
+  workflow_dispatch:
+  
   schedule:
   - cron: '23 18 * * *'
 
@@ -22,14 +24,32 @@ jobs:
       with:
         debug-only: true
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'This issue is stale because it has been open 180 days with no activity. Remove stale label or comment or this will be closed in 10 days.'
-        stale-pr-message: 'This PR is stale because it has been open 90 days with no activity. There is probably no intent to merge it. Remove stale label or comment or this will be closed in 10 days.'
+        stale-issue-message: |
+          This issue is stale because it has been open 180 days with no activity.
+          Probably there there is either no clarity on the error cause (have you provided all necessary details?), 
+          or the issue is deemed as too difficult to resolve.
+          Either way don't hesitate to raise your voice, i.e. comment, to keep this issue alive and (re-)create attention.
+          Our [Discord-channel](https://discord.gg/vkDD3HdQq6) is a good way to get in contact with the developers.
+          Remove stale label or comment or this will be closed in 10 days.
+        stale-pr-message: |
+            This PR is stale because it has been open 90 days with no activity. 
+            There is probably no intent to merge it (is it outdated or has it been addressed in a different fashion?). 
+            Either way don't hesitate to raise your voice, i.e. comment, to keep this issue alive and (re-)create attention.
+            Our [Discord-channel](https://discord.gg/vkDD3HdQq6) is a good way to get in contact with the developers.
+            Remove stale label or comment or this will be closed in 10 days.'
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
-        close-issue-message: 'This issue was closed because it has been stalled for 10 days with no activity.'
-        close-pr-message: 'This PR was closed because it has been stalled for 10 days with no activity.'
+        close-issue-message: |
+            This issue has been automatically closed because it has not had recent activity. Thank you for your contributions.
+            If the issue has not been resolved, you can [find more information in our Wiki](https://github.com/meerk40t/meerk40t/wiki) or [continue the conversation on our Discord](https://discord.gg/vkDD3HdQq6).
+        
+        close-pr-message: |
+            This PR has been automatically closed because it has not had recent activity. Thank you for your contributions.
+            If you believe the PR has merits, you can [find more information in our Wiki](https://github.com/meerk40t/meerk40t/wiki) or [continue the conversation on our Discord](https://discord.gg/vkDD3HdQq6).
         days-before-issue-stale: 180
         days-before-pr-stale: 90
         days-before-issue-close: 10
         days-before-pr-close: 10
         exempt-pr-assignees: 'jpirnay'
+        exempt-issue-labels: 'dont-close'
+        exempt-pr-labels: 'dont-close'
