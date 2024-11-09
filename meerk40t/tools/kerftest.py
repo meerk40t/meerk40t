@@ -11,7 +11,15 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
 
@@ -28,17 +36,18 @@ class KerfPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("kerf")
         self.text_speed = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_speed.set_range(0, 1000)
-        self.label_speed = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_speed = wxStaticText(self, wx.ID_ANY, "")
         self.text_power = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_power.set_range(0, 1000)
-        self.label_power = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_power = wxStaticText(self, wx.ID_ANY, "")
         self.set_power_info()
         self.set_speed_info()
 
-        self.radio_pattern = wx.RadioBox(
+        self.radio_pattern = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Pattern"),
@@ -56,7 +65,7 @@ class KerfPanel(wx.Panel):
         self.text_delta = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         # self.text_delta.set_range(0, 50)
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
@@ -118,33 +127,33 @@ class KerfPanel(wx.Panel):
         hline_type = wx.BoxSizer(wx.HORIZONTAL)
         hline_type.Add(self.radio_pattern, 0, wx.EXPAND, 0)
         hline_count = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        self.info_distance = wx.StaticText(self, wx.ID_ANY, "")
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Count:"))
+        self.info_distance = wxStaticText(self, wx.ID_ANY, "")
         size_it(mylbl, 85)
         hline_count.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.spin_count, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.info_distance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Minimum:"))
         size_it(mylbl, 85)
         hline_min.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min.Add(self.text_min, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Maximum:"))
         size_it(mylbl, 85)
         hline_max.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max.Add(self.text_max, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Size:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Size:"))
         size_it(mylbl, 85)
         hline_dim.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim.Add(self.text_dim, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Delta:"))
         size_it(mylbl, 85)
         hline_delta.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta.Add(self.text_delta, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -166,10 +175,10 @@ class KerfPanel(wx.Panel):
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."
         )
-        info_pic = wx.StaticBitmap(
+        info_pic = wxStaticBitmap(
             self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE)
         )
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())
@@ -309,7 +318,7 @@ class KerfPanel(wx.Panel):
             b = 0
             if maxidx < 8:
                 colrange = 8
-            if maxidx < 16:
+            elif maxidx < 16:
                 colrange = 16
             elif maxidx < 32:
                 colrange = 32
@@ -334,16 +343,16 @@ class KerfPanel(wx.Panel):
             self.context.elements.clear_elements(fast=True)
 
         def shortened(value, digits):
-            result = str(round(value, digits))
-            if "." in result:
-                while result.endswith("0"):
-                    result = result[:-1]
-            if result.endswith("."):
-                if result == ".":
-                    result = "0"
+            _result = str(round(value, digits))
+            if "." in _result:
+                while _result.endswith("0"):
+                    _result = _result[:-1]
+            if _result.endswith("."):
+                if _result == ".":
+                    _result = "0"
                 else:
-                    result = result[:-1]
-            return result
+                    _result = _result[:-1]
+            return _result
 
         def create_operations():
             kerf = minv
@@ -594,7 +603,6 @@ class KerfPanel(wx.Panel):
             x_val = x_offset + inner_border + (num_cuts - 1) * pattern_width
             y_val = y_offset + inner_border + pattern_size
             kerfval = 0
-            idx = 0
             ticklen = float(Length("4mm"))
             tickdist = float(Length("0.02mm"))
             xfactor = tickdist * num_cuts / 2.0

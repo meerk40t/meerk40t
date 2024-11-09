@@ -66,6 +66,22 @@ class Camera(Service):
     def __repr__(self):
         return "Camera()"
 
+    @property 
+    def is_virtual(self):
+        try:
+            i = int(self.uri)
+            return False
+        except ValueError:
+            return True
+
+    @property 
+    def is_physical(self):
+        try:
+            i = int(self.uri)
+            return True
+        except ValueError:
+            return False
+
     def get_frame(self):
         return self._last_frame
 
@@ -126,8 +142,8 @@ class Camera(Service):
         N_OK = len(self._object_points)
         K = np.zeros((3, 3))
         D = np.zeros((4, 1))
-        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
-        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
+        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _i in range(N_OK)]
+        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _i in range(N_OK)]
         try:
             rms, a, b, c, d = cv2.fisheye.calibrate(
                 self._object_points,
@@ -157,6 +173,52 @@ class Camera(Service):
         self.fisheye_k = K.tolist()
         self.fisheye_d = D.tolist()
 
+    def set_resolution(self, width, height):
+        self.width = width
+        self.height = height
+
+    def get_resolution(self):
+        actual_width = self.width
+        actual_height = self.height
+        if self.capture:
+            # We have a frame, so let's get the data from there
+            try:
+                actual_width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            except:
+                pass
+        return actual_width, actual_height
+
+    def _get_capture(self, set_resolution = True):
+        import platform
+        # print (self.uri, type(self.uri).__name__)
+        if platform.system() == "Windows":
+            self.logger("Set DSHOW for Windows")
+            cv2.CAP_DSHOW
+            #sets the Windows cv2 backend to DSHOW (Direct Video Input Show)
+            cap = cv2.VideoCapture(self.uri)
+        elif platform.system() == "Linux":
+            self.logger("Set GSTREAMER for Linux")
+            cv2.CAP_GSTREAMER # set the Linux cv2 backend to GTREAMER
+            #cv2.CAP_V4L
+            cap = cv2.VideoCapture(self.uri)
+        else:
+            self.logger("Try something for Darwin")
+            cap = cv2.VideoCapture(self.uri)
+            # For MAC please refer to link below for I/O
+            cap.set(cv2.CAP_FFMPEG, cv2.CAP_AVFOUNDATION) # not sure!
+            #please refer to reference link at bottom of page for more I/O
+        if set_resolution:
+            self.logger (f"Try to start camera with {self.width}x{self.height}")
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.logger (
+                f"Capture: {str(self.capture)}\n" + 
+                f"Frame resolution set to: ({cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{cap.get(cv2.CAP_PROP_FRAME_HEIGHT)})"
+            )
+
+        return cap
+
     def open_camera(self):
         """
         Open Camera device.
@@ -182,6 +244,60 @@ class Camera(Service):
         @return:
         """
         self.quit_thread = True
+
+    def logger(self, msg):
+        # print (msg)
+        self.channel(msg)
+
+    def guess_supported_resolutions(self):
+        # List of supported resolutions
+        supported_resolutions = []
+        # We need to stop the camera for that
+        if self.capture:
+            self.close_camera()
+            waiting_time = 0
+            while self.quit_thread and waiting_time < 3.0:
+                waiting_time += 0.1
+                time.sleep(0.1)
+            if self.quit_thread:
+                self.logger("Camera couldn't be stopped")
+                return []
+        # Open the camera
+        cap = self._get_capture(set_resolution=False)
+        if not cap.isOpened():
+            self.logger("Camera couldn't be opened")
+            return []
+
+        # There is no defnitive list of resolutions that you could
+        # inquire, so we try a couple of popular combinations
+        if self.is_virtual:
+            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            supported_resolutions.append((actual_width, actual_height, "Webcam"))
+            return supported_resolutions
+
+        for combinations in (
+            (640, 480, "0.3MP 4:3"),
+            (800, 600, "0.5MP 4:3"),
+            (960, 544, "0.5MP 30:17"), 
+            (1280, 720, "0.9MP 16:9"),
+            (1440, 1080, "1.5MP 16:9"),
+            (1920, 1080, "2.1MP 16:9"),
+            (3840, 2160, "8MP 16:9"),
+            (7680, 4320, "33MP 16:9"),
+        ):
+            width, height, description = combinations
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            actual_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            actual_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            self.logger(f"Tried {width}x{height} ({description}) - received {actual_width}x{actual_height}")
+            if int(actual_width) == width and int(actual_height) == height:
+                supported_resolutions.append((width, height, description))
+
+        cap.release()
+        return supported_resolutions
+
 
     def process_frame(self):
         frame = self._current_raw
@@ -248,10 +364,8 @@ class Camera(Service):
             except cv2.error:
                 pass
             self.capture = None
-        uri = self.uri
         self.signal("camera_reconnect")
-        self.capture = cv2.VideoCapture(uri)
-        channel(f"Capture: {str(self.capture)}")
+        self.capture = self._get_capture()
         if self.capture is None:
             return False
         return True
@@ -267,20 +381,19 @@ class Camera(Service):
             if self.capture is None:
                 return  # No capture the thread dies.
             try:
-                channel(f"Grabbing Frame: {str(uri)}")
+                # channel(f"Grabbing Frame: {str(uri)}")
                 ret = self.capture.grab()
             except AttributeError:
                 time.sleep(0.2)
                 channel(f"Grab Failed, trying Reconnect: {str(uri)}")
                 if self._attempt_recovery():
                     continue
-                else:
-                    return
+                return
 
             for i in range(self.max_tries_frame):
                 if self.quit_thread:
                     return  # Abort.
-                channel(f"Retrieving Frame: {str(uri)}")
+                # channel(f"Retrieving Frame: {str(uri)}")
                 try:
                     ret, frame = self.capture.retrieve()
                 except cv2.error:
@@ -295,21 +408,20 @@ class Camera(Service):
                 channel(f"Frame Failed, trying Reconnect: {str(uri)}")
                 if self._attempt_recovery():
                     continue  # Recovery was successful.
-                else:
-                    return
-            channel(f"Frame Success: {str(uri)}")
+                return
+            # channel(f"Frame Success: {str(uri)}")
             self.connection_attempts = 0
 
             self._last_raw = self._current_raw
             self._current_raw = frame
             self.frame_index += 1
             self.process_frame()
-            channel(f"Processing Frame: {str(uri)}")
+            # channel(f"Processing Frame: {str(uri)}")
 
     def threaded_image_fetcher(self):
         channel = self.channel("camera")
         uri = self.uri
-        channel(f"URI: {str(uri)}")
+        # channel(f"URI: {str(uri)}")
         if uri is None:
             channel("No camera uri.")
             return
@@ -324,9 +436,8 @@ class Camera(Service):
             uri = self.uri
             channel(f"Connecting {str(uri)}")
             self.signal("camera_state", 1)
-            self.capture = cv2.VideoCapture(uri)
-            channel(f"Capture: {str(self.capture)}")
-
+            # Open the camera
+            self.capture = self._get_capture()
             self._thread_looper(uri)
 
             if self.capture is not None:

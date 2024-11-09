@@ -30,6 +30,10 @@ def bootstrap(profile="MeerK40t_TEST", ignore_settings=True, plugins=None):
 
     kernel.add_plugin(fills.plugin)
 
+    from meerk40t.extra.coolant import plugin as coolantplugin
+
+    kernel.add_plugin(coolantplugin)
+
     from meerk40t.lihuiyu import plugin as lhystudiosdevice
 
     kernel.add_plugin(lhystudiosdevice.plugin)

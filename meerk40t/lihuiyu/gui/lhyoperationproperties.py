@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, wxCheckBox, wxComboBox
 
 _ = wx.GetTranslation
 
@@ -26,7 +26,7 @@ class LhyAdvancedPanel(wx.Panel):
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
 
-        self.check_dratio_custom = wx.CheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
+        self.check_dratio_custom = wxCheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
         self.check_dratio_custom.SetToolTip(
             _("Enables the ability to modify the diagonal ratio.")
         )
@@ -51,7 +51,7 @@ class LhyAdvancedPanel(wx.Panel):
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_sizer.Add(sizer_12, 0, wx.EXPAND, 0)
 
-        self.checkbox_custom_accel = wx.CheckBox(self, wx.ID_ANY, _("Acceleration"))
+        self.checkbox_custom_accel = wxCheckBox(self, wx.ID_ANY, _("Acceleration"))
         self.checkbox_custom_accel.SetToolTip(_("Enables acceleration override"))
         sizer_12.Add(self.checkbox_custom_accel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -82,7 +82,7 @@ class LhyAdvancedPanel(wx.Panel):
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_19.Add(sizer_20, 1, wx.EXPAND, 0)
 
-        self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, _("Dot Length"))
+        self.check_dot_length_custom = wxCheckBox(self, wx.ID_ANY, _("Dot Length"))
         self.check_dot_length_custom.SetToolTip(_("Enable Dot Length"))
         sizer_20.Add(self.check_dot_length_custom, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.text_dot_length = TextCtrl(
@@ -113,7 +113,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
         sizer_20.Add(self.text_dot_length, 1, wx.EXPAND, 0)
 
-        self.combo_dot_length_units = wx.ComboBox(
+        self.combo_dot_length_units = wxComboBox(
             self,
             wx.ID_ANY,
             choices=["steps", "mm", "cm", "inch", "mil", "%"],
@@ -122,7 +122,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.combo_dot_length_units.SetSelection(0)
         sizer_20.Add(self.combo_dot_length_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
+        self.check_shift_enabled = wxCheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
         OPERATION_SHIFT_TOOLTIP = (
             _(
                 "Pulse Grouping is an alternative means of reducing the incidence of "

@@ -16,13 +16,13 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
         try:
             import cv2
-        except ImportError as e:
+        except ImportError:
             print("OpenCV is not installed. Disabling Camera. Install with:")
             print("\tpip install opencv-python-headless")
             return True
         try:
             import numpy as np
-        except ImportError as e:
+        except ImportError:
             print("Numpy is not installed. Disabling Camera.")
             return True
 
@@ -163,6 +163,8 @@ def plugin(kernel, lifecycle=None):
                     cam.height = height
                 return "camera", cam
 
+        @kernel.console_argument("width", type=int, help="force the camera width")
+        @kernel.console_argument("height", type=int, help="force the camera height")
         @kernel.console_option(
             "tries", "t", type=int, default=10, help="Attempts to recover connection"
         )
@@ -172,12 +174,32 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             "start", help="Start Camera.", input_type="camera", output_type="camera"
         )
-        def start_camera(data=None, tries=None, frame_tries=None, **kwargs):
+        def start_camera(_, channel, data=None, width=None, height=None, tries=None, frame_tries=None, **kwargs):
+            if width is not None:
+                data.width = width
+            if height is not None:
+                data.height = height
             if tries is not None:
                 data.max_tries_connect = tries
             if frame_tries is not None:
                 data.max_tries_frame = frame_tries
             data.open_camera()
+            # # Wait 1 second to see if wa have aquired a lock
+            # if info:
+            #     channel(f"Tried to start camera with: {data.width}x{data.height}")
+            #     import time
+            #     import cv2
+            #     elapsed = 0
+            #     while elapsed < 2.0:
+            #         time.sleep(0.2)
+            #         elapsed += 0.2
+            #         if data.capture:
+            #             actual_width = data.capture.get(cv2.CAP_PROP_FRAME_WIDTH)
+            #             actual_height = data.capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            #             channel(f"Camera is running at {actual_width}x{actual_height} (info received after {elapsed:.2f}sec)")
+            #             break
+            #     if elapsed >=2.0:
+            #         channel("Couldn't acquire resolution information from the camera")
             return "camera", data
 
         @kernel.console_command(
@@ -231,15 +253,34 @@ def plugin(kernel, lifecycle=None):
             else:
                 raise CommandSyntaxError
 
+        @kernel.console_argument("device", type=str)
         @kernel.console_command(
             "background",
             help="set background image",
             input_type="camera",
             output_type="image-array",
         )
-        def background_camera(data=None, **kwargs):
-            image_array = data.background()
-            return "image-array", image_array
+        def background_camera(data=None, device=None, **kwargs):
+            doit = True
+            if device:
+                if kernel.device.label != device:
+                    doit = False
+            if doit:
+                image_array = data.background()
+                return "image-array", image_array
+            else:
+                return
+
+        @kernel.console_command(
+            "resolution",
+            help="list available resolutions for the camera",
+            input_type="camera",
+        )
+        def list_camera_resolutions(_, channel, data=None, **kwargs):
+            channel(f"Available resolutions for camera #{data.uri}")
+            info_array = data.guess_supported_resolutions()
+            for width, height, description in info_array:
+                channel (f"{width}x{height} - {description}")
 
         @kernel.console_command(
             "export",
@@ -292,19 +333,20 @@ def plugin(kernel, lifecycle=None):
             if data.capture is None:
                 channel(_("Camera is not currently running..."))
                 return
-            for i in range(100):
+            import cv2
+            width = data.capture.get(cv2.CAP_PROP_FRAME_WIDTH)
+            height = data.capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            channel (f"Backend: {data.capture.getBackendName()}, Resolution: {int(width)}x{int(height)}, Type: {'physical' if data.is_physical else 'virtual'}")
+            for name in dir(cv2):
+                if not name.startswith("CAP_PROP"):
+                    continue
                 try:
-                    v = data.capture.get(i)
-                    prop = None
-                    for name in dir(cv2):
-                        if not name.startswith("CAP_PROP"):
-                            continue
-                        if getattr(cv2, name) == i:
-                            prop = name
-                            break
-                    if prop is None:
+                    idx = getattr(cv2, name)
+                    if idx < 0 or idx > 100:
+                        # arbitrary, not that interesting...
                         continue
-                    channel(f"{i}: {str(prop)} -- {str(v)}")
+                    v = data.capture.get(idx)
+                    channel(f"{idx:2d}: {name} -- {str(v)}")
                 except:
                     pass
 

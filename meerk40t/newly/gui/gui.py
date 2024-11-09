@@ -32,16 +32,18 @@ def plugin(service, lifecycle):
                 "action": lambda e: service("window toggle Controller\n"),
             },
         )
-        service.register(
-            "button/device/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support,
-                "tip": _("Opens device-specific configuration window"),
-                "help": "devicenewly",
-                "action": lambda v: service("window toggle Configuration\n"),
-            },
-        )
+        kernel = service.kernel
+        if not (hasattr(kernel.args, "lock_device_config") and kernel.args.lock_device_config):
+            service.register(
+                "button/device/Configuration",
+                {
+                    "label": _("Config"),
+                    "icon": icons8_computer_support,
+                    "tip": _("Opens device-specific configuration window"),
+                    "help": "devicenewly",
+                    "action": lambda v: service("window toggle Configuration\n"),
+                },
+            )
 
     if lifecycle == "service_attach":
         from meerk40t.gui.icons import (

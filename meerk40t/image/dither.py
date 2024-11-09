@@ -12,8 +12,9 @@ from PIL import Image
 
 try:
     from numba import njit
-except ImportError:
+except Exception as e:
     # Jit does not exist, add a dummy decorator and continue.
+    # print (f"Encountered error: {e}")
     def njit(*args, **kwargs):
         def inner(func):
             return func
@@ -22,7 +23,7 @@ except ImportError:
 
 
 _DIFFUSION_MAPS = {
-    "floyd-steinberg": (
+    "legacy-floyd-steinberg": (
         (1, 0, 7 / 16),
         (-1, 1, 3 / 16),
         (0, 1, 5 / 16),
@@ -316,7 +317,7 @@ def fast_dither(image, diff_map):
 
 function_map = {
     "atkinson": atkinson,
-    "floyd-steinberg": floyd_steinberg,
+    "legacy-floyd-steinberg": floyd_steinberg,
     "jarvis-judice-ninke": jarvis_judice_ninke,
     "stucki": stucki,
     "burkes": burkes,
@@ -326,7 +327,7 @@ function_map = {
 }
 
 
-def dither(image, method="Floyd-Steinberg"):
+def dither(image, method="Legacy-Floyd-Steinberg"):
     method = method.lower()
     dither_function = function_map.get(method)
     if not dither_function:

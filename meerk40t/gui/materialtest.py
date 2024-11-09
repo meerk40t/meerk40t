@@ -10,9 +10,18 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
-from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_detective
+from meerk40t.gui.icons import get_default_icon_size, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxComboBox,
+    wxListBox,
+    wxStaticText,
+)
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
@@ -31,15 +40,16 @@ class SaveLoadPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.callback = None
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer_main)
         sizer_name = wx.BoxSizer(wx.HORIZONTAL)
-        lbl_info = wx.StaticText(self, wx.ID_ANY, _("Template-Name"))
-        self.txt_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.btn_save = wx.Button(self, wx.ID_ANY, _("Save"))
-        self.btn_load = wx.Button(self, wx.ID_ANY, _("Load"))
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        lbl_info = wxStaticText(self, wx.ID_ANY, _("Template-Name"))
+        self.txt_name = TextCtrl(self, wx.ID_ANY, "")
+        self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
+        self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_load.Enable(False)
         self.btn_save.Enable(False)
         self.btn_delete.Enable(False)
@@ -50,7 +60,7 @@ class SaveLoadPanel(wx.Panel):
         sizer_name.Add(self.btn_delete, 0, wx.EXPAND, 0)
 
         self.choices = []
-        self.list_slots = wx.ListBox(
+        self.list_slots = wxListBox(
             self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE
         )
         self.list_slots.SetToolTip(_("Select an entry to reload"))
@@ -134,7 +144,6 @@ class SaveLoadPanel(wx.Panel):
         self.on_text_change(None)
 
     def on_listbox_click(self, event):
-        info = ""
         idx = self.list_slots.GetSelection()
         # print (f"Click with {idx}")
         if idx >= 0:
@@ -143,7 +152,6 @@ class SaveLoadPanel(wx.Panel):
         self.on_text_change(None)
 
     def on_listbox_double_click(self, event):
-        info = ""
         idx = self.list_slots.GetSelection()
         # print (f"DClick with {idx}")
         if idx >= 0:
@@ -171,6 +179,7 @@ class TemplatePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("testpattern")
         self.storage = storage
         self.callback = None
@@ -189,7 +198,6 @@ class TemplatePanel(wx.Panel):
         self.default_op.append(ImageOpNode())
         self.color_scheme_free.append(True)
         op = EngraveOpNode()
-        op.add_node(HatchEffectNode())
         self.default_op.append(op)
         self.color_scheme_free.append(True)
 
@@ -201,7 +209,9 @@ class TemplatePanel(wx.Panel):
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
 
-        self.combo_ops = wx.ComboBox(
+        LABEL_WIDTH = 115
+
+        self.combo_ops = wxComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.images = []
@@ -219,10 +229,10 @@ class TemplatePanel(wx.Panel):
                 w, h = imagenode.active_image.size
                 label = f"{w} x {h} Pixel"
                 if node.label:
-                    label += "(" + node.label + ")"
+                    label += "(" + node.display_label() + ")"
                 self.image_labels.append(label)
 
-        self.combo_images = wx.ComboBox(
+        self.combo_images = wxComboBox(
             self,
             id=wx.ID_ANY,
             choices=self.image_labels,
@@ -234,10 +244,10 @@ class TemplatePanel(wx.Panel):
             )
         )
         self.combo_images.SetSelection(0)
-        self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Labels"))
-        self.check_values = wx.CheckBox(self, wx.ID_ANY, _("Values"))
+        self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Labels"))
+        self.check_values = wxCheckBox(self, wx.ID_ANY, _("Values"))
 
-        self.combo_param_1 = wx.ComboBox(
+        self.combo_param_1 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.spin_count_1 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
@@ -247,20 +257,18 @@ class TemplatePanel(wx.Panel):
         self.text_dim_1.set_range(0, 50)
         self.text_delta_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_delta_1.set_range(0, 50)
-        self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
-        self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
-        size_it(self.unit_param_1a, 85)
-        size_it(self.unit_param_1b, 85)
+        self.unit_param_1a = wxStaticText(self, wx.ID_ANY, "")
+        self.unit_param_1b = wxStaticText(self, wx.ID_ANY, "")
 
-        self.combo_color_1 = wx.ComboBox(
+        self.combo_color_1 = wxComboBox(
             self,
             wx.ID_ANY,
             choices=color_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.check_color_direction_1 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
+        self.check_color_direction_1 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
-        self.combo_param_2 = wx.ComboBox(
+        self.combo_param_2 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.spin_count_2 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
@@ -270,20 +278,18 @@ class TemplatePanel(wx.Panel):
         self.text_dim_2.set_range(0, 50)
         self.text_delta_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_delta_2.set_range(0, 50)
-        self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
-        self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
-        size_it(self.unit_param_2a, 85)
-        size_it(self.unit_param_2b, 85)
+        self.unit_param_2a = wxStaticText(self, wx.ID_ANY, "")
+        self.unit_param_2b = wxStaticText(self, wx.ID_ANY, "")
 
-        self.combo_color_2 = wx.ComboBox(
+        self.combo_color_2 = wxComboBox(
             self,
             wx.ID_ANY,
             choices=color_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.check_color_direction_2 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
+        self.check_color_direction_2 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -294,8 +300,8 @@ class TemplatePanel(wx.Panel):
         self.sizer_param_op = StaticBoxSizer(
             self, wx.ID_ANY, _("Operation to test"), wx.VERTICAL
         )
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Operation:"))
+        size_it(mylbl, LABEL_WIDTH)
         h1 = wx.BoxSizer(wx.HORIZONTAL)
         h1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
@@ -317,53 +323,53 @@ class TemplatePanel(wx.Panel):
         )
 
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Parameter:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_param_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_1.Add(self.combo_param_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        size_it(mylbl, 85)
-        self.info_delta_1 = wx.StaticText(self, wx.ID_ANY, "")
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Count:"))
+        size_it(mylbl, LABEL_WIDTH)
+        self.info_delta_1 = wxStaticText(self, wx.ID_ANY, "")
 
         hline_count_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_1.Add(self.spin_count_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_1.Add(self.info_delta_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Minimum:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_min_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.text_min_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.unit_param_1a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Maximum:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_max_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.text_max_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.unit_param_1b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Width:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_1.Add(self.text_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        mylbl = wxStaticText(self, wx.ID_ANY, "mm")
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Delta:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_1.Add(self.text_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        mylbl = wxStaticText(self, wx.ID_ANY, "mm")
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_color_1 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Color:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_color_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.combo_color_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.check_color_direction_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -381,52 +387,52 @@ class TemplatePanel(wx.Panel):
         )
 
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Parameter:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_param_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_2.Add(self.combo_param_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        size_it(mylbl, 85)
-        self.info_delta_2 = wx.StaticText(self, wx.ID_ANY, "")
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Count:"))
+        size_it(mylbl, LABEL_WIDTH)
+        self.info_delta_2 = wxStaticText(self, wx.ID_ANY, "")
         hline_count_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_2.Add(self.spin_count_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_2.Add(self.info_delta_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Minimum:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_min_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.text_min_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.unit_param_2a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Maximum:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_max_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.text_max_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.unit_param_2b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Height:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_2.Add(self.text_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        mylbl = wxStaticText(self, wx.ID_ANY, "mm")
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Delta:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_2.Add(self.text_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        mylbl = wxStaticText(self, wx.ID_ANY, "mm")
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_color_2 = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
-        size_it(mylbl, 85)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Color:"))
+        size_it(mylbl, LABEL_WIDTH)
         hline_color_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.combo_color_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.check_color_direction_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -471,7 +477,7 @@ class TemplatePanel(wx.Panel):
             "by creating a testpattern that varies two different parameters."
         )
 
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())
@@ -492,7 +498,7 @@ class TemplatePanel(wx.Panel):
         )
         self.combo_color_1.SetToolTip(
             _(
-                "Choose the color aspect for the second parameter. NB: the colors for both parameters will be combined"
+                "Choose the color aspect for the first parameter. NB: the colors for both parameters will be combined"
             )
         )
         self.combo_color_2.SetToolTip(
@@ -598,6 +604,10 @@ class TemplatePanel(wx.Panel):
         return self.context.device.use_mm_min_for_speed_display
 
     def set_param_according_to_op(self, event):
+        def preset_image_dpi(node=None):
+            # Will be called ahead of the modification of the 'op image' dpi variable
+            node.overrule_dpi = True
+
         def preset_passes(node=None):
             # Will be called ahead of the modification of the passes variable
             node.passes_custom = True
@@ -639,6 +649,7 @@ class TemplatePanel(wx.Panel):
             return
         self.current_op = opidx
 
+        busy = wx.BusyCursor()
         self.Freeze()
         if opidx < 0:
             opnode = None
@@ -677,106 +688,57 @@ class TemplatePanel(wx.Panel):
 
         if opidx == 0:
             # Cut
-            # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
+            # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive, type)
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
-                ("dpi", None, _("DPI"), "dpi", False, True),
-                ("overscan", None, _("Overscan"), "mm", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                ("dpi", None, _("DPI"), "dpi", False, True, int),
+                ("overscan", None, _("Overscan"), "mm", False, True, None),
             ]
         elif opidx == 3:
             # Image
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
-                ("dpi", None, _("DPI"), "dpi", False, True),
-                ("overscan", None, _("Overscan"), "mm", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                ("dpi", preset_image_dpi, _("DPI"), "dpi", False, True, int),
+                ("overscan", None, _("Overscan"), "mm", False, True, None),
             ]
         elif opidx == 4:
             # Hatch
             self.parameters = [
-                ("speed", None, _("Speed"), speed_unit, False, True),
-                ("power", None, _("Power"), ppi, False, True),
-                ("passes", preset_passes, _("Passes"), "x", False, True),
-                ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
-                ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                ("hatch_distance", None, _("Hatch Distance"), "mm", False, True, None),
+                ("hatch_angle", None, _("Hatch Angle"), "deg", False, True, None),
             ]
 
         if "balor" in self.context.device.path:
             balor_choices = [
-                ("frequency", None, _("Frequency"), "kHz", False, True),
-                (
-                    "rapid_speed",
-                    preset_balor_rapid,
-                    _("Rapid Speed"),
-                    "mm/s",
-                    False,
-                    True,
-                ),
-                (
-                    "delay_laser_on",
-                    preset_balor_timings,
-                    _("Laser On Delay"),
-                    "µs",
-                    False,
-                    False,
-                ),
-                (
-                    "delay_laser_off",
-                    preset_balor_timings,
-                    _("Laser Off Delay"),
-                    "µs",
-                    False,
-                    False,
-                ),
-                (
-                    "delay_polygon",
-                    preset_balor_timings,
-                    _("Polygon Delay"),
-                    "µs",
-                    False,
-                    False,
-                ),
-                (
-                    "wobble_radius",
-                    preset_balor_wobble,
-                    _("Wobble Radius"),
-                    "mm",
-                    True,
-                    True,
-                ),
-                (
-                    "wobble_interval",
-                    preset_balor_wobble,
-                    _("Wobble Interval"),
-                    "mm",
-                    True,
-                    True,
-                ),
-                (
-                    "wobble_speed",
-                    preset_balor_wobble,
-                    _("Wobble Speed Multiplier"),
-                    "x",
-                    False,
-                    True,
-                ),
+                ("frequency", None, _("Frequency"), "kHz", False, True, None),
+                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True, None,),
+                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False, None,),
+                ("delay_laser_off", preset_balor_timings, _("Laser Off Delay"), "µs", False, False, None,),
+                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False, None,),
+                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True, None,),
+                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True, None,),
+                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True, None,),
             ]
             if self.context.device.pulse_width_enabled:
                 balor_choices.append(
@@ -786,12 +748,16 @@ class TemplatePanel(wx.Panel):
                         _("Pulse Width"),
                         "ns",
                         False,
-                        True,
+                        True, 
+                        None,
                     )
                 )
 
             for entry in balor_choices:
                 self.parameters.append(entry)
+        # for p in self.parameters:
+        #     if len(p) != 7:
+        #         print (f"No good: {p}")
         choices = []
         for entry in self.parameters:
             choices.append(entry[2])
@@ -812,6 +778,7 @@ class TemplatePanel(wx.Panel):
         self.on_combo_2(None)
         self.Layout()
         self.Thaw()
+        del busy
 
     def on_combo_1(self, input):
         s_unit = ""
@@ -1056,13 +1023,20 @@ class TemplatePanel(wx.Panel):
                 node.modified()
                 text_op_y.add_reference(node, 0)
 
-            p_value_1 = min_value_1
+            _p_value_1 = min_value_1
 
             xx = start_x
             for idx1 in range(count_1):
+                p_value_1 = _p_value_1
+                if param_value_type_1 is not None:
+                    try:
+                        _pp = param_value_type_1(_p_value_1)
+                        p_value_1 = _pp
+                    except ValueError:
+                        pass
                 pval1 = self.shortened(p_value_1, 3)
 
-                p_value_2 = min_value_2
+                _p_value_2 = min_value_2
                 yy = start_y
 
                 if display_values:
@@ -1083,6 +1057,14 @@ class TemplatePanel(wx.Panel):
                     text_op_x.add_reference(node, 0)
 
                 for idx2 in range(count_2):
+                    p_value_2 = _p_value_2
+                    if param_value_type_2 is not None:
+                        try:
+                            _pp = param_value_type_2(_p_value_2)
+                            p_value_2 = _pp
+                        except ValueError:
+                            pass
+
                     pval2 = self.shortened(p_value_2, 3)
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
@@ -1102,19 +1084,27 @@ class TemplatePanel(wx.Panel):
                         text_op_y.add_reference(node, 0)
                     if optype == 0:  # Cut
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = False
                     elif optype == 1:  # Engrave
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = False
                     elif optype == 2:  # Raster
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = True
                     elif optype == 3:  # Image
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = False
                     elif optype == 4:  # Hatch
-                        this_op = copy(self.default_op[optype])
-                        usefill = True
+                        master_op = copy(self.default_op[optype])
+                        this_op = HatchEffectNode()
+                        master_op.add_node(this_op)
+
+                        # We need to add a hatch node and make this the target for parameter application
+                        usefill = False
                     else:
                         return
                     this_op.label = s_lbl
@@ -1131,14 +1121,25 @@ class TemplatePanel(wx.Panel):
                         value *= 10.0
                     if param_type_1 == "speed" and self.use_mm_min():
                         value /= 60.0
+                    if hasattr(master_op, param_type_1):
+                        # quick and dirty
+                        if param_type_1 == "passes":
+                            value = int(value)
+                        if param_type_1 == "hatch_distance":
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
+                        setattr(master_op, param_type_1, value)
+                    # else:  # Try setting
+                    #     master_op.settings[param_type_1] = value
                     if hasattr(this_op, param_type_1):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
                         if param_type_1 == "hatch_distance":
-                            value = f"{value}mm"
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
                         setattr(this_op, param_type_1, value)
-                    else:  # Try setting
+                    elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_1] = value
 
                     # Do we need to prep the op?
@@ -1153,13 +1154,22 @@ class TemplatePanel(wx.Panel):
                         value *= 10.0
                     if param_type_2 == "speed" and self.use_mm_min():
                         value /= 60.0
+                    if hasattr(master_op, param_type_2):
+                        # quick and dirty
+                        if param_type_2 == "passes":
+                            value = int(value)
+                        if param_type_2 == "hatch_distance":
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
+                        setattr(master_op, param_type_2, value)
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
                         if param_type_2 == "hatch_distance":
-                            value = f"{value}mm"
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
                         setattr(this_op, param_type_2, value)
-                    else:  # Try setting
+                    elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_2] = value
 
                     set_color = make_color(
@@ -1174,7 +1184,7 @@ class TemplatePanel(wx.Panel):
                     )
                     this_op.color = set_color
                     # Add op to tree.
-                    operation_branch.add_node(this_op)
+                    operation_branch.add_node(master_op)
                     # Now add a rectangle to the scene and assign it to the newly created op
                     if usefill:
                         fill_color = set_color
@@ -1209,9 +1219,9 @@ class TemplatePanel(wx.Panel):
                         )
                     elemnode.label = s_lbl
                     this_op.add_reference(elemnode, 0)
-                    p_value_2 += delta_2
+                    _p_value_2 += delta_2
                     yy = yy + gap_y + size_y
-                p_value_1 += delta_1
+                _p_value_1 += delta_1
                 xx = xx + gap_x + size_x
 
         # Read the parameters and user input
@@ -1226,6 +1236,7 @@ class TemplatePanel(wx.Panel):
         # 4 = keep_unit, 5 = needs_to_be_positive)
         param_name_1 = self.parameters[idx][2]
         param_type_1 = self.parameters[idx][0]
+        param_value_type_1 = self.parameters[idx][6]
         param_prepper_1 = self.parameters[idx][1]
         if param_prepper_1 == "":
             param_prepper_1 = None
@@ -1238,6 +1249,7 @@ class TemplatePanel(wx.Panel):
             return
         param_name_2 = self.parameters[idx][2]
         param_type_2 = self.parameters[idx][0]
+        param_value_type_2 = self.parameters[idx][6]
         param_prepper_2 = self.parameters[idx][1]
         if param_prepper_2 == "":
             param_prepper_2 = None
@@ -1292,7 +1304,7 @@ class TemplatePanel(wx.Panel):
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
-        elif param_unit_1 == "%":
+        elif param_unit_2 == "%":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 100)
         else:
@@ -1551,8 +1563,16 @@ class TemplateTool(MWindow):
             style=aui.AUI_NB_TAB_EXTERNAL_MOVE
             | aui.AUI_NB_SCROLL_BUTTONS
             | aui.AUI_NB_TAB_SPLIT
-            | aui.AUI_NB_TAB_MOVE,
+            | aui.AUI_NB_TAB_MOVE
+            | aui.AUI_NB_BOTTOM,
         )
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
 
@@ -1605,6 +1625,7 @@ class TemplateTool(MWindow):
 
         if node is None:
             return
+        busy = wx.BusyCursor()
         self.Freeze()
         pages_to_instance = []
         pages_in_node = []
@@ -1672,6 +1693,7 @@ class TemplateTool(MWindow):
 
         self.Layout()
         self.Thaw()
+        del busy
 
     def window_open(self):
         pass

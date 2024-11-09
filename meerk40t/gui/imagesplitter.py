@@ -7,7 +7,16 @@ from meerk40t.gui.icons import (
     icon_split_image,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -19,18 +28,19 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.context.themes.set_window_colors(self)
+        self.lbl_info_main = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -53,7 +63,7 @@ class InfoPanel(wx.Panel):
         sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
         self.make_raster = None
         self.SetSizer(sizer_main)
-        self.Layout
+        self.Layout()
 
     def show_stuff(self, has_emph):
         def create_image_from_node(node, iconsize):
@@ -86,7 +96,6 @@ class InfoPanel(wx.Panel):
             self.make_raster = self.context.elements.lookup("render-op/make_raster")
 
         count = 0
-        msg = ""
         if has_emph:
             data = list(self.context.elements.flat(emphasized=True))
             count = len(data)
@@ -137,6 +146,7 @@ class SplitterPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("imagesplit")
         self.scene = scene
         # Amount of currently selected
@@ -155,7 +165,7 @@ class SplitterPanel(wx.Panel):
         self.split_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
         self.split_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -166,13 +176,19 @@ class SplitterPanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
-        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
+        self.lbl_info = wxStaticText(self, wx.ID_ANY, "")
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
             icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
         )
 
-        lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
+        lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
             self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
@@ -221,12 +237,12 @@ class SplitterPanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            num_cols = self.split_x.GetValue()
-            num_rows = self.split_y.GetValue()
+            # num_cols = self.split_x.GetValue()
+            # num_rows = self.split_y.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            esort = self.selectparam[idx]
+            # esort = self.selectparam[idx]
             try:
                 dpi = int(self.text_dpi.GetValue())
             except ValueError:
@@ -282,6 +298,7 @@ class KeyholePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("keyhole")
         self.scene = scene
         # Amount of currently selected
@@ -296,7 +313,7 @@ class KeyholePanel(wx.Panel):
         )
         self.selectparam = ("first", "last")
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Keyhole Object:"),
@@ -307,14 +324,20 @@ class KeyholePanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create keyhole image"))
         self.btn_align.SetBitmap(
             icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size())
         )
 
-        lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
+        lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
             self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
@@ -328,8 +351,8 @@ class KeyholePanel(wx.Panel):
         sizer_check_outline = StaticBoxSizer(
             self, wx.ID_ANY, _("Trace Keyhole:"), wx.HORIZONTAL
         )
-        self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert")
-        self.check_outline = wx.CheckBox(self, wx.ID_ANY, "Trace")
+        self.check_invert = wxCheckBox(self, wx.ID_ANY, "Invert")
+        self.check_outline = wxCheckBox(self, wx.ID_ANY, "Trace")
 
         sizer_check_invert.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_check_outline.Add(self.check_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -365,12 +388,12 @@ class KeyholePanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            invert = self.check_invert.GetValue()
-            outline = self.check_outline.GetValue()
+            # invert = self.check_invert.GetValue()
+            # outline = self.check_outline.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            esort = self.selectparam[idx]
+            # esort = self.selectparam[idx]
             try:
                 dpi = int(self.text_dpi.GetValue())
             except ValueError:
@@ -450,6 +473,12 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
@@ -484,7 +513,7 @@ class RenderSplit(MWindow):
     @staticmethod
     def sub_register(kernel):
         bsize_normal = STD_ICON_SIZE
-        bsize_small = int(STD_ICON_SIZE / 2)
+        # bsize_small = int(STD_ICON_SIZE / 2)
 
         kernel.register(
             "button/align/SplitImage",

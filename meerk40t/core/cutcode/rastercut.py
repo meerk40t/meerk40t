@@ -24,9 +24,11 @@ class RasterCut(CutObject):
         passes=1,
         parent=None,
         color=None,
+        post_filter=None,
+        label=None,
     ):
         CutObject.__init__(
-            self, settings=settings, passes=passes, parent=parent, color=color
+            self, settings=settings, passes=passes, parent=parent, color=color, label=label,
         )
         if image.mode not in ("L", "1"):
             image = image.convert("L")
@@ -45,6 +47,7 @@ class RasterCut(CutObject):
         self.width, self.height = image.size
         self.inverted = inverted
         self.scan = overscan
+        # Only relevant for bidirectional mode
         if inverted:
             skip_pixel = 255
 
@@ -56,6 +59,8 @@ class RasterCut(CutObject):
 
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+        if post_filter is None:
+            post_filter = image_filter
 
         self.plot = RasterPlotter(
             data=image.load(),
@@ -71,7 +76,7 @@ class RasterCut(CutObject):
             offset_y=self.offset_y,
             step_x=self.step_x,
             step_y=self.step_y,
-            filter=image_filter,
+            filter=post_filter,
         )
 
     def reversible(self):
@@ -112,15 +117,16 @@ class RasterCut(CutObject):
         """
 
         if self.horizontal:
+            pixels = self.width
             scanlines = self.height
             scan_step = self.step_y
             scan_stride = self.step_x
-            scan_distance = self.width * scan_stride
         else:
+            pixels = self.height
             scanlines = self.width
-            scan_stride = self.step_x
-            scan_step = self.step_y
-            scan_distance = self.height * scan_stride
+            scan_step = self.step_x
+            scan_stride = self.step_y
+        scan_distance = pixels * scan_stride
         # Total scan-distance is pixel_distance plus overscan
         scan_distance += self.scan
         if not self.bidirectional:

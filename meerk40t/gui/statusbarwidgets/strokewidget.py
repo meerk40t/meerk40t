@@ -1,8 +1,9 @@
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.units import Length
+from meerk40t.gui.wxutils import TextCtrl, wxCheckBox, wxComboBox, wxStaticBitmap, wxStaticText
 
-from ...core.units import Length
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -32,7 +33,7 @@ class ColorWidget(StatusBarWidget):
         )
         self.button_color = []
         for idx in range(len(colors)):
-            wx_button = wx.StaticBitmap(
+            wx_button = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=wx.Size(20, -1),
@@ -108,13 +109,14 @@ class StrokeWidget(StatusBarWidget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._needs_generation = False
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
         font_size = 7
 
         # Plus one combobox + value field for stroke width
-        self.strokewidth_label = wx.StaticText(
+        self.strokewidth_label = wxStaticText(
             self.parent, id=wx.ID_ANY, label=_("Stroke:")
         )
         self.strokewidth_label.SetFont(
@@ -125,7 +127,7 @@ class StrokeWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self.spin_width = wx.TextCtrl(
+        self.spin_width = TextCtrl(
             self.parent, id=wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
         )
         self.spin_width.SetFont(
@@ -140,7 +142,7 @@ class StrokeWidget(StatusBarWidget):
         self.spin_width.SetMaxSize(wx.Size(80, -1))
 
         self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
-        self.combo_units = wx.ComboBox(
+        self.combo_units = wxComboBox(
             self.parent,
             wx.ID_ANY,
             choices=self.unit_choices,
@@ -164,7 +166,7 @@ class StrokeWidget(StatusBarWidget):
             self.context.strokewidth_default_units = 0
         self.combo_units.SetSelection(self.context.strokewidth_default_units)
 
-        self.chk_scale = wx.CheckBox(self.parent, wx.ID_ANY, _("Scale"))
+        self.chk_scale = wxCheckBox(self.parent, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
             _("Toggle the behaviour of stroke-growth.")
             + "\n"
@@ -242,10 +244,24 @@ class StrokeWidget(StatusBarWidget):
                 self.chk_scale.SetValue(e.stroke_scaled)
                 return
 
+    def calculate_infos(self):
+        self.update_stroke_magnitude()
+        self.update_stroke_scale_check()
+        self.startup = False
+
+    def GenerateInfos(self):
+        if self.visible:
+            self.context.elements.set_start_time("strokewidget")
+            self.calculate_infos()
+            self.context.elements.set_end_time("strokewidget")
+        else:
+            self._needs_generation = True
+
+    def Show(self, showit=True):
+        if self._needs_generation and showit:
+            self.calculate_infos()
+        super().Show(showit)
+
     def Signal(self, signal, *args):
-        if signal == "emphasized":
-            self.update_stroke_magnitude()
-            self.update_stroke_scale_check()
-            self.startup = False
-        if signal == "modified":
-            self.update_stroke_magnitude()
+        if signal in ("modified", "emphasized"):
+            self.GenerateInfos()

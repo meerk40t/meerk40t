@@ -3,6 +3,7 @@ import wx
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -28,6 +29,12 @@ class NewlyConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         options = (
@@ -51,6 +58,10 @@ class NewlyConfiguration(MWindow):
         )
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Raster Chart"))
+
+        newpanel = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Effects"))
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)

@@ -19,13 +19,8 @@ from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
 def plugin(kernel, lifecycle):
-    if lifecycle == "boot":
-        context = kernel.root
-    elif lifecycle == "register":
+    if lifecycle == "register":
         kernel.register("load/EZDLoader", EZDLoader)
-        pass
-    elif lifecycle == "shutdown":
-        pass
 
 
 def _parse_struct(file):
@@ -722,7 +717,7 @@ class EZText(EZObject):
         ]  # 2 is first button, 1 is right to left.
         (count,) = struct.unpack("<i", file.read(4))
         for i in range(count):
-            (type,) = struct.unpack("<H", file.read(2))
+            (_type,) = struct.unpack("<H", file.read(2))
             # type, 7 file. 1 Text. 2 Serial
             extradata = _parse_struct(file)
             _construct(extradata)
@@ -894,6 +889,7 @@ class EZDLoader:
                 "File format was only partially unrecognized.\n"
                 "Please raise an github issue and submit this file for review.\n"
             )
+        elements_service._loading_cleared = True
 
         ez_processor = EZProcessor(elements_service)
         ez_processor.process(ezfile, pathname)

@@ -3,7 +3,6 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
-    icon_effect_hatch,
     icon_points,
     icons8_direction,
     icons8_image,
@@ -11,7 +10,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox, wxComboBox
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
@@ -45,12 +44,13 @@ class OperationAssignPanel(wx.Panel):
         self.iconsize = 20
         self.buttonsize = self.iconsize + 10
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.MAXBUTTONS = 24
         self.hover = 0
         self.buttons = []
         self.op_nodes = []
         for idx in range(self.MAXBUTTONS):
-            btn = wx.Button(
+            btn = wxButton(
                 self,
                 id=wx.ID_ANY,
                 size=dip_size(self, self.buttonsize, self.buttonsize),
@@ -63,15 +63,15 @@ class OperationAssignPanel(wx.Panel):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.cbo_apply_color = wx.ComboBox(
+        self.cbo_apply_color = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,
             value=choices[0],
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        self.chk_all_similar = wx.CheckBox(self, wx.ID_ANY, _("Similar"))
-        self.chk_exclusive = wx.CheckBox(self, wx.ID_ANY, _("Exclusive"))
+        self.chk_all_similar = wxCheckBox(self, wx.ID_ANY, _("Similar"))
+        self.chk_exclusive = wxCheckBox(self, wx.ID_ANY, _("Exclusive"))
         self.cbo_apply_color.SetToolTip(
             _(
                 "Leave - neither the color of the operation nor of the elements will be changed"
@@ -285,8 +285,10 @@ class OperationAssignPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
+        self.context.elements.set_start_time("Emphasis OpAssignPanel")
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
+        self.context.elements.set_end_time("Emphasis OpAssignPanel")
 
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")

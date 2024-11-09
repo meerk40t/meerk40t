@@ -1,13 +1,15 @@
+import itertools
 from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.units import Angle, Length
-from meerk40t.svgelements import Color, Matrix
+from meerk40t.svgelements import Color, Point
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class HatchEffectNode(Node):
+class HatchEffectNode(Node, Suppressable):
     """
     Effect node performing a hatch. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -16,19 +18,29 @@ class HatchEffectNode(Node):
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         self.fill = None
         self.stroke = Color("Blue")
-        self.stroke_width = 1000.0
+        self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
+
         self.output = True
         self.hatch_distance = None
         self.hatch_angle = None
         self.hatch_angle_delta = None
         self.hatch_type = None
         self.loops = None
-        Node.__init__(
+        self._interim = False
+        super().__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
-        self._formatter = "{element_type} - {distance} {angle} ({children})"
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
+
+        self._formatter = "{element_type} {id} - {distance} {angle} ({children})"
 
         if label is None:
             self.label = "Hatch"
@@ -64,8 +76,11 @@ class HatchEffectNode(Node):
         nd["fill"] = copy(self.fill)
         return HatchEffectNode(**nd)
 
-    def scaled(self, sx, sy, ox, oy):
-        self.altered()
+    def scaled(self, sx, sy, ox, oy, interim=False):
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
     def notify_attached(self, node=None, **kwargs):
         Node.notify_attached(self, node=node, **kwargs)
@@ -91,17 +106,23 @@ class HatchEffectNode(Node):
             return
         self.altered()
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        Node.notify_translated(self, node, dx, dy, **kwargs)
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
     @property
     def angle(self):
@@ -157,6 +178,14 @@ class HatchEffectNode(Node):
     def preprocess(self, context, matrix, plan):
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
+        # Let's establish the angle
+        p1:Point = matrix.point_in_matrix_space((0, 0))
+        p2:Point = matrix.point_in_matrix_space((1, 0))
+        angle = p1.angle_to(p2)
+        self._angle -= angle
+        # from math import tau
+        # print(f"Angle: {angle} - {angle/tau * 360:.1f}°")
+
         # for c in self._children:
         #     c.matrix *= matrix
 
@@ -217,7 +246,7 @@ class HatchEffectNode(Node):
         nodes = right_types(self)
         return nodes
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         """
         Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
         internal loops value is rotated each pass by the angle-delta.
@@ -232,6 +261,8 @@ class HatchEffectNode(Node):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
+        if self._interim:
+            return outlines
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
@@ -245,11 +276,56 @@ class HatchEffectNode(Node):
             )
         return path
 
+    def as_geometries(self, **kws):
+        """
+        Calculates the hatch effect geometries and returns the geometries
+        for each pass and child object individually.
+        The pass index is the number of copies of this geometry whereas the
+        internal loops value is rotated each pass by the angle-delta.
+
+        @param kws:
+        @return:
+        """
+        outlines = [
+            node.as_geometry(**kws)
+            for node in self.affected_children()
+            if hasattr(node, "as_geometry")
+        ]
+        if self._distance is None:
+            self.recalculate()
+        for p in range(self.loops):
+            for o in outlines:
+                yield Geomstr.hatch(
+                    o,
+                    distance=self._distance,
+                    angle=self._angle + p * self._angle_delta,
+                )
+
+
+    def set_interim(self):
+        self.empty_cache()
+        self._interim = True
+
+    def altered(self, *args, **kwargs):
+        self._interim = False
+        super().altered()
+
     def modified(self):
         self.altered()
 
-    def drop(self, drag_node, modify=True):
-        # Default routine for drag + drop for an op node - irrelevant for others...
+    def can_drop(self, drag_node):
+        if (
+            hasattr(drag_node, "as_geometry") or
+            drag_node.type in ("effect", "file", "group", "reference") or
+            (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+        ):
+            return True
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an effect node - irrelevant for others...
+        if not self.can_drop(drag_node):
+            return False
         if drag_node.type.startswith("effect"):
             if modify:
                 if drag_node.parent is self.parent:
@@ -277,8 +353,15 @@ class HatchEffectNode(Node):
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
-            # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            # then we will reverse the game, but we will take the operations color
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,
             # then we will do it only if this an element effect

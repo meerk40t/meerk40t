@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_usb_connector
 from meerk40t.gui.mwindow import MWindow
-
+from meerk40t.gui.wxutils import TextCtrl
 _ = wx.GetTranslation
 
 
@@ -11,11 +11,12 @@ class UsbConnectPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
-        self.text_main = wx.TextCtrl(
+        self.text_main = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.text_entry = wx.TextCtrl(
+        self.text_entry = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
 

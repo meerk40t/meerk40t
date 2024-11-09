@@ -2,7 +2,14 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxCheckBox,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -11,22 +18,23 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        context.themes.set_window_colors(self)
         self.context = context.device
-        self.checkbox_vector_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
-        self.text_vector_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
-        self.text_vector_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
-        self.text_vector_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
-        self.checkbox_vraster_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.text_vraster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
-        self.text_vraster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
-        self.text_vraster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
-        self.text_vraster_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
-        self.checkbox_raster_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.text_raster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
-        self.text_raster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "127")
-        self.text_raster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "320")
-        self.text_raster_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
+        self.checkbox_vector_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.text_vector_accel_1 = TextCtrl(self, wx.ID_ANY, "25.4")
+        self.text_vector_accel_2 = TextCtrl(self, wx.ID_ANY, "60")
+        self.text_vector_accel_3 = TextCtrl(self, wx.ID_ANY, "127")
+        self.text_vector_accel_4 = TextCtrl(self, wx.ID_ANY, _("infinity"))
+        self.checkbox_vraster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.text_vraster_accel_1 = TextCtrl(self, wx.ID_ANY, "25.4")
+        self.text_vraster_accel_2 = TextCtrl(self, wx.ID_ANY, "60")
+        self.text_vraster_accel_3 = TextCtrl(self, wx.ID_ANY, "127")
+        self.text_vraster_accel_4 = TextCtrl(self, wx.ID_ANY, _("infinity"))
+        self.checkbox_raster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.text_raster_accel_1 = TextCtrl(self, wx.ID_ANY, "25.4")
+        self.text_raster_accel_2 = TextCtrl(self, wx.ID_ANY, "127")
+        self.text_raster_accel_3 = TextCtrl(self, wx.ID_ANY, "320")
+        self.text_raster_accel_4 = TextCtrl(self, wx.ID_ANY, _("infinity"))
 
         self.__set_properties()
         self.__do_layout()
@@ -195,28 +203,28 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
 
         sizer_vector.Add(self.checkbox_vector_accel_enable, 0, 0, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, "1 <")
+        label_2 = wxStaticText(self, wx.ID_ANY, "1 <")
         sizer_9.Add(label_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_9.Add(self.text_vector_accel_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_3 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_9.Add(label_3, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_4 = wx.StaticText(self, wx.ID_ANY, "2 <")
+        label_4 = wxStaticText(self, wx.ID_ANY, "2 <")
         sizer_10.Add(label_4, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_10.Add(self.text_vector_accel_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_5 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_10.Add(label_5, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_6 = wx.StaticText(self, wx.ID_ANY, "3 <")
+        label_6 = wxStaticText(self, wx.ID_ANY, "3 <")
         sizer_11.Add(label_6, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_11.Add(self.text_vector_accel_3, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_7 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_7 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_11.Add(label_7, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_8 = wx.StaticText(self, wx.ID_ANY, "4 <")
+        label_8 = wxStaticText(self, wx.ID_ANY, "4 <")
         sizer_12.Add(label_8, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_12.Add(self.text_vector_accel_4, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_13 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_13 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_12.Add(label_13, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_vector.Add(sizer_9, 0, 0, 0)
@@ -228,28 +236,28 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
 
         sizer_vraster.Add(self.checkbox_vraster_accel_enable, 0, 0, 0)
 
-        label_9 = wx.StaticText(self, wx.ID_ANY, "1 <")
+        label_9 = wxStaticText(self, wx.ID_ANY, "1 <")
         sizer_17.Add(label_9, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_17.Add(self.text_vraster_accel_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_10 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_10 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_17.Add(label_10, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_11 = wx.StaticText(self, wx.ID_ANY, "2 <")
+        label_11 = wxStaticText(self, wx.ID_ANY, "2 <")
         sizer_20.Add(label_11, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_20.Add(self.text_vraster_accel_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_12 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_12 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_20.Add(label_12, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_14 = wx.StaticText(self, wx.ID_ANY, "3 <")
+        label_14 = wxStaticText(self, wx.ID_ANY, "3 <")
         sizer_21.Add(label_14, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_21.Add(self.text_vraster_accel_3, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_23 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_23 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_21.Add(label_23, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_24 = wx.StaticText(self, wx.ID_ANY, "4 <")
+        label_24 = wxStaticText(self, wx.ID_ANY, "4 <")
         sizer_22.Add(label_24, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_22.Add(self.text_vraster_accel_4, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_25 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_25 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_22.Add(label_25, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_vraster.Add(sizer_17, 0, 0, 0)
@@ -261,28 +269,28 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
 
         sizer_hraster.Add(self.checkbox_raster_accel_enable, 0, 0, 0)
 
-        label_15 = wx.StaticText(self, wx.ID_ANY, "1 <")
+        label_15 = wxStaticText(self, wx.ID_ANY, "1 <")
         sizer_14.Add(label_15, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_14.Add(self.text_raster_accel_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_16 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_16 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_14.Add(label_16, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_17 = wx.StaticText(self, wx.ID_ANY, "2 <")
+        label_17 = wxStaticText(self, wx.ID_ANY, "2 <")
         sizer_15.Add(label_17, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_15.Add(self.text_raster_accel_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_18 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_18 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_15.Add(label_18, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_19 = wx.StaticText(self, wx.ID_ANY, "3 <")
+        label_19 = wxStaticText(self, wx.ID_ANY, "3 <")
         sizer_18.Add(label_19, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_18.Add(self.text_raster_accel_3, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_20 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
+        label_20 = wxStaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_18.Add(label_20, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_21 = wx.StaticText(self, wx.ID_ANY, "4 <")
+        label_21 = wxStaticText(self, wx.ID_ANY, "4 <")
         sizer_19.Add(label_21, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_19.Add(self.text_raster_accel_4, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_22 = wx.StaticText(self, wx.ID_ANY, "mm/s")
+        label_22 = wxStaticText(self, wx.ID_ANY, "mm/s")
         sizer_19.Add(label_22, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_hraster.Add(sizer_14, 0, 0, 0)

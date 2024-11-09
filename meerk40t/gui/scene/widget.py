@@ -87,18 +87,31 @@ class Widget(list):
         """
         Widget.draw() routine which concat's the widgets matrix and call the process_draw() function.
         """
+        ## Adding some debug messages to understand the Darwin crashes
         # Concat if this is a thing.
         if not self.visible:
             return
         matrix = self.matrix
         gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.process_draw(gc)
+        try:
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        except Exception as e:
+            print (f"Could not concat gc transformation [{e}]")
+            gc.PopState()
+            return
+
+        try:
+            self.process_draw(gc)
+        except Exception as e:
+            print (f"Could not process draw [{e}]")
         for i in range(len(self) - 1, -1, -1):
             widget = self[i]
             if widget is not None:
-                widget.draw(gc)
+                try:
+                    widget.draw(gc)
+                except Exception as e:
+                    print (f"Could not draw widget #{i} {type(widget).__name__} [{e}]")
         gc.PopState()
 
     def process_draw(self, gc):

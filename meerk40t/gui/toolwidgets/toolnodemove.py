@@ -1,5 +1,3 @@
-import math
-
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
@@ -40,7 +38,7 @@ class NodeMoveTool(ToolWidget):
             keycode (string): if available the keycode that was pressed
 
         Returns:
-            Indicator how to proceed with this event after its execution (consume, chain etc)
+            Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
         try:
             pos = complex(*space_pos[:2])

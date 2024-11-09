@@ -1,7 +1,7 @@
 """
     This module displays information about an element
     that is gathered by periodically (every 0.5 seconds)
-    looking at the window ie control under the mouse cursor.
+    looking at the window i.e. control under the mouse cursor.
     It will examine the window if it contains a tooltip text and
     will display this in a textbox in this panel.
     The purpose of this helper window is to allow better
@@ -11,8 +11,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import get_default_icon_size, icons8_info
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import wxCheckBox, TextCtrl  # , wxButton
 from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
@@ -48,14 +47,13 @@ class HelperPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self._lock_updates = None
-        self.text_info = wx.TextCtrl(
+        self.text_info = TextCtrl(
             self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.check_allow = wx.CheckBox(
-            self, wx.ID_ANY, _("Display control-information")
-        )
-        # self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
+        self.check_allow = wxCheckBox(self, wx.ID_ANY, _("Display control-information"))
+        # self.button_webhelp = wxButton(self, wx.ID_ANY, _("Online-Help"))
         # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
         self.__set_properties()
@@ -91,7 +89,7 @@ class HelperPanel(wx.Panel):
     def mouse_query(self, event=None):
         """
         This routine looks periodically (every 0.5 seconds)
-        at the window ie control under the mouse cursor.
+        at the window i.e. control under the mouse cursor.
         It will examine the window if it contains a tooltip text and
         will display this in a textbox in this panel.
         Additionally, it will read the associated HelpText of the control
@@ -136,10 +134,10 @@ class HelperPanel(wx.Panel):
             + _(
                 "If inactive then no more updates will happen until you check this checkbox again"
             )
-            + "\n"
-            + _(
-                "Tip: Press Ctrl+Shift+F while hovering over a control to lock the content."
-            )
+            # + "\n"
+            # + _(
+            #     "Tip: Press Ctrl+Shift+L while hovering over a control to lock the content."
+            # )
         )
         # self.button_webhelp.SetToolTip(_("Call online help-page"))
 

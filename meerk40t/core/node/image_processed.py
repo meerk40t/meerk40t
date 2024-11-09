@@ -35,7 +35,7 @@ class ImageProcessedNode(Node):
 
         super().__init__(type="elem image", **kwargs)
         # kwargs can actually reset quite a lot of the properties to none
-        # so we need to revert these changes...
+        # so, we need to revert these changes...
         if self.red is None:
             self.red = 1.0
         if self.green is None:
@@ -162,16 +162,27 @@ class ImageProcessedNode(Node):
         default_map["element_type"] = "Image"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            (drag_node.type.startswith("op ") and drag_node.type != "op dots") or
+            drag_node.type in ("file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            return drag_node.drop(self, modify=modify, flag=flag)
         return False
 
     def revalidate_points(self):

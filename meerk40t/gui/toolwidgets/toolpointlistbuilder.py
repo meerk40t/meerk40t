@@ -22,7 +22,7 @@ class PointListTool(ToolWidget):
     overload the draw routine and fill the create_node routine.
     The following caller routines are available:
     point_added(self): just a note that another point was added (self.point_series)
-    create_node(self): a call that should pickup the points and create an element
+    create_node(self): a call that should pick up the points and create an element
     aborted(self): a note that the creation was aborted, in case you need to tidy up something
     status_message(points): this routine should give back a string that will be displayed in the status bar
 
@@ -182,7 +182,9 @@ class PointListTool(ToolWidget):
                 response = RESPONSE_CONSUME
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if len(self.point_series) > 0:
+                response = RESPONSE_CONSUME
         return response
 
     def end_tool(self):
@@ -193,6 +195,10 @@ class PointListTool(ToolWidget):
         self.scene.request_refresh()
         if followup:
             self.scene.context(f"{followup}\n")
+        elif self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context.signal("statusmsg", "")
+            self.scene.context("tool none\n")
 
     # Routines that can be overloaded -------------------
 
@@ -263,7 +269,7 @@ class PointListTool(ToolWidget):
         This routine needs to be overloaded - this is the only
         mandatory one. To make sure you really notice it we
         will raise an error!
-        The routine should pickup the points in self.point_series
+        The routine should pick up the points in self.point_series
         and create a new element. If you want a followup action
         to be executed at the end (e.g. you immediately want to
         fall back to the selection tool), then provide a command

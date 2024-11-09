@@ -176,7 +176,10 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_fill",
     ),
-    "ctrl+i": ("element* select^",),
+    "ctrl+i": (
+        "",
+        "element* select^",
+    ),
     "ctrl+d": ("element copy",),
     "ctrl+g": (
         "",
@@ -245,7 +248,11 @@ DEFAULT_KEYMAP = {
         "reset_bind_alias",
     ),
     "ctrl+alt+shift+home": ("bind default;alias default",),
-    "ctrl+shift+l": ("signal lock_helper",),
+    # That's not working, so we delete it...
+    "ctrl+shift+l": (
+        "",
+        "signal lock_helper",
+    ),
 }
 DEFAULT_ALIAS = {
     "+scale_up": (".timerscale_up 0 0.1 .scale 1.02",),
@@ -260,6 +267,7 @@ DEFAULT_ALIAS = {
     "+left": (".timerleft 0 0.1 left 1mm",),
     "+up": (".timerup 0 0.1 up 1mm",),
     "+down": (".timerdown 0 0.1 down 1mm",),
+    "burn": ("planz clear copy preprocess validate blob preopt optimize spool", ),
     "-scale_up": (".timerscale_up off",),
     "-scale_down": (".timerscale_down off",),
     "-rotate_cw": (".timerrotate_cw off",),
@@ -356,6 +364,7 @@ class Bind(Service):
         return value, keyvalue
 
     def trigger(self, keyvalue):
+        # print (f"trigger for {keyvalue} started with {self.triggered}")
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
             fnd, keyvalue = self.is_found(keyvalue, self.triggered)
@@ -365,10 +374,11 @@ class Bind(Service):
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
                     self(f"{cmd}\n")
-                return True
+            return True
         return False
 
     def untrigger(self, keyvalue):
+        # print (f"untrigger for {keyvalue} started with {self.triggered}")
         keymap = self.keymap
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
@@ -380,7 +390,7 @@ class Bind(Service):
                 # Keyup commands only trigger if the down command started with +
                 action = "-" + action[1:]
                 self(action + "\n")
-                return True
+            return True
         return False
 
     def shutdown(self, *args, **kwargs):
@@ -431,7 +441,7 @@ class Alias(Service):
         @self.console_command(
             "alias", help=_("alias <alias> <console commands[;console command]*>")
         )
-        def alias(command, channel, _, alias=None, remainder=None, **kwgs):
+        def alias_command(command, channel, _, alias=None, remainder=None, **kwgs):
             _ = self._
             if alias is None:
                 reverse_keymap = {v: k for k, v in self.bind.keymap.items()}

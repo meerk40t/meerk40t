@@ -48,8 +48,8 @@ https://feirell.github.io/offset-bezier/
 The algorithm deals with the challenge as follows:
 a) It walks through the subpaths of a given path so that we have a continuous curve
 b) It looks at the different segment typs and deals with them,
-generating a new offseted segement
-c) Finally it stitches those segments together, treating for the simplifaction
+generating a new offseted segment
+c) Finally it stitches those segments together, preparing for the simplification
 """
 
 
@@ -122,7 +122,7 @@ def linearize_segment(segment, interpolation=500, reduce=True):
                 this_slope = atan2(dy, dx)
                 if last_slope is not None:
                     if abs(last_slope - this_slope) < slope_tolerance:
-                        # Combine segments, ie get rid of mid point
+                        # Combine segments, i.e. get rid of mid point
                         this_slope = last_slope
                         appendit = False
                 last_slope = this_slope
@@ -349,7 +349,7 @@ def intersect_line_segments(w, z, x, y):
     s = 1 / deter * (d * (w.x - x.x) + -b * (w.y - x.y))
     t = 1 / deter * (-c * (w.x - x.x) + a * (w.y - x.y))
     p1 = w + t * (z - w)
-    p2 = x + s * (y - x)
+    # p2 = x + s * (y - x)
     # print (f"p1 = ({p1.x:.3f}, {p1.y:.3f})")
     # print (f"p2 = ({p2.x:.3f}, {p2.y:.3f})")
     p = p1
@@ -404,7 +404,6 @@ def path_offset(
         seg2 = stitchpath._segments[right_start]
 
         #  print (f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
-        needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
             return point_added
@@ -434,7 +433,7 @@ def path_offset(
                         needs_connector = False
                         # print ("Used internal intersect")
                     elif not radial:
-                        # is the intersect too far away for our purposes?
+                        # is the intersection too far away for our purposes?
                         odist = orgintersect.distance_to(p)
                         if odist > abs(offset):
                             angle = orgintersect.angle_to(p)
@@ -625,11 +624,11 @@ def path_offset(
                 sub_path._segments.insert(lastidx + 1, segment)
                 # print ("Fallback case, just create  line")
 
-    def dis(pt):
-        if pt is None:
-            return "None"
-        else:
-            return f"({pt.x:.0f}, {pt.y:.0f})"
+    # def dis(pt):
+    #     if pt is None:
+    #         return "None"
+    #     else:
+    #         return f"({pt.x:.0f}, {pt.y:.0f})"
 
     results = []
     # This needs to be a continuous path
@@ -648,10 +647,10 @@ def path_offset(
         #     offset = min(offset, bb[2] - bb[0])
         #     offset = min(offset, bb[3] - bb[1])
         is_closed = False
-        # Lets check the first and last valid point. If they are identical
+        # Let's check the first and last valid point. If they are identical
         # we consider this to be a closed path even if it has no closed indicator.
-        firstp_start = None
-        lastp = None
+        # firstp_start = None
+        # lastp = None
         idx = 0
         while (idx < len(p)) and not isinstance(
             p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
@@ -689,7 +688,7 @@ def path_offset(
             segment = p._segments[idx]
             # print (f"Deal with seg {idx}: {type(segment).__name__} - {first_point}, {last_point}, {is_closed}")
             if isinstance(segment, Close):
-                # Lets add an additional line and replace the closed segment by this new segment
+                # Let's add a line and replace the closed segment by this new segment
                 # Look for the last two valid segments
                 last_point = None
                 first_point = None
@@ -949,7 +948,9 @@ def init_commands(kernel):
             )
             newnode.stroke_width = UNITS_PER_PIXEL
             newnode.linejoin = Linejoin.JOIN_ROUND
-            newnode.label = f"Offset of {node.id if node.label is None else node.label}"
+            newnode.label = (
+                f"Offset of {node.id if node.label is None else node.display_label()}"
+            )
             data_out.append(newnode)
 
         # Newly created! Classification needed?

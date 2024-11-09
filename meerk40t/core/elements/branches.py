@@ -1,5 +1,144 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing branches and operations within the application.
+These commands allow users to load files, manage operations, and manipulate elements in various ways.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up branch commands.
+- init_commands(kernel): Initializes the branch commands and defines the associated operations.
+- load(channel, _, filename=None, **kwargs): Loads a file from the working directory and adds its contents to the application.
+  Args:
+    channel: The communication channel for messages.
+    filename: The name of the file to load.
+  Returns:
+    A tuple containing the type of the file and its path.
+- element(command, **kwargs): Displays information about operations in the system.
+  Args:
+    command: The command context.
+  Returns:
+    None
+- operation_select(**kwargs): Selects the currently emphasized operations.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and the selected operations.
+- operation_all(**kwargs): Selects all operations in the system.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and all operations.
+- operation_invert(**kwargs): Selects all non-emphasized operations.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and the non-selected operations.
+- operation_base(**kwargs): Selects the currently emphasized operations.
+  Args:
+    command: The command context.
+  Returns:
+    A tuple containing the type of operations and the emphasized operations.
+- operation_re(command, channel, _, **kwargs): Selects operations based on specified indices.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    A tuple containing the type of operations and the selected operations.
+- operation_select_emphasis(data=None, **kwargs): Sets the specified operations as the current selection.
+  Args:
+    data: The operations to select.
+  Returns:
+    A tuple containing the type of operations and the selected operations.
+- operation_select_plus(data=None, **kwargs): Adds the specified operations to the current selection.
+  Args:
+    data: The operations to add.
+  Returns:
+    A tuple containing the type of operations and the updated selection.
+- operation_select_minus(data=None, **kwargs): Removes the specified operations from the current selection.
+  Args:
+    data: The operations to remove.
+  Returns:
+    A tuple containing the type of operations and the updated selection.
+- operation_select_xor(data=None, **kwargs): Toggles the specified operations in the current selection.
+  Args:
+    data: The operations to toggle.
+  Returns:
+    A tuple containing the type of operations and the updated selection.
+- opelem_select_range(data=None, data_type=None, start=None, end=None, step=1, **kwargs): Subsets the current selection based on specified start, end, and step indices.
+  Args:
+    data: The elements to subset.
+    data_type: The type of data being processed.
+    start: The starting index for the subset.
+    end: The ending index for the subset.
+    step: The step size for the subset.
+  Returns:
+    A tuple containing the type of data and the subsetted elements.
+- opelem_filter(channel=None, data=None, data_type=None, filter=None, **kwargs): Filters the current selection based on the provided filter string.
+  Args:
+    channel: The communication channel for messages.
+    data: The elements to filter.
+    data_type: The type of data being processed.
+    filter: The filter string to apply.
+  Returns:
+    A tuple containing the type of data and the filtered elements.
+- opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs): Sets or retrieves the ID of the specified elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    id: The new ID to set.
+    data: The elements to modify.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the modified elements.
+- opelem_label(command, channel, _, label=None, data=None, data_type=None, **kwargs): Sets or retrieves the label of the specified elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    label: The new label to set.
+    data: The elements to modify.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the modified elements.
+- operation_empty(channel, _, data=None, data_type=None, **kwargs): Removes all elements from the specified operations.
+  Args:
+    channel: The communication channel for messages.
+    data: The operations to clear.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the cleared operations.
+- operation_list(command, channel, _, data=None, **kwargs): Lists information about the specified operations.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The operations to list.
+  Returns:
+    A tuple containing the type of data and the listed operations.
+- element_lock(data=None, **kwargs): Locks the specified elements to prevent manipulation.
+  Args:
+    data: The elements to lock.
+  Returns:
+    A tuple containing the type of data and the locked elements.
+- element_unlock(data=None, **kwargs): Unlocks the specified elements to allow manipulation.
+  Args:
+    data: The elements to unlock.
+  Returns:
+    A tuple containing the type of data and the unlocked elements.
+- e_copy(data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs): Duplicates the specified elements a given number of times with optional offsets.
+  Args:
+    data: The elements to copy.
+    data_type: The type of data being processed.
+    post: Additional processing information.
+    dx: The x-offset for the copies.
+    dy: The y-offset for the copies.
+    copies: The number of copies to create.
+  Returns:
+    A tuple containing the type of data and the copied elements.
+- e_delete(command, channel, _, data=None, data_type=None, **kwargs): Deletes the specified elements or operations.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements or operations to delete.
+    data_type: The type of data being processed.
+  Returns:
+    A tuple containing the type of data and the deleted elements.
 """
 
 import re
@@ -11,14 +150,11 @@ from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.util_input import InputOperation
-from meerk40t.core.node.util_output import OutputOperation
-from meerk40t.core.node.util_wait import WaitOperation
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix
-
-
+from meerk40t.core.elements.element_types import op_nodes
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -439,6 +575,29 @@ def init_commands(kernel):
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return data_type, data
+
+
+    @self.console_command(
+        "empty",
+        help=_("Remove all elements from provided operations"),
+        input_type="ops",
+        output_type="ops",
+    )
+    def operation_empty(channel, _, data=None, **kwargs):
+        if data is None:
+            data = list()
+            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+                data.append(item)
+
+        with self.static("clear_all_op"):
+            index_ops = list(self.ops())
+            for item in data:
+                i = index_ops.index(item)
+                select_piece = "*" if item.emphasized else " "
+                name = f"{select_piece} {i}: {str(item)}"
+                channel(f"{name}: {len(item.children)}")
+                item.remove_all_children()
+        self.signal("rebuild_tree")
 
     @self.console_command(
         "list",
@@ -1171,40 +1330,59 @@ def init_commands(kernel):
     @self.console_option(
         "dy", "y", help=_("copy offset y (for elems)"), type=Length, default=0
     )
+    @self.console_option(
+        "copies", "c", help=_("amount of copies to be created"), type=int, default=1
+    )
     @self.console_command(
         "copy",
         help=_("Duplicate elements"),
         input_type=("elements", "ops"),
         output_type=("elements", "ops"),
     )
-    def e_copy(data=None, data_type=None, post=None, dx=None, dy=None, **kwargs):
+    def e_copy(data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs):
         if data is None:
             # Take tree selection for ops, scene selection for elements
             if data_type == "ops":
                 data = list(self.ops(selected=True))
             else:
                 data = list(self.elems(emphasized=True))
+        if copies is None:
+            copies = 1
+        if copies < 1:
+            copies = 1
 
         if data_type == "ops":
-            add_elem = list(map(copy, data))
-            self.add_ops(add_elem)
-            return "ops", add_elem
+            add_ops = list()
+            for idx in range(copies):
+                add_ops.extend(list(map(copy, data)))
+            # print (f"Add ops contains now: {len(add_ops)} operations")
+            self.add_ops(add_ops)
+            return "ops", add_ops
         else:
             if dx is None:
                 x_pos = 0
             else:
-                x_pos = dx
+                x_pos = float(dx)
             if dy is None:
                 y_pos = 0
             else:
-                y_pos = dy
-            add_elem = list(map(copy, data))
-            matrix = None
-            if x_pos != 0 or y_pos != 0:
-                matrix = Matrix.translate(dx, dy)
+                y_pos = float(dy)
+            add_elem = list()
+            shift = list()
+            tx = 0
+            ty = 0
+            for idx in range(copies):
+                tx += x_pos
+                ty += y_pos
+                this_shift = [(tx, ty)] * len(data)
+                add_elem.extend(list(map(copy, data)))
+                shift.extend(this_shift)
+            # print (f"Add elem contains now: {len(add_elem)} elements")
             delta_wordlist = 1
-            for e in add_elem:
-                if matrix:
+            for e, delta in zip(add_elem, shift):
+                tx, ty = delta
+                if tx != 0 or ty != 0:
+                    matrix = Matrix.translate(tx, ty)
                     e.matrix *= matrix
                 newnode = self.elem_branch.add_node(e)
                 if self.copy_increases_wordlist_references and hasattr(newnode, "text"):
@@ -1451,23 +1629,20 @@ def init_commands(kernel):
         channel("----------")
         return "elements", data
 
+    @kernel.console_option("stitchtolerance", "s", type=Length, help=_("By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"))
+    @kernel.console_option("nostitch", "n", type=bool, action="store_true", help=_("By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"))
     @self.console_command(
         "merge",
         help=_("merge elements"),
         input_type="elements",
         output_type="elements",
     )
-    def element_merge(data=None, post=None, **kwargs):
+    def element_merge(command, channel, _, data=None, post=None, nostitch=None, stitchtolerance=None, **kwargs):
         """
         Merge combines the geometries of the inputs. This matters in some cases where fills are used. Such that two
         nested circles forms a toroid rather two independent circles.
         """
-        node = self.elem_branch.add(type="elem path")
-        for e in data:
-            try:
-                path = e.as_geometry()
-            except AttributeError:
-                continue
+        def set_nonset_attributes(node, e):
             try:
                 if node.stroke is None:
                     node.stroke = e.stroke
@@ -1483,7 +1658,123 @@ def init_commands(kernel):
                     node.stroke_width = e.stroke_width
             except AttributeError:
                 pass
-            node.geometry.append(path)
+
+        def merge_paths(other, path, nocase, tolerance):
+            def segments_can_stitch(aseg, bseg, starta, startb):
+                def segtype(info):
+                    return int(info[2].real) & 0xFF
+
+                if segtype(aseg) not in NON_GEOMETRY_TYPES and segtype(bseg) not in NON_GEOMETRY_TYPES:
+                    s1, _dummy2, _dummy3, _dummy4, e1 = aseg
+                    s2, _dummy2, _dummy3, _dummy4, e2 = bseg
+                    c1 = s1 if starta else e1
+                    c2 = s2 if startb else e2
+                    if abs(c1 - c2) <= tolerance + 1E-6:
+                        return True
+                return False
+
+
+            seg1_start = other.segments[0]
+            seg1_end = other.segments[other.index - 1]
+            seg2_start = path.segments[0]
+            seg2_end = path.segments[path.index - 1]
+            # We have six cases: forbidden, s1.end=s2.start, s1.start=s2.end, s1.start=s2.start, s2.end=s1.end, anything else
+
+            if nocase:
+                # ignore, path after other, proper orientation, disjoint
+                separate = True
+                orientation = True
+                path_before = False
+                to_set_seg, to_set_idx, from_seg, from_idx = None, None, None, None
+            elif segments_can_stitch(seg1_end, seg2_start, False, True):
+                # s1.end = s2.start, path after other, proper orientation
+                orientation = True
+                path_before = False
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = 0, 0, other.index - 1, 4
+            elif segments_can_stitch(seg1_start, seg2_end, True, False):
+                # s1.start = s2.end, path before other, proper orientation, joint
+                orientation = True
+                path_before = True
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = path.index - 1, 4, 0, 0
+            elif segments_can_stitch(seg1_start, seg2_start, True, True):
+                # s1.start = s2.start, path before other, wrong orientation, joint
+                orientation = False
+                path_before = True
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = 0, 0, 0, 0
+            elif segments_can_stitch(seg1_end, seg2_end, False, False):
+                # s1.end = s2. end, path after other, wrong orientation, joint
+                orientation = False
+                path_before = False
+                separate = False
+                to_set_seg, to_set_idx, from_seg, from_idx = path.index - 1, 4, other.index - 1, 4
+            else:
+                # ignore, path after other, proper orientation, disjoint
+                separate = True
+                orientation = True
+                path_before = False
+                to_set_seg, to_set_idx, from_seg, from_idx = None, None, None, None
+
+            return separate, orientation, path_before, to_set_seg, to_set_idx, from_seg, from_idx
+
+
+        if nostitch is None:
+            nostitch = False
+        tolerance = 0
+        if stitchtolerance is not None:
+            try:
+                tolerance = float(Length(stitchtolerance))
+            except ValueError:
+                channel(_("Invalid tolerance distance provided"))
+                return
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No item selected."))
+            return
+        node_label = None
+        for e in data:
+            if e.label is not None:
+                el = e.label
+                idx = el.rfind("-")
+                if idx > 0:
+                    el = el[:idx]
+                node_label = el
+                break
+        node = self.elem_branch.add(type="elem path", label=node_label)
+        first = True
+        for e in data:
+            try:
+                if hasattr(e, "final_geometry"):
+                    path = e.final_geometry()
+                else:
+                    path = e.as_geometry()
+            except AttributeError:
+                continue
+
+            set_nonset_attributes(node, e)
+
+            if first:
+                node.geometry = path
+                first = False
+            else:
+                other = node.geometry
+
+                separate, orientation, path_before, to_set_seg, to_set_idx, from_seg, from_idx = merge_paths(other, path, nostitch, tolerance)
+                if to_set_seg is not None:
+                    path.segments[to_set_seg, to_set_idx] = other.segments[from_seg, from_idx]
+                actionstr = 'Insert' if path_before else 'Append'
+                typestr = 'regular' if orientation else 'reversed'
+                channel(f"{actionstr} a {typestr} path - separate: {separate}")
+                if not orientation:
+                    path.reverse()
+                if path_before:
+                    node.geometry.insert(0, path.segments[:path.index])
+                else:
+                    node.geometry.append(path, end=separate)
+
         self.remove_elements(data)
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
@@ -1504,28 +1795,43 @@ def init_commands(kernel):
         if not isinstance(data, list):
             data = list(data)
         elements_nodes = []
-        elements = []
+        elems = []
+        groups= []
         for node in data:
-            node_attributes = []
+            node_label = node.label
+            node_attributes = {}
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
-                    node_attributes.append([attrib, oldval])
-            group_node = node.replace_node(type="group", label=node.label)
-
+                    node_attributes[attrib] = oldval
+            group_node = node.replace_node(type="group", label=node_label)
+            groups.append(group_node)
             try:
-                geometry = node.as_geometry()
+                if hasattr(node, "final_geometry"):
+                    geometry = node.final_geometry()
+                else:
+                    geometry = node.as_geometry()
                 geometry.ensure_proper_subpaths()
             except AttributeError:
                 continue
-
+            idx = 0
             for subpath in geometry.as_subpaths():
-                subnode = group_node.add(geometry=subpath, type="elem path")
-                for item in node_attributes:
-                    setattr(subnode, item[0], item[1])
-                elements.append(subnode)
+                subpath.ensure_proper_subpaths()
+                idx += 1
+                subnode = group_node.add(
+                    geometry=subpath, 
+                    type="elem path", 
+                    label=f"{node_label}-{idx}",
+                    stroke=node_attributes.get("stroke", None),
+                    fill=node_attributes.get("fill", None),
+                )
+                for key, value in node_attributes.items():
+                    setattr(subnode, key, value)
+
+                elems.append(subnode)
             elements_nodes.append(group_node)
-        post.append(classify_new(elements))
+        post.append(classify_new(elems))
+        self.signal("element_property_reload", groups)
         return "elements", elements_nodes
 
     # --------------------------- END COMMANDS ------------------------------

@@ -32,6 +32,13 @@ class TextTool(ToolWidget):
         self.scene.context.elements.set_emphasis([node])
         node.focus()
 
+    def end_tool(self, force=False):
+        self.scene.context.signal("statusmsg", "")
+        self.scene.request_refresh()
+        if force or self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context("tool none\n")
+
     def event(
         self,
         window_pos=None,
@@ -50,7 +57,6 @@ class TextTool(ToolWidget):
                 x = nearest_snap[0]
                 y = nearest_snap[1]
             ## self.scene.context(f"window open TextEntry {x} {y}\n")
-            self.scene.context("tool none\n")
             node = self.scene.context.elements.elem_branch.add(
                 text="Text",
                 matrix=Matrix(f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"),
@@ -68,20 +74,20 @@ class TextTool(ToolWidget):
             if activate is not None:
                 activate(node)
             node.focus()
-            self.scene.context.signal("selected")
+            # self.scene.context.signal("selected")
             self.scene.context.signal("textselect", node)
             # The ugliest hack ever, somewhere the node gets defocussed,
             # so we are trying to bring it back after all the ruckus happened...
             self.last_node_created = node
             wx.CallLater(750, self.refocus_text)
+            self.end_tool()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
             if self.scene.pane.tool_active:
-                self.scene.pane.tool_active = False
-                self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
+            self.end_tool(force=True)
         return response
 
     # @staticmethod

@@ -23,7 +23,7 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size
+from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -38,6 +38,7 @@ class TipPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.tip_command = ""
         self.tip_image = ""
         self.tips = list()
@@ -58,9 +59,9 @@ class TipPanel(wx.Panel):
         icon_size = dip_size(self, 25, 25)
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
+        self.image_tip = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(dip_size(self, 250, -1))
-        self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
+        self.no_image_message = TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
                 "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
@@ -69,7 +70,7 @@ class TipPanel(wx.Panel):
         self.no_image_message.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
         # self.image_tip.SetSize(wx.Size(250, -1))
-        self.text_tip = wx.TextCtrl(
+        self.text_tip = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
@@ -79,15 +80,15 @@ class TipPanel(wx.Panel):
 
         sizer_main.Add(tip_area, 1, wx.EXPAND, 0)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_prev = wx.Button(self, wx.ID_ANY, _("Previous tip"))
+        self.button_prev = wxButton(self, wx.ID_ANY, _("Previous tip"))
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
-        self.label_position = wx.StaticText(
+        self.label_position = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
         )
 
-        self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
+        self.button_next = wxButton(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
         self.button_next.SetToolTip(_("Jump to the next tip"))
 
@@ -96,7 +97,7 @@ class TipPanel(wx.Panel):
         button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
-        self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup = wxCheckBox(self, wx.ID_ANY, _("Show tips at startup"))
         self.check_startup.SetToolTip(
             _(
                 "Show tips at program start.\n"
@@ -106,7 +107,7 @@ class TipPanel(wx.Panel):
         self.check_startup.SetValue(self.context.show_tips)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_try = wx.Button(self, wx.ID_ANY, _("Try it out"))
+        self.button_try = wxButton(self, wx.ID_ANY, _("Try it out"))
         self.button_try.SetToolTip(
             _(
                 "Launch an example, please be aware that this might change your design,\n"
@@ -114,7 +115,7 @@ class TipPanel(wx.Panel):
             )
         )
         self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
-        self.checkbox_update = wx.CheckBox(self, wx.ID_ANY, _("Automatically Update"))
+        self.checkbox_update = wxCheckBox(self, wx.ID_ANY, _("Automatically Update"))
         self.checkbox_update.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
@@ -170,14 +171,17 @@ class TipPanel(wx.Panel):
         else:
             self.button_try.Show(False)
             self.tip_command = ""
+        have_img = False
         if my_tip[2]:
-            self.set_tip_image(
+            have_img = self.set_tip_image(
                 my_tip[2], self._current_tip, self.context.tip_access_consent
             )
-        else:
+        if not have_img:
             # Let's use the default image...
-            self.set_tip_image(
-                icons8_light_on.GetBitmap(resize=200), self._current_tip, self.context.tip_access_consent
+            have_img = self.set_tip_image(
+                icons8_light_on.GetBitmap(resize=200),
+                self._current_tip,
+                self.context.tip_access_consent,
             )
 
             # self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
@@ -200,7 +204,7 @@ class TipPanel(wx.Panel):
         try:
             with urllib.request.urlopen(uri) as file:
                 content = file.read()
-        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+        except Exception as e:
             # print (f"Error: {e}")
             return False
         # If the file object is successfully opened, read its content as a string
@@ -224,25 +228,25 @@ class TipPanel(wx.Panel):
         if isinstance(path, wx.Bitmap):
             self.image_tip.SetBitmap(path)
             self.image_tip.Show(True)
-            return
+            return True
 
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
         self.tip_image = path
         if not path or not self.cache_dir:
             # Path was not established
-            return
+            return False
 
         parts = path.split("/")
         if len(parts) <= 0:
             # Malformed path.
-            return
+            return False
 
         # basename = f"_{counter}_{parts[-1]}"
         basename = hex(hash(path))
         local_path = os.path.join(self.cache_dir, basename)
         if not local_path:
-            return
+            return False
         # Is this file already on the disk? If not load it...
         if not os.path.exists(local_path):
             if automatic_download:
@@ -253,14 +257,14 @@ class TipPanel(wx.Panel):
         if not os.path.exists(local_path):
             # File still does not exist.
             self.no_image_message.Show(True)
-            return
+            return False
 
         bmp = wx.Bitmap()
         res = bmp.LoadFile(local_path)
         if not res:
             # Bitmap failed to load.
             self.no_image_message.Show(True)
-            return
+            return False
         new_x, new_y = bmp.Size
         img_size = self.image_tip.GetSize()
         # print(f"bmp: {int(new_x)}x{int(new_y)}, space: {img_size[0]}x{img_size[1]}")
@@ -279,12 +283,13 @@ class TipPanel(wx.Panel):
             bmp = wx.Bitmap(image)
 
         try:
-            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
+            self.image_tip.SetScaleMode(wxStaticBitmap.Scale_None)
         except AttributeError:
             # Old version of wxpython
             pass
         self.image_tip.SetBitmap(bmp)
         self.image_tip.Show(True)
+        return True
 
     def on_button_try(self, event):
         if self.tip_command:
@@ -418,18 +423,18 @@ class TipPanel(wx.Panel):
         if locale and locale != "en":
             try:
                 with urllib.request.urlopen(url + locale + "/tips.txt") as file:
-                    content = file.read().decode("utf-8")
+                    content = file.read().decode("utf-8", errors="ignore")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError):
+            except Exception:
                 pass
 
         # if we don't have anything localized then let's use the english master
         if not successful:
             try:
                 with urllib.request.urlopen(url + "tips.txt") as file:
-                    content = file.read().decode("utf-8")
+                    content = file.read().decode("utf-8", errors="ignore")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError) as e:
+            except Exception as e:
                 # print (f"Error: {e}")
                 pass
 
@@ -447,7 +452,6 @@ class TipPanel(wx.Panel):
             """
             Return a comparable sequence from a version string
             """
-            ending = ""
             result = list()
             if version is not None:
                 if version.startswith("v"):
@@ -492,10 +496,9 @@ class TipPanel(wx.Panel):
                         # Store previous
                         add_tip(tip, cmd, img, ver, myversion)
                         ver = ""
-                        tip = ""
+                        tip = cline[len("tip=") :]
                         cmd = ""
                         img = ""
-                        tip = cline[len("tip=") :]
                     elif cline.startswith("version="):
                         lastline_was_tip = False
                         ver = cline[len("version=") :]

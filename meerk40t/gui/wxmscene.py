@@ -3,13 +3,16 @@ import random
 import time
 
 import wx
+from PIL import Image
 from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.propertypanels.imageproperty import ContourPanel
 from meerk40t.gui.scene.scenepanel import ScenePanel
 
 # from meerk40t.gui.scenewidgets.affinemover import AffineMover
@@ -45,16 +48,16 @@ from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
+from meerk40t.gui.toolwidgets.tooltabedit import TabEditTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
-from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Color
+from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
@@ -84,12 +87,48 @@ def register_panel_scene(window, context):
     context.register("pane/scene", pane)
 
 
+class ContourDetectionDialog(wx.Dialog):
+    def __init__(self, parent, context, node):
+        super().__init__(
+            parent, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        )
+        self.context = context
+        self._init_ui(node)
+        self._start_dialog()
+
+    def _init_ui(self, node):
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel = ContourPanel(
+            self, wx.ID_ANY, context=self.context, node=node, simplified=True, direct_mode=True,
+        )
+        main_sizer.Add(panel, 1, wx.EXPAND, 0)
+        buttons = self.CreateStdDialogButtonSizer(wx.OK)
+        main_sizer.Add(buttons, 0, wx.EXPAND, 0)
+        panel.pane_active()
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def _start_dialog(self):
+        win_wd = self.context.setting(int, "win_bgcontour_width", 700)
+        win_ht = self.context.setting(int, "win_bgcontour_height", 500)
+        self.SetSize(win_wd, win_ht)
+        self.CenterOnParent()
+
+    def end_dialog(self):
+        # Save window size for next time
+        win_wd, win_ht = self.GetSize()
+        self.context.win_bgcontour_width = win_wd
+        self.context.win_bgcontour_height = win_ht
+        self.context.signal("refresh_scene", "Scene")
+
+
 class MeerK40tScenePanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.scene = ScenePanel(
             self.context,
             self,
@@ -101,6 +140,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         self.tool_active = False
         self.modif_active = False
+        self.ignore_snap = False
         self.suppress_selection = False
         self._reference = None  # Reference Object
 
@@ -197,8 +237,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -224,13 +262,12 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/pointmove", PointMoveTool)
         context.register("tool/parameter", ParameterTool)
         context.register("tool/imagecut", ImageCutTool)
+        context.register("tool/tabedit", TabEditTool)
 
         bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
-            from meerk40t.extra.hershey import have_hershey_fonts
-
-            if have_hershey_fonts(context):
+            if context.fonts.have_hershey_fonts():
                 context.kernel.elements("tool linetext\n")
             else:
                 context.kernel.elements("window open HersheyFontManager\n")
@@ -501,6 +538,10 @@ class MeerK40tScenePanel(wx.Panel):
                     self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
+                if aspect == "unsetbright":  # reset all
+                    self.widget_scene.colors.set_default_colors(brighter=True)
+                    self.context.signal("theme", True)
+                    return "scene", data
                 if aspect == "random":  # reset all
                     self.widget_scene.colors.set_random_colors()
                     self.context.signal("theme", True)
@@ -621,6 +662,11 @@ class MeerK40tScenePanel(wx.Panel):
         def scene_focus(
             command, _, channel, data, x, y, width, height, animate=False, **kwgs
         ):
+            if animate:
+                overrule = self.context.setting(bool, "suppress_focus_animation", False)
+                if overrule:
+                    animate = False
+
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
@@ -1120,6 +1166,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            elif gridtype == "offset":
+                self.grid.draw_offset_lines = not self.grid.draw_offset_lines
             self.scene.signal("guide")
             self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
@@ -1134,14 +1182,68 @@ class MeerK40tScenePanel(wx.Panel):
         def toggle_grid_c(event=None):
             toggle_grid("circular")
 
+        def toggle_grid_o(event=None):
+            toggle_grid("offset")
+
         def remove_background(event=None):
             self.widget_scene._signal_widget(
                 self.widget_scene.widget_root, "background", None
             )
             self.widget_scene.request_refresh()
 
+        def recognize_background_contours(event=None):
+            def image_from_bitmap(myBitmap):
+                wx_image = myBitmap.ConvertToImage()
+                myPilImage = Image.new(
+                    "RGB", (wx_image.GetWidth(), wx_image.GetHeight())
+                )
+                myPilImage.frombytes(wx_image.GetData())
+                return myPilImage
+
+            if not self.widget_scene.has_background:
+                return
+            # We build a dummy imageNode, so we fetch the background,
+            # calculate the required transformation matrix and pass
+            # it on to one of the standard image node property dialogs
+
+            background = self.widget_scene.active_background
+            if background is None:
+                return
+            background_image = image_from_bitmap(background)
+
+            # Calculate scaling matrix
+            sx = float(Length(self.context.device.view.width)) / background_image.width
+            sy = (
+                float(Length(self.context.device.view.height)) / background_image.height
+            )
+            matrix = Matrix(f"scale({sx},{sy})")
+            # print (f"Image dimension: {background_image.width} x {background_image.height} pixel")
+            # print (f"View-Size: {float(Length(self.context.device.view.width))} x {float(Length(self.context.device.view.height))}")
+            # print (f"Matrix: {matrix}")
+
+            node = ImageNode(
+                image=background_image,
+                matrix=matrix,
+                dither=False,
+                prevent_crop=True,
+                dpi=500,
+            )
+            # print (f"Node-Dimensions: {node.bbox()}")
+            dlg = ContourDetectionDialog(self, self.context, node)
+            dlg.ShowModal()
+            dlg.end_dialog()
+            dlg.Destroy()
+
         def stop_auto_update(event=None):
-            self.context("timer.updatebg --off\n")
+            devlabel = self.context.device.label
+            to_stop = []
+            for job, content in self.context.kernel.jobs.items():
+                if job is not None and job.startswith("timer.updatebg"):
+                    cmd = str(content).strip()
+                    if cmd.endswith("background") or cmd.endswith(devlabel):
+                        to_stop.append(job)
+            for job in to_stop:
+                self.context(f"{job} --off\n")
 
         gui = self
         menu = wx.Menu()
@@ -1180,18 +1282,37 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
+        mx = float(Length(self.context.device.view.margin_x))
+        my = float(Length(self.context.device.view.margin_y))
+        # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
+        if mx != 0.0 or my != 0.0:
+            menu.AppendSeparator()
+            id4b = menu.Append(
+                wx.ID_ANY,
+                _("Show physical dimensions"),
+                _("Display the physical dimensions"),
+                wx.ITEM_CHECK,
+            )
+            self.Bind(wx.EVT_MENU, toggle_grid_o, id=id4b.GetId())
+            menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
+
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
+
+            id6 = menu.Append(wx.ID_ANY, _("Detect contours on background"), "")
+            self.Bind(wx.EVT_MENU, recognize_background_contours, id=id6.GetId())
         # Do we have a timer called .updatebg?
+        devlabel = self.context.device.label
         we_have_a_job = False
-        try:
-            obj = self.context.kernel.jobs["timer.updatebg"]
-            if obj is not None:
-                we_have_a_job = True
-        except KeyError:
-            pass
+        for job, content in self.context.kernel.jobs.items():
+            if job is not None and job.startswith("timer.updatebg"):
+                cmd = str(content).strip()
+                if cmd.endswith("background") or cmd.endswith(devlabel):
+                    we_have_a_job = True
+                    break
+
         if we_have_a_job:
             self.Bind(
                 wx.EVT_MENU,
@@ -1257,6 +1378,15 @@ class MeerK40tScenePanel(wx.Panel):
         """
         if scene_name == "Scene":
             self.request_refresh()
+
+    @signal_listener("coolant_changed")
+    def on_coolant_changed(self, origin, *args):
+        if hasattr(self.context.device, "coolant"):
+            coolid = self.context.device.device_coolant
+            if coolid == "":
+                coolid = None
+            cool = self.context.kernel.root.coolant
+            cool.claim_coolant(self.context.device, coolid)
 
     @signal_listener("view;realized")
     def on_bedsize_simple(self, origin=None, nocmd=None, *args):
@@ -1350,13 +1480,21 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
+        self.context.elements.process_keyhole_updates(self.context)
         self.scene.signal("modified_by_tool")
+
+    @signal_listener("tabs_updated")
+    def on_tabs_update(self, origin, *args):
+        # Pass on to scene widgets
+        self.scene.signal("tabs_updated")
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
+        self.scene.context.elements.set_start_time("Emphasis wxmscene")
         self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
+        self.scene.context.elements.set_end_time("Emphasis wxmscene")
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
@@ -1418,6 +1556,13 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
         self.widget_scene.context.elements.default_fill = color
+
+    @signal_listener("scene_deactivated")
+    def on_scene_deactived(self, origin, *args):
+        if not self.context.setting(bool, "auto_tool_reset", True):
+            return
+        if self.active_tool != "none":
+            self.context(".tool none\n")
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

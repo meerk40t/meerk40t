@@ -10,6 +10,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
+from meerk40t.gui.wxutils import wxCheckBox, wxStaticBitmap, wxStaticText
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -34,7 +35,7 @@ class SimpleInfoWidget(StatusBarWidget):
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
 
-        self.info_text = wx.StaticText(self.parent, wx.ID_ANY, label="")
+        self.info_text = wxStaticText(self.parent, wx.ID_ANY, label="")
         if self.fontsize is not None:
             self.info_text.SetFont(
                 wx.Font(
@@ -44,7 +45,7 @@ class SimpleInfoWidget(StatusBarWidget):
                     wx.FONTWEIGHT_NORMAL,
                 )
             )
-        self.btn_next = wx.StaticBitmap(
+        self.btn_next = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
             bitmap=icons8_up.GetBitmap(resize=20),
@@ -124,7 +125,7 @@ class InformationWidget(SimpleInfoWidget):
         super().__init__(**kwargs)
         self.fontsize = 7
         self._needs_generation = False
-        # We dont have a context yet...
+        # We don't have a context yet...
         self._info_active = True
 
     def Show(self, showit=True):
@@ -137,7 +138,7 @@ class InformationWidget(SimpleInfoWidget):
         self.context.setting(bool, "statusbar_auto_statistic", True)
         self._info_active = self.context.statusbar_auto_statistic
 
-        self.chk_active = wx.CheckBox(parent, wx.ID_ANY, "")
+        self.chk_active = wxCheckBox(parent, wx.ID_ANY, "")
         self.chk_active.SetToolTip(
             _("Uncheck if you don't want automatic statistic generation")
         )
@@ -163,7 +164,6 @@ class InformationWidget(SimpleInfoWidget):
         make_raster = self.context.root.lookup("render-op/make_raster")
         if nodes is None or len(nodes) == 0 or not make_raster:
             return 0, 0
-        ratio = 0
         dpi = 300
         dots_per_units = dpi / UNITS_PER_INCH
         _mm = float(Length("1mm"))
@@ -197,7 +197,6 @@ class InformationWidget(SimpleInfoWidget):
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
-            ratio = 0
 
             all_pixel = new_height * new_width
             if all_pixel > 0:
@@ -243,23 +242,52 @@ class InformationWidget(SimpleInfoWidget):
         if self._info_active:
             elements = self.context.elements
             ct = 0
-            total_area = 0
             total_length = 0
             _mm = float(Length("1mm"))
             mydata = list(elements.flat(types=elem_nodes, emphasized=True))
-            total_area, second_area = self.covered_area(mydata)
-            for e in mydata:
-                ct += 1
-                if hasattr(e, "as_path"):
-                    path = e.as_path()
-                    this_length = path.length(error=1e-2)
-                else:
-                    this_length = 0
-                total_length += this_length
+            ct = len(mydata)
+            if ct <= 100:
+                info_type = ""
+                total_area, second_area = self.covered_area(mydata)
+                for e in mydata:
+                    if hasattr(e, "as_path"):
+                        path = e.as_path()
+                        this_length = path.length(error=1e-2)
+                    else:
+                        this_length = 0
+                    total_length += this_length
 
-            if ct > 0:
-                total_length = total_length / _mm
-                msg = f"# = {ct}, A = {total_area:.1f} mm², D = {total_length:.1f} mm"
+                if ct > 0:
+                    total_length = total_length / _mm
+
+            else:
+                info_type = "(Box) "
+                x_min = float("inf")
+                y_min = float("inf")
+                x_max = -x_min
+                y_max = -y_min
+                for e in mydata:
+                    try:
+                        bb = e.bounds
+                        if bb is None:
+                            continue
+                    except AttributeError:
+                        continue
+                    x_min = min(bb[0], x_min)
+                    y_min = min(bb[1], y_min)
+                    x_max = max(bb[2], x_max)
+                    y_max = max(bb[3], y_max)
+
+                if isinf(x_min):
+                    dx = 0
+                    dy = 0
+                else:
+                    dx = x_max - x_min
+                    dy = y_max - y_min
+                total_area = dx * dy / (_mm * _mm)
+                total_length = (2 * dx + 2 * dy) / _mm
+
+            msg = f"# = {ct}, {info_type}A = {total_area:.1f} mm², D = {total_length:.1f} mm"
         else:
             msg = "---"
         self.StartPopulation()
@@ -283,6 +311,7 @@ class StatusPanelWidget(SimpleInfoWidget):
         # self.fontsize = 7
 
     def GenerateInfos(self):
+        self.SetInformation(_("Gathering information..."))
         compacted_messages = []
         for idx, entry in enumerate(self.status_text):
             if entry != "":

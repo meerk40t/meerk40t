@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
@@ -46,8 +45,10 @@ class RasterOpNode(Node, Parameters):
         # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = False
         self.label = "Raster"
+        self.cutoff_threshold = 0
 
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
@@ -57,6 +58,15 @@ class RasterOpNode(Node, Parameters):
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
+        if isinstance(self.cutoff_threshold, str):
+            s = self.cutoff_threshold
+            if s.endswith("%"):
+                s = s[:-1]
+            try:
+                self.cutoff_threshold = float(s)
+            except ValueError:
+                self.cutoff_threshold = 0
+
 
     def __repr__(self):
         return "RasterOp()"
@@ -111,6 +121,7 @@ class RasterOpNode(Node, Parameters):
         default_map["overscan"] = f"±{self.overscan}"
         default_map["percent"] = "100%"
         default_map["ppi"] = "default"
+        default_map["cutoff"] = "-" if self.cutoff_threshold is None else str(self.cutoff_threshold)
         if self.power is not None:
             default_map["percent"] = f"{self.power / 10.0:.0f}%"
             default_map["ppi"] = f"{self.power:.0f}"
@@ -119,13 +130,29 @@ class RasterOpNode(Node, Parameters):
         )
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.has_ancestor("branch reg"):
+            # Will be dealt with in elements -
+            # we don't implement a more sophisticated routine here
+            return False
+        if drag_node.type.startswith("elem ") and drag_node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type in op_nodes:
+            # Move operation to a different position.
+            return True
+        elif drag_node.type in ("file", "group"):
+            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
         count = 0
         existing = 0
         result = False
-        if (
-            drag_node.type.startswith("elem")
-            and not drag_node._parent.type == "branch reg"
+        if drag_node.type.startswith("elem") and not drag_node.has_ancestor(
+            "branch reg"
         ):
             existing += 1
             # if drag_node.type == "elem image":
@@ -150,7 +177,9 @@ class RasterOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             result = True
-        elif drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(types=elem_nodes):
                 existing += 1
@@ -179,6 +208,14 @@ class RasterOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
@@ -187,9 +224,9 @@ class RasterOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
-            result = False
+            _result = False
             if col1 is None and col2 is None:
-                result = True
+                _result = True
             elif (
                 col1 is not None
                 and col1.argb is not None
@@ -198,10 +235,14 @@ class RasterOpNode(Node, Parameters):
             ):
                 if fuzzy:
                     distance = Color.distance(col1, col2)
-                    result = distance < fuzzydistance
+                    _result = distance < fuzzydistance
                 else:
-                    result = col1 == col2
-            return result
+                    _result = col1 == col2
+            return _result
+
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
 
         feedback = []
         if node.type in self._allowed_elements:
@@ -327,10 +368,13 @@ class RasterOpNode(Node, Parameters):
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
-
-        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        try:
+            overscan = float(Length(self.overscan))
+        except ValueError:
+            overscan = 0
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
+
         if len(self.children) == 0:
             return
 
@@ -378,19 +422,39 @@ class RasterOpNode(Node, Parameters):
             image_node.step_x = step_x
             image_node.step_y = step_y
             image_node.process_image()
-
-        if matrix.value_scale_y() < 0:
+        msx = matrix.value_scale_x()
+        msy = matrix.value_scale_y()
+        rotated = False
+        negative_scale_x = msx < 0
+        negative_scale_y = msy < 0
+        if msx == 0 and msy == 0:
+            # Rotated view
+            rotated = True
+            p1a = matrix.point_in_matrix_space((0, 0))
+            p2a = matrix.point_in_matrix_space((1, 0))
+            dx = p1a.x - p2a.x
+            dy = p1a.y - p2a.y
+            negative_scale_x = bool(dy < 0) if dx == 0 else bool(dx < 0)
+            negative_scale_y = False if dx == 0 else bool(dy < 0)
+        if rotated:
+            mapping = {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}
+            if self.raster_direction in mapping:
+                self.raster_direction = mapping[self.raster_direction]
+        if negative_scale_y:
+            self.raster_preference_top = not self.raster_preference_top
             # Y is negative scale, flip raster_direction if needed
             if self.raster_direction == 0:
                 self.raster_direction = 1
             elif self.raster_direction == 1:
                 self.raster_direction = 0
-        if matrix.value_scale_x() < 0:
+        if negative_scale_x:
+            self.raster_preference_left = not self.raster_preference_left
             # X is negative scale, flip raster_direction if needed
             if self.raster_direction == 2:
                 self.raster_direction = 3
             elif self.raster_direction == 3:
                 self.raster_direction = 2
+                self.raster_preference_top = False
 
         commands.append(make_image)
 
@@ -415,8 +479,8 @@ class RasterOpNode(Node, Parameters):
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
-        start_minimum_x = False
-        start_minimum_y = False
+        start_minimum_y = self.raster_preference_top > 0
+        start_minimum_x = self.raster_preference_left > 0
         if direction == 0 or direction == 4:
             horizontal = True
             start_minimum_y = True
@@ -434,6 +498,10 @@ class RasterOpNode(Node, Parameters):
         for image_node in self.children:
             # Process each child. Some core settings are the same for each child.
 
+            if image_node.type == "reference":
+                image_node = image_node.node
+            if getattr(image_node, "hidden", False):
+                continue
             if image_node.type != "elem image":
                 continue
 
@@ -471,6 +539,15 @@ class RasterOpNode(Node, Parameters):
                     (max_x, min_y),
                 )
             )
+            image_filter = None
+            if self.cutoff_threshold: # Given as percentage
+                threshold = self.cutoff_threshold / 100.0
+                def image_filter(pixel):
+                    # This threshold filter function is defined to set image pixels(white=255, black=0)
+                    # to a brightness value (white=0, black=1), additionally we apply a lowp pass filter
+                    # that sets all pixels to 0 if they are below the threshold.
+                    value = (255 - pixel) / 255.0
+                    return 0 if value <= threshold else value
 
             # Create Cut Object
             cut = RasterCut(
@@ -487,6 +564,7 @@ class RasterOpNode(Node, Parameters):
                 overscan=overscan,
                 settings=settings,
                 passes=passes,
+                post_filter=image_filter,
             )
             cut.path = path
             cut.original_op = self.type
@@ -521,3 +599,15 @@ class RasterOpNode(Node, Parameters):
                 cut.path = path
                 cut.original_op = self.type
                 yield cut
+
+    @property
+    def bounds(self):
+        if not self._bounds_dirty:
+            return self._bounds
+
+        self._bounds = None
+        if self.output:
+            if self._children:
+                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+            self._bounds_dirty = False
+        return self._bounds

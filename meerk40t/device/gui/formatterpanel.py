@@ -6,6 +6,7 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     EmptyIcon,
     icon_console,
+    icon_distort,
     icon_effect_hatch,
     icon_effect_wobble,
     icon_external,
@@ -43,6 +44,7 @@ class FormatterPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("formatter")
 
         self.data = {}
@@ -60,7 +62,7 @@ class FormatterPanel(wx.Panel):
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
-            "effect warp": icon_effect_wobble,
+            "effect warp": icon_distort,
             "file": icons8_file,
             "group": icons8_group_objects,
             "elem point": icon_points,
@@ -81,7 +83,7 @@ class FormatterPanel(wx.Panel):
             try:
                 self.node_list.remove(node)
             except ValueError:
-                # wasnt in list...
+                # wasn't in list...
                 pass
 
         self.context.setting(bool, "use_percent_for_power_display", False)
@@ -191,54 +193,9 @@ class FormatterPanel(wx.Panel):
     def get_node_patterns(self, nodetype):
         from PIL import Image
 
-        from meerk40t.core.node.elem_ellipse import EllipseNode
-        from meerk40t.core.node.elem_image import ImageNode
-        from meerk40t.core.node.elem_line import LineNode
-        from meerk40t.core.node.elem_path import PathNode
-        from meerk40t.core.node.elem_point import PointNode
-        from meerk40t.core.node.elem_polyline import PolylineNode
-        from meerk40t.core.node.elem_rect import RectNode
-        from meerk40t.core.node.elem_text import TextNode
-        from meerk40t.core.node.filenode import FileNode
-        from meerk40t.core.node.groupnode import GroupNode
-        from meerk40t.core.node.op_cut import CutOpNode
-        from meerk40t.core.node.op_dots import DotsOpNode
-        from meerk40t.core.node.op_engrave import EngraveOpNode
-        from meerk40t.core.node.op_image import ImageOpNode
-        from meerk40t.core.node.op_raster import RasterOpNode
-        from meerk40t.core.node.refnode import ReferenceNode
-        from meerk40t.core.node.util_console import ConsoleOperation
-        from meerk40t.core.node.util_goto import GotoOperation
-        from meerk40t.core.node.util_home import HomeOperation
-        from meerk40t.core.node.util_input import InputOperation
-        from meerk40t.core.node.util_output import OutputOperation
-        from meerk40t.core.node.util_wait import WaitOperation
+        # Get dictionary with all nodetypes
+        from meerk40t.core.node.bootstrap import bootstrap
 
-        bootstrap = {
-            "op cut": CutOpNode,
-            "op engrave": EngraveOpNode,
-            "op raster": RasterOpNode,
-            "op image": ImageOpNode,
-            "op dots": DotsOpNode,
-            "util console": ConsoleOperation,
-            "util wait": WaitOperation,
-            "util home": HomeOperation,
-            "util goto": GotoOperation,
-            "util input": InputOperation,
-            "util output": OutputOperation,
-            "group": GroupNode,
-            "elem ellipse": EllipseNode,
-            "elem line": LineNode,
-            "elem rect": RectNode,
-            "elem path": PathNode,
-            "elem point": PointNode,
-            "elem polyline": PolylineNode,
-            "elem image": ImageNode,
-            "elem text": TextNode,
-            # "image raster": ImageRasterNode,
-            "reference": ReferenceNode,
-            "file": FileNode,
-        }
         node = None
         available = ""
         if nodetype in bootstrap:

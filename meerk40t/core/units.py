@@ -17,8 +17,6 @@ import re
 from copy import copy
 from math import tau
 
-from meerk40t.svgelements import Matrix
-
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)\.?([A-Za-z%%]*)" % PATTERN_FLOAT)
 ERROR = 1e-11
@@ -82,6 +80,15 @@ ACCEPTED_UNITS = (
     "tat",
 )
 
+ACCEPTED_ANGLE_UNITS = (
+    "",
+    "deg",
+    "grad",
+    "rad",
+    "turn",
+    "%",
+)
+
 
 class Length:
     """
@@ -102,6 +109,10 @@ class Length:
     ):
         self._digits = digits
         self._amount = amount
+        if relative_length:
+            self._relative = Length(relative_length, unitless=unitless).units
+        else:
+            self._relative = None
         if self._amount is None:
             if len(args) == 2:
                 value = str(args[0]) + str(args[1])
@@ -112,7 +123,7 @@ class Length:
             s = str(value)
             match = REGEX_LENGTH.match(s)
             if not match:
-                raise ValueError("Length was not parsable.")
+                raise ValueError(f"Length was not parsable: '{s}'.")
             amount = float(match.group(1))
             units = match.group(2)
             if units == "inch" or units == "inches":
@@ -156,7 +167,7 @@ class Length:
                 else:
                     raise ValueError("Percent without relative length is meaningless.")
             else:
-                raise ValueError("Units was not recognized")
+                raise ValueError(f"Units '{units}' was not recognized for '{s}'")
             self._amount = scale * amount
             if preferred_units is None:
                 preferred_units = units
@@ -309,6 +320,8 @@ class Length:
             return self.pt
         elif self._preferred_units == "spx":
             return self.spx
+        elif self._preferred_units == "%":
+            return self.percent
         else:
             return self.units
 
@@ -330,6 +343,8 @@ class Length:
             return self.length_um
         elif self._preferred_units == "pt":
             return self.length_pt
+        elif self._preferred_units == "%":
+            return self.length_percent
         else:
             return self.length_units
 
@@ -404,6 +419,15 @@ class Length:
         return amount
 
     @property
+    def percent(self):
+        if self._relative is None or self._relative == 0:
+            raise ValueError("Percent without relative length is meaningless.")
+        amount = 100.0 * self._amount / self._relative
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
     def length_pixels(self):
         amount = self.pixels
         return f"{round(amount, 8)}px"
@@ -447,6 +471,11 @@ class Length:
     def length_spx(self):
         amount = self.spx
         return f"{round(amount, 8)}spx"
+
+    @property
+    def length_percent(self):
+        amount = self.percent
+        return f"{round(amount, 8)}%"
 
     @property
     def length_units(self):
@@ -658,7 +687,7 @@ def viewbox_transform(
 ):
     """
     SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
-    With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+    Regarding https://github.com/w3c/svgwg/issues/215 use 8.2 version.
 
     It creates transform commands equal to that viewport expected.
 

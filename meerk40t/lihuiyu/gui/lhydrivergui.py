@@ -3,10 +3,18 @@ import wx
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxCheckBox,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -72,7 +80,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_usb_restrict.Add(sizer_serial, 0, wx.EXPAND, 0)
 
-        self.check_serial_number = wx.CheckBox(self, wx.ID_ANY, _("Serial Number"))
+        self.check_serial_number = wxCheckBox(self, wx.ID_ANY, _("Serial Number"))
         self.check_serial_number.SetToolTip(
             _("Require a serial number match for this board")
         )
@@ -92,7 +100,7 @@ class ConfigurationUsb(wx.Panel):
         sizer_buffer = StaticBoxSizer(self, wx.ID_ANY, _("Write Buffer"), wx.HORIZONTAL)
         sizer_usb_settings.Add(sizer_buffer, 0, wx.EXPAND, 0)
 
-        self.checkbox_limit_buffer = wx.CheckBox(
+        self.checkbox_limit_buffer = wxCheckBox(
             self, wx.ID_ANY, _("Limit Write Buffer")
         )
         self.checkbox_limit_buffer.SetToolTip(
@@ -111,7 +119,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_buffer.Add(self.text_buffer_length, 1, wx.EXPAND, 0)
 
-        label_14 = wx.StaticText(self, wx.ID_ANY, "/")
+        label_14 = wxStaticText(self, wx.ID_ANY, "/")
         sizer_buffer.Add(label_14, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.spin_packet_buffer_max = wx.SpinCtrl(
@@ -237,6 +245,11 @@ class ConfigurationTcp(wx.Panel):
             check="int",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.text_port.lower_limit = 0
+        self.text_port.upper_limit = 65535
+        self.text_port.lower_limit_err = 0
+        self.text_port.upper_limit_err = 65535
+
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         sizer_port.Add(self.text_port, 1, wx.EXPAND, 0)
 
@@ -261,7 +274,7 @@ class ConfigurationTcp(wx.Panel):
 
     def on_text_port(self):  # wxGlade: ConfigurationTcp.<event_handler>
         try:
-            self.context.port = int(self.text_port.GetValue())
+            self.context.port = max(0, min(65535, int(self.text_port.GetValue())))
         except ValueError:
             pass
 
@@ -384,13 +397,19 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         panel_config = ChoicePropertyPanel(
             self.notebook_main,
             wx.ID_ANY,
             context=self.context,
-            choices=("bed_dim", "bed_orientation"),
+            choices=("bed_dim", "bed_orientation", "coolant"),
         )
 
         panel_interface = ConfigurationInterfacePanel(
@@ -403,6 +422,8 @@ class LihuiyuDriverGui(MWindow):
             context=self.context,
             choices=("lhy-general", "lhy-jog", "lhy-rapid-override", "lhy-speed"),
         )
+
+        panel_effects = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_format = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -410,6 +431,7 @@ class LihuiyuDriverGui(MWindow):
         self.panels.append(panel_config)
         self.panels.append(panel_interface)
         self.panels.append(panel_setup)
+        self.panels.append(panel_effects)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_format)
@@ -417,6 +439,7 @@ class LihuiyuDriverGui(MWindow):
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
+        self.notebook_main.AddPage(panel_effects, _("Effects"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_format, _("Display Options"))

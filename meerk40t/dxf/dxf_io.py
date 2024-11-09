@@ -48,8 +48,7 @@ class DxfLoader:
         """
         try:
             dxf = ezdxf.readfile(pathname)
-        except ezdxf.DXFError as e:
-            # print (f"Error while reading: {e}")
+        except ezdxf.DXFError:
             try:
                 # dxf is low quality. Attempt recovery.
                 from ezdxf import recover
@@ -161,7 +160,7 @@ class DXFProcessor:
         if hasattr(entity, "transform_to_wcs"):
             try:
                 entity.transform_to_wcs(entity.ocs())
-            except AttributeError as e:
+            except AttributeError:
                 pass
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
@@ -295,7 +294,6 @@ class DXFProcessor:
                 else:
                     element = Path()
                     bulge = 0
-                    maxidx = len(entity)
                     for idx, e in enumerate(entity):
                         point = e.dxf.location
                         if bulge == 0:
@@ -541,7 +539,7 @@ class DXFProcessor:
             except ImportError:
                 pass
             self.check_for_attributes(node, entity)
-            # We don't seem to get the position right, so lets' look
+            # We don't seem to get the position right, so let's look
             # at our bottom_left position again and fix the gap
             bb = node.bounds
             dx = targetpos.x - bb[0]

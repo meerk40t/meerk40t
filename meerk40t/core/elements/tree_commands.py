@@ -82,7 +82,7 @@ def init_commands(kernel):
             if d.type == "root":
                 channel(_("Tree:"))
             else:
-                channel(f"{d.label}:")
+                channel(f"{d.display_label()}:")
             t_list([], d)
             channel("----------")
 
@@ -156,6 +156,9 @@ def init_commands(kernel):
                 submenu = submenus[submenu_name]
             elif submenu_name is not None:
                 submenu = list()
+                if func.separate_before:
+                    menu_context.append(("------", None))
+                    func.separate_before = False
                 menu.append((submenu_name, submenu))
                 submenus[submenu_name] = submenu
 
@@ -334,7 +337,7 @@ def init_commands(kernel):
             entry = 3
         if not single:
             if typecount[3] > 0:
-                # regmarks take precedence, the least dangereous delete
+                # regmarks take precedence, the least dangerous delete
                 entry = 3
             elif typecount[1] > 0:
                 # refs next

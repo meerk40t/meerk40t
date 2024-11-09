@@ -16,8 +16,8 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.tools.geomstr import TYPE_END
+from meerk40t.gui.wxutils import get_matrix_scale, get_gc_full_scale
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 
 class RectSelectWidget(Widget):
@@ -106,65 +106,69 @@ class RectSelectWidget(Widget):
     def rect_select(self, elements, sx, sy, ex, ey):
         sector = self.sector
         selected = False
-        for node in elements.elems():
-            try:
-                q = node.bounds
-            except AttributeError:
-                continue  # This element has no bounds.
-            if q is None:
-                continue
-            if hasattr(node, "can_emphasize") and not node.can_emphasize:
-                continue
-            xmin = q[0]
-            ymin = q[1]
-            xmax = q[2]
-            ymax = q[3]
-            # no hit
-            cover = 0
-            # Check Hit
-            # The rectangles don't overlap if
-            # one rectangle's minimum in some dimension
-            # is greater than the other's maximum in
-            # that dimension.
-            if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
-                cover = self.SELECTION_TOUCH
-                # If selection rect is fully inside an object then ignore
-                if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
-                    cover = 0
+        # We don't want every single element to to issue a signal
+        with elements.signalfree("emphasized"):
+            for node in elements.elems():
+                try:
+                    q = node.bounds
+                except AttributeError:
+                    continue  # This element has no bounds.
+                if q is None:
+                    continue
+                if hasattr(node, "hidden") and node.hidden:
+                    continue
+                if hasattr(node, "can_emphasize") and not node.can_emphasize:
+                    continue
+                xmin = q[0]
+                ymin = q[1]
+                xmax = q[2]
+                ymax = q[3]
+                # no hit
+                cover = 0
+                # Check Hit
+                # The rectangles don't overlap if
+                # one rectangle's minimum in some dimension
+                # is greater than the other's maximum in
+                # that dimension.
+                if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
+                    cover = self.SELECTION_TOUCH
+                    # If selection rect is fully inside an object then ignore
+                    if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
+                        cover = 0
 
-            # Check Cross
-            if (
-                ((sx <= xmin) and (xmax <= ex))
-                and not ((sy > ymax) or (ey < ymin))
-                or ((sy <= ymin) and (ymax <= ey))
-                and not ((sx > xmax) or (ex < xmin))
-            ):
-                cover = self.SELECTION_CROSS
-            # Check contain
-            if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
-                cover = self.SELECTION_ENCLOSE
+                # Check Cross
+                if (
+                    ((sx <= xmin) and (xmax <= ex))
+                    and not ((sy > ymax) or (ey < ymin))
+                    or ((sy <= ymin) and (ymax <= ey))
+                    and not ((sx > xmax) or (ex < xmin))
+                ):
+                    cover = self.SELECTION_CROSS
+                # Check contain
+                if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
+                    cover = self.SELECTION_ENCLOSE
 
-            if "shift" in self.modifiers:
-                # Add Selection
-                if cover >= self.selection_method[sector]:
-                    node.emphasized = True
-                    node.selected = True
-                    selected = True
-            elif "ctrl" in self.modifiers:
-                # Invert Selection
-                if cover >= self.selection_method[sector]:
-                    node.emphasized = not node.emphasized
-                    node.selected = node.emphasized
-                    selected = True
-            else:
-                # Replace Selection
-                if cover >= self.selection_method[sector]:
-                    node.emphasized = True
-                    node.selected = True
-                    selected = True
+                if "shift" in self.modifiers:
+                    # Add Selection
+                    if cover >= self.selection_method[sector]:
+                        node.emphasized = True
+                        node.selected = True
+                        selected = True
+                elif "ctrl" in self.modifiers:
+                    # Invert Selection
+                    if cover >= self.selection_method[sector]:
+                        node.emphasized = not node.emphasized
+                        node.selected = node.emphasized
+                        selected = True
                 else:
-                    node.emphasized = False
-                    node.selected = False
+                    # Replace Selection
+                    if cover >= self.selection_method[sector]:
+                        node.emphasized = True
+                        node.selected = True
+                        selected = True
+                    else:
+                        node.emphasized = False
+                        node.selected = False
         if selected:
             self.scene.context.signal("element_clicked")
 
@@ -263,6 +267,8 @@ class RectSelectWidget(Widget):
 
                     # Find the minimum distance and its corresponding indices
                     min_dist = np.min(dist)
+                    if np.isnan(min_dist):
+                        return None, 0, 0
                     min_indices = np.argwhere(dist == min_dist)
 
                     # Return the coordinates of the two points
@@ -278,7 +284,7 @@ class RectSelectWidget(Widget):
                     and "shift" not in modifiers
                     and b is not None
                 ):
-                    gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                    gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
                     # We gather all points of non-selected elements,
                     # but only those that lie within the boundaries
                     # of the selected area
@@ -301,22 +307,16 @@ class RectSelectWidget(Widget):
                         last = None
                         for seg in geom.segments[: geom.index]:
                             start = seg[0]
-                            seg_type = int(seg[2].real)
+                            seg_type = geom._segtype(seg)
                             end = seg[4]
-                            if seg_type != TYPE_END:
-                                if start != last:
-                                    xx = start.real
-                                    yy = start.imag
-                                    ignore = (
-                                        xx < b[0] - gap
-                                        or xx > b[2] + gap
-                                        or yy < b[1] - gap
-                                        or yy > b[3] + gap
-                                    )
-                                    if not ignore:
-                                        target.append(start)
-                                xx = end.real
-                                yy = end.imag
+                            if seg_type in NON_GEOMETRY_TYPES:
+                                continue
+                            if np.isnan(start) or np.isnan(end):
+                                print (f"Strange, encountered within rectselect a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                                continue
+                            if start != last:
+                                xx = start.real
+                                yy = start.imag
                                 ignore = (
                                     xx < b[0] - gap
                                     or xx > b[2] + gap
@@ -324,15 +324,30 @@ class RectSelectWidget(Widget):
                                     or yy > b[3] + gap
                                 )
                                 if not ignore:
-                                    target.append(end)
-                                last = end
+                                    target.append(start)
+                            xx = end.real
+                            yy = end.imag
+                            ignore = (
+                                xx < b[0] - gap
+                                or xx > b[2] + gap
+                                or yy < b[1] - gap
+                                or yy > b[3] + gap
+                            )
+                            if not ignore:
+                                target.append(end)
+                            last = end
                     # t2 = perf_counter()
-                    if len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        other_points is not None
+                        and selected_points is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
-                        if dist < gap:
+                        if dist is not None and dist < gap:
                             did_snap_to_point = True
                             dx = pt1.real - pt2.real
                             dy = pt1.imag - pt2.imag
@@ -348,7 +363,7 @@ class RectSelectWidget(Widget):
                     and not did_snap_to_point
                 ):
                     # t1 = perf_counter()
-                    gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
+                    gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
                     # Check for corner points + center:
                     selected_points = (
                         (b[0], b[1]),
@@ -358,12 +373,17 @@ class RectSelectWidget(Widget):
                         ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                     )
                     other_points = self.scene.pane.grid.grid_points
-                    if len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        other_points is not None
+                        and selected_points is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                        if dist < gap:
-                            did_snap_to_point = True
+                        if dist is not None and dist < gap:
+                            # did_snap_to_point = True
                             dx = pt1[0] - pt2[0]
                             dy = pt1[1] - pt2[1]
                             move_to(dx, dy)
@@ -413,39 +433,53 @@ class RectSelectWidget(Widget):
         self.scene.cursor("arrow")
 
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
-        matrix = self.parent.matrix
+        # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+        # when drawing dashed/dotted lines, so they always appear to be solid
+        # (even if they are dotted on a microscopic level)
+        # To circumvent this issue, we scale the gc back
+        gc.PushState()
+        sx, sy = get_gc_full_scale(gc)
+        gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
         gc.SetPen(self.selection_pen)
-        linewidth = 2.0 / matrix_scale(matrix)
-        if linewidth < 1:
-            linewidth = 1
+        linewidth = 1
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        gc.StrokeLine(x0, y0, x1, y0)
-        gc.StrokeLine(x1, y0, x1, y1)
-        gc.StrokeLine(x1, y1, x0, y1)
-        gc.StrokeLine(x0, y1, x0, y0)
+        gc.StrokeLine(x0 * sx, y0 * sy, x1 * sx, y0 * sy)
+        gc.StrokeLine(x1 * sx, y0 * sy, x1 * sx, y1 * sy)
+        gc.StrokeLine(x1 * sx, y1 * sy, x0 * sx, y1 * sy)
+        gc.StrokeLine(x0 * sx, y1 * sy, x0 * sx, y0 * sy)
+        gc.PopState()
 
     def draw_tiny_indicator(self, gc, symbol, x0, y0, x1, y1, tcolor, tstyle):
-        matrix = self.parent.matrix
+        # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+        # when drawing dashed/dotted lines, so they always appear to be solid
+        # (even if they are dotted on a microscopic level)
+        # To circumvent this issue, we scale the gc back
+        gc.PushState()
+        sx, sy = get_gc_full_scale(gc)
+        # print (f"sx={sx}, sy={sy}")
+        gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
 
-        linewidth = 2.0 / matrix_scale(matrix)
-        if linewidth < 1:
-            linewidth = 1
+        linewidth = 1
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        delta_X = 15.0 / matrix_scale(matrix)
-        delta_Y = 15.0 / matrix_scale(matrix)
-        if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
+        delta_X = 15.0
+        delta_Y = 15.0
+        x0 *= sx
+        x1 *= sx
+        y0 *= sx
+        y1 *= sx
+        if abs(x1 - x0) > delta_X and abs(y1 - y0)  > delta_Y:  # Don't draw if too tiny
             # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
             y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
@@ -455,7 +489,7 @@ class RectSelectWidget(Widget):
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
-            font_size = 10.0 / matrix_scale(matrix)
+            font_size = 10.0
             if font_size < 1.0:
                 font_size = 1.0
             try:
@@ -478,7 +512,7 @@ class RectSelectWidget(Widget):
                 symbol, (ax1 + x1) / 2 - t_width / 2, (ay1 + y1) / 2 - t_height / 2
             )
             if (
-                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0) > 2 * delta_Y
+                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0)  > 2 * delta_Y
             ):  # Don't draw if too tiny
                 # Draw second symbol at origin
                 ax1 = x0 + x_signum
@@ -488,6 +522,7 @@ class RectSelectWidget(Widget):
                 gc.DrawText(
                     symbol, (ax1 + x0) / 2 - t_width / 2, (ay1 + y0) / 2 - t_height / 2
                 )
+        gc.PopState()
 
     def process_draw(self, gc):
         """

@@ -6,7 +6,7 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
-
+from meerk40t.gui.wxutils import wxStaticBitmap
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -29,13 +29,13 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def node_label(self, node):
         if isinstance(node, CutOpNode):
-            slabel = f"Cut ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Cut ({percent}, {speed}mm/s)"
         elif isinstance(node, EngraveOpNode):
-            slabel = f"Engrave ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Engrave ({percent}, {speed}mm/s)"
         elif isinstance(node, RasterOpNode):
-            slabel = f"Raster ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Raster ({percent}, {speed}mm/s)"
         elif isinstance(node, ImageOpNode):
-            slabel = f"Image ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Image ({percent}, {speed}mm/s)"
         else:
             slabel = ""
         slabel = (
@@ -53,13 +53,13 @@ class DefaultOperationWidget(StatusBarWidget):
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
         super().GenerateControls(parent, panelidx, identifier, context)
-        # How should be display the data?
+        # How should we display the data?
         display_mode = self.context.elements.setting(int, "default_ops_display_mode", 0)
 
         self.buttonsize_x = self.iconsize
         self.buttonsize_y = min(self.iconsize, self.height)
         self.ClearItems()
-        self.btn_prev = wx.StaticBitmap(
+        self.btn_prev = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
@@ -125,7 +125,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 mylist[idx] = None
 
         for op in oplist:
-            btn = wx.StaticBitmap(
+            btn = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=(self.buttonsize_x, self.buttonsize_y),
@@ -158,7 +158,7 @@ class DefaultOperationWidget(StatusBarWidget):
             self.Add(btn, 0, wx.EXPAND, 0)
             self.SetActive(btn, False)
 
-        self.btn_next = wx.StaticBitmap(
+        self.btn_next = wxStaticBitmap(
             parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
@@ -178,7 +178,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
-        self.btn_matman = wx.StaticBitmap(
+        self.btn_matman = wxStaticBitmap(
             parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
@@ -424,6 +424,14 @@ class DefaultOperationWidget(StatusBarWidget):
         self.parent.Reposition(self.panelidx)
 
     def reset_tooltips(self):
+        # Desync?
+        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+            # New default operations!
+            self.GenerateControls(
+                self.parent, self.panelidx, self.identifier, self.context
+            )
+            # Repaint
+            self.show_stuff(True)
         # First reset all
         for idx, node in enumerate(self.context.elements.default_operations):
             slabel = self.node_label(node)

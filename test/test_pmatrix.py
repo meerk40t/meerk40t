@@ -1,7 +1,6 @@
 import unittest
 
 from meerk40t.core.units import Angle
-from meerk40t.svgelements import Matrix
 from meerk40t.tools.pmatrix import PMatrix
 
 

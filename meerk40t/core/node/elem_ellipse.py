@@ -1,7 +1,12 @@
 from copy import copy
 from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +18,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked, FunctionalParameter):
+class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -52,9 +57,21 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.stroke_dash = None  # None or "" Solid
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
 
         super().__init__(type="elem ellipse", **kwargs)
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
         self.__formatter = "{element_type} {id} {stroke}"
         if self.cx is None:
             self.cx = 0
@@ -80,6 +97,9 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
             # store two extreme points
             self.functional_parameter = (
                 "ellipse",
+                0,
+                self.cx,
+                self.cy,
                 0,
                 self.cx + self.rx,
                 self.cy,
@@ -132,12 +152,35 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         """
         return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
         path.transform(self.matrix)
         return path
 
-    def scaled(self, sx, sy, ox, oy):
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effects like tabs and dashes/dots
+        """
+        unit_factor = kws.get("unitfactor", 1)
+        path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
+        path.transform(self.matrix)
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+
+        return path
+
+    def scaled(self, sx, sy, ox, oy, interim=False):
         """
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering its properties
@@ -170,7 +213,8 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
-        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+        self.set_dirty()
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)
 
     def bbox(self, transformed=True, with_stroke=False):
         geometry = self.as_geometry()
@@ -216,16 +260,35 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            (drag_node.type.startswith("op ") and drag_node.type != "op dots") or
+            drag_node.type in ("file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
-            # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            # then we will reverse the game, but we will take the operations color
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):
@@ -233,8 +296,8 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
@@ -306,18 +369,36 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
                         self.ry = radius
                         self.altered()
                 elif method == "ellipse":
-                    pt1x = getit(self.mkparam, 2, self.cx + self.rx)
-                    pt1y = getit(self.mkparam, 3, self.cy)
-                    pt2x = getit(self.mkparam, 5, self.cx)
-                    pt2y = getit(self.mkparam, 6, self.cy + self.ry)
-                    rx = pt1x - pt2x
-                    ry = pt2y - pt1y
-                    ncx = pt1x - rx
-                    ncy = pt2y - ry
-                    rx = abs(rx)
-                    ry = abs(ry)
-                    self.cx = ncx
-                    self.cy = ncy
-                    self.rx = rx
-                    self.ry = ry
+                    ncx = getit(self.mkparam, 2, self.cx)
+                    ncy = getit(self.mkparam, 3, self.cy)
+                    pt1x = getit(self.mkparam, 5, self.cx + self.rx)
+                    pt1y = getit(self.mkparam, 6, self.cy)
+                    pt2x = getit(self.mkparam, 8, self.cx)
+                    pt2y = getit(self.mkparam, 9, self.cy + self.ry)
+                    if ncx != self.cx or ncy != self.cy:
+                        self.cx = ncx
+                        self.cy = ncy
+                    else:
+                        rx = pt1x - pt2x
+                        ry = pt2y - pt1y
+                        ncx = pt1x - rx
+                        ncy = pt2y - ry
+                        rx = abs(rx)
+                        ry = abs(ry)
+                        self.cx = ncx
+                        self.cy = ncy
+                        self.rx = rx
+                        self.ry = ry
+                    self.mkparam = (
+                        "ellipse",
+                        0,
+                        self.cx,
+                        self.cy,
+                        0,
+                        self.cx + self.rx,
+                        self.cy,
+                        0,
+                        self.cx,
+                        self.cy + self.ry,
+                    )
                     self.altered()

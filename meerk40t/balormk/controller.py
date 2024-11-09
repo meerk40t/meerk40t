@@ -9,6 +9,7 @@ import struct
 import threading
 import time
 from copy import copy
+from usb.core import NoBackendError
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
@@ -284,6 +285,7 @@ class GalvoController:
         self._list_executing = False
         self._number_of_list_packets = 0
         self.paused = False
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def define_pins(self):
         self._light_bit = self.service.setting(int, "light_pin", 8)
@@ -385,6 +387,11 @@ class GalvoController:
                     self.set_disable_connect(True)
                     self.usb_log("Could not connect to the LMC controller.")
                     self.usb_log("Automatic connections disabled.")
+                    from platform import system
+                    osname = system()
+                    if osname == "Windows":
+                        self.usb_log("Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?")
+                        self.usb_log("Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows")
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
@@ -396,7 +403,10 @@ class GalvoController:
     def send(self, data, read=True):
         if self.is_shutdown:
             return -1, -1, -1, -1
-        self.connect_if_needed()
+        try:
+            self.connect_if_needed()
+        except (ConnectionRefusedError, NoBackendError):
+            return -1, -1, -1, -1
         try:
             self.connection.write(self._machine_index, data)
         except ConnectionError:
@@ -916,7 +926,7 @@ class GalvoController:
         @return:
         """
         # return int(speed / 2)
-        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True)
+        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True, margins=False)
         return abs(int(speed * galvos_per_mm / 1000.0))
 
     def _convert_frequency(self, frequency_khz, base=20000.0):
@@ -1038,6 +1048,15 @@ class GalvoController:
         x = int(x)
         y = int(y)
         self._list_write(listJumpTo, x, y, angle, distance)
+        if self._signal_updates:
+            view  = self.service.view
+            l_x, l_y = view.iposition(self._last_x, self._last_y)
+            n_x, n_y = view.iposition(x, y)
+            self.service.signal(
+                "driver;position",
+                (l_x, l_y, n_x, n_y),
+            )
+
         self._last_x = x
         self._last_y = y
 
@@ -1047,14 +1066,14 @@ class GalvoController:
     def list_laser_on_point(self, dwell_time):
         self._list_write(listLaserOnPoint, dwell_time)
 
-    def list_delay_time(self, time):
+    def list_delay_time(self, delay_time):
         """
         Delay time in 10 microseconds units
 
-        @param time:
+        @param delay_time:
         @return:
         """
-        self._list_write(listDelayTime, abs(time))
+        self._list_write(listDelayTime, abs(delay_time))
 
     def list_mark(self, x, y, angle=0):
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
@@ -1063,6 +1082,16 @@ class GalvoController:
         x = int(x)
         y = int(y)
         self._list_write(listMarkTo, x, y, angle, distance)
+
+        if self._signal_updates:
+            view  = self.service.view
+            l_x, l_y = view.iposition(self._last_x, self._last_y)
+            n_x, n_y = view.iposition(x, y)
+            self.service.signal(
+                "driver;position",
+                (l_x, l_y, n_x, n_y),
+            )
+
         self._last_x = x
         self._last_y = y
 

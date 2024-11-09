@@ -76,17 +76,15 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("render-op/make_raster", renderer.make_raster)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
-        from meerk40t.gui.guicolors import GuiColors
+        from meerk40t.gui.themes import Themes
+        kernel.add_service("themes", Themes(kernel))
 
+        from meerk40t.gui.guicolors import GuiColors
         kernel.add_service("colors", GuiColors(kernel))
 
         from meerk40t.gui.scene.scene import Scene
-
         kernel.register("module/Scene", Scene)
 
-        from meerk40t.gui.themes import Themes
-
-        kernel.add_service("themes", Themes(kernel))
 
     elif lifecycle == "boot":
         kernel_root = kernel.root
@@ -180,7 +178,7 @@ and a wxpython version <= 4.1.1."""
                     )
                 ),
                 "page": "Gui",
-                "section": "General",
+                "section": "Tooltips",
                 "signals": "restart",
             },
             {
@@ -193,7 +191,57 @@ and a wxpython version <= 4.1.1."""
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),
                 "page": "Gui",
-                "section": "General",
+                "section": "Tooltips",
+            },
+            {
+                "attr": "tooltip_delay",
+                "object": kernel.root,
+                "default": 100,
+                "type": int,
+                "style": "flat",
+                "label": _("ToolTip delay"),
+                "trailer": "ms",
+                "tip": _("How long do you need to hover over a control before the tooltip appears"),
+                "page": "Gui",
+                "section": "Tooltips",
+                "signals": "restart",
+            },
+            {
+                "attr": "tooltip_autopop",
+                "object": kernel.root,
+                "default": 10000,
+                "type": int,
+                "style": "flat",
+                "label": _("ToolTip duration"),
+                "trailer": "ms",
+                "tip": _("How long should the tooltip stay before it disappears"),
+                "page": "Gui",
+                "section": "Tooltips",
+                "signals": "restart",
+            },
+            {
+                "attr": "concern_level",
+                "object": kernel.root,
+                "default": 0,
+                "type": int,
+                "style": "option",
+                "display": (
+                    _("Low + Normal + Critical"),
+                    _("Normal + Critical"),
+                    _("Critical"),
+                    _("Ignore all"),
+                ),
+                "choices": (1, 2, 3, 4),
+                "label": _("Level"),
+                "tip": (
+                    _("Which warning severity level do you want to recognize") + "\n" +
+                    _("Critical: might damage your laser (e.g. laserhead bumping into rail)") + "\n" +
+                    _("Normal: might ruin your burn (e.g. unassigned=unburnt elements)") + "\n" +
+                    _("Low: I hope you know what your doing (e.g. disabled operations)")
+                ),
+                "page": "Gui",
+                "section": "Warning-Indicator",
+                "signals": ("icons", "warn_state_update"),
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -232,30 +280,48 @@ and a wxpython version <= 4.1.1."""
                 option_no = _("No")
             if caption is None:
                 caption = _("Question")
-            dlg = wx.MessageDialog(
-                None,
-                message=prompt,
-                caption=caption,
-                style=wx.YES_NO | wx.ICON_QUESTION,
-            )
-            if dlg.SetYesNoLabels(option_yes, option_no):
-                dlg.SetMessage(prompt)
-            else:
-                dlg.SetMessage(
-                    prompt
-                    + "\n"
-                    + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
+            if option_yes == option_no:
+                dlg = wx.MessageDialog(
+                    None,
+                    message=prompt,
+                    caption=caption,
+                    style=wx.OK | wx.ICON_INFORMATION,
                 )
+                if dlg.SetOKLabel(option_yes):
+                    dlg.SetMessage(prompt)
+                else:
+                    dlg.SetMessage(
+                        prompt + "\n" + _("(Yes={yes})").format(yes=option_yes)
+                    )
+            else:
+                dlg = wx.MessageDialog(
+                    None,
+                    message=prompt,
+                    caption=caption,
+                    style=wx.YES_NO | wx.ICON_QUESTION,
+                )
+                if dlg.SetYesNoLabels(option_yes, option_no):
+                    dlg.SetMessage(prompt)
+                else:
+                    dlg.SetMessage(
+                        prompt
+                        + "\n"
+                        + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
+                    )
 
             response = dlg.ShowModal()
             dlg.Destroy()
-            return bool(response == wx.ID_YES)
+            return bool(response in (wx.ID_YES, wx.ID_OK))
 
         kernel.yesno = yesno_popup
 
         from meerk40t.gui.busy import BusyInfo
 
-        kernel.busyinfo = BusyInfo()
+        kargs = {}
+        if kernel.themes.dark:
+            kargs["bgcolor"] = kernel.themes.get("win_bg")
+            kargs["fgcolor"] = kernel.themes.get("win_fg")
+        kernel.busyinfo = BusyInfo(**kargs)
 
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)
@@ -312,10 +378,22 @@ and a wxpython version <= 4.1.1."""
             lock.acquire(True)
 
         if kernel._gui:
+            try:
+                flag = kernel.themes.dark
+                import meerk40t.gui.icons as icons
+                icons.DARKMODE = flag
+                image = icons.icon_meerk40t.GetBitmap(resize=400)
+            except ImportError:
+                image = None
+            from ..main import APPLICATION_VERSION
+            from platform import system
+            if system() != "Linux":
+                kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
+                kernel.busyinfo.change(msg=_("Load main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
             @kernel.console_command(
-                ("quit", "shutdown"), help=_("shuts down the gui and exits")
+                ("quit", "shutdown", "exit"), help=_("shuts down the gui and exits")
             )
             def shutdown(**kwargs):
                 try:
@@ -324,21 +402,37 @@ and a wxpython version <= 4.1.1."""
                     pass
 
             if kernel.args.simpleui:
+                kernel.busyinfo.end()
                 kernel.console("window open SimpleUI\n")
                 meerk40tgui.MainLoop()
                 return
 
             kernel.console("window open MeerK40t\n")
+            windows_to_ignore = ("HersheyFontSelector", "About", "Properties")
+            if kernel.busyinfo.shown:
+                kernel.busyinfo.change(msg=_("Loading windows"), keep=1)
             for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
                 if kernel.read_persistent(bool, window, "open_on_start", False):
+                    win_name = window_name[7:]
+                    if win_name in windows_to_ignore:
+                        continue
                     if window_index is not None:
                         kernel.console(
-                            f"window open -m {window_index} {window_name[7:]} {window_index}\n"
+                            f"window open -m {window_index} {win_name} {window_index}\n"
                         )
                     else:
-                        kernel.console(f"window open {window_name[7:]}\n")
+                        kernel.console(f"window open {win_name}\n")
 
-            meerk40tgui.MainLoop()
+            if kernel.busyinfo.shown:
+                kernel.busyinfo.change(msg=_("Finishing GUI"), keep=1)
+            kernel.signal("started", "/", "")
+            try:
+                meerk40tgui.MainLoop()
+            except AssertionError as e:
+                # Under Darwin we have every now and then at program end a 
+                # wx._core.wxAssertionError: ... in DoScreenToClient(): TopLevel Window missing
+                print (f"MeerK40t encountered an error at shutdown: {e}")
+                pass

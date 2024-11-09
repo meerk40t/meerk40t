@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.dwellcut import DwellCut
@@ -24,6 +23,7 @@ class DotsOpNode(Node, Parameters):
         self._allowed_elements = ("elem point",)
         # Is this op out of useful bounds?
         self.dangerous = False
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
         self.label = "Dots"
 
@@ -70,12 +70,29 @@ class DotsOpNode(Node, Parameters):
             default_map["ppi"] = f"{self.power:.0f}"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.has_ancestor("branch reg"):
+            # Will be dealt with in elements -
+            # we don't implement a more sophisticated routine here
+            return False
+        if hasattr(drag_node, "as_geometry") and drag_node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type in op_nodes:
+            # Move operation to a different position.
+            return True
+        elif drag_node.type in ("file", "group"):
+            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
-                or drag_node._parent.type == "branch reg"
+                or drag_node.has_ancestor("branch reg")
             ):
                 return False
             # Dragging element onto operation adds that element to the op.
@@ -95,7 +112,9 @@ class DotsOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
@@ -119,6 +138,14 @@ class DotsOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
@@ -127,9 +154,9 @@ class DotsOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
-            result = False
+            _result = False
             if col1 is None and col2 is None:
-                result = True
+                _result = True
             elif (
                 col1 is not None
                 and col1.argb is not None
@@ -138,11 +165,14 @@ class DotsOpNode(Node, Parameters):
             ):
                 if fuzzy:
                     distance = Color.distance(col1, col2)
-                    result = distance < fuzzydistance
+                    _result = distance < fuzzydistance
                 else:
-                    result = col1 == col2
-            return result
+                    _result = col1 == col2
+            return _result
 
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
         feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
@@ -239,9 +269,13 @@ class DotsOpNode(Node, Parameters):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
         for point_node in self.children:
+            if point_node.type == "reference":
+                point_node = point_node.node
             if point_node.type != "elem point":
                 continue
             if point_node.point is None:
+                continue
+            if getattr(point_node, "hidden", False):
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
@@ -249,3 +283,15 @@ class DotsOpNode(Node, Parameters):
                 settings=settings,
                 passes=passes,
             )
+
+    @property
+    def bounds(self):
+        if not self._bounds_dirty:
+            return self._bounds
+
+        self._bounds = None
+        if self.output:
+            if self._children:
+                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+            self._bounds_dirty = False
+        return self._bounds

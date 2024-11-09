@@ -1,7 +1,8 @@
+import numpy as np
 import os
 import subprocess
 from copy import copy
-
+from math import tau
 from meerk40t.kernel import CommandSyntaxError
 
 from ..core.exceptions import BadFileError
@@ -9,6 +10,137 @@ from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
 from .dither import dither
+
+def img_to_polygons(
+        node_image,                 # The image
+        minimal,                    # Minimum area in percent (int) to consider
+        maximal,                    # Maximum area in percent (int) to consider
+        ignoreinner,                # Ignore inner contours
+        needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+):
+    """
+    Takes the image and provides a list of geomstr + associated matrix
+    containing the (simplified) contours of the artifacts found on the image
+    """
+    try:
+        import cv2
+        from PIL import ImageOps
+    except ImportError:
+        return ([], [])
+    geom_list = list()
+
+    # Convert the image to grayscale
+    img = node_image.convert("L")
+    if needs_invert:
+        gray = np.array(ImageOps.invert(img))
+    else:
+        gray = np.array(img)
+
+    # Apply thresholding to create a binary image
+    _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Find contours in the binary image
+    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
+    width, height = node_image.size
+    minarea = int(minimal / 100.0 * width * height)
+    maxarea = int(maximal / 100.0 * width * height)
+
+    # Extract coordinates of white regions
+    for idx, contour in enumerate(contours):
+        hierarchy = hierarchies[0][idx]
+        # print (hierarchy)
+        h_next, h_prev, h_child, h_parent = hierarchy
+        if ignoreinner and h_parent >= 0:
+            continue
+        area = cv2.contourArea(contour)
+        if area < minarea:
+            continue
+        if area > maxarea:
+            continue
+        region = contour.squeeze().astype(float).tolist()
+        if type(region[0]) is list:
+            if len(region) > 2:
+                crdnts = [{'x': i[0], 'y': i[1]} for i in region]
+
+                geom = Geomstr()
+                notfirst = False
+                for pnt in crdnts:
+                    rx, ry = pnt['x'], pnt['y']
+                    if notfirst:
+                        geom.line(complex(lx, ly), complex(rx, ry))
+                    notfirst = True
+                    lx = rx
+                    ly = ry
+                geom.close()
+                matrix = Matrix()
+                geom_list.append( (geom, 100 * area / (width * height)) )
+
+    return geom_list
+
+def img_to_rectangles(
+        node_image,                 # The image
+        minimal,                    # Minimum area in percent (int) to consider
+        maximal,                    # Maximum area in percent (int) to consider
+        ignoreinner,                # Ignore inner contours
+        needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+):
+    """
+    Takes the image and provides a list of geomstr + associated matrix
+    containing the minimum bounding rectangle of the artifacts found on the image
+    Please note that these rectangles can be already rotated.
+    """
+    try:
+        import cv2
+        from PIL import ImageOps
+    except ImportError:
+        return ([], [])
+    geom_list = []
+
+    # Convert the image to grayscale
+    img = node_image.convert("L")
+    if needs_invert:
+        gray = np.array(ImageOps.invert(img))
+    else:
+        gray = np.array(img)
+
+    # Apply thresholding to create a binary image
+    _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Find contours in the binary image
+    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
+    width, height = node_image.size
+    minarea = int(minimal / 100.0 * width * height)
+    maxarea = int(maximal / 100.0 * width * height)
+
+    for idx, contour in enumerate(contours):
+        hierarchy = hierarchies[0][idx]
+        # print (hierarchy)
+        h_next, h_prev, h_child, h_parent = hierarchy
+        if ignoreinner and h_parent >= 0:
+            continue
+        area = cv2.contourArea(contour)
+        if area < minarea:
+            continue
+        if area > maxarea:
+            continue
+        rot_rect = cv2.minAreaRect(contour)
+        box = cv2.boxPoints(rot_rect)
+        # rot_rect is a tuple containing  ( (center_x, center_y), (width, height), angle_in_degress
+        # box contains the coordinates of the 4 corners
+        # (center_x, center_y), (rect_width, rect_height), angle_deg = rot_rect
+        # print (f"center: {center_x:.2f}, {center_y:.2f}, dimension: {rect_width:.2f}x{rect_height:.2f}, angle={angle_deg:.1f}")
+        # print (box)
+        geom = Geomstr()
+        geom.line(start=complex(box[0][0], box[0][1]), end=complex(box[1][0], box[1][1]))
+        geom.line(start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1]))
+        geom.line(start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1]))
+        geom.line(start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1]))
+        # Geometry plus enclosed area
+        geom_list.append( (geom, 100 * area / (width * height)) )
+
+    return geom_list
 
 
 def plugin(kernel, lifecycle=None):
@@ -37,14 +169,14 @@ def plugin(kernel, lifecycle=None):
             "label": _("Image DPI Scaling"),
             "tip": "\n".join(
                 (
-                    _("Unset: Use the image as if it were 1000 pixels per inch."),
+                    _("Unset: Use the image as if it were 96 pixels per inch."),
                     _(
                         "Set: Use the DPI setting saved in the image to scale the image to the correct size."
                     ),
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
         },
         {
             "attr": "create_image_group",
@@ -59,7 +191,32 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
+        },
+        {
+            "attr": "scale_oversized_images",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Scale oversized images"),
+            "tip": _("Set: Will scale down large images so they will fit on the laserbed."),
+            "page": "Input/Output",
+            "section": "Images",
+        },
+        {
+            "attr": "center_image_on_load",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Center image on import"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Places the image at the left upper corner."),
+                    _("Set: Places the image at the center."),
+                )
+            ),
+            "page": "Input/Output",
+            "section": "Images",
         },
     ]
     kernel.register_choices("preferences", choices)
@@ -70,7 +227,7 @@ def plugin(kernel, lifecycle=None):
         if hasattr(node, "node"):
             node.node.altered()
         node.altered()
-        node.update(context)
+        context.elements.do_image_update(node, context)
 
     @context.console_command(
         "image",
@@ -183,7 +340,7 @@ def plugin(kernel, lifecycle=None):
             if not len(script) and inode.operations:
                 channel(_("Disabled raster script."))
             inode.operations = script
-            inode.update(context)
+            context.elements.do_image_update(inode, context)
         return "image", data
 
     @context.console_command(
@@ -329,10 +486,10 @@ def plugin(kernel, lifecycle=None):
             raise CommandSyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
 
-        def dist(pixel):
-            r = color.red - pixel[0]
-            g = color.green - pixel[1]
-            b = color.blue - pixel[2]
+        def dist(px):
+            r = color.red - px[0]
+            g = color.green - px[1]
+            b = color.blue - px[2]
             return r * r + g * g + b * b <= distance_sq
 
         for inode in data:
@@ -1197,15 +1354,15 @@ def plugin(kernel, lifecycle=None):
                 raise CommandSyntaxError(
                     _("Lower margin is higher than the upper margin.")
                 )
-            image_pop = img.crop((left, upper, right, lower))
+            image_popped = img.crop((left, upper, right, lower))
             image_remain = img.copy()
 
             if not remain:
-                image_blank = Image.new("L", image_pop.size, 255)
+                image_blank = Image.new("L", image_popped.size, 255)
                 image_remain.paste(image_blank, (left, upper))
 
             inode_pop = copy(inode)
-            inode_pop.image = image_pop
+            inode_pop.image = image_popped
 
             inode_pop.transform.pre_translate(left, upper)
 
@@ -1375,7 +1532,7 @@ def plugin(kernel, lifecycle=None):
             update_image_node(inode)
         return "image", data
 
-    @context.console_option("minimal", "m", type=int, help=_("minimal area"), default=2)
+    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
     @context.console_option(
         "outer",
         "o",
@@ -1431,11 +1588,24 @@ def plugin(kernel, lifecycle=None):
         post=None,
         **kwargs,
     ):
+        def org_bounds(node):
+            image_width, image_height = node.image.size
+            matrix = node.matrix
+            x0, y0 = matrix.point_in_matrix_space((0, 0))
+            x1, y1 = matrix.point_in_matrix_space((image_width - 1, image_height - 1))
+            x2, y2 = matrix.point_in_matrix_space((0, image_height - 1))
+            x3, y3 = matrix.point_in_matrix_space((image_width - 1, 0))
+            return (
+                min(x0, x1, x2, x3),
+                min(y0, y1, y2, y3),
+                max(x0, x1, x2, x3),
+                max(y0, y1, y2, y3),
+            )
+
         try:
             import cv2
-            import numpy as np
         except ImportError:
-            channel("Either cv2 or numpy weren't installed")
+            channel("cv2 wasn't installed")
             return
         # from PIL import Image
         if data is None:
@@ -1467,7 +1637,7 @@ def plugin(kernel, lifecycle=None):
                 continue
             if not hasattr(inode, "bounds"):
                 continue
-            bb = inode.bounds
+            bb = org_bounds(inode)
             ox = bb[0]
             oy = bb[1]
             coord_width = bb[2] - bb[0]
@@ -1494,12 +1664,17 @@ def plugin(kernel, lifecycle=None):
             # Filter contours based on area, rectangle of at least x%
 
             large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > minarea]
+            if len(large_contours) == 0:
+                channel(
+                    f"Could not identify any relevant white areas in the image '{inode.create_label('{desc}')}'"
+                )
+                continue
 
             # Create some rectangles around the white areas
             for contour in large_contours:
                 # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
                 x, y, w, h = cv2.boundingRect(contour)
-                rx, ry = getpoint(x, y)
+                # rx, ry = getpoint(x, y)
                 rw, rh = getpoint(w, h)
                 rw -= ox
                 rh -= oy
@@ -1617,7 +1792,7 @@ def plugin(kernel, lifecycle=None):
                 for idx1, c in enumerate(linecandidates):
                     if c[0] < 0:
                         continue
-                    cx = c[0] + c[1] / 2
+                    # cx = c[0] + c[1] / 2
                     for idx2, d in enumerate(linecandidates):
                         if idx1 == idx2 or d[0] < 0:
                             continue
@@ -1669,7 +1844,7 @@ def plugin(kernel, lifecycle=None):
                         # print(f"Erasing right: {dx}:{rwidth}")
                     newnode = copy(inode)
                     newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                     )
                     # newnode.dither = False
                     # newnode.operations.clear()
@@ -1691,7 +1866,7 @@ def plugin(kernel, lifecycle=None):
                     anyslices += 1
                     newnode = copy(inode)
                     newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                     )
                     # newnode.dither = False
                     # newnode.operations.clear()
@@ -1715,6 +1890,175 @@ def plugin(kernel, lifecycle=None):
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
 
+    @context.console_option("threshold", "t", type=float, help=_("Threshold for simplification"), default=0.25)
+    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
+    @context.console_option(
+        "inner",
+        "i",
+        type=bool,
+        help=_("Ignore inner areas"),
+        action="store_true",
+    )
+    @context.console_option(
+        "dontinvert",
+        "d",
+        type=bool,
+        help=_("Do not invert the image"),
+        action="store_true",
+    )
+    @context.console_option(
+        "rectangles",
+        "r",
+        type=bool,
+        help=_("Create minimum-area bounding rectangle instead of the contour"),
+        action="store_true",
+    )
+    @context.console_option(
+        "simplified",
+        "s",
+        type=bool,
+        help=_("Use alternative simplification method"),
+        action="store_true",
+    )
+    @context.console_command(
+        "identify_contour",
+        help=_("identify contours in image"),
+        input_type=(None, "image"),
+        output_type="elements",
+    )
+    def image_contour(
+        command,
+        channel,
+        _,
+        minimal=None,
+        threshold=None,
+        simplified=False,
+        inner=False,
+        dontinvert=False,
+        rectangles=False,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        try:
+            import cv2
+            import PIL.ImageOps
+            import time
+        except ImportError:
+            channel("cv2/Pillow weren't installed")
+            return
+
+        t0 = time.perf_counter()
+        elements = context.elements
+        # from PIL import Image
+        if data is None:
+            data = list(e for e in elements.flat(emphasized=True) if e.type == "elem image")
+        if data is None or len(data) == 0:
+            channel(_("No images selected"))
+            return
+
+        ignoreinner = inner
+        if ignoreinner is None:
+            ignoreinner = False
+        if dontinvert is None:
+            dontinvert = False
+        if rectangles is None:
+            rectangles = False
+
+        if minimal is None:
+            minimal = 2
+        if minimal <= 0 or minimal > 100:
+            minimal = 2
+        maximal = 95
+
+        if threshold is None:
+            # We are on pixel level
+            threshold = 0.25
+        channel(f"Contouring: {minimal:.2f} <= area <= {maximal:.2f}, inverting: {'No' if dontinvert else 'Yes'}, threshold: {threshold:.2f}, inner: {'No' if ignoreinner else 'Yes'}")
+        data_out = list()
+
+        remembered_dithers = list()
+        for idx, inode in enumerate(data):
+            if inode.type != "elem image":
+                continue
+            if inode.dither:
+                remembered_dithers.append(inode)
+                inode.dither = False
+                inode.update(None)
+
+            # node_image = inode.image
+            node_image = inode.active_image
+            width, height = node_image.size
+            if width == 0 or height == 0:
+                continue
+            if not hasattr(inode, "bounds"):
+                continue
+            # Extract polygons from the image
+            if rectangles:
+                contours = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                msg = "Bounding"
+            else:
+                contours = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                msg = "Contour"
+            pidx = 0
+            for (geom, c_info) in contours:
+                pidx += 1
+                channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
+                if simplified:
+                    # Let's try Visvalingam line simplification
+                    geom = geom.simplify_geometry(threshold=threshold)
+                else:
+                    # Use Douglas-Peucker instead
+                    geom = geom.simplify(threshold)
+                geom.transform(inode.active_matrix)
+                node = context.elements.elem_branch.add(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    label=f"{msg} {idx+1}.{pidx}",
+                    type="elem path",
+                )
+                data_out.append(node)
+        for inode in remembered_dithers:
+            inode.dither = True
+            inode.update(None)
+
+        t_total_overall = time.perf_counter() - t0
+        channel(f"Done, created: {len(data_out)} contour elements >= {minimal}% (Total time: {t_total_overall:.2f} sec)")
+        post.append(context.elements.post_classify(data_out))
+        return "elements", data_out
+
+    @context.console_command(
+        "background",
+        help=_("use the image as bed background"),
+        input_type=(None, "image"),
+        output_type=None,
+    )
+    def image_background(
+        command,
+        channel,
+        _,
+        data=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(e for e in context.elements.flat(emphasized=True) if e.type == "elem image")
+        if len(data) == 0:
+            channel("No image provided")
+            return
+        image = None
+        for node in data:
+            if hasattr(node, "image"):
+                if node.image.mode == "I":
+                    continue
+                image = node.image.convert("L")
+                break
+        if image is None:
+            channel("No valid image provided")
+            return
+
+        width, height = image.size
+        newimage = image.convert("RGB")
+        context.signal("background", (width, height, newimage.tobytes()))
 
 class RasterScripts:
     """
@@ -2118,6 +2462,7 @@ class ImageLoader:
             raise BadFileError(
                 "Cannot load an .eps file without GhostScript installed"
             ) from e
+        elements_service._loading_cleared = True
         try:
             from PIL import ImageOps
 
@@ -2150,9 +2495,10 @@ class ImageLoader:
         element_branch = elements_service.get(type="branch elems")
         if context.create_image_group:
             file_node = element_branch.add(
-                type="file", label=os.path.basename(pathname)
+                type="file",
+                label=os.path.basename(pathname),
+                filepath=pathname,
             )
-            file_node.filepath = pathname
         else:
             file_node = element_branch
         n = file_node.add(
@@ -2162,6 +2508,24 @@ class ImageLoader:
             type="elem image",
             dpi=_dpi,
         )
+
+        context.setting(bool, "scale_oversized_images", True)
+        if context.scale_oversized_images:
+            bb = n.bbox()
+            sx = (bb[2] - bb[0]) / context.device.space.width
+            sy = (bb[3] - bb[1]) / context.device.space.height
+            if sx > 1 or sy > 1:
+                sx = max(sx, sy)
+                n.matrix.post_scale(1 / sx, 1 / sx)
+
+        context.setting(bool, "center_image_on_load", True)
+        if context.center_image_on_load:
+            bb = n.bbox()
+            dx = (context.device.space.width - (bb[2] - bb[0])) / 2
+            dy = (context.device.space.height - (bb[3] - bb[1])) / 2
+
+            n.matrix.post_translate(dx, dy)
+
         if context.create_image_group:
             file_node.focus()
         else:

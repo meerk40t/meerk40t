@@ -394,11 +394,9 @@ class GuideWidget(Widget):
         if not (is_x or is_y):
             return
 
-        value = 0
-        p = self.scene.context
+        # value = 0
         if self.scaled_conversion_x == 0:
             return
-        p = self.scene.context
         sx = 0
         sy = 0
         tick_distance_x = self.scene.pane.grid.tick_distance

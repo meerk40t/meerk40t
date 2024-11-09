@@ -18,14 +18,14 @@ IBzzzvRzzzvS1P
 ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
 """
 
-egv_image = """Document type : LHYMICRO-GL file
+egv_image="""Document type : LHYMICRO-GL file
 File version: 1.0.01
 Copyright: Unknown
 Creator-Software: MeerK40t v0.0.0-testing
 
 %0%0%0%0%
 IB067R091S1P
-IV1552121G002NLTS1EDnU|sB|oD|aU|qT|oD|iU|oB|oD|mU|qT|oD|sU|oB|oD|uU|oT|oD|yU|oB|oD054U|mT|oD054U|oB|oD058U|mT|oD058U|mB|oD058U|oT|oD062U|mB|oD062U|mT|oD062U|mB|oD062U|mT|oD062U|mB|oD062U|mT|oD062U|mB|qD058U|mT|oD058U|mB|oD058U|mT|qD054U|mB|oD054U|mT|qD|yU|mB|qD|uU|mT|qD|qU|mB|qD|mU|mT|qD|iU|mB|sD|aU|mT|uDlFNSE-
+IV1552121G002NLTS1EBbTDnUfBD|aUbTBbTD|iUbBD|mUbTBbTD|sUbBD|uTBbTD|yUbBD054TUbBbTD054UbBD058TUbBbTD058BD058TBbTD062BD062TUbBbTD062BD062TUbBbTD062BD062TUbBbTD062BbD058TUbBbTD058BD058TUbBTbBbTD054BD054TUbBTbBbTD|yBbD|uTUbBTbBbTD|qBbD|mTUbBTbBbTD|iBdD|aTUbBTfBbTDnFNSE-
 """
 
 egv_blank = """Document type : LHYMICRO-GL file
@@ -188,6 +188,7 @@ class TestDriverLihuiyu(unittest.TestCase):
             kernel()
         with open(file1) as f:
             data = f.read()
+            # print (f'egv_image="""{data}"""')
         self.assertEqual(data, egv_image)
 
 

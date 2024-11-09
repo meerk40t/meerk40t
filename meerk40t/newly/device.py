@@ -3,10 +3,12 @@ Newly Device
 """
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.units import Length
 from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class NewlyDevice(Service, Status):
@@ -105,6 +107,8 @@ class NewlyDevice(Service, Status):
         ]
         self.register_choices("newly-speedchart", choices)
 
+        self.register_choices("newly-effects", get_effect_choices(self))
+
         choices = [
             {
                 "attr": "label",
@@ -124,6 +128,7 @@ class NewlyDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
             },
@@ -135,8 +140,44 @@ class NewlyDevice(Service, Status):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": 0,
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
             },
             {
                 "attr": "home_corner",
@@ -242,6 +283,18 @@ class NewlyDevice(Service, Status):
                     "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
                 ),
                 "section": "_30_Output",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("newly", choices)
@@ -487,8 +540,49 @@ class NewlyDevice(Service, Status):
             },
         ]
         self.register_choices("newly-global", choices)
+
+        choices = [
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed",
+            },
+        ]
+        self.register_choices("coolant", choices)
+
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
+
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
+
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         self.state = 0
         self.view = View(
@@ -553,7 +647,7 @@ class NewlyDevice(Service, Status):
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -590,12 +684,12 @@ class NewlyDevice(Service, Status):
             self.spooler.command("disconnect", priority=1)
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
-        def usb_abort(command, channel, _, **kwargs):
+        def usb_abort(command, channel, _, **kwgs):
             self.spooler.command("abort_retry", priority=1)
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def newly_save(channel, _, filename, data=None, **kwargs):
+        def newly_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -645,7 +739,7 @@ class NewlyDevice(Service, Status):
             help=_("sends the newly move_frame command"),
             all_arguments_required=True,
         )
-        def move_rect(file_index, **kwargs):
+        def move_rect(file_index, **kwgs):
             try:
                 self.driver.connection.move_frame(file_index)
             except ConnectionRefusedError:
@@ -661,7 +755,7 @@ class NewlyDevice(Service, Status):
             help=_("sends the newly draw_frame command"),
             all_arguments_required=True,
         )
-        def draw_rect(file_index, **kwargs):
+        def draw_rect(file_index, **kwgs):
             try:
                 self.driver.connection.draw_frame(file_index)
             except ConnectionRefusedError:
@@ -677,7 +771,7 @@ class NewlyDevice(Service, Status):
             help=_("sends the file replay command"),
             all_arguments_required=True,
         )
-        def replay(file_index, **kwargs):
+        def replay(file_index, **kwgs):
             try:
                 self.driver.connection.replay(file_index)
             except ConnectionRefusedError:
@@ -707,13 +801,16 @@ class NewlyDevice(Service, Status):
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     @signal_listener("home_corner")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0
@@ -730,6 +827,7 @@ class NewlyDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
         self.view.transform(
@@ -754,3 +852,6 @@ class NewlyDevice(Service, Status):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)

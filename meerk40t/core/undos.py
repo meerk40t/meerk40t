@@ -71,9 +71,18 @@ class Undo:
             if len(self._undo_stack) == 0:
                 # Stack is entirely empty.
                 return False
-            self._undo_index -= 1
+            # print (f"Index: {self._undo_index} / {len(self._undo_stack)}")
+            to_be_restored = self._undo_index - 1     
+            if self._undo_index == len(self._undo_stack) - 1 and self._undo_stack[self._undo_index].message != "Last status":
+                # We store the current state
+                self._undo_stack.append(
+                    UndoState(self.tree.backup_tree(), message="Last status"),
+                )
+                self._undo_index = to_be_restored + 1
+            else:
+                self._undo_index = to_be_restored
             try:
-                undo = self._undo_stack[self._undo_index]
+                undo = self._undo_stack[to_be_restored]
             except IndexError:
                 # Invalid? Reset to bottom of stack
                 self._undo_index = 0
@@ -113,12 +122,35 @@ class Undo:
             q = "*" if i == self._undo_index else " "
             yield f"{q}{str(i).ljust(5)}: state {str(v)}"
 
+    def debug_me(self, index):
+        print (f"Wanted: {index}, stack-index: {self._undo_index} - stack-size: {len(self._undo_stack)}")
+        for idx, s in enumerate(self._undo_stack):
+            print (f"[{idx}]{'*' if idx==self._undo_index else ' '} {'#' if idx==index else ' '} {str(s)}")
+        for idx in range(len(self._undo_stack) + 4):
+            print (f"[{idx}]: undo-label: '{self.undo_string(idx, debug=False)}', redo-label: '{self.redo_string(idx, debug=False)}'")
+
+
+    def undo_string(self, *args, **kwargs):
+        idx = self._undo_index
+        if idx >= len(self._undo_stack):
+            idx = len(self._undo_stack) - 1
+        if idx <= 0 or len(self._undo_stack) == 0:
+            # At bottom of stack / empty stack
+            return ""
+        return str(self._undo_stack[idx])
+
     def has_undo(self, *args):
         if self._undo_index == 0:
             # At bottom of stack.
             return False
         # Stack is entirely empty.
-        return len(self._undo_stack) != 0
+        return len(self._undo_stack) > 0
+
+    def redo_string(self, *args, **kwargs):
+        idx = self._undo_index
+        if idx > len(self._undo_stack) - 2 or len(self._undo_stack) == 0:
+            return ""
+        return str(self._undo_stack[idx + 1])
 
     def has_redo(self, *args):
-        return self._undo_index < len(self._undo_stack) - 1
+        return self._undo_index < len(self._undo_stack) - 1 and (len(self._undo_stack) > 0)

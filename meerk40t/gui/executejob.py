@@ -5,7 +5,12 @@ from meerk40t.kernel import signal_listener
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
-from .wxutils import disable_window
+from .wxutils import (
+    disable_window, 
+    wxButton, 
+    wxComboBox,
+    wxListBox,
+)
 
 _ = wx.GetTranslation
 
@@ -16,6 +21,7 @@ class PlannerPanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.busy = False
 
         self.plan_name = plan_name
@@ -28,18 +34,18 @@ class PlannerPanel(wx.Panel):
                 break
         spools = [s.label for s in self.available_devices]
 
-        self.combo_device = wx.ComboBox(
+        self.combo_device = wxComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
-        self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
+        self.list_operations = wxListBox(self, wx.ID_ANY, choices=[])
+        self.list_command = wxListBox(self, wx.ID_ANY, choices=[])
 
         choices = self.context.lookup("choices/optimize")  # [:7]
         self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
-        self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
+        self.button_start = wxButton(self, wx.ID_ANY, _("Start"))
 
         self.__set_properties()
         self.__do_layout()
@@ -119,9 +125,7 @@ class PlannerPanel(wx.Panel):
         if node_index == -1:
             return
         cutplan = self.context.planner.default_plan
-        obj = cutplan.plan[node_index]
         self.context.open("window/Properties", self)
-        # self.context.kernel.activate_instance(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

@@ -90,6 +90,7 @@ class NewlyController:
         self.mode = "init"
         self.paused = False
         self._command_buffer = []
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __call__(self, cmd, *args, **kwargs):
         if isinstance(cmd, str):
@@ -190,7 +191,8 @@ class NewlyController:
         )
         x, y = self.service.view.iposition(self._last_x, self._last_y)
         self.sync()
-        self.service.signal("driver;position", (last_x, last_y, x, y))
+        if self._signal_updates:
+            self.service.signal("driver;position", (last_x, last_y, x, y))
 
     #######################
     # MODE SHIFTS
@@ -205,7 +207,7 @@ class NewlyController:
             return
         self._realtime = True
         self.mode = "realtime"
-        self(f"ZZZFile0")
+        self(f"ZZZFile{0}")
         self._clear_settings()
 
     def _clear_settings(self):
@@ -241,7 +243,7 @@ class NewlyController:
         """
         Move mode is done for any major movements usually starting out an execution.
 
-        eg.
+        e.g.
         VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
         @return:
         """
@@ -265,7 +267,7 @@ class NewlyController:
         Goto mode is done for minor between movements, where we don't need to set the power to 0, since we will be
         using PU; commands.
 
-        eg.
+        e.g.
         SP2;SP2;VQ15;VJ24;VS10;PR;PU2083,-5494;
 
         @return:
@@ -278,7 +280,7 @@ class NewlyController:
     def _set_frame_mode(self):
         """
         Frame mode is the standard framing operation settings.
-        eg.
+        e.g.
         SP0;VS20;PR;PD9891,0;PD0,-19704;PD-9891,0;PD0,19704;ZED;
 
         @return:
@@ -298,7 +300,7 @@ class NewlyController:
         """
         Vector mode typically is just the PD commands for a vector.
 
-        eg.
+        e.g.
         PR;SP1;DA65;VS187;PD0,-2534;PD1099,0;PD0,2534;PD-1099,0;
         @return:
         """
@@ -346,7 +348,7 @@ class NewlyController:
             for pt in outline:
                 self.frame(*pt)
             self.frame(*outline[0])
-            self.goto(x, y)  # Return to initial x, y if different than outline.
+            self.goto(x, y)  # Return to initial x, y if different from outline.
             self._clear_settings()
             self("ZED")
 
@@ -354,8 +356,11 @@ class NewlyController:
         self.service.laser_status = "active"
         self("ZED")
         cmd = b";".join(self._command_buffer) + b";"
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=cmd)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=cmd)
+        except ConnectionError:
+            pass
         self._command_buffer.clear()
         self._clear_settings()
         self.service.laser_status = "idle"
@@ -569,8 +574,11 @@ class NewlyController:
 
     def raw(self, data):
         data = bytes(data, "latin1")
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=data)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=data)
+        except ConnectionError:
+            return
 
     def frame(self, x, y):
         self._set_frame_mode()

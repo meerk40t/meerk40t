@@ -230,7 +230,7 @@ class SceneSpaceWidget(Widget):
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
             self.scene.request_refresh()
-        return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
 
     def set_view(self, x, y, w, h, preserve_aspect=None):
         self._view = Viewbox(f"{x} {y} {w} {h}", preserve_aspect)
@@ -322,7 +322,7 @@ class SceneSpaceWidget(Widget):
 class SceneAnimateMatrix:
     def __init__(self, widget):
         self.widget = widget
-        self.tick_max = 10
+        self.tick_max = 5
         self.tick_index = 0
         self._from_matrix = None
         self._to_matrix = None

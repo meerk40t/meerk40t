@@ -3,7 +3,6 @@ import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import ScrolledPanel
 
-from ...core.units import Length
 from ..balor_params import Parameters
 
 _ = wx.GetTranslation
@@ -16,6 +15,7 @@ class BalorOperationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("baloroperation")
         self.parent = args[0]
         self.operation = node

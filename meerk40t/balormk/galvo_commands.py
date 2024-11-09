@@ -3,8 +3,8 @@ import re
 import struct
 import time
 
+from usb.core import NoBackendError
 from meerk40t.balormk.driver import BalorDriver
-from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
@@ -68,15 +68,17 @@ def plugin(service, lifecycle):
         if data is None:
             channel("Nothing sent")
             return
-        service.job = ElementLightJob(
+        service.job = LiveLightJob(
             service,
-            data,
+            mode="geometry",
+            geometry=data,
             travel_speed=travel_speed,
             jump_delay=jump_delay,
-            simulation_speed=simulation_speed,
             quantization=quantization,
-            simulate=bool(command != "light"),
+            listen=False,
         )
+        if command != "light":
+            service.job.set_travel_speed(simulation_speed)
         service.spooler.send(service.job)
 
     @service.console_command("select-light", help=_("Execute selection light idle job"))
@@ -97,14 +99,14 @@ def plugin(service, lifecycle):
         service.job = LiveLightJob(service)
         service.spooler.send(service.job)
 
-    @service.console_command(
-        "regmark-light", help=_("Execute regmark live light idle job")
-    )
-    def reg_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="regmarks")
-        service.spooler.send(service.job)
+    # @service.console_command(
+    #     "regmark-light", help=_("Execute regmark live light idle job")
+    # )
+    # def reg_light(**kwargs):
+    #     if service.job is not None:
+    #         service.job.stop()
+    #     service.job = LiveLightJob(service, mode="regmarks")
+    #     service.spooler.send(service.job)
 
     @service.console_command("hull-light", help=_("Execute convex hull light idle job"))
     def hull_light(**kwargs):
@@ -148,7 +150,7 @@ def plugin(service, lifecycle):
             return
         xmin, ymin, xmax, ymax = bounds
         channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
+        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymax - ymin)
         if count > 1:
             geometry.copies(count)
         return "geometry", geometry
@@ -373,8 +375,11 @@ def plugin(service, lifecycle):
                             )
                             if v[0] == 0x8002:
                                 break
-
-                driver.connection.connect_if_needed()
+                try:
+                    driver.connection.connect_if_needed()
+                except (ConnectionRefusedError, NoBackendError):
+                    channel("Could not connect to Galvo")
+                    return
                 driver.connection.connection.write = write
                 job.execute()
 
@@ -713,15 +718,17 @@ def plugin(service, lifecycle):
     def galvo_on(command, channel, _, off=None, remainder=None, **kwgs):
         try:
             if off == "off":
-                reply = service.driver.connection.light_off()
+                service.driver.connection.light_off()
                 service.driver.connection.write_port()
                 service.redlight_preferred = False
                 channel("Turning off redlight.")
+                service.signal("red_dot", False)
             else:
-                reply = service.driver.connection.light_on()
+                service.driver.connection.light_on()
                 service.driver.connection.write_port()
                 channel("Turning on redlight.")
                 service.redlight_preferred = True
+                service.signal("red_dot", True)
         except ConnectionRefusedError:
             service.signal(
                 "warning",
@@ -748,7 +755,7 @@ def plugin(service, lifecycle):
             channel(f"Using default corfile: {filename}")
         if filename is None:
             service.driver.connection.write_correction_file(None)
-            channel(f"Force set corrections to blank.")
+            channel("Force set corrections to blank.")
         else:
             from os.path import exists
 

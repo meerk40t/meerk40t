@@ -45,6 +45,7 @@ class ElementsWidget(Widget):
                 draw_mode,
                 zoomscale=zoom_scale,
                 alpha=32,
+                msg="regmarks unselected",
             )
             self.renderer.render(
                 context.elements.regmarks_nodes(selected=True),
@@ -52,6 +53,7 @@ class ElementsWidget(Widget):
                 draw_mode,
                 zoomscale=zoom_scale,
                 alpha=64,
+                msg="regmarks selected",
             )
             # Slightly more prominent - alpha 96
             self.renderer.render(
@@ -60,6 +62,7 @@ class ElementsWidget(Widget):
                 draw_mode,
                 zoomscale=zoom_scale,
                 alpha=96,
+                msg="placement node",
             )
         if self.scene.pane.tool_container.mode == "vertex":
             draw_mode |= DRAW_MODE_EDIT
@@ -68,6 +71,7 @@ class ElementsWidget(Widget):
             gc,
             draw_mode,
             zoomscale=zoom_scale,
+            msg="elements",
         )
 
     def event(
@@ -91,7 +95,7 @@ class ElementsWidget(Widget):
         if event_type == "rightdown" and empty_or_right:
             if not self.scene.pane.tool_active:
                 if self.scene.pane.active_tool != "none":
-                    self.scene.context("tool none")
+                    self.scene.context("tool none\n")
                     return RESPONSE_CONSUME
                 else:
                     self.scene.context.signal("scene_right_click")

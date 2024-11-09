@@ -1,5 +1,27 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains a collection of console commands that manage and implement the elements system related to tracing shapes.
+It provides functionalities for calculating minimum enclosing circles, generating hull shapes, and tracing elements based on various methods.
+
+Functions:
+- plugin: Initializes the console commands for the trace system.
+- dist: Calculates the Euclidean distance between two points.
+- is_inside: Checks if a point lies inside or on the boundary of a circle.
+- get_circle_center: Computes the center of a circle defined by three points.
+- circle_from1: Returns the smallest circle that intersects two points.
+- circle_from2: Returns a unique circle that intersects three points.
+- is_valid_circle: Checks if a circle encloses a given set of points.
+- min_circle_trivial: Returns the minimum enclosing circle for up to three points.
+- welzl_helper: Implements Welzl's algorithm to find the minimum enclosing circle.
+- welzl: Finds the minimum enclosing circle using a randomized approach.
+- generate_hull_shape_segment: Generates a hull shape segment from the provided data.
+- generate_hull_shape_quick: Quickly generates a bounding box for the provided data.
+- generate_hull_shape_hull: Generates a convex hull shape from the provided data.
+- generate_hull_shape_circle_data: Computes the minimum enclosing circle for the provided data.
+- generate_hull_shape_circle: Generates a circular hull shape based on the minimum enclosing circle.
+- init_commands: Sets up the console commands related to tracing operations.
+- trace_trace_spooler: Traces the given elements using a specified method.
+- trace_trace_generator: Creates a trace around the given elements based on a specified method.
+
 """
 
 from math import cos, isinf, sin, sqrt, tau
@@ -7,7 +29,7 @@ from random import randint, shuffle
 
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Circle, Path, Point, Polyline
-
+from meerk40t.tools.geomstr import Geomstr
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -245,34 +267,58 @@ def generate_hull_shape_quick(data):
 
 
 def generate_hull_shape_hull(data):
-    pts = []
+    # pts = []
+    # for node in data:
+    #     if hasattr(node, "convex_hull"):
+    #         ghull = node.convex_hull()
+    #         if ghull is not None:
+    #             for pt in ghull.as_points():
+    #                 pts.append((pt.real, pt.imag))
+    #             continue
+    #     try:
+    #         path = node.as_path()
+    #         p = path.first_point
+    #         if p is None:
+    #             continue
+    #         pts.append(p)
+    #         for segment in path:
+    #             pts.append(segment.end)
+    #         pts.append(p)
+    #     except AttributeError:
+    #         bounds = node.bounds
+    #         if bounds:
+    #             pts.extend(
+    #                 [
+    #                     (bounds[0], bounds[1]),
+    #                     (bounds[0], bounds[3]),
+    #                     (bounds[2], bounds[1]),
+    #                     (bounds[2], bounds[3]),
+    #                 ]
+    #             )
+    # hull = list(Point.convex_hull(pts))
+    geometry = Geomstr()
     for node in data:
         try:
-            path = node.as_path()
-            p = path.first_point
-            if p is None:
-                continue
-            pts.append(p)
-            for segment in path:
-                pts.append(segment.end)
-            pts.append(p)
+            e = None
+            if hasattr(node, "convex_hull"):
+                e = node.convex_hull()
+            if e is None:
+                e = node.as_geometry()
         except AttributeError:
-            bounds = node.bounds
-            if bounds:
-                pts.extend(
-                    [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-                )
-    hull = list(Point.convex_hull(pts))
-    if len(hull) != 0:
-        hull.append(hull[0])  # loop
-    return hull
+            continue
+        geometry.append(e)
 
+    # Convert to hull.
+    resolution = float(Length("1mm"))
+    hull = Geomstr.hull(geometry, distance=int(resolution))
+    # cpts = list(hull.as_points())
+    pts = list((p.real, p.imag) for p in hull.as_points())
+    if len(pts) != 0:
+        pts.append(pts[0])  # loop
+    return pts
 
+"""
+There is no need for shape_complex any more as the regular hull routine already uses interpolation
 def generate_hull_shape_complex(data, resolution=None):
     if resolution is None:
         resolution = 500  # How coarse / fine shall a subpath be split
@@ -308,7 +354,7 @@ def generate_hull_shape_complex(data, resolution=None):
     if len(hull) != 0:
         hull.append(hull[0])  # loop
     return hull
-
+"""
 
 def generate_hull_shape_circle_data(data):
     pts = []
@@ -391,7 +437,7 @@ def init_commands(kernel):
 
     @self.console_argument(
         "method",
-        help=_("Method to use (one of quick, hull, complex, segment, circle)"),
+        help=_("Method to use (one of quick, hull, segment, circle)"),
     )
     @self.console_argument("resolution")
     @self.console_option(
@@ -428,10 +474,10 @@ def init_commands(kernel):
         if force is None:
             force = False
         method = method.lower()
-        if method not in ("segment", "quick", "hull", "complex", "circle"):
+        if method not in ("segment", "quick", "hull", "circle"):
             channel(
                 _(
-                    "Invalid method, please use one of quick, hull, complex, segment, circle."
+                    "Invalid method, please use one of quick, hull, segment, circle."
                 )
             )
             return
@@ -480,14 +526,14 @@ def init_commands(kernel):
             hull = generate_hull_shape_quick(target_data)
         elif method == "hull":
             hull = generate_hull_shape_hull(target_data)
-        elif method == "complex":
-            hull = generate_hull_shape_complex(target_data, resolution)
+        # elif method == "complex":
+        #     hull = generate_hull_shape_complex(target_data, resolution)
         elif method == "circle":
             hull = generate_hull_shape_circle(target_data)
         else:
             raise ValueError
         if start is None:
-            # Lets take system default
+            # Let's take system default
             start = self.trace_start_method
         if start < 0 or start > 2:
             start = 0
@@ -526,7 +572,7 @@ def init_commands(kernel):
 
     @self.console_argument(
         "method",
-        help=_("Method to use (one of quick, hull, complex, segment, circle)"),
+        help=_("Method to use (one of quick, hull, segment, circle)"),
     )
     @self.console_argument(
         "resolution", help=_("Resolution for complex slicing, default=500")
@@ -550,10 +596,10 @@ def init_commands(kernel):
         if method is None:
             method = "quick"
         method = method.lower()
-        if not method in ("segment", "quick", "hull", "complex", "circle"):
+        if not method in ("segment", "quick", "hull", "circle"):
             channel(
                 _(
-                    "Invalid method, please use one of quick, hull, complex, segment, circle."
+                    "Invalid method, please use one of quick, hull, segment, circle."
                 )
             )
             return
@@ -570,8 +616,8 @@ def init_commands(kernel):
             hull = generate_hull_shape_quick(data)
         elif method == "hull":
             hull = generate_hull_shape_hull(data)
-        elif method == "complex":
-            hull = generate_hull_shape_complex(data, resolution)
+        # elif method == "complex":
+        #     hull = generate_hull_shape_complex(data, resolution)
         elif method == "circle":
             shape_type = "elem ellipse"
             s_center, s_radius = generate_hull_shape_circle_data(data)

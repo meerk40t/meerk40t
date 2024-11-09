@@ -226,7 +226,11 @@ class GcodeJob:
 
     def write_blob(self, data):
         self.write_all(
-            [r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()]
+            [
+                r
+                for r in re.split("[\n|\r]", data.decode("utf-8", errors="ignore"))
+                if r.strip()
+            ]
         )
 
     def execute(self, driver=None):
@@ -269,12 +273,10 @@ class GcodeJob:
         """
         How long is this job already running...
         """
-        result = 0
         if self.is_running():
-            result = time.time() - self.time_started
+            return time.time() - self.time_started
         else:
-            result = self.runtime
-        return result
+            return self.runtime
 
     def estimate_time(self):
         """
@@ -361,19 +363,19 @@ class GcodeJob:
                     self.program_mode = False
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
-                    pass
+                    self._driver.service.kernel.root.coolant.coolant_on(
+                        self._driver.service
+                    )
                 elif v == 8:
                     # Coolant Control: Flood coolant On
-                    try:
-                        self._driver.signal("coolant", True)
-                    except AttributeError:
-                        pass
+                    self._driver.service.kernel.root.coolant.coolant_on(
+                        self._driver.service
+                    )
                 elif v == 9:
                     # Coolant Control: Flood coolant Off
-                    try:
-                        self._driver.signal("coolant", False)
-                    except AttributeError:
-                        pass
+                    self._driver.service.kernel.root.coolant.coolant_off(
+                        self._driver.service
+                    )
                 elif v == 56:
                     # Parking motion override control.
                     pass
@@ -690,6 +692,8 @@ class GcodeJob:
         if matrix is None:
             # Using job for something other than point plotting
             return
+        if power is None:
+            power = 1000
         power = min(1000, power)
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])

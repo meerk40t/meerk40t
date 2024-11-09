@@ -106,7 +106,6 @@ class Parameters:
         for v in settings:
             if v in COLOR_PARAMETERS:
                 settings[v] = Color(settings[v])
-                continue
             elif v in FLOAT_PARAMETERS:
                 settings[v] = float(settings[v])
             elif v in INT_PARAMETERS:
@@ -156,18 +155,18 @@ class Parameters:
         color = self.settings.get("color")
         if color is None:
             try:
-                type = self.type
+                _type = self.type
             except AttributeError:
-                type = None
-            if type == "op cut":
+                _type = None
+            if _type == "op cut":
                 return Color("red")
-            elif type == "op engrave":
+            elif _type == "op engrave":
                 return Color("blue")
-            elif type == "op raster":
+            elif _type == "op raster":
                 return Color("black")
-            elif type == "op image":
+            elif _type == "op image":
                 return Color("transparent")
-            elif type == "op dots":
+            elif _type == "op dots":
                 return Color("transparent")
             else:
                 return Color("white")
@@ -270,18 +269,18 @@ class Parameters:
         speed = self.settings.get("speed")
         if speed is None:
             try:
-                type = self.type
+                _type = self.type
             except AttributeError:
-                type = None
-            if type == "op cut":
+                _type = None
+            if _type == "op cut":
                 return 10.0
-            elif type == "op engrave":
+            elif _type == "op engrave":
                 return 35.0
-            elif type == "op raster":
+            elif _type == "op raster":
                 return 150.0
-            elif type == "op image":
+            elif _type == "op image":
                 return 150.0
-            elif type == "op dots":
+            elif _type == "op dots":
                 return 35.0
             else:
                 return 10.0
@@ -442,6 +441,19 @@ class Parameters:
     def kerf(self, value):
         self.settings["kerf"] = value
         self.__dict__["kerf"] = value
+
+    #####################
+    # ZAXIS PROPERTIES
+    #####################
+
+    @property
+    def zaxis(self):
+        return self.settings.get("zaxis")
+
+    @zaxis.setter
+    def zaxis(self, value):
+        self.settings["zaxis"] = value
+        self.__dict__["zaxis"] = value
 
     #####################
     # HATCH PROPERTIES

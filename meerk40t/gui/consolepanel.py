@@ -7,6 +7,7 @@ from wx import aui
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.gui.wxutils import TextCtrl
 
 try:
     from wx import richtext
@@ -102,6 +103,61 @@ def register_panel_console(window, context):
             w = context.opened["pane/console"]
             w.control.clear()
 
+    @context.console_option("reset", "r", type=bool, action="store_true")
+    @context.console_command(
+        ("console_font"),
+        help=_("Sets the console font"),
+    )
+    def set_console_font(channel, _, reset=False, *args, **kwargs):
+        def getfont(initial):
+            result = ""
+            data = wx.FontData()
+            data.EnableEffects(True)
+            cur_font = None
+            if initial:
+                try:
+                    cur_font = wx.Font()
+                    success = cur_font.SetNativeFontInfo(initial)
+                    if not success:
+                        cur_font = None
+                except Exception:
+                    pass
+            if cur_font is None:
+                cur_font = wx.Font(
+                10,
+                wx.FONTFAMILY_TELETYPE,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+            data.SetInitialFont(cur_font)
+
+            dlg = wx.FontDialog(window, data)
+
+            if dlg.ShowModal() == wx.ID_OK:
+                data = dlg.GetFontData()
+                font = data.GetChosenFont()
+                result = font.GetNativeFontInfoDesc()
+
+            # Don't destroy the dialog until you get everything you need from the
+            # dialog!
+            dlg.Destroy()
+            return result
+
+        current = context.setting(str, "console_font", "")
+        if reset:
+            context.console_font = ""
+        else:
+            # Show Fontdialog
+            result = getfont(current)
+            context.console_font = result
+        if "window/Console" in context.opened:
+            w = context.opened["window/Console"]
+            w.panel.reset_font()
+        if "pane/console" in context.opened:
+            w = context.opened["pane/console"]
+            w.control.reset_font()
+        channel(_("Font has been changed"))
+
 
 class ConsolePanel(wx.ScrolledWindow):
     def __init__(self, *args, context=None, **kwargs):
@@ -109,16 +165,13 @@ class ConsolePanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("notes")
-        font = wx.Font(
-            10,
-            wx.FONTFAMILY_TELETYPE,
-            wx.FONTSTYLE_NORMAL,
-            wx.FONTWEIGHT_NORMAL,
-        )
-        self.text_entry = wx.TextCtrl(
+        font = self.get_font()
+        self.text_entry = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
+        self.richtext = False
 
         try:
             self.text_main = richtext.RichTextCtrl(
@@ -160,9 +213,10 @@ class ConsolePanel(wx.ScrolledWindow):
             self.style = style
             self.text_main.Update()  # Apply style to just opened window
             self._update_text = self.update_text_rich
+            self.richtext = True
 
         except NameError:
-            self.text_main = wx.TextCtrl(
+            self.text_main = TextCtrl(
                 self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
             )
             self.text_main.SetFont(font)
@@ -209,12 +263,51 @@ class ConsolePanel(wx.ScrolledWindow):
         }
         self._buffer = ""
         self._buffer_lock = threading.Lock()
+        self.command_list = list(self.context.kernel.match("command/.*/.*"))
+        self.command_list.sort()
+        self.command_context = list()
+        for command_name in self.command_list:
+            parts = command_name.split("/")
+            context_item = parts[1]
+            if context_item != "None" and context_item not in self.command_context:
+                self.command_context.append(context_item)
+
+    def get_font(self):
+        font = None
+        fontdesc = self.context.setting(str, "console_font", "")
+        if fontdesc:
+            # print (f"Try fontdesc: {fontdesc}")
+            try:
+                font = wx.Font(fontdesc)
+            except Exception as e:
+                # print (e)
+                font = None
+        if font is None:
+            font = wx.Font(
+                10,
+                wx.FONTFAMILY_TELETYPE,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        return font
+
+    def reset_font(self):
+        font = self.get_font()
+        if self.richtext:
+            self.style.SetFont(font)
+            self.text_main.SetBasicStyle(self.style)
+            self.text_main.SetDefaultStyle(self.style)
+            self.text_main.Update()
+        else:
+            self.text_main.SetFont(font)
+        self.Refresh()
 
     def style_normal(self, style):
         return self.style
 
     def background_color(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        return self.context.themes.get("win_bg")
+        # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
 
     @property
     def is_dark(self):
@@ -430,6 +523,63 @@ class ConsolePanel(wx.ScrolledWindow):
                 else:
                     self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
+            elif key == wx.WXK_TAB:
+                # Let's try some autocompletion or at least show possible candidates
+                content = self.text_entry.GetValue()
+                words = content.split(" ")
+                if len(words):
+                    short_check = words[0]
+                    context_str = ""
+                    if len(short_check):
+                        if len(words) > 1 and short_check in self.command_context:
+                            context_str = short_check + " "
+                            short_check = words[1]
+                        long_check = context_str + short_check
+                        full_match = False
+                        found = 0
+                        candidate = ""
+                        for command_name in self.command_list:
+                            parts = command_name.split("/")
+                            command_item = parts[2]
+                            full_item = command_item
+                            if parts[1] != "None":
+                                full_item = parts[1] + " " + full_item
+                            # print (f"Compare {s} to {command_item}")
+                            if context_str == "":
+                                if command_item == short_check:
+                                    candidate = command_item
+                                    full_match = True
+                                elif short_check in command_item:
+                                    candidate = command_item
+                                    found += 1
+                            else:
+                                if full_item == long_check:
+                                    candidate = command_item
+                                    full_match = True
+                                elif long_check in full_item:
+                                    candidate = command_item
+                                    found += 1
+                        self.context(f"?? {long_check}\n")
+                        if full_match or found == 1:
+                            self.context(f"help {candidate}\n")
+                        if found == 0 and context_str == "":
+                            context_candidate = ""
+                            for context_name in self.command_context:
+                                if context_name.startswith(short_check):
+                                    found += 1
+                                    context_candidate = context_name
+                            # Only set if we did not provide  parameters already
+                            if found == 1 and len(words) == 1:
+                                self.text_entry.SetValue(f"{context_candidate} ")
+                                self.text_entry.SetInsertionPointEnd()
+                        elif found == 1:
+                            # Only set if we did not provide  parameters already
+                            if len(words) == 1 or (
+                                len(words) == 2 and context_str != ""
+                            ):
+                                self.text_entry.SetValue(f"{context_str}{candidate}")
+                                self.text_entry.SetInsertionPointEnd()
+                # We are consuming the key...
             else:
                 event.Skip()
         except IndexError:
@@ -462,23 +612,23 @@ class ConsolePanel(wx.ScrolledWindow):
             pass
 
     def load_log(self):
-        def tail(f, window=1):
+        def tail(fs, window=1):
             """
             Returns the last `window` lines of file `f` as a list of bytes.
             """
             if window == 0:
                 return b""
             BUFSIZE = 1024
-            f.seek(0, 2)
-            end = f.tell()
+            fs.seek(0, 2)
+            end = fs.tell()
             nlines = window + 1
             data = []
             while nlines > 0 and end > 0:
                 i = max(0, end - BUFSIZE)
                 nread = min(end, BUFSIZE)
 
-                f.seek(i)
-                chunk = f.read(nread)
+                fs.seek(i)
+                chunk = fs.read(nread)
                 data.append(chunk)
                 nlines -= chunk.count(b"\n")
                 end -= nread
@@ -497,7 +647,9 @@ class ConsolePanel(wx.ScrolledWindow):
             result = []
             try:
                 with open(fname, "rb") as f:
-                    result = tail(f, 3 * limit).decode("utf-8").splitlines()
+                    result = (
+                        tail(f, 3 * limit).decode("utf-8", errors="ignore").splitlines()
+                    )
             except (PermissionError, OSError):
                 # Could not load
                 pass

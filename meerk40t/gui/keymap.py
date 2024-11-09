@@ -4,7 +4,7 @@ import wx
 
 from .icons import icons8_keyboard
 from .mwindow import MWindow
-from .wxutils import get_key_name
+from .wxutils import get_key_name, wxButton, wxListCtrl, TextCtrl
 
 _ = wx.GetTranslation
 
@@ -15,16 +15,18 @@ class KeymapPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.list_index = []
 
-        self.list_keymap = wx.ListCtrl(
+        self.list_keymap = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES,
+            context=self.context, list_name="list_keymap",
         )
-        self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
-        self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_command_name = wx.TextCtrl(
+        self.button_add = wxButton(self, wx.ID_ANY, _("Add Hotkey"))
+        self.text_key_name = TextCtrl(self, wx.ID_ANY, "")
+        self.text_command_name = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
 
@@ -47,9 +49,10 @@ class KeymapPanel(wx.Panel):
     def pane_show(self):
         self.reload_keymap()
         self.Children[0].SetFocus()
+        self.list_keymap.load_column_widths()
 
     def pane_hide(self):
-        pass
+        self.list_keymap.save_column_widths()
 
     def __set_properties(self):
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
@@ -57,6 +60,7 @@ class KeymapPanel(wx.Panel):
         self.list_keymap.AppendColumn(
             _("Command"), format=wx.LIST_FORMAT_LEFT, width=322
         )
+        self.list_keymap.resize_columns()
         self.button_add.SetToolTip(_("Add a new hotkey"))
         # end wxGlade
 

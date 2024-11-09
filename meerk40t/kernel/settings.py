@@ -21,11 +21,13 @@ class Settings:
     """
 
     def __init__(self, directory, filename, ignore_settings=False, create_backup=False):
-        self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
-            filename
-        )
+        if directory:
+            self._config_file = Path(get_safe_path(directory, create=True)).joinpath(filename)
+        else:
+            self._config_file = filename
         self._config_dict = {}
         self.create_backup = create_backup
+        self.prevent_persisting = False
         if not ignore_settings:
             self.read_configuration()
 
@@ -68,6 +70,8 @@ class Settings:
         This uses the python ConfigParser to save data from the _config_dict.
         @return:
         """
+        if self.prevent_persisting:
+            return
         if targetfile is None:
             targetfile = self._config_file
         try:
@@ -109,7 +113,7 @@ class Settings:
                     RuntimeError,
                     FileExistsError,
                     FileNotFoundError,
-                ) as e:
+                ):
                     # print (f"Error happened: {e}")
                     pass
             with open(targetfile, "w", encoding="utf-8") as fp:

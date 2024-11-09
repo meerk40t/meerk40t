@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length
+from meerk40t.core.units import UNITS_PER_MIL, Length
 from meerk40t.core.view import View
 
 

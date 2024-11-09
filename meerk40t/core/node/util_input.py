@@ -1,5 +1,5 @@
 from meerk40t.core.cutcode.inputcut import InputCut
-from meerk40t.core.elements.element_types import *
+from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.core.node.node import Node
 
 
@@ -76,18 +76,18 @@ class InputOperation(Node):
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Move operation to a different position.
+        return bool(drag_node.type in op_nodes)
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an op node - irrelevant for others...
         drop_node = self
-        if drag_node.type in op_nodes:
-            if modify:
-                drop_node.insert_sibling(drag_node)
-            return True
-        elif drop_node.type == "branch ops":
-            # Dragging operation to op branch to effectively move to bottom.
-            if modify:
-                drop_node.append_child(drag_node)
-            return True
-        return False
+        if not self.can_drop(drag_node):
+            return False
+        if modify:
+            drop_node.insert_sibling(drag_node)
+        return True
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -97,6 +97,6 @@ class InputOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        input = InputCut(self.input_mask, self.input_value, self.input_message)
-        input.original_op = self.type
-        yield input
+        _input = InputCut(self.input_mask, self.input_value, self.input_message)
+        _input.original_op = self.type
+        yield _input

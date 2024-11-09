@@ -5,6 +5,7 @@ The Driver has a set of different commands which are standardly sent and utilize
 driver.
 """
 import time
+from usb.core import NoBackendError
 
 from meerk40t.balormk.controller import GalvoController
 from meerk40t.core.cutcode.cubiccut import CubicCut
@@ -40,6 +41,8 @@ class BalorDriver:
         self._shutdown = False
 
         self.queue = list()
+        self._queue_current = 0
+        self._queue_total = 0
         self.plot_planner = PlotPlanner(
             dict(), single=True, ppi=False, shift=False, group=True
         )
@@ -64,7 +67,10 @@ class BalorDriver:
         self._shutdown = True
 
     def connect(self):
-        self.connection.connect_if_needed()
+        try:
+            self.connection.connect_if_needed()
+        except (ConnectionRefusedError, NoBackendError):
+            return
 
     def disconnect(self):
         self.connection.disconnect()
@@ -88,6 +94,13 @@ class BalorDriver:
         @return:
         """
         return priority <= 0 and self.paused
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     def get(self, key, default=None):
         """
@@ -144,6 +157,7 @@ class BalorDriver:
 
         @return:
         """
+        self.service.laser_status = "active"
         con = self.connection
         con._light_speed = None
         con._dark_speed = None
@@ -154,9 +168,7 @@ class BalorDriver:
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             con.set_settings(sets)
             # LOOP CHECKS
-            if self._aborting:
-                con.abort()
-                self._aborting = False
+            if self._abort_mission():
                 return
             if segment_type == "line":
                 last_x, last_y = con.get_last_xy()
@@ -177,9 +189,7 @@ class BalorDriver:
                 g.quad(start, c1, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -195,9 +205,7 @@ class BalorDriver:
                 g.cubic(start, c1, c2, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -213,9 +221,7 @@ class BalorDriver:
                 g.arc(start, c1, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -259,6 +265,7 @@ class BalorDriver:
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()
+        self.service.laser_status = "idle"
 
         if self.service.redlight_preferred:
             con.light_on()
@@ -308,7 +315,9 @@ class BalorDriver:
 
         @return:
         """
+
         # preprocess queue to establish steps
+        self.service.laser_status = "active"
         con = self.connection
         con._light_speed = None
         con._dark_speed = None
@@ -318,7 +327,11 @@ class BalorDriver:
         last_on = None
         queue = self.queue
         self.queue = list()
+        total = len(queue)
+        current = 0
         for q in queue:
+            current += 1
+            self._set_queue_status(current, total)
             settings = q.settings
             penbox = settings.get("penbox_value")
             if penbox is not None:
@@ -328,9 +341,7 @@ class BalorDriver:
                     self.value_penbox = None
             con.set_settings(settings)
             # LOOP CHECKS
-            if self._aborting:
-                con.abort()
-                self._aborting = False
+            if self._abort_mission():
                 return
             if isinstance(q, LineCut):
                 last_x, last_y = con.get_last_xy()
@@ -349,9 +360,7 @@ class BalorDriver:
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -372,9 +381,7 @@ class BalorDriver:
                 )
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -386,9 +393,7 @@ class BalorDriver:
                     con.goto(x, y)
                 for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -452,9 +457,7 @@ class BalorDriver:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
+                    if self._abort_mission():
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -512,6 +515,8 @@ class BalorDriver:
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()
+        self.service.laser_status = "idle"
+        self._set_queue_status(0, 0)
 
         if self.service.redlight_preferred:
             con.light_on()
@@ -587,7 +592,7 @@ class BalorDriver:
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
         self.home()
 
@@ -612,7 +617,7 @@ class BalorDriver:
 
         @return:
         """
-        pass
+        return
 
     def wait_finished(self):
         """
@@ -718,6 +723,7 @@ class BalorDriver:
         self.pulse(time_in_ms)
 
     def pulse(self, pulse_time):
+        self.service.laser_status = "active"
         con = self.connection
         con.program_mode()
         con.frequency(self.service.default_frequency)
@@ -731,6 +737,7 @@ class BalorDriver:
             dwell_time -= d
         con.list_delay_time(int(self.service.delay_end / 10.0))
         con.rapid_mode()
+        self.service.laser_status = "idle"
         if self.service.redlight_preferred:
             con.light_on()
             con.write_port()
@@ -740,3 +747,32 @@ class BalorDriver:
 
     def set_abort(self):
         self._aborting = True
+
+    def _abort_mission(self):
+        if self._aborting:
+            self.connection.abort()
+            self._aborting = False
+            self.service.laser_status = "idle"
+            return True
+        return False
+
+    def cylinder_validate(self):
+        if self.service.cylinder_active:
+            self._cylinder_wrap()
+        else:
+            self._cylinder_restore()
+
+    def _cylinder_restore(self):
+        if not hasattr(self, "_original_connection"):
+            return
+        oc = getattr(self, "_original_connection")
+        self.connection = oc
+        delattr(self, "_original_connection")
+
+    def _cylinder_wrap(self):
+        if hasattr(self, "_original_connection"):
+            return
+        from .cylindermod import CylinderModifier
+
+        setattr(self, "_original_connection", self.connection)
+        setattr(self, "connection", CylinderModifier(self.connection, self.service))

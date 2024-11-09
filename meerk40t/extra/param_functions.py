@@ -3,7 +3,6 @@ This module exposes a couple of routines to create shapes,
 that have additional functional parameters set to allow
 parametric editing
 """
-import copy
 import math
 
 from meerk40t.core.units import Angle, Length
@@ -155,15 +154,11 @@ def plugin(kernel, lifecycle):
 
         def update_node_grid(node):
             my_id = "grid"
-            valid = True
             try:
                 param = node.functional_parameter
                 if param is None or param[0] != my_id:
-                    valid = False
+                    return
             except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
                 return
             node_id = getit(param, 2, None)
             if node_id is None:
@@ -258,7 +253,7 @@ def plugin(kernel, lifecycle):
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, turtle, n, iterations, base=None, **kwargs):
+        def fractal_t(command, channel, turtle, n, iterations, base=None, **kwargs):
             """
             Add a turtle fractal to the scene. All fractals are geometry outputs.
             F - Forward
@@ -338,7 +333,7 @@ def plugin(kernel, lifecycle):
         @self.console_command(
             "quad_corners", input_type="geometry", output_type="geometry"
         )
-        def round_corners(command, channel, data, amount=0.2, **kwargs):
+        def quad_corners(command, channel, data, amount=0.2, **kwargs):
             data.bezier_corners(amount)
             if hasattr(data, "parameter_store"):
                 param = list(data.parameter_store)  # make it editable
@@ -350,15 +345,11 @@ def plugin(kernel, lifecycle):
 
         def update_node_tfractal(node):
             my_id = "tfractal"
-            valid = True
             try:
                 param = node.functional_parameter
                 if param is None or param[0] != my_id:
-                    valid = False
+                    return
             except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
                 return
             turtle = getit(param, 2, "")
             basepattern = getit(param, 4, "")
@@ -368,78 +359,76 @@ def plugin(kernel, lifecycle):
             iterations = getit(param, 8, 1)
             pattern_repeat = getit(param, 10, 1)
             connector = getit(param, 12, 0)
-            if valid:
-                seed = Geomstr.turtle(turtle, n)
-                # Let's see whether we need to reconstruct the base
-                # Store it
-                targetpattern = basepattern
-                if basepattern is not None:
-                    if basepattern.startswith("n"):
+            seed = Geomstr.turtle(turtle, n)
+            # Let's see whether we need to reconstruct the base
+            # Store it
+            targetpattern = basepattern
+            if basepattern is not None:
+                if basepattern.startswith("n"):
+                    basepattern = basepattern[1:]
+                    previous = ""
+                    while len(basepattern) and basepattern[0] in "0123456789":
+                        previous += basepattern[0]
                         basepattern = basepattern[1:]
-                        previous = ""
-                        while len(basepattern) and basepattern[0] in "0123456789":
-                            previous += basepattern[0]
-                            basepattern = basepattern[1:]
-                        prev_len = 1
-                        if previous:
-                            try:
-                                prev_len = int(previous)
-                            except ValueError:
-                                prev_len = 1
-                            # Need add 1 to the length as the connector symbol
-                            # is not present after the last repetition
-                            if (len(basepattern) + 1) % prev_len == 0:
-                                old = basepattern
-                                basepattern = basepattern[
-                                    0 : int(len(basepattern) / prev_len)
-                                ]
-                            else:
-                                # that's wrong...
-                                pattern_repeat = 1
+                    if previous:
+                        try:
+                            prev_len = int(previous)
+                        except ValueError:
+                            prev_len = 1
+                        # Need add 1 to the length as the connector symbol
+                        # is not present after the last repetition
+                        if (len(basepattern) + 1) % prev_len == 0:
+                            # old = basepattern
+                            basepattern = basepattern[
+                                0 : int(len(basepattern) / prev_len)
+                            ]
+                        else:
+                            # that's wrong...
+                            pattern_repeat = 1
 
-                    if pattern_repeat > 1:
-                        targetpattern = f"n{pattern_repeat}"
-                        for idx in range(pattern_repeat):
-                            if idx > 0:
-                                targetpattern += "+"
-                            targetpattern += basepattern
-                    else:
-                        targetpattern = basepattern
-
-                if targetpattern == "":
-                    targetpattern = None
-
-                if targetpattern is None:
-                    base = Geomstr.svg("M0,0 H65535")
+                if pattern_repeat > 1:
+                    targetpattern = f"n{pattern_repeat}"
+                    for idx in range(pattern_repeat):
+                        if idx > 0:
+                            targetpattern += "+"
+                        targetpattern += basepattern
                 else:
-                    base = Geomstr.turtle(targetpattern, n, d=65535)
+                    targetpattern = basepattern
 
-                for i in range(iterations):
-                    base.fractal(seed)
-                if connector == 2:
-                    amount = 0.2
-                    base.bezier_corners(amount)
-                elif connector == 1:
-                    amount = 0.2
-                    base.round_corners(amount)
-                node.geometry = base
-                node.altered()
-                # Rewrite the functional_parameter
-                node.functional_parameter = (
-                    "tfractal",
-                    3,
-                    turtle,
-                    3,
-                    targetpattern,
-                    1,
-                    n,
-                    1,
-                    iterations,
-                    1,
-                    pattern_repeat,
-                    1,
-                    connector,  # line connector
-                )
+            if targetpattern == "":
+                targetpattern = None
+
+            if targetpattern is None:
+                base = Geomstr.svg("M0,0 H65535")
+            else:
+                base = Geomstr.turtle(targetpattern, n, d=65535)
+
+            for i in range(iterations):
+                base.fractal(seed)
+            if connector == 2:
+                amount = 0.2
+                base.bezier_corners(amount)
+            elif connector == 1:
+                amount = 0.2
+                base.round_corners(amount)
+            node.geometry = base
+            node.altered()
+            # Rewrite the functional_parameter
+            node.functional_parameter = (
+                "tfractal",
+                3,
+                turtle,
+                3,
+                targetpattern,
+                1,
+                n,
+                1,
+                iterations,
+                1,
+                pattern_repeat,
+                1,
+                connector,  # line connector
+            )
 
         @self.console_argument("svg_path", type=str)
         @self.console_argument("iterations", type=int)
@@ -450,7 +439,7 @@ def plugin(kernel, lifecycle):
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, svg_path, iterations, inversions, **kwargs):
+        def fractal_f(command, channel, svg_path, iterations, inversions, **kwargs):
             seed = Geomstr.svg(svg_path)
             segments = seed.segments
             for i, q in enumerate(inversions):
@@ -526,20 +515,16 @@ def plugin(kernel, lifecycle):
 
         def update_node_fractaltree(node):
             my_id = "fractaltree"
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    return
+            except (AttributeError, IndexError):
+                return
             point_a = None
             point_b = None
             iterations = 5
             ratio = 0.75
-            valid = True
-            try:
-                param = node.functional_parameter
-                if param is None or param[0] != my_id:
-                    valid = False
-            except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
-                return
             try:
                 if param[1] == 0:
                     point_a = Point(param[2], param[3])
@@ -550,13 +535,12 @@ def plugin(kernel, lifecycle):
                 if param[9] == 2:
                     ratio = param[10]
             except IndexError:
-                valid = False
+                return
             if point_a is None or point_b is None:
-                valid = False
-            if valid:
-                geom = create_fractal_tree(point_a, point_b, iterations, ratio)
-                node.geometry = geom
-                node.altered()
+                return
+            geom = create_fractal_tree(point_a, point_b, iterations, ratio)
+            node.geometry = geom
+            node.altered()
 
         # --- Fractal Dragon - now superceded by generic tfractal routine
         # def create_fractal_dragon(first_pt, second_pt, iterations):
@@ -805,15 +789,11 @@ def plugin(kernel, lifecycle):
 
         def update_node_cycloid(node):
             my_id = "cycloid"
-            valid = True
             try:
                 param = node.functional_parameter
                 if param is None or param[0] != my_id:
-                    valid = False
+                    return
             except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
                 return
             point_c = None
             point_major = None
@@ -828,35 +808,34 @@ def plugin(kernel, lifecycle):
                 if param[10] == 1:
                     iterations = param[11]
             except IndexError:
-                valid = False
+                return
             if point_c is None or point_major is None or point_minor is None:
-                valid = False
-            if valid:
-                radius_major = point_c.distance_to(point_major)
-                radius_minor = point_c.distance_to(point_minor)
-                ssx = point_c.x
-                ssy = point_c.y
-                geom = create_cycloid_shape(
-                    ssx, ssy, radius_major, radius_minor, iterations
-                )
-                node.geometry = geom
-                node.altered()
-                point_major = Point(ssx + radius_major, ssy)
-                point_minor = Point(ssx, ssy - radius_minor)
-                node.functional_parameter = (
-                    "cycloid",
-                    0,
-                    point_c.x,
-                    point_c.y,
-                    0,
-                    point_major.x,
-                    point_major.y,
-                    0,
-                    point_minor.x,
-                    point_minor.y,
-                    1,
-                    iterations,
-                )
+                return
+            radius_major = point_c.distance_to(point_major)
+            radius_minor = point_c.distance_to(point_minor)
+            ssx = point_c.x
+            ssy = point_c.y
+            geom = create_cycloid_shape(
+                ssx, ssy, radius_major, radius_minor, iterations
+            )
+            node.geometry = geom
+            node.altered()
+            point_major = Point(ssx + radius_major, ssy)
+            point_minor = Point(ssx, ssy - radius_minor)
+            node.functional_parameter = (
+                "cycloid",
+                0,
+                point_c.x,
+                point_c.y,
+                0,
+                point_major.x,
+                point_major.y,
+                0,
+                point_minor.x,
+                point_minor.y,
+                1,
+                iterations,
+            )
 
         # --- Star like shapes
         def create_star_shape(
@@ -870,7 +849,7 @@ def plugin(kernel, lifecycle):
             density,
         ):
             geom = Geomstr()
-            center = Point(cx, cy)
+            # center = Point(cx, cy)
             if startangle is None:
                 startangle = 0
 
@@ -933,7 +912,7 @@ def plugin(kernel, lifecycle):
             # print(f"Created geometry from {len(pts) / 2} pts: {geom.capacity}")
             return geom
 
-        # Shape (ie star) routine
+        # Shape (i.e. star) routine
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
@@ -1128,11 +1107,10 @@ def plugin(kernel, lifecycle):
             node.stroke_width = self.default_strokewidth
             node.fill = self.default_fill
             node.altered()
-            node.emphasized = True
+            self.set_emphasis([node])
             node.focus()
 
             data = [node]
-            node.emphasized = True
             # Newly created! Classification needed?
             post.append(classify_new(data))
 
@@ -1330,7 +1308,7 @@ def plugin(kernel, lifecycle):
                 opposite_angle -= math.tau
             while opposite_angle < 0:
                 opposite_angle += math.tau
-            pt2 = Point.polar(pt0, opposite_angle, sidelen * ratio_in_percent)
+            # pt2 = Point.polar(pt0, opposite_angle, sidelen * ratio_in_percent)
             node.functional_parameter = (
                 "growingshape",
                 0,

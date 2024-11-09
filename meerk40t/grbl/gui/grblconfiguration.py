@@ -1,10 +1,9 @@
-import re
-
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -20,6 +19,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("grblconfig")
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
@@ -49,6 +49,15 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             )
             sizer_interface_radio.Add(self.radio_tcp, 1, wx.EXPAND, 0)
 
+        if self.context.permit_ws:
+            self.radio_ws = wx.RadioButton(self, wx.ID_ANY, _("WebSocket"))
+            self.radio_ws.SetToolTip(
+                _(
+                    "Select this if the GRBL device is contacted via WebSocket connection"
+                )
+            )
+            sizer_interface_radio.Add(self.radio_ws, 1, wx.EXPAND, 0)
+
         self.radio_mock = wx.RadioButton(self, wx.ID_ANY, _("Mock"))
         self.radio_mock.SetToolTip(
             _("Select this only for debugging without a physical laser available.")
@@ -65,6 +74,11 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface.Add(self.panel_tcp_config, 1, wx.EXPAND, 0)
 
+        self.panel_ws_config = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="ws"
+        )
+        sizer_interface.Add(self.panel_ws_config, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_page_1)
 
         self.Layout()
@@ -73,18 +87,27 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_serial)
         if self.context.permit_tcp:
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
+        if self.context.permit_ws:
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_ws)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
         # end wxGlade
         if self.context.permit_serial and self.context.interface == "serial":
             self.radio_serial.SetValue(True)
             self.panel_tcp_config.Hide()
+            self.panel_ws_config.Hide()
         elif self.context.permit_tcp and self.context.interface == "tcp":
             self.panel_serial_settings.Hide()
             self.radio_tcp.SetValue(True)
+            self.panel_ws_config.Hide()
+        elif self.context.permit_ws and self.context.interface == "ws":
+            self.panel_serial_settings.Hide()
+            self.panel_tcp_config.Hide()
+            self.radio_ws.SetValue(True)
         else:
             # Mock
             self.panel_tcp_config.Hide()
             self.panel_serial_settings.Hide()
+            self.panel_ws_config.Hide()
             self.radio_mock.SetValue(True)
 
         self.SetupScrolling()
@@ -92,33 +115,55 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def pane_show(self):
         self.panel_serial_settings.pane_show()
         self.panel_tcp_config.pane_show()
+        self.panel_ws_config.pane_show()
 
     def pane_hide(self):
         self.panel_serial_settings.pane_hide()
         self.panel_tcp_config.pane_hide()
+        self.panel_ws_config.pane_hide()
 
     def on_radio_interface(
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
+        last = self.context.interface
         try:
             if self.radio_serial.GetValue():
                 self.context.interface = "serial"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Show()
                 self.panel_tcp_config.Hide()
+                self.panel_ws_config.Hide()
         except AttributeError:
             pass
         try:
             if self.radio_tcp.GetValue():
+                if self.context.port == 81:
+                    self.context.port = 23
+                    self.context.signal("port", self.context.port, self.context)
                 self.context.interface = "tcp"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Hide()
                 self.panel_tcp_config.Show()
+                self.panel_ws_config.Hide()
+        except AttributeError:
+            pass
+
+        try:
+            if self.radio_ws.GetValue():
+                if self.context.port == 23:
+                    self.context.port = 81
+                    self.context.signal("port", self.context.port, self.context)
+                self.context.interface = "ws"
+                self.context.signal("update_interface")
+                self.panel_serial_settings.Hide()
+                self.panel_tcp_config.Hide()
+                self.panel_ws_config.Show()
         except AttributeError:
             pass
         if self.radio_mock.GetValue():
             self.panel_tcp_config.Hide()
             self.panel_serial_settings.Hide()
+            self.panel_ws_config.Hide()
             self.context.interface = "mock"
             self.context.signal("update_interface")
         self.Layout()
@@ -141,6 +186,12 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         self._requested_status = False
@@ -154,6 +205,18 @@ class GRBLConfiguration(MWindow):
                 "style": "button",
                 "label": _("Query properties"),
                 "tip": _("Connect to laser and try to establish some properties"),
+                "section": "_ZZ_Auto-Configuration",
+                "width": 250,
+                "weight": 0,
+            },
+            {
+                "attr": "hw_config",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Hardware properties"),
+                "tip": _("Retrieve and change Laser properties"),
                 "section": "_ZZ_Auto-Configuration",
                 "width": 250,
                 "weight": 0,
@@ -176,6 +239,8 @@ class GRBLConfiguration(MWindow):
         panel_protocol = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="protocol"
         )
+
+        panel_effects = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -184,6 +249,7 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_interface)
         self.panels.append(panel_protocol)
         self.panels.append(panel_global)
+        self.panels.append(panel_effects)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
@@ -192,6 +258,7 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_protocol, _("Protocol"))
         self.notebook_main.AddPage(panel_global, _("Advanced"))
+        self.notebook_main.AddPage(panel_effects, _("Effects"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_formatter, _("Display Options"))
@@ -214,6 +281,25 @@ class GRBLConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "GRBL-Configuration"
+
+    @property
+    def hw_config(self):
+        # Not relevant
+        return False
+
+    @hw_config.setter
+    def hw_config(self, value):
+        if not value:
+            return
+        try:
+            self.context.driver(f"$${self.context.driver.line_end}")
+            self.context("window open GrblHardwareConfig\n")
+        except:
+            wx.MessageBox(
+                _("Could not query laser-data!"),
+                _("Connect failed"),
+                wx.OK | wx.ICON_ERROR,
+            )
 
     @property
     def acquire_properties(self):

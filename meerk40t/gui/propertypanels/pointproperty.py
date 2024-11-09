@@ -4,6 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel
 
 from ..icons import icons8_vector
 from ..mwindow import MWindow
+from ..wxutils import wxCheckBox
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
 _ = wx.GetTranslation
@@ -14,6 +15,7 @@ class PointPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
@@ -47,7 +49,7 @@ class PointPropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
 
-        self.check_classify = wx.CheckBox(
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)

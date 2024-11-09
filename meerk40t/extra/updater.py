@@ -120,7 +120,6 @@ def plugin(kernel, lifecycle):
                 Beta is derived from Release by default if release > 100 and last two digits != 0
                 """
                 src = beta = False
-                orgversion = version
                 ending = ""
                 result = list()
                 if version is not None:
@@ -491,7 +490,7 @@ def plugin(kernel, lifecycle):
                         import wx
 
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-                        from meerk40t.gui.wxutils import dip_size
+                        from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
 
                         has_wx = True
                     except ImportError:
@@ -510,22 +509,24 @@ def plugin(kernel, lifecycle):
                                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                             )
                             # contents
+                            kernel.themes.set_window_colors(dlg)
+
                             sizer = wx.BoxSizer(wx.VERTICAL)
 
-                            label = wx.StaticText(dlg, wx.ID_ANY, header)
+                            label = wxStaticText(dlg, wx.ID_ANY, header)
                             sizer.Add(label, 0, wx.EXPAND, 0)
-                            info = wx.TextCtrl(
+                            info = TextCtrl(
                                 dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
                             )
                             info.SetValue(content)
                             sizer.Add(info, 1, wx.EXPAND, 0)
-                            label = wx.StaticText(dlg, wx.ID_ANY, footer)
+                            label = wxStaticText(dlg, wx.ID_ANY, footer)
                             sizer.Add(label, 0, wx.EXPAND, 0)
                             btnsizer = wx.StdDialogButtonSizer()
-                            btn = wx.Button(dlg, wx.ID_OK)
+                            btn = wxButton(dlg, wx.ID_OK)
                             btn.SetDefault()
                             btnsizer.AddButton(btn)
-                            btn = wx.Button(dlg, wx.ID_CANCEL)
+                            btn = wxButton(dlg, wx.ID_CANCEL)
                             btnsizer.AddButton(btn)
                             btnsizer.Realize()
                             sizer.Add(btnsizer, 0, wx.EXPAND, 0)
@@ -538,6 +539,8 @@ def plugin(kernel, lifecycle):
                             dlg.SetSize(dip_size(dlg, 620, 400))
                             dlg.CenterOnScreen()
                             answer = dlg.ShowModal()
+                            # Unlisten
+                            panel.module_close()
                             dlg.Destroy()
                             response = bool(answer in (wx.YES, wx.ID_YES, wx.ID_OK))
                         else:

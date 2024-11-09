@@ -9,7 +9,7 @@ class CutObject:
     """
 
     def __init__(
-        self, start=None, end=None, settings=None, parent=None, passes=1, color=None
+        self, start=None, end=None, settings=None, parent=None, passes=1, color=None, label=None,
     ):
         if settings is None:
             settings = dict()
@@ -44,6 +44,7 @@ class CutObject:
         self.closed = False
         self.original_op = None
         self.pass_index = -1
+        self.label = label
 
     @property
     def burns_done(self):

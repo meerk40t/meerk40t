@@ -11,6 +11,7 @@ This data is expected to be called in a menu, but can be called via the console 
 
 import functools
 
+ZZDEFAULT = "ZZZZZZZZZZ"
 
 def tree_calc(value_name, calc_func):
     """
@@ -222,7 +223,7 @@ def tree_separator_after():
     return decor
 
 
-def tree_separator_before():
+def tree_separate_before():
     """
     Decorator to flag this operation as having a separator before it.
 
@@ -237,7 +238,7 @@ def tree_separator_before():
 
 
 def tree_operation(
-    registration, name, node_type=None, help=None, enable=True, **kwargs
+    registration, name, node_type=None, help=None, enable=True, grouping=None, **kwargs
 ):
     """
     Main tree registration decorator. Registers the tree operation with the given help and set the enabled state.
@@ -247,6 +248,7 @@ def tree_operation(
     @param node_type: types of node this operation applies to.
     @param help: Help data to be displayed in menu or other help information locations.
     @param enable: Should this be enabled.
+    @param grouping: Hint how to group items together
     @param kwargs: Any remaining keywords.
     @return:
     """
@@ -293,6 +295,8 @@ def tree_operation(
         # Should add a separator before this function.
         inner.separate_before = False
 
+        inner.grouping = grouping
+
         # Conditionals required to be true to enable function.
         inner.conditionals = list()
 
@@ -319,7 +323,7 @@ def tree_operation(
             # Register tree/node/name for each node within the registration.
             p = f"tree/{_in}/{registered_name}"
             if p in registration._registered:
-                # We used the name so we may not have duplicate tree operations with the same name.
+                # We used the name, so we may not have duplicate tree operations with the same name.
                 raise NameError(f"A function of this name was already registered: {p}")
             registration.register(p, inner)
         return inner
@@ -354,12 +358,48 @@ def tree_operations_for_node(registration, node):
     """
     if node.type is None:
         return
+    mylist = list()
+    # print ("Before sort")
+    idx = 0
     for func, m, sname in registration.find("tree", node.type, ".*"):
+        if func.submenu is None:
+            func.submenu = ""
+        # print (f"{idx} - {sname} - {func.submenu} - {func.grouping}")
+        if hasattr(func, "grouping"):
+            mylist.append((func, m, sname, ZZDEFAULT if func.grouping is None else func.grouping))
+        else:
+            mylist.append((func, m, sname, ZZDEFAULT))
+        idx += 1
+    mylist = sorted(
+        sorted(mylist, key=lambda d: d[0].submenu),
+        key=lambda d: d[3],
+    )
+    last_grouping = ""
+    for func, m, sname, grouping in mylist:
+        if grouping != last_grouping and last_grouping != "":
+            func.separate_before = True
+        last_grouping = func.grouping
+    
+    # print ("After sort")
+    last_separator = None
+    idx = -1
+    for func, m, sname, grouping in mylist:
+        idx += 1
+        # print (f"{idx} - {sname} - {func.submenu} - {func.grouping} - {last_separator} {func.separate_before if hasattr(func, 'separate_before') else '---'}")
+        if last_separator is not None and hasattr(func, "separate_before"):
+            func.separate_before = func.separate_before or last_separator
+
         reject = False
         for cond in func.conditionals:
             # Do not provide this if the conditionals fail.
             if not cond(node):
                 reject = True
+                # print (f"Reject 1, was {last_separator} will become {func.separate_before if hasattr(func, 'separate_before') else '---'}")
+                if hasattr(func, "separate_before"):
+                    if last_separator is not None:
+                        last_separator = last_separator or func.separate_before
+                    else:
+                        last_separator = func.separate_before
                 break
         if reject:
             continue
@@ -367,6 +407,12 @@ def tree_operations_for_node(registration, node):
             # Do not provide this if the try conditional fail. Crash is a pass.
             try:
                 if not cond(node):
+                    # print (f"Reject 2, was {last_separator} will become {func.separate_before if hasattr(func, 'separate_before') else '---'}")
+                    if hasattr(func, "separate_before"):
+                        if last_separator is not None:
+                            last_separator = last_separator or func.separate_before
+                        else:
+                            last_separator = func.separate_before
                     reject = True
                     break
             except Exception:
@@ -436,7 +482,7 @@ def tree_operations_for_node(registration, node):
                 try:
                     func.submenu = value_submenus[i]
                 except IndexError:
-                    print(f"Wrong index...")
+                    print("Wrong index...")
                     pass
             try:
                 func_dict[func.value_name] = value
@@ -456,7 +502,7 @@ def tree_operations_for_node(registration, node):
                     func.radio_state = False
             else:
                 func.radio_state = None
-
+            
             if hasattr(func, "check") and func.check is not None:
                 # Sets the checkbox state by the checkbox function.
                 try:
@@ -473,7 +519,7 @@ def tree_operations_for_node(registration, node):
             func.func_dict = func_dict
             func.real_name = name
             yield func
-
+            last_separator = None
 
 def get_tree_operation_for_node(registration):
     """

@@ -1,7 +1,11 @@
-import math
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    Stroked,
+    LabelDisplay,
+    Suppressable,
+)
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +17,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RectNode(Node, Stroked, FunctionalParameter):
+class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """
@@ -61,7 +65,19 @@ class RectNode(Node, Stroked, FunctionalParameter):
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
+        self.stroke_dash = None  # None or "" Solid
+        unit_mm = 65535 / 2.54 / 10
+        self.mktablength = 2 * unit_mm
+        # tab_positions is a list of relative positions (percentage) of the overall path length
+        self.mktabpositions = ""
         super().__init__(type="elem rect", **kwargs)
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} {stroke}"
         if self.x is None:
             self.x = 0
@@ -107,7 +123,10 @@ class RectNode(Node, Stroked, FunctionalParameter):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
+        """
+        Delivers the basic shape without any special effects like tabs and / or dashes/dots
+        """
         x = self.x
         y = self.y
         width = self.width
@@ -118,7 +137,35 @@ class RectNode(Node, Stroked, FunctionalParameter):
         path.transform(self.matrix)
         return path
 
-    def scaled(self, sx, sy, ox, oy):
+    def final_geometry(self, **kws) -> Geomstr:
+        """
+        This will resolve and apply all effects like tabs and dashes/dots
+        """
+        unit_factor = kws.get("unitfactor", 1)
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+        rx = self.rx
+        ry = self.ry
+        # This is only true in scene units but will be compensated for devices by unit_factor
+        unit_mm = 65535 / 2.54 / 10
+        resolution = 0.05 * unit_mm
+        path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
+        path.transform(self.matrix)
+        # Do we have tabs?
+        tablen = self.mktablength
+        numtabs = self.mktabpositions
+        if tablen and numtabs:
+            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+        # Is there a dash/dot pattern to apply?
+        dashlen = self.stroke_dash
+        irrelevant = 50
+        if dashlen:
+            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+        return path
+
+    def scaled(self, sx, sy, ox, oy, interim=False):
         """
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering its properties
@@ -151,8 +198,8 @@ class RectNode(Node, Stroked, FunctionalParameter):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
-        self._points_dirty = True
-        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+        self.set_dirty()
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)
 
     def bbox(self, transformed=True, with_stroke=False):
         # self._sync_svg()
@@ -192,16 +239,34 @@ class RectNode(Node, Stroked, FunctionalParameter):
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            (drag_node.type.startswith("op ") and drag_node.type != "op dots") or
+            drag_node.type in ("file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
-            # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            # then we will reverse the game, but we will take the operations color
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):
@@ -209,8 +274,8 @@ class RectNode(Node, Stroked, FunctionalParameter):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
@@ -262,6 +327,15 @@ class RectNode(Node, Stroked, FunctionalParameter):
             "rect",
             2,
             k,
+            0,
+            self.x,
+            self.y,
+            0,
+            self.x + self.width,
+            self.y + self.height,
+            0,
+            self.x + self.width / 2,
+            self.y + self.height / 2,
         )
 
     @functional_parameter.setter
@@ -278,12 +352,25 @@ class RectNode(Node, Stroked, FunctionalParameter):
             return
         if param[0] != "rect":
             return
+        nx0 = getit(param, 4, self.x)
+        ny0 = getit(param, 5, self.y)
+        nx1 = getit(param, 7, self.x + self.width)
+        ny1 = getit(param, 8, self.y + self.height)
+        cx = self.x + self.width / 2
+        cy = self.y + self.height / 2
+        ncx = getit(param, 10, cx)
+        ncy = getit(param, 11, cy)
+        if ncx != cx or ncy != cy:
+            self.x += ncx - cx
+            self.y += ncy - cy
+        else:
+            self.x = nx0
+            self.y = ny0
+            self.width = abs(nx1 - nx0)
+            self.height = abs(ny1 - ny0)
         dimens = 0.5 * min(self.width, self.height)
         rx = getit(param, 2, 0)
         self.rx = dimens * rx
-        ry = getit(param, 4, None)
-        if ry is None:
-            self.ry = self.rx
-        else:
-            self.ry = dimens * ry
+        self.ry = self.rx
+
         self.altered()

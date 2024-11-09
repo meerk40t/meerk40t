@@ -4,6 +4,8 @@
 name: Meerk40t (Windows)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
@@ -12,10 +14,10 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: 3.8
         # Latest version of python support by Windows 7 is Python 3.8
@@ -35,7 +37,7 @@ jobs:
         pip install ezdxf
         pip install pyserial
         pip install bitarray
-        pip install scipy
+        pip install scipy=1.10.0
         pip install pypotrace-windows
         pip install pyclipr
         pip install .
@@ -46,7 +48,7 @@ jobs:
       run: |
           pip list
 
-    
+
 
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
@@ -83,7 +85,7 @@ jobs:
 
     - name: Upload Release Assets
       id: release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |

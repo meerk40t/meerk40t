@@ -8,7 +8,7 @@ class BasicHSizer:
     you have fully under control... (required for a Linux environment)
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.windows = []
         self.proportions = []
         self.flags = []
@@ -97,7 +97,7 @@ class BasicHSizer:
         #     "Total proportions: %.1f, width=%.1f, remaining=%.1f"
         #     % (total_proportions, self.width, availw)
         # )
-        # Now that we have established the minsize lets see what we have left
+        # Now that we have established the minsize let's see what we have left
         # First iteration, check for maxSize
         if total_proportions > 0:
             for idx, wind in enumerate(self.windows):
@@ -132,7 +132,7 @@ class BasicHSizer:
                     )
                     self.myw[idx] = testsize
 
-        # And now lets move the windows...
+        # And now let's move the windows...
         newx = self.start_x + self.x
         for idx, wind in enumerate(self.windows):
             # print(f"{idx}, vis={self.activectrl[idx]}, x={newx}")
@@ -222,7 +222,7 @@ class StatusBarWidget(BasicHSizer):
         # COPY:
         #   super().GenerateControls(parent, panelidx, identifier, context)
         # Now add your controls, make sure they are added with
-        #   self.btn = wx.Button(self.parent, wx.ID_ANY...)
+        #   self.btn = wxButton(self.parent, wx.ID_ANY...)
         #   self.add(self.btn, 1, wx.EXPAND, 0)
 
     def StartPopulation(self):
@@ -242,8 +242,6 @@ class StatusBarWidget(BasicHSizer):
         if cnt == 0:
             return
         if cnt == 1:
-            # dummylbl = wx.StaticText(self.parent, wx.ID_ANY, "")
-            # self.Add(dummylbl, 0, 0, 0)
             self.PrependSpacer(5)
 
         # Standard action to show or hide, can be redefined

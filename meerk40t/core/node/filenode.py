@@ -25,10 +25,29 @@ class FileNode(Node):
         default_map["filename"] = s
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def is_a_child_of(self, node):
+        candidate = self
+        while candidate is not None:
+            if candidate is node:
+                return True
+            candidate = candidate.parent
+        return False
+    
+    def can_drop(self, drag_node):
+        if self.is_a_child_of(drag_node):
+            return False
+        if drag_node.type == "group":
+            return True
+        return False
+    
+    def drop(self, drag_node, modify=True, flag=False):
+        # Do not allow dragging onto children
+        if not self.can_drop(drag_node):
+            return False
         if drag_node.type == "group":
             if modify:
                 self.append_child(drag_node)
+            return True
         return False
 
     @property

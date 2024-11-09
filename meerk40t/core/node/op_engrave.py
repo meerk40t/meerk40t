@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.elements.element_types import *
@@ -23,6 +22,7 @@ class EngraveOpNode(Node, Parameters):
 
         # Is this op out of useful bounds?
         self.dangerous = False
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
 
         self.label = "Engrave"
         # We may want to add more advanced logic at a later time
@@ -100,12 +100,35 @@ class EngraveOpNode(Node, Parameters):
         )
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.has_ancestor("branch reg"):
+            # Will be dealt with in elements -
+            # we don't implement a more sophisticated routine here
+            return False
+        if (
+            hasattr(drag_node, "as_geometry")
+            and drag_node.type in self._allowed_elements_dnd
+        ):
+            return True
+        elif (
+            drag_node.type == "reference"
+            and drag_node.node.type in self._allowed_elements_dnd
+        ):
+            return True
+        elif drag_node.type in op_nodes:
+            # Move operation to a different position.
+            return True
+        elif drag_node.type in ("file", "group"):
+            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
-                or drag_node._parent.type == "branch reg"
+                or drag_node.has_ancestor("branch reg")
             ):
                 return False
             # Dragging element onto operation adds that element to the op.
@@ -125,7 +148,9 @@ class EngraveOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
@@ -150,6 +175,14 @@ class EngraveOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
@@ -158,9 +191,9 @@ class EngraveOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
-            result = False
+            _result = False
             if col1 is None and col2 is None:
-                result = True
+                _result = True
             elif (
                 col1 is not None
                 and col1.argb is not None
@@ -169,11 +202,14 @@ class EngraveOpNode(Node, Parameters):
             ):
                 if fuzzy:
                     distance = Color.distance(col1, col2)
-                    result = distance < fuzzydistance
+                    _result = distance < fuzzydistance
                 else:
-                    result = col1 == col2
-            return result
+                    _result = col1 == col2
+            return _result
 
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
         feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
@@ -208,6 +244,24 @@ class EngraveOpNode(Node, Parameters):
                     feedback.append("fill")
                     return True, self.stopop, feedback
         return False, False, None
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        # is the very first child an effect node?
+        # if yes then we will put that reference under this one
+        if node is None:
+            return
+        if not self.valid_node_for_reference(node):
+            # We could raise a ValueError but that will break things...
+            return
+        first_is_effect =  (
+            len(self._children) > 0 and
+            self._children[0].type.startswith("effect ")
+        )
+        effect = self._children[0] if first_is_effect else None
+        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        node._references.append(ref)
+        if first_is_effect:
+            effect.append_child(ref)
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -273,41 +327,89 @@ class EngraveOpNode(Node, Parameters):
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
-        for node in self.children:
+
+        def get_pathlist(node, factor):
+            from time import perf_counter
+
+            pathlist = []
             if node.type == "reference":
                 node = node.node
             if node.type == "elem image":
                 box = node.bbox()
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
+                pathlist.append(
+                    (
+                        None,
+                        Path(
+                            Polygon(
+                                (box[0], box[1]),
+                                (box[0], box[3]),
+                                (box[2], box[3]),
+                                (box[2], box[1]),
+                            )
+                        ),
                     )
                 )
+            elif hasattr(node, "final_geometry"):
+                # This will deliver all relevant effects
+                # like tabs, dots/dashes applied to the element
+                path = node.final_geometry(unitfactor=factor).as_path()
+                path.approximate_arcs_with_cubics()
+                pathlist.append((None, path))
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+                pathlist.append((None, path))
             elif node.type.startswith("effect"):
-                path = node.as_geometry().as_path()
-            elif node.type not in self._allowed_elements_dnd:
-                # These aren't valid.
-                continue
+                if hasattr(node, "as_geometries"):
+                    time_indicator = f"{perf_counter():.5f}".replace(".", "")
+                    pathlist.extend(
+                        (f"hatch_{idx}_{time_indicator}", effect_geom.as_path())
+                        for idx, effect_geom in enumerate(list(node.as_geometries()))
+                    )
+                else:
+                    pathlist.append((None, node.as_geometry().as_path()))
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
+                pathlist.append((None, path))
+            return pathlist
+
+        settings = self.derive()
+        factor = settings["native_mm"] / UNITS_PER_MM if "native_mm" in settings else 1
+        for node in self.children:
+            if (
+                hasattr(node, "hidden")
+                and node.hidden
+                or node.type not in self._allowed_elements_dnd
+            ):
+                continue
+
+            pathlist = get_pathlist(node, factor)
+
             try:
                 stroke = node.stroke
             except AttributeError:
                 # ImageNode does not have a stroke.
                 stroke = None
-            yield from path_to_cutobjects(
-                path,
-                settings=settings,
-                closed_distance=closed_distance,
-                passes=passes,
-                original_op=self.type,
-                color=stroke,
-            )
+            for origin, path in pathlist:
+                yield from path_to_cutobjects(
+                    path,
+                    settings=settings,
+                    closed_distance=closed_distance,
+                    passes=passes,
+                    original_op=self.type,
+                    color=stroke,
+                    origin=origin,
+                )
+
+    @property
+    def bounds(self):
+        if not self._bounds_dirty:
+            return self._bounds
+
+        self._bounds = None
+        if self.output:
+            if self._children:
+                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+            self._bounds_dirty = False
+        return self._bounds

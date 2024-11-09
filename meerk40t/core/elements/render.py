@@ -1,5 +1,16 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains console commands that interact with the elements system in the program.
+It provides functionality for rendering, vectorizing, outlining, and managing keyhole elements for images.
+
+Functions:
+- plugin: Initializes console commands related to rendering and vectorization.
+- init_commands: Sets up various console commands for rendering and manipulating elements.
+- render_elements: Creates a raster image from the given elements.
+- vectorize_elements: Converts given elements to a path.
+- element_outline: Creates an outline path at the inner and outer side of a path.
+- keyhole_elements: Sets a path-like element as a keyhole frame for selected images.
+- remove_keyhole_elements: Removes keyhole frame for selected images.
+
 """
 
 from copy import copy
@@ -205,6 +216,7 @@ def init_commands(kernel):
         if isinf(xmin):
             channel(_("No bounds for selected elements."))
             return
+        kernel.busyinfo.start(msg=_("Generating..."))
         width = xmax - xmin
         height = ymax - ymin
 
@@ -236,7 +248,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         node = self.elem_branch.add(
             path=abs(path),
-            stroke_width=0,
+            stroke_width=500,
             stroke_scaled=False,
             type="elem path",
             fillrule=Fillrule.FILLRULE_NONZERO,
@@ -246,7 +258,7 @@ def init_commands(kernel):
         data_out = [node]
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
-
+        kernel.busyinfo.end()
         return "elements", data_out
 
     @self.console_option(
@@ -359,7 +371,7 @@ def init_commands(kernel):
         altered stroke-widths and rendered and vectorized again.
 
         This two phase approach is required as not all nodes have
-        a proper stroke-width that can be adjusted (eg text or images...)
+        a proper stroke-width that can be adjusted (e.g. text or images...)
 
         The subvariant --outer requires one additional pass where we disassemble
         the first outline and fill the subpaths, This will effectively deal with
@@ -378,6 +390,7 @@ def init_commands(kernel):
             return
         if debug is None:
             debug = False
+        kernel.busyinfo.start(msg=_("Generating..."))
         reverse = self.classify_reverse
         if reverse:
             data = list(reversed(data))
@@ -412,10 +425,7 @@ def init_commands(kernel):
             opticurve = True
         if opttolerance is None:
             opttolerance = 0.2
-        if color is None:
-            pathcolor = Color("blue")
-        else:
-            pathcolor = color
+        pathcolor = Color("blue") if color is None else color
         if invert is None:
             invert = False
         if blacklevel is None:
@@ -502,7 +512,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         data_node = PathNode(
             path=abs(path),
-            stroke_width=1,
+            stroke_width=500,
             stroke=Color("black"),
             stroke_scaled=False,
             fill=None,
@@ -577,7 +587,7 @@ def init_commands(kernel):
             path_final = path_2
             data_node_2 = PathNode(
                 path=abs(path_2),
-                stroke_width=1,
+                stroke_width=500,
                 stroke=Color("black"),
                 stroke_scaled=False,
                 fill=None,
@@ -603,7 +613,7 @@ def init_commands(kernel):
                     subpath = Path(pasp)
                     data_node = PathNode(
                         path=abs(subpath),
-                        stroke_width=1,
+                        stroke_width=500,
                         stroke=Color("black"),
                         stroke_scaled=False,
                         fill=Color("black"),
@@ -665,7 +675,7 @@ def init_commands(kernel):
 
             outline_node = self.elem_branch.add(
                 path=abs(path_final),
-                stroke_width=1,
+                stroke_width=500,
                 stroke_scaled=False,
                 type="elem path",
                 fill=None,
@@ -680,8 +690,80 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         post.append(classify_new(outputdata))
         self.signal("refresh_scene", "Scene")
+        kernel.busyinfo.end()
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
         return "elements", outputdata
+
+    @self.console_argument("refid", type=str, help=_("The id of the keyhole element"))
+    @self.console_command(
+        "keyhole",
+        help=_("Set a path-like element as keyhole frame for selected images"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def keyhole_elements(command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        if nohide is None:
+            nohide = False
+        if refid is None:
+            # We do look for the very first occurence of a path like object and take this...
+            for node in data:
+                if node.id is not None and node.type in ("elem path", "elem ellipse", "elem rect", "elem polyline"):
+                    refid = node.id
+                    break
+
+        if refid is None:
+            channel(_("You need to provide an ID of an element to act as a keyhole"))
+            return
+        refnode = self.find_node(refid)
+        if refnode is None:
+            channel(_("A node with such an ID couldn't be found"))
+            return
+        if not hasattr(refnode, "as_geometry"):
+            channel(_("This node can not act as a keyhole: {nodetype}").format(nodetype=refnode.type))
+            return
+        images = list ( (e for e in data if e.type == "elem image") )
+        if len(images) == 0:
+            channel(_("No images selected/provided"))
+            return
+
+        for node in images:
+            rid = node.keyhole_reference
+            if rid is not None:
+                self.deregister_keyhole(rid, node)
+            try:
+                self.register_keyhole(refnode, node)
+            except ValueError as e:
+                channel(f"Could not register keyhole: {e}")
+                return
+        self.process_keyhole_updates(None)
+        self.signal("refresh_scene", "Scene")
+        return "elements", images
+
+    @self.console_command(
+        "remove_keyhole",
+        help=_("Removes keyhole frame for selected images"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def remove_keyhole_elements(command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        images = list ( (e for e in data if e.type == "elem image") )
+        if len(images) == 0:
+            channel(_("No images selected/provided"))
+            return
+        for node in images:
+            rid = node.keyhole_reference
+            if rid is not None:
+                self.deregister_keyhole(rid, node)
+        self.process_keyhole_updates(None)
+
+        self.signal("refresh_scene", "Scene")
+        return "elements", images
 
     # --------------------------- END COMMANDS ------------------------------
