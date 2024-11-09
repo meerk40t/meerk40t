@@ -176,6 +176,14 @@ class SplitterPanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
+        self.text_dpi.set_default_values(
+            list(
+                (
+                    str(dpi),
+                    _("Set DPI to {value}").format(value=str(dpi))
+                ) for dpi in self.context.device.view.get_sensible_dpi_values()
+            )
+        )
         self.lbl_info = wxStaticText(self, wx.ID_ANY, "")
         self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
@@ -318,6 +326,12 @@ class KeyholePanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
         self.btn_align = wxButton(self, wx.ID_ANY, _("Create keyhole image"))
