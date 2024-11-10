@@ -92,6 +92,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(lbrn.plugin)
 
+        from .extra import xcs_reader
+
+        plugins.append(xcs_reader.plugin)
+
         from .extra import updater
 
         plugins.append(updater.plugin)
