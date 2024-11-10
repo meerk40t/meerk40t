@@ -512,7 +512,6 @@ class RasterOpNode(Node, Parameters):
                 image_node = image_node.node
             if getattr(image_node, "hidden", False):
                 continue
-            print (f"Image_node: {image_node.type} - hidden: {image_node.hidden}")
             if image_node.type != "elem image":
                 continue
 
