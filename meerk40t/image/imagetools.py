@@ -2170,7 +2170,7 @@ def plugin(kernel, lifecycle=None):
                         # Notabene: the axes are swapped between np array and pil image!!
                         if len(path) == 1:
                             y_prev, x_prev, y, x = path[0]
-                            if x_prev < 0 or (x_prev == x and y_prev == y):
+                            if x_prev < 0:
                                 # print (f"Single point at {idx}")
                                 continue
                         geom = Geomstr()
