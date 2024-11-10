@@ -400,6 +400,8 @@ class RasterOpNode(Node, Parameters):
             img_mx = Matrix.scale(step_x, step_y)
             data = []
             for node in self.flat():
+                if node.type not in self._allowed_elements_dnd:
+                    continue
                 if node.type == "reference":
                     node = node.node
                 if getattr(node, 'hidden', False):
