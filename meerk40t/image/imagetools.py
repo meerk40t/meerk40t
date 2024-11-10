@@ -2109,6 +2109,8 @@ def plugin(kernel, lifecycle=None):
             channel("No image provided")
             return
         data_out = []
+        context.process_console_in_realtime = True
+        channel("This algorithm has still some flaws! Start analyzing...")
         t0 = perf_counter()
         for node in data:
             if node.type != "elem image":
@@ -2139,6 +2141,7 @@ def plugin(kernel, lifecycle=None):
             matrix = Matrix(f"scale ({(bounds[2] - bounds[0]) / node_image.width}, {(bounds[3] - bounds[1]) / node_image.height})")
             matrix.post_translate(bounds[0], bounds[1])
             # matrix = node.active_matrix
+
             def save_geom(geom, idx, matrix):
                 before = geom.index
                 if before == 0:
@@ -2146,7 +2149,7 @@ def plugin(kernel, lifecycle=None):
                 idx += 1
                 geom = geom.simplify(2)
                 after = geom.index
-                channel(f"Simplify: {before} -> {after}")
+                # channel(f"Simplify: {before} -> {after}")
                 geom.transform(matrix)
                 label = f"L_{idx:2d}_{node.display_label()}"
                 rnode = context.elements.elem_branch.add(
@@ -2160,29 +2163,32 @@ def plugin(kernel, lifecycle=None):
                 data_out.append(rnode)
                 return idx
 
-            idx = 0
-            for path in multiple:
-                # Notabene: the axes are swapped between np array and pil image!!
-                if len(path) == 1:
-                    y_prev, x_prev, y, x = path[0]
-                    if x_prev < 0 or (x_prev == x and y_prev == y):
-                        # print (f"Single point at {idx}")
-                        continue
-                geom = Geomstr()
-                for i in range(len(path)):
-                    y_prev, x_prev, y, x = path[i]
-                    dx = x - x_prev
-                    dy = y - y_prev
-                    if (dx * dx + dy * dy) >= 4: # Thats too wide by definition, new subpath
-                        idx = save_geom(geom, idx, matrix)
+            with context.elements.undoscope("Create lines"):
+                with context.elements.static("linefill"):
+                    idx = 0
+                    for path in multiple:
+                        # Notabene: the axes are swapped between np array and pil image!!
+                        if len(path) == 1:
+                            y_prev, x_prev, y, x = path[0]
+                            if x_prev < 0 or (x_prev == x and y_prev == y):
+                                # print (f"Single point at {idx}")
+                                continue
                         geom = Geomstr()
-                        continue
-                    geom.line(complex(x_prev, y_prev), complex(x, y))
-                idx = save_geom(geom, idx, matrix)
+                        for i in range(len(path)):
+                            y_prev, x_prev, y, x = path[i]
+                            dx = x - x_prev
+                            dy = y - y_prev
+                            if (dx * dx + dy * dy) >= 4: # Thats too wide by definition, new subpath
+                                idx = save_geom(geom, idx, matrix)
+                                geom = Geomstr()
+                                continue
+                            geom.line(complex(x_prev, y_prev), complex(x, y))
+                        idx = save_geom(geom, idx, matrix)
         t1 = perf_counter()
 
         # Save the result
         channel(f"Done, created: {len(data_out)} paths (Total time: {t1 - t0:.2f} sec)")
+        context.process_console_in_realtime = False
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
