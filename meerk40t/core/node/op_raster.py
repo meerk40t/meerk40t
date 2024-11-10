@@ -396,9 +396,20 @@ class RasterOpNode(Node, Parameters):
             self.set_dirty_bounds()
 
             step_x, step_y = context.device.view.dpi_to_steps(self.dpi)
-            bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
-            data = list(self.flat())
+            data = []
+            for node in self.flat():
+                if node.type not in self._allowed_elements_dnd:
+                    continue
+                if node.type == "reference":
+                    node = node.node
+                if getattr(node, 'hidden', False):
+                    continue
+                data.append(node)
+            if not data:
+                self.children.clear()
+                return
+            bounds = Node.union_bounds(data, attr="paint_bounds")
             reverse = context.elements.classify_reverse
             if reverse:
                 data = list(reversed(data))
@@ -422,6 +433,7 @@ class RasterOpNode(Node, Parameters):
             image_node.step_x = step_x
             image_node.step_y = step_y
             image_node.process_image()
+
         msx = matrix.value_scale_x()
         msy = matrix.value_scale_y()
         rotated = False
