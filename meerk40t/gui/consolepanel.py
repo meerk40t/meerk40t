@@ -347,7 +347,10 @@ class ConsolePanel(wx.ScrolledWindow):
             self._buffer += f"{text}\n"
             if len(self._buffer) > 50000:
                 self._buffer = self._buffer[-50000:]
-        self.context.signal("console_update")
+        if getattr(self.context, "process_console_in_realtime", False):
+            self.update_console_main("internal")
+        else:
+            self.context.signal("console_update")
 
     @signal_listener("console_update")
     def update_console_main(self, origin, *args):
