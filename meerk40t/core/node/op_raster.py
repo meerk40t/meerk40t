@@ -398,7 +398,16 @@ class RasterOpNode(Node, Parameters):
             step_x, step_y = context.device.view.dpi_to_steps(self.dpi)
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
-            data = list(self.flat())
+            data = []
+            for node in self.flat():
+                if node.type == "reference":
+                    node = node.node
+                if getattr(node, 'hidden', False):
+                    continue
+                data.append(node)
+            if not data:
+                self.children.clear()
+                return
             reverse = context.elements.classify_reverse
             if reverse:
                 data = list(reversed(data))
@@ -422,6 +431,7 @@ class RasterOpNode(Node, Parameters):
             image_node.step_x = step_x
             image_node.step_y = step_y
             image_node.process_image()
+
         msx = matrix.value_scale_x()
         msy = matrix.value_scale_y()
         rotated = False
@@ -502,6 +512,7 @@ class RasterOpNode(Node, Parameters):
                 image_node = image_node.node
             if getattr(image_node, "hidden", False):
                 continue
+            print (f"Image_node: {image_node.type} - hidden: {image_node.hidden}")
             if image_node.type != "elem image":
                 continue
 
