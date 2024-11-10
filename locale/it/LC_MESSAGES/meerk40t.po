@@ -16758,7 +16758,7 @@ msgid "Lihuiyu interpreter attached to {device}"
 msgstr "Interprete Lihuiyu collegato a {device}"
 
 #: ./meerk40t\lihuiyu\device.py:927
-msgid "Intepreter cannot be attached to any device."
+msgid "Interpreter cannot be attached to any device."
 msgstr "L'Intepreter non può essere collegato a nessun dispositivo"
 
 #: ./meerk40t\lihuiyu\gui\lhydrivergui.py:49

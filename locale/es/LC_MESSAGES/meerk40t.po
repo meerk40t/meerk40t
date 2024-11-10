@@ -8563,7 +8563,7 @@ msgid "Lihuiyu interpreter attached to {device}"
 msgstr ""
 
 #: meerk40t/lihuiyu/device.py:954
-msgid "Intepreter cannot be attached to any device."
+msgid "Interpreter cannot be attached to any device."
 msgstr ""
 
 #: meerk40t/lihuiyu/plugin.py:29

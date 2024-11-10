@@ -8613,7 +8613,7 @@ msgstr ""
 
 #: meerk40t/lihuiyu/device.py:954
 #, fuzzy
-msgid "Intepreter cannot be attached to any device."
+msgid "Interpreter cannot be attached to any device."
 msgstr "A szerver nem csatlakoztatható semmilyen eszközhöz."
 
 #: meerk40t/lihuiyu/plugin.py:29
