@@ -10,6 +10,7 @@ from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
 from .dither import dither
+from ..core.node.node import Linejoin
 
 def img_to_polygons(
         node_image,                 # The image
@@ -2059,6 +2060,137 @@ def plugin(kernel, lifecycle=None):
         width, height = image.size
         newimage = image.convert("RGB")
         context.signal("background", (width, height, newimage.tobytes()))
+
+    @context.console_command(
+        "linefill",
+        help=_("Create a linefill representation of the provided images"),
+        input_type = (None, "image", "elements"),
+        output_type = "elements",
+    )
+    def do_linefill(
+        command,
+        channel,
+        _,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        from time import perf_counter
+        def trace_black_areas(image):
+            def dfs(x, y):
+                path = []
+                stack = [(-1, -1, x, y)]
+                while stack:
+                    x_prev, y_prev, x, y = stack.pop()
+                    if x < 0 or x >= image.shape[0] or y < 0 or y >= image.shape[1]:
+                        continue
+                    if image[x, y] == 255 or visited[x, y]:
+                        continue
+                    visited[x, y] = True
+                    path.append((x_prev, y_prev, x, y))
+                    stack.extend([(x, y, x + 1, y), (x, y, x - 1, y), (x, y, x, y + 1), (x, y, x, y - 1)])
+                return path
+
+            visited = np.zeros_like(image, dtype=bool)
+            separated = []
+            path = []
+            for x in range(image.shape[0]):
+                for y in range(image.shape[1]):
+                    if image[x, y] != 255 and not visited[x, y]:
+                        path = dfs(x, y)
+                        if path:
+                            separated.append(path)
+                        path = []
+            return separated
+
+        if data is None:
+            data = list(e for e in context.elements.flat(emphasized=True) if e.type == "elem image")
+        if len(data) == 0:
+            channel("No image provided")
+            return
+        data_out = []
+        context.process_console_in_realtime = True
+        channel("This algorithm has still some flaws! Start analyzing...")
+        t0 = perf_counter()
+        for node in data:
+            if node.type != "elem image":
+                continue
+            if node.dither:
+                node.dither = False
+                # Needs to be done immediately
+                node.update(None)
+                node_image, bounds = node.as_image()
+                node.dither = True
+                # Could be done later...
+                node.update(context)
+            else:
+                node_image, bounds = node.as_image()
+            # Trace the black areas
+            image = np.array(node_image)
+
+            # print (f"NP: {image.shape[0]}x{image.shape[1]}, image: {node_image.width}x{node_image.height}")
+
+            multiple = trace_black_areas(image)
+            points = sum(len(path) for path in multiple)
+            channel (f"Found points: {points}, subpaths={len(multiple)}")
+            # for y in range(20):
+            #     msg = f"[{y:2d}]"
+            #     for x in range(20):
+            #         msg =f"{msg} {image[x,y]}"
+            #     print (msg)
+            matrix = Matrix(f"scale ({(bounds[2] - bounds[0]) / node_image.width}, {(bounds[3] - bounds[1]) / node_image.height})")
+            matrix.post_translate(bounds[0], bounds[1])
+            # matrix = node.active_matrix
+
+            def save_geom(geom, idx, matrix):
+                before = geom.index
+                if before == 0:
+                    return idx
+                idx += 1
+                geom = geom.simplify(2)
+                after = geom.index
+                # channel(f"Simplify: {before} -> {after}")
+                geom.transform(matrix)
+                label = f"L_{idx:2d}_{node.display_label()}"
+                rnode = context.elements.elem_branch.add(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    label=label,
+                    type="elem path",
+                    stroke_width = 1000,
+                    linejoin=Linejoin.JOIN_ROUND
+                )
+                data_out.append(rnode)
+                return idx
+
+            with context.elements.undoscope("Create lines"):
+                with context.elements.static("linefill"):
+                    idx = 0
+                    for path in multiple:
+                        # Notabene: the axes are swapped between np array and pil image!!
+                        if len(path) == 1:
+                            y_prev, x_prev, y, x = path[0]
+                            if x_prev < 0 or (x_prev == x and y_prev == y):
+                                # print (f"Single point at {idx}")
+                                continue
+                        geom = Geomstr()
+                        for i in range(len(path)):
+                            y_prev, x_prev, y, x = path[i]
+                            dx = x - x_prev
+                            dy = y - y_prev
+                            if (dx * dx + dy * dy) >= 4: # Thats too wide by definition, new subpath
+                                idx = save_geom(geom, idx, matrix)
+                                geom = Geomstr()
+                                continue
+                            geom.line(complex(x_prev, y_prev), complex(x, y))
+                        idx = save_geom(geom, idx, matrix)
+        t1 = perf_counter()
+
+        # Save the result
+        channel(f"Done, created: {len(data_out)} paths (Total time: {t1 - t0:.2f} sec)")
+        context.process_console_in_realtime = False
+        post.append(context.elements.post_classify(data_out))
+        return "elements", data_out
 
 class RasterScripts:
     """
