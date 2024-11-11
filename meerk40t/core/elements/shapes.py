@@ -617,8 +617,21 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        if prop is None:
+        if prop is None or (prop == "?" and new_value=="?"):
             channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties: "
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}, {d}"
+                    channel(prop_str)
+                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
             return
         classify_required = False
         prop = prop.lower()
@@ -856,8 +869,21 @@ def init_commands(kernel):
         if not data:
             channel(_("No selected operations."))
             return
-        if prop is None:
+        if prop is None or (prop == "?" and new_value=="?"):
             channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties: "
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}, {d}"
+                    channel(prop_str)
+                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
             return
         prop = prop.lower()
         if len(new_value) == 0:
