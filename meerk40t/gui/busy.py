@@ -149,7 +149,7 @@ class BusyInfo:
             else:
                 self.display.SetBitmap(self.image)
                 bm_w, bm_h = self.image.Size
-                self.display.SetSize(bm_h + 2, bm_h + 2)
+                self.display.SetSize(bm_w + 2, bm_h + 2)
 
             self.text.SetFont(font)
             self.text.SetLabel(self.msg.replace("|", "\n"))
