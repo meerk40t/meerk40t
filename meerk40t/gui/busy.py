@@ -148,9 +148,8 @@ class BusyInfo:
                 self.display.Hide()
             else:
                 self.display.SetBitmap(self.image)
-                self.display.Show()
-                bm_w = self.image.GetWidth()
-                bm_h = self.image.GetHeight()
+                bm_w, bm_h = self.image.Size
+                self.display.SetSize(bm_h + 2, bm_h + 2)
 
             self.text.SetFont(font)
             self.text.SetLabel(self.msg.replace("|", "\n"))
@@ -160,7 +159,7 @@ class BusyInfo:
             wd = sizetext.width + 5 + bm_w
             ht = max(sizetext.height, bm_h)
 
-            self.frame.SetClientSize((wd+ 60, ht + 40))
+            self.frame.SetClientSize((wd + 60, ht + 40))
             self.panel.SetSize(self.frame.GetClientSize())
             self.panel.Layout()
             # self.text.Center()
