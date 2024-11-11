@@ -451,7 +451,7 @@ class Meerk40tFonts:
         return font, font_path
 
     def create_linetext_node(
-        self, x, y, text, font=None, font_size=None, font_spacing=1.0
+        self, x, y, text, font=None, font_size=None, font_spacing=1.0, align="start",
     ):
         if font_size is None:
             font_size = Length("20px")
@@ -478,7 +478,7 @@ class Meerk40tFonts:
             path = FontPath(weld)
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
-            cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
+            cfont.render(path, mytext, horizontal=horizontal, font_size=float(font_size), h_spacing=font_spacing, align=align)
         except (AttributeError, ShxFontParseError):
             # Could not parse path.
             pass
@@ -500,7 +500,7 @@ class Meerk40tFonts:
         path_node.mkfontsize = float(font_size)
         path_node.mkfontspacing = float(font_spacing)
         path_node.mkfontweld = weld
-        path_node.mkalign = "start"
+        path_node.mkalign = align
         path_node.mklinegap = 1.1
         path_node.mktext = text
         path_node._translated_text = mytext
@@ -799,7 +799,7 @@ def plugin(kernel, lifecycle):
             if text is None or text == "":
                 channel(_("No text given."))
                 return
-            
+
 
             if font_spacing is None:
                 font_spacing = 1
@@ -815,9 +815,9 @@ def plugin(kernel, lifecycle):
                 for item in registered_fonts:
                     channel(f"{item[1]} ({item[0]})")
                 return
-            
+
             channel(f"Will use font '{font_name}' ({font_path})")
-    
+
             path_node = context.fonts.create_linetext_node(
                 x, y, text, font_path, font_size, font_spacing
             )
@@ -833,4 +833,3 @@ def plugin(kernel, lifecycle):
 
             context.signal("element_added", path_node)
             context.signal("refresh_scene", "Scene")
-            
