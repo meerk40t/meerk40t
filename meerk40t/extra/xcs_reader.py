@@ -120,6 +120,17 @@ class XCSLoader:
     def to_length(value):
         return round(value, 8) * UNITS_PER_MM
 
+
+    def fix_position(self, node, content):
+        x, y = self.get_coords(content)
+        bb = node.bounds
+        dx = x - bb[0]
+        dy = y - bb[1]
+        if abs(dx) > 50 or abs(dy) > 50:
+            node.matrix *= Matrix.translate(dx, dy)
+            node.translated(dx, dy)
+
+
     def get_coords(self, content, key=None):
         if key:
             x_coord = self.to_length(content[key].get("x", 0))
@@ -187,7 +198,7 @@ class XCSLoader:
         return parent
 
     def parse_text(self, parent, content):
-        matrix = self.get_matrix(content, use_translate=False)
+        matrix = self.get_matrix(content, use_translate=True)
         x_start, y_start = self.get_coords(content)
         width = self.to_length(content.get("width", 0))
         height = self.to_length(content.get("height", 0))
@@ -260,10 +271,11 @@ class XCSLoader:
         node.mkfont = font_name
         node.mkfontsize = font_size
         node.mkalign = alignment
+        self.fix_position(node, content)
         return parent
 
     def parse_path(self, parent, content):
-        matrix = self.get_matrix(content, use_translate=False)
+        matrix = self.get_matrix(content, use_translate=True)
         x_start, y_start = self.get_coords(content)
         width = self.to_length(content.get("width", 0))
         height = self.to_length(content.get("height", 0))
@@ -275,7 +287,7 @@ class XCSLoader:
             return
         geom = Geomstr.svg(pathstr)
         geom.uscale(UNITS_PER_MM)
-        # geom.translate(x_start, y_start)
+        geom.translate(x_start, y_start)
         ident = content.get("id", None)
         label = content.get("name", None)
         if label == "null":
@@ -294,6 +306,7 @@ class XCSLoader:
             stroke=stroke,
             geometry=geom,
         )
+        self.fix_position(node, content)
         return parent
 
     def parse_circle(self, parent, content):
