@@ -61,7 +61,7 @@ _ = wx.GetTranslation
 
 def register_panel_navigation(window, context):
     dragpanel = Drag(window, wx.ID_ANY, context=context)
-    iconsize = get_default_icon_size()
+    iconsize = get_default_icon_size(context)
     if platform.system() == "Windows":
         dx = 24
         dy = 30
@@ -1277,7 +1277,7 @@ class MovePanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         self.SetHelpText("move")
-        iconsize = 0.5 * get_default_icon_size()
+        iconsize = 0.5 * get_default_icon_size(self.context)
         self.button_navigate_move_to = wxBitmapButton(
             self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=iconsize)
         )
@@ -1556,7 +1556,7 @@ class PulsePanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         self.SetHelpText("pulse")
-        iconsize = 0.5 * get_default_icon_size()
+        iconsize = 0.5 * get_default_icon_size(self.context)
         self.button_navigate_pulse = wxBitmapButton(
             self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=iconsize)
         )
@@ -2544,7 +2544,7 @@ class Navigation(MWindow):
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
-        iconsize = int(0.75 * get_default_icon_size())
+        iconsize = int(0.75 * get_default_icon_size(self.context))
         minw = (3 + 3 + 3) * iconsize + 150
         minh = (4 + 1) * iconsize + 170
         super().SetSizeHints(minW=minw, minH=minh)

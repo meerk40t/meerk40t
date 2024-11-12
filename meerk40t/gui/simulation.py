@@ -1050,7 +1050,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(
-            icons8_circled_play.GetBitmap(resize=get_default_icon_size())
+            icons8_circled_play.GetBitmap(resize=get_default_icon_size(self.context))
         )
         self.text_playback_speed.SetMinSize(dip_size(self, 55, 23))
         # self.combo_device.SetToolTip(_("Select the device"))
@@ -1065,7 +1065,7 @@ class SimulationPanel(wx.Panel, Job):
             )
         )
         self.button_spool.SetBitmap(
-            icons8_route.GetBitmap(resize=1.5 * get_default_icon_size())
+            icons8_route.GetBitmap(resize=1.5 * get_default_icon_size(self.context))
         )
         # end wxGlade
 
@@ -1847,7 +1847,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def _start(self):
         self.button_play.SetBitmap(
-            icons8_pause.GetBitmap(resize=get_default_icon_size())
+            icons8_pause.GetBitmap(resize=get_default_icon_size(self.context))
         )
         self.button_play.SetToolTip(_("Stop the simulation replay"))
         self.context.schedule(self)
@@ -1855,7 +1855,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def _stop(self):
         self.button_play.SetBitmap(
-            icons8_circled_play.GetBitmap(resize=get_default_icon_size())
+            icons8_circled_play.GetBitmap(resize=get_default_icon_size(self.context))
         )
         self.button_play.SetToolTip(_("Start the simulation replay"))
         self.context.unschedule(self)

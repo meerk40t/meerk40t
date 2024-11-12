@@ -66,7 +66,7 @@ class ProjectPanel(wx.Panel):
         self.button_load = wxButton(self, wx.ID_ANY, _("Load Project"))
 
         self.button_load.SetBitmap(
-            icons8_opened_folder.GetBitmap(resize=get_default_icon_size())
+            icons8_opened_folder.GetBitmap(resize=get_default_icon_size(self.context))
         )
         info_panel = StaticBoxSizer(self, wx.ID_ANY, "Project-Information", wx.VERTICAL)
         line1 = wx.BoxSizer(wx.HORIZONTAL)

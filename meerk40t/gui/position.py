@@ -80,9 +80,9 @@ class PositionPanel(wx.Panel):
         self.chk_lock = wxCheckBox(self, wx.ID_ANY, _("Keep ratio"))
         self.chk_lock.SetValue(context.lock_active)
         if self.small:
-            resize_param = 0.5 * get_default_icon_size()
+            resize_param = 0.5 * get_default_icon_size(self.context)
         else:
-            resize_param = 0.75 * get_default_icon_size()
+            resize_param = 0.75 * get_default_icon_size(self.context)
 
         self.button_execute = wxBitmapButton(self, wx.ID_ANY)
         self.button_param = wxBitmapButton(self, wx.ID_ANY)

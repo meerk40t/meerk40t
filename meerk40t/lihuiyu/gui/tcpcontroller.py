@@ -89,7 +89,7 @@ class TCPController(MWindow):
         )
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         self.text_status.SetToolTip(_("Connection status"))
@@ -184,7 +184,7 @@ class TCPController(MWindow):
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -193,7 +193,7 @@ class TCPController(MWindow):
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()

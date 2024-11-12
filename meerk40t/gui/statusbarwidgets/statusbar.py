@@ -27,7 +27,8 @@ class CustomStatusBar(wx.StatusBar):
         self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
-        btn_size = 22
+        btn_size = int(22 * self.context.root.bitmap_correction_scale)
+
         for __ in range(self.panelct):
             # Linux wxPython has a fundamental flaw in the treatment of
             # small bitmap buttons. It reserves an extent around the

@@ -82,17 +82,17 @@ class CameraPanel(wx.Panel, Job):
 
         if not pane:
             self.button_update = wxBitmapButton(
-                self, wx.ID_ANY, icons8_camera.GetBitmap(resize=get_default_icon_size())
+                self, wx.ID_ANY, icons8_camera.GetBitmap(resize=get_default_icon_size(self.context))
             )
             self.button_export = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_image_in_frame.GetBitmap(resize=get_default_icon_size()),
+                icons8_image_in_frame.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             self.button_reconnect = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_connected.GetBitmap(resize=get_default_icon_size()),
+                icons8_connected.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             self.check_fisheye = wxCheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
             self.check_perspective = wxCheckBox(
@@ -109,7 +109,7 @@ class CameraPanel(wx.Panel, Job):
             self.button_detect = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_detective.GetBitmap(resize=get_default_icon_size()),
+                icons8_detective.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             scene_name = f"Camera{self.index}"
         else:

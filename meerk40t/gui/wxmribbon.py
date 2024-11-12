@@ -48,7 +48,7 @@ _ = wx.GetTranslation
 
 
 def register_panel_ribbon(window, context):
-    iconsize = get_default_icon_size()
+    iconsize = get_default_icon_size(context)
     minh = 3 * iconsize + 25
     pane_ribbon = (
         aui.AuiPaneInfo()
