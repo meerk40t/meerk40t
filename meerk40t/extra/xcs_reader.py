@@ -78,10 +78,18 @@ class XCSLoader:
     def get_matrix(self, content, use_scale: bool = True, use_rotate : bool = True, use_translate: bool = True):
         tx = 0
         ty = 0
+        o_x = content.get("offsetX", 0)
+        o_y = content.get("offsetY", 0)
         if use_rotate:
+            # XCS does center around the center of the object
+            # width and height are provided as the unrotated dimensions
+            wd = content.get("width", 0)
+            ht = content.get("height", 0)
             angle = content.get("angle", 0)
             angle = angle / 360 * tau
             px, py = self.get_coords(content, "pivot")
+            px += wd / 2
+            py += ht / 2
         else:
             angle = 0
             px = 0
@@ -141,9 +149,13 @@ class XCSLoader:
         return x_coord, y_coord
 
     def parse_line(self, parent, content):
-        matrix = self.get_matrix(content, use_translate=False, use_scale=False, use_rotate=False)
+        matrix = self.get_matrix(content, use_translate=False, use_scale=False, use_rotate=True)
         x_start, y_start = self.get_coords(content)
+        x_offset = self.to_length(content.get("offsetX", 0))
+        y_offset = self.to_length(content.get("offsetY", 0))
         x_end, y_end = self.get_coords(content, "endPoint")
+        x_end += x_offset
+        y_end += y_offset
         in_group, group_node = self.need_group(content, parent)
         ident = content.get("id", None)
         label = content.get("name", None)
@@ -166,6 +178,7 @@ class XCSLoader:
             matrix=matrix,
             stroke=stroke,
         )
+        self.fix_position(node, content)
         return parent
 
     def parse_rect(self, parent, content):
@@ -182,6 +195,8 @@ class XCSLoader:
         stroke = Color(content.get("layerColor", "blue"))
         lock = content.get("lockState", False)
         p_node = group_node if in_group else parent
+        # print (f"(xcs   ) x={Length(x_start).length_mm}, y={Length(y_start).length_mm}, width={Length(width).length_mm}, height={Length(height).length_mm}")
+        # print (matrix)
         node = p_node.add(
             type="elem rect",
             label=label,
@@ -195,6 +210,8 @@ class XCSLoader:
             matrix=matrix,
             stroke=stroke,
         )
+        bb = node.bounds
+        # print (f"(bounds) x={Length(bb[0]).length_mm}, y={Length(bb[0]).length_mm}, width={Length(bb[2] - bb[0]).length_mm}, height={Length(bb[3] - bb[1]).length_mm}")
         return parent
 
     def parse_text(self, parent, content):
@@ -229,29 +246,41 @@ class XCSLoader:
         stroke = Color(content.get("layerColor", "blue"))
         lock = content.get("lockState", False)
         geom = Geomstr()
-        font_data = content.get("fontData", None)
-        if font_data:
-            glyph_data = font_data.get("glyphData", {})
-            dx = 0
-            dy = 0
-            for glyph in text_content:
-                if glyph not in glyph_data:
-                    continue
-                info = glyph_data[glyph]
-                pathstr = info.get("dPath")
-                advance_x = info.get("advanceWidth", 0)
-                advance_y = info.get("advanceHeight", 0)
-                dx += advance_x + letter_spacing
-                if glyph == "\n":
-                    dy += advance_y
-                    dx = 0
-                    continue
+        if "charJSONs" in content:
+            glyph_data = content["charJSONs"]
+            for glyph in glyph_data:
+                dx = glyph["x"]
+                dy = glyph["y"]
+                pathstr = glyph["dPath"]
                 if not pathstr:
                     continue
                 glyph_geom = Geomstr.svg(pathstr)
                 glyph_geom.translate(dx, dy)
                 geom.append(glyph_geom, end=True)
-            geom.uscale(UNITS_PER_MM)
+        else:
+            font_data = content.get("fontData", None)
+            if font_data:
+                glyph_data = font_data.get("glyphData", {})
+                dx = 0
+                dy = 0
+                for glyph in text_content:
+                    if glyph not in glyph_data:
+                        continue
+                    info = glyph_data[glyph]
+                    pathstr = info.get("dPath")
+                    advance_x = info.get("advanceWidth", 0)
+                    advance_y = info.get("advanceHeight", 0)
+                    dx += advance_x + letter_spacing
+                    if glyph == "\n":
+                        dy += advance_y
+                        dx = 0
+                        continue
+                    if not pathstr:
+                        continue
+                    glyph_geom = Geomstr.svg(pathstr)
+                    glyph_geom.translate(dx, dy)
+                geom.append(glyph_geom, end=True)
+        geom.uscale(UNITS_PER_MM)
             # geom.translate(x_start, y_start)
         # Nothing found....
         if geom.index == 0:
@@ -271,7 +300,7 @@ class XCSLoader:
         node.mkfont = font_name
         node.mkfontsize = font_size
         node.mkalign = alignment
-        self.fix_position(node, content)
+        # self.fix_position(node, content)
         return parent
 
     def parse_path(self, parent, content):
