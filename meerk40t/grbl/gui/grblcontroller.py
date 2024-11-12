@@ -35,7 +35,7 @@ class GRBLControllerPanel(wx.Panel):
         self.service.themes.set_window_colors(self)
         self.SetHelpText("grblcontoller")
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        self.iconsize = 0.75 * get_default_icon_size(self.context)
+        self.iconsize = 0.75 * get_default_icon_size(context)
         self.state = None
         self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
