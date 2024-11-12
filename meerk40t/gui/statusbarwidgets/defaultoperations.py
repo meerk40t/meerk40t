@@ -6,7 +6,7 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import wxStaticBitmap
+from meerk40t.gui.wxutils import wxStaticBitmap, dip_size
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -53,6 +53,9 @@ class DefaultOperationWidget(StatusBarWidget):
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
         super().GenerateControls(parent, panelidx, identifier, context)
+        size = dip_size(self.parent, 32, 32)
+        self.iconsize = size[0]
+
         # How should we display the data?
         isize = int(self.iconsize * self.context.root.bitmap_correction_scale)
         display_mode = self.context.elements.setting(int, "default_ops_display_mode", 0)

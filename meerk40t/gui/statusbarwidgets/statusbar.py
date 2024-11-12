@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.icons import icons8_circled_right
-from meerk40t.gui.wxutils import wxStaticBitmap
+from meerk40t.gui.wxutils import wxStaticBitmap, dip_size
 
 _ = wx.GetTranslation
 
@@ -19,7 +19,8 @@ class CustomStatusBar(wx.StatusBar):
         wx.StatusBar.__init__(self, parent, -1)
         self.context.themes.set_window_colors(self)
         # Make sure that the statusbar elements are visible fully
-        self.SetMinHeight(25)
+        size = dip_size(parent, 25, 25)
+        self.SetMinHeight(size[0])
         self.SetFieldsCount(self.panelct)
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         self.status_text = [""] * self.panelct
@@ -27,7 +28,7 @@ class CustomStatusBar(wx.StatusBar):
         self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
-        btn_size = int(22 * self.context.root.bitmap_correction_scale)
+        btn_size = int((size[0] - 3) * self.context.root.bitmap_correction_scale)
 
         for __ in range(self.panelct):
             # Linux wxPython has a fundamental flaw in the treatment of
@@ -38,7 +39,7 @@ class CustomStatusBar(wx.StatusBar):
                 self,
                 id=wx.ID_ANY,
                 bitmap=icons8_circled_right.GetBitmap(resize=btn_size, buffer=1),
-                size=wx.Size(btn_size, btn_size),
+                size=wx.Size(size[0], size[1]),
                 # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)
