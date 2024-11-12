@@ -57,8 +57,15 @@ def set_icon_appearance(factor, min_size):
     _GLOBAL_FACTOR = factor
 
 
-def get_default_icon_size():
-    return int(_GLOBAL_FACTOR * STD_ICON_SIZE)
+def get_default_icon_size(context = None):
+    res = _GLOBAL_FACTOR * STD_ICON_SIZE
+    c = context
+    if c is not None:
+        if hasattr(c, "root"):
+            c = c.root
+        if hasattr(c, "bitmap_correction_scale"):
+            res *= c.bitmap_correction_scale
+    return int(res)
 
 
 def set_default_icon_size(default_size):
@@ -550,7 +557,7 @@ class VectorIcon:
 
     def prepare_bitmap(self, final_icon_width, final_icon_height, buffer, forced_background=None):
         # forced_background is a (r, g, b, a) tuple (needed so we can still hash it)
-        wincol = self._background.GetColour() 
+        wincol = self._background.GetColour()
         red, green, blue = wincol.red, wincol.green, wincol.blue
 
         bmp = wx.Bitmap.FromRGBA(
@@ -3533,7 +3540,7 @@ icon_distort = VectorIcon(
 		"c28.651,0,52.672-19.051,60.821-45.056l263.915-37.696c9.493,23.445,32.448,40.085,59.264,40.085c35.285,0,64-28.715,64-64"
 		"C512,375.637,491.605,350.848,464.149,343.637z M387.2,386.368l-263.936,37.717c-6.507-16.064-19.285-28.864-35.349-35.349"
 		"L125.632,124.8c17.792-5.568,32.363-18.453,39.723-35.392l155.072,34.453C320.32,125.248,320,126.571,320,128"
-		"c0,29.675,20.395,54.464,47.851,61.675l52.693,158.08C404.629,355.392,392.533,369.323,387.2,386.368z", 
+		"c0,29.675,20.395,54.464,47.851,61.675l52.693,158.08C404.629,355.392,392.533,369.323,387.2,386.368z",
     ),
     stroke=()
 )

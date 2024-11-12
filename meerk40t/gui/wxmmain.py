@@ -234,6 +234,35 @@ class Autosaver:
         self.context.schedule(self._job)
 
 
+def register_panel_dpi_bug(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Bottom()
+        .Caption(_("Unfortunate System Settings"))
+        .MinSize(200, 40)
+        .FloatingSize(400, 98)
+        .Name("dpi_bug")
+        .Show()
+        .CaptionVisible(not context.pane_lock)
+    )
+    # pane.submenu = "_10_" + _("Laser")
+    pane.dock_proportion = 98
+    pane.hide_menu = True
+    pane.pane_show = True
+    msg = _(
+        "Your system is using a very high userscale value: {scale}% ! " +
+        "Unfortunately there is a bug in wxPython (the framework we are using) " +
+        "that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n" +
+        "As there is only so much we can do about it, we recommend lowering your userscale value to something below 165%."
+    ).format(scale=context.root.user_scale)
+    panel = wx.StaticText(window, wx.ID_ANY, label=msg)
+    panel.SetBackgroundColour(wx.YELLOW)
+    panel.SetForegroundColour(wx.RED)
+
+    pane.control = panel
+    window.on_pane_create(pane)
+    context.register("pane/dpi_bug", pane)
+
 class MeerK40t(MWindow):
     """MeerK40t main window"""
 
@@ -279,6 +308,7 @@ class MeerK40t(MWindow):
         self.previous_position = None
         self.is_paused = False
 
+        self.context.kernel.busyinfo.change(msg=_("Loading panels..."), keep=1)
         self._mgr = aui.AuiManager()
         self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
@@ -2967,6 +2997,9 @@ class MeerK40t(MWindow):
             self.context.elements.undo.mark("Clear Project")
 
     def __set_panes(self):
+        if self.context.root.faulty_bitmap_scaling:
+            self.context.kernel.register("wxpane/dpi_bug", register_panel_dpi_bug)
+
         self.context.setting(bool, "pane_lock", False)
 
         for register_panel in list(self.context.lookup_all("wxpane")):

@@ -64,7 +64,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         )
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         # end wxGlade
@@ -96,7 +96,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
         self.button_device_connect.SetBitmap(
-            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size(self.context))
         )
         self.button_device_connect.Enable()
 
@@ -104,7 +104,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         self.button_device_connect.SetBackgroundColour("#dfdf00")
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         self.button_device_connect.Enable()

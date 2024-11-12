@@ -35,7 +35,7 @@ class GRBLControllerPanel(wx.Panel):
         self.service.themes.set_window_colors(self)
         self.SetHelpText("grblcontoller")
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        self.iconsize = 0.75 * get_default_icon_size()
+        self.iconsize = 0.75 * get_default_icon_size(self.context)
         self.state = None
         self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
@@ -99,7 +99,7 @@ class GRBLControllerPanel(wx.Panel):
             if entry[3] is not None:
                 btn.SetBitmap(
                     entry[3].GetBitmap(
-                        resize=0.5 * get_default_icon_size(), use_theme=False
+                        resize=0.5 * get_default_icon_size(self.context), use_theme=False
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)

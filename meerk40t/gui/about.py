@@ -168,6 +168,18 @@ class AboutPanel(wx.Panel):
         )
         vsizer_main.AddSpacer(5)
         vsizer_main.Add(meerk40t_about_text, 4, wx.EXPAND, 0)
+        if self.context.root.faulty_bitmap_scaling:
+            info = wxStaticText(self, wx.ID_ANY,
+                _(
+                    "Your system is using a very high userscale value: {scale}% ! " +
+                    "Unfortunately there is a bug in wxPython (the framework we are using) " +
+                    "that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n" +
+                    "As there is only so much we can do about it, we recommend lowering your userscale value to something below 165%."
+                ).format(scale=self.context.root.user_scale)
+            )
+            info.SetBackgroundColour(wx.YELLOW)
+            info.SetForegroundColour(wx.RED)
+            vsizer_main.Add(info, 1, wx.EXPAND, 0)
         self.SetSizer(vsizer_main)
         self.Layout()
         # end wxGlade

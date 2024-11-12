@@ -513,7 +513,7 @@ class DebugIconPanel(wx.Panel):
             if obj is not None:
                 if isinstance(obj, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
                     imgs = self.icon_show.Size
-                    ms = min(imgs[0], imgs[1])
+                    ms = min(imgs[0], imgs[1]) * self.context.root.bitmap_correction_scale
                     bmp = obj.GetBitmap(resize=ms, force_darkmode=self.context.themes.dark)
                     self.icon_show.SetBitmap(bmp)
 
@@ -573,11 +573,11 @@ class DebugWindowPanel(wx.Panel):
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
         radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
         btn_bmap_left = wx.BitmapButton(
-            self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=25)
+            self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=mkicons.get_default_icon_size(self.context)/2)
         )
         slider_left = wx.Slider(self, wx.ID_ANY, value=0, minValue=0, maxValue=100)
         static_left = wx.StaticBitmap(
-            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
+            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=mkicons.get_default_icon_size(self.context))
         )
         left_side.Add(cb_left, 0, 0, 0)
         left_side.Add(text_left, 0, 0, 0)
@@ -600,7 +600,7 @@ class DebugWindowPanel(wx.Panel):
         toggle_right = wxToggleButton(self, wx.ID_ANY, "Toggle")
         radio_right = wxRadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
         static_right = wxStaticBitmap(
-            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
+            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=mkicons.get_default_icon_size(self.context))
         )
         # right_side.Add(cb_right, 0, 0, 0)
         right_side.Add(text_right, 0, 0, 0)

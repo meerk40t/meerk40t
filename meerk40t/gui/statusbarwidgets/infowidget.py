@@ -45,10 +45,11 @@ class SimpleInfoWidget(StatusBarWidget):
                     wx.FONTWEIGHT_NORMAL,
                 )
             )
+        isize = 20 * self.context.root.bitmap_correction_scale
         self.btn_next = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
-            bitmap=icons8_up.GetBitmap(resize=20),
+            bitmap=icons8_up.GetBitmap(resize=isize),
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )

@@ -52,10 +52,11 @@ class BasicOpPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         # icons for coolant-indicator
+        isize = 20 * self.context.root.bitmap_correction_scale
         self.cool_icons = {
-            0: icon_ignore.GetBitmap(resize=20),
-            1: icon_air_on.GetBitmap(resize=20, color="green"),
-            2: icon_air_off.GetBitmap(resize=20, color="red"),
+            0: icon_ignore.GetBitmap(resize=isize),
+            1: icon_air_on.GetBitmap(resize=isize, color="green"),
+            2: icon_air_off.GetBitmap(resize=isize, color="red"),
         }
 
         # Refresh logic
@@ -389,7 +390,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_direction.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -397,7 +398,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_image.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -405,7 +406,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -413,7 +414,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_laser_beam.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -421,7 +422,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icon_points.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
