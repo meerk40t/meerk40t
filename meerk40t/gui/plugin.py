@@ -1,3 +1,5 @@
+import platform
+
 def plugin(kernel, lifecycle):
     _ = kernel.translation
     kernel_root = kernel.root
@@ -378,52 +380,52 @@ and a wxpython version <= 4.1.1."""
             lock.acquire(True)
 
         if kernel._gui:
-            context = kernel.root
-            context.user_scale = 100
-            context.faulty_bitmap_scaling = False
-            context.bitmap_correction_scale = 1.0
-            import wx
-            import platform
-            import meerk40t.gui.icons as icons
-            high_dpi = context.setting(bool, "high_dpi", True)
-            if platform.system() == "Windows" and high_dpi:
+
+            def detect_windows_dpi(context):
+                """Get Windows DPI scaling factor and set DPI awareness."""
+                scale = 100
+                if not (platform.system() == "Windows" and context.setting(bool, "high_dpi", True)):
+                    return scale
                 try:
                     # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                     from ctypes import OleDLL
                     shcore = OleDLL("shcore")
-                    context.user_scale = shcore.GetScaleFactorForDevice(0)
-                    # The next call might cause a runtime error
+                    scale = shcore.GetScaleFactorForDevice(0)
                     shcore.SetProcessDpiAwareness(1)
-                except (AttributeError, ImportError):
-                    # We're on a non-Windows box.
-                    pass
-                except OSError:
-                    # Potential access denied - and it still works!
+                except (AttributeError, ImportError, OSError):
+                    # This is the wrong windows version, or we geta
                     pass
 
-            """
-            wxPython has unfortunately a bug of how it will deal with upscaling.
-            A user can set a scale in the windows display settings. The
-            moment that scale is set beyond 170% then out of a sudden wxpython will scale
-            up all images / bitmaps you hand it over. For 250% for instance
-            it will upscale all images by a factor of 3! If you need a specific bitmap
-            size then we have to artificially reduce the resolution by a third
-            to compensate this. This will make buttons - despite the high resolution -
-            look more pixely!
-            """
-            # We could just use a threshold value, but let's test it instead!
-            bmap : wx.Bitmap = icons.icons8_pause.GetBitmap(resize = 50)
-            test_frame = wx.Frame(None, wx.ID_ANY)
-            test_control = wx.StaticBitmap(test_frame, wx.ID_ANY)
-            s = bmap.Size
-            test_control.SetBitmap(bmap)
-            t = test_control.Size
-            test_frame.Destroy()
-            # print(s, t)
-            if abs(s[0] - t[0]) > 2 or abs(s[1] - t[1]) > 2:
-                context.faulty_bitmap_scaling = True
-                # They don't differ from x to y
-                context.bitmap_correction_scale = s[0] / t[0]
+                return scale
+
+            def detect_bitmap_scaling(icons):
+                import wx
+                """
+                wxPython has unfortunately a bug of how it will deal with upscaling.
+                A user can set a scale in the windows display settings. The
+                moment that scale is set beyond 170% then out of a sudden wxpython will scale
+                up all images / bitmaps you hand it over. For 250% for instance
+                it will upscale all images by a factor of 3! If you need a specific bitmap
+                size then we have to artificially reduce the resolution by a third
+                to compensate this. This will make buttons - despite the high resolution -
+                look more pixely!
+                """
+                bmap = icons.icons8_pause.GetBitmap(resize=50)
+                test_frame = wx.Frame(None, wx.ID_ANY)
+                test_control = wx.StaticBitmap(test_frame, wx.ID_ANY)
+                src_size = bmap.Size
+                test_control.SetBitmap(bmap)
+                actual_size = test_control.Size
+                test_frame.Destroy()
+
+                has_scaling_issue = abs(src_size[0] - actual_size[0]) > 2
+                correction = src_size[0] / actual_size[0] if has_scaling_issue else 1.0
+                return has_scaling_issue, correction
+
+            import meerk40t.gui.icons as icons
+            context = kernel.root
+            context.user_scale = detect_windows_dpi(context)
+            context.faulty_bitmap_scaling, context.bitmap_correction_scale = detect_bitmap_scaling(icons)
 
             flag = kernel.themes.dark
             icons.DARKMODE = flag
@@ -431,10 +433,9 @@ and a wxpython version <= 4.1.1."""
             sizeme = 150 if flag else 400
             image = icons.icon_meerk40t.GetBitmap(resize=sizeme)
             from ..main import APPLICATION_VERSION
-            from platform import system
-            if system() != "Linux":
+            if platform.system() != "Linux":
                 kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
-                kernel.busyinfo.change(msg=_("Load main module"), keep=1)
+                kernel.busyinfo.change(msg=_("Loading main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
             @kernel.console_command(
