@@ -118,19 +118,19 @@ class SpoolerPanel(wx.Panel):
         self.button_pause = wxButton(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
-            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button.GetBitmap(
-                resize=0.5 * get_default_icon_size(),
+                resize=0.5 * get_default_icon_size(self.context),
                 color=self.context.themes.get("stop_fg"),
                 keepalpha=True,
             )
         )
         self.button_stop.SetBitmapFocus(
-            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
         self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))

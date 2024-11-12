@@ -209,7 +209,10 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wxBitmapButton(
-            self, wx.ID_ANY, icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2)
+            self, wx.ID_ANY,
+            icons8_choose_font.GetBitmap(
+                resize=STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2
+            )
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node

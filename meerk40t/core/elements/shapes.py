@@ -617,8 +617,21 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        if prop is None:
+        if prop is None or (prop == "?" and new_value=="?"):
             channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties: "
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}, {d}"
+                    channel(prop_str)
+                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
             return
         classify_required = False
         prop = prop.lower()
@@ -832,6 +845,139 @@ def init_commands(kernel):
                 post.append(classify_new(changed))
 
         return "elements", data
+
+    @self.console_argument("prop", type=str, help=_("property to set"))
+    @self.console_argument("new_value", type=str, help=_("new property value"))
+    @self.console_command(
+        "op-property-set",
+        help=_("set operation property to new value"),
+        input_type=(
+            None,
+            "ops",
+        ),
+        output_type="ops",
+        all_arguments_required=True,
+    )
+    def operation_property_set(
+        command, channel, _, data, post=None, prop=None, new_value=None, **kwargs
+    ):
+        """
+        Generic node manipulation routine, use with care
+        """
+        if data is None:
+            data = list(self.ops(selected=True))
+        if not data:
+            channel(_("No selected operations."))
+            return
+        if prop is None or (prop == "?" and new_value=="?"):
+            channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties: "
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}, {d}"
+                    channel(prop_str)
+                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
+            return
+        prop = prop.lower()
+        if len(new_value) == 0:
+            new_value = None
+        # Let's distinguish a couple of special cases...
+        prevalidated = False
+        if prop == "color":
+            if new_value is not None:
+                if new_value.lower() == "none":
+                    # The text...
+                    new_value = None
+                try:
+                    new_value = Color(new_value)
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid color value: {value}").format(value=new_value))
+                    return
+        if prop in ("power", "speed", "dpi"):
+            try:
+                testval = float(new_value)
+            except ValueError:
+                channel(f"Invalid value: {new_value}")
+                return
+            if testval < 0:
+                channel(f"Invalid value: {new_value}")
+                return
+            if prop == "power" and testval > 1000:
+                channel(f"Invalid value: {new_value}")
+                return
+            new_value = testval
+            prevalidated = True
+
+
+        changed = []
+
+        for e in data:
+            if hasattr(e, prop):
+                if hasattr(e, "can_modify") and not e.can_modify:
+                    channel(
+                        _("Can't modify a locked element: {name}").format(
+                            name=str(e)
+                        )
+                    )
+                    continue
+                try:
+                    oldval = getattr(e, prop)
+                    if prevalidated:
+                        setval = new_value
+                    else:
+                        if oldval is not None:
+                            proptype = type(oldval)
+                            setval = proptype(new_value)
+                            if isinstance(oldval, bool):
+                                if new_value.lower() in ("1", "true"):
+                                    setval = True
+                                elif new_value.lower() in ("0", "false"):
+                                    setval = False
+                        else:
+                            setval = new_value
+                    setattr(e, prop, setval)
+                except TypeError:
+                    channel(
+                        _(
+                            "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                        ).format(val=new_value, field=prop, oldval=oldval)
+                    )
+                except ValueError:
+                    channel(
+                        _(
+                            "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                        ).format(val=new_value, field=prop, oldval=oldval)
+                    )
+                except AttributeError:
+                    channel(
+                        _(
+                            "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                        ).format(val=new_value, field=prop, oldval=oldval)
+                    )
+
+
+            else:
+                channel(
+                    _("Operation {name} has no property {field}").format(
+                        name=str(e), field=prop
+                    )
+                )
+                continue
+            e.altered()
+            changed.append(e)
+        if len(changed) > 0:
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_update", changed)
+
+        return "ops", data
 
     @self.console_command(
         "recalc", input_type=("elements", None), output_type="elements"

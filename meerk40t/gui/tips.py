@@ -57,6 +57,7 @@ class TipPanel(wx.Panel):
         # self.context.tip_access_consent = False
         self.SetHelpText("tips")
         icon_size = dip_size(self, 25, 25)
+        icon_size *= self.context.root.bitmap_correction_scale
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)

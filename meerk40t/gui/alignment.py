@@ -260,7 +260,7 @@ class AlignmentPanel(wx.Panel):
         self.rbox_treatment.SetSelection(0)
         self.btn_align = wxButton(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
@@ -506,7 +506,7 @@ class DistributionPanel(wx.Panel):
 
         self.btn_dist = wxButton(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_check = StaticBoxSizer(
@@ -1182,7 +1182,7 @@ class ArrangementPanel(wx.Panel):
 
         self.btn_arrange = wxButton(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)

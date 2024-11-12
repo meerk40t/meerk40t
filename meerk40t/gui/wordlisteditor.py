@@ -19,7 +19,7 @@ from .icons import (
 from .mwindow import MWindow
 from .wxutils import (
     StaticBoxSizer,
-    TextCtrl, 
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
@@ -62,13 +62,13 @@ class WordlistMiniPanel(wx.Panel):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wxButton(self, wx.ID_ANY, _("Edit"))
         self.button_edit.SetBitmap(
-            icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
         self.button_next = wxButton(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(
-            icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_next.SetToolTip(
             _("Wordlist: go to next page (right-click to next entry)")
@@ -76,7 +76,7 @@ class WordlistMiniPanel(wx.Panel):
 
         self.button_prev = wxButton(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(
-            icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_prev.SetToolTip(
             _("Wordlist: go to previous page (right-click to previous entry)")

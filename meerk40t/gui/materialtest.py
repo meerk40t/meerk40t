@@ -291,7 +291,7 @@ class TemplatePanel(wx.Panel):
 
         self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
-            icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -748,7 +748,7 @@ class TemplatePanel(wx.Panel):
                         _("Pulse Width"),
                         "ns",
                         False,
-                        True, 
+                        True,
                         None,
                     )
                 )

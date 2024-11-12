@@ -19523,7 +19523,7 @@ msgid "How long should the tooltip stay before it disappears"
 msgstr "Per quanto tempo deve rimanere visibile il tooltip prima di scomparire"
 
 #: meerk40t/gui/plugin.py:362
-msgid "Load main module"
+msgid "Loading main module"
 msgstr "Caricamento il modulo principale"
 
 #: meerk40t/gui/plugin.py:382

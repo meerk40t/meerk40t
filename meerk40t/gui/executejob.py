@@ -6,8 +6,8 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
 from .wxutils import (
-    disable_window, 
-    wxButton, 
+    disable_window,
+    wxButton,
     wxComboBox,
     wxListBox,
 )
@@ -90,7 +90,7 @@ class PlannerPanel(wx.Panel):
         )
         self.button_start.SetForegroundColour(wx.BLACK)
         self.button_start.SetBitmap(
-            icons8_laser_beam.GetBitmap(resize=get_default_icon_size())
+            icons8_laser_beam.GetBitmap(resize=get_default_icon_size(self.context))
         )
         # end wxGlade
 

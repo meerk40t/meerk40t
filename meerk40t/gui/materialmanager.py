@@ -369,7 +369,7 @@ class MaterialPanel(ScrolledPanel):
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
             context=self.context, list_name="list_materialmanager"
         )
-        
+
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
         self.list_preview.AppendColumn(
             _("Operation"),
@@ -627,7 +627,7 @@ class MaterialPanel(ScrolledPanel):
     def expanded_info(self, newvalue):
         self._expanded_info = newvalue
         info = dip_size(self, 20, 20)
-        icon_size = info[0]
+        icon_size = info[0] * self.context.root.bitmap_correction_scale
         if self._expanded_info:
             self.btn_expand.SetBitmap(icons8_caret_up.GetBitmap(resize=icon_size))
             self.btn_expand.SetToolTip(_("Click to hide extended infos"))

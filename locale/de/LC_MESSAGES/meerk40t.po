@@ -17915,7 +17915,7 @@ msgid "How long should the tooltip stay before it disappears"
 msgstr "Wie lange soll der Hilfetext angezeigt werden, bevor er verschwindet"
 
 #: meerk40t/gui/plugin.py:362
-msgid "Load main module"
+msgid "Loading main module"
 msgstr "Lade Hauptprogramm"
 
 #: meerk40t/gui/plugin.py:382
@@ -19221,6 +19221,22 @@ msgstr "dann definiert dies den minimalen Schwarz-Wert eines zu brennenden Pixel
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1369
 msgid "Padding that will be added at the end of a scanline to allow the laser to slow down"
 msgstr "Puffer der am Ende einer Linie hinzugefügt wird, damit der Laser abbremsen kann."
+
+#: meerk40t/gui/about.py:174
+msgid ""
+"Your system is using a very high userscale value: {scale}% ! "
+"Unfortunately there is a bug in wxPython (the framework we are using) "
+"that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n"
+"As there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
+msgstr ""
+"Die aktuelle Systemkonfiguration verwendet einen sehr hohen Skalierungswert von {scale}%! "
+"Leider gibt es in wxPython (der von uns verwendeten Bibliothek) einen Bug, der bei diesen Werten "
+"alle Bilder ungewollt vergrößert. Dies erkennt man an zu großen/sehr pixeligen Icons.\n"
+"Wir empfehlen dringend die Benutzerskalierung in den Systemeinstellungen auf einen Wert von unter 150% einzustellen."
+
+#: meerk40t./gui/wxmmain.py:241
+msgid "Unfortunate System Settings"
+msgstr "Inkompatible Systemeinstellungen"
 
 #: meerk40t/gui/wxutils.py:848
 msgid "Default values..."

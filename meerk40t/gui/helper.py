@@ -54,7 +54,7 @@ class HelperPanel(wx.Panel):
         )
         self.check_allow = wxCheckBox(self, wx.ID_ANY, _("Display control-information"))
         # self.button_webhelp = wxButton(self, wx.ID_ANY, _("Online-Help"))
-        # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
+        # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size(self.context)))
         self.active = False
         self.__set_properties()
         self.__do_layout()

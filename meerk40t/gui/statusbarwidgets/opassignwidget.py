@@ -225,7 +225,8 @@ class OperationAssignWidget(StatusBarWidget):
                         iconcolor = c2
                 return iconcolor, background
 
-            iconsize = 20
+            iconsize = int(20 * self.context.root.bitmap_correction_scale)
+
             result = None
             d = None
             if node.type == "op raster":

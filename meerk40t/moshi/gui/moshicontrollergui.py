@@ -108,7 +108,7 @@ class MoshiControllerPanel(wx.Panel):
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         self.button_device_connect.SetFont(
@@ -336,7 +336,7 @@ class MoshiControllerPanel(wx.Panel):
                 self.button_device_connect.SetLabel(str(usb_status[0]))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -345,7 +345,7 @@ class MoshiControllerPanel(wx.Panel):
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -354,7 +354,7 @@ class MoshiControllerPanel(wx.Panel):
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Disable()
@@ -363,7 +363,7 @@ class MoshiControllerPanel(wx.Panel):
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -372,7 +372,7 @@ class MoshiControllerPanel(wx.Panel):
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Disable()

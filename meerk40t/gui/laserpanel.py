@@ -136,7 +136,7 @@ class LaserPanel(wx.Panel):
         self.context.root.setting(bool, "laserpane_arm", True)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.icon_size = 0.5 * get_default_icon_size()
+        self.icon_size = 0.5 * get_default_icon_size(self.context)
 
         self.sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(self.sizer_devices, 0, wx.EXPAND, 0)
@@ -151,8 +151,9 @@ class LaserPanel(wx.Panel):
             _("Select device from list of configured devices")
         )
         ss = dip_size(self, 23, 23)
+        bsize = ss[0] * self.context.root.bitmap_correction_scale
         self.btn_config_laser = wxButton(self, wx.ID_ANY, size=ss)
-        self.btn_config_laser.SetBitmap(icons8_computer_support.GetBitmap(resize=ss[0]))
+        self.btn_config_laser.SetBitmap(icons8_computer_support.GetBitmap(resize=bsize))
         self.btn_config_laser.SetToolTip(
             _("Opens device-specific configuration window")
         )
@@ -712,7 +713,7 @@ class JobPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
-        self.icon_size = 0.5 * get_default_icon_size()
+        self.icon_size = 0.5 * get_default_icon_size(self.context)
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 

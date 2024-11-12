@@ -3139,9 +3139,80 @@ def init_tree(kernel):
             self.classify_inherit_stroke = False
 
     @tree_conditional(lambda node: not is_regmark(node))
+    @tree_submenu(_("Duplicate group"))
+    @tree_operation(
+        _("Make 1 copy"), node_type="group", help=_("Create one copy of the selected group"), grouping="20_ELEM_DUPLICATION"
+    )
+    def duplicate_groups_1(node, **kwargs):
+        duplicate_groups_n(node, copies=1, **kwargs)
+
+    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_submenu(_("Duplicate group"))
+    @tree_iterate("copies", 2, 10)
+    @tree_operation(
+        _("Make {copies} copies"),
+        node_type="group",
+        help=_("Create multiple copies of the selected group"),
+        grouping="20_ELEM_DUPLICATION",
+    )
+    def duplicate_groups_n(node, copies, **kwargs):
+
+        def copy_a_group(groupnode, parent, dx, dy):
+            new_group = copy(groupnode)
+            for orgnode in groupnode.children:
+                if orgnode.type in ("file", "group"):
+                    copy_a_group(orgnode, new_group, dx, dy)
+                    continue
+                copy_node = copy(orgnode)
+                if hasattr(copy_node, "matrix"):
+                    copy_node.matrix *= Matrix.translate(dx, dy)
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
+                    if hasattr(orgnode, optional):
+                        setattr(copy_node, optional, getattr(orgnode, optional))
+                had_optional = False
+                options = []
+                for prop in dir(orgnode):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
+                    if hasattr(orgnode, optional):
+                        setattr(copy_node, optional, getattr(orgnode, optional))
+                        had_optional = True
+
+                if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
+                    copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
+                elif self.copy_increases_wordlist_references and hasattr(orgnode, "mktext"):
+                    copy_node.mktext = self.wordlist_delta(orgnode.mktext, delta_wordlist)
+                new_group.add_node(copy_node)
+                if had_optional:
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, copy_node)
+                copy_nodes.append(copy_node)
+            parent.add_node(new_group)
+            dm = new_group.default_map()
+
+        copy_nodes = []
+        with self.undoscope("Duplicate element(s)"):
+            with self.static("duplicate_n"):
+                _dx = self.length_x("3mm")
+                _dy = self.length_y("3mm")
+                delta_wordlist = 0
+                for n in range(copies):
+                    delta_wordlist += 1
+                    copy_a_group(node, node.parent, (n + 1 ) * _dx, (n + 1) * _dy)
+        if copy_nodes:
+            if self.classify_new:
+                self.classify(copy_nodes)
+            self.signal("element_property_reload", copy_nodes)
+        self.set_emphasis(None)
+
+    @tree_conditional(lambda node: not is_regmark(node))
     @tree_submenu(_("Duplicate element(s)"))
     @tree_operation(
-        _("Make 1 copy"), node_type=elem_group_nodes, help=_("Create one copy of the selected elements"), grouping="20_ELEM_DUPLICATION"
+        _("Make 1 copy"), node_type=elem_nodes, help=_("Create one copy of the selected elements"), grouping="20_ELEM_DUPLICATION"
     )
     def duplicate_element_1(node, **kwargs):
         duplicate_element_n(node, copies=1, **kwargs)
@@ -3151,7 +3222,7 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(
         _("Make {copies} copies"),
-        node_type=elem_group_nodes,
+        node_type=elem_nodes,
         help=_("Create multiple copies of the selected elements"),
         grouping="20_ELEM_DUPLICATION",
     )
@@ -3168,22 +3239,22 @@ def init_tree(kernel):
                 # default values for these attributes
                 options = ["fill", "stroke", "wxfont"]
                 for optional in options:
-                    if hasattr(e, optional):
+                    if hasattr(orgnode, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
                 had_optional = False
                 options = []
-                for prop in dir(e):
+                for prop in dir(orgnode):
                     if prop.startswith("mk"):
                         options.append(prop)
                 for optional in options:
-                    if hasattr(e, optional):
+                    if hasattr(orgnode, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
                         had_optional = True
 
                 if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
                     copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
-                elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
-                    copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
+                elif self.copy_increases_wordlist_references and hasattr(orgnode, "mktext"):
+                    copy_node.mktext = self.wordlist_delta(orgnode.mktext, delta_wordlist)
                 orgparent.add_node(copy_node)
                 if had_optional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
@@ -3199,20 +3270,30 @@ def init_tree(kernel):
                         )
                     dm = copy_node.default_map()
 
+        copy_nodes = []
         with self.undoscope("Duplicate element(s)"):
             with self.static("duplicate_n"):
-                copy_nodes = list()
                 _dx = self.length_x("3mm")
                 _dy = self.length_y("3mm")
                 alldata = list(self.elems(emphasized=True))
-                minimaldata = self.condense_elements(alldata, expand_at_end=False)
-                for e in minimaldata:
-                    parent = e.parent
-                    copy_single_node(e, parent, copies, _dx, _dy)
+                if len(alldata) == 0:
+                    alldata = [node]
+                if alldata:
+                    # Special case: did we select all elements inside one group?
+                    first_parent = alldata[0].parent
+                    justonegroup = all(node.parent is first_parent for node in alldata)
+                    if justonegroup:
+                        minimaldata = alldata
+                    else:
+                        minimaldata = self.condense_elements(alldata, expand_at_end=False)
+                    for e in minimaldata:
+                        parent = e.parent
+                        copy_single_node(e, parent, copies, _dx, _dy)
 
-                if self.classify_new:
-                    self.classify(copy_nodes)
-        self.signal("element_property_reload", copy_nodes)
+                    if self.classify_new:
+                        self.classify(copy_nodes)
+        if copy_nodes:
+            self.signal("element_property_reload", copy_nodes)
         self.set_emphasis(None)
 
     def has_wordlist(node):
