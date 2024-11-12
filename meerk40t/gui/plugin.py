@@ -404,8 +404,8 @@ and a wxpython version <= 4.1.1."""
             """
             wxPython has unfortunately a bug of how it will deal with upscaling.
             A user can set a scale in the windows display settings. The
-            moment that scale is set beyond 170% then ou of a sudden wxpython will scale
-            up all images / bitmaps you hand it over. For 250% for insatnce
+            moment that scale is set beyond 170% then out of a sudden wxpython will scale
+            up all images / bitmaps you hand it over. For 250% for instance
             it will upscale all images by a factor of 3! If you need a specific bitmap
             size then we have to artificially reduce the resolution by a third
             to compensate this. This will make buttons - despite the high resolution -
