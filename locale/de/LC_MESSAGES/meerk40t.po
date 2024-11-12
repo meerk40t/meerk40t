@@ -19233,3 +19233,7 @@ msgstr ""
 "Leider gibt es in wxPython (der von uns verwendeten Bibliothek) einen Bug, der bei diesen Werten "
 "alle Bilder ungewollt vergrößert. Dies erkennt man an zu großen/sehr pixeligen Icons.\n"
 "Wir empfehlen dringend die Benutzerskalierung in den Systemeinstellungen auf einen Wert von unter 165% einzustellen."
+
+#: meerk40t./gui/wxmmain.py:241
+msgid "Unfortunate System Settings"
+msgstr "Inkompatible Systemeinstellungen"
