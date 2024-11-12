@@ -440,6 +440,18 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Red Dot",
             },
             {
+                "attr": "use_red_dot_for_outline",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Outline"),
+                "tip": _(
+                    "If active then the red dot will automatically be used if you outline the burn area"
+                ),
+                "conditional": (self, "use_red_dot"),
+                "section": "_10_Red Dot",
+            },
+            {
                 "attr": "max_vector_speed",
                 "object": self,
                 "default": 140,
@@ -620,6 +632,33 @@ class GRBLDevice(Service, Status):
         if self.permit_serial:
             self._register_console_serial()
 
+    def red_dot(self, turn_on):
+        if turn_on:
+            # self.redlight_preferred = True
+            # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
+            self.driver._clean()
+            self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
+            # By default, any move is a G0 move which will not activate the laser,
+            # so we need to switch to G1 mode:
+            self.driver.move_mode = 1
+            # An arbitrary move to turn the laser really on!
+            # self.driver.grbl("G1")
+        else:
+            self.driver.laser_off()
+            # self.driver.grbl("G0")
+            self.driver.move_mode = 0
+            # self.redlight_preferred = False
+
+        def pre_outline(self):
+            if not (self.use_red_dot and self.use_red_dot_for_outline):
+                return
+            self.red_dot(True)
+        
+        def post_outline(self):
+            if not (self.use_red_dot and self.use_red_dot_for_outline):
+                return
+            self.red_dot(False)
+
         @self.console_command(
             "gcode",
             help=_("Send raw gcode to the device"),
@@ -787,36 +826,30 @@ class GRBLDevice(Service, Status):
             command, channel, _, off=None, strength=None, remainder=None, **kwgs
         ):
             if not self.use_red_dot:
-                channel("Red Dot feature is not enabled, see config")
+                if channel:
+                    channel("Red Dot feature is not enabled, see config")
                 # self.redlight_preferred = False
                 return
             if not self.spooler.is_idle:
-                channel("Won't interfere with a running job, abort...")
+                if channel:
+                    channel("Won't interfere with a running job, abort...")
                 return
             if strength is not None:
                 if 0 <= strength <= 1000:
                     self.red_dot_level = strength
-                    channel(
-                        f"Laser strength for red dot is now: {self.red_dot_level/10.0}%"
-                    )
+                    if channel:
+                        channel(
+                            f"Laser strength for red dot is now: {self.red_dot_level/10.0}%"
+                        )
             if off == "off":
-                self.driver.laser_off()
-                # self.driver.grbl("G0")
-                self.driver.move_mode = 0
-                # self.redlight_preferred = False
-                channel("Turning off redlight.")
+                self.red_dot(False)
+                if channel:
+                    channel("Turning off redlight.")
                 self.signal("grbl_red_dot", False)
             else:
-                # self.redlight_preferred = True
-                # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
-                self.driver._clean()
-                self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
-                # By default, any move is a G0 move which will not activate the laser,
-                # so we need to switch to G1 mode:
-                self.driver.move_mode = 1
-                # An arbitrary move to turn the laser really on!
-                # self.driver.grbl("G1")
-                channel("Turning on redlight.")
+                self.red_dot(True)
+                if channel:
+                    channel("Turning on redlight.")
                 self.signal("grbl_red_dot", True)
 
         @self.console_option(
