@@ -17915,7 +17915,7 @@ msgid "How long should the tooltip stay before it disappears"
 msgstr "Wie lange soll der Hilfetext angezeigt werden, bevor er verschwindet"
 
 #: meerk40t/gui/plugin.py:362
-msgid "Load main module"
+msgid "Loading main module"
 msgstr "Lade Hauptprogramm"
 
 #: meerk40t/gui/plugin.py:382
