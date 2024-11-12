@@ -41,15 +41,22 @@ class Themes(Service):
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(self, kernel, "themes" if index is None else f"themes{index}")
         _ = wx.GetTranslation
-        if system() == "Darwin":
+        os_ver = system()
+        if os_ver == "Darwin":
             kernel.root.setting(str, "forced_theme", "default")
             kernel.root.forced_theme = "default"
         else:
+            if os_ver == "Windows":
+                default_value = "light"
+            elif os_ver == "Linux":
+                default_value = "default"
+            else:
+                default_value = "default"
             choices = [
                 {
                     "attr": "forced_theme",
                     "object": kernel.root,
-                    "default": "default",
+                    "default": default_value,
                     "type": str,
                     "label": _("UI-Colours"),
                     "style": "option",
