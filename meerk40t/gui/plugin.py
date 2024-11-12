@@ -391,14 +391,14 @@ and a wxpython version <= 4.1.1."""
                     # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                     from ctypes import OleDLL
                     shcore = OleDLL("shcore")
+                    context.user_scale = shcore.GetScaleFactorForDevice(0)
+                    # The next call might cause a runtime error
                     shcore.SetProcessDpiAwareness(1)
-                    context.userscale = shcore.GetScaleFactorForDevice(0)
-
                 except (AttributeError, ImportError):
                     # We're on a non-Windows box.
                     pass
                 except OSError:
-                    # Potential access denied.
+                    # Potential access denied - and it still works!
                     pass
 
             """
