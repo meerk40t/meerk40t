@@ -552,7 +552,8 @@ def init_commands(kernel):
                 elif startmethod == 2:
                     # Wait for some seconds
                     yield "wait", 5000
-
+                if hasattr(_spooler.context, "pre_outline"):
+                    yield from _spooler.context.pre_outline()
                 yield "wait_finish"
                 yield "rapid_mode"
                 idx = 0
@@ -563,6 +564,8 @@ def init_commands(kernel):
                         Length(amount=p[0]).length_mm,
                         Length(amount=p[1]).length_mm,
                     )
+                if hasattr(_spooler.context, "post_outline"):
+                    yield from _spooler.context.post_outline()
 
             _spooler.laserjob(
                 list(trace_hull(startmethod)), label=f"Trace Job: {method}", helper=True

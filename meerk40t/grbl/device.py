@@ -652,12 +652,12 @@ class GRBLDevice(Service, Status):
         def pre_outline(self):
             if not (self.use_red_dot and self.use_red_dot_for_outline):
                 return
-            self.red_dot(True)
+            yield ("console", "red on -f")
         
         def post_outline(self):
             if not (self.use_red_dot and self.use_red_dot_for_outline):
                 return
-            self.red_dot(False)
+            yield("console", "red off -f")
 
         @self.console_command(
             "gcode",
@@ -817,20 +817,23 @@ class GRBLDevice(Service, Status):
         @self.console_option(
             "strength", "s", type=int, help="Set the dot laser strength."
         )
+        @self.console_option(
+            "force", "f", type=bool, action="store_true", help="Set the dot laser strength."
+        )
         @self.console_argument("off", type=str)
         @self.console_command(
             "red",
             help=_("Turns redlight on/off"),
         )
         def red_dot_on(
-            command, channel, _, off=None, strength=None, remainder=None, **kwgs
+            command, channel, _, off=None, force=False, strength=None, remainder=None, **kwgs
         ):
             if not self.use_red_dot:
                 if channel:
                     channel("Red Dot feature is not enabled, see config")
                 # self.redlight_preferred = False
                 return
-            if not self.spooler.is_idle:
+            if not force and not self.spooler.is_idle:
                 if channel:
                     channel("Won't interfere with a running job, abort...")
                 return
