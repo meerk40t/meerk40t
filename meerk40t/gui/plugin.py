@@ -378,13 +378,58 @@ and a wxpython version <= 4.1.1."""
             lock.acquire(True)
 
         if kernel._gui:
-            try:
-                flag = kernel.themes.dark
-                import meerk40t.gui.icons as icons
-                icons.DARKMODE = flag
-                image = icons.icon_meerk40t.GetBitmap(resize=400)
-            except ImportError:
-                image = None
+            context = kernel.root
+            context.user_scale = 100
+            context.faulty_bitmap_scaling = False
+            context.bitmap_correction_scale = 1.0
+            import wx
+            import platform
+            import meerk40t.gui.icons as icons
+            high_dpi = context.setting(bool, "high_dpi", True)
+            if platform.system() == "Windows" and high_dpi:
+                try:
+                    # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
+                    from ctypes import OleDLL
+                    shcore = OleDLL("shcore")
+                    shcore.SetProcessDpiAwareness(1)
+                    context.userscale = shcore.GetScaleFactorForDevice(0)
+
+                except (AttributeError, ImportError):
+                    # We're on a non-Windows box.
+                    pass
+                except OSError:
+                    # Potential access denied.
+                    pass
+
+            """
+            wxPython has unfortunately a bug of how it will deal with upscaling.
+            A user can set a scale in the windows display settings. The
+            moment that scale is set beyond 170% then ou of a sudden wxpython will scale
+            up all images / bitmaps you hand it over. For 250% for insatnce
+            it will upscale all images by a factor of 3! If you need a specific bitmap
+            size then we have to artificially reduce the resolution by a third
+            to compensate this. This will make buttons - despite the high resolution -
+            look more pixely!
+            """
+            # We could just use a threshold value, but let's test it instead!
+            bmap : wx.Bitmap = icons.icons8_pause.GetBitmap(resize = 50)
+            test_frame = wx.Frame(None, wx.ID_ANY)
+            test_control = wx.StaticBitmap(test_frame, wx.ID_ANY)
+            s = bmap.Size
+            test_control.SetBitmap(bmap)
+            t = test_control.Size
+            test_frame.Destroy()
+            # print(s, t)
+            if abs(s[0] - t[0]) > 2 or abs(s[1] - t[1]) > 2:
+                context.faulty_bitmap_scaling = True
+                # They don't differ from x to y
+                context.bitmap_correction_scale = s[0] / t[0]
+
+            flag = kernel.themes.dark
+            icons.DARKMODE = flag
+            flag = context.faulty_bitmap_scaling
+            sizeme = 150 if flag else 400
+            image = icons.icon_meerk40t.GetBitmap(resize=sizeme)
             from ..main import APPLICATION_VERSION
             from platform import system
             if system() != "Linux":
@@ -432,7 +477,7 @@ and a wxpython version <= 4.1.1."""
             try:
                 meerk40tgui.MainLoop()
             except AssertionError as e:
-                # Under Darwin we have every now and then at program end a 
+                # Under Darwin we have every now and then at program end a
                 # wx._core.wxAssertionError: ... in DoScreenToClient(): TopLevel Window missing
                 print (f"MeerK40t encountered an error at shutdown: {e}")
                 pass
