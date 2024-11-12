@@ -174,7 +174,7 @@ class AboutPanel(wx.Panel):
                     "Your system is using a very high userscale value: {scale}% ! " +
                     "Unfortunately there is a bug in wxPython (the framework we are using) " +
                     "that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n" +
-                    "As there is only so much we can do about it, we recommend lowering your userscale value to something below 165%."
+                    "As there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
                 ).format(scale=self.context.root.user_scale)
             )
             info.SetBackgroundColour(wx.YELLOW)
