@@ -8571,7 +8571,7 @@ msgid "Lihuiyu interpreter attached to {device}"
 msgstr "已连接 Lihuiyu 解释器到 {device}"
 
 #: meerk40t/lihuiyu/device.py:954
-msgid "Intepreter cannot be attached to any device."
+msgid "Interpreter cannot be attached to any device."
 msgstr "无法连接到任何设备的解释器。"
 
 #: meerk40t/lihuiyu/plugin.py:29

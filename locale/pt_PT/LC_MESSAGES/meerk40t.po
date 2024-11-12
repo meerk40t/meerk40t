@@ -8658,7 +8658,7 @@ msgstr ""
 
 #: meerk40t/lihuiyu/device.py:954
 #, fuzzy
-msgid "Intepreter cannot be attached to any device."
+msgid "Interpreter cannot be attached to any device."
 msgstr "O servidor 1427 não pode ser ligado a nenhum dispositivo."
 
 #: meerk40t/lihuiyu/plugin.py:29

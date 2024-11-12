@@ -12498,7 +12498,7 @@ msgstr ""
 "der PPI-Optionen), bestimmt die "
 "Punkt-Länge die minimale Länge bei "
 "der der Laser eingeschaltet sein muss, "
-"damit eine stetiger Low-Power-Strahl"
+"damit eine stetiger Low-Power-Strahl "
 "zu einer Reihe von Strichen wird."
 
 msgid ""
@@ -19237,3 +19237,103 @@ msgstr ""
 #: meerk40t./gui/wxmmain.py:241
 msgid "Unfortunate System Settings"
 msgstr "Inkompatible Systemeinstellungen"
+
+#: meerk40t/gui/wxutils.py:848
+msgid "Default values..."
+msgstr "Standard-Werte..."
+
+#: meerk40t/ruida/gui/ruidaconfig.py:23
+msgid "UDP Settings"
+msgstr "UDP Einstellungen"
+
+#: meerk40t/ruida/gui/ruidaconfig.py:156
+msgid "Ruida-Configuration"
+msgstr "Ruida-Konfiguration"
+
+#: meerk40t/ruida/gui/ruidacontroller.py:120
+msgid "Connected"
+msgstr "Verbunden"
+
+#: meerk40t/ruida/gui/ruidacontroller.py:122
+msgid "Disconnected"
+msgstr "Getrennt"
+
+#: meerk40t/ruida/gui/ruidacontroller.py:168
+msgid "Ruida-Controller"
+msgstr "Ruida-Controller"
+
+#: meerk40t/ruida/gui/ruidaoperationproperties.py:26
+msgid "Air Assist"
+msgstr "Luftstrom"
+
+#: meerk40t/ruida/gui/ruidaoperationproperties.py:27
+msgid "Trigger the per element air assist"
+msgstr "Schaltet den Luftstrom um"
+
+#: meerk40t/tools/kerftest.py:880
+msgid "Kerf-Test"
+msgstr "Keft-Test"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:106
+msgid "Highest number of bytes in the write buffer."
+msgstr "Größte Anzahl von Bytes im Schreibpuffer"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1348
+msgid "Cutoff:"
+msgstr "Schwarzlevel"
+
+#: meerk40t/ruida/gui/gui.py:41
+msgid "Focus Z"
+msgstr "Z-Fokus"
+
+#: meerk40t/ruida/gui/gui.py:43
+msgid "Send a Ruida FocusZ command"
+msgstr "Sendet ein Z-Fokus Kommando"
+
+#: meerk40t/gui/propertypanels/attributes.py:467
+msgid "Butt"
+msgstr "Flach"
+
+#: meerk40t/gui/propertypanels/attributes.py:467 meerk40t/gui/propertypanels/attributes.py:468
+msgid "Round"
+msgstr "Rund"
+
+#: meerk40t/gui/propertypanels/attributes.py:467
+msgid "Square"
+msgstr "Quadrat"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Arcs"
+msgstr "Bogen"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Bevel"
+msgstr "Fase"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Miter"
+msgstr "Gehrung"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Miter-Clip"
+msgstr "Kurze Gehrung"
+
+#: meerk40t/gui/propertypanels/attributes.py:469
+msgid "Non-Zero"
+msgstr "Non-Zero"
+
+#: meerk40t/gui/propertypanels/attributes.py:469
+msgid "Even-Odd"
+msgstr "Even-Odd"
+
+#: meerk40t/gui/propertypanels/attributes.py:503
+msgid "Line-End"
+msgstr "Linien-Ende"
+
+#: meerk40t/gui/propertypanels/attributes.py:506
+msgid "Line-Join"
+msgstr "Verbindungen"
+
+#: meerk40t/gui/propertypanels/attributes.py:509
+msgid "Fillrule"
+msgstr "Füllregel"

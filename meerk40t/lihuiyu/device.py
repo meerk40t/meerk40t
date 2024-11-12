@@ -996,7 +996,7 @@ class LihuiyuDevice(Service, Status):
                         )
                     )
                 except KeyError:
-                    channel(_("Intepreter cannot be attached to any device."))
+                    channel(_("Interpreter cannot be attached to any device."))
                 return
 
     @property
