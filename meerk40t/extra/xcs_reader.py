@@ -424,6 +424,13 @@ class XCSLoader:
         content = xcs_data.get("device", None)
         if not content:
             return
+        opname_map = {
+            "VECTOR_ENGRAVING": "op engrave",
+            "VECTOR_CUTTING": "op cut",
+            "FILL_VECTOR_ENGRAVING": "op raster",
+            "BITMAP_ENGRAVING": "op image",
+            "KNIFE_CUTTING": "op cut",
+        }
         main_power = content.get('power', 100)
         data = content.get('data', {})
         material_list = content.get('materialList', {})
@@ -453,12 +460,8 @@ class XCSLoader:
             else:
                 p_node = self.elements.op_branch
                 op_label = f"{material_type} - {power}%"
-                if processing_type == "VECTOR_ENGRAVING":
-                    op_type = "op engrave"
-                elif processing_type == "VECTOR_CUTTING":
-                    op_type = "op cut"
-                elif processing_type == "FILL_VECTOR_ENGRAVING":
-                    op_type = "op raster"
+                if processing_type in opname_map:
+                    op_type = opname_map[processing_type]
                 else:
                     print (f"Unknown type: {processing_type}")
                     continue
@@ -471,6 +474,13 @@ class XCSLoader:
                 )
                 if op_type == "op cut" and kerf_distance != 0:
                     op_node.kerf = kerf_distance
+                if op_type == "op image":
+                    if "density" in parameter_set:
+                        op_node.overrule_dpi = True
+                        op_node.dpi = parameter_set["density"]
+                    if "bitmapMode" in parameter_set:
+                        bmode = parameter_set["bitmapMode"]
+                        # usually 'grayscale'
                 operation_list[hash_value] = op_node
             if node_id in nodelist:
                 cnode = nodelist[node_id]
