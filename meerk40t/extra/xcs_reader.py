@@ -46,6 +46,7 @@ from meerk40t.tools.geomstr import Geomstr
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("load/XCSLoaderFull", XCSLoader)
+        kernel.register("load/XCSLoaderPlain", XCSLoaderPlain)
 
 DEFAULT_SPEED = 30
 DEFAULT_POWER = 30
@@ -577,6 +578,19 @@ class XCSLoader:
     def load(context, elements_service, pathname, **kwargs):
 
         parser = XCSParser(context=context, elements=elements_service, plain=False)
+        with open(pathname, "r", encoding='utf-8') as source:
+            parser.parse(pathname, source, canvasid=0)
+        elements_service._loading_cleared = True
+        return True
+class XCSLoaderPlain:
+
+    @staticmethod
+    def load_types():
+        yield "XTool Files (without laser settings)", ("xcs",), "application/x-xcs"
+
+    @staticmethod
+    def load(context, elements_service, pathname, **kwargs):
+        parser = XCSParser(context=context, elements=elements_service, plain=True)
         with open(pathname, "r", encoding='utf-8') as source:
             parser.parse(pathname, source, canvasid=0)
         elements_service._loading_cleared = True
