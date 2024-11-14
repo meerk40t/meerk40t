@@ -45,23 +45,18 @@ from meerk40t.tools.geomstr import Geomstr
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        kernel.register("load/XCSLoader", XCSLoader)
-
+        kernel.register("load/XCSLoaderFull", XCSLoader)
 
 DEFAULT_SPEED = 30
 DEFAULT_POWER = 30
 
-
-class XCSLoader:
-    def __init__(self, context=None, elements=None, *args, **kwargs):
+class XCSParser:
+    def __init__(self, context=None, elements=None, plain=False, *args, **kwargs):
         self.channel = context.kernel.channels["console"]
         self.context = context
         self.elements = elements
         self.groups = {}
-
-    @staticmethod
-    def load_types():
-        yield "XTool Files", ("xcs",), "application/x-xcs"
+        self.plain = plain
 
     def log(self, msg):
         if self.channel:
@@ -77,6 +72,18 @@ class XCSLoader:
                 label = grp.get("groupName", None)
                 if grp_id:
                     self.groups[grp_id] = [label, None]  # label and associated node
+
+    def need_group(self, content, parent):
+        result = False
+        node = None
+        grpId = content.get("groupTag", "")
+        if grpId in self.groups:
+            result = True
+            label, node = self.groups[grpId]
+            if node is None:
+                node = parent.add(type="group", label=label)
+                self.groups[grpId] = (label, node)
+        return result, node
 
     def get_matrix(
         self,
@@ -103,8 +110,6 @@ class XCSLoader:
             sx = 1
             sy = 1
         if use_rotate:
-            wd = self.to_length(content.get("width", 0))
-            ht = self.to_length(content.get("height", 0))
             angle = content.get("angle", 0)
             angle = angle / 360.0 * tau
             px, py = self.get_coords(content, "pivot")
@@ -143,6 +148,19 @@ class XCSLoader:
             node.matrix *= Matrix.translate(dx, dy)
             node.translated(dx, dy)
 
+    def get_id_and_name(self, content):
+        ident = content.get("id", None)
+        label = content.get("name", None)
+        if label == "null":
+            label = None
+        return ident, label
+
+    def get_basic_attributes(self, content):
+        set_hidden = not content.get("visible", True)
+        stroke = Color(content.get("layerColor", "blue"))
+        lock = content.get("lockState", False)
+        return set_hidden, stroke, lock
+
     def get_coords(self, content, key=None):
         if key:
             x_coord = self.to_length(content[key].get("x", 0))
@@ -164,15 +182,10 @@ class XCSLoader:
         x_end += x_offset
         y_end += y_offset
         in_group, group_node = self.need_group(content, parent)
-        ident = content.get("id", None)
-        label = content.get("name", None)
-        if label == "null":
-            label = None
-        set_hidden = not content.get("visible", True)
-        stroke = Color(content.get("layerColor", "blue"))
-        lock = content.get("lockState", False)
+        ident, label = self.get_id_and_name(content)
+        set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
-        node = p_node.add(
+        return p_node.add(
             type="elem line",
             label=label,
             x1=x_start,
@@ -185,8 +198,6 @@ class XCSLoader:
             matrix=matrix,
             stroke=stroke,
         )
-        # self.fix_position(node, content)
-        return node
 
     def parse_rect(self, parent, content):
         matrix = self.get_matrix(content, use_scale=False, use_translate=False)
@@ -194,17 +205,12 @@ class XCSLoader:
         width = self.to_length(content.get("width", 0))
         height = self.to_length(content.get("height", 0))
         in_group, group_node = self.need_group(content, parent)
-        ident = content.get("id", None)
-        label = content.get("name", None)
-        if label == "null":
-            label = None
-        set_hidden = not content.get("visible", True)
-        stroke = Color(content.get("layerColor", "blue"))
-        lock = content.get("lockState", False)
+        ident, label = self.get_id_and_name(content)
+        set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
         # print (f"(xcs   ) x={Length(x_start).length_mm}, y={Length(y_start).length_mm}, width={Length(width).length_mm}, height={Length(height).length_mm}")
         # print (matrix)
-        node = p_node.add(
+        return p_node.add(
             type="elem rect",
             label=label,
             x=x_start,
@@ -217,21 +223,8 @@ class XCSLoader:
             matrix=matrix,
             stroke=stroke,
         )
-        bb = node.bounds
-        # print (f"(bounds) x={Length(bb[0]).length_mm}, y={Length(bb[0]).length_mm}, width={Length(bb[2] - bb[0]).length_mm}, height={Length(bb[3] - bb[1]).length_mm}")
-        return node
 
-    def parse_text(self, parent, content):
-        matrix = self.get_matrix(content, use_scale=False, use_rotate=False)
-        x_start, y_start = self.get_coords(content)
-        width = self.to_length(content.get("width", 0))
-        height = self.to_length(content.get("height", 0))
-        in_group, group_node = self.need_group(content, parent)
-        ident = content.get("id", None)
-        label = content.get("name", None)
-        if label == "null":
-            label = None
-        text_content = content.get("text", "")
+    def get_font_attributes(self, content):
         font_style = content.get("style", {})
         font_name = "Arial"
         font_size = Length("12pt")
@@ -248,15 +241,12 @@ class XCSLoader:
         }
         if alignment in replacements:
             alignment = replacements[alignment]
+        return font_name, font_size, letter_spacing, alignment
 
-        set_hidden = not content.get("visible", True)
-        stroke = Color(content.get("layerColor", "blue"))
-        lock = content.get("lockState", False)
-        geom = Geomstr()
+    def import_characters(self, content) -> Geomstr:
         glyph_data = content["charJSONs"]
+        geom = Geomstr()
         for glyph in glyph_data:
-            cx = glyph["x"]
-            cy = glyph["y"]
             angle = glyph["angle"]
             dx = glyph["offsetX"]
             dy = glyph["offsetY"]
@@ -265,7 +255,7 @@ class XCSLoader:
             if not pathstr:
                 continue
             glyph_geom = Geomstr.svg(pathstr)
-            cb = glyph_geom.bbox()
+            # cb = glyph_geom.bbox()
             # print (f"Text: ({content['x']:.2f}, {content['y']:.2f}), "
             #        f"char: ({glyph['x']:.2f}, {glyph['y']:.2f}), "
             #        f"char-offset: ({glyph['offsetX']:.2f}, {glyph['offsetY']:.2f}), "
@@ -281,13 +271,28 @@ class XCSLoader:
             cmatrix.post_translate(dx, dy)
             glyph_geom.transform(cmatrix)
             geom.append(glyph_geom, end=True)
+        return geom
+
+    def parse_text(self, parent, content):
+        # We rotate and scale at character level
+        matrix = Matrix()
+        # x_start, y_start = self.get_coords(content)
+        # width = self.to_length(content.get("width", 0))
+        # height = self.to_length(content.get("height", 0))
+        in_group, group_node = self.need_group(content, parent)
+        ident, label = self.get_id_and_name(content)
+        set_hidden, stroke, lock = self.get_basic_attributes(content)
+        text_content = content.get("text", "")
+        font_name, font_size, letter_spacing, alignment = self.get_font_attributes(content)
+
+        geom = self.import_characters(content)
         geom.uscale(UNITS_PER_MM)
         # geom.translate(x_start, y_start)
         # Nothing found....
         if geom.index == 0:
-            return
+            return None
         p_node = group_node if in_group else parent
-        node = p_node.add(
+        return p_node.add(
             type="elem path",
             label=label,
             id=ident,
@@ -303,29 +308,19 @@ class XCSLoader:
             mkfontsize=font_size,
             mkalign=alignment,
         )
-        # self.fix_position(node, content)
-        return node
 
     def parse_path(self, parent, content):
         matrix = self.get_matrix(content, use_translate=True)
-        x_start, y_start = self.get_coords(content)
-        width = self.to_length(content.get("width", 0))
-        height = self.to_length(content.get("height", 0))
         in_group, group_node = self.need_group(content, parent)
         pathstr = content.get("dPath", None)
         if not pathstr:
             self.log("Invalid path information")
-            return
+            return None
         geom = Geomstr.svg(pathstr)
         geom.uscale(UNITS_PER_MM)
         # geom.translate(x_start, y_start)
-        ident = content.get("id", None)
-        label = content.get("name", None)
-        if label == "null":
-            label = None
-        set_hidden = not content.get("visible", True)
-        stroke = Color(content.get("layerColor", "blue"))
-        lock = content.get("lockState", False)
+        ident, label = self.get_id_and_name(content)
+        set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
         node = p_node.add(
             type="elem path",
@@ -350,13 +345,8 @@ class XCSLoader:
         cx = x_start + width / 2
         cy = y_start + width / 2
         in_group, group_node = self.need_group(content, parent)
-        ident = content.get("id", None)
-        label = content.get("name", None)
-        if label == "null":
-            label = None
-        set_hidden = not content.get("visible", True)
-        stroke = Color(content.get("layerColor", "blue"))
-        lock = content.get("lockState", False)
+        ident, label = self.get_id_and_name(content)
+        set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
         node = p_node.add(
             type="elem ellipse",
@@ -376,7 +366,7 @@ class XCSLoader:
     def parse_bitmap(self, parent, content):
         if "base64" not in content:
             self.log("Unknown content for bitmap")
-            return
+            return None
         rawdata = content["base64"]
         prefix = "data:image/png;base64,"
         if rawdata.startswith(prefix):
@@ -393,13 +383,8 @@ class XCSLoader:
         imagematrix.pre_scale(width / image.width, height / image.height)
         matrix = imagematrix * matrix
         in_group, group_node = self.need_group(content, parent)
-        ident = content.get("id", None)
-        label = content.get("name", None)
-        if label == "null":
-            label = None
-        set_hidden = not content.get("visible", True)
-        stroke = Color(content.get("layerColor", "blue"))
-        lock = content.get("lockState", False)
+        ident, label = self.get_id_and_name(content)
+        set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
         node = p_node.add(
             type="elem image",
@@ -417,17 +402,31 @@ class XCSLoader:
         # pprint (content)
         return None
 
-    def need_group(self, content, parent):
-        result = False
-        node = None
-        grpId = content.get("groupTag", "")
-        if grpId in self.groups:
-            result = True
-            label, node = self.groups[grpId]
-            if node is None:
-                node = parent.add(type="group", label=label)
-                self.groups[grpId] = (label, node)
-        return result, node
+    def get_operation_context(self, content):
+        data = content.get("data", {})
+        if not data:
+            return None
+        material_list = content.get("materialList", {})
+        material_type_list = content.get("materialTypeList", {})
+        data_value = data.get("value", [])
+        if not data_value:
+            return None
+        data_id, data_content = data_value[0]
+        return data_content
+
+    def extract_operation_settings(self, map_entry, main_power):
+        node_id, node_data = map_entry
+        processing_type = node_data["processingType"]
+        settings = node_data["data"]
+        operation_information = settings.get(processing_type, {})
+        material_type = operation_information.get("materialType", "")
+        material_infos = operation_information.get("parameter", {})
+        parameter_set = material_infos.get(material_type, {})
+        power = parameter_set.get("power", main_power)
+        speed = parameter_set.get("speed", 20)
+        passes = parameter_set.get("repeat", 1)
+        return node_id, processing_type, material_type, power, speed, passes, parameter_set
+
 
     def create_ops(self, xcs_data, nodelist) -> bool:
         anything_created = False
@@ -443,35 +442,16 @@ class XCSLoader:
             "KNIFE_CUTTING": "op cut",
         }
         main_power = content.get("power", 100)
-        data = content.get("data", {})
-        material_list = content.get("materialList", {})
-        material_type_list = content.get("materialTypeList", {})
-        data_value = data.get("value", [])
-        if not data_value:
+        data_content = self.get_operation_context(content)
+        if not data_content:
             self.log("Device information detils were empty, no operations created")
             return False
-        data_id, data_content = data_value[0]
         # pprint (data_content)
         data_map = data_content.get("displays", {})
         map_data = data_map.get("value", [])
         operation_list = {}
         for map_entry in map_data:
-            node_id, node_data = map_entry
-            processing_type = node_data["processingType"]
-            settings = node_data["data"]
-            operation_information = settings.get(processing_type, {})
-            material_type = operation_information.get("materialType", "")
-            material_infos = operation_information.get("parameter", {})
-            parameter_set = material_infos.get(material_type, {})
-            node_type = node_data["type"]
-            power = parameter_set.get("power", main_power)
-            speed = parameter_set.get("speed", 20)
-            passes = parameter_set.get("repeat", 1)
-            kerf_distance = (
-                parameter_set.get("kerfDistance", 0)
-                if parameter_set.get("enableKerf", False)
-                else 0
-            )
+            node_id, processing_type, material_type, power, speed, passes, parameter_set = self.extract_operation_settings(map_entry, main_power)
             hash_value = f"{processing_type}-{power}-{speed}-{passes}"
             if hash_value in operation_list:
                 op_node = operation_list[hash_value]
@@ -491,7 +471,12 @@ class XCSLoader:
                     passes=passes,
                 )
                 anything_created = True
-                if op_type == "op cut" and kerf_distance != 0:
+                if op_type == "op cut":
+                    kerf_distance = (
+                        parameter_set.get("kerfDistance", 0)
+                        if parameter_set.get("enableKerf", False)
+                        else 0
+                    )
                     op_node.kerf = kerf_distance
                 if op_type == "op image":
                     if "density" in parameter_set:
@@ -505,13 +490,8 @@ class XCSLoader:
                 cnode = nodelist[node_id]
                 op_node.add_reference(cnode)
         return anything_created
-        # if data_value and data_value[0]:
-        #     references = data_value[0][1]
-        #     details = references.get["details", {}]
-        #     pprint(details)
 
-    def parse(self, pathname, source, canvasid=0):
-        op_branch = self.elements.op_branch
+    def parse(self, pathname, source, canvasid=0, **kwargs):
         elem_branch = self.elements.elem_branch
 
         # op_branch.remove_all_children()
@@ -528,16 +508,15 @@ class XCSLoader:
         }
         try:
             xcs_data = json.load(source)
-        except Exception as e:
+        except OSError as e:
             raise BadFileError(str(e)) from e
         if "canvas" not in xcs_data:
             raise BadFileError("No canvas found")
         idx = 0
-        had_ops = False
         for canvas in xcs_data["canvas"]:
             if idx != canvasid:
                 self.log(
-                    f"We do only support from canvas {canvasid}: ignore canvas {idx} - {canvas.get('title', '<no title>')}"
+                    f"We do only support import from canvas {canvasid}: ignore canvas {idx} - {canvas.get('title', '<no title>')}"
                 )
                 continue
             self.log(f"Processing canvas {idx} - {canvas.get('title', '<no title>')}")
@@ -561,22 +540,44 @@ class XCSLoader:
                     if node_id:
                         nodes[node_id] = created_node
                 # pprint (disp)
-            had_ops = had_ops or self.create_ops(xcs_data, nodes)
-            if not had_ops and nodes and self.elements.classify_new:
-                self.elements.classify(list(nodes.values()))
+            if not self.plain:
+                had_ops = self.create_ops(xcs_data, nodes)
+                if not had_ops and nodes and self.elements.classify_new:
+                    self.elements.classify(list(nodes.values()))
             idx += 1
 
         root_parent.focus()
 
+"""
+    Load elements from a specified file in XTool Creative Space format (.xcs) into the given context.
+
+    This static method reads a file from the provided pathname and uses an XCSLoader to parse
+    its contents into the specified elements service.
+    It ensures that the loading state is cleared after the operation is completed.
+
+    Args:
+        context: The context in which the loading occurs.
+        elements_service: The service responsible for managing elements.
+        pathname: The path to the file to be loaded.
+        **kwargs: Additional keyword arguments for loading configuration.
+
+    Returns:
+        bool: True if the loading operation was successful.
+
+    Raises:
+        BadFileError: If there is an issue reading the file or parsing its contents.
+"""
+class XCSLoader:
+
+    @staticmethod
+    def load_types():
+        yield "XTool Files", ("xcs",), "application/x-xcs"
+
     @staticmethod
     def load(context, elements_service, pathname, **kwargs):
-        loader = XCSLoader(context=context, elements=elements_service)
-        with open(pathname, "r") as source:
-            loader.parse(pathname, source, canvasid=0)
-        # try:
-        #     with open(pathname, "r") as source:
-        #         loader.parse(pathname, source, canvasid=0)
-        # except (IOError, IndexError) as e:
-        #     raise BadFileError(str(e)) from e
+
+        parser = XCSParser(context=context, elements=elements_service, plain=False)
+        with open(pathname, "r", encoding='utf-8') as source:
+            parser.parse(pathname, source, canvasid=0)
         elements_service._loading_cleared = True
         return True
