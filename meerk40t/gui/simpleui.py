@@ -130,7 +130,7 @@ class ProjectPanel(wx.Panel):
 
     def on_load(self, event):  # wxGlade: MyFrame.<event_handler>
         # This code should load just specific project files rather than all importable formats.
-        files = self.context.elements.load_types()
+        files, descriptors = self.context.elements.load_types()
         with wx.FileDialog(
             self,
             _("Open"),
@@ -139,9 +139,14 @@ class ProjectPanel(wx.Panel):
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
+            idx = fileDialog.GetFilterIndex()
+            try:
+                preferred_loader = descriptors[idx]
+            except IndexError:
+                preferred_loader = None
             pathname = fileDialog.GetPath()
             self.clear_project()
-            self.load(pathname)
+            self.load(pathname, preferred_loader)
             self.update_info(pathname)
         event.Skip()
 
@@ -183,7 +188,7 @@ class ProjectPanel(wx.Panel):
             dlg.Destroy()
             self.update_info(validpath)
 
-    def load(self, pathname):
+    def load(self, pathname, preferred_loader=None):
         def unescaped(filename):
             import platform
 
@@ -204,6 +209,7 @@ class ProjectPanel(wx.Panel):
                 pathname,
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.elements.svg_ppi,
+                preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
             return True

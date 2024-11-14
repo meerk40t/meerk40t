@@ -4074,6 +4074,7 @@ class Elemental(Service):
         kernel = self.kernel
         _ = kernel.translation
         filetypes = []
+        typedescriptors = []
         if all:
             filetypes.append(_("All valid types"))
             exts = []
@@ -4082,6 +4083,7 @@ class Elemental(Service):
                     for ext in extensions:
                         exts.append(f"*.{ext}")
             filetypes.append(";".join(exts))
+            typedescriptors.append(None)
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 exts = []
@@ -4089,7 +4091,8 @@ class Elemental(Service):
                     exts.append(f"*.{ext}")
                 filetypes.append(f"{description} ({extensions[0]})")
                 filetypes.append(";".join(exts))
-        return "|".join(filetypes)
+                typedescriptors.append(loader_name)
+        return "|".join(filetypes), typedescriptors
 
     def save(self, pathname, version="default", temporary=False):
         kernel = self.kernel
