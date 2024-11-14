@@ -27,20 +27,21 @@ Section canvas
 --------------
 
 """
-import json
 import base64
+import json
 from io import BytesIO
 from math import tau
 
 import PIL.Image
 
-from meerk40t.core.node.node import Linejoin
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_INCH, Length
+from meerk40t.core.node.node import Linejoin
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Matrix
 from meerk40t.tools.geomstr import Geomstr
 
-from pprint import pprint
+# from pprint import pprint
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -52,7 +53,6 @@ DEFAULT_POWER = 30
 
 
 class XCSLoader:
-
     def __init__(self, context=None, elements=None, *args, **kwargs):
         self.channel = context.kernel.channels["console"]
         self.context = context
@@ -61,8 +61,11 @@ class XCSLoader:
 
     @staticmethod
     def load_types():
-        yield "XTool Files", ("xcs", ), "application/x-xcs"
+        yield "XTool Files", ("xcs",), "application/x-xcs"
 
+    def log(self, msg):
+        if self.channel:
+            self.channel(msg)
 
     def fill_groups(self, canvas):
         self.groups = {}
@@ -75,8 +78,13 @@ class XCSLoader:
                 if grp_id:
                     self.groups[grp_id] = [label, None]  # label and associated node
 
-
-    def get_matrix(self, content, use_scale: bool = True, use_rotate : bool = True, use_translate: bool = True):
+    def get_matrix(
+        self,
+        content,
+        use_scale: bool = True,
+        use_rotate: bool = True,
+        use_translate: bool = True,
+    ):
         x, y = self.get_coords(content)
         tx = 0
         ty = 0
@@ -117,9 +125,9 @@ class XCSLoader:
             matrix.post_rotate(angle, px, py)
         if sx != 1 or sy != 1:
             # print (f"Scaling: {sx:.4f} / {sy:.4f} around ({Length(x).length_mm}, {Length(y).length_mm})")
-            matrix.post_scale(sx = sx, sy = sy, x = x, y = y)
+            matrix.post_scale(sx=sx, sy=sy, x=x, y=y)
         if skew_x != 0 or skew_y != 0:
-            print (f"Having skew: x={skew_x:.3f}, y={skew_y:.3f}")
+            self.log(f"Having skew: x={skew_x:.3f}, y={skew_y:.3f}")
         return matrix
 
     @staticmethod
@@ -135,7 +143,6 @@ class XCSLoader:
             node.matrix *= Matrix.translate(dx, dy)
             node.translated(dx, dy)
 
-
     def get_coords(self, content, key=None):
         if key:
             x_coord = self.to_length(content[key].get("x", 0))
@@ -147,7 +154,9 @@ class XCSLoader:
 
     def parse_line(self, parent, content):
         # pprint(content)
-        matrix = self.get_matrix(content, use_translate=False, use_scale=True, use_rotate=True)
+        matrix = self.get_matrix(
+            content, use_translate=False, use_scale=True, use_rotate=True
+        )
         x_start, y_start = self.get_coords(content)
         x_offset = self.to_length(content.get("offsetX", 0))
         y_offset = self.to_length(content.get("offsetY", 0))
@@ -213,7 +222,7 @@ class XCSLoader:
         return node
 
     def parse_text(self, parent, content):
-        matrix = self.get_matrix(content, use_scale=True, use_rotate=False)
+        matrix = self.get_matrix(content, use_scale=False, use_rotate=False)
         x_start, y_start = self.get_coords(content)
         width = self.to_length(content.get("width", 0))
         height = self.to_length(content.get("height", 0))
@@ -229,7 +238,7 @@ class XCSLoader:
         if "fontSize" in font_style:
             font_size = Length(f"{font_style['fontSize']}pt")
         if "fontName" in font_style:
-            font_name = font_style['fontName']
+            font_name = font_style["fontName"]
         letter_spacing = font_style.get("letterSpacing", 0)
         alignment = font_style.get("align", "left")
         replacements = {
@@ -257,14 +266,18 @@ class XCSLoader:
                 continue
             glyph_geom = Geomstr.svg(pathstr)
             cb = glyph_geom.bbox()
-            print (f"Text: ({content['x']:.2f}, {content['y']:.2f}), "
-                   f"char: ({glyph['x']:.2f}, {glyph['y']:.2f}), "
-                   f"char-offset: ({glyph['offsetX']:.2f}, {glyph['offsetY']:.2f}), "
-                   f"bounds=({Length(cb[0]*UNITS_PER_MM).length_mm}, {Length(cb[1]*UNITS_PER_MM).length_mm}) - ({Length(cb[2]*UNITS_PER_MM).length_mm}, {Length(cb[3]*UNITS_PER_MM).length_mm})"
-            )
+            # print (f"Text: ({content['x']:.2f}, {content['y']:.2f}), "
+            #        f"char: ({glyph['x']:.2f}, {glyph['y']:.2f}), "
+            #        f"char-offset: ({glyph['offsetX']:.2f}, {glyph['offsetY']:.2f}), "
+            #        f"bounds=({Length(cb[0]*UNITS_PER_MM).length_mm}, {Length(cb[1]*UNITS_PER_MM).length_mm}) - ({Length(cb[2]*UNITS_PER_MM).length_mm}, {Length(cb[3]*UNITS_PER_MM).length_mm})"
+            # )
             cmatrix = Matrix()
             if angle != 0:
-                cmatrix.post_rotate(angle / 360*tau)
+                cmatrix.post_rotate(angle / 360 * tau)
+            sx = glyph["scale"]["x"]
+            sy = glyph["scale"]["x"]
+            if sx != 1 or sy != 1:
+                cmatrix.post_scale(sx, sy)
             cmatrix.post_translate(dx, dy)
             glyph_geom.transform(cmatrix)
             geom.append(glyph_geom, end=True)
@@ -283,14 +296,14 @@ class XCSLoader:
             matrix=matrix,
             stroke=stroke,
             geometry=geom,
-            linejoin = Linejoin.JOIN_MITER,
+            linejoin=Linejoin.JOIN_MITER,
             stroke_width=500,
-            mktext = text_content,
-            mkfont = font_name,
-            mkfontsize = font_size,
-            mkalign = alignment,
+            mktext=text_content,
+            mkfont=font_name,
+            mkfontsize=font_size,
+            mkalign=alignment,
         )
-        self.fix_position(node, content)
+        # self.fix_position(node, content)
         return node
 
     def parse_path(self, parent, content):
@@ -301,8 +314,7 @@ class XCSLoader:
         in_group, group_node = self.need_group(content, parent)
         pathstr = content.get("dPath", None)
         if not pathstr:
-            if self.channel:
-                self.channel("Invalid path information")
+            self.log("Invalid path information")
             return
         geom = Geomstr.svg(pathstr)
         geom.uscale(UNITS_PER_MM)
@@ -324,7 +336,7 @@ class XCSLoader:
             matrix=matrix,
             stroke=stroke,
             geometry=geom,
-            linejoin = Linejoin.JOIN_MITER,
+            linejoin=Linejoin.JOIN_MITER,
             stroke_width=500,
         )
         self.fix_position(node, content)
@@ -363,13 +375,12 @@ class XCSLoader:
 
     def parse_bitmap(self, parent, content):
         if "base64" not in content:
-            if self.channel:
-                self.channel("Unknown content for bitmap")
+            self.log("Unknown content for bitmap")
             return
         rawdata = content["base64"]
         prefix = "data:image/png;base64,"
         if rawdata.startswith(prefix):
-            rawdata = rawdata[len(prefix):]
+            rawdata = rawdata[len(prefix) :]
         data = base64.b64decode(rawdata)
         stream = BytesIO(data)
         image = PIL.Image.open(stream)
@@ -402,11 +413,9 @@ class XCSLoader:
         return node
 
     def parse_unknown(self, parent, content):
-        if self.channel:
-            self.channel(f"Unknown type {content.get('type', '??')}")
-        pprint (content)
+        self.log(f"Unknown type {content.get('type', '??')}")
+        # pprint (content)
         return None
-
 
     def need_group(self, content, parent):
         result = False
@@ -420,10 +429,12 @@ class XCSLoader:
                 self.groups[grpId] = (label, node)
         return result, node
 
-    def create_ops(self, xcs_data, nodelist):
+    def create_ops(self, xcs_data, nodelist) -> bool:
+        anything_created = False
         content = xcs_data.get("device", None)
         if not content:
-            return
+            self.log("Device information was empty, no operations created")
+            return False
         opname_map = {
             "VECTOR_ENGRAVING": "op engrave",
             "VECTOR_CUTTING": "op cut",
@@ -431,29 +442,36 @@ class XCSLoader:
             "BITMAP_ENGRAVING": "op image",
             "KNIFE_CUTTING": "op cut",
         }
-        main_power = content.get('power', 100)
-        data = content.get('data', {})
-        material_list = content.get('materialList', {})
-        material_type_list = content.get('materialTypeList', {})
-        data_value = data.get('value', [])
+        main_power = content.get("power", 100)
+        data = content.get("data", {})
+        material_list = content.get("materialList", {})
+        material_type_list = content.get("materialTypeList", {})
+        data_value = data.get("value", [])
+        if not data_value:
+            self.log("Device information detils were empty, no operations created")
+            return False
         data_id, data_content = data_value[0]
         # pprint (data_content)
-        data_map = data_content.get('displays', {})
-        map_data = data_map.get('value', [])
+        data_map = data_content.get("displays", {})
+        map_data = data_map.get("value", [])
         operation_list = {}
         for map_entry in map_data:
             node_id, node_data = map_entry
             processing_type = node_data["processingType"]
             settings = node_data["data"]
             operation_information = settings.get(processing_type, {})
-            material_type = operation_information.get('materialType', '')
-            material_infos = operation_information.get('parameter', {})
+            material_type = operation_information.get("materialType", "")
+            material_infos = operation_information.get("parameter", {})
             parameter_set = material_infos.get(material_type, {})
             node_type = node_data["type"]
             power = parameter_set.get("power", main_power)
             speed = parameter_set.get("speed", 20)
             passes = parameter_set.get("repeat", 1)
-            kerf_distance =  parameter_set.get("kerfDistance", 0) if parameter_set.get("enableKerf", False) else 0
+            kerf_distance = (
+                parameter_set.get("kerfDistance", 0)
+                if parameter_set.get("enableKerf", False)
+                else 0
+            )
             hash_value = f"{processing_type}-{power}-{speed}-{passes}"
             if hash_value in operation_list:
                 op_node = operation_list[hash_value]
@@ -463,15 +481,16 @@ class XCSLoader:
                 if processing_type in opname_map:
                     op_type = opname_map[processing_type]
                 else:
-                    print (f"Unknown type: {processing_type}")
+                    self.log(f"Unknown processing type: {processing_type}")
                     continue
                 op_node = p_node.add(
-                    type = op_type,
-                    label = op_label,
-                    power = power * 10,  # was given in percent
-                    speed = speed,
-                    passes = passes,
+                    type=op_type,
+                    label=op_label,
+                    power=power * 10,  # was given in percent
+                    speed=speed,
+                    passes=passes,
                 )
+                anything_created = True
                 if op_type == "op cut" and kerf_distance != 0:
                     op_node.kerf = kerf_distance
                 if op_type == "op image":
@@ -485,12 +504,11 @@ class XCSLoader:
             if node_id in nodelist:
                 cnode = nodelist[node_id]
                 op_node.add_reference(cnode)
-
+        return anything_created
         # if data_value and data_value[0]:
         #     references = data_value[0][1]
         #     details = references.get["details", {}]
         #     pprint(details)
-
 
     def parse(self, pathname, source, canvasid=0):
         op_branch = self.elements.op_branch
@@ -500,7 +518,7 @@ class XCSLoader:
         # elem_branch.remove_all_children()
         root_parent = elem_branch.add(type="file", filepath=pathname)
         parent = root_parent
-        handler= {
+        handler = {
             "LINE": self.parse_line,
             "PATH": self.parse_path,
             "RECT": self.parse_rect,
@@ -515,16 +533,16 @@ class XCSLoader:
         if "canvas" not in xcs_data:
             raise BadFileError("No canvas found")
         idx = 0
+        had_ops = False
         for canvas in xcs_data["canvas"]:
             if idx != canvasid:
-                if self.channel:
-                    self.channel(f"We do only support from canvas {canvasid}: ignore canvas {idx} - {canvas.get('title', '<no title>')}")
+                self.log(
+                    f"We do only support from canvas {canvasid}: ignore canvas {idx} - {canvas.get('title', '<no title>')}"
+                )
                 continue
-            if self.channel:
-                self.channel(f"Processing canvas {idx} - {canvas.get('title', '<no title>')}")
+            self.log(f"Processing canvas {idx} - {canvas.get('title', '<no title>')}")
             if "displays" not in canvas:
-                if self.channel:
-                    self.channel("Strange, no displays found")
+                self.log("Strange, no displays found")
                 continue
             self.fill_groups(canvas)
             # Displays are the elements
@@ -533,8 +551,7 @@ class XCSLoader:
             for disp in displays:
                 mode = disp.get("type", "")
                 mode = mode.upper()
-                if self.channel:
-                    self.channel(f"Loading {mode}")
+                self.log(f"Loading {mode}")
                 if mode in handler:
                     created_node = handler[mode](parent=parent, content=disp)
                 else:
@@ -544,8 +561,11 @@ class XCSLoader:
                     if node_id:
                         nodes[node_id] = created_node
                 # pprint (disp)
-            self.create_ops(xcs_data, nodes)
+            had_ops = had_ops or self.create_ops(xcs_data, nodes)
+            if not had_ops and nodes and self.elements.classify_new:
+                self.elements.classify(list(nodes.values()))
             idx += 1
+
         root_parent.focus()
 
     @staticmethod
@@ -560,5 +580,3 @@ class XCSLoader:
         #     raise BadFileError(str(e)) from e
         elements_service._loading_cleared = True
         return True
-
-
