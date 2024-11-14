@@ -2825,7 +2825,7 @@ class MeerK40t(MWindow):
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
             # This code should load just specific project files rather than all importable formats.
-            files = context.elements.load_types()
+            files, descriptors = context.elements.load_types()
             with wx.FileDialog(
                 gui,
                 _("Open"),
@@ -2835,20 +2835,17 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 idx = fileDialog.GetFilterIndex()
-                preferred_loader = None
-                if idx > 0:
-                    lidx = 0
-                    for loader, loader_name, sname in context.kernel.find("load"):
-                        lidx += 1
-                        if lidx == idx:
-                            preferred_loader = loader_name
-                            break
+                try:
+                    preferred_loader = descriptors[idx]
+                except IndexError:
+                    preferred_loader = None
+
                 pathname = fileDialog.GetPath()
                 gui.clear_and_open(pathname, preferred_loader=preferred_loader)
 
         @context.console_command("dialog_import", hidden=True)
         def import_dialog(**kwargs):
-            files = context.elements.load_types()
+            files, descriptors = context.elements.load_types()
             with wx.FileDialog(
                 gui,
                 _("Import"),
@@ -2858,14 +2855,10 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 idx = fileDialog.GetFilterIndex()
-                preferred_loader = None
-                if idx > 0:
-                    lidx = 0
-                    for loader, loader_name, sname in context.kernel.find("load"):
-                        lidx += 1
-                        if lidx == idx:
-                            preferred_loader = loader_name
-                            break
+                try:
+                    preferred_loader = descriptors[idx]
+                except IndexError:
+                    preferred_loader = None
                 pathname = fileDialog.GetPath()
                 gui.load(pathname, preferred_loader, execution=False)
 
@@ -4800,7 +4793,7 @@ class MeerK40t(MWindow):
         """
         Loads an open dialog at given filename to load data.
         """
-        files = self.context.elements.load_types()
+        files, descriptors = self.context.elements.load_types()
         default_file = os.path.basename(filename)
         default_dir = os.path.dirname(filename)
 
@@ -4816,14 +4809,10 @@ class MeerK40t(MWindow):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
             idx = fileDialog.GetFilterIndex()
-            preferred_loader = None
-            if idx > 0:
-                lidx = 0
-                for loader, loader_name, sname in self.context.kernel.find("load"):
-                    lidx += 1
-                    if lidx == idx:
-                        preferred_loader = loader_name
-                        break
+            try:
+                preferred_loader = descriptors[idx]
+            except IndexError:
+                preferred_loader = None
             pathname = fileDialog.GetPath()
             self.load(pathname, preferred_loader, execution=True)
 
