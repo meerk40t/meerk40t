@@ -47,9 +47,9 @@ class AboutPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         self.bitmap_button_1 = wx.BitmapButton(
-            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150, force_lightmode=True)
+            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150)
         )
-        self.bitmap_button_1.SetBackgroundColour(wx.WHITE)
+        # self.bitmap_button_1.SetBackgroundColour(wx.WHITE)
 
         self.__set_properties()
         self.__do_layout()
