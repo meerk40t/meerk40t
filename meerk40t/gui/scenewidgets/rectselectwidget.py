@@ -16,7 +16,7 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import get_matrix_scale, get_gc_full_scale
+from meerk40t.gui.wxutils import get_matrix_scale, get_gc_full_scale, dip_size
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 
@@ -80,6 +80,7 @@ class RectSelectWidget(Widget):
         self.scene.context.setting(bool, "delayed_move", True)
         self.mode = "select"
         self.can_drag_move = False
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
 
     def hit(self):
         return HITCHAIN_HIT
@@ -473,8 +474,8 @@ class RectSelectWidget(Widget):
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        delta_X = 15.0
-        delta_Y = 15.0
+        delta_X = 15.0 * self.magnification
+        delta_Y = 15.0 * self.magnification
         x0 *= sx
         x1 *= sx
         y0 *= sx
@@ -489,7 +490,7 @@ class RectSelectWidget(Widget):
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
-            font_size = 10.0
+            font_size = 10.0 * self.magnification
             if font_size < 1.0:
                 font_size = 1.0
             try:

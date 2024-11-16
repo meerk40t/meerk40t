@@ -3,7 +3,7 @@ from math import atan2, cos, sin, sqrt, tau
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.wxutils import get_matrix_scale, get_gc_scale
+from meerk40t.gui.wxutils import get_matrix_scale, get_gc_scale, dip_size
 
 from .toolpointlistbuilder import PointListTool
 
@@ -24,6 +24,7 @@ class MeasureTool(PointListTool):
         self.line_pen.SetColour(self.scene.colors.color_measure_line)
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)
         self.line_pen.SetWidth(1000)
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
 
     def create_node(self):
         # No need to create anything
@@ -38,7 +39,7 @@ class MeasureTool(PointListTool):
             return
         mat_fact = get_gc_scale(gc)
         try:
-            font_size = 10.0 / mat_fact
+            font_size = 10.0 * self.magnification / mat_fact
         except ZeroDivisionError:
             font_size = 5000
         if font_size > 1e8:
