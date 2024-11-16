@@ -66,7 +66,7 @@ class Camera(Service):
     def __repr__(self):
         return "Camera()"
 
-    @property 
+    @property
     def is_virtual(self):
         try:
             i = int(self.uri)
@@ -74,7 +74,7 @@ class Camera(Service):
         except ValueError:
             return True
 
-    @property 
+    @property
     def is_physical(self):
         try:
             i = int(self.uri)
@@ -213,7 +213,7 @@ class Camera(Service):
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.logger (
-                f"Capture: {str(self.capture)}\n" + 
+                f"Capture: {str(self.capture)}\n" +
                 f"Frame resolution set to: ({cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{cap.get(cv2.CAP_PROP_FRAME_HEIGHT)})"
             )
 
@@ -279,7 +279,7 @@ class Camera(Service):
         for combinations in (
             (640, 480, "0.3MP 4:3"),
             (800, 600, "0.5MP 4:3"),
-            (960, 544, "0.5MP 30:17"), 
+            (960, 544, "0.5MP 30:17"),
             (1280, 720, "0.9MP 16:9"),
             (1440, 1080, "1.5MP 16:9"),
             (1920, 1080, "2.1MP 16:9"),
@@ -287,11 +287,15 @@ class Camera(Service):
             (7680, 4320, "33MP 16:9"),
         ):
             width, height, description = combinations
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-            actual_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-            actual_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            self.logger(f"Tried {width}x{height} ({description}) - received {actual_width}x{actual_height}")
+            try:
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+                actual_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+                actual_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                msg = "(OK)"
+            except Exception as e:
+                msg = f"(Fail: {e})"
+            self.logger(f"Tried {width}x{height} ({description}) - received {actual_width}x{actual_height} {msg}")
             if int(actual_width) == width and int(actual_height) == height:
                 supported_resolutions.append((width, height, description))
 
