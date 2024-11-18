@@ -449,11 +449,14 @@ class DefaultOperationWidget(StatusBarWidget):
                 continue
             opid = node.id
             if opid:
-                for idx, op in enumerate(self.context.elements.default_operations):
+                for op in self.context.elements.default_operations:
                     if opid == op.id:
                         slabel = self.node_label(node)
                         if slabel:
-                            self.assign_buttons[idx].SetToolTip(slabel)
+                            for idx, op in enumerate(self.assign_operations):
+                                if op.id == opid:
+                                    self.assign_buttons[idx].SetToolTip(slabel)
+                                    break
                         break
 
     def Signal(self, signal, *args):
