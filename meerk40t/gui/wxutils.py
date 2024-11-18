@@ -582,15 +582,15 @@ class TextCtrl(wx.TextCtrl):
         self.upper_limit_err = None
         self.lower_limit_warn = None
         self.upper_limit_warn = None
-        self._default_color_background = None
+        self._default_color_background = self.GetBackgroundColour()
         self._error_color_background = wx.RED
         self._warn_color_background = wx.YELLOW
-        self._modify_color_background = None
+        self._modify_color_background = self._default_color_background
 
-        self._default_color_foreground = None
-        self._error_color_foreground = None
+        self._default_color_foreground = self.GetForegroundColour()
+        self._error_color_foreground = self._default_color_foreground
         self._warn_color_foreground = wx.BLACK
-        self._modify_color_foreground = None
+        self._modify_color_foreground = self._default_color_foreground
         self._warn_status = "modified"
 
         self._last_valid_value = None
