@@ -107,7 +107,7 @@ from meerk40t.core.treeop import (
     tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
@@ -838,43 +838,90 @@ def init_tree(kernel):
             activate(firstnode)
             self.signal("propupdate", firstnode)
 
-    @tree_submenu(_("Convert to Path"))
-    @tree_operation(
-        _("Horizontal"), node_type="elem image", help=_("Create a horizontal linepattern from the image"), grouping="50_ELEM_MODIFY_ZMISC"
-    )
-    def image_convert_to_path_horizontal(node, **kwargs):
-        # Language hint _("To path: Horizontal")
-        with self.undoscope("To path: Horizontal"):
+    self._image_2_path_bidirectional = True
+    self._image_2_path_optimize = True
+
+    def convert_image_to_path(node, mode):
+        def feedback(msg):
+            busy.change(msg=msg, keep=1)
+            busy.show()
+
+        busy = self.kernel.busyinfo
+        busy.start(msg="Converting image")
+        busy.show()
+        with self.undoscope(f"To path: {mode}"):
             image, box = node.as_image()
+            vertical = mode.lower() != "horizontal"
+            bidirectional = self._image_2_path_bidirectional
+            threshold = 0.5 if self._image_2_path_optimize else None # Half a percent
+            geom = Geomstr.image(
+                    image, vertical=vertical,
+                    bidirectional=bidirectional,
+                )
+            if threshold:
+                geom.two_opt_distance(auto_stop_threshold=threshold, feedback=feedback)
+            # self.context
             m = Matrix(node.active_matrix)
+            try:
+                spot_value = float(Length(getattr(self.device, "laserspot", "0.3mm")))
+            except ValueError:
+                spot_value = 1000
+
             n = node.replace_node(
                 type="elem path",
-                geometry=Geomstr.image(image, vertical=False),
+                geometry=geom,
                 stroke=self.default_stroke,
-                stroke_width=self.default_strokewidth,
+                stroke_width=spot_value,
                 matrix=m,
             )
             if self.classify_new:
                 self.classify([n])
+        busy.end()
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(
-        _("Vertical"), node_type="elem image", help=_("Create a vertical linepattern from the image"), grouping="50_ELEM_MODIFY_ZMISC"
+        _("Horizontal"), node_type="elem image", help=_("Create a horizontal linepattern from the image"), grouping="70_ELEM_IMAGES_Y"
+    )
+    def image_convert_to_path_horizontal(node, **kwargs):
+        # Language hint _("To path: Horizontal")
+        convert_image_to_path(node, "Horizontal")
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(
+        _("Vertical"), node_type="elem image", help=_("Create a vertical linepattern from the image"), grouping="70_ELEM_IMAGES_Y"
     )
     def image_convert_to_path_vertical(node, **kwargs):
-        # Language hint _("To path: Vertical")
-        with self.undoscope("To path: Vertical"):
-            image, box = node.as_image()
-            m = Matrix(node.active_matrix)
-            n = node.replace_node(
-                type="elem path",
-                geometry=Geomstr.image(image, vertical=True),
-                stroke=self.default_stroke,
-                stroke_width=self.default_strokewidth,
-                matrix=m,
-            )
-            if self.classify_new:
-                self.classify([n])
+        convert_image_to_path(node, "Vertical")
+
+    def load_for_path_1(node, **kwargs):
+        return self._image_2_path_bidirectional
+
+    def load_for_path_2(node, **kwargs):
+        return self._image_2_path_optimize
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_separate_before()
+    @tree_check(load_for_path_1)
+    @tree_operation(
+        _("Bidirectional"),
+        node_type="elem image",
+        help=_("Shall the line pattern be able to travel back and forth or will it always start at the same side"),
+        grouping="70_ELEM_IMAGES_Y",
+    )
+    def set_img_2_path_option_1(node, **kwargs):
+        self._image_2_path_bidirectional = not self._image_2_path_bidirectional
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_check(load_for_path_2)
+    @tree_operation(
+        _("Optimize travel"),
+        node_type="elem image",
+        help=_("Shall the line pattern be able to travel back and forth or will it always start at the same side"),
+        grouping="70_ELEM_IMAGES_Y",
+    )
+    def set_img_2_path_option_2(node, **kwargs):
+        self._image_2_path_optimize = not self._image_2_path_optimize
+
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
