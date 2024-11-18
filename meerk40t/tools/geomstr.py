@@ -5315,11 +5315,12 @@ class Geomstr:
             self.segments[p1] = c
             pt = c[-1]
 
-    def two_opt_distance(self, max_passes=None, chunk=0):
+    def two_opt_distance(self, max_passes=None, chunk=0, auto_stop_threshold=None, feedback=None):
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
         @param chunk: Chunk check value
+        @param auto_stop_threshold percentage value of needed gain in every pass
         @return:
         """
         self._trim()
@@ -5333,6 +5334,9 @@ class Geomstr:
         indexes1 = indexes0 + 1
 
         improved = True
+        first_travel = self.travel_distance()
+        last_travel = first_travel
+        threshold_value = None if auto_stop_threshold is None else auto_stop_threshold / 100.0 * last_travel
         while improved:
             improved = False
 
@@ -5381,8 +5385,18 @@ class Geomstr:
                     segments[index + 1 :], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
+            this_travel = self.travel_distance()
+            dt = last_travel - this_travel
+            dt_total = first_travel - this_travel
+            if feedback:
+                msg = f"Pass {current_pass + 1}: saved {dt / first_travel * 100:.1f}%, total: {dt_total / first_travel * 100:.1f}%"
+                feedback(msg)
             if max_passes and current_pass >= max_passes:
                 break
+            if threshold_value:
+                if dt <= threshold_value:
+                    break
+                last_travel = this_travel
             current_pass += 1
 
     #######################
