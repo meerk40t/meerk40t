@@ -408,9 +408,7 @@ class RasterPlotter:
         #             f.write(f"{x}, {y}, {on}\n")
         if self.use_integers:
             for x, y, on in self._plot_pixels():
-                yield int(round(offset_x + step_x * x)), int(
-                    round(offset_y + y * step_y)
-                ), on
+                yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
         else:
             for x, y, on in self._plot_pixels():
                 yield offset_x + step_x * x, offset_y + y * step_y, on
@@ -424,8 +422,9 @@ class RasterPlotter:
     def _plot_vertical(self):
         """
         This code is for vertical rastering.
-
-        @return:
+        We are looking first for all consecutive pixel chains with the same pixel value
+        Then we loop through the segments and yield the 'end edge' of the 'last' pixel
+        'end edge' and 'last' are dependent on the sweep direction.
         """
         width = self.width
         unidirectional = not self.bidirectional
@@ -480,8 +479,9 @@ class RasterPlotter:
     def _plot_horizontal(self):
         """
         This code is horizontal rastering.
-
-        @return:
+        We are looking first for all consecutive pixel chains with the same pixel value
+        Then we loop through the segments and yield the 'end edge' of the 'last' pixel
+        'end edge' and 'last' are dependent on the sweep direction.
         """
         height = self.height
         unidirectional = not self.bidirectional
