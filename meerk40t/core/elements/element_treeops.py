@@ -1821,6 +1821,7 @@ def init_tree(kernel):
         if not cancelled:
             with self.undoscope("Convert to Elements"):
                 d2p.parse(node.data_type, node.data, self)
+                node.remove_node()
         return True
 
     @tree_conditional_try(
@@ -1837,6 +1838,7 @@ def init_tree(kernel):
         parser = LihuiyuParser()
         parser.fix_speeds = True
         parser.parse(node.data, self)
+        node.remove_node()
         self.signal("refresh_scene", "Scene")
 
     @tree_conditional_try(
