@@ -396,18 +396,24 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-        from time import perf_counter_ns
-        with open(f"plot_{perf_counter_ns()}.txt", mode="w") as f:
-            if self.use_integers:
-                for x, y, on in self._plot_pixels():
-                    f.write(f"{x}, {y}, {on}\n")
-                    yield int(round(offset_x + step_x * x)), int(
-                        round(offset_y + y * step_y)
-                    ), on
-            else:
-                for x, y, on in self._plot_pixels():
-                    f.write(f"{x}, {y}, {on}\n")
-                    yield offset_x + step_x * x, offset_y + y * step_y, on
+
+        # from time import perf_counter_ns
+        # with open(f"plot_{perf_counter_ns()}.txt", mode="w") as f:
+        #     if self.use_integers:
+        #         for x, y, on in self._plot_pixels():
+        #             f.write(f"{x}, {y}, {on}\n")
+        #             ), on
+        #     else:
+        #         for x, y, on in self._plot_pixels():
+        #             f.write(f"{x}, {y}, {on}\n")
+        if self.use_integers:
+            for x, y, on in self._plot_pixels():
+                yield int(round(offset_x + step_x * x)), int(
+                    round(offset_y + y * step_y)
+                ), on
+        else:
+            for x, y, on in self._plot_pixels():
+                yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
         if self.horizontal:
