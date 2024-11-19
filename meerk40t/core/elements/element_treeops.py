@@ -1824,6 +1824,22 @@ def init_tree(kernel):
         return True
 
     @tree_conditional_try(
+        lambda node: node.data_type == "egv"
+    )
+    @tree_operation(
+        _("Convert to Elements"),
+        node_type="blob",
+        help=_("Convert attached binary object to elements"),
+        grouping="85_OPS_BLOB",
+    )
+    def egv2path(node, **kwargs):
+        from meerk40t.lihuiyu.parser import LihuiyuParser
+        parser = LihuiyuParser()
+        parser.fix_speeds = True
+        parser.parse(node.data, self)
+        self.signal("refresh_scene", "Scene")
+
+    @tree_conditional_try(
         lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
     )
     @tree_operation(
