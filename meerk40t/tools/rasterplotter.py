@@ -502,15 +502,17 @@ class RasterPlotter:
                 if pixel != skip_pixel:
                     delta = 1 if traveling_bottom else 0
                     yield x, y + delta, pixel
-            yield x, y, 0
+            cy = y
+            yield x, cy, 0
             if self.overscan:
-                yield x, y + self.overscan * (1 if traveling_bottom else -1), 0
+                cy = y + self.overscan * (1 if traveling_bottom else -1)
+                yield x, cy, 0
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
-            yield next_x, y, 0
-            if y != next_y:
+            yield next_x, cy, 0
+            if cy != next_y:
                 yield next_x, next_y, 0
             x = next_x
             y = next_y if next_traveling_bottom else next_y + 1
@@ -611,15 +613,17 @@ class RasterPlotter:
                     delta = 1 if traveling_right else 0
                     yield x + delta, y, pixel
                     # print (f"{'<' if traveling_right else '>'} final line: {x + delta}, {y}, {pixel:.2f}")
-            yield x, y, 0
+            cx = x
+            yield cx, y, 0
             if self.overscan:
-                yield x + self.overscan * (1 if traveling_right else -1), y, 0
+                cx = x + self.overscan * (1 if traveling_right else -1)
+                yield cx, y, 0
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
             # We jump to the next line
-            yield x, next_y, 0
-            if x != next_x:
+            yield cx, next_y, 0
+            if cx != next_x:
                 yield next_x, next_y, 0
             x = next_x if next_traveling_right else next_x + 1
             y = next_y
