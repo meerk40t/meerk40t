@@ -37,7 +37,6 @@ class RasterPlotter:
         step_x=1,
         step_y=1,
         filter=None,
-        **kwargs,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -70,8 +69,6 @@ class RasterPlotter:
         self.bidirectional = bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
-        # The overscan value isn't really used here any more
-        # The previous implementation just used the value to force a line end
         if horizontal:
             self.overscan = round(overscan / float(step_x))
         else:
@@ -104,7 +101,7 @@ class RasterPlotter:
 
         if all pixels skipped returns None
         """
-        for x in range(self.width):
+        for x in range(0, self.width):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
@@ -116,7 +113,7 @@ class RasterPlotter:
 
         if all pixels skipped returns None
         """
-        for y in range(self.height):
+        for y in range(0, self.height):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
@@ -399,14 +396,18 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-        if self.use_integers:
-            for x, y, on in self._plot_pixels():
-                yield int(round(offset_x + step_x * x)), int(
-                    round(offset_y + y * step_y)
-                ), on
-        else:
-            for x, y, on in self._plot_pixels():
-                yield offset_x + step_x * x, offset_y + y * step_y, on
+        from time import perf_counter_ns
+        with open(f"plot_{perf_counter_ns()}.txt", mode="w") as f:
+            if self.use_integers:
+                for x, y, on in self._plot_pixels():
+                    f.write(f"{x}, {y}, {on}\n")
+                    yield int(round(offset_x + step_x * x)), int(
+                        round(offset_y + y * step_y)
+                    ), on
+            else:
+                for x, y, on in self._plot_pixels():
+                    f.write(f"{x}, {y}, {on}\n")
+                    yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
         if self.horizontal:
@@ -424,99 +425,51 @@ class RasterPlotter:
         unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
 
-        x, y = self.initial_position()
-        if not self.start_minimum_y:
-            y += 1
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-
-        yield x, y, 0
+        x = 0 if self.start_minimum_x else width - 1
+        last_y = None
         while 0 <= x < width:
-            lower_bound = self.topmost_not_equal(x)
-            if lower_bound is None:
-                x += dx
-                yield x, y, 0
-                continue
-            upper_bound = self.bottommost_not_equal(x)
-            traveling_bottom = self.start_minimum_y if unidirectional else dy >= 0
-            next_traveling_bottom = self.start_minimum_y if unidirectional else dy <= 0
-
-            next_x, next_y = self.calculate_next_vertical_pixel(
-                x + dx, dx, topmost_pixel=next_traveling_bottom
-            )
-            if next_y is not None:
-                # If we have a next scanline, we must end after the last pixel of that scanline too.
-                upper_bound = max(next_y, upper_bound)
-                lower_bound = min(next_y, lower_bound)
-            if lower_bound == upper_bound:
-                # Me sure we have that pixel covered
-                pixel = self.px(x, lower_bound)
-                yield x, lower_bound, pixel
-
-            if traveling_bottom:
-                ly = lower_bound
-                while y < upper_bound:
-                    try:
-                        pixel = self.px(x, y)
-                    except IndexError:
-                        pixel = 0
-                    y = self.nextcolor_bottom(x, y, upper_bound)
-                    y = min(y, upper_bound)
-                    # As we are ending at the boundary of a pixel
-                    # we need to add 0 as we are coming from the top
-                    # and need to look at the upper edge
-                    if pixel == skip_pixel:
-                        yield x, y, 0
+            last_pixel = None
+            segments = []
+            for idx in range(self.height):
+                pixel = self.px(x, idx)
+                on = 0 if pixel == skip_pixel else pixel
+                if on:
+                    if on == last_pixel:
+                        segments[-1][1] = idx
                     else:
-                        ly = y
-                        yield x, y, pixel
-                # jump to eol
-                y = upper_bound
-            else:
-                ly = upper_bound
-                while lower_bound < y:
-                    try:
-                        pixel = self.px(x, y)
-                    except IndexError:
-                        pixel = 0
-                    y = self.nextcolor_top(x, y, lower_bound)
-                    y = max(y, lower_bound)
-                    # As we are ending at the boundary of a pixel
-                    # we need to add 1 as we are coming from the bottom
-                    # and need to look at the bottom edge
-                    if pixel == skip_pixel:
-                        yield x, y + 1, 0
-                    else:
-                        ly = y + 1
-                        yield x, y + 1, pixel
-                # jump to eol
-                y = lower_bound
-            # eol treatment
-            insufficient = ly <= y if traveling_bottom else ly >= y
-            if insufficient:
-                # Didnt we reach the end? Then check the pixel
-                try:
-                    pixel = self.px(x, y)
-                except IndexError:
-                    pixel = 0
-                if pixel != skip_pixel:
-                    delta = 1 if traveling_bottom else 0
-                    yield x, y + delta, pixel
-            cy = y
-            yield x, cy, 0
-            if self.overscan:
-                cy = y + self.overscan * (1 if traveling_bottom else -1)
-                yield x, cy, 0
-
-            if next_y is None:
-                # remaining image is blank, we stop right here.
-                return
-            yield next_x, cy, 0
-            if cy != next_y:
-                yield next_x, next_y, 0
-            x = next_x
-            y = next_y if next_traveling_bottom else next_y + 1
-            dy = -dy
+                        segments.append ([idx, idx, on])
+                last_pixel = on
+            if segments:
+                if dy > 0:
+                    # from top to bottom
+                    idx = 0
+                    start = 0
+                    end = 1
+                    edge_start = 0
+                    edge_end = 1
+                else:
+                    idx = len(segments) - 1
+                    end = 0
+                    start = 1
+                    edge_start = 1
+                    edge_end = 0
+                if last_y is None:
+                    last_y = segments[idx][start]
+                yield x, last_y, 0
+                while 0 <= idx < len(segments):
+                    sy = segments[idx][start] + edge_start
+                    ey = segments[idx][end] + edge_end
+                    on = segments[idx][2]
+                    if last_y != sy:
+                        yield x, sy, 0
+                    yield x, ey, on
+                    last_y = ey
+                    idx += dy
+            if not unidirectional:
+                dy = -dy
+            x += dx
 
     def _plot_horizontal(self):
         """
@@ -528,103 +481,48 @@ class RasterPlotter:
         unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
 
-        x, y = self.initial_position()
-        if not self.start_minimum_x:
-            x += 1
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-        yield x, y, 0
+        y = 0 if self.start_minimum_y else height - 1
+        last_x = None
         while 0 <= y < height:
-            lower_bound = self.leftmost_not_equal(y)
-            if lower_bound is None:
-                y += dy
-                yield x, y, 0
-                continue
-            upper_bound = self.rightmost_not_equal(y)
-            traveling_right = self.start_minimum_x if unidirectional else dx >= 0
-            next_traveling_right = self.start_minimum_x if unidirectional else dx <= 0
-            # print (f"Range {y}: {lower_bound} - {upper_bound} ({self.width})")
-            next_x, next_y = self.calculate_next_horizontal_pixel(
-                y + dy, dy, leftmost_pixel=next_traveling_right
-            )
-            if next_x is not None:
-                # If we have a next scanline, we must end after the last pixel of that scanline too.
-                upper_bound = max(next_x, upper_bound)
-                lower_bound = min(next_x, lower_bound)
-
-            if lower_bound == upper_bound:
-                # Make sure we have that pixel covered
-                pixel = self.px(lower_bound, y)
-                yield lower_bound, y, pixel
-            if traveling_right:
-                lx = lower_bound
-                while x < upper_bound:
-                    try:
-                        pixel = self.px(x, y)
-                    except IndexError:
-                        # So we are beyond the given boundaries
-                        pixel = 0
-                    x = self.nextcolor_right(x, y, upper_bound)
-                    x = min(x, upper_bound)
-                    # As we are ending at the boundary of a pixel
-                    # we need to add 0 as we are coming from the left
-                    # and need to look at the left edge
-                    if pixel == skip_pixel:
-                        yield x, y, 0
+            last_pixel = None
+            segments = []
+            for idx in range(self.width):
+                pixel = self.px(idx, y)
+                on = 0 if pixel == skip_pixel else pixel
+                if on:
+                    if on == last_pixel:
+                        segments[-1][1] = idx
                     else:
-                        lx = x
-                        yield x, y, pixel
-                        # print (f"> line: {x+1}, {y}, {pixel:.2f}")
-                # jump to eol
-                x = upper_bound
-            else:
-                lx = upper_bound
-                while lower_bound < x:
-                    lx = x
-                    try:
-                        pixel = self.px(x, y)
-                    except IndexError:
-                        pixel = 0
-                    x = self.nextcolor_left(x, y, lower_bound)
-                    ox = x
-                    x = max(x, lower_bound)
-                    # print (f"< Testing {ox} -> {x}: {pixel:.2f} -> {self.px(x, y):.2f}")
-                    # As we are ending at the boundary of a pixel
-                    # we need to add 1 as we are coming from the right
-                    # and need to look at the right edge
-                    if pixel == skip_pixel:
-                        yield x + 1, y, 0
-                    else:
-                        lx = x + 1
-                        yield x + 1, y, pixel
-                        # print (f"< line: {x+1}, {y}, {pixel:.2f}")
-                # jump to eol
-                x = lower_bound
-            # eol treatment
-            # print (f"ended at {lx} [{self.px(lx, y):.2f}] ({x} [{self.px(x, y):.2f}])")
-            insufficient = lx <= x if traveling_right else lx >= x
-            if insufficient:
-                # Didnt we reach the end? Then check the pixel
-                try:
-                    pixel = self.px(x, y)
-                except IndexError:
-                    pixel = 0
-                if pixel != skip_pixel:
-                    delta = 1 if traveling_right else 0
-                    yield x + delta, y, pixel
-                    # print (f"{'<' if traveling_right else '>'} final line: {x + delta}, {y}, {pixel:.2f}")
-            cx = x
-            yield cx, y, 0
-            if self.overscan:
-                cx = x + self.overscan * (1 if traveling_right else -1)
-                yield cx, y, 0
-            if next_y is None:
-                # remaining image is blank, we stop right here.
-                return
-            # We jump to the next line
-            yield cx, next_y, 0
-            if cx != next_x:
-                yield next_x, next_y, 0
-            x = next_x if next_traveling_right else next_x + 1
-            y = next_y
-            dx = -dx
+                        segments.append ([idx, idx, on])
+                last_pixel = on
+            if segments:
+                if dx > 0:
+                    # from left to right
+                    idx = 0
+                    start = 0
+                    end = 1
+                    edge_start = 0
+                    edge_end = 1
+                else:
+                    idx = len(segments) - 1
+                    end = 0
+                    start = 1
+                    edge_start = 1
+                    edge_end = 0
+                if last_x is None:
+                    last_x = segments[idx][start]
+                yield last_x, y, 0
+                while 0 <= idx < len(segments):
+                    sx = segments[idx][start] + edge_start
+                    ex = segments[idx][end] + edge_end
+                    on = segments[idx][2]
+                    if last_x != sx:
+                        yield sx, y, 0
+                    yield ex, y, on
+                    last_x = ex
+                    idx += dx
+            if not unidirectional:
+                dx = -dx
+            y += dy
