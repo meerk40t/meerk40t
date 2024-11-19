@@ -462,6 +462,7 @@ class RasterPlotter:
                     edge_end = 0
                 if last_y is None:
                     last_y = segments[idx][start]
+                # Goto next column
                 yield x, last_y, 0
                 while 0 <= idx < len(segments):
                     sy = segments[idx][start] + edge_start
@@ -472,6 +473,9 @@ class RasterPlotter:
                     yield x, ey, on
                     last_y = ey
                     idx += dy
+                if self.overscan:
+                    last_y += dy * self.overscan
+                    yield x, last_y, 0
             if not unidirectional:
                 dy = -dy
             x += dx
@@ -519,6 +523,7 @@ class RasterPlotter:
                     edge_end = 0
                 if last_x is None:
                     last_x = segments[idx][start]
+                # Goto next line
                 yield last_x, y, 0
                 while 0 <= idx < len(segments):
                     sx = segments[idx][start] + edge_start
@@ -529,6 +534,9 @@ class RasterPlotter:
                     yield ex, y, on
                     last_x = ex
                     idx += dx
+                if self.overscan:
+                    last_x += dx * self.overscan
+                    yield last_x, y, 0
             if not unidirectional:
                 dx = -dx
             y += dy
