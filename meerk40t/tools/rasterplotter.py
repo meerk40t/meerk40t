@@ -143,89 +143,89 @@ class RasterPlotter:
                 return y
         return None
 
-    def nextcolor_left(self, x, y, default=None):
-        """
-        Determine the next pixel change going left from the (x,y) point.
-        If no next pixel is found default is returned.
-        """
-        if x <= -1:
-            return default
-        if x == 0:
-            return -1
-        if x == self.width:
-            return self.width - 1
-        if self.width < x:
-            return self.width
+    # def nextcolor_left(self, x, y, default=None):
+    #     """
+    #     Determine the next pixel change going left from the (x,y) point.
+    #     If no next pixel is found default is returned.
+    #     """
+    #     if x <= -1:
+    #         return default
+    #     if x == 0:
+    #         return -1
+    #     if x == self.width:
+    #         return self.width - 1
+    #     if self.width < x:
+    #         return self.width
 
-        v = self.px(x, y)
-        for ix in range(x, -1, -1):
-            pixel = self.px(ix, y)
-            if pixel != v:
-                return ix
-        return 0
+    #     v = self.px(x, y)
+    #     for ix in range(x, -1, -1):
+    #         pixel = self.px(ix, y)
+    #         if pixel != v:
+    #             return ix
+    #     return 0
 
-    def nextcolor_top(self, x, y, default=None):
-        """
-        Determine the next pixel change going top from the (x,y) point.
-        If no next pixel is found default is returned.
-        """
-        if y <= -1:
-            return default
-        if y == 0:
-            return -1
-        if y == self.height:
-            return self.height - 1
-        if self.height < y:
-            return self.height
+    # def nextcolor_top(self, x, y, default=None):
+    #     """
+    #     Determine the next pixel change going top from the (x,y) point.
+    #     If no next pixel is found default is returned.
+    #     """
+    #     if y <= -1:
+    #         return default
+    #     if y == 0:
+    #         return -1
+    #     if y == self.height:
+    #         return self.height - 1
+    #     if self.height < y:
+    #         return self.height
 
-        v = self.px(x, y)
-        for iy in range(y, -1, -1):
-            pixel = self.px(x, iy)
-            if pixel != v:
-                return iy
-        return 0
+    #     v = self.px(x, y)
+    #     for iy in range(y, -1, -1):
+    #         pixel = self.px(x, iy)
+    #         if pixel != v:
+    #             return iy
+    #     return 0
 
-    def nextcolor_right(self, x, y, default=None):
-        """
-        Determine the next pixel change going right from the (x,y) point.
-        If no next pixel is found default is returned.
-        """
-        if x < -1:
-            return -1
-        if x == -1:
-            return 0
-        if x == self.width - 1:
-            return self.width
-        if self.width <= x:
-            return default
+    # def nextcolor_right(self, x, y, default=None):
+    #     """
+    #     Determine the next pixel change going right from the (x,y) point.
+    #     If no next pixel is found default is returned.
+    #     """
+    #     if x < -1:
+    #         return -1
+    #     if x == -1:
+    #         return 0
+    #     if x == self.width - 1:
+    #         return self.width
+    #     if self.width <= x:
+    #         return default
 
-        v = self.px(x, y)
-        for ix in range(x, self.width):
-            pixel = self.px(ix, y)
-            if pixel != v:
-                return ix
-        return self.width - 1
+    #     v = self.px(x, y)
+    #     for ix in range(x, self.width):
+    #         pixel = self.px(ix, y)
+    #         if pixel != v:
+    #             return ix
+    #     return self.width - 1
 
-    def nextcolor_bottom(self, x, y, default=None):
-        """
-        Determine the next pixel change going bottom from the (x,y) point.
-        If no next pixel is found default is returned.
-        """
-        if y < -1:
-            return -1
-        if y == -1:
-            return 0
-        if y == self.height - 1:
-            return self.height
-        if self.height <= y:
-            return default
+    # def nextcolor_bottom(self, x, y, default=None):
+    #     """
+    #     Determine the next pixel change going bottom from the (x,y) point.
+    #     If no next pixel is found default is returned.
+    #     """
+    #     if y < -1:
+    #         return -1
+    #     if y == -1:
+    #         return 0
+    #     if y == self.height - 1:
+    #         return self.height
+    #     if self.height <= y:
+    #         return default
 
-        v = self.px(x, y)
-        for iy in range(y, self.height):
-            pixel = self.px(x, iy)
-            if pixel != v:
-                return iy
-        return self.height - 1
+    #     v = self.px(x, y)
+    #     for iy in range(y, self.height):
+    #         pixel = self.px(x, iy)
+    #         if pixel != v:
+    #             return iy
+    #     return self.height - 1
 
     def calculate_next_horizontal_pixel(self, y, dy=1, leftmost_pixel=True):
         """
@@ -396,47 +396,54 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-        data = list(self._plot_pixels())
-        from time import perf_counter_ns
-        from platform import system
-        defaultdir = "c:\\temp\\" if system() == "Windows" else ""
-        has_duplicates = 0
-        with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
-            f.write(f"0.9.6\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
-            f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
-            f.write(f"Image dimensions: {self.width}x{self.height}\n")
-            f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
-            test_dict = {}
-            lastx = None
-            lasty = None
-            for lineno, (x, y, on) in enumerate(data, start=1):
-                key = f"{x} - {y}"
-                if key in test_dict:
-                    f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
-                    has_duplicates += 1
-                else:
-                    test_dict[key] = (lineno, on)
-                if lastx is not None:
-                    dx = x - lastx
-                    dy = y - lasty
-                    if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
-                        f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-                        print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-                lastx = x
-                lasty = y
-            f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
-            for lineno, (x, y, on) in enumerate(data, start=1):
-                f.write(f"{lineno}: {x}, {y}, {on}\n")
-        if has_duplicates:
-            print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
-            print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
-            print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
-            print(f"Image dimensions: {self.width}x{self.height}")
+
+        # data = list(self._plot_pixels())
+        # from time import perf_counter_ns
+        # from platform import system
+        # defaultdir = "c:\\temp\\" if system() == "Windows" else ""
+        # has_duplicates = 0
+        # with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
+        #     f.write(f"0.9.6\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+        #     f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
+        #     f.write(f"Image dimensions: {self.width}x{self.height}\n")
+        #     f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
+        #     test_dict = {}
+        #     lastx = None
+        #     lasty = None
+        #     for lineno, (x, y, on) in enumerate(data, start=1):
+        #         key = f"{x} - {y}"
+        #         if key in test_dict:
+        #             f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
+        #             has_duplicates += 1
+        #         else:
+        #             test_dict[key] = (lineno, on)
+        #         if lastx is not None:
+        #             dx = x - lastx
+        #             dy = y - lasty
+        #             if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
+        #                 f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+        #                 print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+        #         lastx = x
+        #         lasty = y
+        #     f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
+        #     for lineno, (x, y, on) in enumerate(data, start=1):
+        #         f.write(f"{lineno}: {x}, {y}, {on}\n")
+        # if has_duplicates:
+        #     print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
+        #     print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
+        #     print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
+        #     print(f"Image dimensions: {self.width}x{self.height}")
+        # if self.use_integers:
+        #     for x, y, on in data:
+        #         yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+        # else:
+        #     for x, y, on in data:
+        #         yield offset_x + step_x * x, offset_y + y * step_y, on
         if self.use_integers:
-            for x, y, on in data:
+            for x, y, on in self._plot_pixels():
                 yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
         else:
-            for x, y, on in data:
+            for x, y, on in self._plot_pixels():
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
@@ -475,7 +482,6 @@ class RasterPlotter:
         b) we need to take care that we are not landing on the same pixel twice. So we move
            outside the new chain to avoid this
         """
-        width = self.width
         unidirectional = not self.bidirectional
 
         dx = 1 if self.start_minimum_x else -1
@@ -561,7 +567,6 @@ class RasterPlotter:
         b) we need to take care that we are not landing on the same pixel twice. So we move
            outside the new chain to avoid this
         """
-        height = self.height
         unidirectional = not self.bidirectional
 
         dx = 1 if self.start_minimum_x else -1
