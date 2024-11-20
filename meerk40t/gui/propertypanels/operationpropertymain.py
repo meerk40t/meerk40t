@@ -1345,22 +1345,14 @@ class RasterSettingsPanel(wx.Panel):
         sizer_dpi.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        self.sizer_cutoff = StaticBoxSizer(self, wx.ID_ANY, _("Cutoff:"), wx.HORIZONTAL)
-        param_sizer.Add(self.sizer_cutoff, 1, wx.EXPAND, 0)
-        self.text_cutoff = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0%",
-            limited=True,
-            check="percentage",
-            style=wx.TE_PROCESS_ENTER,
+        self.sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Override black/white image:"), wx.HORIZONTAL)
+        param_sizer.Add(self.sizer_grayscale, 1, wx.EXPAND, 0)
+        self.check_grayscale = wxCheckBox(self, wx.ID_ANY, _("Use grayscale instead") )
+        self.check_grayscale.SetToolTip(
+            _("Usually a raster will be created as a black and white picture. Every non-white pixel (even very light ones) will become black and will be burned at full power.") + "\n" +
+            _("If you check this value then pixels will be converted to grayscale and the burn-power of a pixel will depend on its darkness.")
         )
-        self.text_cutoff.SetToolTip(
-            _("Usually every non-white pixel (even very light ones) will be burned.") + "\n" +
-            _("If you set this value to something different than 0%,") + "\n" +
-            _("then this defines the needed blackness level for a pixel to be burned.")
-        )
-        self.sizer_cutoff.Add(self.text_cutoff, 1, wx.EXPAND, 0)
+        self.sizer_grayscale.Add(self.check_grayscale, 1, wx.EXPAND, 0)
 
         sizer_overscan = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
         param_sizer.Add(sizer_overscan, 1, wx.EXPAND, 0)
@@ -1454,8 +1446,8 @@ class RasterSettingsPanel(wx.Panel):
 
         self.Layout()
         self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_grayscale, self.check_grayscale)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
-        self.text_cutoff.SetActionRoutine(self.on_text_cutoff)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
 
         self.Bind(
@@ -1483,12 +1475,12 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.dpi is not None:
             dpi = int(self.operation.dpi)
             set_ctrl_value(self.text_dpi, str(dpi))
-        if hasattr(self.operation, "cutoff_threshold"):
-            self.sizer_cutoff.ShowItems(True)
+        if hasattr(self.operation, "use_grayscale"):
+            self.sizer_grayscale.ShowItems(True)
 
-            self.text_cutoff.SetValue(f"{self.operation.cutoff_threshold:.1f}%")
+            self.check_grayscale.SetValue(self.operation.use_grayscale)
         else:
-            self.sizer_cutoff.ShowItems(False)
+            self.sizer_grayscale.ShowItems(False)
 
         if hasattr(self.operation, "overrule_dpi"):
             self.check_overrule_dpi.Show(True)
@@ -1533,19 +1525,11 @@ class RasterSettingsPanel(wx.Panel):
             )
             self.context.signal("warn_state_update")
 
-    def on_text_cutoff(self):
-        s = self.text_cutoff.GetValue()
-        if s.endswith("%"):
-            s = s[:-1]
-        try:
-            value = float(s)
-        except ValueError:
-            value = 0
-        if self.operation.cutoff_threshold != value:
-            self.operation.cutoff_threshold = value
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "text_cutoff"
-            )
+    def on_check_grayscale(self, event):
+        value = self.check_grayscale.GetValue()
+        if self.operation.use_grayscale != value:
+            self.operation.use_grayscale = value
+            self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_overscan(self):
         try:
