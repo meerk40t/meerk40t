@@ -480,11 +480,15 @@ class RasterPlotter:
 
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-        x = 0 if self.start_minimum_x else width - 1
         last_y = None
-        while 0 <= x < width:
+        had_a_segment = False
+        lower = min(self.initial_x, self.final_x)
+        upper = max(self.initial_x, self.final_x)
+        x = lower if self.start_minimum_x else upper
+        while lower <= x < upper:
             segments = self._get_pixel_chains(x, False)
             if segments:
+                had_a_segment = True
                 if dy > 0:
                     # from top to bottom
                     idx = 0
@@ -535,9 +539,10 @@ class RasterPlotter:
                     dy = -dy
             else:
                 # Just climb the line, and don't change directions
-                if last_y is None:
-                    last_y = 0
-                yield x, last_y, 0
+                if had_a_segment:
+                    if last_y is None:
+                        last_y = 0
+                    yield x, last_y, 0
 
             x += dx
 
@@ -561,11 +566,15 @@ class RasterPlotter:
 
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-        y = 0 if self.start_minimum_y else height - 1
         last_x = None
-        while 0 <= y < height:
+        had_a_segment = False
+        lower = min(self.initial_y, self.final_y)
+        upper = max(self.initial_y, self.final_y)
+        y = lower if self.start_minimum_y else upper
+        while lower <= y < upper:
             segments = self._get_pixel_chains(y, True)
             if segments:
+                had_a_segment = True
                 if dx > 0:
                     # from left to right
                     idx = 0
@@ -616,7 +625,8 @@ class RasterPlotter:
                     dx = -dx
             else:
                 # Just climb the line, and don't change directions
-                if last_x is None:
-                    last_x = 0
-                yield last_x, y, 0
+                if had_a_segment:
+                    if last_x is None:
+                        last_x = 0
+                    yield last_x, y, 0
             y += dy
