@@ -396,21 +396,28 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-
-        # from time import perf_counter_ns
-        # with open(f"plot_{perf_counter_ns()}.txt", mode="w") as f:
-        #     if self.use_integers:
-        #         for x, y, on in self._plot_pixels():
-        #             f.write(f"{x}, {y}, {on}\n")
-        #             ), on
-        #     else:
-        #         for x, y, on in self._plot_pixels():
-        #             f.write(f"{x}, {y}, {on}\n")
+        data = list(self._plot_pixels())
+        from time import perf_counter_ns
+        with open(f"plot_{perf_counter_ns()}.txt", mode="w") as f:
+            f.write(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+            f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
+            f.write(f"Image dimensions: {self.width}x{self.height}\n")
+            f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
+            test_dict = {}
+            for lineno, (x, y, on) in enumerate(data, start=1):
+                key = f"{x} - {y}"
+                if key in test_dict:
+                    f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
+                else:
+                    test_dict[key] = (lineno, on)
+            f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
+            for lineno, (x, y, on) in enumerate(data, start=1):
+                f.write(f"{lineno}: {x}, {y}, {on}\n")
         if self.use_integers:
-            for x, y, on in self._plot_pixels():
+            for x, y, on in data:
                 yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
         else:
-            for x, y, on in self._plot_pixels():
+            for x, y, on in data:
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
@@ -461,7 +468,7 @@ class RasterPlotter:
                     edge_start = 1
                     edge_end = 0
                 if last_y is None:
-                    last_y = segments[idx][start]
+                    last_y = segments[idx][start] + edge_start
                 # Goto next column
                 yield x, last_y, 0
                 while 0 <= idx < len(segments):
@@ -522,7 +529,7 @@ class RasterPlotter:
                     edge_start = 1
                     edge_end = 0
                 if last_x is None:
-                    last_x = segments[idx][start]
+                    last_x = segments[idx][start] + edge_start
                 # Goto next line
                 yield last_x, y, 0
                 while 0 <= idx < len(segments):
