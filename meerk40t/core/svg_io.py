@@ -594,8 +594,8 @@ class SVGWriter:
 
         if node.lock is not None:
             subelement.set("lock", str(node.lock))
-        if hasattr(node, "cutoff_threshold") and node.cutoff_threshold is not None:
-            subelement.set("cutoff_threshold", f"{node.cutoff_threshold:.1f}%")
+        if hasattr(node, "use_grayscale") and node.use_grayscale is not None:
+            subelement.set("use_grayscale", str(node.use_grayscale))
 
         try:
             for key, value in node.settings.items():
