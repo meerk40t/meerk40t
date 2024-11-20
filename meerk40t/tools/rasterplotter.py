@@ -491,7 +491,7 @@ class RasterPlotter:
         lower = min(self.initial_x, self.final_x)
         upper = max(self.initial_x, self.final_x)
         x = lower if self.start_minimum_x else upper
-        while lower <= x < upper:
+        while lower <= x <= upper:
             segments = self._get_pixel_chains(x, False)
             if segments:
                 had_a_segment = True
@@ -576,7 +576,7 @@ class RasterPlotter:
         lower = min(self.initial_y, self.final_y)
         upper = max(self.initial_y, self.final_y)
         y = lower if self.start_minimum_y else upper
-        while lower <= y < upper:
+        while lower <= y <= upper:
             segments = self._get_pixel_chains(y, True)
             if segments:
                 had_a_segment = True
