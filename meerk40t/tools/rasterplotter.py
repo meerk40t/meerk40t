@@ -464,8 +464,7 @@ class RasterPlotter:
            next scanline by going directly up/down/left/right and then move to the first
            relevant pixel.
         b) we need to take care that we are not landing on the same pixel twice. So we move
-        So at the end of a likne
-
+           outside the new chain to avoid this
         """
         width = self.width
         unidirectional = not self.bidirectional
@@ -533,6 +532,14 @@ class RasterPlotter:
         We are looking first for all consecutive pixel chains with the same pixel value
         Then we loop through the segments and yield the 'end edge' of the 'last' pixel
         'end edge' and 'last' are dependent on the sweep direction.
+        There is one peculiarity though that is required for K40 lasers:
+        a) We may only move from one yielded (x,y,on) tuple in a pure horizontal or pure
+           vertical fashion (we could as well go perfectly diagonal but we are not using
+           this feature). So at the end of one sweepline we need to change to the
+           next scanline by going directly up/down/left/right and then move to the first
+           relevant pixel.
+        b) we need to take care that we are not landing on the same pixel twice. So we move
+           outside the new chain to avoid this
         """
         height = self.height
         unidirectional = not self.bidirectional
