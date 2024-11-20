@@ -61,6 +61,8 @@ class RasterOpNode(Node, Parameters):
         if isinstance(self.use_grayscale, str):
             s = self.use_grayscale.lower()
             self.use_grayscale = s in ("true", "1")
+        if self.use_grayscale is None:
+            self.use_grayscale = False
 
 
     def __repr__(self):
@@ -548,8 +550,7 @@ class RasterOpNode(Node, Parameters):
             )
             image_filter = None
             if not self.use_grayscale: # By default a bw picture
-                pil_image.convert("1")
-
+                pil_image = pil_image.convert("1")
             # Create Cut Object
             cut = RasterCut(
                 image=pil_image,

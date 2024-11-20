@@ -30,6 +30,8 @@ class RasterCut(CutObject):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color, label=label,
         )
+        print (f"Image was handed over with mode {image.mode}, filter was {post_filter}")
+        image.save("0961.png")
         if image.mode not in ("L", "1"):
             image = image.convert("L")
         # assert image.mode in ("L", "1")
@@ -59,6 +61,7 @@ class RasterCut(CutObject):
 
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+
         if post_filter is None:
             post_filter = image_filter
 
