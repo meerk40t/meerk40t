@@ -30,8 +30,6 @@ class RasterCut(CutObject):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color, label=label,
         )
-        print (f"Image was handed over with mode {image.mode}, filter was {post_filter}")
-        image.save("0961.png")
         if image.mode not in ("L", "1"):
             image = image.convert("L")
         # assert image.mode in ("L", "1")
