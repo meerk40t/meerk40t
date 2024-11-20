@@ -398,7 +398,10 @@ class RasterPlotter:
             return
         data = list(self._plot_pixels())
         from time import perf_counter_ns
-        with open(f"plot_{perf_counter_ns()}.txt", mode="w") as f:
+        from platform import system
+        defaultdir = "c:\\temp\\" if system() == "Windows" else ""
+        has_duplicates = 0
+        with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
             f.write(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
             f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
             f.write(f"Image dimensions: {self.width}x{self.height}\n")
@@ -408,11 +411,17 @@ class RasterPlotter:
                 key = f"{x} - {y}"
                 if key in test_dict:
                     f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
+                    has_duplicates += 1
                 else:
                     test_dict[key] = (lineno, on)
             f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
             for lineno, (x, y, on) in enumerate(data, start=1):
                 f.write(f"{lineno}: {x}, {y}, {on}\n")
+        if has_duplicates:
+            print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
+            print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
+            print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
+            print(f"Image dimensions: {self.width}x{self.height}")
         if self.use_integers:
             for x, y, on in data:
                 yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
@@ -426,33 +435,47 @@ class RasterPlotter:
         else:
             yield from self._plot_vertical()
 
+    def _get_pixel_chains(self, xy:int, is_x : bool) -> list:
+        last_pixel = None
+        segments = []
+        upper = self.width if is_x else self.height
+        for idx in range(upper):
+            pixel = self.px(idx, xy) if is_x else self.px(xy, idx)
+            on = 0 if pixel == self.skip_pixel else pixel
+            if on:
+                if on == last_pixel:
+                    segments[-1][1] = idx
+                else:
+                    segments.append ([idx, idx, on])
+            last_pixel = on
+
+        return segments
+
     def _plot_vertical(self):
         """
         This code is for vertical rastering.
         We are looking first for all consecutive pixel chains with the same pixel value
         Then we loop through the segments and yield the 'end edge' of the 'last' pixel
         'end edge' and 'last' are dependent on the sweep direction.
+        There is one peculiarity though that is required for K40 lasers:
+        a) We may only move from one yielded (x,y,on) tuple in a pure horizontal or pure
+           vertical fashion (we could as well go perfectly diagonal but we are not using
+           this feature). So at the end of one sweepline we need to change to the
+           next scanline by going directly up/down/left/right and then move to the first
+           relevant pixel.
+        b) we need to take care that we are not landing on the same pixel twice. So we move
+        So at the end of a likne
+
         """
         width = self.width
         unidirectional = not self.bidirectional
-        skip_pixel = self.skip_pixel
 
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
         x = 0 if self.start_minimum_x else width - 1
         last_y = None
         while 0 <= x < width:
-            last_pixel = None
-            segments = []
-            for idx in range(self.height):
-                pixel = self.px(x, idx)
-                on = 0 if pixel == skip_pixel else pixel
-                if on:
-                    if on == last_pixel:
-                        segments[-1][1] = idx
-                    else:
-                        segments.append ([idx, idx, on])
-                last_pixel = on
+            segments = self._get_pixel_chains(x, False)
             if segments:
                 if dy > 0:
                     # from top to bottom
@@ -469,7 +492,24 @@ class RasterPlotter:
                     edge_end = 0
                 if last_y is None:
                     last_y = segments[idx][start] + edge_start
-                # Goto next column
+                # Goto next column, but make sure we end up outside our chain
+                # We consider as well the overscan value
+                overscan_top = 0 if dy >= 0 else self.overscan
+                overscan_bottom = 0 if dy <= 0 else self.overscan
+                if segments[0][0] - overscan_top <= last_y <= segments[-1][1] + overscan_bottom:
+                    # inside the chain!
+                    # So lets move a bit to the side
+                    if dy > 0:
+                        if self.bidirectional:
+                            # Previous was sweep from right to left, so we go beyond first point
+                            last_y = segments[0][0] - overscan_top - 1
+                        else:
+                            # We go beyond last point
+                            last_y = segments[-1][1] + overscan_bottom + 1
+                    else:
+                        # Previous was sweep from left to right, so we go beyond last point
+                        last_y = segments[-1][1] + overscan_bottom + 1
+                    yield x - dx, last_y, 0
                 yield x, last_y, 0
                 while 0 <= idx < len(segments):
                     sy = segments[idx][start] + edge_start
@@ -503,17 +543,7 @@ class RasterPlotter:
         y = 0 if self.start_minimum_y else height - 1
         last_x = None
         while 0 <= y < height:
-            last_pixel = None
-            segments = []
-            for idx in range(self.width):
-                pixel = self.px(idx, y)
-                on = 0 if pixel == skip_pixel else pixel
-                if on:
-                    if on == last_pixel:
-                        segments[-1][1] = idx
-                    else:
-                        segments.append ([idx, idx, on])
-                last_pixel = on
+            segments = self._get_pixel_chains(y, True)
             if segments:
                 if dx > 0:
                     # from left to right
@@ -530,7 +560,24 @@ class RasterPlotter:
                     edge_end = 0
                 if last_x is None:
                     last_x = segments[idx][start] + edge_start
-                # Goto next line
+                # Goto next line, but make sure we end up outside our chain
+                # We consider as well the overscan value
+                overscan_left = 0 if dx >= 0 else self.overscan
+                overscan_right = 0 if dx <= 0 else self.overscan
+                if segments[0][0] - overscan_left <= last_x <= segments[-1][1] + overscan_right:
+                    # inside the chain!
+                    # So lets move a bit to the side
+                    if dx > 0:
+                        if self.bidirectional:
+                            # Previous was sweep from right to left, so we go beyond first point
+                            last_x = segments[0][0] - overscan_left - 1
+                        else:
+                            # We go beyond last point
+                            last_x = segments[-1][1] + overscan_right + 1
+                    else:
+                        # Previous was sweep from left to right, so we go beyond last point
+                        last_x = segments[-1][1] + overscan_right + 1
+                    yield last_x, y - dy, 0
                 yield last_x, y, 0
                 while 0 <= idx < len(segments):
                     sx = segments[idx][start] + edge_start
