@@ -407,6 +407,8 @@ class RasterPlotter:
             f.write(f"Image dimensions: {self.width}x{self.height}\n")
             f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
             test_dict = {}
+            lastx = None
+            lasty = None
             for lineno, (x, y, on) in enumerate(data, start=1):
                 key = f"{x} - {y}"
                 if key in test_dict:
@@ -414,6 +416,14 @@ class RasterPlotter:
                     has_duplicates += 1
                 else:
                     test_dict[key] = (lineno, on)
+                if lastx is not None:
+                    dx = x - lastx
+                    dy = y - lasty
+                    if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
+                        f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+                        print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+                lastx = x
+                lasty = y
             f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
             for lineno, (x, y, on) in enumerate(data, start=1):
                 f.write(f"{lineno}: {x}, {y}, {on}\n")
@@ -521,8 +531,14 @@ class RasterPlotter:
                 if self.overscan:
                     last_y += dy * self.overscan
                     yield x, last_y, 0
-            if not unidirectional:
-                dy = -dy
+                if not unidirectional:
+                    dy = -dy
+            else:
+                # Just climb the line, and don't change directions
+                if last_y is None:
+                    last_y = 0
+                yield x, last_y, 0
+
             x += dx
 
     def _plot_horizontal(self):
@@ -542,7 +558,6 @@ class RasterPlotter:
         """
         height = self.height
         unidirectional = not self.bidirectional
-        skip_pixel = self.skip_pixel
 
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
@@ -597,6 +612,11 @@ class RasterPlotter:
                 if self.overscan:
                     last_x += dx * self.overscan
                     yield last_x, y, 0
-            if not unidirectional:
-                dx = -dx
+                if not unidirectional:
+                    dx = -dx
+            else:
+                # Just climb the line, and don't change directions
+                if last_x is None:
+                    last_x = 0
+                yield last_x, y, 0
             y += dy
