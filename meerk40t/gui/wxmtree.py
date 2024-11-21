@@ -1958,8 +1958,10 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
+        # Is the node expanded? If yes regular dnd applies, if not we will add the node to the end...
+        closed_leaf = (self.wxtree.ItemHasChildren(drop_item) and not self.wxtree.IsExpanded(drop_item))
         # We extend the logic by calling the appropriate elems routine
-        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node)
+        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node, flag=closed_leaf)
         if skip:
             event.Skip()
             self.dragging_nodes = None

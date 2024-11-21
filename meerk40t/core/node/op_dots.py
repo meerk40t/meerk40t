@@ -97,7 +97,7 @@ class DotsOpNode(Node, Parameters):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.add_reference(drag_node, pos=0)
+                self.add_reference(drag_node, pos=None if flag else 0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
