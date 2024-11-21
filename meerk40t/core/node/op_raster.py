@@ -550,7 +550,9 @@ class RasterOpNode(Node, Parameters):
             )
             image_filter = None
             if not self.use_grayscale: # By default a bw picture
-                pil_image = pil_image.convert("1")
+                threshold = 200
+                pil_image = pil_image.point(lambda x: 255 if x > threshold else 0, mode="1")
+                # pil_image = pil_image.convert("1")
             # Create Cut Object
             cut = RasterCut(
                 image=pil_image,
