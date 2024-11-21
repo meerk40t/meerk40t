@@ -320,9 +320,9 @@ def plugin(kernel, lifecycle):
                     try:
                         req = urlopen(req)
                         response = json.loads(req.read())
-                    except (HTTPError, URLError, http.client.IncompleteRead):
+                    except Exception as e:
                         if verbosity_level > 0:
-                            channel(ERROR_MESSAGE)
+                            channel(ERROR_MESSAGE + f"\n{e}")
                         return
 
                     tag_full = tag_beta = None
