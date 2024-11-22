@@ -18,7 +18,6 @@ The rasters can either be BIDIRECTIONAL or UNIDIRECTIONAL meaning they raster on
 or only on forward swing.
 """
 
-
 class RasterPlotter:
     def __init__(
         self,
@@ -37,6 +36,7 @@ class RasterPlotter:
         step_x=1,
         step_y=1,
         filter=None,
+        optimize=False,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -59,6 +59,7 @@ class RasterPlotter:
                             implementation is agnostic regarding what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                             part of the skip pixel.
+        @param optimize: activate experimental greedy path optimisation
         """
         self.data = data
         self.width = width
@@ -80,6 +81,7 @@ class RasterPlotter:
         self.filter = filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
         self.final_x, self.final_y = self.calculate_last_pixel()
+        self.optimize = optimize
 
     def px(self, x, y):
         """
@@ -396,7 +398,7 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-
+        # Debug code....
         # data = list(self._plot_pixels())
         # from time import perf_counter_ns
         # from platform import system
@@ -447,10 +449,13 @@ class RasterPlotter:
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
-        if self.horizontal:
+        if self.optimize:
+            yield from self._plot_optimize(horizontal=self.horizontal)
+        elif self.horizontal:
             yield from self._plot_horizontal()
         else:
             yield from self._plot_vertical()
+            # yield from self._plot_vertical()
 
     def _get_pixel_chains(self, xy:int, is_x : bool) -> list:
         last_pixel = None
@@ -635,3 +640,215 @@ class RasterPlotter:
                         last_x = 0
                     yield last_x, y, 0
             y += dy
+
+    def _plot_optimize(self, horizontal: bool = True):
+        """
+        Distance Matrix Function: The distance_matrix function calculates the squared distances from the
+        current point to all other points, applying a penalty to the y-distances to prefer movements in the x-direction.
+
+        Initialization: We initialize the visited array to keep track of visited segments, the path list
+        to store the order of segments along with the relevant point (start or end),
+        and the current_point as the starting point.
+
+        Sliding Window: We use a sliding window to limit the number of segments we need to consider at each step.
+        The window size is controlled by the window_size parameter and is applied to both x and y coordinates.
+
+        Main Loop: In the main loop, we calculate the distances from the current point to all unvisited points
+        within the sliding window using the distance_matrix function.
+        We then use np.argmin to find the index of the smallest distance.
+        We update the current_point to the next point and mark the segment as visited.
+        The path list is updated with the segment index and whether the start or end point is relevant.
+        """
+        import numpy as np
+        from time import perf_counter
+
+        def walk_segments(segments, horizontal=True, xy_penalty=1, width=1, height=1):
+            n:int = len(segments)
+            visited = np.zeros(n, dtype=bool)
+            path = []
+            window_size = 10
+            current_point = np.array(segments[0][0], dtype=float)
+            segment_points = np.array([point for segment in segments for point in segment], dtype=float)
+            mask = ~visited.repeat(2)
+            while len(path) < n:
+                # Find the range of segments within the x- and y-window
+                x_min = current_point[0] - window_size
+                x_max = current_point[0] + window_size
+                y_min = current_point[1] - window_size
+                y_max = current_point[1] + window_size
+                unvisited_indices = np.where(
+                    (segment_points[:, 0] >= x_min) &
+                    (segment_points[:, 0] <= x_max) &
+                    (segment_points[:, 1] >= y_min) &
+                    (segment_points[:, 1] <= y_max) &
+                    mask
+                )[0]
+                if len(unvisited_indices) == 0:
+                    # If no segments are within the window, expand the window
+                    window_size *= 2
+                    # print (f"Did not find points: now window: {window_size}")
+                    if window_size <= 2* height or window_size <= 2 * width: # Safety belt
+                        continue
+
+                unvisited_points = segment_points[unvisited_indices]
+
+                # distances = distance_matrix(unvisited_points, current_point, y_penalty)
+                diff = unvisited_points - current_point
+                if horizontal:
+                    diff[:, 1] *= xy_penalty # Apply penalty to y-distances
+                else:
+                    diff[:, 0] *= xy_penalty # Apply penalty to x-distances
+
+                distances = np.sum(diff ** 2, axis=1) # Return squared distances
+
+                min_distance_idx = np.argmin(distances)
+                next_segment = unvisited_indices[min_distance_idx] // 2
+
+                if not visited[next_segment]:
+                    visited[next_segment] = True
+                    # mask = ~visited.repeat(2)
+                    mask[2 * next_segment] = False
+                    mask[2 * next_segment + 1] = False
+                    if min_distance_idx % 2 == 0:
+                        path.append((next_segment, 'end'))
+                        current_point = segment_points[next_segment * 2 + 1]  # Move to the other endpoint
+                    else:
+                        path.append((next_segment, 'start'))
+                        current_point = segment_points[next_segment * 2]  # Move to the other endpoint
+                    window_size = 10 # Reset window size
+
+            return path
+
+        t0 = perf_counter()
+        # An experimental routine
+        if horizontal:
+            dy = 1 if self.start_minimum_y else -1
+            lower = min(self.initial_y, self.final_y)
+            upper = max(self.initial_y, self.final_y)
+            y = lower if self.start_minimum_y else upper
+        else:
+            dx = 1 if self.start_minimum_x else -1
+            lower = min(self.initial_x, self.final_x)
+            upper = max(self.initial_x, self.final_x)
+            x = lower if self.start_minimum_x else upper
+
+        line_parts = []
+        on_parts = []
+        print (f"{'horizontal' if horizontal else 'Vertical'} for {self.width}x{self.height} image. {'y' if horizontal else 'x'} from {lower} to {upper}")
+        if horizontal:
+            while lower <= y <= upper:
+                segments = self._get_pixel_chains(y, True)
+                for seg in segments:
+                    # Append (xstart, y), (xend, y), on
+                    line_parts.append( ( (seg[0], y), (seg[1], y) ) )
+                    on_parts.append(seg[2])
+                y += dy
+        else:
+            while lower <= x <= upper:
+                segments = self._get_pixel_chains(x, False)
+                for seg in segments:
+                    # Append (xstart, y), (xend, y), on
+                    line_parts.append( ( (x, seg[0]), (x, seg[1]) ) )
+                    on_parts.append(seg[2])
+                x += dx
+        print (f"Created {len(line_parts)} segments")
+        t1 = perf_counter()
+        path = walk_segments(line_parts, horizontal=horizontal, xy_penalty=3, width=self.width, height=self.height)
+        # print("Order of segments:", path)
+        t2 = perf_counter()
+        if horizontal:
+            last_x = self.initial_x
+            last_y = lower
+        else:
+            last_x = lower
+            last_y = self.initial_y
+        for idx, mode in path:
+            if mode == "end":
+                # end was closer
+                (ex, ey), (sx, sy) = line_parts[idx]
+            else:
+                (sx, sy), (ex, ey) = line_parts[idx]
+            on = on_parts[idx]
+            # print (f"[{idx}] -> {line_parts[abs(idx)]} -> {sx}, {sy} to {ex}, {ey} with {on:.2f}")
+            if horizontal:
+                dx = ex - sx
+                if dx >= 0:
+                    # from left to right
+                    edge_start = 0
+                    edge_end = 1
+                else:
+                    edge_start = 1
+                    edge_end = 0
+                sx += edge_start
+                ex += edge_end
+                if sy != last_y:
+                    yield last_x, sy, 0
+                if last_x != sx:
+                    yield sx, sy, 0
+            else:
+                dy = ey - sy
+                if dy >= 0:
+                    # from left to right
+                    edge_start = 0
+                    edge_end = 1
+                else:
+                    edge_start = 1
+                    edge_end = 0
+                sy += edge_start
+                ey += edge_end
+                if sx != last_x:
+                    yield sx, last_y, 0
+                if last_y != sy:
+                    yield sx, sy, 0
+
+            yield ex, ey, on
+            last_x = ex
+            last_y = ey
+        t3 = perf_counter()
+        print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
+        print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
+
+    # def dummy(self):
+    #     # This is the working sample with simple python code
+    #     def distance_sq(p1, p2):
+    #         penalty = 9
+    #         return (p1[0] - p2[0]) ** 2 + penalty * (p1[1] - p2[1]) ** 2
+    #
+    #     def find_next_segment(current_point, segments, visited):
+    #         min_distance = float('inf')
+    #         next_segment = None
+    #         next_point = None
+    #
+    #         for i, (start, end) in enumerate(segments):
+    #             if i not in visited:
+    #                 dist_to_start = distance_sq(current_point, start)
+    #                 dist_to_end = distance_sq(current_point, end)
+    #
+    #                 if dist_to_start < min_distance:
+    #                     min_distance = dist_to_start
+    #                     next_segment = i
+    #                     next_point = end
+    #                 if dist_to_end < min_distance:
+    #                     min_distance = dist_to_end
+    #                     next_segment = -i # negative sign is indicating end
+    #                     next_point = start
+    #
+    #         return next_segment, next_point
+    #
+    #     def walk_segments(segments):
+    #         visited = set()
+    #         # Force the first segment!
+    #         visited.add(0)
+    #         path = [0]
+    #         current_point = segments[0][1]
+    #
+    #         while len(visited) < len(segments):
+    #             next_segment, next_point = find_next_segment(current_point, segments, visited)
+    #             if next_segment is None:
+    #                 break
+    #             visited.add(abs(next_segment))
+    #             path.append(next_segment)
+    #             current_point = next_point
+    #
+    #         return path
+
