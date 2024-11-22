@@ -596,6 +596,8 @@ class SVGWriter:
             subelement.set("lock", str(node.lock))
         if hasattr(node, "use_grayscale") and node.use_grayscale is not None:
             subelement.set("use_grayscale", str(node.use_grayscale))
+        if hasattr(node, "optimize") and node.optimize is not None:
+            subelement.set("optimize", str(node.optimize))
 
         try:
             for key, value in node.settings.items():
