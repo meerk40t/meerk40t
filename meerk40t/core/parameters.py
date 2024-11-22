@@ -20,6 +20,7 @@ INT_PARAMETERS = (
     "input_value",
     "output_mask",
     "output_value",
+    "coolant",
 )
 
 FLOAT_PARAMETERS = (
@@ -50,7 +51,6 @@ BOOL_PARAMETERS = (
     "advanced",
     "stopop",
     "effect",
-    "air_assist",
 )
 
 STRING_PARAMETERS = (
@@ -720,10 +720,10 @@ class Parameters:
         self.__dict__["output_message"] = value
 
     @property
-    def air_assist(self):
-        return self.settings.get("air_assist", True)
+    def coolant(self):
+        return self.settings.get("coolant", True)
 
-    @air_assist.setter
-    def air_assist(self, value):
-        self.settings["air_assist"] = value
-        self.__dict__["air_assist"] = value
+    @coolant.setter
+    def coolant(self, value):
+        self.settings["coolant"] = value
+        self.__dict__["coolant"] = value
