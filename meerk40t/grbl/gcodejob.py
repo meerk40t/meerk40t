@@ -363,13 +363,31 @@ class GcodeJob:
                     self.program_mode = False
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
-                    pass
+                    try:
+                        self._driver.service.kernel.root.coolant.coolant_on(
+                            self._driver.service
+                        )
+                    except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
+                        pass
                 elif v == 8:
                     # Coolant Control: Flood coolant On
-                    pass
+                    try:
+                        self._driver.service.kernel.root.coolant.coolant_on(
+                            self._driver.service
+                        )
+                    except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
+                        pass
                 elif v == 9:
                     # Coolant Control: Flood coolant Off
-                    pass
+                    try:
+                        self._driver.service.kernel.root.coolant.coolant_off(
+                            self._driver.service
+                        )
+                    except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
+                        pass
                 elif v == 56:
                     # Parking motion override control.
                     pass
