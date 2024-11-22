@@ -571,7 +571,7 @@ class RasterOpNode(Node, Parameters):
                         white_pixels = col_count
                         break
                 white_pixel_ratio = white_pixels / (pil_image.width * pil_image.height)
-                print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
+                # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
                 if white_pixel_ratio < 0.3:
                     do_optimize = False
 
