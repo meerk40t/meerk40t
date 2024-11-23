@@ -1045,6 +1045,9 @@ class PanelStartPreference(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
+        if self.operation.opt_method == 2: # Crossover
+            self.Hide()
+            return
         validate_raster_settings(self.operation)
         self._toggle_sliders()
         self.refresh_display()
@@ -1498,7 +1501,21 @@ class RasterSettingsPanel(wx.Panel):
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
+        self.allow_controls_according_to_optimization(self.operation.opt_method)
         self.Show()
+
+    def allow_controls_according_to_optimization(self, opt_method):
+        overscan_okay = opt_method in (0, 2)
+        raster_method_okay = opt_method in (0, 1)
+        swing_okay = opt_method == 0
+        self.text_overscan.Enable(overscan_okay)
+        self.combo_raster_direction.Enable(raster_method_okay)
+        if not raster_method_okay:
+            self.combo_raster_direction.SetSelection(0)
+        self.radio_raster_swing.Enable(swing_okay)
+        if not swing_okay:
+            self.radio_raster_swing.SetSelection(True)
+
 
     def on_overrule(self, event):
         if self.operation is None or not hasattr(self.operation, "overrule_dpi"):
@@ -1537,6 +1554,7 @@ class RasterSettingsPanel(wx.Panel):
             return
         if self.operation.opt_method != value:
             self.operation.opt_method = value
+            self.allow_controls_according_to_optimization(value)
             self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_overscan(self):
