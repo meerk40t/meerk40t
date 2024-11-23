@@ -18,6 +18,9 @@ The rasters can either be BIDIRECTIONAL or UNIDIRECTIONAL meaning they raster on
 or only on forward swing.
 """
 
+import numpy as np
+from time import perf_counter
+
 class RasterPlotter:
     def __init__(
         self,
@@ -36,7 +39,7 @@ class RasterPlotter:
         step_x=1,
         step_y=1,
         filter=None,
-        optimize=False,
+        opt_method=False,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -59,7 +62,7 @@ class RasterPlotter:
                             implementation is agnostic regarding what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                             part of the skip pixel.
-        @param optimize: activate experimental greedy path optimisation
+        @param opt_method: activate experimental greedy path optimisation
         """
         self.data = data
         self.width = width
@@ -81,7 +84,7 @@ class RasterPlotter:
         self.filter = filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
         self.final_x, self.final_y = self.calculate_last_pixel()
-        self.optimize = optimize
+        self.opt_method = opt_method
 
     def px(self, x, y):
         """
@@ -408,10 +411,11 @@ class RasterPlotter:
         #     f.write(f"0.9.6\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
         #     f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
         #     f.write(f"Image dimensions: {self.width}x{self.height}\n")
+        #     f.write(f"Startpoint: {self.initial_x}, {self.initial_y}")
         #     f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
         #     test_dict = {}
-        #     lastx = None
-        #     lasty = None
+        #     lastx = self.initial_x
+        #     lasty = self.initial_y
         #     for lineno, (x, y, on) in enumerate(data, start=1):
         #         key = f"{x} - {y}"
         #         if key in test_dict:
@@ -424,7 +428,7 @@ class RasterPlotter:
         #             dy = y - lasty
         #             if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
         #                 f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-        #                 print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+        #                 print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
         #         lastx = x
         #         lasty = y
         #     f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
@@ -449,8 +453,10 @@ class RasterPlotter:
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
-        if self.optimize:
-            yield from self._plot_optimize(horizontal=self.horizontal)
+        if self.opt_method == 1:
+            yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
+        elif self.opt_method == 2:
+            yield from self._plot_crossover()
         elif self.horizontal:
             yield from self._plot_horizontal()
         else:
@@ -641,7 +647,7 @@ class RasterPlotter:
                     yield last_x, y, 0
             y += dy
 
-    def _plot_optimize(self, horizontal: bool = True):
+    def _plot_greedy_neighbour(self, horizontal: bool = True):
         """
         Distance Matrix Function: The distance_matrix function calculates the squared distances from the
         current point to all other points, applying a penalty to the y-distances to prefer movements in the x-direction.
@@ -659,8 +665,6 @@ class RasterPlotter:
         We update the current_point to the next point and mark the segment as visited.
         The path list is updated with the segment index and whether the start or end point is relevant.
         """
-        import numpy as np
-        from time import perf_counter
 
         def walk_segments(segments, horizontal=True, xy_penalty=1, width=1, height=1):
             n:int = len(segments)
@@ -805,50 +809,234 @@ class RasterPlotter:
             last_x = ex
             last_y = ey
         t3 = perf_counter()
-        print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
-        print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
+        # print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
+        # print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
+        self.final_x = last_x
+        self.final_y = last_y
 
-    # def dummy(self):
-    #     # This is the working sample with simple python code
-    #     def distance_sq(p1, p2):
-    #         penalty = 9
-    #         return (p1[0] - p2[0]) ** 2 + penalty * (p1[1] - p2[1]) ** 2
-    #
-    #     def find_next_segment(current_point, segments, visited):
-    #         min_distance = float('inf')
-    #         next_segment = None
-    #         next_point = None
-    #
-    #         for i, (start, end) in enumerate(segments):
-    #             if i not in visited:
-    #                 dist_to_start = distance_sq(current_point, start)
-    #                 dist_to_end = distance_sq(current_point, end)
-    #
-    #                 if dist_to_start < min_distance:
-    #                     min_distance = dist_to_start
-    #                     next_segment = i
-    #                     next_point = end
-    #                 if dist_to_end < min_distance:
-    #                     min_distance = dist_to_end
-    #                     next_segment = -i # negative sign is indicating end
-    #                     next_point = start
-    #
-    #         return next_segment, next_point
-    #
-    #     def walk_segments(segments):
-    #         visited = set()
-    #         # Force the first segment!
-    #         visited.add(0)
-    #         path = [0]
-    #         current_point = segments[0][1]
-    #
-    #         while len(visited) < len(segments):
-    #             next_segment, next_point = find_next_segment(current_point, segments, visited)
-    #             if next_segment is None:
-    #                 break
-    #             visited.add(abs(next_segment))
-    #             path.append(next_segment)
-    #             current_point = next_point
-    #
-    #         return path
+    def _plot_crossover(self):
+        """
+        This algorithm scans through the image looking for the row or the column with the most pixels.
+        It will hand back this information together with a precompiled list of
+        state changes (start, end, pixel), ie a non-blank pixel with a different on value
+        than the previous pixel
+        It will then clean the row / column and start again.
+        This happens until no more non-empty rows / cols can be found
+
+        The receiving routine takes these values, orders them according to
+        type (row/col) and row/col number and generates plot instructions
+        that will be yielded.
+
+        Yields:
+            list of tuples with (x, y, on)
+        """
+        ROW=0
+        COL=1
+
+        def process_image(image):
+            # We will modify the image to keep track of deleted rows and columns
+            # Get the dimensions of the image
+            rows, cols = image.shape
+
+            # Initialize a list to store the results
+            results = []
+
+
+            # Iterate through the matrix, we cover all rows and cols
+            colidx = 0
+            rowidx = 0
+            covered_row = [False] * rows
+            covered_col = [False] * cols
+            stored_row = np.zeros(rows)
+            stored_col = np.zeros(cols)
+            recalc_row = True
+            recalc_col = True
+            while True:
+                if recalc_col:
+                    for i in range(cols):
+                        if covered_col[i]:
+                            count = 0
+                        else:
+                            count = np.count_nonzero(image[:, i])
+                            if count == 0:
+                                covered_col[i] = True
+                        stored_col[i] = count
+                if recalc_row:
+                    for i in range(rows):
+                        if covered_row[i]:
+                            count = 0
+                        else:
+                            count = np.count_nonzero(image[i, :])
+                            if count == 0:
+                                covered_row[i] = True
+                        stored_row[i] = count
+                colidx = np.argmax(stored_col)
+                rowidx = np.argmax(stored_row)
+                col_count = stored_col[colidx]
+                row_count = stored_row[rowidx]
+
+                if row_count == col_count == 0:
+                    break
+                # Determine whether there are more pixels in the row or column
+                if row_count >= col_count:
+                    last_pixel = None
+                    segments = []
+                    counted = 0
+                    for idx in range(cols):
+                        on = image[rowidx, idx]
+                        if on:
+                            counted += 1
+                            if on == last_pixel:
+                                segments[-1][1] = idx
+                            else:
+                                segments.append ([idx, idx, on])
+                        last_pixel = on
+                    results.append((COL, rowidx, segments)) # Intentionally so, as the numpy array has x and y exchanged
+                    # Clear the column
+                    image[rowidx,:] = 0
+                    covered_row[rowidx] = True
+                    stored_row[rowidx] = 0
+                    recalc_col = True
+                else:
+                    last_pixel = None
+                    segments = []
+                    counted = 0
+                    msg = ""
+                    for idx in range(rows):
+                        on = image[idx, colidx]
+                        msg = f"{msg}{'X' if on else '.'}"
+                        if on:
+                            counted += 1
+                            if on == last_pixel:
+                                segments[-1][1] = idx
+                            else:
+                                segments.append ([idx, idx, on])
+                        last_pixel = on
+                    results.append((ROW, colidx, segments))
+                    # Clear the row
+                    image[:, colidx] = 0
+                    covered_col[colidx] = True
+                    stored_col[colidx] = 0
+                    recalc_row = True
+
+            return results
+
+        t0 = perf_counter()
+        # initialize the matrix
+        image = np.empty((self.width, self.height))
+        # Apply filter and eliminate skip_pixel
+        for x in range(self.width):
+            for y in range(self.height):
+                px = self.px(x, y)
+                if px==self.skip_pixel:
+                    px = 0
+                image[x, y] = px
+        t1 = perf_counter()
+        results = process_image(image)
+        results.sort()
+        t2 = perf_counter()
+        dx = 1
+        dy = 1
+        first_x = 0
+        first_y = 0
+        last_x = 0
+        last_y = 0
+        # yield self.initial_x, self.initial_y, 0
+        first = True
+        for mode, idx, segments in results:
+            # eliminate data and swap direction
+            if not segments:
+                continue
+            if (mode==ROW and dx < 0) or (mode==COL and dy < 0):
+                segments.reverse()
+            if mode==ROW:
+                line_start_x = segments[0][0] if dx >= 0 else segments[0][1]
+                line_start_y = idx
+            else:
+                line_start_x = idx
+                line_start_y = segments[0][0] if dy >= 0 else segments[0][1]
+            if first:
+                first = False
+                first_x = line_start_x
+                first_y = line_start_y
+                last_x = first_x
+                last_y = first_y
+            covered = 0
+            if line_start_y != last_y:
+                last_y = line_start_y
+                yield last_x, last_y, 0
+                covered += 1
+            if last_x != line_start_x:
+                last_x = line_start_x
+                yield last_x, last_y, 0
+                covered += 1
+            if covered != 2:
+                last_x = line_start_x
+                last_y = line_start_y
+                yield last_x, last_y, 0
+            for seg in segments:
+                if mode==ROW:
+                    sy = idx
+                    ey = idx
+                    if dx >= 0:
+                        sx, ex, on = seg
+                        edge_start = 0
+                        edge_end = 1
+                    else:
+                        ex, sx, on = seg
+                        edge_start = 1
+                        edge_end = 0
+                    sx += edge_start
+                    ex += edge_end
+
+                    if sx != last_x:
+                        last_x = sx
+                        yield last_x, last_y, 0
+                    if last_y != sy:
+                        last_y = sy
+                        yield last_x, last_y, 0
+                else:
+                    sx = idx
+                    ex = idx
+                    if dy >= 0:
+                        sy, ey, on = seg
+                        edge_start = 0
+                        edge_end = 1
+                    else:
+                        ey, sy, on = seg
+                        edge_start = 1
+                        edge_end = 0
+                    # sy += edge_start
+                    # ey += edge_end
+                    if sy != last_y:
+                        last_y = sy
+                        yield last_x, last_y, 0
+                    if last_x != sx:
+                        last_x = sx
+                        yield last_x, last_y, 0
+
+                last_x = ex
+                last_y = ey
+                yield last_x, last_y, on
+            # All segments done, do we need to go further aka overscan
+            if self.overscan:
+                if mode == ROW:
+                    last_x += dx * self.overscan
+                else:
+                    last_y += dy * self.overscan
+                yield last_x, last_y, 0
+
+            if mode == ROW:
+                dx = -dx
+            else: # column
+                dy = -dy
+
+        # We need to set the final values so that the rastercut is able to carry on
+        self.initial_x = first_x
+        self.initial_y = first_y
+        self.final_x = last_x
+        self.final_y = last_y
+        t3 = perf_counter()
+        # print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
+        # print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
 

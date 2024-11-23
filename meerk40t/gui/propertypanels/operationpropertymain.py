@@ -1329,15 +1329,20 @@ class RasterSettingsPanel(wx.Panel):
 
         self.sizer_optimize = StaticBoxSizer(self, wx.ID_ANY, _("Optimize movement:"), wx.HORIZONTAL)
         param_sizer.Add(self.sizer_optimize, 1, wx.EXPAND, 0)
-        self.check_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize movement") )
-        self.check_optimize.SetToolTip(
+        choices = (
+            _("No optimization"),
+            _("Greedy distance"),
+            _("Crossover"),
+        )
+        self.combo_optimize = wxComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_optimize.SetToolTip(
             _("Activate experimental raster optimisation. Please note:") + "\n" +
             _("a) This will only help if your image/raster contains relevant white areas") + "\n" +
             _("b) A raster/an image will not be optimized if it contains less than 30% of white pixels") + "\n" +
             _("c) This will take some time to compute, so be patient please") + "\n" +
             _("d) Depthmap images will not be optimized")
         )
-        self.sizer_optimize.Add(self.check_optimize, 1, wx.EXPAND, 0)
+        self.sizer_optimize.Add(self.combo_optimize, 1, wx.EXPAND, 0)
 
         self.sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Override black/white image:"), wx.HORIZONTAL)
         param_sizer.Add(self.sizer_grayscale, 1, wx.EXPAND, 0)
@@ -1441,7 +1446,7 @@ class RasterSettingsPanel(wx.Panel):
         self.Layout()
         self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_grayscale, self.check_grayscale)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_optimize, self.check_optimize)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_optimize, self.combo_optimize)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
 
@@ -1476,7 +1481,7 @@ class RasterSettingsPanel(wx.Panel):
             self.check_grayscale.SetValue(self.operation.use_grayscale)
         else:
             self.sizer_grayscale.ShowItems(False)
-        self.check_optimize.SetValue(self.operation.optimize)
+        self.combo_optimize.SetSelection(self.operation.opt_method)
         if hasattr(self.operation, "overrule_dpi"):
             self.check_overrule_dpi.Show(True)
             overrule = self.operation.overrule_dpi
@@ -1526,10 +1531,12 @@ class RasterSettingsPanel(wx.Panel):
             self.operation.use_grayscale = value
             self.context.elements.signal("element_property_reload", self.operation)
 
-    def on_check_optimize(self, event):
-        value = self.check_optimize.GetValue()
-        if self.operation.optimize != value:
-            self.operation.optimize = value
+    def on_combo_optimize(self, event):
+        value = self.combo_optimize.GetSelection()
+        if value < 0:
+            return
+        if self.operation.opt_method != value:
+            self.operation.opt_method = value
             self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_overscan(self):

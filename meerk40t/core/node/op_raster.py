@@ -49,7 +49,7 @@ class RasterOpNode(Node, Parameters):
         self.stopop = False
         self.label = "Raster"
         self.use_grayscale = False
-        self.optimize = False
+        self.opt_method = 0
 
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
@@ -64,11 +64,16 @@ class RasterOpNode(Node, Parameters):
             self.use_grayscale = s in ("true", "1")
         if self.use_grayscale is None:
             self.use_grayscale = False
-        if isinstance(self.optimize, str):
-            s = self.optimize.lower()
-            self.optimize = s in ("true", "1")
-        if self.optimize is None:
-            self.optimize = False
+        if isinstance(self.opt_method, str):
+            try:
+                self.opt_method =  int(self.opt_method)
+            except ValueError:
+                self.opt_method = 0
+        elif isinstance(self.opt_method, bool):
+            # From an old version
+            self.opt_method = 1
+        if self.opt_method is None:
+            self.opt_method = 0
 
 
     def __repr__(self):
@@ -104,7 +109,7 @@ class RasterOpNode(Node, Parameters):
             raster_dir = "X"
         else:
             raster_dir = str(self.raster_direction)
-        if self.optimize:
+        if self.opt_method:
             raster_dir =f"!{raster_dir}!"
         default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
@@ -561,8 +566,8 @@ class RasterOpNode(Node, Parameters):
                 threshold = 200
                 pil_image = pil_image.point(lambda x: 255 if x > threshold else 0, mode="1")
                 # pil_image = pil_image.convert("1")
-            do_optimize=self.optimize
-            if do_optimize:
+            do_optimize=self.opt_method
+            if do_optimize == 1: # Greedy nearest neighbour
                 # get some image statistics
                 white_pixels = 0
                 used_colors = pil_image.getcolors()
@@ -573,7 +578,7 @@ class RasterOpNode(Node, Parameters):
                 white_pixel_ratio = white_pixels / (pil_image.width * pil_image.height)
                 # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
                 if white_pixel_ratio < 0.3:
-                    do_optimize = False
+                    do_optimize = 0
 
             # Create Cut Object
             cut = RasterCut(
@@ -591,7 +596,7 @@ class RasterOpNode(Node, Parameters):
                 settings=settings,
                 passes=passes,
                 post_filter=image_filter,
-                optimize=do_optimize,
+                opt_method=do_optimize,
             )
             cut.path = path
             cut.original_op = self.type
@@ -622,7 +627,7 @@ class RasterOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
-                    optimize=do_optimize,
+                    opt_method=do_optimize,
                 )
                 cut.path = path
                 cut.original_op = self.type

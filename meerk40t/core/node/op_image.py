@@ -50,15 +50,20 @@ class ImageOpNode(Node, Parameters):
         self.overrule_dpi = False
         self._allowed_elements_dnd = ("elem image",)
         self._allowed_elements = ("elem image",)
-        self.optimize = False
+        self.opt_method = 0
 
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
-        if isinstance(self.optimize, str):
-            s = self.optimize.lower()
-            self.optimize = s in ("true", "1")
-        if self.optimize is None:
-            self.optimize = False
+        if isinstance(self.opt_method, str):
+            try:
+                self.opt_method = int(self.opt_method)
+            except ValueError:
+                self.opt_method = 0
+        elif isinstance(self.opt_method, bool):
+            # From an old version
+            self.opt_method = 1
+        if self.opt_method is None:
+            self.opt_method = 0
 
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
 
@@ -95,7 +100,7 @@ class ImageOpNode(Node, Parameters):
             raster_dir = "X"
         else:
             raster_dir = str(self.raster_direction)
-        if self.optimize:
+        if self.opt_method:
             raster_dir =f"!{raster_dir}!"
         default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
@@ -493,7 +498,7 @@ class ImageOpNode(Node, Parameters):
                         passes=passes,
                         post_filter=image_filter,
                         label=f"Pass {gray}: cutoff={skip_pixel}",
-                        optimize=False,
+                        opt_method=0,
                     )
                     cut.path = path
                     cut.original_op = self.type
@@ -527,14 +532,14 @@ class ImageOpNode(Node, Parameters):
                             passes=passes,
                             post_filter=image_filter,
                             label=f"Pass {gray}.2: cutoff={skip_pixel}",
-                            optimize=False,
+                            opt_method=0,
                         )
                         cut.path = path
                         cut.original_op = self.type
                         cutcodes.append(cut)
             else:
                 # Create Cut Object for regular image
-                do_optimize=self.optimize
+                do_optimize=self.opt_method
                 if do_optimize:
                     # get some image statistics
                     white_pixels = 0
@@ -546,7 +551,7 @@ class ImageOpNode(Node, Parameters):
                     white_pixel_ratio = white_pixels / (pil_image.width * pil_image.height)
                     # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
                     if white_pixel_ratio < 0.3:
-                        do_optimize = False
+                        do_optimize = 0
 
                 cut = RasterCut(
                     image=pil_image,
@@ -562,7 +567,7 @@ class ImageOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
-                    optimize=do_optimize,
+                    opt_method=do_optimize,
                 )
                 cut.path = path
                 cut.original_op = self.type
@@ -593,7 +598,7 @@ class ImageOpNode(Node, Parameters):
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
-                    optimize=do_optimize,
+                    opt_method=do_optimize,
                 )
                 cut.path = path
                 cut.original_op = self.type

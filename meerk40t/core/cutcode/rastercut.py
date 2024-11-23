@@ -26,7 +26,7 @@ class RasterCut(CutObject):
         color=None,
         post_filter=None,
         label=None,
-        optimize=False,
+        opt_method=0,
     ):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color, label=label,
@@ -48,7 +48,7 @@ class RasterCut(CutObject):
         self.width, self.height = image.size
         self.inverted = inverted
         self.scan = overscan
-        self.optimize = optimize
+        self.opt_method = opt_method
         # Only relevant for bidirectional mode
         if inverted:
             skip_pixel = 255
@@ -80,7 +80,7 @@ class RasterCut(CutObject):
             step_x=self.step_x,
             step_y=self.step_y,
             filter=post_filter,
-            optimize=self.optimize,
+            opt_method=self.opt_method,
         )
 
     def reversible(self):
