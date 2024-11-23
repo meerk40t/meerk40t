@@ -402,55 +402,57 @@ class RasterPlotter:
             # There is no image.
             return
         # Debug code....
-        # data = list(self._plot_pixels())
-        # from time import perf_counter_ns
-        # from platform import system
-        # defaultdir = "c:\\temp\\" if system() == "Windows" else ""
-        # has_duplicates = 0
-        # with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
-        #     f.write(f"0.9.6\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
-        #     f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
-        #     f.write(f"Image dimensions: {self.width}x{self.height}\n")
-        #     f.write(f"Startpoint: {self.initial_x}, {self.initial_y}")
-        #     f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
-        #     test_dict = {}
-        #     lastx = self.initial_x
-        #     lasty = self.initial_y
-        #     for lineno, (x, y, on) in enumerate(data, start=1):
-        #         key = f"{x} - {y}"
-        #         if key in test_dict:
-        #             f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
-        #             has_duplicates += 1
-        #         else:
-        #             test_dict[key] = (lineno, on)
-        #         if lastx is not None:
-        #             dx = x - lastx
-        #             dy = y - lasty
-        #             if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
-        #                 f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-        #                 print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
-        #         lastx = x
-        #         lasty = y
-        #     f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
-        #     for lineno, (x, y, on) in enumerate(data, start=1):
-        #         f.write(f"{lineno}: {x}, {y}, {on}\n")
-        # if has_duplicates:
-        #     print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
-        #     print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
-        #     print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
-        #     print(f"Image dimensions: {self.width}x{self.height}")
-        # if self.use_integers:
-        #     for x, y, on in data:
-        #         yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
-        # else:
-        #     for x, y, on in data:
-        #         yield offset_x + step_x * x, offset_y + y * step_y, on
-        if self.use_integers:
-            for x, y, on in self._plot_pixels():
-                yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+        if True:
+            data = list(self._plot_pixels())
+            from time import perf_counter_ns
+            from platform import system
+            defaultdir = "c:\\temp\\" if system() == "Windows" else ""
+            has_duplicates = 0
+            with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
+                f.write(f"0.9.6\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+                f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
+                f.write(f"Image dimensions: {self.width}x{self.height}\n")
+                f.write(f"Startpoint: {self.initial_x}, {self.initial_y}")
+                f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
+                test_dict = {}
+                lastx = self.initial_x
+                lasty = self.initial_y
+                for lineno, (x, y, on) in enumerate(data, start=1):
+                    key = f"{x} - {y}"
+                    if key in test_dict:
+                        f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
+                        has_duplicates += 1
+                    else:
+                        test_dict[key] = (lineno, on)
+                    if lastx is not None:
+                        dx = x - lastx
+                        dy = y - lasty
+                        if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
+                            f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+                            print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
+                    lastx = x
+                    lasty = y
+                f.write("-----------------------------------------------------------------------------------------------------------------------------\n")
+                for lineno, (x, y, on) in enumerate(data, start=1):
+                    f.write(f"{lineno}: {x}, {y}, {on}\n")
+                if has_duplicates:
+                    print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
+                    print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
+                    print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
+                    print(f"Image dimensions: {self.width}x{self.height}")
+            if self.use_integers:
+                for x, y, on in data:
+                    yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+            else:
+                for x, y, on in data:
+                    yield offset_x + step_x * x, offset_y + y * step_y, on
         else:
-            for x, y, on in self._plot_pixels():
-                yield offset_x + step_x * x, offset_y + y * step_y, on
+            if self.use_integers:
+                for x, y, on in self._plot_pixels():
+                    yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+            else:
+                for x, y, on in self._plot_pixels():
+                    yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
         if self.opt_method == 1:
@@ -939,9 +941,9 @@ class RasterPlotter:
         dy = 1
         first_x = 0
         first_y = 0
-        last_x = 0
-        last_y = 0
-        # yield self.initial_x, self.initial_y, 0
+        last_x = self.initial_x
+        last_y = self.initial_y
+        yield last_x, last_y, 0
         first = True
         for mode, idx, segments in results:
             # eliminate data and swap direction
@@ -959,8 +961,6 @@ class RasterPlotter:
                 first = False
                 first_x = line_start_x
                 first_y = line_start_y
-                last_x = first_x
-                last_y = first_y
             covered = 0
             if line_start_y != last_y:
                 last_y = line_start_y
@@ -1032,8 +1032,6 @@ class RasterPlotter:
                 dy = -dy
 
         # We need to set the final values so that the rastercut is able to carry on
-        self.initial_x = first_x
-        self.initial_y = first_y
         self.final_x = last_x
         self.final_y = last_y
         t3 = perf_counter()
