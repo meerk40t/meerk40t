@@ -64,6 +64,7 @@ class RasterPlotter:
                             part of the skip pixel.
         @param opt_method: activate experimental greedy path optimisation
         """
+        self.debug = False
         self.data = data
         self.width = width
         self.height = height
@@ -402,7 +403,7 @@ class RasterPlotter:
             # There is no image.
             return
         # Debug code....
-        if True:
+        if self.debug:
             data = list(self._plot_pixels())
             from time import perf_counter_ns
             from platform import system
@@ -740,7 +741,8 @@ class RasterPlotter:
 
         line_parts = []
         on_parts = []
-        print (f"{'horizontal' if horizontal else 'Vertical'} for {self.width}x{self.height} image. {'y' if horizontal else 'x'} from {lower} to {upper}")
+        if self.debug:
+            print (f"{'horizontal' if horizontal else 'Vertical'} for {self.width}x{self.height} image. {'y' if horizontal else 'x'} from {lower} to {upper}")
         if horizontal:
             while lower <= y <= upper:
                 segments = self._get_pixel_chains(y, True)
@@ -757,7 +759,8 @@ class RasterPlotter:
                     line_parts.append( ( (x, seg[0]), (x, seg[1]) ) )
                     on_parts.append(seg[2])
                 x += dx
-        print (f"Created {len(line_parts)} segments")
+        if self.debug:
+            print (f"Created {len(line_parts)} segments")
         t1 = perf_counter()
         path = walk_segments(line_parts, horizontal=horizontal, xy_penalty=3, width=self.width, height=self.height)
         # print("Order of segments:", path)
@@ -811,8 +814,9 @@ class RasterPlotter:
             last_x = ex
             last_y = ey
         t3 = perf_counter()
-        # print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
-        # print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
+        if self.debug:
+            print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
+            print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
         self.final_x = last_x
         self.final_y = last_y
 
@@ -1035,6 +1039,7 @@ class RasterPlotter:
         self.final_x = last_x
         self.final_y = last_y
         t3 = perf_counter()
-        # print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
-        # print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
+        if self.debug:
+            print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
+            print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
 
