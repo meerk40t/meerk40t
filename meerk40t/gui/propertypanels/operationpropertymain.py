@@ -1345,14 +1345,14 @@ class RasterSettingsPanel(wx.Panel):
             _("c) This will take some time to compute, so be patient please") + "\n" +
             _("d) Depthmap images will not be optimized")
         )
-        self.sizer_optimize.Add(self.combo_optimize, 0, wx.EXPAND, 0)
+        self.sizer_optimize.Add(self.combo_optimize, 1, wx.EXPAND, 0)
         self.check_laserdot = wxCheckBox(self, wx.ID_ANY, _("Consider laserdot") )
         self.check_laserdot.SetToolTip(
             _("A laser dot has a certain diameter, so for high dpi values, lines will overlap a lot.") + "\n" +
             _("Active: don't burn pixels already overlapped") + "\n" +
             _("Inactive: burn all pixels regardless of a possible overlap.")
         )
-        self.sizer_optimize.Add(self.check_laserdot, 0, wx.EXPAND, 0)
+        self.sizer_optimize.Add(self.check_laserdot, 1, wx.EXPAND, 0)
 
         self.sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Override black/white image:"), wx.HORIZONTAL)
         param_sizer.Add(self.sizer_grayscale, 2, wx.EXPAND, 0)
@@ -1510,6 +1510,8 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.check_laserdot.SetValue(self.operation.consider_laserspot)
+        # Hide it for now...
+        self.check_laserdot.Show(False)
         self.allow_controls_according_to_optimization(self.operation.opt_method)
         self.Show()
 
