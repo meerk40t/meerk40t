@@ -73,7 +73,7 @@ class RasterPlotter:
         @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
         @param special: a dict of special treatment instructions for the different algorithms
         """
-        self.debug = False
+        self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
@@ -417,7 +417,7 @@ class RasterPlotter:
             # There is no image.
             return
         # Debug code....
-        if self.debug:
+        if self.debug_level > 0:
             data = list(self._plot_pixels())
             from time import perf_counter_ns
             from platform import system
@@ -429,6 +429,10 @@ class RasterPlotter:
                 f.write(f"Image dimensions: {self.width}x{self.height}\n")
                 f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
                 f.write(f"Overlapping pixels to any side: {self.overlap}\n")
+                if self.opt_method == 1:
+                    f.write("Optimization: Greedy Neighbor\n")
+                if self.opt_method == 2:
+                    f.write("Optimization: Crossover\n")
                 f.write("----------------------------------------------------------------------\n")
                 test_dict = {}
                 lastx = self.initial_x
@@ -488,6 +492,19 @@ class RasterPlotter:
             yield from self._plot_vertical()
             # yield from self._plot_vertical()
 
+    def _debug_data(self):
+        if self.debug_level < 3:
+            return
+        BLANK = 255
+        for y in range(self.height):
+            msg:str = f"{y:3d}: "
+            for x in range(self.width):
+                if self.data[x, y] == BLANK:
+                    msg += "."
+                else:
+                    msg += "X"
+            print (msg)
+
     def _get_pixel_chains(self, xy:int, is_x : bool) -> list:
         last_pixel = None
         segments = []
@@ -504,7 +521,6 @@ class RasterPlotter:
         return segments
 
     def _consume_pixel_chains(self, segments:list, xy:int, is_x : bool):
-        return # buggy
         BLANK = 255
         for seg in segments:
             c_start = seg[0]
@@ -528,6 +544,7 @@ class RasterPlotter:
                         xi = xy + i
                         if xi < self.width:
                             self.data[xi, idx] = BLANK
+        self._debug_data()
 
     def _plot_vertical(self):
         """
@@ -790,7 +807,7 @@ class RasterPlotter:
 
         line_parts = []
         on_parts = []
-        if self.debug:
+        if self.debug_level > 2:
             print (f"{'horizontal' if horizontal else 'Vertical'} for {self.width}x{self.height} image. {'y' if horizontal else 'x'} from {lower} to {upper}")
         if horizontal:
             while lower <= y <= upper:
@@ -810,7 +827,7 @@ class RasterPlotter:
                     line_parts.append( ( (x, seg[0]), (x, seg[1]) ) )
                     on_parts.append(seg[2])
                 x += dx
-        if self.debug:
+        if self.debug_level > 2:
             print (f"Created {len(line_parts)} segments")
         t1 = perf_counter()
         path = walk_segments(line_parts, horizontal=horizontal, xy_penalty=3, width=self.width, height=self.height)
@@ -829,7 +846,6 @@ class RasterPlotter:
             else:
                 (sx, sy), (ex, ey) = line_parts[idx]
             on = on_parts[idx]
-            # print (f"[{idx}] -> {line_parts[abs(idx)]} -> {sx}, {sy} to {ex}, {ey} with {on:.2f}")
             if horizontal:
                 dx = ex - sx
                 if dx >= 0:
@@ -842,9 +858,10 @@ class RasterPlotter:
                 sx += edge_start
                 ex += edge_end
                 if sy != last_y:
-                    yield last_x, sy, 0
+                    last_y = sy
+                    yield last_x, last_y, 0
                 if last_x != sx:
-                    yield sx, sy, 0
+                    yield sx, last_y, 0
             else:
                 dy = ey - sy
                 if dy >= 0:
@@ -857,15 +874,17 @@ class RasterPlotter:
                 sy += edge_start
                 ey += edge_end
                 if sx != last_x:
-                    yield sx, last_y, 0
+                    last_x = sx
+                    yield last_x, last_y, 0
                 if last_y != sy:
+                    last_y = sy
                     yield sx, sy, 0
 
             yield ex, ey, on
             last_x = ex
             last_y = ey
         t3 = perf_counter()
-        if self.debug:
+        if self.debug_level > 1:
             print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
             print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
         self.final_x = last_x
@@ -969,7 +988,7 @@ class RasterPlotter:
                     last_pixel = None
                     segments = []
                     counted = 0
-                    # msg = ""
+                    msg = ""
                     for idx in range(rows):
                         on = image[idx, colidx]
                         # msg = f"{msg}{'X' if on else '.'}"
@@ -997,6 +1016,13 @@ class RasterPlotter:
                             covered_col[r] = True
                             stored_col[r] = 0
                     recalc_row = True
+                if self.debug_level > 2:
+                    for cidx in range(cols):
+                        msg = ""
+                        for ridx in range(rows):
+                            on = image[ridx, cidx]
+                            msg = f"{msg}{'X' if on else '.'}"
+                        print (f"{cidx:3d}: {msg}")
 
             return results
 
@@ -1083,15 +1109,15 @@ class RasterPlotter:
                         ey, sy, on = seg
                         edge_start = 1
                         edge_end = 0
-                    # sy += edge_start
-                    # ey += edge_end
+                    sy += edge_start
+                    ey += edge_end
                     if sy != last_y:
                         last_y = sy
                         yield last_x, last_y, 0
                     if last_x != sx:
                         last_x = sx
                         yield last_x, last_y, 0
-
+                print (f"{sx}, {sy} -> {ex}, {ey} with {on}")
                 last_x = ex
                 last_y = ey
                 yield last_x, last_y, on
@@ -1112,7 +1138,7 @@ class RasterPlotter:
         self.final_x = last_x
         self.final_y = last_y
         t3 = perf_counter()
-        if self.debug:
+        if self.debug_level > 1:
             print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
             print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
 
