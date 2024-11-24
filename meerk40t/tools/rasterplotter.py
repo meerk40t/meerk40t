@@ -505,6 +505,7 @@ class RasterPlotter:
         return segments
 
     def _consume_pixel_chains(self, segments:list, xy:int, is_x : bool):
+        return # buggy
         BLANK = 255
         for seg in segments:
             c_start = seg[0]
