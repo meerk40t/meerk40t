@@ -67,7 +67,7 @@ class RasterOpNode(Node, Parameters):
             self.use_grayscale = False
         if isinstance(self.opt_method, str):
             try:
-                self.opt_method =  int(self.opt_method)
+                self.opt_method = int(self.opt_method)
             except ValueError:
                 self.opt_method = 0
         elif isinstance(self.opt_method, bool):
@@ -75,6 +75,10 @@ class RasterOpNode(Node, Parameters):
             self.opt_method = 1
         if self.opt_method is None:
             self.opt_method = 0
+        # They might come from a svg read, but shouldnt be in settings
+        for attrib in ("lock", "dangerous", "opt_method", "use_grayscale", "consider_laserspot"):
+            if attrib in self.settings:
+                del self.settings[attrib]
 
 
     def __repr__(self):

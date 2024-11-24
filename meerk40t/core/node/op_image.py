@@ -67,6 +67,10 @@ class ImageOpNode(Node, Parameters):
             self.opt_method = 0
 
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
+        # They might come from a svg read, but shouldnt be in settings
+        for attrib in ("lock", "dangerous", "opt_method", "use_grayscale", "consider_laserspot", "overrule_dpi"):
+            if attrib in self.settings:
+                del self.settings[attrib]
 
     def __repr__(self):
         return "ImageOpNode()"

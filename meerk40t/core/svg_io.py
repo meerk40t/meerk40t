@@ -592,6 +592,27 @@ class SVGWriter:
         if node.label is not None:
             subelement.set("label", str(node.label))
 
+        # We might end up with items in settings that have an unwanted equivalent in the node.dict
+        # as the settings instance is read and initiated on svg load...
+        for key, value in node.__dict__.items():
+            if not key or key.startswith("_"):
+                continue
+            if key in (
+                "references",
+                "tag",
+                "type",
+                "draw",
+                "stroke_width",
+                "matrix",
+                "settings",
+            ):
+                continue
+            if key in node.settings:
+                settings_value = node.settings[key]
+                if settings_value != value:
+                    # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
+                    node.settings[key] = value
+
         saved_attributes = []
         try:
             for key, value in node.settings.items():
