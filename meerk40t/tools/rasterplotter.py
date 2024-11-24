@@ -73,7 +73,7 @@ class RasterPlotter:
         @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
         @param special: a dict of special treatment instructions for the different algorithms
         """
-        self.debug = True
+        self.debug = False
         self.data = data
         self.width = width
         self.height = height
@@ -87,8 +87,6 @@ class RasterPlotter:
         # We consider an overlap only in the enclosed square of the circle
         # and calculate the overlap in pixels to the left / to the right
         self.overlap = int(laserspot / sqrt(2) / 2)
-        if self.debug:
-            print (f"overlap in pixels to each side: {self.overlap}")
         self.special = special
         if horizontal:
             self.overscan = round(overscan / float(step_x))
