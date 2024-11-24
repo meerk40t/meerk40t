@@ -2342,7 +2342,7 @@ class Simulation(MWindow):
             {
                 "label": _("Simulate"),
                 "icon": icons8_laser_beam_hazard,
-                "tip": _("Simulate the current laser job"),
+                "tip": _("Simulate the current laser job") + "\n" + _("(Right click: no optimisation)"),
                 "action": open_simulator,
                 "action_right": open_simulator_simple,
                 "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
