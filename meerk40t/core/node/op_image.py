@@ -50,6 +50,8 @@ class ImageOpNode(Node, Parameters):
         self._allowed_elements_dnd = ("elem image",)
         self._allowed_elements = ("elem image",)
         self.opt_method = 0
+        self.consider_laserspot = False
+        self._spot_in_device_units = 0
 
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
@@ -282,6 +284,16 @@ class ImageOpNode(Node, Parameters):
         @param plan:
         @return:
         """
+        self._spot_in_device_units = 0
+        if self.consider_laserspot and hasattr(context, "device"):
+            try:
+                laserspot = getattr(context.device, "laserspot", "0.3mm")
+                spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
+            except (ValueError, AttributeError):
+                spot = 0
+            self._spot_in_device_units = spot
+
+
         try:
             overscan = float(Length(self.overscan))
         except ValueError:
@@ -400,6 +412,8 @@ class ImageOpNode(Node, Parameters):
             step_x = expected_width / image_width
             step_y = expected_height / image_height
 
+            dotwidth = 2 * self._spot_in_device_units / (step_x + step_y)
+
             if horizontal:
                 # Raster step is only along y for horizontal raster
                 settings["raster_step_x"] = 0
@@ -498,6 +512,7 @@ class ImageOpNode(Node, Parameters):
                         post_filter=image_filter,
                         label=f"Pass {gray}: cutoff={skip_pixel}",
                         opt_method=0,
+                        laserspot=dotwidth,
                     )
                     cut.path = path
                     cut.original_op = self.type
@@ -532,6 +547,7 @@ class ImageOpNode(Node, Parameters):
                             post_filter=image_filter,
                             label=f"Pass {gray}.2: cutoff={skip_pixel}",
                             opt_method=0,
+                            laserspot=dotwidth,
                         )
                         cut.path = path
                         cut.original_op = self.type
@@ -567,6 +583,7 @@ class ImageOpNode(Node, Parameters):
                     settings=settings,
                     passes=passes,
                     opt_method=do_optimize,
+                    laserspot=dotwidth,
                 )
                 cut.path = path
                 cut.original_op = self.type
@@ -598,6 +615,7 @@ class ImageOpNode(Node, Parameters):
                     settings=settings,
                     passes=passes,
                     opt_method=do_optimize,
+                    laserspot=dotwidth,
                 )
                 cut.path = path
                 cut.original_op = self.type

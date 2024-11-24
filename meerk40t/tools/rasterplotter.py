@@ -19,6 +19,7 @@ or only on forward swing.
 """
 
 import numpy as np
+from math import sqrt
 from time import perf_counter
 
 class RasterPlotter:
@@ -40,6 +41,8 @@ class RasterPlotter:
         step_y=1,
         filter=None,
         opt_method=False,
+        laserspot=0,
+        special={},
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -59,10 +62,16 @@ class RasterPlotter:
         @param step_x: The amount units per pixel.
         @param step_y: The amount scanline gap.
         @param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
-                            implementation is agnostic regarding what data is provided. The filter is expected
-                            to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
-                            part of the skip pixel.
-        @param opt_method: activate experimental greedy path optimisation
+                    implementation is agnostic regarding what data is provided. The filter is expected
+                    to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
+                    part of the skip pixel.
+        @param opt_method: 0 no optimization, 1 experimental greedy path optimisation, 2 crossover
+                    a) greedy will keep the main direction, a bit time intensive for larger images
+                    b) crossover draws first all majority lines, then all majority columns
+                       (to be decided by looping over the matrix and looking at the amount
+                       of black pixels on the same line / on the same column), timewise okayish
+        @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
+        @param special: a dict of special treatment instructions for the different algorithms
         """
         self.debug = False
         self.data = data
@@ -74,6 +83,13 @@ class RasterPlotter:
         self.bidirectional = bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
+        # laserspot = width in pixels, so the surrounding logic needs to calculate it
+        # We consider an overlap only in the enclosed square of the circle
+        # and calculate the overlap in pixels to the left / to the right
+        self.overlap = int(laserspot / sqrt(2) / 2)
+        if self.debug:
+            print (f"overlap in pixels to each side: {self.overlap}")
+        self.special = special
         if horizontal:
             self.overscan = round(overscan / float(step_x))
         else:
@@ -481,6 +497,31 @@ class RasterPlotter:
             last_pixel = on
         return segments
 
+    def _consume_pixel_chains(self, segments:list, xy:int, is_x : bool):
+        BLANK = 255
+        for seg in segments:
+            c_start = seg[0]
+            c_end = seg[1]
+            for idx in range(c_start, c_end):
+                if is_x:
+                    self.data[idx, xy] = BLANK
+                    for i in range(self.overlap):
+                        yi = xy - i
+                        if yi >= 0:
+                            self.data[idx, yi] = BLANK
+                        yi = xy + i
+                        if yi < self.height:
+                            self.data[idx, yi] = BLANK
+                else:
+                    self.data[idx, xy] = BLANK
+                    for i in range(self.overlap):
+                        xi = xy - i
+                        if i >= 0:
+                            self.data[xi, idx] = BLANK
+                        xi = xy + i
+                        if xi < self.width:
+                            self.data[xi, idx] = BLANK
+
     def _plot_vertical(self):
         """
         This code is for vertical rastering.
@@ -507,6 +548,7 @@ class RasterPlotter:
         x = lower if self.start_minimum_x else upper
         while lower <= x <= upper:
             segments = self._get_pixel_chains(x, False)
+            self._consume_pixel_chains(segments, x, False)
             if segments:
                 had_a_segment = True
                 if dy > 0:
@@ -592,6 +634,7 @@ class RasterPlotter:
         y = lower if self.start_minimum_y else upper
         while lower <= y <= upper:
             segments = self._get_pixel_chains(y, True)
+            self._consume_pixel_chains(segments, y, True)
             if segments:
                 had_a_segment = True
                 if dx > 0:
@@ -746,6 +789,7 @@ class RasterPlotter:
         if horizontal:
             while lower <= y <= upper:
                 segments = self._get_pixel_chains(y, True)
+                self._consume_pixel_chains(segments, y, True)
                 for seg in segments:
                     # Append (xstart, y), (xend, y), on
                     line_parts.append( ( (seg[0], y), (seg[1], y) ) )
@@ -754,6 +798,7 @@ class RasterPlotter:
         else:
             while lower <= x <= upper:
                 segments = self._get_pixel_chains(x, False)
+                self._consume_pixel_chains(segments, x, False)
                 for seg in segments:
                     # Append (xstart, y), (xend, y), on
                     line_parts.append( ( (x, seg[0]), (x, seg[1]) ) )
@@ -902,15 +947,26 @@ class RasterPlotter:
                     image[rowidx,:] = 0
                     covered_row[rowidx] = True
                     stored_row[rowidx] = 0
+                    for rc in range(0, self.overlap):
+                        r = rowidx - rc
+                        if r >= 0:
+                            image[r,:] = 0
+                            covered_row[r] = True
+                            stored_row[r] = 0
+                        r = rowidx + rc
+                        if r < rows:
+                            image[r,:] = 0
+                            covered_row[r] = True
+                            stored_row[r] = 0
                     recalc_col = True
                 else:
                     last_pixel = None
                     segments = []
                     counted = 0
-                    msg = ""
+                    # msg = ""
                     for idx in range(rows):
                         on = image[idx, colidx]
-                        msg = f"{msg}{'X' if on else '.'}"
+                        # msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             counted += 1
                             if on == last_pixel:
@@ -923,6 +979,17 @@ class RasterPlotter:
                     image[:, colidx] = 0
                     covered_col[colidx] = True
                     stored_col[colidx] = 0
+                    for rc in range(0, self.overlap):
+                        r = colidx - rc
+                        if r >= 0:
+                            image[r,:] = 0
+                            covered_col[r] = True
+                            stored_col[r] = 0
+                        r = rowidx + rc
+                        if r < cols:
+                            image[r,:] = 0
+                            covered_col[r] = True
+                            stored_col[r] = 0
                     recalc_row = True
 
             return results

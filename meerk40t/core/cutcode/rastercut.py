@@ -27,6 +27,8 @@ class RasterCut(CutObject):
         post_filter=None,
         label=None,
         opt_method=0,
+        laserspot=0,
+        special={},
     ):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color, label=label,
@@ -81,6 +83,8 @@ class RasterCut(CutObject):
             step_y=self.step_y,
             filter=post_filter,
             opt_method=self.opt_method,
+            laserspot=laserspot,
+            special=special,
         )
 
     def reversible(self):
@@ -116,6 +120,8 @@ class RasterCut(CutObject):
         self.scan_x * width in pixel = real width
 
         overscan is in device units
+
+        Todo: this is unaware of the optimisation algorithms introduced, so this needs to be revised.
 
         @return:
         """

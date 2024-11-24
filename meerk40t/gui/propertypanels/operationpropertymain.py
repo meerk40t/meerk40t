@@ -1331,7 +1331,7 @@ class RasterSettingsPanel(wx.Panel):
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         self.sizer_optimize = StaticBoxSizer(self, wx.ID_ANY, _("Optimize movement:"), wx.HORIZONTAL)
-        param_sizer.Add(self.sizer_optimize, 1, wx.EXPAND, 0)
+        param_sizer.Add(self.sizer_optimize, 2, wx.EXPAND, 0)
         choices = (
             _("No optimization"),
             _("Greedy distance"),
@@ -1345,10 +1345,17 @@ class RasterSettingsPanel(wx.Panel):
             _("c) This will take some time to compute, so be patient please") + "\n" +
             _("d) Depthmap images will not be optimized")
         )
-        self.sizer_optimize.Add(self.combo_optimize, 1, wx.EXPAND, 0)
+        self.sizer_optimize.Add(self.combo_optimize, 0, wx.EXPAND, 0)
+        self.check_laserdot = wxCheckBox(self, wx.ID_ANY, _("Consider laserdot") )
+        self.check_laserdot.SetToolTip(
+            _("A laser dot has a certain diameter, so for high dpi values, lines will overlap a lot.") + "\n" +
+            _("Active: don't burn pixels already overlapped") + "\n" +
+            _("Inactive: burn all pixels regardless of a possible overlap.")
+        )
+        self.sizer_optimize.Add(self.check_laserdot, 0, wx.EXPAND, 0)
 
         self.sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Override black/white image:"), wx.HORIZONTAL)
-        param_sizer.Add(self.sizer_grayscale, 1, wx.EXPAND, 0)
+        param_sizer.Add(self.sizer_grayscale, 2, wx.EXPAND, 0)
         self.check_grayscale = wxCheckBox(self, wx.ID_ANY, _("Use grayscale instead") )
         self.check_grayscale.SetToolTip(
             _("Usually a raster will be created as a black and white picture. Every non-white pixel (even very light ones) will become black and will be burned at full power.") + "\n" +
@@ -1449,6 +1456,7 @@ class RasterSettingsPanel(wx.Panel):
         self.Layout()
         self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_grayscale, self.check_grayscale)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_laserdot, self.check_laserdot)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_optimize, self.combo_optimize)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
@@ -1501,6 +1509,7 @@ class RasterSettingsPanel(wx.Panel):
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
+        self.check_laserdot.SetValue(self.operation.consider_laserspot)
         self.allow_controls_according_to_optimization(self.operation.opt_method)
         self.Show()
 
@@ -1546,6 +1555,12 @@ class RasterSettingsPanel(wx.Panel):
         value = self.check_grayscale.GetValue()
         if self.operation.use_grayscale != value:
             self.operation.use_grayscale = value
+            self.context.elements.signal("element_property_reload", self.operation)
+
+    def on_check_laserdot(self, event):
+        value = self.check_laserdot.GetValue()
+        if self.operation.consider_laserspot != value:
+            self.operation.consider_laserspot = value
             self.context.elements.signal("element_property_reload", self.operation)
 
     def on_combo_optimize(self, event):

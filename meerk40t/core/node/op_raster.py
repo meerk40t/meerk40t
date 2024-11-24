@@ -49,6 +49,8 @@ class RasterOpNode(Node, Parameters):
         self.label = "Raster"
         self.use_grayscale = False
         self.opt_method = 0
+        self.consider_laserspot = False
+        self._spot_in_device_units = 0
 
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
@@ -367,6 +369,16 @@ class RasterOpNode(Node, Parameters):
         @param plan:
         @return:
         """
+        self._spot_in_device_units = 0
+        if self.consider_laserspot and hasattr(context, "device"):
+            try:
+                laserspot = getattr(context.device, "laserspot", "0.3mm")
+                spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
+                # print (f"Laserpot in device units: {spot:.2f} [{laserspot.length_mm}], scale: {context.device.view.native_scale_x + context.device.view.native_scale_y:.2f}")
+            except (ValueError, AttributeError):
+                spot = 0
+            self._spot_in_device_units = spot
+
         if isinstance(self.speed, str):
             try:
                 self.speed = float(self.speed)
@@ -529,6 +541,9 @@ class RasterOpNode(Node, Parameters):
             step_x = image_node.step_x
             step_y = image_node.step_y
 
+            dotwidth = 2 * self._spot_in_device_units / (step_x + step_y)
+            # print (f"Laserspot in device units: {self._spot_in_device_units:.2f}, step: {step_x:.2f} + {step_y:.2f} -> {dotwidth:.2f}")
+
             if horizontal:
                 # Raster step is only along y for horizontal raster
                 settings["raster_step_x"] = 0
@@ -596,6 +611,7 @@ class RasterOpNode(Node, Parameters):
                 passes=passes,
                 post_filter=image_filter,
                 opt_method=do_optimize,
+                laserspot=dotwidth,
             )
             cut.path = path
             cut.original_op = self.type
@@ -627,6 +643,7 @@ class RasterOpNode(Node, Parameters):
                     settings=settings,
                     passes=passes,
                     opt_method=do_optimize,
+                    laserspot=dotwidth,
                 )
                 cut.path = path
                 cut.original_op = self.type
