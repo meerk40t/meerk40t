@@ -454,7 +454,8 @@ class RasterPlotter:
                         has_duplicates += 1
                     else:
                         test_dict[key] = (lineno, on)
-                f.write("----------------------------------------------------------------------\n")
+                if has_duplicates:
+                    f.write("----------------------------------------------------------------------\n")
                 for lineno, (x, y, on) in enumerate(data, start=1):
                     f.write(f"{lineno}: {x}, {y}, {on}\n")
                 if has_duplicates:
@@ -547,16 +548,16 @@ class RasterPlotter:
 
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-        last_y = None
-        had_a_segment = False
         lower = min(self.initial_x, self.final_x)
         upper = max(self.initial_x, self.final_x)
+        last_x = self.initial_x
+        last_y = self.initial_y
         x = lower if self.start_minimum_x else upper
+        first = True
         while lower <= x <= upper:
             segments = self._get_pixel_chains(x, False)
             self._consume_pixel_chains(segments, x, False)
             if segments:
-                had_a_segment = True
                 if dy > 0:
                     # from top to bottom
                     idx = 0
@@ -570,13 +571,11 @@ class RasterPlotter:
                     start = 1
                     edge_start = 1
                     edge_end = 0
-                if last_y is None:
-                    last_y = segments[idx][start] + edge_start
                 # Goto next column, but make sure we end up outside our chain
                 # We consider as well the overscan value
                 overscan_top = 0 if dy >= 0 else self.overscan
                 overscan_bottom = 0 if dy <= 0 else self.overscan
-                if segments[0][0] - overscan_top <= last_y <= segments[-1][1] + overscan_bottom:
+                if not first and (segments[0][0] - overscan_top <= last_y <= segments[-1][1] + overscan_bottom):
                     # inside the chain!
                     # So lets move a bit to the side
                     if dy > 0:
@@ -589,28 +588,29 @@ class RasterPlotter:
                     else:
                         # Previous was sweep from left to right, so we go beyond last point
                         last_y = segments[-1][1] + overscan_bottom + 1
-                    yield x - dx, last_y, 0
-                yield x, last_y, 0
+                    last_x = x - dx
+                    yield last_x, last_y, 0
+                last_x = x
+                yield last_x, last_y, 0
                 while 0 <= idx < len(segments):
                     sy = segments[idx][start] + edge_start
                     ey = segments[idx][end] + edge_end
                     on = segments[idx][2]
                     if last_y != sy:
-                        yield x, sy, 0
-                    yield x, ey, on
+                        yield last_x, sy, 0
                     last_y = ey
+                    yield last_x, last_y, on
                     idx += dy
                 if self.overscan:
                     last_y += dy * self.overscan
-                    yield x, last_y, 0
+                    yield last_x, last_y, 0
                 if not unidirectional:
                     dy = -dy
+                first = False
             else:
                 # Just climb the line, and don't change directions
-                if had_a_segment:
-                    if last_y is None:
-                        last_y = 0
-                    yield x, last_y, 0
+                last_x = x
+                yield last_x, last_y, 0
 
             x += dx
 
@@ -633,16 +633,16 @@ class RasterPlotter:
 
         dx = 1 if self.start_minimum_x else -1
         dy = 1 if self.start_minimum_y else -1
-        last_x = None
-        had_a_segment = False
+        last_x = self.initial_x
+        last_y = self.initial_y
         lower = min(self.initial_y, self.final_y)
         upper = max(self.initial_y, self.final_y)
         y = lower if self.start_minimum_y else upper
+        first = True
         while lower <= y <= upper:
             segments = self._get_pixel_chains(y, True)
             self._consume_pixel_chains(segments, y, True)
             if segments:
-                had_a_segment = True
                 if dx > 0:
                     # from left to right
                     idx = 0
@@ -662,7 +662,7 @@ class RasterPlotter:
                 # We consider as well the overscan value
                 overscan_left = 0 if dx >= 0 else self.overscan
                 overscan_right = 0 if dx <= 0 else self.overscan
-                if segments[0][0] - overscan_left <= last_x <= segments[-1][1] + overscan_right:
+                if not first and (segments[0][0] - overscan_left <= last_x <= segments[-1][1] + overscan_right):
                     # inside the chain!
                     # So lets move a bit to the side
                     if dx > 0:
@@ -676,27 +676,27 @@ class RasterPlotter:
                         # Previous was sweep from left to right, so we go beyond last point
                         last_x = segments[-1][1] + overscan_right + 1
                     yield last_x, y - dy, 0
-                yield last_x, y, 0
+                last_y = y
+                yield last_x, last_y, 0
                 while 0 <= idx < len(segments):
                     sx = segments[idx][start] + edge_start
                     ex = segments[idx][end] + edge_end
                     on = segments[idx][2]
                     if last_x != sx:
-                        yield sx, y, 0
-                    yield ex, y, on
+                        yield sx, last_y, 0
                     last_x = ex
+                    yield last_x, last_y, on
                     idx += dx
                 if self.overscan:
                     last_x += dx * self.overscan
-                    yield last_x, y, 0
+                    yield last_x, last_y, 0
                 if not unidirectional:
                     dx = -dx
+                first = False
             else:
                 # Just climb the line, and don't change directions
-                if had_a_segment:
-                    if last_x is None:
-                        last_x = 0
-                    yield last_x, y, 0
+                last_y = y
+                yield last_x, last_y, 0
             y += dy
 
     def _plot_greedy_neighbour(self, horizontal: bool = True):
