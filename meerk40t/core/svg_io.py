@@ -620,6 +620,7 @@ class SVGWriter:
                 "draw",
                 "stroke_width",
                 "matrix",
+                "settings",
             ):
                 # References key from previous loaded version (filter out, rebuild)
                 continue
