@@ -683,9 +683,9 @@ class RasterPlotter:
                 first = False
             else:
                 # Just climb the line, and don't change directions
-                if self.special.get("single_step", False):
+                if self.special.get("singular_steps", False):
                     sign = 1 if last_x > x else -1
-                    for interim in range(x + sign, last_x, sign):
+                    for interim in range(last_x + sign, x, sign):
                         yield interim, last_y, 0
                 last_x = x
                 yield last_x, last_y, 0
@@ -773,9 +773,9 @@ class RasterPlotter:
                 first = False
             else:
                 # Just climb the line, and don't change directions
-                if self.special.get("single_step", False):
-                    sign = 1 if last_y > y else -1
-                    for interim in range(y + sign, last_y, sign):
+                if self.special.get("singular_steps", False):
+                    sign = 1 if last_y < y else -1
+                    for interim in range(last_y + sign, y, sign):
                         yield last_x, interim, 0
                 last_y = y
                 yield last_x, last_y, 0
@@ -923,9 +923,9 @@ class RasterPlotter:
                 sx += edge_start
                 ex += edge_end
                 if sy != last_y:
-                    if self.special.get("single_step", False):
-                        sign = 1 if last_y > y else -1
-                        for interim in range(y + sign, last_y, sign):
+                    if self.special.get("singular_steps", False):
+                        sign = 1 if last_y < y else -1
+                        for interim in range(last_y + sign, y, sign):
                             yield last_x, interim, 0
                     last_y = sy
                     yield last_x, last_y, 0
@@ -943,9 +943,9 @@ class RasterPlotter:
                 sy += edge_start
                 ey += edge_end
                 if sx != last_x:
-                    if self.special.get("single_step", False):
-                        sign = 1 if last_x > x else -1
-                        for interim in range(x + sign, last_x, sign):
+                    if self.special.get("singular_steps", False):
+                        sign = 1 if last_x < x else -1
+                        for interim in range(last_x + sign, x, sign):
                             yield interim, last_y, 0
                     last_x = sx
                     yield last_x, last_y, 0
@@ -1093,7 +1093,8 @@ class RasterPlotter:
                         print (f"{cidx:3d}: {msg}")
 
             return results
-
+        # m2nano needs this
+        edge_advance = 1 if self.special.get("edge_advance", False) else 0
         t0 = perf_counter()
         # initialize the matrix
         image = np.empty((self.width, self.height))
@@ -1138,17 +1139,24 @@ class RasterPlotter:
                 first_x = line_start_x
                 first_y = line_start_y
             if line_start_y != last_y:
-                if self.special.get("single_step", False):
-                    sign = 1 if last_y > line_start_y else -1
-                    for interim in range(line_start_y + sign, last_y, sign):
-                        yield last_x, interim, 0
+                if self.special.get("singular_steps", False):
+                    sign = 1 if last_y < line_start_y else -1
+                    # print (f"will run the range({last_y + sign}, {line_start_y}, {sign})")
+                    for interim in range(last_y + sign, line_start_y, sign):
                         # print (f"{last_x}, {interim}, {0} - linestart interim y step")
+                        yield last_x, interim, 0
 
                 # print (f"{last_x}, {line_start_y}, {0} - goto correct line start position #1 ({line_start_y} != {last_y})")
                 last_y = line_start_y
                 yield last_x, last_y, 0
             if last_x != line_start_x:
                 # print (f"{line_start_x}, {last_y}, {0} - goto correct line start position #2 ({line_start_x} != {last_x})")
+                if self.special.get("singular_steps", False):
+                    sign = 1 if last_x < line_start_x else -1
+                    # print (f"will run the range({last_x + sign}, {line_start_x}, {sign})")
+                    for interim in range(last_x + sign, line_start_x, sign):
+                        # print (f"{last_x}, {interim}, {0} - linestart interim y step")
+                        yield interim, last_y, 0
                 last_x = line_start_x
                 yield last_x, last_y, 0
             for seg in segments:
@@ -1158,10 +1166,10 @@ class RasterPlotter:
                     if dx >= 0:
                         sx, ex, on = seg
                         edge_start = 0
-                        edge_end = 0 # 1
+                        edge_end = edge_advance
                     else:
                         ex, sx, on = seg
-                        edge_start = 0 # 1
+                        edge_start = edge_advance
                         edge_end = 0
                     sx += edge_start
                     ex += edge_end
@@ -1180,10 +1188,10 @@ class RasterPlotter:
                     if dy >= 0:
                         sy, ey, on = seg
                         edge_start = 0
-                        edge_end = 0 # 1
+                        edge_end = edge_advance
                     else:
                         ey, sy, on = seg
-                        edge_start = 0 # 1
+                        edge_start = edge_advance
                         edge_end = 0
                     sy += edge_start
                     ey += edge_end

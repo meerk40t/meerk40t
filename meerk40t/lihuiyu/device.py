@@ -1003,6 +1003,7 @@ class LihuiyuDevice(Service, Status):
         instructions = {
             "singular_steps": True,
             "split_crossover": True,
+            "edge_advance": True,
         }
         return instructions
 
