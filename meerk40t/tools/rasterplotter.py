@@ -73,7 +73,7 @@ class RasterPlotter:
         @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
         @param special: a dict of special treatment instructions for the different algorithms
         """
-        self.debug_level = 1 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
+        self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
@@ -90,7 +90,7 @@ class RasterPlotter:
         # and calculate the overlap in pixels to the left / to the right
         self.overlap = int(laserspot / sqrt(2) / 2)
         # self.overlap = 1
-        self.special = special
+        self.special = dict(special) # Copy it so it wont be changed
         if horizontal:
             self.overscan = round(overscan / float(step_x))
         else:
@@ -479,6 +479,10 @@ class RasterPlotter:
                 f.write(f"Image dimensions: {self.width}x{self.height}\n")
                 f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
                 f.write(f"Overlapping pixels to any side: {self.overlap}\n")
+                if self.special:
+                    f.write(f"Special instructions:\n")
+                    for key, value in self.special.items():
+                        f.write(f"  {key} = {value}\n")
                 if self.opt_method == 1:
                     f.write("Optimization: Greedy Neighbor\n")
                 if self.opt_method == 2:
@@ -585,25 +589,19 @@ class RasterPlotter:
             c_end = seg[1]
             for idx in range(c_start, c_end + 1):
                 if is_x:
-                    self.data[idx, xy] = BLANK
-
-                    for i in range(self.overlap):
-                        yi = xy - i - 1
-                        if yi >= 0:
-                            self.data[idx, yi] = BLANK
-                        yi = xy + i + 1
-                        if yi < self.height:
-                            self.data[idx, yi] = BLANK
+                    px = idx
+                    py = xy
                 else:
-                    self.data[xy, idx] = BLANK
-                    for i in range(self.overlap):
-                        xi = xy - i - 1
-                        if xi >= 0:
-                            self.data[xi, idx] = BLANK
-                        xi = xy + i + 1
-                        if xi < self.width:
-                            self.data[xi, idx] = BLANK
-        self._debug_data(True)
+                    px = xy
+                    py = idx
+                for x_idx in range(-self.overlap, self.overlap + 1):
+                    for y_idx in range(-self.overlap, self.overlap + 1):
+                        nx = px + x_idx
+                        ny = py + y_idx
+                        if nx < 0 or nx >= self.width or ny < 0 or ny > self.height:
+                            continue
+                        self.data[nx, ny] = BLANK
+        self._debug_data()
 
     def _plot_vertical(self):
         """
@@ -685,6 +683,10 @@ class RasterPlotter:
                 first = False
             else:
                 # Just climb the line, and don't change directions
+                if self.special.get("single_step", False):
+                    sign = 1 if last_x > x else -1
+                    for interim in range(x + sign, last_x, sign):
+                        yield interim, last_y, 0
                 last_x = x
                 yield last_x, last_y, 0
 
@@ -771,6 +773,10 @@ class RasterPlotter:
                 first = False
             else:
                 # Just climb the line, and don't change directions
+                if self.special.get("single_step", False):
+                    sign = 1 if last_y > y else -1
+                    for interim in range(y + sign, last_y, sign):
+                        yield last_x, interim, 0
                 last_y = y
                 yield last_x, last_y, 0
             y += dy
@@ -917,6 +923,10 @@ class RasterPlotter:
                 sx += edge_start
                 ex += edge_end
                 if sy != last_y:
+                    if self.special.get("single_step", False):
+                        sign = 1 if last_y > y else -1
+                        for interim in range(y + sign, last_y, sign):
+                            yield last_x, interim, 0
                     last_y = sy
                     yield last_x, last_y, 0
                 if last_x != sx:
@@ -933,6 +943,10 @@ class RasterPlotter:
                 sy += edge_start
                 ey += edge_end
                 if sx != last_x:
+                    if self.special.get("single_step", False):
+                        sign = 1 if last_x > x else -1
+                        for interim in range(x + sign, last_x, sign):
+                            yield interim, last_y, 0
                     last_x = sx
                     yield last_x, last_y, 0
                 if last_y != sy:
@@ -976,7 +990,6 @@ class RasterPlotter:
             # Initialize a list to store the results
             results = []
 
-
             # Iterate through the matrix, we cover all rows and cols
             colidx = 0
             rowidx = 0
@@ -1016,11 +1029,9 @@ class RasterPlotter:
                 if row_count >= col_count:
                     last_pixel = None
                     segments = []
-                    counted = 0
                     for idx in range(cols):
                         on = image[rowidx, idx]
                         if on:
-                            counted += 1
                             if on == last_pixel:
                                 segments[-1][1] = idx
                             else:
@@ -1046,13 +1057,11 @@ class RasterPlotter:
                 else:
                     last_pixel = None
                     segments = []
-                    counted = 0
                     msg = ""
                     for idx in range(rows):
                         on = image[idx, colidx]
                         # msg = f"{msg}{'X' if on else '.'}"
                         if on:
-                            counted += 1
                             if on == last_pixel:
                                 segments[-1][1] = idx
                             else:
@@ -1075,7 +1084,7 @@ class RasterPlotter:
                             covered_col[r] = True
                             stored_col[r] = 0
                     recalc_row = True
-                if self.debug_level > 2:
+                if self.debug_level > 1:
                     for cidx in range(cols):
                         msg = ""
                         for ridx in range(rows):
@@ -1109,6 +1118,11 @@ class RasterPlotter:
         first = True
         for mode, idx, segments in results:
             # eliminate data and swap direction
+            if self.special.get("mode_filter", "") == "ROW" and mode != ROW:
+                continue
+            if self.special.get("mode_filter", "") == "COL" and mode != COL:
+                continue
+
             if not segments:
                 continue
             if (mode==ROW and dx < 0) or (mode==COL and dy < 0):
@@ -1123,18 +1137,19 @@ class RasterPlotter:
                 first = False
                 first_x = line_start_x
                 first_y = line_start_y
-            covered = 0
             if line_start_y != last_y:
+                if self.special.get("single_step", False):
+                    sign = 1 if last_y > line_start_y else -1
+                    for interim in range(line_start_y + sign, last_y, sign):
+                        yield last_x, interim, 0
+                        # print (f"{last_x}, {interim}, {0} - linestart interim y step")
+
+                # print (f"{last_x}, {line_start_y}, {0} - goto correct line start position #1 ({line_start_y} != {last_y})")
                 last_y = line_start_y
                 yield last_x, last_y, 0
-                covered += 1
             if last_x != line_start_x:
+                # print (f"{line_start_x}, {last_y}, {0} - goto correct line start position #2 ({line_start_x} != {last_x})")
                 last_x = line_start_x
-                yield last_x, last_y, 0
-                covered += 1
-            if covered != 2:
-                last_x = line_start_x
-                last_y = line_start_y
                 yield last_x, last_y, 0
             for seg in segments:
                 if mode==ROW:
@@ -1143,18 +1158,20 @@ class RasterPlotter:
                     if dx >= 0:
                         sx, ex, on = seg
                         edge_start = 0
-                        edge_end = 1
+                        edge_end = 0 # 1
                     else:
                         ex, sx, on = seg
-                        edge_start = 1
+                        edge_start = 0 # 1
                         edge_end = 0
                     sx += edge_start
                     ex += edge_end
 
                     if sx != last_x:
+                        # print (f"{sx}, {last_y}, {0} - ROW goto correct start position x ({sx} != {last_x})")
                         last_x = sx
                         yield last_x, last_y, 0
                     if last_y != sy:
+                        # print (f"{last_x}, {sy}, {0} - ROW goto correct start position y ({sy} != {last_y})")
                         last_y = sy
                         yield last_x, last_y, 0
                 else:
@@ -1163,23 +1180,32 @@ class RasterPlotter:
                     if dy >= 0:
                         sy, ey, on = seg
                         edge_start = 0
-                        edge_end = 1
+                        edge_end = 0 # 1
                     else:
                         ey, sy, on = seg
-                        edge_start = 1
+                        edge_start = 0 # 1
                         edge_end = 0
                     sy += edge_start
                     ey += edge_end
                     if sy != last_y:
+                        # print (f"{last_x}, {last_y}, {0} - COL goto correct start position y ({sy} != {last_y})")
                         last_y = sy
                         yield last_x, last_y, 0
                     if last_x != sx:
                         last_x = sx
                         yield last_x, last_y, 0
-                print (f"{sx}, {sy} -> {ex}, {ey} with {on}")
+                        # print (f"{last_x}, {last_y}, {0} - COL goto correct start position x ({sx} != {last_x}")
+                if self.debug_level > 1:
+                    if mode == ROW:
+                        direction = ">" if dx > 0 else "<"
+                    else:
+                        direction = "v" if dy > 0 else "^"
+                    # print (f"{sx}, {sy} -> {ex}, {ey} with {on} ({direction} {'ROW' if mode==ROW else 'COL'} {idx}: {seg})")
                 last_x = ex
                 last_y = ey
                 yield last_x, last_y, on
+                # print (f"{last_x}, {last_y}, {on} - draw segment")
+
             # All segments done, do we need to go further aka overscan
             if self.overscan:
                 if mode == ROW:
@@ -1187,6 +1213,7 @@ class RasterPlotter:
                 else:
                     last_y += dy * self.overscan
                 yield last_x, last_y, 0
+                # print (f"{last_x}, {last_y}, {0} - Overscan")
 
             if mode == ROW:
                 dx = -dx
