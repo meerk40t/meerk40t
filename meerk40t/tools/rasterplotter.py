@@ -73,10 +73,12 @@ class RasterPlotter:
         @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
         @param special: a dict of special treatment instructions for the different algorithms
         """
-        self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
+        self.debug_level = 1 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
+        if self.debug_level == 4:
+            self.build_test_data(1)
         self.horizontal = horizontal
         self.start_minimum_y = start_minimum_y
         self.start_minimum_x = start_minimum_x
@@ -87,6 +89,7 @@ class RasterPlotter:
         # We consider an overlap only in the enclosed square of the circle
         # and calculate the overlap in pixels to the left / to the right
         self.overlap = int(laserspot / sqrt(2) / 2)
+        # self.overlap = 1
         self.special = special
         if horizontal:
             self.overscan = round(overscan / float(step_x))
@@ -100,6 +103,53 @@ class RasterPlotter:
         self.initial_x, self.initial_y = self.calculate_first_pixel()
         self.final_x, self.final_y = self.calculate_last_pixel()
         self.opt_method = opt_method
+
+    def build_test_data (self, pat_num=0):
+        BLACK = 0
+        BLANK = 255
+        if pat_num == 0:
+            pattern = (
+                "XXXXX..XXXXXXXXXXX..XXXXX",
+                ".........................",
+                "XXXX..........X......XXXX",
+                "........XXXXXXX..........",
+                "XXX...........X.......XXX",
+                ".........................",
+                "XX......XXXXXXX........XX",
+                "........X..X..X..........",
+                "X.......X..X..X.........X",
+                ".........................",
+                "X.......X..XXXX.........X",
+                "X.......X..X..X.........X",
+                "X.......XXXX..X.........X",
+                "X.......................X",
+                "..............X..........",
+                "X.......XXXXXXX.........X",
+                "X.X...........X.......X.X",
+                "X.X.X...............X.X.X",
+                "X.X.X.X...........X.X.X.X",
+                "X.X.X.X.X..XXX..X.X.X.X.X",
+            )
+        elif pat_num == 1:
+            pattern = (
+                "XXXXXX....X",
+                "XXXXX....XX",
+                "XXXX....XXX",
+                "XXX....XXXX",
+                "XX....XXXXX",
+                "X....XXXXXX",
+            )
+
+        else:
+            return
+        self.width = len(pattern[0])
+        self.height = len(pattern)
+        self.data = np.empty((self.width, self.height))
+        for y, line in enumerate(pattern):
+            for x, p_char in enumerate(line):
+                value = BLACK if p_char == "X" else BLANK
+                self.data[x, y] = value
+
 
     def px(self, x, y):
         """
@@ -492,8 +542,8 @@ class RasterPlotter:
             yield from self._plot_vertical()
             # yield from self._plot_vertical()
 
-    def _debug_data(self):
-        if self.debug_level < 3:
+    def _debug_data(self, force=False):
+        if self.debug_level < 3 and not force:
             return
         BLANK = 255
         for y in range(self.height):
@@ -522,29 +572,38 @@ class RasterPlotter:
 
     def _consume_pixel_chains(self, segments:list, xy:int, is_x : bool):
         BLANK = 255
+        # for x in range(5):
+        #     msg1 = f"{x}: "
+        #     msg2 = ""
+        #     for y in range(5):
+        #         msg1 += "." if self.data[x, y] == BLANK else "X"
+        #         msg2 += f" {self.data[x, y]}"
+        #     print (msg1, msg2)
+
         for seg in segments:
             c_start = seg[0]
             c_end = seg[1]
-            for idx in range(c_start, c_end):
+            for idx in range(c_start, c_end + 1):
                 if is_x:
                     self.data[idx, xy] = BLANK
+
                     for i in range(self.overlap):
-                        yi = xy - i
+                        yi = xy - i - 1
                         if yi >= 0:
                             self.data[idx, yi] = BLANK
-                        yi = xy + i
+                        yi = xy + i + 1
                         if yi < self.height:
                             self.data[idx, yi] = BLANK
                 else:
-                    self.data[idx, xy] = BLANK
+                    self.data[xy, idx] = BLANK
                     for i in range(self.overlap):
-                        xi = xy - i
-                        if i >= 0:
+                        xi = xy - i - 1
+                        if xi >= 0:
                             self.data[xi, idx] = BLANK
-                        xi = xy + i
+                        xi = xy + i + 1
                         if xi < self.width:
                             self.data[xi, idx] = BLANK
-        self._debug_data()
+        self._debug_data(True)
 
     def _plot_vertical(self):
         """
