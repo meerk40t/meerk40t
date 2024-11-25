@@ -999,6 +999,13 @@ class LihuiyuDevice(Service, Status):
                     channel(_("Interpreter cannot be attached to any device."))
                 return
 
+    def get_raster_instructions(self):
+        instructions = {
+            "singular_steps": True,
+            "split_crossover": True,
+        }
+        return instructions
+
     @property
     def safe_label(self):
         """
