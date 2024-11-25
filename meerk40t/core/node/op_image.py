@@ -52,6 +52,7 @@ class ImageOpNode(Node, Parameters):
         self.opt_method = 0
         self.consider_laserspot = False
         self._spot_in_device_units = 0
+        self._instructions = {}
 
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
@@ -289,14 +290,19 @@ class ImageOpNode(Node, Parameters):
         @return:
         """
         self._spot_in_device_units = 0
-        if self.consider_laserspot and hasattr(context, "device"):
-            try:
-                laserspot = getattr(context.device, "laserspot", "0.3mm")
-                spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
-            except (ValueError, AttributeError):
-                spot = 0
-            self._spot_in_device_units = spot
+        self._instructions = {}
+        if hasattr(context, "device"):
+            if hasattr(context.device, "get_raster_instructions"):
+                self._instructions = context.device.get_raster_instructions()
 
+            if self.consider_laserspot:
+                try:
+                    laserspot = getattr(context.device, "laserspot", "0.3mm")
+                    spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
+                    # print (f"Laserpot in device units: {spot:.2f} [{laserspot.length_mm}], scale: {context.device.view.native_scale_x + context.device.view.native_scale_y:.2f}")
+                except (ValueError, AttributeError):
+                    spot = 0
+                self._spot_in_device_units = spot
 
         try:
             overscan = float(Length(self.overscan))
@@ -517,6 +523,7 @@ class ImageOpNode(Node, Parameters):
                         label=f"Pass {gray}: cutoff={skip_pixel}",
                         opt_method=0,
                         laserspot=dotwidth,
+                        special=self._instructions,
                     )
                     cut.path = path
                     cut.original_op = self.type
@@ -552,6 +559,7 @@ class ImageOpNode(Node, Parameters):
                             label=f"Pass {gray}.2: cutoff={skip_pixel}",
                             opt_method=0,
                             laserspot=dotwidth,
+                            special=self._instructions,
                         )
                         cut.path = path
                         cut.original_op = self.type
@@ -572,6 +580,42 @@ class ImageOpNode(Node, Parameters):
                     if white_pixel_ratio < 0.3:
                         do_optimize = 0
 
+                if self.opt_method == 2 and "split_crossover" in self._instructions:
+                    self._instructions["mode_filter"] = "ROW"
+                    horizontal=True
+                    bidirectional=True
+                    start_on_left = True
+                    start_on_top = True
+                    # Create Cut Object for horizontal lines
+                    cut = RasterCut(
+                        image=pil_image,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        step_x=step_x,
+                        step_y=step_y,
+                        inverted=False,
+                        bidirectional=bidirectional,
+                        horizontal=horizontal,
+                        start_minimum_y=start_on_top,
+                        start_minimum_x=start_on_left,
+                        overscan=overscan,
+                        settings=settings,
+                        passes=passes,
+                        post_filter=image_filter,
+                        opt_method=do_optimize,
+                        laserspot=dotwidth,
+                        special=self._instructions,
+                    )
+                    cut.path = path
+                    cut.original_op = self.type
+                    cutcodes.append(cut)
+
+                    # Now set it for the next pass
+                    self._instructions["mode_filter"] = "COL"
+                    horizontal=False
+                    bidirectional=True
+                    direction = 0
+
                 cut = RasterCut(
                     image=pil_image,
                     offset_x=offset_x,
@@ -588,6 +632,7 @@ class ImageOpNode(Node, Parameters):
                     passes=passes,
                     opt_method=do_optimize,
                     laserspot=dotwidth,
+                    special=self._instructions,
                 )
                 cut.path = path
                 cut.original_op = self.type
@@ -620,6 +665,7 @@ class ImageOpNode(Node, Parameters):
                     passes=passes,
                     opt_method=do_optimize,
                     laserspot=dotwidth,
+                    special=self._instructions,
                 )
                 cut.path = path
                 cut.original_op = self.type

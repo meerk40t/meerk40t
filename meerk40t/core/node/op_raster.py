@@ -51,6 +51,7 @@ class RasterOpNode(Node, Parameters):
         self.opt_method = 0
         self.consider_laserspot = False
         self._spot_in_device_units = 0
+        self._instructions = {}
 
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
@@ -374,14 +375,19 @@ class RasterOpNode(Node, Parameters):
         @return:
         """
         self._spot_in_device_units = 0
-        if self.consider_laserspot and hasattr(context, "device"):
-            try:
-                laserspot = getattr(context.device, "laserspot", "0.3mm")
-                spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
-                # print (f"Laserpot in device units: {spot:.2f} [{laserspot.length_mm}], scale: {context.device.view.native_scale_x + context.device.view.native_scale_y:.2f}")
-            except (ValueError, AttributeError):
-                spot = 0
-            self._spot_in_device_units = spot
+        self._instructions = {}
+        if hasattr(context, "device"):
+            if hasattr(context.device, "get_raster_instructions"):
+                self._instructions = context.device.get_raster_instructions()
+
+            if self.consider_laserspot:
+                try:
+                    laserspot = getattr(context.device, "laserspot", "0.3mm")
+                    spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
+                    # print (f"Laserpot in device units: {spot:.2f} [{laserspot.length_mm}], scale: {context.device.view.native_scale_x + context.device.view.native_scale_y:.2f}")
+                except (ValueError, AttributeError):
+                    spot = 0
+                self._spot_in_device_units = spot
 
         if isinstance(self.speed, str):
             try:
@@ -533,6 +539,7 @@ class RasterOpNode(Node, Parameters):
         bidirectional = self.bidirectional
 
         for image_node in self.children:
+            cutcodes = []
             # Process each child. Some core settings are the same for each child.
 
             if image_node.type == "reference":
@@ -597,6 +604,41 @@ class RasterOpNode(Node, Parameters):
                 # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
                 if white_pixel_ratio < 0.3:
                     do_optimize = 0
+            if self.opt_method == 2 and "split_crossover" in self._instructions:
+                self._instructions["mode_filter"] = "ROW"
+                horizontal=True
+                bidirectional=True
+                start_minimum_x = True
+                start_minimum_y = True
+                # Create Cut Object for horizontal lines
+                cut = RasterCut(
+                    image=pil_image,
+                    offset_x=offset_x,
+                    offset_y=offset_y,
+                    step_x=step_x,
+                    step_y=step_y,
+                    inverted=False,
+                    bidirectional=bidirectional,
+                    horizontal=horizontal,
+                    start_minimum_y=start_minimum_y,
+                    start_minimum_x=start_minimum_x,
+                    overscan=overscan,
+                    settings=settings,
+                    passes=passes,
+                    post_filter=image_filter,
+                    opt_method=do_optimize,
+                    laserspot=dotwidth,
+                    special=self._instructions,
+                )
+                cut.path = path
+                cut.original_op = self.type
+                cutcodes.append(cut)
+
+                # Now set it for the next pass
+                self._instructions["mode_filter"] = "COL"
+                horizontal=False
+                bidirectional=True
+                direction = 0
 
             # Create Cut Object
             cut = RasterCut(
@@ -616,10 +658,11 @@ class RasterOpNode(Node, Parameters):
                 post_filter=image_filter,
                 opt_method=do_optimize,
                 laserspot=dotwidth,
+                special=self._instructions,
             )
             cut.path = path
             cut.original_op = self.type
-            yield cut
+            cutcodes.append(cut)
             if direction == 4:
                 # Create optional crosshatch cut
                 horizontal = not horizontal
@@ -648,9 +691,13 @@ class RasterOpNode(Node, Parameters):
                     passes=passes,
                     opt_method=do_optimize,
                     laserspot=dotwidth,
+                    special=self._instructions,
                 )
                 cut.path = path
                 cut.original_op = self.type
+                cutcodes.append(cut)
+            # Yield all generated cutcodes of this image
+            for cut in cutcodes:
                 yield cut
 
     @property
