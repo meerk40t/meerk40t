@@ -1598,6 +1598,7 @@ class SimulationPanel(wx.Panel, Job):
         self._startup()
         self.request_refresh()
 
+    @signal_listener("device;modified")
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         def resend_signal():
