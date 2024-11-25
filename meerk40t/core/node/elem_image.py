@@ -484,7 +484,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
     @property
     def opaque_image(self):
-        from PIL import Image
 
         img = self.image
         if img is not None and img.mode == "RGBA":
@@ -1070,3 +1069,77 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         if self._convex_hull is not None:
             self._convex_hull.translate(dx, dy)
         return super().translated(dx, dy)
+
+    def get_majority_images(self):
+        """
+        Delivers two subpictures, that combined will give the full picture
+        One with all rows populated where we have more horizontal than vertical pixels
+        The other with all columns populated where we have more vertical than horizontal pixels
+
+        """
+        BLANK = 255
+        try:
+            from PIL import Image
+        except ImportError:
+            return self.active_image, self.active_image
+        image = np.array(self.active_image)
+        horizontal = np.full(image.shape, BLANK)
+        vertical = np.full(image.shape, BLANK)
+        # We will modify the image to keep track of deleted rows and columns
+        # Get the dimensions of the image
+        rows, cols = image.shape
+
+        # Iterate through the matrix, we cover all rows and cols
+        colidx = 0
+        rowidx = 0
+        covered_row = [False] * rows
+        covered_col = [False] * cols
+        stored_row = np.zeros(rows)
+        stored_col = np.zeros(cols)
+        recalc_row = True
+        recalc_col = True
+        while True:
+            if recalc_col:
+                for i in range(cols):
+                    if covered_col[i]:
+                        count = 0
+                    else:
+                        count = np.count_nonzero(image[:, i] != BLANK)
+                        if count == 0:
+                            covered_col[i] = True
+                    stored_col[i] = count
+            if recalc_row:
+                for i in range(rows):
+                    if covered_row[i]:
+                        count = 0
+                    else:
+                        count = np.count_nonzero(image[i, :] != BLANK)
+                        if count == 0:
+                            covered_row[i] = True
+                    stored_row[i] = count
+            colidx = np.argmax(stored_col)
+            rowidx = np.argmax(stored_row)
+            col_count = stored_col[colidx]
+            row_count = stored_row[rowidx]
+
+            if row_count == col_count == 0:
+                break
+            # Determine whether there are more pixels in the row or column
+            if row_count > col_count:
+                vertical[rowidx, :] = image[rowidx, :]
+                # Clear the column
+                image[rowidx,:] = BLANK
+                covered_row[rowidx] = True
+                stored_row[rowidx] = 0
+                recalc_col = True
+            else:
+                horizontal[:, colidx] = image[:,colidx]
+                # Clear the row
+                image[:, colidx] = BLANK
+                covered_col[colidx] = True
+                stored_col[colidx] = 0
+                recalc_row = True
+
+        img_hor = Image.fromarray(horizontal)
+        img_ver = Image.fromarray(vertical)
+        return img_hor, img_ver
