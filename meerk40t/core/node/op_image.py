@@ -566,6 +566,7 @@ class ImageOpNode(Node, Parameters):
                         cutcodes.append(cut)
             else:
                 # Create Cut Object for regular image
+                image_filter = None
                 do_optimize=self.opt_method
                 if do_optimize:
                     # get some image statistics
