@@ -47,7 +47,7 @@ class RasterOpNode(Node, Parameters):
         self.dangerous = False
         self.stopop = False
         self.label = "Raster"
-        self.use_grayscale = False
+        self.use_grayscale = True
         self.opt_method = 0
         self.consider_laserspot = False
         self._spot_in_device_units = 0
@@ -64,7 +64,7 @@ class RasterOpNode(Node, Parameters):
             s = self.use_grayscale.lower()
             self.use_grayscale = s in ("true", "1")
         if self.use_grayscale is None:
-            self.use_grayscale = False
+            self.use_grayscale = True
         if isinstance(self.opt_method, str):
             try:
                 self.opt_method = int(self.opt_method)

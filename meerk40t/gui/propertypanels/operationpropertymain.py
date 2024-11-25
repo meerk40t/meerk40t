@@ -1358,8 +1358,8 @@ class RasterSettingsPanel(wx.Panel):
         param_sizer.Add(self.sizer_grayscale, 2, wx.EXPAND, 0)
         self.check_grayscale = wxCheckBox(self, wx.ID_ANY, _("Use grayscale instead") )
         self.check_grayscale.SetToolTip(
-            _("Usually a raster will be created as a black and white picture. Every non-white pixel (even very light ones) will become black and will be burned at full power.") + "\n" +
-            _("If you check this value then pixels will be converted to grayscale and the burn-power of a pixel will depend on its darkness.")
+            _("Usually a raster will be created as a grayscale picture and the burn-power of a pixel will depend on its darkness.") + "\n" +
+            _("If you uncheck this value then every non-white pixel (even very light ones) will become black and will be burned at full power.")
         )
         self.sizer_grayscale.Add(self.check_grayscale, 1, wx.EXPAND, 0)
 
@@ -1511,7 +1511,7 @@ class RasterSettingsPanel(wx.Panel):
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.check_laserdot.SetValue(self.operation.consider_laserspot)
         # Hide it for now...
-        self.check_laserdot.Show(False)
+        # self.check_laserdot.Show(False)
         self.allow_controls_according_to_optimization(self.operation.opt_method)
         self.Show()
 
