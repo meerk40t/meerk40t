@@ -1,3 +1,4 @@
+from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
@@ -8,7 +9,6 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
-
 
 class RasterOpNode(Node, Parameters):
     """
@@ -512,6 +512,7 @@ class RasterOpNode(Node, Parameters):
         if len(self.children) == 0:
             return
         settings = self.derive()
+        # make an independent copy
         unsupported = self._instructions.get("unsupported_opt", ())
         if self.opt_method in unsupported:
             self.opt_method = 0
@@ -609,13 +610,25 @@ class RasterOpNode(Node, Parameters):
                     do_optimize = 0
             if self.opt_method == 2 and "split_crossover" in self._instructions:
                 self._instructions["mode_filter"] = "ROW"
+                direction = 0
                 horizontal=True
                 bidirectional=True
                 start_minimum_x = True
                 start_minimum_y = True
+                if horizontal:
+                    # Raster step is only along y for horizontal raster
+                    settings["raster_step_x"] = 0
+                    settings["raster_step_y"] = step_y
+                else:
+                    # Raster step is only along x for vertical raster
+                    settings["raster_step_x"] = step_x
+                    settings["raster_step_y"] = 0
                 # Create Cut Object for horizontal lines
+                # The image may be manipulated inside RasterCut, so let's create a fresh copy
+                rasterimage = copy(pil_image)
+                cutsettings = dict(settings)
                 cut = RasterCut(
-                    image=pil_image,
+                    image=rasterimage,
                     offset_x=offset_x,
                     offset_y=offset_y,
                     step_x=step_x,
@@ -626,7 +639,7 @@ class RasterOpNode(Node, Parameters):
                     start_minimum_y=start_minimum_y,
                     start_minimum_x=start_minimum_x,
                     overscan=overscan,
-                    settings=settings,
+                    settings=cutsettings,
                     passes=passes,
                     post_filter=image_filter,
                     opt_method=do_optimize,
@@ -638,14 +651,27 @@ class RasterOpNode(Node, Parameters):
                 cutcodes.append(cut)
 
                 # Now set it for the next pass
-                self._instructions["mode_filter"] = "COL"
                 horizontal=False
                 bidirectional=True
-                direction = 0
+                direction = 2
+                if horizontal:
+                    # Raster step is only along y for horizontal raster
+                    settings["raster_step_x"] = 0
+                    settings["raster_step_y"] = step_y
+                else:
+                    # Raster step is only along x for vertical raster
+                    settings["raster_step_x"] = step_x
+                    settings["raster_step_y"] = 0
+
+                self._instructions["mode_filter"] = "COL"
+
+            # The image may be manipulated inside RasterCut, so let's create a fresh copy
+            rasterimage = copy(pil_image)
+            cutsettings = dict(settings)
 
             # Create Cut Object
             cut = RasterCut(
-                image=pil_image,
+                image=rasterimage,
                 offset_x=offset_x,
                 offset_y=offset_y,
                 step_x=step_x,
@@ -656,7 +682,7 @@ class RasterOpNode(Node, Parameters):
                 start_minimum_y=start_minimum_y,
                 start_minimum_x=start_minimum_x,
                 overscan=overscan,
-                settings=settings,
+                settings=cutsettings,
                 passes=passes,
                 post_filter=image_filter,
                 opt_method=do_optimize,
@@ -678,8 +704,11 @@ class RasterOpNode(Node, Parameters):
                     # Raster step is only along x for vertical raster
                     settings["raster_step_x"] = step_x
                     settings["raster_step_y"] = 0
+                # The image may be manipulated inside RasterCut, so let's create a fresh copy
+                rasterimage = copy(pil_image)
+                cutsettings = dict(settings)
                 cut = RasterCut(
-                    image=pil_image,
+                    image=rasterimage,
                     offset_x=offset_x,
                     offset_y=offset_y,
                     step_x=step_x,
@@ -690,7 +719,7 @@ class RasterOpNode(Node, Parameters):
                     start_minimum_y=start_minimum_y,
                     start_minimum_x=start_minimum_x,
                     overscan=overscan,
-                    settings=settings,
+                    settings=cutsettings,
                     passes=passes,
                     opt_method=do_optimize,
                     laserspot=dotwidth,
