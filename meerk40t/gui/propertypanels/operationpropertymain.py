@@ -1580,6 +1580,7 @@ class RasterSettingsPanel(wx.Panel):
                         caption=_("Unsupported method!"),
                         style=wx.ICON_HAND | wx.OK,
                     )
+                    self.combo_optimize.SetSelection(self.operation.opt_method)
                     return
 
             self.operation.opt_method = value
