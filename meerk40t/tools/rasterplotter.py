@@ -487,6 +487,14 @@ class RasterPlotter:
                     f.write("Optimization: Greedy Neighbor\n")
                 if self.opt_method == 2:
                     f.write("Optimization: Crossover\n")
+                if self.opt_method == 3:
+                    f.write("Testpattern #1: Rectangle\n")
+                if self.opt_method == 4:
+                    f.write("Testpattern #2: Horizontal Snake\n")
+                if self.opt_method == 5:
+                    f.write("Testpattern #3: Vertical Snake\n")
+                if self.opt_method == 6:
+                    f.write("Testpattern #4: Spiral\n")
                 f.write("----------------------------------------------------------------------\n")
                 test_dict = {}
                 lastx = self.initial_x
@@ -497,8 +505,8 @@ class RasterPlotter:
                         dx = x - lastx
                         dy = y - lasty
                         if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
-                            f.write (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-                            print (f"You fucked up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
+                            f.write (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+                            print (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
                             failed = True
                     lastx = x
                     lasty = y
@@ -540,6 +548,8 @@ class RasterPlotter:
             yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
         elif self.opt_method == 2:
             yield from self._plot_crossover()
+        elif self.opt_method > 2:
+            yield from self.testpattern_generator()
         elif self.horizontal:
             yield from self._plot_horizontal()
         else:
@@ -1248,3 +1258,86 @@ class RasterPlotter:
             print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
             print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
 
+    def testpattern_generator(self):
+        on = self.filter(0)
+        off = 0
+        # print (f"on={on}, off={off}")
+        if self.opt_method == 3:
+            # simple rectangle
+            self.initial_x = 0
+            self.initial_y = 0
+            self.final_x = 0
+            self.final_y = 0
+            yield 0, 0, off
+            yield self.width - 1, 0, on
+            yield self.width - 1, self.height - 1, on
+            yield 0, self.height - 1, on
+            yield 0, 0, on
+        elif self.opt_method == 4:
+            # horizontal snake
+            self.initial_x = 0
+            self.initial_y = 0
+            x = 0
+            y = 0
+            yield 0, 0, off
+            wd = self.width - 1
+            left = True
+            while y < self.height - 2:
+                if left:
+                    x = wd
+                else:
+                    x = 0
+                yield x, y, on
+                yield x, y + 2, on
+                left = not left
+                y += 2
+                self.final_x = x
+                self.final_y = y
+
+        elif self.opt_method == 5:
+            # vertical snake
+            self.initial_x = 0
+            self.initial_y = 0
+            x = 0
+            yield 0, 0, off
+            ht = self.height - 1
+            top = True
+            while x < self.width - 2:
+                if top:
+                    y = ht
+                else:
+                    y = 0
+                yield x, y, on
+                yield x + 2, y, on
+                top = not top
+                x += 2
+                self.final_x = x
+                self.final_y = y
+
+        elif self.opt_method == 6:
+            # Spiral to inside
+            self.initial_x = 0
+            self.initial_y = 0
+            yield 0, 0, off
+
+            x = -2 # start
+            y = 0
+            width = self.width + 1
+            height = self.height - 1
+            while width > 0 and height > 0:
+                x += width
+                y += 0
+                yield x, y, on
+                x += 0
+                y += height
+                yield x, y, on
+                x -=(width - 2)
+                y += 0
+                yield x, y, on
+                x += 0
+                y -= (height - 2)
+                yield x, y, on
+                width -= 4
+                height -= 4
+                self.final_x = x
+                self.final_y = y
