@@ -372,6 +372,10 @@ class ImageOpNode(Node, Parameters):
         Generator of cutobjects for the image operation. This takes any image node children
         and converts them into rastercut cutobjects.
         """
+        unsupported = self._instructions.get("unsupported_opt", ())
+        if self.opt_method in unsupported:
+            self.opt_method = 0
+
         for image_node in self.children:
             cutcodes = []
             # Process each child. All settings are different for each child.

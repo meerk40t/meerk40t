@@ -512,6 +512,9 @@ class RasterOpNode(Node, Parameters):
         if len(self.children) == 0:
             return
         settings = self.derive()
+        unsupported = self._instructions.get("unsupported_opt", ())
+        if self.opt_method in unsupported:
+            self.opt_method = 0
 
         # Set overscan
         overscan = self.overscan

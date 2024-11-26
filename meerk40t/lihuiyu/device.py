@@ -1000,12 +1000,12 @@ class LihuiyuDevice(Service, Status):
                 return
 
     def get_raster_instructions(self):
-        instructions = {
+        return {
             "singular_steps": True,
             "split_crossover": True,
             "edge_advance": True,
+            "unsupported_opt": (1,),  # Greedy loses registration way too often to be reliable
         }
-        return instructions
 
     @property
     def safe_label(self):

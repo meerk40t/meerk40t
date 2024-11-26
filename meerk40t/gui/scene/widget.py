@@ -103,14 +103,14 @@ class Widget(list):
 
         try:
             self.process_draw(gc)
-        except Exception as e:
+        except OSError as e:
             print (f"Could not process draw [{e}]")
         for i in range(len(self) - 1, -1, -1):
             widget = self[i]
             if widget is not None:
                 try:
                     widget.draw(gc)
-                except Exception as e:
+                except OSError as e:
                     print (f"Could not draw widget #{i} {type(widget).__name__} [{e}]")
         gc.PopState()
 

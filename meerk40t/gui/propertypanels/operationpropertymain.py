@@ -1570,6 +1570,18 @@ class RasterSettingsPanel(wx.Panel):
         if value < 0:
             return
         if self.operation.opt_method != value:
+            # Let's see whether this an unsupported type on the current device
+            if hasattr(self.context.device, "get_raster_instructions"):
+                instructions = self.context.deviceget_raster_instructions()
+                unsupported = instructions.get("unsupported_opt", ())
+                if value in unsupported:
+                    wx.MessageBox(
+                        message=_("This optimisation method isn't supported on this device."),
+                        caption=_("Unsupported method!"),
+                        style=wx.ICON_HAND | wx.OK,
+                    )
+                    return
+
             self.operation.opt_method = value
             self.allow_controls_according_to_optimization(value)
             self.context.elements.signal("element_property_reload", self.operation)
