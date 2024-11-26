@@ -598,7 +598,7 @@ class RasterPlotter:
                     for y_idx in range(-self.overlap, self.overlap + 1):
                         nx = px + x_idx
                         ny = py + y_idx
-                        if nx < 0 or nx >= self.width or ny < 0 or ny > self.height:
+                        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
                             continue
                         self.data[nx, ny] = BLANK
         self._debug_data()
