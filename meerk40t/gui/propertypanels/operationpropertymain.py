@@ -1572,7 +1572,7 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.opt_method != value:
             # Let's see whether this an unsupported type on the current device
             if hasattr(self.context.device, "get_raster_instructions"):
-                instructions = self.context.deviceget_raster_instructions()
+                instructions = self.context.device.get_raster_instructions()
                 unsupported = instructions.get("unsupported_opt", ())
                 if value in unsupported:
                     wx.MessageBox(
