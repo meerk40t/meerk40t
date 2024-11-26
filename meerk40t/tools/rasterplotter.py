@@ -895,7 +895,8 @@ class RasterPlotter:
         if self.debug_level > 2:
             print (f"Created {len(line_parts)} segments")
         t1 = perf_counter()
-        path = walk_segments(line_parts, horizontal=horizontal, xy_penalty=3, width=self.width, height=self.height)
+        penalty = 3 if self.special.get("gantry", False) else 1
+        path = walk_segments(line_parts, horizontal=horizontal, xy_penalty=penalty, width=self.width, height=self.height)
         # print("Order of segments:", path)
         t2 = perf_counter()
         if horizontal:
@@ -986,6 +987,14 @@ class RasterPlotter:
             # We will modify the image to keep track of deleted rows and columns
             # Get the dimensions of the image
             rows, cols = image.shape
+            # We prefer cols (which is the x-axis and that is normally
+            # slightly advantageous for gantry lasers)
+            if self.special.get("gantry", False):
+                colfactor = 1.0
+                rowfactor = 1.1
+            else:
+                colfactor = 1.0
+                rowfactor = 1.0
 
             # Initialize a list to store the results
             results = []
@@ -1026,7 +1035,10 @@ class RasterPlotter:
                 if row_count == col_count == 0:
                     break
                 # Determine whether there are more pixels in the row or column
-                if row_count >= col_count:
+                row_ratio = row_count / cols * rowfactor
+                col_ratio = col_count / rows * colfactor
+                # if row_count >= col_count:
+                if row_ratio >= col_ratio:
                     last_pixel = None
                     segments = []
                     for idx in range(cols):

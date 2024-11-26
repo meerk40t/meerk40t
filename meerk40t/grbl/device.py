@@ -1017,3 +1017,8 @@ class GRBLDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_raster_instructions(self):
+        return {
+            "gantry": True,
+        }

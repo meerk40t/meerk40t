@@ -1005,6 +1005,7 @@ class LihuiyuDevice(Service, Status):
             "split_crossover": True,
             "edge_advance": True,
             "unsupported_opt": (1,),  # Greedy loses registration way too often to be reliable
+            "gantry" : True,
         }
 
     @property
