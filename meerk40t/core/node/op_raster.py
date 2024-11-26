@@ -608,7 +608,11 @@ class RasterOpNode(Node, Parameters):
                 # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
                 if white_pixel_ratio < 0.3:
                     do_optimize = 0
-            if self.opt_method == 2:
+            if self.opt_method >= 2:
+                horizontal = True
+                start_minimum_x = True
+                start_minimum_y = True
+                direction = 0
                 settings["raster_step_x"] = step_x
                 settings["raster_step_y"] = step_y
             if self.opt_method == 2 and "split_crossover" in self._instructions:

@@ -73,7 +73,7 @@ class PlotPlanner(Parameters):
             self.shift = Shift(self)
         if group:
             self.group = Group(self)
-
+        self.passthrough =  PassthroughCompletion(self)
         self.pos_x = None
         self.pos_y = None
         self.settings_then_jog = False
@@ -196,7 +196,7 @@ class PlotPlanner(Parameters):
             # Plot the current.
             # Current is executed in cut settings.
             yield None, None, PLOT_START
-            yield from self.process_plots(cut.generator())
+            yield from self.process_plots(cut.generator(), cut=cut)
             self.pos_x = self.single.single_x
             self.pos_y = self.single.single_y
 
@@ -210,7 +210,7 @@ class PlotPlanner(Parameters):
         self.abort = False
         yield None, None, PLOT_FINISH
 
-    def process_plots(self, plot):
+    def process_plots(self, plot, cut=None):
         """
         Converts a series of inputs into a series of outputs. There is not a 1:1 input to output conversion.
         Processes can buffer data and return None. Processes are required to surrender any buffer they have if the
@@ -244,6 +244,8 @@ class PlotPlanner(Parameters):
             plot = self.group.process(plot)
         if self.debug:
             plot = debug(plot, self.group)
+        if cut:
+            plot = self.passthrough.process(cut, plot)
         return plot
 
     def step_move(self, x0, y0, x1, y1):
@@ -302,6 +304,23 @@ class PlotManipulation:
     def flushed(self):
         return True
 
+class PassthroughCompletion(PlotManipulation):
+    """
+    This routine looks for Passthrough code and sets the correct values from the active cut object
+    """
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}(Passthrough injector)"
+
+    def process(self, cut, plot):
+        for x, y, on in plot:
+            if x is None and y is None and on == PLOT_AXIS:
+                yield cut.major_axis(), None, PLOT_AXIS
+                # yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
+            else:
+                yield x, y, on
 
 class Single(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
@@ -333,6 +352,11 @@ class Single(PlotManipulation):
         for event in plot:
             x = event[0]
             y = event[1]
+            on = event[2] if len(event) > 2 else 0
+            if x is None and y is None and on in (PLOT_AXIS, PLOT_DIRECTION):
+                # Passthrough
+                yield event
+                continue
             if self.single_x is None or self.single_y is None:
                 # Our single_x or single_y position is not established.
                 self.single_x = x
@@ -396,6 +420,10 @@ class PPI(PlotManipulation):
         px = None
         py = None
         for x, y, on in plot:
+            if x is None and y is None and on in (PLOT_AXIS, PLOT_DIRECTION):
+                # Passthrough
+                yield x, y, on
+                continue
             if x is None or y is None:
                 yield x, y, on
                 # Sequential, random, progressive, static.
@@ -454,6 +482,10 @@ class Shift(PlotManipulation):
         @return:
         """
         for x, y, on in plot:
+            if x is None and y is None and on in (PLOT_AXIS, PLOT_DIRECTION):
+                # Passthrough
+                yield x, y, on
+                continue
             if (x is None or y is None) or (
                 not self.planner.force_shift and not self.planner.shift_enabled
             ):
@@ -538,6 +570,11 @@ class Group(PlotManipulation):
         px = None
         py = None
         for x, y, on in plot:
+            if x is None and y is None and on in (PLOT_AXIS, PLOT_DIRECTION):
+                # Passthrough
+                yield x, y, on
+                continue
+
             if x is None or y is None:
                 yield from self.flush()
                 continue

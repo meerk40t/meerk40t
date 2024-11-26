@@ -648,6 +648,9 @@ class LaserRender:
                     maxcount = int(len(todraw) * residual)
                 count = 0
                 for px, py, pon in todraw:
+                    if px is None and py is None:
+                        # Passthrough
+                        continue
                     if pon == 0:
                         p.MoveToPoint(px + x, py + y)
                     else:
