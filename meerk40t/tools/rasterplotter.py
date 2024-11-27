@@ -21,7 +21,8 @@ or only on forward swing.
 import numpy as np
 from math import sqrt
 from time import perf_counter
-from meerk40t.device.basedevice import PLOT_AXIS
+from meerk40t.device.basedevice import PLOT_AXIS_SWAP
+
 class RasterPlotter:
     def __init__(
         self,
@@ -441,20 +442,22 @@ class RasterPlotter:
                 if self.opt_method == 2:
                     f.write("Optimization: Crossover\n")
                 if self.opt_method == 3:
-                    f.write("Testpattern #1: Rectangle\n")
+                    f.write("Testpattern #1: Rectangle starting horizontally\n")
                 if self.opt_method == 4:
-                    f.write("Testpattern #2: Horizontal Snake\n")
+                    f.write("Testpattern #2: Rectangle starting vertically\n")
                 if self.opt_method == 5:
-                    f.write("Testpattern #3: Vertical Snake\n")
+                    f.write("Testpattern #3: Horizontal Snake\n")
                 if self.opt_method == 6:
-                    f.write("Testpattern #4: Spiral\n")
+                    f.write("Testpattern #4: Vertical Snake\n")
+                if self.opt_method == 7:
+                    f.write("Testpattern #5: Spiral\n")
                 f.write("----------------------------------------------------------------------\n")
                 test_dict = {}
                 lastx = self.initial_x
                 lasty = self.initial_y
                 failed = False
                 for lineno, (x, y, on) in enumerate(data, start=1):
-                    if x is None and y is None:
+                    if x is None or y is None:
                         f.write("Forced setting update, aka major axis change\n")
                         continue
                     if lastx is not None:
@@ -470,7 +473,7 @@ class RasterPlotter:
                     f.write("Good news, no zig-zag movements identified!\n")
                 f.write("----------------------------------------------------------------------\n")
                 for lineno, (x, y, on) in enumerate(data, start=1):
-                    if x is None and y is None:
+                    if x is None or y is None:
                         continue
                     key = f"{x} - {y}"
                     if key in test_dict:
@@ -489,26 +492,26 @@ class RasterPlotter:
                     print(f"Image dimensions: {self.width}x{self.height}")
             if self.use_integers:
                 for x, y, on in data:
-                    if x is None and y is None:
+                    if x is None or y is None:
                         yield x, y, on
                     else:
                         yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
             else:
                 for x, y, on in data:
-                    if x is None and y is None:
+                    if x is None or y is None:
                         yield x, y, on
                     else:
                         yield offset_x + step_x * x, offset_y + y * step_y, on
         else:
             if self.use_integers:
                 for x, y, on in self._plot_pixels():
-                    if x is None and y is None:
+                    if x is None or y is None:
                         yield x, y, on
                     else:
                         yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
             else:
                 for x, y, on in self._plot_pixels():
-                    if x is None and y is None:
+                    if x is None or y is None:
                         yield x, y, on
                     else:
                         yield offset_x + step_x * x, offset_y + y * step_y, on
@@ -1124,14 +1127,14 @@ class RasterPlotter:
                 if not self.horizontal:
                     # Axis change
                     self.horizontal = True
-                    yield None, None, PLOT_AXIS
+                    yield 0, None, PLOT_AXIS_SWAP
                 line_start_x = segments[0][0] if dx >= 0 else segments[0][1]
                 line_start_y = idx
             else:
                 if self.horizontal:
                     # Axis change
                     self.horizontal = False
-                    yield None, None, PLOT_AXIS
+                    yield 1, None, PLOT_AXIS_SWAP
                 line_start_x = idx
                 line_start_y = segments[0][0] if dy >= 0 else segments[0][1]
             if first:
@@ -1247,17 +1250,18 @@ class RasterPlotter:
             self.final_x = 0
             self.final_y = 0
             self.horizontal = True
+
+            yield 0, None, PLOT_AXIS_SWAP
             yield 0, 0, off
-            yield None, None, PLOT_AXIS
             yield self.width - 1, 0, on
-            self.horizontal = False
-            yield None, None, PLOT_AXIS
+
+            yield 1, None, PLOT_AXIS_SWAP
             yield self.width - 1, self.height - 1, on
-            self.horizontal = True
-            yield None, None, PLOT_AXIS
+
+            yield 0, None, PLOT_AXIS_SWAP
             yield 0, self.height - 1, on
-            self.horizontal = False
-            yield None, None, PLOT_AXIS
+
+            yield 1, None, PLOT_AXIS_SWAP
             yield 0, 0, on
 
         elif self.opt_method == 4:
@@ -1276,10 +1280,10 @@ class RasterPlotter:
                 else:
                     x = 0
                 self.horizontal = True
-                yield None, None, PLOT_AXIS
+                yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 self.horizontal = False
-                yield None, None, PLOT_AXIS
+                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y + 2, on
                 left = not left
                 y += 2
@@ -1300,10 +1304,10 @@ class RasterPlotter:
                 else:
                     y = 0
                 self.horizontal = False
-                yield None, None, PLOT_AXIS
+                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 self.horizontal = True
-                yield None, None, PLOT_AXIS
+                yield 0, None, PLOT_AXIS_SWAP
                 yield x + 2, y, on
                 top = not top
                 x += 2
@@ -1324,22 +1328,22 @@ class RasterPlotter:
                 x += width
                 y += 0
                 self.horizontal = True
-                yield None, None, PLOT_AXIS
+                yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 x += 0
                 y += height
                 self.horizontal = False
-                yield None, None, PLOT_AXIS
+                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 x -=(width - 2)
                 y += 0
                 self.horizontal = True
-                yield None, None, PLOT_AXIS
+                yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 x += 0
                 y -= (height - 2)
                 self.horizontal = False
-                yield None, None, PLOT_AXIS
+                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 width -= 4
                 height -= 4
