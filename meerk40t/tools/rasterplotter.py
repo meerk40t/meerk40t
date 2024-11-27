@@ -1263,8 +1263,28 @@ class RasterPlotter:
 
             yield 1, None, PLOT_AXIS_SWAP
             yield 0, 0, on
+        if self.opt_method == 4:
+            # simple rectangle but start with y movements first
+            self.initial_x = 0
+            self.initial_y = 0
+            self.final_x = 0
+            self.final_y = 0
+            self.horizontal = True
 
-        elif self.opt_method == 4:
+            yield 1, None, PLOT_AXIS_SWAP
+            yield 0, 0, off
+            yield 0, self.height - 1, on
+
+            yield 0, None, PLOT_AXIS_SWAP
+            yield self.width - 1, self.height - 1, on
+
+            yield 1, None, PLOT_AXIS_SWAP
+            yield self.width - 1, 0, on
+
+            yield 0, None, PLOT_AXIS_SWAP
+            yield 0, 0, on
+
+        elif self.opt_method == 5:
             # horizontal snake
             self.initial_x = 0
             self.initial_y = 0
@@ -1290,7 +1310,7 @@ class RasterPlotter:
                 self.final_x = x
                 self.final_y = y
 
-        elif self.opt_method == 5:
+        elif self.opt_method == 6:
             # vertical snake
             self.initial_x = 0
             self.initial_y = 0
@@ -1314,7 +1334,7 @@ class RasterPlotter:
                 self.final_x = x
                 self.final_y = y
 
-        elif self.opt_method == 6:
+        elif self.opt_method == 7:
             # Spiral to inside
             self.initial_x = 0
             self.initial_y = 0

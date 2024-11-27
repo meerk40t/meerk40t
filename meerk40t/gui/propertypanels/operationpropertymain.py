@@ -1336,10 +1336,11 @@ class RasterSettingsPanel(wx.Panel):
             _("No optimization"),
             _("Greedy distance"),
             _("Crossover"),
-            "Test 1: Rectangle",
-            "Test 2: Horizontal Snake",
-            "Test 3: Vertical Snake",
-            "Test 4: Spiral",
+            "Test 1: Rectangle (start horizontal)",
+            "Test 2: Rectangle (start vertical)",
+            "Test 3: Horizontal Snake",
+            "Test 4: Vertical Snake",
+            "Test 5: Spiral",
         )
         self.combo_optimize = wxComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.combo_optimize.SetToolTip(
