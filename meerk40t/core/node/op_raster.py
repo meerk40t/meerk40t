@@ -1,6 +1,16 @@
 from copy import copy
 from math import isnan
 
+from meerk40t.constants import (
+    RASTER_T2B,
+    RASTER_B2T,
+    RASTER_R2L,
+    RASTER_L2R,
+    RASTER_HATCH,
+    RASTER_GREEDY_H,
+    RASTER_GREEDY_V,
+    RASTER_CROSSOVER,
+)
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.elements.element_types import *
@@ -48,7 +58,6 @@ class RasterOpNode(Node, Parameters):
         self.stopop = False
         self.label = "Raster"
         self.use_grayscale = True
-        self.opt_method = 0
         self.consider_laserspot = False
         self._spot_in_device_units = 0
         self._instructions = {}
@@ -66,18 +75,8 @@ class RasterOpNode(Node, Parameters):
             self.use_grayscale = s in ("true", "1")
         if self.use_grayscale is None:
             self.use_grayscale = True
-        if isinstance(self.opt_method, str):
-            try:
-                self.opt_method = int(self.opt_method)
-            except ValueError:
-                self.opt_method = 0
-        elif isinstance(self.opt_method, bool):
-            # From an old version
-            self.opt_method = 1
-        if self.opt_method is None:
-            self.opt_method = 0
         # They might come from a svg read, but shouldnt be in settings
-        for attrib in ("lock", "dangerous", "opt_method", "use_grayscale", "consider_laserspot"):
+        for attrib in ("lock", "dangerous", "use_grayscale", "consider_laserspot"):
             if attrib in self.settings:
                 del self.settings[attrib]
 
@@ -103,20 +102,24 @@ class RasterOpNode(Node, Parameters):
             raster_swing = "="
         else:
             raster_swing = "-"
-        if self.raster_direction == 0:
+        if self.raster_direction == RASTER_T2B:
             raster_dir = "T2B"
-        elif self.raster_direction == 1:
+        elif self.raster_direction == RASTER_B2T:
             raster_dir = "B2T"
-        elif self.raster_direction == 2:
+        elif self.raster_direction == RASTER_R2L:
             raster_dir = "R2L"
-        elif self.raster_direction == 3:
+        elif self.raster_direction == RASTER_L2R:
             raster_dir = "L2R"
-        elif self.raster_direction == 4:
+        elif self.raster_direction == RASTER_HATCH:
             raster_dir = "X"
+        elif self.raster_direction == RASTER_CROSSOVER:
+            raster_dir = "|-|-"
+        elif self.raster_direction == RASTER_GREEDY_H:
+            raster_dir = "GR-"
+        elif self.raster_direction == RASTER_GREEDY_V:
+            raster_dir = "GR|"
         else:
             raster_dir = str(self.raster_direction)
-        if self.opt_method:
-            raster_dir =f"!{raster_dir}!"
         default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
         default_map["power"] = "default"
@@ -341,14 +344,14 @@ class RasterOpNode(Node, Parameters):
         width_in_inches = (max_x - min_x) / UNITS_PER_INCH
         height_in_inches = (max_y - min_y) / UNITS_PER_INCH
         speed_in_per_s = self.speed / MM_PER_INCH
-        if self.raster_direction in (0, 1, 4):
+        if self.raster_direction in (RASTER_T2B, RASTER_B2T, RASTER_HATCH, RASTER_GREEDY_H, RASTER_CROSSOVER):
             scanlines = height_in_inches * dpi
             if not self.bidirectional:
                 scanlines *= 2
             this_len = scanlines * width_in_inches + height_in_inches
             estimate += this_len / speed_in_per_s
             # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
-        if self.raster_direction in (2, 3, 4):
+        if self.raster_direction in (RASTER_L2R, RASTER_R2L, RASTER_HATCH, RASTER_GREEDY_V):
             scanlines = width_in_inches * dpi
             if not self.bidirectional:
                 scanlines *= 2
@@ -479,25 +482,32 @@ class RasterOpNode(Node, Parameters):
             dy = p1a.y - p2a.y
             negative_scale_x = bool(dy < 0) if dx == 0 else bool(dx < 0)
             negative_scale_y = False if dx == 0 else bool(dy < 0)
+
         if rotated:
-            mapping = {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}
+            mapping = {
+                RASTER_T2B: RASTER_L2R,
+                RASTER_B2T: RASTER_R2L,
+                RASTER_R2L: RASTER_B2T,
+                RASTER_L2R: RASTER_T2B,
+                RASTER_GREEDY_H: RASTER_GREEDY_V,
+                RASTER_GREEDY_V: RASTER_GREEDY_H,
+            }
             if self.raster_direction in mapping:
                 self.raster_direction = mapping[self.raster_direction]
         if negative_scale_y:
-            self.raster_preference_top = not self.raster_preference_top
             # Y is negative scale, flip raster_direction if needed
-            if self.raster_direction == 0:
-                self.raster_direction = 1
-            elif self.raster_direction == 1:
-                self.raster_direction = 0
+            self.raster_preference_top = not self.raster_preference_top
+            if self.raster_direction == RASTER_T2B:
+                self.raster_direction = RASTER_B2T
+            elif self.raster_direction == RASTER_B2T:
+                self.raster_direction = RASTER_T2B
         if negative_scale_x:
-            self.raster_preference_left = not self.raster_preference_left
             # X is negative scale, flip raster_direction if needed
-            if self.raster_direction == 2:
-                self.raster_direction = 3
-            elif self.raster_direction == 3:
-                self.raster_direction = 2
-                self.raster_preference_top = False
+            self.raster_preference_left = not self.raster_preference_left
+            if self.raster_direction == RASTER_R2L:
+                self.raster_direction = RASTER_L2R
+            elif self.raster_direction == RASTER_L2R:
+                self.raster_direction = RASTER_R2L
 
         commands.append(make_image)
 
@@ -514,8 +524,8 @@ class RasterOpNode(Node, Parameters):
         settings = self.derive()
         # make an independent copy
         unsupported = self._instructions.get("unsupported_opt", ())
-        if self.opt_method in unsupported:
-            self.opt_method = 0
+        if self.raster_direction in unsupported:
+            self.raster_direction = RASTER_T2B
 
         # Set overscan
         overscan = self.overscan
@@ -526,20 +536,20 @@ class RasterOpNode(Node, Parameters):
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
-        start_minimum_y = self.raster_preference_top > 0
-        start_minimum_x = self.raster_preference_left > 0
-        if direction == 0 or direction == 4:
+        start_on_left = self.raster_preference_top > 0
+        start_on_top = self.raster_preference_left > 0
+        if direction in [RASTER_T2B, RASTER_HATCH, RASTER_CROSSOVER, RASTER_GREEDY_H]:
             horizontal = True
-            start_minimum_y = True
-        elif direction == 1:
+            start_on_top = True
+        elif direction == RASTER_B2T:
             horizontal = True
-            start_minimum_y = False
-        elif direction == 2:
+            start_on_top = False
+        elif direction in (RASTER_R2L, RASTER_GREEDY_V):
             horizontal = False
-            start_minimum_x = False
-        elif direction == 3:
+            start_on_left = False
+        elif direction == RASTER_L2R:
             horizontal = False
-            start_minimum_x = True
+            start_on_left = True
         bidirectional = self.bidirectional
 
         for image_node in self.children:
@@ -595,8 +605,7 @@ class RasterOpNode(Node, Parameters):
                 threshold = 200
                 pil_image = pil_image.point(lambda x: 255 if x > threshold else 0, mode="1")
                 # pil_image = pil_image.convert("1")
-            do_optimize=self.opt_method
-            if do_optimize == 1: # Greedy nearest neighbour
+            if self.raster_direction in (RASTER_GREEDY_H, RASTER_GREEDY_V): # Greedy nearest neighbour
                 # get some image statistics
                 white_pixels = 0
                 used_colors = pil_image.getcolors()
@@ -607,21 +616,21 @@ class RasterOpNode(Node, Parameters):
                 white_pixel_ratio = white_pixels / (pil_image.width * pil_image.height)
                 # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
                 if white_pixel_ratio < 0.3:
-                    do_optimize = 0
-            if self.opt_method >= 2:
-                horizontal = True
-                start_minimum_x = True
-                start_minimum_y = True
-                direction = 0
+                    self.raster_direction = RASTER_T2B if self.raster_direction == RASTER_GREEDY_H else RASTER_L2R
+
+            if self.raster_direction == RASTER_CROSSOVER: # Crossover - need both
                 settings["raster_step_x"] = step_x
                 settings["raster_step_y"] = step_y
-            if self.opt_method == 2 and "split_crossover" in self._instructions:
+                horizontal = True
+                start_on_top = True
+                start_on_left = True
+            if self.raster_direction == RASTER_CROSSOVER and "split_crossover" in self._instructions:
                 self._instructions["mode_filter"] = "ROW"
-                direction = 0
+                direction = RASTER_T2B
                 horizontal=True
                 bidirectional=True
-                start_minimum_x = True
-                start_minimum_y = True
+                start_on_top = True
+                start_on_left = True
                 if horizontal:
                     # Raster step is only along y for horizontal raster
                     settings["raster_step_x"] = 0
@@ -642,14 +651,14 @@ class RasterOpNode(Node, Parameters):
                     step_y=step_y,
                     inverted=False,
                     bidirectional=bidirectional,
+                    direction=direction,
                     horizontal=horizontal,
-                    start_minimum_y=start_minimum_y,
-                    start_minimum_x=start_minimum_x,
+                    start_minimum_y=start_on_left,
+                    start_minimum_x=start_on_top,
                     overscan=overscan,
                     settings=cutsettings,
                     passes=passes,
                     post_filter=image_filter,
-                    opt_method=do_optimize,
                     laserspot=dotwidth,
                     special=self._instructions,
                 )
@@ -660,7 +669,7 @@ class RasterOpNode(Node, Parameters):
                 # Now set it for the next pass
                 horizontal=False
                 bidirectional=True
-                direction = 2
+                direction = RASTER_L2R
                 if horizontal:
                     # Raster step is only along y for horizontal raster
                     settings["raster_step_x"] = 0
@@ -685,23 +694,28 @@ class RasterOpNode(Node, Parameters):
                 step_y=step_y,
                 inverted=False,
                 bidirectional=bidirectional,
+                direction=direction,
                 horizontal=horizontal,
-                start_minimum_y=start_minimum_y,
-                start_minimum_x=start_minimum_x,
+                start_minimum_y=start_on_left,
+                start_minimum_x=start_on_top,
                 overscan=overscan,
                 settings=cutsettings,
                 passes=passes,
                 post_filter=image_filter,
-                opt_method=do_optimize,
                 laserspot=dotwidth,
                 special=self._instructions,
             )
             cut.path = path
             cut.original_op = self.type
             cutcodes.append(cut)
-            if direction == 4:
+            if direction == RASTER_HATCH:
                 # Create optional crosshatch cut
-                horizontal = not horizontal
+                if start_on_top:
+                    direction = RASTER_T2B
+                else:
+                    direction = RASTER_B2T
+
+                horizontal = False
                 settings = dict(settings)
                 if horizontal:
                     # Raster step is only along y for horizontal raster
@@ -722,13 +736,13 @@ class RasterOpNode(Node, Parameters):
                     step_y=step_y,
                     inverted=False,
                     bidirectional=bidirectional,
+                    direction=direction,
                     horizontal=horizontal,
-                    start_minimum_y=start_minimum_y,
-                    start_minimum_x=start_minimum_x,
+                    start_minimum_y=start_on_left,
+                    start_minimum_x=start_on_top,
                     overscan=overscan,
                     settings=cutsettings,
                     passes=passes,
-                    opt_method=do_optimize,
                     laserspot=dotwidth,
                     special=self._instructions,
                 )

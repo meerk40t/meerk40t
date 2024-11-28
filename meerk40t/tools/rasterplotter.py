@@ -22,6 +22,17 @@ import numpy as np
 from math import sqrt
 from time import perf_counter
 from meerk40t.device.basedevice import PLOT_AXIS_SWAP
+from meerk40t.constants import (
+    RASTER_T2B,
+    RASTER_B2T,
+    RASTER_R2L,
+    RASTER_L2R,
+    RASTER_HATCH,
+    RASTER_GREEDY_H,
+    RASTER_GREEDY_V,
+    RASTER_CROSSOVER,
+)
+
 
 class RasterPlotter:
     def __init__(
@@ -29,6 +40,7 @@ class RasterPlotter:
         data,
         width,
         height,
+        direction=0,
         horizontal=True,
         start_minimum_y=True,
         start_minimum_x=True,
@@ -41,9 +53,8 @@ class RasterPlotter:
         step_x=1,
         step_y=1,
         filter=None,
-        opt_method=False,
         laserspot=0,
-        special={},
+        special=None,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -66,7 +77,7 @@ class RasterPlotter:
                     implementation is agnostic regarding what data is provided. The filter is expected
                     to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                     part of the skip pixel.
-        @param opt_method: 0 no optimization, 1 experimental greedy path optimisation, 2 crossover
+        @param direction: 0 top 2 bottom, 1 bottom 2 top, 2 right 2 left, 3 left 2 right, 4 greedy path optimisation, 5 crossover
                     a) greedy will keep the main direction, a bit time intensive for larger images
                     b) crossover draws first all majority lines, then all majority columns
                        (to be decided by looping over the matrix and looking at the amount
@@ -74,14 +85,30 @@ class RasterPlotter:
         @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
         @param special: a dict of special treatment instructions for the different algorithms
         """
+        if special is None:
+            special = {}
         self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
-        self.horizontal = horizontal
-        self.start_minimum_y = start_minimum_y
-        self.start_minimum_x = start_minimum_x
-        self.bidirectional = bidirectional
+        self.direction = direction
+        parameters = {
+            # Provide an override for the minimumx / minimumy / horizontal / bidirectional
+            RASTER_T2B: (None, True, True, None), # top to bottom
+            RASTER_B2T: (None, False, True, None), # bottom to top
+            RASTER_R2L: (False, None, False, None), # right to left
+            RASTER_L2R: (True, None, False, None), # left to right
+            RASTER_HATCH: (None, None, None, None), # crossraster (one of the two)
+            RASTER_GREEDY_H: (True, None, None, True), # greedy neighbour horizontal
+            RASTER_GREEDY_V: (None, True, None, True), # greedy neighbour
+            RASTER_CROSSOVER: (None, None, None, True), # true crossover
+        }
+        def_x, def_y, def_hor, def_bidir = parameters.get(direction, (None, None, None, None))
+        self.start_minimum_x = start_minimum_x if def_x is None else def_x
+        self.start_minimum_y = start_minimum_y if def_y is None else def_y
+        self.horizontal = horizontal if def_hor is None else def_hor
+        self.bidirectional = bidirectional if def_bidir is None else def_bidir
+
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
         # laserspot = width in pixels, so the surrounding logic needs to calculate it
@@ -101,9 +128,8 @@ class RasterPlotter:
         self.filter = filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
         self.final_x, self.final_y = self.calculate_last_pixel()
-        self.opt_method = opt_method
-
-
+        self._distance_travel = 0
+        self._distance_burn = 0
 
     def px(self, x, y):
         """
@@ -166,6 +192,14 @@ class RasterPlotter:
             if pixel != self.skip_pixel:
                 return y
         return None
+
+    @property
+    def distance_travel(self):
+        return self._distance_travel
+
+    @property
+    def distance_burn(self):
+        return self._distance_burn
 
     # def nextcolor_left(self, x, y, default=None):
     #     """
@@ -417,6 +451,9 @@ class RasterPlotter:
         offset_y = self.offset_y
         step_x = self.step_x
         step_y = self.step_y
+        self._distance_travel = 0
+        self._distance_burn = 0
+
         if self.initial_x is None:
             # There is no image.
             return
@@ -428,7 +465,26 @@ class RasterPlotter:
             defaultdir = "c:\\temp\\" if system() == "Windows" else ""
             has_duplicates = 0
             with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
-                f.write(f"0.9.6\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+                methods = (
+                    "Top2Bottom",
+                    "Bottom2Top",
+                    "Right2Left",
+                    "Left2Right",
+                    "Greedy Neighbor",
+                    "Crossover",
+                    "Test: Horizontal Rectangle",
+                    "Test: Vertical Rectangle",
+                    "Test: Horizontal Snake",
+                    "Test: Vertical Snake",
+                    "Test: Spiral",
+                    "Unknown",
+                )
+                try:
+                    m = methods[self.direction]
+                except IndexError:
+                    m = methods[-1]
+                m = f"Method: {m}"
+                f.write(f"0.9.6\n{m}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
                 f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
                 f.write(f"Image dimensions: {self.width}x{self.height}\n")
                 f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
@@ -437,20 +493,6 @@ class RasterPlotter:
                     f.write(f"Special instructions:\n")
                     for key, value in self.special.items():
                         f.write(f"  {key} = {value}\n")
-                if self.opt_method == 1:
-                    f.write("Optimization: Greedy Neighbor\n")
-                if self.opt_method == 2:
-                    f.write("Optimization: Crossover\n")
-                if self.opt_method == 3:
-                    f.write("Testpattern #1: Rectangle starting horizontally\n")
-                if self.opt_method == 4:
-                    f.write("Testpattern #2: Rectangle starting vertically\n")
-                if self.opt_method == 5:
-                    f.write("Testpattern #3: Horizontal Snake\n")
-                if self.opt_method == 6:
-                    f.write("Testpattern #4: Vertical Snake\n")
-                if self.opt_method == 7:
-                    f.write("Testpattern #5: Spiral\n")
                 f.write("----------------------------------------------------------------------\n")
                 test_dict = {}
                 lastx = self.initial_x
@@ -490,38 +532,40 @@ class RasterPlotter:
                     print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
                     print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
                     print(f"Image dimensions: {self.width}x{self.height}")
-            if self.use_integers:
-                for x, y, on in data:
-                    if x is None or y is None:
-                        yield x, y, on
-                    else:
-                        yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
-            else:
-                for x, y, on in data:
-                    if x is None or y is None:
-                        yield x, y, on
-                    else:
-                        yield offset_x + step_x * x, offset_y + y * step_y, on
+
+        last_x = offset_x
+        last_y = offset_y
+        if self.use_integers:
+            for x, y, on in self._plot_pixels():
+                if x is None or y is None:
+                    yield x, y, on
+                else:
+                    nx = int(round(offset_x + step_x * x))
+                    ny = int(round(offset_y + y * step_y))
+                    self._distance_burn += 0 if on == 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
+                    self._distance_travel += 0 if on != 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
+                    yield nx, ny, on
+                    last_x = nx
+                    last_y = ny
         else:
-            if self.use_integers:
-                for x, y, on in self._plot_pixels():
-                    if x is None or y is None:
-                        yield x, y, on
-                    else:
-                        yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
-            else:
-                for x, y, on in self._plot_pixels():
-                    if x is None or y is None:
-                        yield x, y, on
-                    else:
-                        yield offset_x + step_x * x, offset_y + y * step_y, on
+            for x, y, on in self._plot_pixels():
+                if x is None or y is None:
+                    yield x, y, on
+                else:
+                    nx = int(round(offset_x + step_x * x))
+                    ny = int(round(offset_y + y * step_y))
+                    self._distance_burn += 0 if on == 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
+                    self._distance_travel += 0 if on != 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
+                    yield offset_x + step_x * x, offset_y + y * step_y, on
+                    last_x = nx
+                    last_y = ny
 
     def _plot_pixels(self):
-        if self.opt_method == 1:
+        if self.direction == 5:
             yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
-        elif self.opt_method == 2:
+        elif self.direction == 6:
             yield from self._plot_crossover()
-        elif self.opt_method > 2:
+        elif self.direction > 6:
             yield from self.testpattern_generator()
         elif self.horizontal:
             yield from self._plot_horizontal()
@@ -536,10 +580,7 @@ class RasterPlotter:
         for y in range(self.height):
             msg:str = f"{y:3d}: "
             for x in range(self.width):
-                if self.data[x, y] == BLANK:
-                    msg += "."
-                else:
-                    msg += "X"
+                msg += "." if self.data[x, y] == BLANK else "X"
             print (msg)
 
     def _get_pixel_chains(self, xy:int, is_x : bool) -> list:
@@ -1037,7 +1078,7 @@ class RasterPlotter:
                     image[rowidx,:] = 0
                     covered_row[rowidx] = True
                     stored_row[rowidx] = 0
-                    for rc in range(0, self.overlap):
+                    for rc in range(self.overlap):
                         r = rowidx - rc
                         if r >= 0:
                             image[r,:] = 0
@@ -1067,7 +1108,7 @@ class RasterPlotter:
                     image[:, colidx] = 0
                     covered_col[colidx] = True
                     stored_col[colidx] = 0
-                    for rc in range(0, self.overlap):
+                    for rc in range(self.overlap):
                         r = colidx - rc
                         if r >= 0:
                             image[r,:] = 0
@@ -1240,10 +1281,7 @@ class RasterPlotter:
             print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
 
     def testpattern_generator(self):
-        on = self.filter(0)
-        off = 0
-        # print (f"on={on}, off={off}")
-        if self.opt_method == 3:
+        def rectangle_h():
             # simple rectangle
             self.initial_x = 0
             self.initial_y = 0
@@ -1263,7 +1301,8 @@ class RasterPlotter:
 
             yield 1, None, PLOT_AXIS_SWAP
             yield 0, 0, on
-        if self.opt_method == 4:
+
+        def rectangle_v():
             # simple rectangle but start with y movements first
             self.initial_x = 0
             self.initial_y = 0
@@ -1284,7 +1323,8 @@ class RasterPlotter:
             yield 0, None, PLOT_AXIS_SWAP
             yield 0, 0, on
 
-        elif self.opt_method == 5:
+
+        def snake_h():
             # horizontal snake
             self.initial_x = 0
             self.initial_y = 0
@@ -1295,10 +1335,7 @@ class RasterPlotter:
             wd = self.width - 1
             left = True
             while y < self.height - 2:
-                if left:
-                    x = wd
-                else:
-                    x = 0
+                x = wd if left else 0
                 self.horizontal = True
                 yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
@@ -1310,7 +1347,7 @@ class RasterPlotter:
                 self.final_x = x
                 self.final_y = y
 
-        elif self.opt_method == 6:
+        def snake_v():
             # vertical snake
             self.initial_x = 0
             self.initial_y = 0
@@ -1319,10 +1356,7 @@ class RasterPlotter:
             ht = self.height - 1
             top = True
             while x < self.width - 2:
-                if top:
-                    y = ht
-                else:
-                    y = 0
+                y = ht if top else 0
                 self.horizontal = False
                 yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
@@ -1334,7 +1368,7 @@ class RasterPlotter:
                 self.final_x = x
                 self.final_y = y
 
-        elif self.opt_method == 7:
+        def spiral():
             # Spiral to inside
             self.initial_x = 0
             self.initial_y = 0
@@ -1369,3 +1403,13 @@ class RasterPlotter:
                 height -= 4
                 self.final_x = x
                 self.final_y = y
+
+        on = self.filter(0)
+        off = 0
+        # print (f"on={on}, off={off}")
+        method = self.direction - RASTER_CROSSOVER - 1
+        methods = (rectangle_h, rectangle_v, snake_h, snake_v, spiral)
+        try:
+            methods[method]()
+        except IndexError:
+            print (f"Unknown testgenerator for {self.direction}")

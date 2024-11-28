@@ -586,7 +586,7 @@ class Warnings:
             if not unsupported:
                 return flag, count
             for op in self.context.elements.ops():
-                if hasattr(op, "opt_method") and op.opt_method in unsupported:
+                if hasattr(op, "raster_direction") and op.raster_direction in unsupported:
                     flag = True
                     count += 1
 
@@ -698,7 +698,7 @@ class Warnings:
         if invalid_opt:
             self._concerns.append(
                 (
-                    _("- Raster/Images have an optimisation method that is unsupported on this device: no optimisation will be applied in these cases") + f" ({info})\n",
+                    _("- Raster/Images have a raster method that is unsupported on this device: no optimisation will be applied in these cases") + f" ({info})\n",
                     CONCERN_NORMAL
                 )
             )
