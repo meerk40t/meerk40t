@@ -1018,56 +1018,42 @@ class RasterPlotter:
             # Iterate through the matrix, we cover all rows and cols
             colidx = 0
             rowidx = 0
-            covered_row = [False] * rows
-            covered_col = [False] * cols
+            covered_row = [None] * rows
+            covered_col = [None] * cols
             stored_row = np.zeros(rows)
             stored_col = np.zeros(cols)
             stored_row_len = np.zeros(rows)
             stored_col_len = np.zeros(cols)
             recalc_row = True
             recalc_col = True
-            comparison = 0
             while True:
                 if recalc_col:
                     for i in range(cols):
                         col_len = cols
-                        if covered_col[i]:
-                            count = 0
-                        else:
+                        if covered_col[i] is None:
                             nonzero_indices = np.nonzero(image[:, i])[0]
                             count = len(nonzero_indices)
                             if count == 0:
                                 covered_col[i] = True
                             else:
                                 col_len = nonzero_indices[-1] - nonzero_indices[0] + 1
-                            # count = np.count_nonzero(image[:, i])
-                            # if count == 0:
-                            #     covered_col[i] = True
-                            # else:
-                            #     nonzero_indices = np.nonzero(image[:, i])[0]
-                            #     col_len = nonzero_indices[-1] - nonzero_indices[0] + 1
-                        stored_col[i] = count
-                        stored_col_len[i] = col_len
+                                covered_col[i] = False
+                            stored_col[i] = count
+                            stored_col_len[i] = col_len
                 if recalc_row:
                     for i in range(rows):
                         row_len = rows
-                        if covered_row[i]:
-                            count = 0
-                        else:
+                        if covered_row[i] is None:
                             nonzero_indices = np.nonzero(image[i, :])[0]
                             count = len(nonzero_indices)
                             if count == 0:
                                 covered_row[i] = True
                             else:
                                 row_len = nonzero_indices[-1] - nonzero_indices[0] + 1
-                            # count = np.count_nonzero(image[i, :])
-                            # if count == 0:
-                            #     covered_row[i] = True
-                            # else:
-                            #     nonzero_indices = np.nonzero(image[i, :])[0]
-                            #     row_len = nonzero_indices[-1] - nonzero_indices[0] + 1
-                        stored_row[i] = count
-                        stored_row_len[i] = row_len
+                                covered_row[i] = False
+                            stored_row[i] = count
+                            stored_row_len[i] = row_len
+
                 colidx = np.argmax(stored_col)
                 rowidx = np.argmax(stored_row)
 
@@ -1088,11 +1074,13 @@ class RasterPlotter:
                 if row_ratio >= col_ratio:
                     last_pixel = None
                     segments = []
-                    msg = ""
+                    # msg = ""
                     for idx in range(cols):
                         on = image[rowidx, idx]
-                        msg = f"{msg}{'X' if on else '.'}"
+                        # msg = f"{msg}{'X' if on else '.'}"
                         if on:
+                            if not covered_col[idx]:
+                                covered_col[idx] = None # needs recalc
                             if on == last_pixel:
                                 segments[-1][1] = idx
                             else:
@@ -1120,11 +1108,13 @@ class RasterPlotter:
                 else:
                     last_pixel = None
                     segments = []
-                    msg = ""
+                    # msg = ""
                     for idx in range(rows):
                         on = image[idx, colidx]
-                        msg = f"{msg}{'X' if on else '.'}"
+                        # msg = f"{msg}{'X' if on else '.'}"
                         if on:
+                            if not covered_row[idx]:
+                                covered_row[idx] = None # needs recalc
                             if on == last_pixel:
                                 segments[-1][1] = idx
                             else:

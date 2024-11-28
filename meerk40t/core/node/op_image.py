@@ -387,7 +387,7 @@ class ImageOpNode(Node, Parameters):
         for key, description, method in context.kernel.lookup_all("raster_preprocessor/.*"):
             if key == self.raster_direction:
                 plan.commands.append(call_me(method))
-                print (f"Found {description}")
+                # print (f"Found {description}")
                 break
 
     def as_cutobjects(self, closed_distance=15, passes=1):
@@ -698,10 +698,7 @@ class ImageOpNode(Node, Parameters):
             cutcodes.append(cut)
             if self.raster_direction == RASTER_HATCH:
                 # Create optional crosshatch cut
-                if start_on_left:
-                    direction = RASTER_L2R
-                else:
-                    direction = RASTER_R2L
+                direction = RASTER_L2R if start_on_left else RASTER_R2L
                 horizontal = False
                 settings = dict(settings)
                 if horizontal:
@@ -737,8 +734,7 @@ class ImageOpNode(Node, Parameters):
                 cut.original_op = self.type
                 cutcodes.append(cut)
             # Yield all generated cutcodes of this image
-            for cut in cutcodes:
-                yield cut
+            yield from cutcodes
 
     @property
     def bounds(self):

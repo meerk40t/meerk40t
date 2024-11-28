@@ -523,7 +523,7 @@ class RasterOpNode(Node, Parameters):
         for key, description, method in context.kernel.lookup_all("raster_preprocessor/.*"):
             if key == self.raster_direction:
                 plan.commands.append(call_me(method))
-                print (f"Found {description}")
+                # print (f"Found {description}")
                 break
 
 
@@ -728,10 +728,8 @@ class RasterOpNode(Node, Parameters):
             cutcodes.append(cut)
             if self.raster_direction == RASTER_HATCH:
                 # Create optional crosshatch cut
-                if start_on_left:
-                    direction = RASTER_L2R
-                else:
-                    direction = RASTER_R2L
+
+                direction = RASTER_L2R if start_on_left else RASTER_R2L
 
                 horizontal = False
                 settings = dict(settings)

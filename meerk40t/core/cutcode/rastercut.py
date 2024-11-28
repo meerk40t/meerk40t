@@ -144,14 +144,10 @@ class RasterCut(CutObject):
         return scanlines * total_distance_per_scanline
 
     def extra(self):
-        if self.horizontal:
-            return self.height * 0.119
-        else:
-            return self.width * 0.119
+        return self.height * 0.119 if self.horizontal else self.width * 0.119
 
     def internal_travel(self):
-        distance = self.plot.distance_travel
-        return distance
+        return self.plot.distance_travel
 
     def internal_length(self):
         distance = self.plot.distance_burn
