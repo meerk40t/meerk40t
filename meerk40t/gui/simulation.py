@@ -836,7 +836,9 @@ class SimulationPanel(wx.Panel, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
+
         self.statistics = self.cutcode.provide_statistics()
+        wx.CallLater(1500, self.reload_statistics )
 
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
@@ -1029,6 +1031,12 @@ class SimulationPanel(wx.Panel, Job):
         self.slided_in = True
         self.start_time = perf_counter()
         self.debug(f"Init done: {perf_counter()-self.start_time}")
+
+    def reload_statistics(self):
+        self.statistics = self.cutcode.provide_statistics()
+        self._set_slider_dimensions()
+        self.sim_travel.initvars()
+        self.update_fields()
 
     def debug(self, message):
         # print (message)
@@ -1576,12 +1584,13 @@ class SimulationPanel(wx.Panel, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
-        self.statistics = self.cutcode.provide_statistics()
+
+        # self.reload_statistics()
+
+        wx.CallLater(1500, self.reload_statistics )
+
         # for idx, stat in enumerate(self.statistics):
         #     print(f"#{idx}: {stat}")
-        self._set_slider_dimensions()
-        self.sim_travel.initvars()
-        self.update_fields()
         bb = self.cutplan._previous_bounds
         if bb is None or math.isinf(bb[0]):
             self.parent.SetTitle(_("Simulation"))
@@ -1676,6 +1685,7 @@ class SimulationPanel(wx.Panel, Job):
             "total_distance_travel": 0,
             "total_distance_cut": 0,
             "total_time_travel": 0,
+            "total_internal_travel": 0,
             "total_time_cut": 0,
             "total_time_extra": 0,
         }
@@ -1693,10 +1703,16 @@ class SimulationPanel(wx.Panel, Job):
         travel_mm = (
             item["total_distance_travel"] + partials["total_distance_travel"]
         ) / mm
+        internal_mm = (
+            item["total_internal_travel"] + partials["total_internal_travel"]
+        ) / mm
         cuts_mm = (item["total_distance_cut"] + partials["total_distance_cut"]) / mm
         # travel_mm = self.cutcode.length_travel(stop_at=step) / mm
         # cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
-        self.text_distance_travel_step.SetValue(len_str(travel_mm))
+        info = len_str(travel_mm)
+        if internal_mm != 0:
+            info += f" ({len_str(internal_mm)})"
+        self.text_distance_travel_step.SetValue(info)
         self.text_distance_laser_step.SetValue(len_str(cuts_mm))
         self.text_distance_total_step.SetValue(len_str(travel_mm + cuts_mm))
         try:

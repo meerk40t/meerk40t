@@ -149,6 +149,16 @@ class RasterCut(CutObject):
         else:
             return self.width * 0.119
 
+    def internal_travel(self):
+        distance = self.plot.distance_travel
+        return distance
+
+    def internal_length(self):
+        distance = self.plot.distance_burn
+        if distance == 0:
+            distance = self.length()
+        return distance
+
     def major_axis(self):
         return 0 if self.plot.horizontal else 1
 
