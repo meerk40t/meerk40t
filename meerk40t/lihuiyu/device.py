@@ -1002,7 +1002,7 @@ class LihuiyuDevice(Service, Status):
     def get_raster_instructions(self):
         return {
             "split_crossover": True,
-            "unsupported_opt": (mkconst.RASTER_CROSSOVER, mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V),  # Greedy loses registration way too often to be reliable
+            "unsupported_opt": (mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V),  # Greedy loses registration way too often to be reliable
             "gantry" : True,
         }
 
