@@ -620,7 +620,6 @@ class ImageOpNode(Node, Parameters):
                     settings["raster_step_y"] = step_y
                 if self.raster_direction == RASTER_CROSSOVER and "split_crossover" in self._instructions:
                     self._instructions["mode_filter"] = "ROW"
-                    direction = RASTER_T2B
                     horizontal=True
                     bidirectional=True
                     start_on_top = True
@@ -654,7 +653,7 @@ class ImageOpNode(Node, Parameters):
                         passes=passes,
                         post_filter=image_filter,
                         laserspot=dotwidth,
-                        special=self._instructions,
+                        special=dict(self._instructions),
                     )
                     cut.path = path
                     cut.original_op = self.type
@@ -662,8 +661,6 @@ class ImageOpNode(Node, Parameters):
 
                     # Now set it for the next pass
                     horizontal=False
-                    bidirectional=True
-                    direction = RASTER_L2R
                     if horizontal:
                         # Raster step is only along y for horizontal raster
                         settings["raster_step_x"] = 0

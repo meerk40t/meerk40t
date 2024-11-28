@@ -486,11 +486,11 @@ class RasterPlotter:
                 s_meth = f"Method: Unknown {self.direction}"
             print (s_meth)
             data = list(self._plot_pixels())
-            from time import perf_counter_ns
             from platform import system
             defaultdir = "c:\\temp\\" if system() == "Windows" else ""
             has_duplicates = 0
-            with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
+            tstamp = int(perf_counter() * 100)
+            with open(f"{defaultdir}plot_{tstamp}.txt", mode="w") as f:
                 f.write(f"0.9.6\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
                 f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
                 f.write(f"Image dimensions: {self.width}x{self.height}\n")
@@ -1007,7 +1007,7 @@ class RasterPlotter:
             # slightly advantageous for gantry lasers)
             if self.special.get("gantry", False):
                 colfactor = 1.0
-                rowfactor = 1.1
+                rowfactor = 0.8
             else:
                 colfactor = 1.0
                 rowfactor = 1.0
@@ -1022,37 +1022,68 @@ class RasterPlotter:
             covered_col = [False] * cols
             stored_row = np.zeros(rows)
             stored_col = np.zeros(cols)
+            stored_row_len = np.zeros(rows)
+            stored_col_len = np.zeros(cols)
             recalc_row = True
             recalc_col = True
+            comparison = 0
             while True:
                 if recalc_col:
                     for i in range(cols):
+                        col_len = cols
                         if covered_col[i]:
                             count = 0
                         else:
-                            count = np.count_nonzero(image[:, i])
+                            nonzero_indices = np.nonzero(image[:, i])[0]
+                            count = len(nonzero_indices)
                             if count == 0:
                                 covered_col[i] = True
+                            else:
+                                col_len = nonzero_indices[-1] - nonzero_indices[0] + 1
+                            # count = np.count_nonzero(image[:, i])
+                            # if count == 0:
+                            #     covered_col[i] = True
+                            # else:
+                            #     nonzero_indices = np.nonzero(image[:, i])[0]
+                            #     col_len = nonzero_indices[-1] - nonzero_indices[0] + 1
                         stored_col[i] = count
+                        stored_col_len[i] = col_len
                 if recalc_row:
                     for i in range(rows):
+                        row_len = rows
                         if covered_row[i]:
                             count = 0
                         else:
-                            count = np.count_nonzero(image[i, :])
+                            nonzero_indices = np.nonzero(image[i, :])[0]
+                            count = len(nonzero_indices)
                             if count == 0:
                                 covered_row[i] = True
+                            else:
+                                row_len = nonzero_indices[-1] - nonzero_indices[0] + 1
+                            # count = np.count_nonzero(image[i, :])
+                            # if count == 0:
+                            #     covered_row[i] = True
+                            # else:
+                            #     nonzero_indices = np.nonzero(image[i, :])[0]
+                            #     row_len = nonzero_indices[-1] - nonzero_indices[0] + 1
                         stored_row[i] = count
+                        stored_row_len[i] = row_len
                 colidx = np.argmax(stored_col)
                 rowidx = np.argmax(stored_row)
+
                 col_count = stored_col[colidx]
+                col_len = stored_col_len[colidx]
                 row_count = stored_row[rowidx]
+                row_len = stored_row_len[rowidx]
 
                 if row_count == col_count == 0:
                     break
                 # Determine whether there are more pixels in the row or column
-                row_ratio = row_count / cols * rowfactor
-                col_ratio = col_count / rows * colfactor
+
+                row_ratio = row_count * row_count / row_len * rowfactor
+                col_ratio = col_count * col_count / col_len * colfactor
+                # print (f"Col #{rowidx}: {int(row_count):3d} pixel over {int(row_len):3d} length, ratio: {row_ratio:.3f} {'winner' if row_ratio >= col_ratio else 'loser'}")
+                # print (f"Row #{colidx}: {int(col_count):3d} pixel over {int(col_len):3d} length, ratio: {col_ratio:.3f} {'winner' if row_ratio < col_ratio else 'loser'}")
                 # if row_count >= col_count:
                 if row_ratio >= col_ratio:
                     last_pixel = None
