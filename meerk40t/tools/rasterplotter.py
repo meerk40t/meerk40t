@@ -1076,12 +1076,12 @@ class RasterPlotter:
                     stored_row[rowidx] = 0
                     for rc in range(self.overlap):
                         r = rowidx - rc
-                        if r >= 0:
+                        if 0 <= r < rows:
                             image[r,:] = 0
                             covered_row[r] = True
                             stored_row[r] = 0
                         r = rowidx + rc
-                        if r < rows:
+                        if 0 <= r < rows:
                             image[r,:] = 0
                             covered_row[r] = True
                             stored_row[r] = 0
@@ -1107,13 +1107,13 @@ class RasterPlotter:
                     stored_col[colidx] = 0
                     for rc in range(self.overlap):
                         r = colidx - rc
-                        if r >= 0:
-                            image[r,:] = 0
+                        if 0 <= r < cols:
+                            image[:, r] = 0
                             covered_col[r] = True
                             stored_col[r] = 0
                         r = rowidx + rc
-                        if r < cols:
-                            image[r,:] = 0
+                        if 0 <= r < cols:
+                            image[:, r] = 0
                             covered_col[r] = True
                             stored_col[r] = 0
                     recalc_row = True
