@@ -12,10 +12,6 @@ INT_PARAMETERS = (
     "loops",
     "jog_distance",
     "raster_direction",
-    "raster_preference_top",
-    "raster_preference_right",
-    "raster_preference_left",
-    "raster_preference_bottom",
     "input_mask",
     "input_value",
     "output_mask",
@@ -51,6 +47,8 @@ BOOL_PARAMETERS = (
     "advanced",
     "stopop",
     "effect",
+    "raster_preference_top",
+    "raster_preference_left",
 )
 
 STRING_PARAMETERS = (
@@ -111,7 +109,7 @@ class Parameters:
             elif v in INT_PARAMETERS:
                 settings[v] = int(float(settings[v]))
             elif v in BOOL_PARAMETERS:
-                settings[v] = str(settings[v]).lower() == "true"
+                settings[v] = str(settings[v]).lower() in ("true", "1")
             elif v in STRING_PARAMETERS:
                 pass  # Already strings.
             else:
@@ -588,7 +586,7 @@ class Parameters:
 
     @property
     def raster_preference_top(self):
-        return self.settings.get("raster_preference_top", 0)
+        return self.settings.get("raster_preference_top", True)
 
     @raster_preference_top.setter
     def raster_preference_top(self, value):
@@ -596,31 +594,13 @@ class Parameters:
         self.__dict__["raster_preference_top"] = value
 
     @property
-    def raster_preference_right(self):
-        return self.settings.get("raster_preference_right", 0)
-
-    @raster_preference_right.setter
-    def raster_preference_right(self, value):
-        self.settings["raster_preference_right"] = value
-        self.__dict__["raster_preference_right"] = value
-
-    @property
     def raster_preference_left(self):
-        return self.settings.get("raster_preference_left", 0)
+        return self.settings.get("raster_preference_left", True)
 
     @raster_preference_left.setter
     def raster_preference_left(self, value):
         self.settings["raster_preference_left"] = value
         self.__dict__["raster_preference_left"] = value
-
-    @property
-    def raster_preference_bottom(self):
-        return self.settings.get("raster_preference_bottom", 0)
-
-    @raster_preference_bottom.setter
-    def raster_preference_bottom(self, value):
-        self.settings["raster_preference_bottom"] = value
-        self.__dict__["raster_preference_bottom"] = value
 
     #####################
     # JOG PROPERTIES

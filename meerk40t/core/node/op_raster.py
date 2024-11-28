@@ -510,6 +510,22 @@ class RasterOpNode(Node, Parameters):
                 self.raster_direction = RASTER_R2L
 
         commands.append(make_image)
+        # Look for registered raster (image) preprocessors,
+        # these are routines that take one image as parameter
+        # and deliver a set of (result image, method (aka raster_direction) )
+        # that will be dealt with independently
+        # The registered datastructure is (rasterid, description, method)
+        def call_me(method):
+            def handler():
+                method(self)
+            return handler
+
+        for key, description, method in context.kernel.lookup_all("raster_preprocessor/.*"):
+            if key == self.raster_direction:
+                plan.commands.append(call_me(method))
+                print (f"Found {description}")
+                break
+
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -533,26 +549,31 @@ class RasterOpNode(Node, Parameters):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
 
-        # Set variables by direction
-        direction = self.raster_direction
-        horizontal = False
-        start_on_left = self.raster_preference_top > 0
-        start_on_top = self.raster_preference_left > 0
-        if direction in [RASTER_T2B, RASTER_HATCH, RASTER_CROSSOVER, RASTER_GREEDY_H]:
-            horizontal = True
-            start_on_top = True
-        elif direction == RASTER_B2T:
-            horizontal = True
-            start_on_top = False
-        elif direction in (RASTER_R2L, RASTER_GREEDY_V):
-            horizontal = False
-            start_on_left = False
-        elif direction == RASTER_L2R:
-            horizontal = False
-            start_on_left = True
-        bidirectional = self.bidirectional
-
         for image_node in self.children:
+            if hasattr(image_node, "direction") and image_node.direction is not None:
+                direction = image_node.direction
+            else:
+                direction = self.raster_direction
+            horizontal = False
+            bidirectional = self.bidirectional
+            start_on_left = self.raster_preference_left
+            start_on_top = self.raster_preference_top
+            # Set variables by direction
+            if direction in (RASTER_GREEDY_V, RASTER_L2R, RASTER_R2L):
+                horizontal = False
+            if direction in (RASTER_B2T, RASTER_T2B, RASTER_HATCH, RASTER_CROSSOVER, RASTER_GREEDY_H):
+                horizontal = True
+            if direction in (RASTER_T2B, RASTER_CROSSOVER):
+                start_on_top = True
+            if direction == RASTER_B2T:
+                start_on_top = False
+            if direction == RASTER_R2L:
+                start_on_left = False
+            if direction == RASTER_L2R:
+                start_on_left = True
+            if direction in (RASTER_GREEDY_H, RASTER_GREEDY_V, RASTER_CROSSOVER):
+                bidirectional = True
+
             cutcodes = []
             # Process each child. Some core settings are the same for each child.
 
@@ -653,8 +674,8 @@ class RasterOpNode(Node, Parameters):
                     bidirectional=bidirectional,
                     direction=direction,
                     horizontal=horizontal,
-                    start_minimum_y=start_on_left,
-                    start_minimum_x=start_on_top,
+                    start_minimum_x=start_on_left,
+                    start_minimum_y=start_on_top,
                     overscan=overscan,
                     settings=cutsettings,
                     passes=passes,
@@ -696,8 +717,8 @@ class RasterOpNode(Node, Parameters):
                 bidirectional=bidirectional,
                 direction=direction,
                 horizontal=horizontal,
-                start_minimum_y=start_on_left,
-                start_minimum_x=start_on_top,
+                start_minimum_x=start_on_left,
+                start_minimum_y=start_on_top,
                 overscan=overscan,
                 settings=cutsettings,
                 passes=passes,
@@ -708,12 +729,12 @@ class RasterOpNode(Node, Parameters):
             cut.path = path
             cut.original_op = self.type
             cutcodes.append(cut)
-            if direction == RASTER_HATCH:
+            if self.raster_direction == RASTER_HATCH:
                 # Create optional crosshatch cut
-                if start_on_top:
-                    direction = RASTER_T2B
+                if start_on_left:
+                    direction = RASTER_L2R
                 else:
-                    direction = RASTER_B2T
+                    direction = RASTER_R2L
 
                 horizontal = False
                 settings = dict(settings)
@@ -738,8 +759,8 @@ class RasterOpNode(Node, Parameters):
                     bidirectional=bidirectional,
                     direction=direction,
                     horizontal=horizontal,
-                    start_minimum_y=start_on_left,
-                    start_minimum_x=start_on_top,
+                    start_minimum_x=start_on_left,
+                    start_minimum_y=start_on_top,
                     overscan=overscan,
                     settings=cutsettings,
                     passes=passes,

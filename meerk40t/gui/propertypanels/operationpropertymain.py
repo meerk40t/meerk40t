@@ -42,17 +42,17 @@ _ = wx.GetTranslation
 
 def validate_raster_settings(node):
     # Make sure things are properly set...
-    if node.raster_direction in (RASTER_T2B, RASTER_GREEDY_H):
-        node.raster_preference_top = 1
+    if node.raster_direction in (RASTER_T2B, ):
+        node.raster_preference_top = True
     elif node.raster_direction in (RASTER_B2T, ):
-        node.raster_preference_top = 0
-    elif node.raster_direction in (RASTER_R2L, RASTER_GREEDY_V):
-        node.raster_preference_left = 0
+        node.raster_preference_top = False
+    elif node.raster_direction in (RASTER_R2L, ):
+        node.raster_preference_left = True
     elif node.raster_direction in (RASTER_L2R, ):
-        node.raster_preference_left = 1
+        node.raster_preference_left = False
     elif node.raster_direction in (RASTER_HATCH, RASTER_CROSSOVER):
-        node.raster_preference_top = 1
-        node.raster_preference_left = 1
+        node.raster_preference_top = True
+        node.raster_preference_left = True
     if node.raster_direction in (RASTER_CROSSOVER, RASTER_GREEDY_H, RASTER_GREEDY_V):
         node.bidirectional = True
 
@@ -1104,8 +1104,8 @@ class PanelStartPreference(wx.Panel):
         if w<10 or h<10: # Ini initialisation phase and too small anyway...
             return
 
-        from_left = self.operation.raster_preference_left > 0
-        from_top = self.operation.raster_preference_top > 0
+        from_left = self.operation.raster_preference_left
+        from_top = self.operation.raster_preference_top
 
         last = None
         direction = self.operation.raster_direction
@@ -1263,11 +1263,11 @@ class PanelStartPreference(wx.Panel):
 
     def _toggle_sliders(self):
         direction = self.operation.raster_direction
-        prefer_min_y = self.operation.raster_preference_top > 0
-        prefer_min_x = self.operation.raster_preference_left > 0
+        prefer_min_y = self.operation.raster_preference_top
+        prefer_min_x = self.operation.raster_preference_left
 
-        self.slider_pref_left.Enable(direction in (RASTER_T2B, RASTER_B2T, RASTER_GREEDY_H))
-        self.slider_pref_top.Enable(direction in (RASTER_L2R, RASTER_R2L, RASTER_GREEDY_V))
+        self.slider_pref_left.Enable(direction in (RASTER_T2B, RASTER_B2T, RASTER_GREEDY_H, RASTER_GREEDY_V))
+        self.slider_pref_top.Enable(direction in (RASTER_L2R, RASTER_R2L, RASTER_GREEDY_H, RASTER_GREEDY_V))
         self.slider_pref_left.SetValue(0 if prefer_min_x else 1)
         self.slider_pref_top.SetValue(0 if prefer_min_y else 1)
 
@@ -1278,7 +1278,7 @@ class PanelStartPreference(wx.Panel):
         self.refresh_display()
 
     def on_slider_pref_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        value = 1 if self.slider_pref_left.GetValue() == 0 else 0
+        value = self.slider_pref_left.GetValue() == 0
         if self.operation.raster_preference_left != value:
             self.operation.raster_preference_left = value
             self._reload_display()
@@ -1287,7 +1287,7 @@ class PanelStartPreference(wx.Panel):
             )
 
     def on_slider_pref_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        value = 1 if self.slider_pref_top.GetValue() == 0 else 0
+        value = self.slider_pref_top.GetValue() == 0
         if self.operation.raster_preference_top != value:
             self.operation.raster_preference_top = value
             self._reload_display()
@@ -1378,40 +1378,40 @@ class RasterSettingsPanel(wx.Panel):
 
         sizer_4 = StaticBoxSizer(self, wx.ID_ANY, _("Direction:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
-        self.raster_terms = {
-            RASTER_T2B: "Top To Bottom",
-            RASTER_B2T: "Bottom To Top",
-            RASTER_R2L: "Right To Left",
-            RASTER_L2R: "Left To Right",
-            RASTER_HATCH: "Crosshatch",
-            RASTER_GREEDY_H: "Greedy horizontal",
-            RASTER_GREEDY_V: "Greedy vertical",
-            RASTER_CROSSOVER: "Crossover",
-        }
-        # Look fore registered raster (image) preprocessors,
+        self.raster_terms = [
+            (RASTER_T2B, "Top To Bottom"),
+            (RASTER_B2T, "Bottom To Top"),
+            (RASTER_R2L, "Right To Left"),
+            (RASTER_L2R, "Left To Right"),
+            (RASTER_HATCH, "Crosshatch"),
+            (RASTER_GREEDY_H, "Greedy horizontal"),
+            (RASTER_GREEDY_V, "Greedy vertical"),
+            (RASTER_CROSSOVER, "Crossover"),
+        ]
+        # Look for registered raster (image) preprocessors,
         # these are routines that take one image as parameter
         # and deliver a set of (result image, method (aka raster_direction) )
         # that will be dealt with independently
         # The registered datastructure is (rasterid, description, method)
         for key, description, method in self.context.kernel.lookup_all("raster_preprocessor/.*"):
-            self.raster_terms[key] = description
+            self.raster_terms.append( (key, description) )
 
         # Add a couple of testcases
-        for key, method in (
+        test_methods = (
             (-1, "Test: Horizontal Rectangle"),
             (-2, "Test: Vertical Rectangle"),
             (-3, "Test: Horizontal Snake"),
             (-4, "Test: Vertical Snake"),
             (-5,  "Test: Spiral"),
-        ):
-            self.raster_terms[key] = method
+        )
+        self.raster_terms.extend(test_methods)
 
         unsupported = ()
         if hasattr(self.context.device, "get_raster_instructions"):
             instructions = self.context.device.get_raster_instructions()
             unsupported = instructions.get("unsupported_opt", ())
-        self.raster_methods = [ key for key in self.raster_terms if key is not unsupported ]
-        choices = [ self.raster_terms[key] for key in self.raster_methods ]
+        self.raster_methods = [ key for key, info in self.raster_terms if key is not unsupported ]
+        choices = [ info for key, info in self.raster_terms if key is not unsupported ]
         self.combo_raster_direction = wxComboBox(
             self,
             wx.ID_ANY,
