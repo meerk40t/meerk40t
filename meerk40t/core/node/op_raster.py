@@ -766,8 +766,7 @@ class RasterOpNode(Node, Parameters):
                 cut.original_op = self.type
                 cutcodes.append(cut)
             # Yield all generated cutcodes of this image
-            for cut in cutcodes:
-                yield cut
+            yield from cutcodes
 
     @property
     def bounds(self):
