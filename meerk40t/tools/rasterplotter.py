@@ -99,8 +99,8 @@ class RasterPlotter:
             RASTER_R2L: (False, None, False, None), # right to left
             RASTER_L2R: (True, None, False, None), # left to right
             RASTER_HATCH: (None, None, None, None), # crossraster (one of the two)
-            RASTER_GREEDY_H: (True, None, None, True), # greedy neighbour horizontal
-            RASTER_GREEDY_V: (None, True, None, True), # greedy neighbour
+            RASTER_GREEDY_H: (None, None, None, True), # greedy neighbour horizontal
+            RASTER_GREEDY_V: (None, None, None, True), # greedy neighbour
             RASTER_CROSSOVER: (None, None, None, True), # true crossover
         }
         def_x, def_y, def_hor, def_bidir = parameters.get(direction, (None, None, None, None))
@@ -463,9 +463,10 @@ class RasterPlotter:
             "Bottom2Top",
             "Right2Left",
             "Left2Right",
-            "Greedy Neighbor",
+            "Hatch",
+            "Greedy Neighbor Hor",
+            "Greedy Neighbor Ver",
             "Crossover",
-            "Unknown",
         )
         testmethods = (
             "Test: Horizontal Rectangle",
@@ -480,7 +481,7 @@ class RasterPlotter:
                     m = methods[self.direction]
                 else:
                     m = testmethods[abs(self.direction) - 1]
-                s_meth = f"Method: {m}"
+                s_meth = f"Method: {m} ({self.direction})"
             except IndexError:
                 s_meth = f"Method: Unknown {self.direction}"
             print (s_meth)
@@ -889,6 +890,7 @@ class RasterPlotter:
             return path
 
         t0 = perf_counter()
+        print (f"Start minimum x: {self.start_minimum_x}, y: {self.start_minimum_y}")
         # An experimental routine
         if horizontal:
             dy = 1 if self.start_minimum_y else -1
