@@ -1387,12 +1387,25 @@ class RasterSettingsPanel(wx.Panel):
             RASTER_GREEDY_H: "Greedy horizontal",
             RASTER_GREEDY_V: "Greedy vertical",
             RASTER_CROSSOVER: "Crossover",
-            8 : "Test: Horizontal Rectangle",
-            9 : "Test: Vertical Rectangle",
-            10 : "Test: Horizontal Snake",
-            11 : "Test: Vertical Snake",
-            12 : "Test: Spiral",
         }
+        # Look fore registered raster (image) preprocessors,
+        # these are routines that take one image as parameter
+        # and deliver a set of (result image, method (aka raster_direction) )
+        # that will be dealt with independently
+        # The registered datastructure is (rasterid, description, method)
+        for key, description, method in self.context.kernel.lookup_all("raster_preprocessor/.*"):
+            self.raster_terms[key] = description
+
+        # Add a couple of testcases
+        for key, method in (
+            (-1, "Test: Horizontal Rectangle"),
+            (-2, "Test: Vertical Rectangle"),
+            (-3, "Test: Horizontal Snake"),
+            (-4, "Test: Vertical Snake"),
+            (-5,  "Test: Spiral"),
+        ):
+            self.raster_terms[key] = method
+
         unsupported = ()
         if hasattr(self.context.device, "get_raster_instructions"):
             instructions = self.context.device.get_raster_instructions()

@@ -458,33 +458,39 @@ class RasterPlotter:
             # There is no image.
             return
         # Debug code....
+        methods = (
+            "Top2Bottom",
+            "Bottom2Top",
+            "Right2Left",
+            "Left2Right",
+            "Greedy Neighbor",
+            "Crossover",
+            "Unknown",
+        )
+        testmethods = (
+            "Test: Horizontal Rectangle",
+            "Test: Vertical Rectangle",
+            "Test: Horizontal Snake",
+            "Test: Vertical Snake",
+            "Test: Spiral",
+        )
         if self.debug_level > 0:
+            try:
+                if self.direction >= 0:
+                    m = methods[self.direction]
+                else:
+                    m = testmethods[abs(self.direction) - 1]
+                s_meth = f"Method: {m}"
+            except IndexError:
+                s_meth = f"Method: Unknown {self.direction}"
+            print (s_meth)
             data = list(self._plot_pixels())
             from time import perf_counter_ns
             from platform import system
             defaultdir = "c:\\temp\\" if system() == "Windows" else ""
             has_duplicates = 0
             with open(f"{defaultdir}plot_{perf_counter_ns()}.txt", mode="w") as f:
-                methods = (
-                    "Top2Bottom",
-                    "Bottom2Top",
-                    "Right2Left",
-                    "Left2Right",
-                    "Greedy Neighbor",
-                    "Crossover",
-                    "Test: Horizontal Rectangle",
-                    "Test: Vertical Rectangle",
-                    "Test: Horizontal Snake",
-                    "Test: Vertical Snake",
-                    "Test: Spiral",
-                    "Unknown",
-                )
-                try:
-                    m = methods[self.direction]
-                except IndexError:
-                    m = methods[-1]
-                m = f"Method: {m}"
-                f.write(f"0.9.6\n{m}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+                f.write(f"0.9.6\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
                 f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
                 f.write(f"Image dimensions: {self.width}x{self.height}\n")
                 f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
@@ -532,11 +538,12 @@ class RasterPlotter:
                     print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
                     print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
                     print(f"Image dimensions: {self.width}x{self.height}")
-
+        else:
+            data = self._plot_pixels()
         last_x = offset_x
         last_y = offset_y
         if self.use_integers:
-            for x, y, on in self._plot_pixels():
+            for x, y, on in data:
                 if x is None or y is None:
                     yield x, y, on
                 else:
@@ -548,7 +555,7 @@ class RasterPlotter:
                     last_x = nx
                     last_y = ny
         else:
-            for x, y, on in self._plot_pixels():
+            for x, y, on in data:
                 if x is None or y is None:
                     yield x, y, on
                 else:
@@ -561,11 +568,11 @@ class RasterPlotter:
                     last_y = ny
 
     def _plot_pixels(self):
-        if self.direction == 5:
+        if self.direction in (RASTER_GREEDY_H, RASTER_GREEDY_V):
             yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
-        elif self.direction == 6:
+        elif self.direction == RASTER_CROSSOVER:
             yield from self._plot_crossover()
-        elif self.direction > 6:
+        elif self.direction < 0:
             yield from self.testpattern_generator()
         elif self.horizontal:
             yield from self._plot_horizontal()
@@ -1407,9 +1414,9 @@ class RasterPlotter:
         on = self.filter(0)
         off = 0
         # print (f"on={on}, off={off}")
-        method = self.direction - RASTER_CROSSOVER - 1
+        method = abs(self.direction) - 1
         methods = (rectangle_h, rectangle_v, snake_h, snake_v, spiral)
         try:
-            methods[method]()
+            yield from methods[method]()
         except IndexError:
             print (f"Unknown testgenerator for {self.direction}")
