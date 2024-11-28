@@ -484,7 +484,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
     @property
     def opaque_image(self):
-
+        from PIL import Image
         img = self.image
         if img is not None and img.mode == "RGBA":
             r, g, b, a = img.split()
