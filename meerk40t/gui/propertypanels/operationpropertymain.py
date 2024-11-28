@@ -1393,29 +1393,27 @@ class RasterSettingsPanel(wx.Panel):
         # and deliver a set of (result image, method (aka raster_direction) )
         # that will be dealt with independently
         # The registered datastructure is (rasterid, description, method)
-        for key, description, method in self.context.kernel.lookup_all("raster_preprocessor/.*"):
-            self.raster_terms.append( (key, description) )
-
-        # Add a couple of testcases
-        test_methods = (
-            (-1, "Test: Horizontal Rectangle"),
-            (-2, "Test: Vertical Rectangle"),
-            (-3, "Test: Horizontal Snake"),
-            (-4, "Test: Vertical Snake"),
-            (-5,  "Test: Spiral"),
+        self.raster_terms.extend(
+            (key, description)
+            for key, description, method in self.context.kernel.lookup_all(
+                "raster_preprocessor/.*"
+            )
         )
-        self.raster_terms.extend(test_methods)
+        # Add a couple of testcases
+        # test_methods = (
+        #     (-1, "Test: Horizontal Rectangle"),
+        #     (-2, "Test: Vertical Rectangle"),
+        #     (-3, "Test: Horizontal Snake"),
+        #     (-4, "Test: Vertical Snake"),
+        #     (-5,  "Test: Spiral"),
+        # )
+        # self.raster_terms.extend(test_methods)
 
-        unsupported = ()
-        if hasattr(self.context.device, "get_raster_instructions"):
-            instructions = self.context.device.get_raster_instructions()
-            unsupported = instructions.get("unsupported_opt", ())
-        self.raster_methods = [ key for key, info in self.raster_terms if key is not unsupported ]
-        choices = [ info for key, info in self.raster_terms if key is not unsupported ]
+        self.raster_methods = [ key for key, info in self.raster_terms ]
+
         self.combo_raster_direction = wxComboBox(
             self,
             wx.ID_ANY,
-            choices = choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         OPERATION_RASTERDIRECTION_TOOLTIP = (
@@ -1490,10 +1488,27 @@ class RasterSettingsPanel(wx.Panel):
         )
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing)
 
+    def fill_raster_combo(self):
+        unsupported = ()
+        if hasattr(self.context.device, "get_raster_instructions"):
+            instructions = self.context.device.get_raster_instructions()
+            unsupported = instructions.get("unsupported_opt", ())
+        # print (f"fill raster called: {unsupported}")
+        self.raster_methods = [ key for key, info in self.raster_terms if key not in unsupported ]
+        choices = [ info for key, info in self.raster_terms if key not in unsupported ]
+        self.combo_raster_direction.Clear()
+        self.combo_raster_direction.SetItems(choices)
+
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        if self.Shown():
+            self.fill_raster_combo()
+
     def pane_hide(self):
         self.panel_start.pane_hide()
 
     def pane_show(self):
+        self.fill_raster_combo()
         self.panel_start.pane_show()
 
     def accepts(self, node):
