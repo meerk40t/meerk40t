@@ -669,14 +669,14 @@ class RasterPlotter:
                     idx = 0
                     start = 0
                     end = 1
-                    edge_start = 0
-                    edge_end = 1
+                    edge_start = -0.5
+                    edge_end = 0.5
                 else:
                     idx = len(segments) - 1
                     end = 0
                     start = 1
-                    edge_start = 1
-                    edge_end = 0
+                    edge_start = 0.5
+                    edge_end = -0.5
                 # Goto next column, but make sure we end up outside our chain
                 # We consider as well the overscan value
                 overscan_top = 0 if dy >= 0 else self.overscan
@@ -715,10 +715,6 @@ class RasterPlotter:
                 first = False
             else:
                 # Just climb the line, and don't change directions
-                if self.special.get("singular_steps", False):
-                    sign = 1 if last_x > x else -1
-                    for interim in range(last_x + sign, x, sign):
-                        yield interim, last_y, 0
                 last_x = x
                 yield last_x, last_y, 0
 
@@ -758,14 +754,14 @@ class RasterPlotter:
                     idx = 0
                     start = 0
                     end = 1
-                    edge_start = 0
-                    edge_end = 1
+                    edge_start = -0.5
+                    edge_end = 0.5
                 else:
                     idx = len(segments) - 1
                     end = 0
                     start = 1
-                    edge_start = 1
-                    edge_end = 0
+                    edge_start = 0.5
+                    edge_end = -0.5
                 if last_x is None:
                     last_x = segments[idx][start] + edge_start
                 # Goto next line, but make sure we end up outside our chain
@@ -805,10 +801,6 @@ class RasterPlotter:
                 first = False
             else:
                 # Just climb the line, and don't change directions
-                if self.special.get("singular_steps", False):
-                    sign = 1 if last_y < y else -1
-                    for interim in range(last_y + sign, y, sign):
-                        yield last_x, interim, 0
                 last_y = y
                 yield last_x, last_y, 0
             y += dy
@@ -890,7 +882,6 @@ class RasterPlotter:
             return path
 
         t0 = perf_counter()
-        print (f"Start minimum x: {self.start_minimum_x}, y: {self.start_minimum_y}")
         # An experimental routine
         if horizontal:
             dy = 1 if self.start_minimum_y else -1
@@ -949,18 +940,14 @@ class RasterPlotter:
                 dx = ex - sx
                 if dx >= 0:
                     # from left to right
-                    edge_start = 0
-                    edge_end = 1
+                    edge_start = -0.5
+                    edge_end = 0.5
                 else:
-                    edge_start = 1
-                    edge_end = 0
+                    edge_start = 0.5
+                    edge_end = -0.5
                 sx += edge_start
                 ex += edge_end
                 if sy != last_y:
-                    if self.special.get("singular_steps", False):
-                        sign = 1 if last_y < y else -1
-                        for interim in range(last_y + sign, y, sign):
-                            yield last_x, interim, 0
                     last_y = sy
                     yield last_x, last_y, 0
                 if last_x != sx:
@@ -969,18 +956,14 @@ class RasterPlotter:
                 dy = ey - sy
                 if dy >= 0:
                     # from left to right
-                    edge_start = 0
-                    edge_end = 1
+                    edge_start = -0.5
+                    edge_end = 0.5
                 else:
-                    edge_start = 1
-                    edge_end = 0
+                    edge_start = 0.5
+                    edge_end = -0.5
                 sy += edge_start
                 ey += edge_end
                 if sx != last_x:
-                    if self.special.get("singular_steps", False):
-                        sign = 1 if last_x < x else -1
-                        for interim in range(last_x + sign, x, sign):
-                            yield interim, last_y, 0
                     last_x = sx
                     yield last_x, last_y, 0
                 if last_y != sy:
@@ -1074,8 +1057,10 @@ class RasterPlotter:
                 if row_ratio >= col_ratio:
                     last_pixel = None
                     segments = []
+                    msg = ""
                     for idx in range(cols):
                         on = image[rowidx, idx]
+                        msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             if on == last_pixel:
                                 segments[-1][1] = idx
@@ -1083,6 +1068,8 @@ class RasterPlotter:
                                 segments.append ([idx, idx, on])
                         last_pixel = on
                     results.append((COL, rowidx, segments)) # Intentionally so, as the numpy array has x and y exchanged
+                    # print (f"Col #{rowidx}: {msg} -> {segments}")
+
                     # Clear the column
                     image[rowidx,:] = 0
                     covered_row[rowidx] = True
@@ -1105,7 +1092,7 @@ class RasterPlotter:
                     msg = ""
                     for idx in range(rows):
                         on = image[idx, colidx]
-                        # msg = f"{msg}{'X' if on else '.'}"
+                        msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             if on == last_pixel:
                                 segments[-1][1] = idx
@@ -1113,6 +1100,7 @@ class RasterPlotter:
                                 segments.append ([idx, idx, on])
                         last_pixel = on
                     results.append((ROW, colidx, segments))
+                    # print (f"Row #{colidx}: {msg} -> {segments}")
                     # Clear the row
                     image[:, colidx] = 0
                     covered_col[colidx] = True
@@ -1138,8 +1126,7 @@ class RasterPlotter:
                         print (f"{cidx:3d}: {msg}")
 
             return results
-        # m2nano needs this
-        edge_advance = 1 if self.special.get("edge_advance", False) else 0
+
         t0 = perf_counter()
         # initialize the matrix
         image = np.empty((self.width, self.height))
@@ -1154,15 +1141,14 @@ class RasterPlotter:
         results = process_image(image)
         results.sort()
         t2 = perf_counter()
-        dx = 1
-        dy = 1
+        dx = +1
+        dy = +1
         first_x = 0
         first_y = 0
         last_x = self.initial_x
         last_y = self.initial_y
         yield last_x, last_y, 0
-        first = True
-        for mode, idx, segments in results:
+        for mode, xy, segments in results:
             # eliminate data and swap direction
             if self.special.get("mode_filter", "") == "ROW" and mode != ROW:
                 continue
@@ -1171,115 +1157,73 @@ class RasterPlotter:
 
             if not segments:
                 continue
-            if (mode==ROW and dx < 0) or (mode==COL and dy < 0):
-                segments.reverse()
             if mode==ROW:
                 if not self.horizontal:
                     # Axis change
                     self.horizontal = True
                     yield 0, None, PLOT_AXIS_SWAP
-                line_start_x = segments[0][0] if dx >= 0 else segments[0][1]
-                line_start_y = idx
             else:
                 if self.horizontal:
                     # Axis change
                     self.horizontal = False
                     yield 1, None, PLOT_AXIS_SWAP
-                line_start_x = idx
-                line_start_y = segments[0][0] if dy >= 0 else segments[0][1]
-            if first:
-                first = False
-                first_x = line_start_x
-                first_y = line_start_y
-            if line_start_y != last_y:
-                if self.special.get("singular_steps", False):
-                    sign = 1 if last_y < line_start_y else -1
-                    # print (f"will run the range({last_y + sign}, {line_start_y}, {sign})")
-                    for interim in range(last_y + sign, line_start_y, sign):
-                        # print (f"{last_x}, {interim}, {0} - linestart interim y step")
-                        yield last_x, interim, 0
-
-                # print (f"{last_x}, {line_start_y}, {0} - goto correct line start position #1 ({line_start_y} != {last_y})")
-                last_y = line_start_y
-                yield last_x, last_y, 0
-            if last_x != line_start_x:
-                # print (f"{line_start_x}, {last_y}, {0} - goto correct line start position #2 ({line_start_x} != {last_x})")
-                if self.special.get("singular_steps", False):
-                    sign = 1 if last_x < line_start_x else -1
-                    # print (f"will run the range({last_x + sign}, {line_start_x}, {sign})")
-                    for interim in range(last_x + sign, line_start_x, sign):
-                        # print (f"{last_x}, {interim}, {0} - linestart interim y step")
-                        yield interim, last_y, 0
-                last_x = line_start_x
-                yield last_x, last_y, 0
-            for seg in segments:
-                if mode==ROW:
-                    sy = idx
-                    ey = idx
-                    if dx >= 0:
-                        sx, ex, on = seg
-                        edge_start = 0
-                        edge_end = edge_advance
-                    else:
-                        ex, sx, on = seg
-                        edge_start = edge_advance
-                        edge_end = 0
-                    sx += edge_start
-                    ex += edge_end
-
-                    if sx != last_x:
-                        # print (f"{sx}, {last_y}, {0} - ROW goto correct start position x ({sx} != {last_x})")
-                        last_x = sx
-                        yield last_x, last_y, 0
-                    if last_y != sy:
-                        # print (f"{last_x}, {sy}, {0} - ROW goto correct start position y ({sy} != {last_y})")
-                        last_y = sy
-                        yield last_x, last_y, 0
-                else:
-                    sx = idx
-                    ex = idx
-                    if dy >= 0:
-                        sy, ey, on = seg
-                        edge_start = 0
-                        edge_end = edge_advance
-                    else:
-                        ey, sy, on = seg
-                        edge_start = edge_advance
-                        edge_end = 0
-                    sy += edge_start
-                    ey += edge_end
-                    if sy != last_y:
-                        # print (f"{last_x}, {last_y}, {0} - COL goto correct start position y ({sy} != {last_y})")
-                        last_y = sy
-                        yield last_x, last_y, 0
-                    if last_x != sx:
-                        last_x = sx
-                        yield last_x, last_y, 0
-                        # print (f"{last_x}, {last_y}, {0} - COL goto correct start position x ({sx} != {last_x}")
-                if self.debug_level > 1:
-                    if mode == ROW:
-                        direction = ">" if dx > 0 else "<"
-                    else:
-                        direction = "v" if dy > 0 else "^"
-                    # print (f"{sx}, {sy} -> {ex}, {ey} with {on} ({direction} {'ROW' if mode==ROW else 'COL'} {idx}: {seg})")
-                last_x = ex
-                last_y = ey
-                yield last_x, last_y, on
-                # print (f"{last_x}, {last_y}, {on} - draw segment")
-
-            # All segments done, do we need to go further aka overscan
-            if self.overscan:
-                if mode == ROW:
-                    last_x += dx * self.overscan
-                else:
-                    last_y += dy * self.overscan
-                yield last_x, last_y, 0
-                # print (f"{last_x}, {last_y}, {0} - Overscan")
-
             if mode == ROW:
-                dx = -dx
-            else: # column
-                dy = -dy
+                if xy != last_y:
+                    last_y = xy
+                    yield last_x, last_y, 0
+                if dx > 0:
+                    # from left to right
+                    idx = 0
+                    start = 0
+                    end = 1
+                    edge_start = -0.5
+                    edge_end = 0.5
+                else:
+                    idx = len(segments) - 1
+                    end = 0
+                    start = 1
+                    edge_start = 0.5
+                    edge_end = -0.5
+                while 0 <= idx < len(segments):
+                    sx = segments[idx][start] + edge_start
+                    ex = segments[idx][end] + edge_end
+                    on = segments[idx][2]
+                    if last_x != sx:
+                        yield sx, last_y, 0
+                    last_x = ex
+                    yield last_x, last_y, on
+                    idx += dx
+            else:
+                if xy != last_x:
+                    last_x = xy
+                    yield last_x, last_y, 0
+                if dy > 0:
+                    # from top to bottom
+                    idx = 0
+                    start = 0
+                    end = 1
+                    edge_start = -0.5
+                    edge_end = 0.5
+                else:
+                    idx = len(segments) - 1
+                    end = 0
+                    start = 1
+                    edge_start = 0.5
+                    edge_end = -0.5
+                while 0 <= idx < len(segments):
+                    sy = segments[idx][start] + edge_start
+                    ey = segments[idx][end] + edge_end
+                    on = segments[idx][2]
+                    if last_y != sy:
+                        yield last_x, sy, 0
+                    last_y = ey
+                    yield last_x, last_y, on
+                    idx += dy
+            if self.bidirectional:
+                if mode == ROW:
+                    dx = -dx
+                else: # column
+                    dy = -dy
 
         # We need to set the final values so that the rastercut is able to carry on
         self.final_x = last_x
