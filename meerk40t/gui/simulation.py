@@ -838,7 +838,6 @@ class SimulationPanel(wx.Panel, Job):
         self.cutcode = CutCode(self.cutcode.flat())
 
         self.statistics = self.cutcode.provide_statistics()
-        wx.CallLater(1500, self.reload_statistics )
 
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
@@ -1249,15 +1248,13 @@ class SimulationPanel(wx.Panel, Job):
                 self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
                 self.voption_sizer.Layout()
                 self.btn_slide_options.SetLabel("<")
-                self.hscene_sizer.Layout()
-                self.Layout()
             else:
                 # Slided out ->
                 self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
                 self.voption_sizer.Layout()
                 self.btn_slide_options.SetLabel(">")
-                self.hscene_sizer.Layout()
-                self.Layout()
+            self.hscene_sizer.Layout()
+            self.Layout()
         except RuntimeError:
             return
 
@@ -1587,8 +1584,6 @@ class SimulationPanel(wx.Panel, Job):
 
         # self.reload_statistics()
 
-        wx.CallLater(1500, self.reload_statistics )
-
         # for idx, stat in enumerate(self.statistics):
         #     print(f"#{idx}: {stat}")
         bb = self.cutplan._previous_bounds
@@ -1604,6 +1599,15 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
+        _job = Job(
+            process=self.cache_updater,
+            job_name="cache_updater",
+            interval=0.25,
+            times=1,
+            run_main=False,
+        )
+        self.context.schedule(_job)
+
         self._startup()
         self.request_refresh()
 
@@ -1668,6 +1672,18 @@ class SimulationPanel(wx.Panel, Job):
             self.options_optimize.Enable(True)
         else:
             self.options_optimize.Enable(False)
+
+    def cache_updater(self):
+        for cut in self.cutcode:
+            if isinstance(cut, (RasterCut, PlotCut)):
+                if hasattr(cut, "_plotcache") and cut._plotcache is not None:
+                    continue
+                if isinstance(cut, RasterCut):
+                    cut._plotcache = list(cut.plot.plot())
+                elif isinstance(cut, PlotCut):
+                    cut._plotcache = list(cut.plot)
+                self.context.signal("refresh_scene", self.widget_scene.name)
+        self.reload_statistics()
 
     def update_fields(self):
         def len_str(value):
