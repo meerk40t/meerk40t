@@ -163,7 +163,7 @@ class LihuiyuDriver(Parameters):
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
         self.paused = False
-        self.debug = True
+        # self.debug = False
 
         def primary_hold():
             if self.out_pipe is None:
@@ -953,16 +953,16 @@ class LihuiyuDriver(Parameters):
                 elif on & PLOT_AXIS:  # Major Axis.
                     # 0 means X Major / Horizontal.
                     # 1 means Y Major / Vertical
-                    if self.debug:
-                        print (f"New axis requested {x} -> {'X' if x == 0 else 'Y'}")
+                    # if self.debug:
+                    #     print (f"New axis requested {x} -> {'X' if x == 0 else 'Y'}")
                     self._request_horizontal_major = bool(x == 0)
                 elif on & PLOT_AXIS_SWAP:  # Major Axis.
                     # 0 means X Major / Horizontal.
                     # 1 means Y Major / Vertical
                     self._horizontal_major = bool(x == 0)
                     self._request_horizontal_major = self._horizontal_major
-                    if self.debug:
-                        print (f"New axis set {x} -> {'X' if self._horizontal_major else 'Y'}")
+                    # if self.debug:
+                    #     print (f"New axis set {x} -> {'X' if self._horizontal_major else 'Y'}")
                 elif on & PLOT_DIRECTION:
                     # -1: Moving Left -x
                     # 1: Moving Right. +x
@@ -988,13 +988,13 @@ class LihuiyuDriver(Parameters):
                 continue
             dx = x - sx
             dy = y - sy
-            if self.debug:
-                if self._horizontal_major and dy != 0 and on != 0:
-                    print (f"You want to burn in Y, but the mode is wrong -> no burn (dx={dx}, dy={dy}, mode={'X' if self._horizontal_major else 'Y'})")
-                elif not self._horizontal_major and dx != 0 and on != 0:
-                    print (f"You want to burn in X, but the mode is wrong -> no burn (dx={dx}, dy={dy}, mode={'X' if self._horizontal_major else 'Y'})")
-                elif on != 0:
-                    print (f"This will be burnt in {'X' if self._horizontal_major else 'Y'}-direction (dx={dx}, dy={dy})")
+            # if self.debug:
+            #     if self._horizontal_major and dy != 0 and on != 0:
+            #         print (f"You want to burn in Y, but the mode is wrong -> no burn (dx={dx}, dy={dy}, mode={'X' if self._horizontal_major else 'Y'})")
+            #     elif not self._horizontal_major and dx != 0 and on != 0:
+            #         print (f"You want to burn in X, but the mode is wrong -> no burn (dx={dx}, dy={dy}, mode={'X' if self._horizontal_major else 'Y'})")
+            #     elif on != 0:
+            #         print (f"This will be burnt in {'X' if self._horizontal_major else 'Y'}-direction (dx={dx}, dy={dy})")
             step_x = self.raster_step_x
             step_y = self.raster_step_y
             if step_x == 0 and step_y == 0:
@@ -1393,8 +1393,8 @@ class LihuiyuDriver(Parameters):
         self._horizontal_major = False
 
     def _goto_xy(self, dx, dy, on=None):
-        if self.debug:
-            print(f"movement {dx}, {dy} with laser: {on}")
+        # if self.debug:
+        #     print(f"movement {dx}, {dy} with laser: {on}")
         rapid = self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER)
         if dx != 0:
             self.native_x += dx
