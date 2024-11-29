@@ -95,6 +95,7 @@ class RasterPlotter:
         self.width = width
         self.height = height
         self.direction = direction
+        self._cache = None
         parameters = {
             # Provide an override for the minimumx / minimumy / horizontal / bidirectional
             RASTER_T2B: (None, True, True, None), # top to bottom
@@ -133,6 +134,9 @@ class RasterPlotter:
         self.final_x, self.final_y = self.calculate_last_pixel()
         self._distance_travel = 0
         self._distance_burn = 0
+
+    def reset(self):
+        self._cache = None
 
     def px(self, x, y):
         """
@@ -481,77 +485,82 @@ class RasterPlotter:
             "Test: Vertical Snake",
             "Test: Spiral",
         )
-        if self.debug_level > 0:
-            try:
-                if self.direction >= 0:
-                    m = methods[self.direction]
-                else:
-                    m = testmethods[abs(self.direction) - 1]
-                s_meth = f"Method: {m} ({self.direction})"
-            except IndexError:
-                s_meth = f"Method: Unknown {self.direction}"
-            print (s_meth)
-            data = list(self._plot_pixels())
-            from platform import system
-            defaultdir = "c:\\temp\\" if system() == "Windows" else ""
-            has_duplicates = 0
-            tstamp = int(perf_counter() * 100)
-            with open(f"{defaultdir}plot_{tstamp}.txt", mode="w") as f:
-                f.write(f"0.9.6\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
-                f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
-                f.write(f"Image dimensions: {self.width}x{self.height}\n")
-                f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
-                f.write(f"Overlapping pixels to any side: {self.overlap}\n")
-                if self.special:
-                    f.write(f"Special instructions:\n")
-                    for key, value in self.special.items():
-                        f.write(f"  {key} = {value}\n")
-                f.write("----------------------------------------------------------------------\n")
-                test_dict = {}
-                lastx = self.initial_x
-                lasty = self.initial_y
-                failed = False
-                for lineno, (x, y, on) in enumerate(data, start=1):
-                    if x is None or y is None:
-                        f.write("Forced setting update, aka major axis change\n")
-                        continue
-                    if lastx is not None:
-                        dx = x - lastx
-                        dy = y - lasty
-                        if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
-                            f.write (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-                            print (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
-                            failed = True
-                    lastx = x
-                    lasty = y
-                if not failed:
-                    f.write("Good news, no zig-zag movements identified!\n")
-                f.write("----------------------------------------------------------------------\n")
-                for lineno, (x, y, on) in enumerate(data, start=1):
-                    if x is None or y is None:
-                        continue
-                    key = f"{x} - {y}"
-                    if key in test_dict:
-                        f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
-                        has_duplicates += 1
+        if self._cache is None:
+            if self.debug_level > 0:
+                try:
+                    if self.direction >= 0:
+                        m = methods[self.direction]
                     else:
-                        test_dict[key] = (lineno, on)
-                if has_duplicates:
+                        m = testmethods[abs(self.direction) - 1]
+                    s_meth = f"Method: {m} ({self.direction})"
+                except IndexError:
+                    s_meth = f"Method: Unknown {self.direction}"
+                print (s_meth)
+                data = list(self._plot_pixels())
+                from platform import system
+                defaultdir = "c:\\temp\\" if system() == "Windows" else ""
+                has_duplicates = 0
+                tstamp = int(perf_counter() * 100)
+                with open(f"{defaultdir}plot_{tstamp}.txt", mode="w") as f:
+                    f.write(f"0.9.6\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+                    f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
+                    f.write(f"Image dimensions: {self.width}x{self.height}\n")
+                    f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
+                    f.write(f"Overlapping pixels to any side: {self.overlap}\n")
+                    if self.special:
+                        f.write(f"Special instructions:\n")
+                        for key, value in self.special.items():
+                            f.write(f"  {key} = {value}\n")
                     f.write("----------------------------------------------------------------------\n")
-                for lineno, (x, y, on) in enumerate(data, start=1):
-                    f.write(f"{lineno}: {x}, {y}, {on}\n")
-                if has_duplicates:
-                    print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
-                    print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
-                    print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
-                    print(f"Image dimensions: {self.width}x{self.height}")
+                    test_dict = {}
+                    lastx = self.initial_x
+                    lasty = self.initial_y
+                    failed = False
+                    for lineno, (x, y, on) in enumerate(data, start=1):
+                        if x is None or y is None:
+                            f.write("Forced setting update, aka major axis change\n")
+                            continue
+                        if lastx is not None:
+                            dx = x - lastx
+                            dy = y - lasty
+                            if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
+                                f.write (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
+                                print (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
+                                failed = True
+                        lastx = x
+                        lasty = y
+                    if not failed:
+                        f.write("Good news, no zig-zag movements identified!\n")
+                    f.write("----------------------------------------------------------------------\n")
+                    for lineno, (x, y, on) in enumerate(data, start=1):
+                        if x is None or y is None:
+                            continue
+                        key = f"{x} - {y}"
+                        if key in test_dict:
+                            f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
+                            has_duplicates += 1
+                        else:
+                            test_dict[key] = (lineno, on)
+                    if has_duplicates:
+                        f.write("----------------------------------------------------------------------\n")
+                    for lineno, (x, y, on) in enumerate(data, start=1):
+                        f.write(f"{lineno}: {x}, {y}, {on}\n")
+                    if has_duplicates:
+                        print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
+                        print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
+                        print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
+                        print(f"Image dimensions: {self.width}x{self.height}")
+            else:
+                data = list(self._plot_pixels())
+            self._cache = data
         else:
-            data = self._plot_pixels()
+            data = self._cache
         last_x = offset_x
         last_y = offset_y
         if self.use_integers:
             for x, y, on in data:
                 if x is None or y is None:
+                    # Passthrough
                     yield x, y, on
                 else:
                     nx = int(round(offset_x + step_x * x))
@@ -564,10 +573,11 @@ class RasterPlotter:
         else:
             for x, y, on in data:
                 if x is None or y is None:
+                    # Passthrough
                     yield x, y, on
                 else:
-                    nx = int(round(offset_x + step_x * x))
-                    ny = int(round(offset_y + y * step_y))
+                    nx = round(offset_x + step_x * x)
+                    ny = round(offset_y + y * step_y)
                     self._distance_burn += 0 if on == 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
                     self._distance_travel += 0 if on != 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
                     yield offset_x + step_x * x, offset_y + y * step_y, on
