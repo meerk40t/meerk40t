@@ -838,6 +838,11 @@ class TextCtrl(wx.TextCtrl):
         def set_menu_value(to_be_set):
             def handler(event):
                 self.SetValue(to_be_set)
+                self.prevalidate("enter")
+                if self._action_routine is not None:
+                    self._event_generated = wx.EVT_TEXT_ENTER
+                    self._action_routine()
+                    self._event_generated = None
             return handler
 
         if not self._default_values:
