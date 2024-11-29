@@ -1620,10 +1620,10 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("device;modified")
     @signal_listener("plan")
-    def on_plan_change(self, origin, plan_name, status):
+    def on_plan_change(self, origin, plan_name=None, status=None):
         def resend_signal():
             self.debug(f"Resending signal: {perf_counter()-self.start_time}")
-            self.context.signal("plan", self.plan_name, 1)
+            self.context.signal("plan", plan_name=self.plan_name, status=1)
 
         winsize = self.view_pane.GetSize()
         winsize1 = self.hscene_sizer.GetSize()
