@@ -20,7 +20,7 @@ or only on forward swing.
 
 import numpy as np
 from math import sqrt
-from time import perf_counter
+from time import perf_counter, sleep
 from meerk40t.device.basedevice import PLOT_AXIS_SWAP
 from meerk40t.constants import (
     RASTER_T2B,
@@ -85,6 +85,9 @@ class RasterPlotter:
         @param laserspot: the laserbeam diameter in pixels (low dpi = irrelevant, high dpi very relevant)
         @param special: a dict of special treatment instructions for the different algorithms
         """
+        # Don't try to plot from two different sources at the same time...
+        self._locked = False
+
         if special is None:
             special = {}
         self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
@@ -447,6 +450,9 @@ class RasterPlotter:
         """
         Plot the values yielded by following the given raster plotter in the traversal defined.
         """
+        while self._locked:
+            sleep(0.1)
+        self._locked = True
         offset_x = self.offset_x
         offset_y = self.offset_y
         step_x = self.step_x
@@ -567,6 +573,7 @@ class RasterPlotter:
                     yield offset_x + step_x * x, offset_y + y * step_y, on
                     last_x = nx
                     last_y = ny
+        self._locked = False
 
     def _plot_pixels(self):
         if self.direction in (RASTER_GREEDY_H, RASTER_GREEDY_V):
