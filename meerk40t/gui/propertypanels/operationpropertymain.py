@@ -10,6 +10,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxComboBox,
     wxRadioBox,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.constants import (
@@ -23,7 +24,7 @@ from meerk40t.constants import (
     RASTER_CROSSOVER,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
-
+from meerk40t.gui.icons import icon_letter_h
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Color
 from ..laserrender import swizzlecolor
@@ -1304,6 +1305,8 @@ class RasterSettingsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        iconsize = dip_size(self, 30, 20)
+        bmpsize = min(iconsize[0], iconsize[1]) * self.context.root.bitmap_correction_scale
 
         raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Raster:"), wx.VERTICAL)
         param_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1445,6 +1448,10 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.btn_instruction = wxStaticBitmap(self, wx.ID_ANY)
+        self.btn_instruction.SetBitmap(icon_letter_h.GetBitmap(resize=bmpsize))
+        self.btn_instruction.SetToolTip(_("Quick info about the available modes"))
+        sizer_4.Add(self.btn_instruction, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.radio_raster_swing = wxRadioBox(
             self,
@@ -1487,6 +1494,7 @@ class RasterSettingsPanel(wx.Panel):
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
         )
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing)
+        self.btn_instruction.Bind(wx.EVT_LEFT_DOWN, self.on_raster_help)
 
     def fill_raster_combo(self):
         unsupported = ()
@@ -1646,6 +1654,43 @@ class RasterSettingsPanel(wx.Panel):
         )
         event.Skip()
 
+    def on_raster_help(self, event):
+        unsupported = ()
+        if hasattr(self.context.device, "get_raster_instructions"):
+            instructions = self.context.device.get_raster_instructions()
+            unsupported = instructions.get("unsupported_opt", ())
+
+        inform = {
+            RASTER_T2B: _("- Top To Bottom: follows the picture line by line starting at the top"),
+            RASTER_B2T: _("- Bottom To Top: follows the picture line by line starting at the bottom"),
+            RASTER_R2L: _("- Right to Left: follows the picture column by column starting at the right side"),
+            RASTER_L2R: _("- Left To Right: follows the picture column by column starting at the left side"),
+            RASTER_HATCH: _("- Crosshatch: Makes two passes: one horizontally then another one vertically"),
+            RASTER_GREEDY_H:
+                _("- Greedy horizontal: Instead of following a complete line,") + "\n" +
+                _("  this will choose the nearest to be drawn segment,") + "\n" +
+                _("  lasering these segments with vertical lines.") + "\n" +
+                _("  Usually much faster on an image with a lot of white pixels."),
+            RASTER_GREEDY_V:
+                _("- Greedy vertical: Instead of following a complete line,") + "\n" +
+                _("  this will choose the nearest to be drawn segment,") + "\n" +
+                _("  lasering these segments with vertical lines.") + "\n" +
+                _("  Usually much faster on an image with a lot of white pixels."),
+            RASTER_CROSSOVER:
+                _("- Crossover: Sweeping over the image drawing first all lines") + "\n" +
+                _("  with a majority of black pixels and then drawing the columns") + "\n" +
+                _("  where we have a majority.") + "\n" +
+                _("  Usually much faster on an image with a lot of white pixels."),
+        }
+        lines = [_("You can choose from the following modes to laser an image:")]
+        lines.extend( [info for key, info in inform.items() if key not in unsupported] )
+
+        message = "\n".join(lines)
+        wx.MessageBox(
+            caption=_("Help"),
+            message=message,
+            style=wx.OK|wx.ICON_INFORMATION
+        )
 
 # end of class RasterSettingsPanel
 
