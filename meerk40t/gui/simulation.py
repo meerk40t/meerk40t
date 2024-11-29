@@ -818,6 +818,14 @@ class SimulationPanel(wx.Panel, Job):
         self._playback_cuts = True
         self._cut_end_time = []
 
+        self.update_job = Job(
+            process=self.cache_updater,
+            job_name="cache_updater",
+            interval=0.25,
+            times=1,
+            run_main=False,
+        )
+
         self.job_name = "simulate"
         self.run_main = True
         self.process = self.animate_sim
@@ -1032,10 +1040,14 @@ class SimulationPanel(wx.Panel, Job):
         self.debug(f"Init done: {perf_counter()-self.start_time}")
 
     def reload_statistics(self):
-        self.statistics = self.cutcode.provide_statistics()
-        self._set_slider_dimensions()
-        self.sim_travel.initvars()
-        self.update_fields()
+        try:
+            self.statistics = self.cutcode.provide_statistics()
+            self._set_slider_dimensions()
+            self.sim_travel.initvars()
+            self.update_fields()
+        except RuntimeError:
+            # Was already deleted
+            pass
 
     def debug(self, message):
         # print (message)
@@ -1599,14 +1611,9 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
-        _job = Job(
-            process=self.cache_updater,
-            job_name="cache_updater",
-            interval=0.25,
-            times=1,
-            run_main=False,
-        )
-        self.context.schedule(_job)
+
+        self.update_job.cancel()
+        self.context.schedule(self.update_job)
 
         self._startup()
         self.request_refresh()
@@ -1674,6 +1681,9 @@ class SimulationPanel(wx.Panel, Job):
             self.options_optimize.Enable(False)
 
     def cache_updater(self):
+        self.button_spool.Enable(False)
+        msg = self.button_spool.GetLabel()
+        self.button_spool.SetLabel(_("Calculating"))
         for cut in self.cutcode:
             if isinstance(cut, (RasterCut, PlotCut)):
                 if hasattr(cut, "_plotcache") and cut._plotcache is not None:
@@ -1684,6 +1694,8 @@ class SimulationPanel(wx.Panel, Job):
                     cut._plotcache = list(cut.plot)
                 self.context.signal("refresh_scene", self.widget_scene.name)
         self.reload_statistics()
+        self.button_spool.SetLabel(msg)
+        self.button_spool.Enable(True)
 
     def update_fields(self):
         def len_str(value):
