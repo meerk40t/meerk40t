@@ -10124,7 +10124,7 @@ msgstr "Aggiornamento dello sfondo"
 
 #: meerk40t/camera/gui/camerapanel.py:439
 msgid "...refresh"
-msgstr "...aggiornamento"
+msgstr "Intervallo di aggiornamento"
 
 #: meerk40t/camera/gui/camerapanel.py:472
 msgid "Stop Camera"
@@ -10156,7 +10156,7 @@ msgstr "Azzeramento fisheye"
 #: meerk40t/camera/gui/camerapanel.py:735
 #: meerk40t/camera/gui/camerapanel.py:1047
 msgid "URI Manager"
-msgstr ""
+msgstr "Gestore URI"
 
 #: meerk40t/camera/gui/camerapanel.py:570
 msgid "URI: {uri}"
@@ -12979,6 +12979,10 @@ msgstr "Dimensione della griglia personalizzata"
 msgid "Reset Colors to Default"
 msgstr "Colori Standard"
 
+#: meerk40t/gui/preferences.py:726
+msgid "Reset Colors to brighter defaults"
+msgstr "Ripristino dei colori ai valori predefiniti più luminosi"
+
 msgid "Design"
 msgstr "Elementi"
 
@@ -14415,8 +14419,9 @@ msgstr ""
 msgid "% of maximum power - This is a percentage of the maximum power of the laser."
 msgstr "% della potenza massima del laser"
 
-msgid "Kerf-Test"
-msgstr "Test di compensazione taglio (kerf)"
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:623
+msgid "Kerf compensation:"
+msgstr "Compensazione taglio"
 
 msgid "Cut-Operation"
 msgstr "Parametri laser"
@@ -16591,7 +16596,7 @@ msgstr "Info sul lavoro"
 
 #: ./meerk40t\gui\spoolerpanel.py:530
 msgid "Disable"
-msgstr "Disattivare"
+msgstr "Disattiva"
 
 #: ./meerk40t\gui\wxmmain.py:1295
 msgid "Paint format"
@@ -16758,7 +16763,7 @@ msgid "Lihuiyu interpreter attached to {device}"
 msgstr "Interprete Lihuiyu collegato a {device}"
 
 #: ./meerk40t\lihuiyu\device.py:927
-msgid "Interpreter cannot be attached to any device."
+msgid "Intepreter cannot be attached to any device."
 msgstr "L'Intepreter non può essere collegato a nessun dispositivo"
 
 #: ./meerk40t\lihuiyu\gui\lhydrivergui.py:49
@@ -16772,10 +16777,6 @@ msgstr ""
 #: ./meerk40t\lihuiyu\gui\lhyoperationproperties.py:110
 msgid "If you set Dot Length to 250 = 1/4, a PPI of 250 would result in 1/4 dashes and 3/4 gaps."
 msgstr ""
-
-#: ./meerk40t\lihuiyu\gui\tcpcontroller.py:98
-msgid "Highest number of bytes in the write buffer."
-msgstr "Numero massimo di byte nel buffer di scrittura"
 
 #: ./meerk40t\newly\device.py:622
 msgid "sends raw data exactly as composed"
@@ -16996,38 +16997,6 @@ msgstr "Reindirizza il traffico a un vero laser"
 msgid "Use LB2RD Bridge Protocol"
 msgstr "Utilizza il protocollo bridge LB2RD"
 
-#: ./meerk40t\ruida\gui\gui.py:39
-msgid "Focus Z"
-msgstr "Focus Z"
-
-#: ./meerk40t\ruida\gui\gui.py:41
-msgid "Send a Ruida FocusZ command"
-msgstr "Inviare un comando Ruida FocusZ"
-
-#: ./meerk40t\ruida\gui\ruidaconfig.py:21
-msgid "UDP Settings"
-msgstr "Impostazioni UDP"
-
-#: ./meerk40t\ruida\gui\ruidacontroller.py:119
-msgid "Connected"
-msgstr "Collegato"
-
-#: ./meerk40t\ruida\gui\ruidacontroller.py:121
-msgid "Disconnected"
-msgstr "Disconnesso"
-
-#: ./meerk40t\ruida\gui\ruidacontroller.py:167
-msgid "Ruida-Controller"
-msgstr "Ruida-Controller"
-
-#: ./meerk40t\ruida\gui\ruidaoperationproperties.py:25
-msgid "Air Assist"
-msgstr "Flusso d'aria"
-
-#: ./meerk40t\ruida\gui\ruidaoperationproperties.py:26
-msgid "Trigger the per element air assist"
-msgstr "Attiva il flusso d'aria per l'elemento"
-
 #: ./meerk40t\kernel\kernel.py:2807
 msgid "Perform beep"
 msgstr "Esegue un beep"
@@ -17112,53 +17081,9 @@ msgstr "In alto a sinistra"
 msgid "Wait time for pause in execution (in seconds)"
 msgstr "Tempo di attesa per la pausa nell'esecuzione (in secondi)"
 
-#: ./meerk40t\gui\propertypanels\operationpropertymain.py:623
-msgid "Kerf compensation:"
-msgstr "Compensazione taglio"
-
 #: ./meerk40t\gui\propertypanels\operationpropertymain.py:387
 msgid "/1000"
 msgstr "/1000"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:395
-msgid "Fillrule"
-msgstr "Regola di riempimento"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:392
-msgid "Line-Join"
-msgstr "Linea di giunzione"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:389
-msgid "Line-End"
-msgstr "Fine linea"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:372
-msgid "Even-Odd"
-msgstr "Pari e dispari"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:372
-msgid "Non-Zero"
-msgstr "Non zero"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:371
-msgid "Bevel"
-msgstr "Smussata"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:371
-msgid "Arcs"
-msgstr "Arco"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:370
-msgid "Square"
-msgstr "Quadrata"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:370
-msgid "Round"
-msgstr "Rotonda"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:370
-msgid "Butt"
-msgstr "Troncata"
 
 #: ./meerk40t\gui\wxmscene.py:362
 msgid "Added harmonograph widget to scene."
@@ -18261,14 +18186,6 @@ msgstr "Termina il servizio all'indice dato"
 #: ./meerk40t\image\imagetools.py:1397
 msgid "Show split line candidates"
 msgstr "Mostra i candidati alla linea divisoria"
-
-#: ./meerk40t\gui\propertypanels\attributes.py:378
-msgid "Miter"
-msgstr ""
-
-#: ./meerk40t\gui\propertypanels\attributes.py:378
-msgid "Miter-Clip"
-msgstr ""
 
 #: ./meerk40t\balormk\galvo_commands.py:311
 msgid "{time}ms exceeds 1 second limit to fire a standing laser."
@@ -19523,8 +19440,8 @@ msgid "How long should the tooltip stay before it disappears"
 msgstr "Per quanto tempo deve rimanere visibile il tooltip prima di scomparire"
 
 #: meerk40t/gui/plugin.py:362
-msgid "Loading main module"
-msgstr "Caricamento il modulo principale"
+msgid "Load main module"
+msgstr "Caricamento del modulo principale"
 
 #: meerk40t/gui/plugin.py:382
 msgid "Loading windows"
@@ -19621,11 +19538,6 @@ msgstr "Esportare il file di correzione"
 #: meerk40t/kernel/kernel.py:3119
 msgid "You need to provide a filename to execute"
 msgstr "È necessario fornire un nome file per l'esecuzione di"
-
-#: meerk40t/ruida/gui/ruidaconfig.py:154
-msgid "Ruida-Configuration"
-msgstr "Configurazione di Ruida"
-
 
 #: meerk40t/balormk/device.py:185
 msgid "Rotate View"
@@ -19988,6 +19900,18 @@ msgstr "Selezionato: Quando si carica un file, si riutilizza un'operazione esist
 msgid "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
 msgstr "Deselezionato: Aggiungeremo un'altra operazione accanto a quelle esistenti (se le proprietà differiscono)"
 
+#: meerk40t/core/elements/elements.py:437
+msgid "Load hidden objects to regmarks"
+msgstr "Caricare gli oggetti nascosti in Riferimenti"
+
+#: meerk40t/core/svg_io.py:119
+msgid "Ticked: When loading a file invisible elements will be loaded to the regmarks branch."
+msgstr "Selezionato: Quando si carica un file, gli elementi invisibili vengono caricati nel ramo Riferimenti"
+
+#: meerk40t/core/elements/elements.py:444
+msgid "Unticked: Invisible elements will be loaded as regular elements and will be hidden."
+msgstr "Non spuntato: Gli elementi invisibili saranno caricati come elementi normali e saranno nascosti"
+
 #: meerk40t/core/elements/elements.py:4050
 msgid "File is Empty"
 msgstr "Il file è vuoto"
@@ -20064,7 +19988,7 @@ msgstr "Converte in gruppo normale"
 msgid "Convert filenode into a regular group"
 msgstr "Converte il filenode in un gruppo regolare"
 
-#: meerk40t/core/elements/element_treeops.py:221
+#: meerk40t/core/elements/element_treeops.py:351
 msgid "Content of {filenode}"
 msgstr "Contenuto di {filenode}"
 
@@ -20531,7 +20455,7 @@ msgstr "Elimina l'effetto maschera di ritaglio"
 msgid "Legacy Classify"
 msgstr "Vecchia logica di classificazione"
 
-#: meerk40t/core/elements/elements.py:395
+#: meerk40t/core/elements/elements.py:421
 msgid "Reuse existing"
 msgstr "Usa quelli esistenti"
 
@@ -20567,23 +20491,23 @@ msgstr "Attivo: le linee di tratteggio saranno ottimizzate"
 msgid "Inactive: hatch lines will be burnt sequentially."
 msgstr "Inattivo: le linee di tratteggio vengono eseguite una dopo l'altra"
 
-#: ./meerk40t\newly\gui\operationproperties.py:29
+#: meerk40t/newly/gui/operationproperties.py:29
 msgid "Advanced Acceleration"
 msgstr "Accelerazione"
 
-#: ./meerk40t\newly\gui\operationproperties.py:30
+#: meerk40t/newly/gui/operationproperties.py:30
 msgid "Set acceleration value for this operation"
 msgstr "Impostare il valore di accelerazione per questa operazione"
 
-#: ./meerk40t\newly\gui\newlyconfig.py:34
+#: meerk40t/newly/gui/newlyconfig.py:41
 msgid "Newly"
 msgstr "Newlydraw"
 
-#: ./meerk40t\newly\gui\newlyconfig.py:36
+#: meerk40t/newly/gui/newlyconfig.py:43
 msgid "Global"
 msgstr "Globale"
 
-#: ./meerk40t\newly\gui\newlyconfig.py:53
+#: meerk40t/newly/gui/newlyconfig.py:60
 msgid "Raster Chart"
 msgstr "Tabella Raster"
 
@@ -20788,7 +20712,7 @@ msgstr "Laser a diodi generico"
 msgid "K40 CO2 (GRBL-Controller)"
 msgstr "K40 CO2 (controller GRBL)"
 
-#: meerk40t/grbl/plugin.py:88 meerk40t/gui/devicepanel.py:116 meerk40t/lihuiyu/plugin.py:38 meerk40t/lihuiyu/plugin.py:68 meerk40t/ruida/plugin.py:30
+#: meerk40t/grbl/plugin.py:88 meerk40t/ruida/plugin.py:30 meerk40t/lihuiyu/plugin.py:38 meerk40t/lihuiyu/plugin.py:68 meerk40t/gui/devicepanel.py:116
 msgid "K-Series CO2-Laser"
 msgstr "Laser CO2 serie K"
 
@@ -20813,13 +20737,6 @@ msgstr "Longer Diode-Laser"
 #: meerk40t/gui/devicepanel.py:119 meerk40t/newly/plugin.py:65 meerk40t/newly/plugin.py:92 meerk40t/newly/plugin.py:119 meerk40t/newly/plugin.py:146 meerk40t/newly/plugin.py:173 meerk40t/newly/plugin.py:210 meerk40t/newly/plugin.py:247 meerk40t/newly/plugin.py:284 meerk40t/newly/plugin.py:321 meerk40t/newly/plugin.py:358 meerk40t/newly/plugin.py:395 meerk40t/newly/plugin.py:432 meerk40t/newly/plugin.py:469 meerk40t/newly/plugin.py:506 meerk40t/newly/plugin.py:543 meerk40t/newly/plugin.py:580 meerk40t/newly/plugin.py:624 meerk40t/newly/plugin.py:657 meerk40t/newly/plugin.py:698 meerk40t/newly/plugin.py:743 meerk40t/newly/plugin.py:776 meerk40t/newly/plugin.py:809 meerk40t/newly/plugin.py:842 meerk40t/newly/plugin.py:875 meerk40t/newly/plugin.py:908 meerk40t/newly/plugin.py:941 meerk40t/newly/plugin.py:970 meerk40t/newly/plugin.py:1003 meerk40t/newly/plugin.py:1036 meerk40t/newly/plugin.py:1077 meerk40t/newly/plugin.py:1110 meerk40t/newly/plugin.py:1143 meerk40t/newly/plugin.py:1184
 msgid "Newly CO2-Laser"
 msgstr "NewlyDraw CO2-Laser"
-
-#: meerk40t/gui/preferences.py:726
-msgid "Reset Colors to brighter defaults"
-msgstr "Ripristino dei colori ai valori predefiniti più luminosi"
-
-
-
 
 #: meerk40t/lihuiyu/plugin.py:30
 msgid "K40-CO2-Laser (m2nano-Board) (Green/Blue)"
@@ -20864,10 +20781,6 @@ msgstr "Aggiunge l'effetto oscillazione"
 #: meerk40t/core/elements/element_treeops.py:2165
 msgid "Add a wobble effect to the operation"
 msgstr "Aggiungere un effetto oscillazione al processp"
-
-#: meerk40t/gui/wxmscene.py:1304
-msgid "Detect contours on background"
-msgstr "Rileva contorni sullo sfondo"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:41
 msgid "Contour recognition"
@@ -20981,7 +20894,7 @@ msgstr "Si vuole creare il contorno stesso o il rettangolo minimo che lo racchiu
 msgid "Shall we try to reduce the number of points for the created contour?"
 msgstr "Provo a ridurre il numero di punti per il contorno creato?"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:560
+#: meerk40t/gui/propertypanels/imageproperty.py:562
 msgid "Contours generated: {count} in {duration}"
 msgstr "Contorni generati: {count} in {duration}"
 
@@ -20989,23 +20902,27 @@ msgstr "Contorni generati: {count} in {duration}"
 msgid "use the image as bed background"
 msgstr "utilizzare l'immagine come sfondo del letto"
 
-#: meerk40t/gui/themes.py:54
+#: meerk40t/gui/wxmscene.py:1304
+msgid "Detect contours on background"
+msgstr "Rileva contorni sullo sfondo"
+
+#: meerk40t/gui/themes.py:49
 msgid "UI-Colours"
 msgstr "Colori UI"
 
-#: meerk40t/gui/themes.py:57
+#: meerk40t/gui/themes.py:52
 msgid "System"
 msgstr "Sistema"
 
-#: meerk40t/gui/themes.py:57
+#: meerk40t/gui/themes.py:52
 msgid "Dark"
 msgstr "Scuro"
 
-#: meerk40t/gui/themes.py:57
+#: meerk40t/gui/themes.py:52
 msgid "Light"
 msgstr "Chiaro"
 
-#: meerk40t/gui/themes.py:58
+#: meerk40t/gui/themes.py:53
 msgid "Will force MeerK40t to start in dark/lightmode despite the system settings"
 msgstr "Forzerà il MeerK40t ad avviarsi in modalità scura/chiara nonostante le impostazioni del sistema"
 
@@ -21013,27 +20930,269 @@ msgstr "Forzerà il MeerK40t ad avviarsi in modalità scura/chiara nonostante le
 msgid "This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first."
 msgstr "Questo utilizza il comando 'play' fornito con il pacchetto sox, quindi potrebbe essere necessario installarlo prima con 'sudo apt install sox'"
 
-#: meerk40t/gui/wxmeerk40t.py:1057
+#: meerk40t/gui/wxmeerk40t.py:1047
 msgid "Soundfile"
 msgstr "File sonoro"
 
-#: meerk40t/gui/wxmeerk40t.py:1058
+#: meerk40t/gui/wxmeerk40t.py:1048
 msgid "Define the soundfile MeerK40t will play when the 'beep' command is issued"
 msgstr "Definisce il file audio che MeerK40t riproduce al comando 'beep'"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:606
+#: meerk40t/gui/propertypanels/imageproperty.py:612
 msgid "Delete this contour"
 msgstr "Cancella il contorno"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:607
+#: meerk40t/gui/propertypanels/imageproperty.py:613
 msgid "Delete all others"
 msgstr "Cancella tutti gli altri"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:608
+#: meerk40t/gui/propertypanels/imageproperty.py:614
 msgid "Delete all bigger"
 msgstr "Elimina tutti i più grandi"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:609
+#: meerk40t/gui/propertypanels/imageproperty.py:615
 msgid "Delete all smaller"
 msgstr "Elimina tutti i più piccoli"
+
+#: meerk40t/lihuiyu/gui/lhycontrollergui.py:529
+msgid "You may run an incompatible version of libusb, have you tried the 32-bit version?"
+msgstr "È possibile che sia in esecuzione una versione incompatibile di libusb, hai provato la versione a 32 bit?"
+
+#: meerk40t/balormk/device.py:148 meerk40t/grbl/device.py:84 meerk40t/lihuiyu/device.py:69 meerk40t/moshi/device.py:91 meerk40t/newly/device.py:152 meerk40t/ruida/device.py:81
+msgid "Laserspot"
+msgstr ""
+
+#: meerk40t/balormk/device.py:149 meerk40t/grbl/device.py:85 meerk40t/lihuiyu/device.py:70 meerk40t/moshi/device.py:92 meerk40t/newly/device.py:153 meerk40t/ruida/device.py:82
+msgid "Laser spot size"
+msgstr "Dimensione dello spot laser"
+
+#: meerk40t/core/elements/element_treeops.py:3142 meerk40t/core/elements/element_treeops.py:3150
+msgid "Duplicate group"
+msgstr "Gruppo duplicato"
+
+#: meerk40t/core/elements/element_treeops.py:3144
+msgid "Create one copy of the selected group"
+msgstr "Crea una copia del gruppo selezionato"
+
+#: meerk40t/core/elements/element_treeops.py:3155
+msgid "Create multiple copies of the selected group"
+msgstr "Creare copie multiple del gruppo selezionato"
+
+#: meerk40t/core/elements/shapes.py:853
+msgid "set operation property to new value"
+msgstr "Imposta la proprietà Processi sul nuovo valore"
+
+#: meerk40t/core/elements/shapes.py:870
+msgid "No selected operations."
+msgstr "Nessun Processo selezionato"
+
+#: meerk40t/core/elements/shapes.py:969
+msgid "Operation {name} has no property {field}"
+msgstr "Processo {name} non ha proprietà {field}"
+
+#: meerk40t/gui/about.py:178 meerk40t/gui/wxmmain.py:257
+msgid "Your system is using a very high userscale value: {scale}% ! Unfortunately there is a bug in wxPython (the framework we are using) that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\nAs there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
+msgstr "Il tuo sistema utilizza un valore di userscale molto alto: {scale}% ! Purtroppo esiste un bug in wxPython (il framework che stiamo utilizzando) che causa un upscaling indesiderato delle immagini in questa configurazione. Lo riconoscerete osservando le icone molto pixellate. Poiché non possiamo fare molto al riguardo, vi consigliamo di ridurre il valore di userscale a qualcosa di inferiore al 150%."
+
+#: meerk40t/gui/imagesplitter.py:181 meerk40t/gui/imagesplitter.py:329 meerk40t/gui/propertypanels/imageproperty.py:1808 meerk40t/gui/propertypanels/operationpropertymain.py:1310
+msgid "Set DPI to {value}"
+msgstr "Imposta DPI su {value}"
+
+#: meerk40t/gui/plugin.py:438
+msgid "Loading main module"
+msgstr "Caricamento del modulo principale"
+
+#: meerk40t/gui/simulation.py:1475
+msgid "Raster as Image"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:1476
+msgid "Show picture as image / as all the lines needed"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:1483
+msgid "Simulate laser width"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:1484
+msgid "Show laser path as wide as laserspot width / as simple line"
+msgstr "Mostra il percorso del laser come larghezza del laserspot / come linea semplice"
+
+#: meerk40t/gui/gui_mixins.py:661
+msgid "- Raster/Images have a low dpi and lines will not overlap"
+msgstr "- Le immagini raster hanno un dpi basso e le linee non si sovrappongono"
+
+#: meerk40t/gui/gui_mixins.py:670
+msgid "- Raster/Images have a high dpi and lines will overlap"
+msgstr "- Le immagini raster hanno dpi elevati e le linee si sovrappongono"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1353
+msgid "Usually every non-white pixel (even very light ones) will be burned."
+msgstr "Di solito ogni pixel non bianco (anche quelli molto chiari) viene processato 'bruciato'"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1354
+msgid "If you set this value to something different than 0%,"
+msgstr "Se si imposta questo valore su qualcosa di diverso da 0%"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1355
+msgid "then this defines the needed blackness level for a pixel to be burned."
+msgstr "definisce il livello di nero necessario di un pixel per la lavorazione"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1369
+msgid "Padding that will be added at the end of a scanline to allow the laser to slow down"
+msgstr "Padding che verrà aggiunto alla fine di una linea di scansione per consentire al laser di rallentare"
+
+#: meerk40t/gui/about.py:174
+msgid ""
+"Your system is using a very high userscale value: {scale}% ! "
+"Unfortunately there is a bug in wxPython (the framework we are using) "
+"that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n"
+"As there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
+msgstr ""
+"La configurazione attuale del sistema utilizza un valore di scala molto alto di {scale}%! "
+"Sfortunatamente, c'è un bug in wxPython (la libreria che usiamo) che causa l'ingrandimento involontario di tutte le immagini a questi valori "
+"tutte le immagini vengono ingrandite involontariamente. Questo può essere riconosciuto dalle icone che sono troppo grandi/molto pixelate.\n"
+"Consigliamo vivamente di impostare il ridimensionamento dell'utente nelle impostazioni di sistema a un valore inferiore al 150%."
+
+#: meerk40t/gui/wxmmain.py:241
+msgid "Unfortunate System Settings"
+msgstr "Impostazioni di sistema sfavorevoli"
+
+#: meerk40t/gui/wxutils.py:848
+msgid "Default values..."
+msgstr "Valori predefiniti... "
+
+#: meerk40t/ruida/gui/ruidaconfig.py:23
+msgid "UDP Settings"
+msgstr "Impostazioni UDP"
+
+#: meerk40t/ruida/gui/ruidaconfig.py:156
+msgid "Ruida-Configuration"
+msgstr "Configurazione di Ruida"
+
+#: meerk40t/ruida/gui/ruidacontroller.py:120
+msgid "Connected"
+msgstr "Collegato"
+
+#: meerk40t/ruida/gui/ruidacontroller.py:122
+msgid "Disconnected"
+msgstr "Disconnesso"
+
+#: meerk40t/ruida/gui/ruidacontroller.py:168
+msgid "Ruida-Controller"
+msgstr "Ruida-Controller"
+
+#: meerk40t/ruida/gui/ruidaoperationproperties.py:26
+msgid "Air Assist"
+msgstr "Flusso d'aria"
+
+#: meerk40t/ruida/gui/ruidaoperationproperties.py:27
+msgid "Trigger the per element air assist"
+msgstr "Attiva il flusso d'aria per l'elemento"
+
+#: meerk40t/tools/kerftest.py:880
+msgid "Kerf-Test"
+msgstr "Test di compensazione taglio (kerf)"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:106
+msgid "Highest number of bytes in the write buffer."
+msgstr "Numero massimo di byte nel buffer di scrittura"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1348
+msgid "Cutoff:"
+msgstr ""
+
+#: meerk40t/ruida/gui/gui.py:41
+msgid "Focus Z"
+msgstr "Focus Z"
+
+#: meerk40t/ruida/gui/gui.py:43
+msgid "Send a Ruida FocusZ command"
+msgstr "Inviare un comando Ruida FocusZ"
+
+#: meerk40t/gui/propertypanels/attributes.py:467
+msgid "Butt"
+msgstr "Troncata"
+
+#: meerk40t/gui/propertypanels/attributes.py:467 meerk40t/gui/propertypanels/attributes.py:468
+msgid "Round"
+msgstr "Rotonda"
+
+#: meerk40t/gui/propertypanels/attributes.py:467
+msgid "Square"
+msgstr "Quadrata"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Arcs"
+msgstr "Arco"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Bevel"
+msgstr "Smussata"
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Miter"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/attributes.py:468
+msgid "Miter-Clip"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/attributes.py:469
+msgid "Non-Zero"
+msgstr "Non zero"
+
+#: meerk40t/gui/propertypanels/attributes.py:469
+msgid "Even-Odd"
+msgstr "Pari e dispari"
+
+#: meerk40t/gui/propertypanels/attributes.py:503
+msgid "Line-End"
+msgstr "Fine linea"
+
+#: meerk40t/gui/propertypanels/attributes.py:506
+msgid "Line-Join"
+msgstr "Linea di giunzione"
+
+#: meerk40t/gui/propertypanels/attributes.py:509
+msgid "Fillrule"
+msgstr "Regola di riempimento"
+
+
+
+
+#: meerk40t/image/imagetools.py:2066
+msgid "Create a linefill representation of the provided images"
+msgstr "Creare una rappresentazione a riempimento di linee delle immagini fornite"
+
+#: meerk40t/core/elements/element_treeops.py:908 meerk40t/core/elements/element_treeops.py:919
+msgid "Shall the line pattern be able to travel back and forth or will it always start at the same side"
+msgstr ""
+
+#: meerk40t/gui/simulation.py:2345
+msgid "(Right click: no optimisation)"
+msgstr "(Click destro: nessuna ottimizzazione)"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1348
+msgid "Override black/white image:"
+msgstr "Sovrascrive l'immagine in bianco/nero:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1350
+msgid "Use grayscale instead"
+msgstr "Utilizza la scala di grigi"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1352
+msgid "Usually a raster will be created as a black and white picture. Every non-white pixel (even very light ones) will become black and will be burned at full power."
+msgstr "Di solito un raster viene creato come un'immagine in bianco e nero. Ogni pixel non bianco (anche quelli molto chiari) diventa nero e viene bruciato alla massima potenza"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1353
+msgid "If you check this value then pixels will be converted to grayscale and the burn-power of a pixel will depend on its darkness."
+msgstr "Se si seleziona questo valore, i pixel saranno convertiti in scala di grigi e la potenza di combustione di un pixel dipenderà dal suo livello di grigio"
+
+#: meerk40t/gui/wxmmain.py:311
+msgid "Loading panels..."
+msgstr "Caricamento Pannelli..."
+
+
+
 
