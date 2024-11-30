@@ -11,7 +11,7 @@ MEERK40T_RELEASES = "https://github.com/meerk40t/meerk40t/releases"
 FACEBOOK_MEERK40T = "https://www.facebook.com/groups/716000085655097"
 DISCORD_MEERK40T = "https://discord.gg/vkDD3HdQq6"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
-IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
+# IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
 MEERK40T_FEATURE = "https://github.com/meerk40t/meerk40t/discussions/new/choose"
 
 
@@ -58,5 +58,5 @@ def plugin(kernel, lifecycle):
         kernel.register("webhelp/facebook", FACEBOOK_MEERK40T)
         kernel.register("webhelp/discord", DISCORD_MEERK40T)
         kernel.register("webhelp/makers", MAKERS_FORUM_MEERK40T)
-        kernel.register("webhelp/irc", IRC_CLIENT)
+        # kernel.register("webhelp/irc", IRC_CLIENT)
         kernel.register("webhelp/featurerequest", MEERK40T_FEATURE)
