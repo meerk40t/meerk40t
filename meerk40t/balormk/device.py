@@ -835,6 +835,82 @@ class BalorDevice(Service, Status):
             },
         ]
         self.register_choices("balor-corfile", choices)
+
+        choices = [
+            {
+                "attr": "chuck_active",
+                "object": self,
+                "type": bool,
+                "default": False,
+                "label": _("Rotary Chuck active"),
+                "tip": _("Is a chuck rotary attached to the controller and should it be used?"),
+                "section": "Motor",
+            },
+            {
+                "attr": "chuck_steps_per_rev",
+                "object": self,
+                "default": 6400,
+                "type": int,
+                "style": "combo",
+                "choices": [
+                    200,
+                    800,
+                    1600,
+                    3200,
+                    6400,
+                    12800,
+                    25600,
+                    51200,
+                    1000,
+                    2000,
+                    4000,
+                    5000,
+                    8000,
+                    10000,
+                    20000,
+                    40000,
+                ],
+                "conditional": (self, "chuck_active"),
+                "label": _("Steps per rev"),
+                "tip": _("How many steps are needed for a full revolution"),
+                "section": "Motor",
+            },
+            {
+                "attr": "chuck_min_speed",
+                "object": self,
+                "default": 100,
+                "type": int,
+                "conditional": (self, "chuck_active"),
+                "label": _("Minimum speed"),
+                "tip": _("Minimum motor speed"),
+                "section": "Motor",
+            },
+            {
+                "attr": "chuck_max_speed",
+                "object": self,
+                "default": 5000,
+                "type": int,
+                "conditional": (self, "chuck_active"),
+                "label": _("Maximum speed"),
+                "tip": _("Maximum motor speed"),
+                "section": "Motor",
+                "subsection": "Speed",
+            },
+            {
+                "attr": "chuck_accel_time",
+                "object": self,
+                "default": 100,
+                "type": int,
+                "conditional": (self, "chuck_active"),
+                "label": _("Acceleration time"),
+                "trailer": "ms",
+                "tip": _("Acceleration time for rotary"),
+                "section": "Motor",
+                "subsection": "Speed",
+            },
+        ]
+        self.register_choices("balor-rotary", choices)
+
         self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         self.state = 0
