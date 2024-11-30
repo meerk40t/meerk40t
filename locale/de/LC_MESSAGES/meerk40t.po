@@ -19337,3 +19337,67 @@ msgstr "Verbindungen"
 #: meerk40t/gui/propertypanels/attributes.py:509
 msgid "Fillrule"
 msgstr "Füllregel"
+
+#: meerk40t/balormk/device.py:148 meerk40t/grbl/device.py:84 meerk40t/lihuiyu/device.py:69 meerk40t/moshi/device.py:91 meerk40t/newly/device.py:152 meerk40t/ruida/device.py:81
+msgid "Laserspot"
+msgstr "Laserpunkt"
+
+#: meerk40t/balormk/device.py:149 meerk40t/grbl/device.py:85 meerk40t/lihuiyu/device.py:70 meerk40t/moshi/device.py:92 meerk40t/newly/device.py:153 meerk40t/ruida/device.py:82
+msgid "Laser spot size"
+msgstr "Größe Laserpunkt"
+
+#: meerk40t/core/cutplan.py:644 meerk40t/core/cutplan.py:680
+msgid "Combine effect primitives"
+msgstr "Effektlinien vereinen"
+
+#: meerk40t/core/cutplan.py:1251 meerk40t/core/cutplan.py:1349 meerk40t/core/cutplan.py:1549
+msgid "Pass {cpass}/{tpass}"
+msgstr "Durchgang {cpass}/{tpass}"
+
+#: meerk40t/core/elements/element_treeops.py:908 meerk40t/core/elements/element_treeops.py:919
+msgid "Shall the line pattern be able to travel back and forth or will it always start at the same side"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3189 meerk40t/core/elements/element_treeops.py:3197
+msgid "Duplicate group"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3191
+msgid "Create one copy of the selected group"
+msgstr "Erzeuge eine Kopie von der ausgewählten Gruppe"
+
+#: meerk40t/core/elements/element_treeops.py:3202
+msgid "Create multiple copies of the selected group"
+msgstr "Erzeuge mehrere Kopien von der ausgewählten Gruppe"
+
+#: meerk40t/core/elements/files.py:104
+msgid "Execute file startup command list"
+msgstr "Führe Datei-Start-Kommandos aus"
+
+#: meerk40t/gui/dialogoptions.py:77 meerk40t/gui/hersheymanager.py:87 meerk40t/gui/materialmanager.py:66 meerk40t/gui/wxutils.py:262
+msgid "Cancel"
+msgstr "Abbruch"
+
+#: meerk40t/gui/imagesplitter.py:181 meerk40t/gui/imagesplitter.py:329 meerk40t/gui/propertypanels/imageproperty.py:1816 meerk40t/gui/propertypanels/operationpropertymain.py:1310
+msgid "Set DPI to {value}"
+msgstr "DPI setzen: {value}"
+
+#: meerk40t/gui/plugin.py:280
+msgid "Yes"
+msgstr "Ja"
+
+#: meerk40t/gui/plugin.py:282
+msgid "No"
+msgstr "Nein"
+
+#: meerk40t/gui/plugin.py:284
+msgid "Question"
+msgstr "Frage"
+
+#: meerk40t/gui/plugin.py:296
+msgid "(Yes={yes})"
+msgstr "(Ja={yes})"
+
+#: meerk40t/gui/plugin.py:311
+msgid "(Yes={yes}, No={no})"
+msgstr "(Ja={yes}, Nein={no})"
