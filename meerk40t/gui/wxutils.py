@@ -814,8 +814,10 @@ class TextCtrl(wx.TextCtrl):
         self.prevalidate("leave")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_KILL_FOCUS
-            self._action_routine()
-            self._event_generated = None
+            try:
+                self._action_routine()
+            finally:
+                self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
@@ -827,8 +829,10 @@ class TextCtrl(wx.TextCtrl):
         self.prevalidate("enter")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_TEXT_ENTER
-            self._action_routine()
-            self._event_generated = None
+            try:
+                self._action_routine()
+            finally:
+                self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
@@ -838,6 +842,13 @@ class TextCtrl(wx.TextCtrl):
         def set_menu_value(to_be_set):
             def handler(event):
                 self.SetValue(to_be_set)
+                self.prevalidate("enter")
+                if self._action_routine is not None:
+                    self._event_generated = wx.EVT_TEXT_ENTER
+                    try:
+                        self._action_routine()
+                    finally:
+                        self._event_generated = None
             return handler
 
         if not self._default_values:
@@ -930,8 +941,10 @@ class TextCtrl(wx.TextCtrl):
             if getattr(self.parent.context.root, "process_while_typing", False):
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT
-                    self._action_routine()
-                    self._event_generated = None
+                    try:
+                        self._action_routine()
+                    finally:
+                        self._event_generated = None
 
     @property
     def is_changed(self):
