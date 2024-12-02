@@ -1663,7 +1663,7 @@ class RasterSettingsPanel(wx.Panel):
         inform = {
             RASTER_T2B: _("- Top To Bottom: follows the picture line by line starting at the top"),
             RASTER_B2T: _("- Bottom To Top: follows the picture line by line starting at the bottom"),
-            RASTER_R2L: _("- Right to Left: follows the picture column by column starting at the right side"),
+            RASTER_R2L: _("- Right To Left: follows the picture column by column starting at the right side"),
             RASTER_L2R: _("- Left To Right: follows the picture column by column starting at the left side"),
             RASTER_HATCH: _("- Crosshatch: Makes two passes: one horizontally then another one vertically"),
             RASTER_GREEDY_H:
