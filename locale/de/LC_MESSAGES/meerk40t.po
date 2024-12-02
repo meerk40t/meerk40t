@@ -19401,3 +19401,113 @@ msgstr "(Ja={yes})"
 #: meerk40t/gui/plugin.py:311
 msgid "(Yes={yes}, No={no})"
 msgstr "(Ja={yes}, Nein={no})"
+
+#: meerk40t/balormk/device.py:265
+msgid "Check serial no"
+msgstr "Prüfe Seriennummer"
+
+#: meerk40t/balormk/device.py:268 meerk40t/balormk/device.py:279
+msgid "Does the machine need to have a specific serial number?"
+msgstr ""
+"Die Seriennummer kann genutzt werden, um ein Board zu identifizieren. Falls das "
+"Gerät keine übereinstimmende Seriennummer hat, so wird die Verbindung unterbrochen."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1348
+msgid "Optimize movement:"
+msgstr "Bewegungen optimieren:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1349
+msgid "Consider laserdot"
+msgstr "Laserspot-Größe"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1351
+msgid "A laser dot has a certain diameter, so for high dpi values, lines will overlap a lot."
+msgstr ""
+"Ein Laserpunkt hat einen relevanten Durchmesser, womit sich die Brennmuster\n"
+"von nah beieinander liegenden Linien stark überlagern."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1352
+msgid "Active: don't burn pixels already overlapped"
+msgstr "Aktiv: überspringe bereits gebrannte Bereiche."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1353
+msgid "Inactive: burn all pixels regardless of a possible overlap."
+msgstr "Inaktiv: brenne alle Bereiche unabhängig von möglichen Überlagerungen."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1358
+msgid "Override black/white image:"
+msgstr "Übersteuere SW-Bilder:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1360
+msgid "Use grayscale instead"
+msgstr "Graustufen verwenden"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1362
+msgid "Usually a raster will be created as a grayscale picture and the burn-power of a pixel will depend on its darkness."
+msgstr ""
+"Normalerweise wird ein Raster als Graustufen-Bild erzeugt und die Intensität\n"
+"des Laserstrahls an einer Pixelposition hängt von der Graustufe des Pixels ab."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1363
+msgid "If you uncheck this value then every non-white pixel (even very light ones) will become black and will be burned at full power."
+msgstr "Wenn diese Option abgewählt wird, so wird jedes nicht-weiße Pixel (auch sehr helle) zu Schwarz und wird mit voller Intensität gebrannt."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1453
+msgid "Quick info about the available modes"
+msgstr "Kurz-Info zu den verfügbaren Raster-Modi"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1664
+msgid "- Top To Bottom: follows the picture line by line starting at the top"
+msgstr "- Top To Bottom: folgt dem Bild Zeile um Zeile und fängt damit am oberen Rand an"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1665
+msgid "- Bottom To Top: follows the picture line by line starting at the bottom"
+msgstr "- Bottom To Top: folgt dem Bild Zeile um Zeile und fängt damit am unteren Rand an"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1666
+msgid "- Right To Left: follows the picture column by column starting at the right side"
+msgstr "- Right To Left: folgt dem Bild Spalte um Spalte und fängt damit am rechten Rand an"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1667
+msgid "- Left To Right: follows the picture column by column starting at the left side"
+msgstr "- Left To Right: folgt dem Bild Spalte um Spalte und fängt damit am rechten Rand an"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1668
+msgid "- Crosshatch: Makes two passes: one horizontally then another one vertically"
+msgstr "- Crosshatch: Zwei Durchgänge: einer Zeilenweise anschließend einer Spaltenweise"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1670
+msgid "- Greedy horizontal: Instead of following a complete line,"
+msgstr "Greedy horizontal: Statt eine Zeile komplett abzufahren,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1671 meerk40t/gui/propertypanels/operationpropertymain.py:1676
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr "  folgt dies dem nächstgelegenen Segment, wobei dieses"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1672 meerk40t/gui/propertypanels/operationpropertymain.py:1677
+msgid "  lasering these segments with vertical lines."
+msgstr "  mit Hilfe horizontaler Linien gebrannt wird."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1673 meerk40t/gui/propertypanels/operationpropertymain.py:1678 meerk40t/gui/propertypanels/operationpropertymain.py:1683
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr "  Normalerweise bei Bildern mit vielen weißen Flächen deutlich schneller."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1675
+msgid "- Greedy vertical: Instead of following a complete line,"
+msgstr "Greedy vertical: Statt eine Zeile komplett abzufahren,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1680
+msgid "- Crossover: Sweeping over the image drawing first all lines"
+msgstr "- Crossover: Fährt das Bild ab, indem zunächst alle Zeilen"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1681
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr "  mit einer Mehrheit an schwarzen Pixeln gebrannt werden,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1682
+msgid "  where we have a majority."
+msgstr "  im Anschluß daran alle Spalten, bei denen Schwarz häufiger war."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1685
+msgid "You can choose from the following modes to laser an image:"
+msgstr "Folgende Modi stehen beim Lasern eines Bilds zur Auswahl:"
