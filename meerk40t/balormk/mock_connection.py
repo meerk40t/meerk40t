@@ -100,16 +100,16 @@ class MockConnection:
     def set_implied_response(self, data):
         if data is None:
             self._implied_response = None
-        else:
-            self._implied_response = bytearray(8)
-            if isinstance(data, str):
-                for idx in range(min(8, len(data))):
-                    self._implied_response[idx] = int(ord(data[idx]))
-            else:
-                for idx in range(min(8, len(data))):
-                    self._implied_response[idx] = int(data[idx])
-            for idx in range(len(data), 8):
-                self._implied_response[idx] = 0
+            return
+
+        # Convert input to bytes early
+        if isinstance(data, str):
+            data = data.encode('ascii')
+
+        # Create fixed-size response with padding
+        self._implied_response = bytearray(8)
+        self._implied_response[:len(data)] = data[:8]
+
 
     def read(self, index=0):
         if self._implied_response is None:
