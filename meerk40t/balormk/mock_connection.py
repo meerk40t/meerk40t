@@ -18,6 +18,7 @@ class MockConnection:
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 500
+        self._implied_response = None
 
     def is_open(self, index=0):
         try:
@@ -46,12 +47,16 @@ class MockConnection:
             del self.devices[index]
 
     def write(self, index=0, packet=None):
+        from meerk40t.balormk.controller import GetSerialNo
         packet_length = len(packet)
         assert packet_length == 0xC or packet_length == 0xC00
         if packet is not None:
             device = self.devices[index]
             if not device:
                 raise ConnectionError
+            b = packet[0]
+            if b == GetSerialNo:
+                self.set_implied_response("meerk40t")
             if self.send:
                 if packet_length == 0xC:
                     self.send(self._parse_single(packet))
@@ -83,7 +88,6 @@ class MockConnection:
 
     def _parse_single(self, packet):
         from meerk40t.balormk.controller import single_command_lookup
-
         b0 = packet[1] << 8 | packet[0]
         b1 = packet[3] << 8 | packet[2]
         b2 = packet[5] << 8 | packet[4]
@@ -93,10 +97,27 @@ class MockConnection:
         string_value = single_command_lookup.get(b0, "Unknown")
         return f"{b0:04x}:{b1:04x}:{b2:04x}:{b3:04x}:{b4:04x}:{b5:04x} {string_value}"
 
+    def set_implied_response(self, data):
+        if data is None:
+            self._implied_response = None
+            return
+
+        # Convert input to bytes early
+        if isinstance(data, str):
+            data = data.encode('ascii')
+
+        # Create fixed-size response with padding
+        self._implied_response = bytearray(8)
+        self._implied_response[:len(data)] = data[:8]
+
+
     def read(self, index=0):
-        read = bytearray(8)
-        for r in range(len(read)):
-            read[r] = random.randint(0, 255)
+        if self._implied_response is None:
+            read = bytearray(8)
+            for r in range(len(read)):
+                read[r] = random.randint(0, 255)
+        else:
+            read = self._implied_response
         read = struct.pack("8B", *read)
         device = self.devices[index]
         if not device:
@@ -106,4 +127,5 @@ class MockConnection:
                 f"{read[0]:02x}:{read[1]:02x}:{read[2]:02x}:{read[3]:02x}"
                 f"{read[4]:02x}:{read[5]:02x}:{read[6]:02x}:{read[7]:02x}"
             )
+        self.set_implied_response(None)
         return read

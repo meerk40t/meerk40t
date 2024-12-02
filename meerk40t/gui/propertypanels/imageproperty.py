@@ -516,13 +516,21 @@ class ContourPanel(wx.Panel):
         if self.parameters["img_invert"]:
             image = ImageOps.invert(image)
         if self.parameters["img_usecontrast"]:
-            contrast = ImageEnhance.Contrast(image)
-            c = (self.parameters["img_contrast"] + 128.0) / 128.0
-            image = contrast.enhance(c)
+            try:
+                contrast = ImageEnhance.Contrast(image)
+                c = (self.parameters["img_contrast"] + 128.0) / 128.0
+                image = contrast.enhance(c)
+            except ValueError:
+                # Not available for this type of image
+                pass
 
-            brightness = ImageEnhance.Brightness(image)
-            b = (self.parameters["img_brightness"] + 128.0) / 128.0
-            image = brightness.enhance(b)
+            try:
+                brightness = ImageEnhance.Brightness(image)
+                b = (self.parameters["img_brightness"] + 128.0) / 128.0
+                image = brightness.enhance(b)
+            except ValueError:
+                # Not available for this type of image
+                pass
         self.image = image
 
     def calculate_contours(self):
