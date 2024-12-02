@@ -1734,10 +1734,14 @@ def disable_window(window):
 
 def set_ctrl_value(ctrl, value):
     # Let's try to save the caret position
-    cursor = ctrl.GetInsertionPoint()
-    if ctrl.GetValue() != value:
-        ctrl.SetValue(value)
-        ctrl.SetInsertionPoint(min(len(value), cursor))
+    try:
+        cursor = ctrl.GetInsertionPoint()
+        if ctrl.GetValue() != value:
+            ctrl.SetValue(value)
+            ctrl.SetInsertionPoint(min(len(value), cursor))
+    except RuntimeError:
+        # Control might already have been destroyed
+        pass
 
 
 def dip_size(frame, x, y):
