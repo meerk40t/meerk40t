@@ -738,13 +738,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                exclusive = c.get("exclusive", True)
+                cb_style = wx.CB_DROPDOWN
+                if exclusive:
+                    cb_style = cb_style | wx.CB_READONLY
 
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
                 control = wxComboBox(
                     self,
                     wx.ID_ANY,
                     choices=choice_list,
-                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                    style = cb_style,
                 )
                 # Constrain the width
                 testsize = control.GetBestSize()
@@ -772,6 +776,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         v = dtype(ctrl.GetValue())
                         current_value = getattr(obj, param)
                         if current_value != v:
+                            # print (f"Setting it to {v}")
                             setattr(obj, param, v)
                             self.context.signal(param, v, obj)
                             for _sig in addsig:
@@ -794,6 +799,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                         attr, control, obj, data_type, additional_signal
                     ),
                 )
+                if not exclusive:
+                    control.Bind(
+                        wx.EVT_TEXT,
+                        on_combosmall_text(
+                            attr, control, obj, data_type, additional_signal
+                        ),
+                    )
+
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == int and data_style == "binary":
                 mask = c.get("mask")
