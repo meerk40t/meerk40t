@@ -444,6 +444,59 @@ def init_tree(kernel):
                 data.append(e)
         return data
 
+    def set_vis(dataset, mode):
+        updated = []
+        for e in dataset:
+            if not hasattr(e, "hidden"):
+                continue
+            if mode==0:
+                e.hidden = True
+            elif mode==1:
+                e.hidden = False
+            else:
+                e.hidden = not e.hidden
+            if e.hidden:
+                e.emphasized = False
+            updated.append(e)
+        return updated
+
+    @tree_submenu(_("Toggle visibility"))
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Hide elements"),
+        node_type=elem_group_nodes,
+        help=_("When invisible the element will neither been displayed nor burnt"),
+        grouping="30_ELEM_VISIBLE",
+    )
+    def element_visibility_hide(node, **kwargs):
+        data = list(self.flat(selected=True))
+        if not data:
+            return
+        with self.undoscope("Hide elements"):
+            updated = set_vis(data, 0)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
+
+    @tree_submenu(_("Toggle visibility"))
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Show elements"),
+        node_type=elem_group_nodes,
+        help=_("When invisible the element will neither been displayed nor burnt"),
+        grouping="30_ELEM_VISIBLE",
+    )
+    def element_visibility_show(node, **kwargs):
+        data = list(self.flat(selected=True))
+        if not data:
+            return
+        with self.undoscope("Show elements"):
+            updated = set_vis(data, 1)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
+
+    @tree_submenu(_("Toggle visibility"))
     @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
     @tree_operation(
         _("Toggle visibility"),
@@ -452,28 +505,11 @@ def init_tree(kernel):
         grouping="30_ELEM_VISIBLE",
     )
     def element_visibility_toggle(node, **kwargs):
-        raw_data = list(self.elems(selected=True))
-        data = self.condense_elements(raw_data, expand_at_end=False)
+        data = list(self.flat(selected=True))
         if not data:
             return
-
-        def toggle_vis(dataset):
-            updated = []
-            for e in dataset:
-                if hasattr(e, "hidden"):
-                    e.hidden = not e.hidden
-                    if e.hidden:
-                        e.emphasized = False
-                if e.type in ("file", "group"):
-                    childset = toggle_vis(e.children)
-                    updated.extend(childset)
-                else:
-                    updated.append(e)
-            return updated
-
-        updated = []
         with self.undoscope("Toggle visibility"):
-            updated = toggle_vis(data)
+            updated = set_vis(data, 2)
         self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", updated)
         self.signal("warn_state_update")
