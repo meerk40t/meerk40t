@@ -4451,6 +4451,7 @@ class MeerK40t(MWindow):
         self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     @signal_listener("warn_state_update")
+    @signal_listener("element_property_reload")
     @signal_listener("updateop_tree")
     @signal_listener("tree_changed")
     @signal_listener("modified_by_tool")

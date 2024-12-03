@@ -9,18 +9,19 @@ spooler. Anything that accesses a driver is expected to call any would-be functi
 AttributeError (because it might).
 """
 
-DRIVER_STATE_RAPID = 0
-DRIVER_STATE_FINISH = 1
-DRIVER_STATE_PROGRAM = 2
-DRIVER_STATE_RASTER = 3
-DRIVER_STATE_MODECHANGE = 4
+# Duplicate definitions as in meerk40t.device.basedevice
+# DRIVER_STATE_RAPID = 0
+# DRIVER_STATE_FINISH = 1
+# DRIVER_STATE_PROGRAM = 2
+# DRIVER_STATE_RASTER = 3
+# DRIVER_STATE_MODECHANGE = 4
 
-PLOT_FINISH = 256
-PLOT_RAPID = 4
-PLOT_JOG = 2
-PLOT_SETTING = 128
-PLOT_AXIS = 64
-PLOT_DIRECTION = 32
+# PLOT_FINISH = 256
+# PLOT_RAPID = 4
+# PLOT_JOG = 2
+# PLOT_SETTING = 128
+# PLOT_AXIS = 64
+# PLOT_DIRECTION = 32
 
 
 class Driver:

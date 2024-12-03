@@ -125,6 +125,12 @@ class CutObject:
     def extra(self):
         return 0
 
+    def internal_travel(self):
+        return 0
+
+    def internal_length(self):
+        return self.length()
+
     def major_axis(self):
         if abs(self._start_x - self._end_x) > abs(self._start_y - self._end_y):
             return 0  # X-Axis

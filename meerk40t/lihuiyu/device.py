@@ -6,7 +6,7 @@ the given device type.
 """
 
 from hashlib import md5
-
+import meerk40t.constants as mkconst
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
@@ -998,6 +998,13 @@ class LihuiyuDevice(Service, Status):
                 except KeyError:
                     channel(_("Interpreter cannot be attached to any device."))
                 return
+
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V),  # Greedy loses registration way too often to be reliable
+            "gantry" : True,
+        }
 
     @property
     def safe_label(self):

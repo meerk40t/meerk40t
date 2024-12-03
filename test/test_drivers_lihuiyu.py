@@ -24,8 +24,8 @@ Copyright: Unknown
 Creator-Software: MeerK40t v0.0.0-testing
 
 %0%0%0%0%
-IB067R091S1P
-IV1552121G002NLTS1EBbTDnUfBD|aUbTBbTD|iUbBD|mUbTBbTD|sUbBD|uTBbTD|yUbBD054TUbBbTD054UbBD058TUbBbTD058BD058TBbTD062BD062TUbBbTD062BD062TUbBbTD062BD062TUbBbTD062BbD058TUbBbTD058BD058TUbBTbBbTD054BD054TUbBTbBbTD|yBbD|uTUbBTbBbTD|qBbD|mTUbBTbBbTD|iBdD|aTUbBTfBbTDnFNSE-
+IB055R091S1P
+IV1552121G002NLBS1ETaBDnUtTnD|aUtBpD|iUtTrD|mUtBrD|sUtTtD|uUtBrD|yUtTrD054UtBtD054UtTrD058UtBtD058UtTtD058UtBrD062UtTtD062UtBtD062UtTtD062UtBtD062UtTtD062UtBtD062UtTvD058UtBtD058UtTtD058UtBvD054UtTtD054UtBvD|yUtTvD|uUtBvD|qUtTvD|mUtBvD|iUtTxD|aUtB|aDnUtFNSE-
 """
 
 egv_blank = """Document type : LHYMICRO-GL file
@@ -188,7 +188,7 @@ class TestDriverLihuiyu(unittest.TestCase):
             kernel()
         with open(file1) as f:
             data = f.read()
-            # print (f'egv_image="""{data}"""')
+            print (f'egv_image="""{data}"""')
         self.assertEqual(data, egv_image)
 
 

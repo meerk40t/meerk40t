@@ -1,16 +1,22 @@
-import numpy as np
 import os
 import subprocess
 from copy import copy
 from math import tau
-from meerk40t.kernel import CommandSyntaxError
 
-from ..core.exceptions import BadFileError
-from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
-from ..svgelements import Color, Matrix, Path
-from ..tools.geomstr import Geomstr
+import numpy as np
+
+from meerk40t.constants import RASTER_B2T, RASTER_T2B
+from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.elem_line import LineNode
+from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.node import Linejoin
+from meerk40t.core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Color, Matrix, Path
+from meerk40t.tools.geomstr import Geomstr
+
 from .dither import dither
-from ..core.node.node import Linejoin
+
 
 def img_to_polygons(
         node_image,                 # The image
@@ -32,11 +38,7 @@ def img_to_polygons(
 
     # Convert the image to grayscale
     img = node_image.convert("L")
-    if needs_invert:
-        gray = np.array(ImageOps.invert(img))
-    else:
-        gray = np.array(img)
-
+    gray = np.array(ImageOps.invert(img)) if needs_invert else np.array(img)
     # Apply thresholding to create a binary image
     _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
@@ -60,24 +62,315 @@ def img_to_polygons(
         if area > maxarea:
             continue
         region = contour.squeeze().astype(float).tolist()
-        if type(region[0]) is list:
-            if len(region) > 2:
-                crdnts = [{'x': i[0], 'y': i[1]} for i in region]
+        if type(region[0]) is list and len(region) > 2:
+            crdnts = [{'x': i[0], 'y': i[1]} for i in region]
 
-                geom = Geomstr()
-                notfirst = False
-                for pnt in crdnts:
-                    rx, ry = pnt['x'], pnt['y']
-                    if notfirst:
-                        geom.line(complex(lx, ly), complex(rx, ry))
-                    notfirst = True
-                    lx = rx
-                    ly = ry
-                geom.close()
-                matrix = Matrix()
-                geom_list.append( (geom, 100 * area / (width * height)) )
+            geom = Geomstr()
+            notfirst = False
+            for pnt in crdnts:
+                rx, ry = pnt['x'], pnt['y']
+                if notfirst:
+                    geom.line(complex(lx, ly), complex(rx, ry))
+                notfirst = True
+                lx = rx
+                ly = ry
+            geom.close()
+            matrix = Matrix()
+            geom_list.append( (geom, 100 * area / (width * height)) )
 
     return geom_list
+
+def do_innerwhite(
+        minimal=None,
+        outer=False,
+        simplified=False,
+        line=False,
+        breakdown=False,
+        whiten=False,
+        data=None,
+    ):
+
+    import cv2
+
+    def org_bounds(node):
+        image_width, image_height = node.image.size
+        matrix = node.matrix
+        x0, y0 = matrix.point_in_matrix_space((0, 0))
+        x1, y1 = matrix.point_in_matrix_space((image_width - 1, image_height - 1))
+        x2, y2 = matrix.point_in_matrix_space((0, image_height - 1))
+        x3, y3 = matrix.point_in_matrix_space((image_width - 1, 0))
+        return (
+            min(x0, x1, x2, x3),
+            min(y0, y1, y2, y3),
+            max(x0, x1, x2, x3),
+            max(y0, y1, y2, y3),
+        )
+
+    if minimal is None:
+        minimal = 2
+    if minimal <= 0 or minimal > 100:
+        minimal = 2
+
+    data_out = []
+
+    show_contour = not simplified
+    show_simplified = simplified
+    if breakdown or whiten:
+        line = False
+        show_simplified = False
+        show_contour = False
+
+    # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
+    for inode in data:
+        # node_image = inode.active_image
+        node_image = inode.image
+        width, height = node_image.size
+        if width == 0 or height == 0:
+            continue
+        if not hasattr(inode, "bounds"):
+            continue
+        bb = org_bounds(inode)
+        ox = bb[0]
+        oy = bb[1]
+        coord_width = bb[2] - bb[0]
+        coord_height = bb[3] - bb[1]
+
+        def getpoint(ix, iy):
+            # Translate image to scene coordinates
+            return (
+                ox + ix / width * coord_width,
+                oy + iy / height * coord_height,
+            )
+
+        gray = np.array(node_image.convert("L"))
+        # Threshold the image
+        _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
+
+        # Find contours
+        contours, hierarchy = cv2.findContours(
+            thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        )
+        linecandidates = list()
+
+        minarea = int(minimal / 100.0 * width * height)
+        # Filter contours based on area, rectangle of at least x%
+
+        large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > minarea]
+
+        # Create some rectangles around the white areas
+        for contour in large_contours:
+            # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
+            x, y, w, h = cv2.boundingRect(contour)
+            # rx, ry = getpoint(x, y)
+            rw, rh = getpoint(w, h)
+            rw -= ox
+            rh -= oy
+            if outer:
+                # leftmost
+                extreme = tuple(contour[contour[:, :, 0].argmin()][0])
+                if extreme[0] == 0:
+                    # print ("Left edge")
+                    continue
+                # rightmost
+                extreme = tuple(contour[contour[:, :, 0].argmax()][0])
+                if extreme[0] >= width - 1:
+                    # print ("Right edge")
+                    continue
+                # topmost
+                extreme = tuple(contour[contour[:, :, 1].argmin()][0])
+                if extreme[1] == 0:
+                    # print ("Top edge")
+                    continue
+                # bottommost
+                extreme = tuple(contour[contour[:, :, 1].argmax()][0])
+                if extreme[1] >= height - 1:
+                    # print ("Bottom edge")
+                    continue
+
+            linecandidates.append((x, w))
+            area = cv2.contourArea(contour)
+            rect_area = w * h
+            extent = float(area) / rect_area
+            # print (f"x={x}, y={y}, w={w}, h={h}, extent={extent*100:.1f}%")
+            label = f"Contour - Area={100 * area / (width * height):.1f}%, Extent={extent*100:.1f}%"
+            # if show_rect:
+            #     node = context.elements.elem_branch.add(
+            #         x=rx,
+            #         y=ry,
+            #         width=rw,
+            #         height=rh,
+            #         stroke=Color("red"),
+            #         label=label,
+            #         type="elem rect",
+            #     )
+            #     data_out.append(node)
+            if show_contour:
+                geom = Geomstr()
+                notfirst = False
+                for c in contour:
+                    for e in c:
+                        rx, ry = getpoint(e[0], e[1])
+                        if notfirst:
+                            geom.line(complex(lx, ly), complex(rx, ry))
+                        notfirst = True
+                        lx = rx
+                        ly = ry
+                geom.close()
+                node = PathNode(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    fill=Color("yellow"),
+                    label=label,
+                )
+                data_out.append(node)
+            if show_simplified:
+                # Set the epsilon value (adjust as needed)
+                epsilon = 0.01 * cv2.arcLength(contour, True)
+
+                # Compute the approximate contour points
+                approx = cv2.approxPolyDP(contour, epsilon, True)
+                geom = Geomstr()
+                notfirst = False
+                for c in approx:
+                    for e in c:
+                        rx, ry = getpoint(e[0], e[1])
+                        if notfirst:
+                            geom.line(complex(lx, ly), complex(rx, ry))
+                        notfirst = True
+                        lx = rx
+                        ly = ry
+                geom.close()
+                node = PathNode(
+                    geometry=geom,
+                    stroke=Color("green"),
+                    label=label,
+                    type="elem path",
+                )
+                data_out.append(node)
+
+            # if show_extreme:
+            #     # leftmost
+            #     extreme = tuple(contour[contour[:, :, 0].argmin()][0])
+            #     lmx, lmy = getpoint(extreme[0], extreme[1])
+            #     # rightmost
+            #     extreme = tuple(contour[contour[:, :, 0].argmax()][0])
+            #     rmx, rmy = getpoint(extreme[0], extreme[1])
+            #     # topmost
+            #     extreme = tuple(contour[contour[:, :, 1].argmin()][0])
+            #     tmx, tmy = getpoint(extreme[0], extreme[1])
+            #     # bottommost
+            #     extreme = tuple(contour[contour[:, :, 1].argmax()][0])
+            #     bmx, bmy = getpoint(extreme[0], extreme[1])
+            #     geom = Geomstr()
+            #     geom.line(lmx + 1j * lmy, tmx + 1j * tmy)
+            #     geom.line(tmx + 1j * tmy, rmx + 1j * rmy)
+            #     geom.line(rmx + 1j * rmy, bmx + 1j * bmy)
+            #     geom.line(bmx + 1j * bmy, lmx + 1j * lmy)
+            #     node = context.elements.elem_branch.add(
+            #         geometry=geom,
+            #         stroke=Color("green"),
+            #         label=label,
+            #         type="elem path",
+            #     )
+            #     data_out.append(node)
+        linecandidates.sort(key=lambda e: e[0])
+        if line or breakdown or whiten:
+            for idx1, c in enumerate(linecandidates):
+                if c[0] < 0:
+                    continue
+                # cx = c[0] + c[1] / 2
+                for idx2, d in enumerate(linecandidates):
+                    if idx1 == idx2 or d[0] < 0:
+                        continue
+                    # Does c line inside d? if yes then we don't need d
+                    if d[0] <= c[0] and d[0] + d[1] >= c[0] + c[1]:
+                        linecandidates[idx2] = (-1, -1)
+        if line:
+            for c in linecandidates:
+                if c[0] < 0:
+                    continue
+                sx, sy = getpoint(c[0] + c[1] / 2, 0)
+                ex, ey = getpoint(c[0] + c[1] / 2, height)
+                node = LineNode(
+                    x1=sx,
+                    y1=sy,
+                    x2=ex,
+                    y2=ey,
+                    stroke=Color("red"),
+                    label="Splitline",
+                )
+                data_out.append(node)
+        if node_image.mode == "L":
+            white_paste = 255
+        else:
+            white_paste = (255, 255, 255)
+        if breakdown or whiten:
+            anyslices = 0
+            right_image = node_image.copy()
+            dx = 0
+            for c in linecandidates:
+                if c[0] < 0:
+                    continue
+                rdx, rdy = getpoint(dx, 0)
+                rdx -= ox
+                rwidth, rheight = right_image.size
+                anyslices += 1
+                if breakdown:
+                    x = int(c[0] + c[1] / 2 - dx)
+                    left_image = right_image.crop((0, 0, x, rheight))
+                    dx = x + 1
+                    right_image = right_image.crop((dx, 0, rwidth, rheight))
+                elif whiten:
+                    x = int(c[0] + c[1] / 2)
+                    left_image = right_image.copy()
+                    # print(f"Break position: {x}")
+                    if dx > 0:
+                        # print(f"Erasing left: 0:{dx - 1}")
+                        left_image.paste(white_paste, (0, 0, dx - 1, rheight))
+                    dx = x + 1
+                    left_image.paste(white_paste, (dx, 0, rwidth, rheight))
+                    # print(f"Erasing right: {dx}:{rwidth}")
+                newnode = copy(inode)
+                newnode.matrix = copy(inode.matrix)
+                newnode.label = (
+                    f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
+                )
+                # newnode.dither = False
+                # newnode.operations.clear()
+                # newnode.prevent_crop = True
+                newnode.image = left_image
+                if breakdown and rdx != 0:
+                    newnode.matrix.post_translate_x(rdx)
+                if whiten:
+                    newnode.prevent_crop = True
+
+                newnode.altered()
+                newnode._processed_image = None
+
+                data_out.append(newnode)
+            if anyslices > 0:
+                rdx, rdy = getpoint(dx, 0)
+                rdx -= ox
+                anyslices += 1
+                newnode = copy(inode)
+                newnode.matrix = copy(inode.matrix)
+                newnode.label = (
+                    f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
+                )
+                # newnode.dither = False
+                # newnode.operations.clear()
+                # newnode.prevent_crop = True
+                if whiten and dx > 0:
+                    right_image.paste(white_paste, (0, 0, dx - 1, rheight))
+                newnode.image = right_image
+                if breakdown and rdx != 0:
+                    newnode.matrix.post_translate_x(rdx)
+                if whiten:
+                    newnode.prevent_crop = True
+                newnode.altered()
+                newnode._processed_image = None
+                data_out.append(newnode)
+    return data_out
 
 def img_to_rectangles(
         node_image,                 # The image
@@ -160,6 +453,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle != "register":
         return
     _ = kernel.translation
+    preproc = RasterImagePreprocessor(kernel)
     kernel.register("load/ImageLoader", ImageLoader)
     choices = [
         {
@@ -1589,19 +1883,6 @@ def plugin(kernel, lifecycle=None):
         post=None,
         **kwargs,
     ):
-        def org_bounds(node):
-            image_width, image_height = node.image.size
-            matrix = node.matrix
-            x0, y0 = matrix.point_in_matrix_space((0, 0))
-            x1, y1 = matrix.point_in_matrix_space((image_width - 1, image_height - 1))
-            x2, y2 = matrix.point_in_matrix_space((0, image_height - 1))
-            x3, y3 = matrix.point_in_matrix_space((image_width - 1, 0))
-            return (
-                min(x0, x1, x2, x3),
-                min(y0, y1, y2, y3),
-                max(x0, x1, x2, x3),
-                max(y0, y1, y2, y3),
-            )
 
         try:
             import cv2
@@ -1617,9 +1898,6 @@ def plugin(kernel, lifecycle=None):
         if minimal <= 0 or minimal > 100:
             minimal = 2
 
-        data_out = list()
-
-        show_contour = not simplified
         show_simplified = simplified
         if breakdown and whiten:
             channel("You can't use --breakdown and --whiten at the same time")
@@ -1627,266 +1905,28 @@ def plugin(kernel, lifecycle=None):
         if breakdown or whiten:
             line = False
             show_simplified = False
-            show_contour = False
 
-        # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
-        for inode in data:
-            # node_image = inode.active_image
-            node_image = inode.image
-            width, height = node_image.size
-            if width == 0 or height == 0:
-                continue
-            if not hasattr(inode, "bounds"):
-                continue
-            bb = org_bounds(inode)
-            ox = bb[0]
-            oy = bb[1]
-            coord_width = bb[2] - bb[0]
-            coord_height = bb[3] - bb[1]
-
-            def getpoint(ix, iy):
-                # Translate image to scene coordinates
-                return (
-                    ox + ix / width * coord_width,
-                    oy + iy / height * coord_height,
-                )
-
-            gray = np.array(node_image.convert("L"))
-            # Threshold the image
-            _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
-
-            # Find contours
-            contours, hierarchy = cv2.findContours(
-                thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-            )
-            linecandidates = list()
-
-            minarea = int(minimal / 100.0 * width * height)
-            # Filter contours based on area, rectangle of at least x%
-
-            large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > minarea]
-            if len(large_contours) == 0:
-                channel(
-                    f"Could not identify any relevant white areas in the image '{inode.create_label('{desc}')}'"
-                )
-                continue
-
-            # Create some rectangles around the white areas
-            for contour in large_contours:
-                # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
-                x, y, w, h = cv2.boundingRect(contour)
-                # rx, ry = getpoint(x, y)
-                rw, rh = getpoint(w, h)
-                rw -= ox
-                rh -= oy
-                if outer:
-                    # leftmost
-                    extreme = tuple(contour[contour[:, :, 0].argmin()][0])
-                    if extreme[0] == 0:
-                        # print ("Left edge")
-                        continue
-                    # rightmost
-                    extreme = tuple(contour[contour[:, :, 0].argmax()][0])
-                    if extreme[0] >= width - 1:
-                        # print ("Right edge")
-                        continue
-                    # topmost
-                    extreme = tuple(contour[contour[:, :, 1].argmin()][0])
-                    if extreme[1] == 0:
-                        # print ("Top edge")
-                        continue
-                    # bottommost
-                    extreme = tuple(contour[contour[:, :, 1].argmax()][0])
-                    if extreme[1] >= height - 1:
-                        # print ("Bottom edge")
-                        continue
-
-                linecandidates.append((x, w))
-                area = cv2.contourArea(contour)
-                rect_area = w * h
-                extent = float(area) / rect_area
-                # print (f"x={x}, y={y}, w={w}, h={h}, extent={extent*100:.1f}%")
-                label = f"Contour - Area={100 * area / (width * height):.1f}%, Extent={extent*100:.1f}%"
-                # if show_rect:
-                #     node = context.elements.elem_branch.add(
-                #         x=rx,
-                #         y=ry,
-                #         width=rw,
-                #         height=rh,
-                #         stroke=Color("red"),
-                #         label=label,
-                #         type="elem rect",
-                #     )
-                #     data_out.append(node)
-                if show_contour:
-                    geom = Geomstr()
-                    notfirst = False
-                    for c in contour:
-                        for e in c:
-                            rx, ry = getpoint(e[0], e[1])
-                            if notfirst:
-                                geom.line(complex(lx, ly), complex(rx, ry))
-                            notfirst = True
-                            lx = rx
-                            ly = ry
-                    geom.close()
-                    node = context.elements.elem_branch.add(
-                        geometry=geom,
-                        stroke=Color("blue"),
-                        fill=Color("yellow"),
-                        label=label,
-                        type="elem path",
-                    )
-                    data_out.append(node)
-                if show_simplified:
-                    # Set the epsilon value (adjust as needed)
-                    epsilon = 0.01 * cv2.arcLength(contour, True)
-
-                    # Compute the approximate contour points
-                    approx = cv2.approxPolyDP(contour, epsilon, True)
-                    geom = Geomstr()
-                    notfirst = False
-                    for c in approx:
-                        for e in c:
-                            rx, ry = getpoint(e[0], e[1])
-                            if notfirst:
-                                geom.line(complex(lx, ly), complex(rx, ry))
-                            notfirst = True
-                            lx = rx
-                            ly = ry
-                    geom.close()
-                    node = context.elements.elem_branch.add(
-                        geometry=geom,
-                        stroke=Color("green"),
-                        label=label,
-                        type="elem path",
-                    )
-                    data_out.append(node)
-
-                # if show_extreme:
-                #     # leftmost
-                #     extreme = tuple(contour[contour[:, :, 0].argmin()][0])
-                #     lmx, lmy = getpoint(extreme[0], extreme[1])
-                #     # rightmost
-                #     extreme = tuple(contour[contour[:, :, 0].argmax()][0])
-                #     rmx, rmy = getpoint(extreme[0], extreme[1])
-                #     # topmost
-                #     extreme = tuple(contour[contour[:, :, 1].argmin()][0])
-                #     tmx, tmy = getpoint(extreme[0], extreme[1])
-                #     # bottommost
-                #     extreme = tuple(contour[contour[:, :, 1].argmax()][0])
-                #     bmx, bmy = getpoint(extreme[0], extreme[1])
-                #     geom = Geomstr()
-                #     geom.line(lmx + 1j * lmy, tmx + 1j * tmy)
-                #     geom.line(tmx + 1j * tmy, rmx + 1j * rmy)
-                #     geom.line(rmx + 1j * rmy, bmx + 1j * bmy)
-                #     geom.line(bmx + 1j * bmy, lmx + 1j * lmy)
-                #     node = context.elements.elem_branch.add(
-                #         geometry=geom,
-                #         stroke=Color("green"),
-                #         label=label,
-                #         type="elem path",
-                #     )
-                #     data_out.append(node)
-            linecandidates.sort(key=lambda e: e[0])
-            if line or breakdown or whiten:
-                for idx1, c in enumerate(linecandidates):
-                    if c[0] < 0:
-                        continue
-                    # cx = c[0] + c[1] / 2
-                    for idx2, d in enumerate(linecandidates):
-                        if idx1 == idx2 or d[0] < 0:
-                            continue
-                        # Does c line inside d? if yes then we don't need d
-                        if d[0] <= c[0] and d[0] + d[1] >= c[0] + c[1]:
-                            linecandidates[idx2] = (-1, -1)
-            if line:
-                for c in linecandidates:
-                    if c[0] < 0:
-                        continue
-                    sx, sy = getpoint(c[0] + c[1] / 2, 0)
-                    ex, ey = getpoint(c[0] + c[1] / 2, height)
-                    node = context.elements.elem_branch.add(
-                        x1=sx,
-                        y1=sy,
-                        x2=ex,
-                        y2=ey,
-                        stroke=Color("red"),
-                        label="Splitline",
-                        type="elem line",
-                    )
-                    data_out.append(node)
-            white_paste = (255, 255, 255)
+        data_out = do_innerwhite(
+            minimal=minimal,
+            outer=outer,
+            simplified=show_simplified,
+            line=line,
+            breakdown=breakdown,
+            whiten=whiten,
+            data=data,
+        )
+        if len(data_out):
+            needs_adding = [True]*len(data_out)
             if breakdown or whiten:
-                anyslices = 0
-                right_image = node_image.copy()
-                dx = 0
-                for c in linecandidates:
-                    if c[0] < 0:
-                        continue
-                    rdx, rdy = getpoint(dx, 0)
-                    rdx -= ox
-                    rwidth, rheight = right_image.size
-                    anyslices += 1
-                    if breakdown:
-                        x = int(c[0] + c[1] / 2 - dx)
-                        left_image = right_image.crop((0, 0, x, rheight))
-                        dx = x + 1
-                        right_image = right_image.crop((dx, 0, rwidth, rheight))
-                    elif whiten:
-                        x = int(c[0] + c[1] / 2)
-                        left_image = right_image.copy()
-                        # print(f"Break position: {x}")
-                        if dx > 0:
-                            # print(f"Erasing left: 0:{dx - 1}")
-                            left_image.paste(white_paste, (0, 0, dx - 1, rheight))
-                        dx = x + 1
-                        left_image.paste(white_paste, (dx, 0, rwidth, rheight))
-                        # print(f"Erasing right: {dx}:{rwidth}")
-                    newnode = copy(inode)
-                    newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
-                    )
-                    # newnode.dither = False
-                    # newnode.operations.clear()
-                    # newnode.prevent_crop = True
-                    newnode.image = left_image
-                    if breakdown and rdx != 0:
-                        newnode.matrix.post_translate_x(rdx)
-                    if whiten:
-                        newnode.prevent_crop = True
-
-                    newnode.altered()
-                    newnode._processed_image = None
-
-                    context.elements.elem_branch.add_node(newnode)
-                    data_out.append(newnode)
-                if anyslices > 0:
-                    rdx, rdy = getpoint(dx, 0)
-                    rdx -= ox
-                    anyslices += 1
-                    newnode = copy(inode)
-                    newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
-                    )
-                    # newnode.dither = False
-                    # newnode.operations.clear()
-                    # newnode.prevent_crop = True
-                    if whiten:
-                        if dx > 0:
-                            # print(f"Last, erasing left: 0:{dx - 1}")
-                            right_image.paste(white_paste, (0, 0, dx - 1, rheight))
-                    newnode.image = right_image
-                    if breakdown and rdx != 0:
-                        newnode.matrix.post_translate_x(rdx)
-                    if whiten:
-                        newnode.prevent_crop = True
-                    newnode.altered()
-                    newnode._processed_image = None
-                    context.elements.elem_branch.add_node(newnode)
-                    data_out.append(newnode)
-
-                    inode.remove_node()
+                for inode in data:
+                    if inode in data_out:
+                        idx = data_out.index(inode)
+                        needs_adding[idx] = False
+                    else:
+                        inode.remove_node()
+            for idx, inode in enumerate(data_out):
+                if needs_adding[idx]:
+                    context.elements.elem_branch.add_node(inode)
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
@@ -1942,9 +1982,10 @@ def plugin(kernel, lifecycle=None):
         **kwargs,
     ):
         try:
+            import time
+
             import cv2
             import PIL.ImageOps
-            import time
         except ImportError:
             channel("cv2/Pillow weren't installed")
             return
@@ -2191,6 +2232,56 @@ def plugin(kernel, lifecycle=None):
         context.process_console_in_realtime = False
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
+
+class RasterImagePreprocessor:
+    def __init__(self, kernel):
+        self.test = False
+        self.kernel = kernel
+        _ = self.kernel.translation
+        RASTER_METHOD_OFFSET = 100
+        self.methods = {
+            RASTER_METHOD_OFFSET + 0: (_("Split image along white areas"), self.process_innerwhite),
+        }
+        self.register_methods()
+
+    @staticmethod
+    def process_innerwhite(operation):
+        print (f"Innerwhite called: {len(operation.children)} children of {operation.type}")
+        data = [inode for inode in operation.children if inode.type == "elem image"]
+        for inode in data:
+            pil_image, bounds = inode.as_image()
+            # Get steps from individual images
+            image_width, image_height = pil_image.size
+            expected_width = bounds[2] - bounds[0]
+            expected_height = bounds[3] - bounds[1]
+            step_x = expected_width / image_width
+            step_y = expected_height / image_height
+            inode.step_x = step_x
+            inode.step_y = step_y
+            data_out = do_innerwhite(minimal=2, outer=True, whiten=True, data=[inode])
+            was_covered = False
+            for idx, e in enumerate(data_out):
+                e.step_x = step_x
+                e.step_y = step_y
+                e.process_image()
+                if e is not inode:
+                    operation.add_node(e)
+                else:
+                    was_covered = True
+                e.direction = RASTER_T2B if idx % 2 == 0 else RASTER_B2T
+            if not was_covered:
+                inode.remove_node()
+
+        operation.raster_direction = RASTER_T2B
+        operation.bidirectional = True
+        print (f"Innerwhite exit: {len(operation.children)} children of {operation.type}")
+
+
+    def register_methods(self):
+        # Split image along white areas
+        for method, (description, routine) in self.methods.items():
+            self.kernel.register(f"raster_preprocessor/Method_{method}", (method, description, routine))
+
 
 class RasterScripts:
     """

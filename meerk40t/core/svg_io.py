@@ -592,13 +592,31 @@ class SVGWriter:
         if node.label is not None:
             subelement.set("label", str(node.label))
 
-        if node.lock is not None:
-            subelement.set("lock", str(node.lock))
-        if hasattr(node, "use_grayscale") and node.use_grayscale is not None:
-            subelement.set("use_grayscale", str(node.use_grayscale))
+        # We might end up with items in settings that have an unwanted equivalent in the node.dict
+        # as the settings instance is read and initiated on svg load...
+        for key, value in node.__dict__.items():
+            if not key or key.startswith("_"):
+                continue
+            if key in (
+                "references",
+                "tag",
+                "type",
+                "draw",
+                "stroke_width",
+                "matrix",
+                "settings",
+            ):
+                continue
+            if key in node.settings:
+                settings_value = node.settings[key]
+                if settings_value != value:
+                    # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
+                    node.settings[key] = value
 
+        saved_attributes = []
         try:
             for key, value in node.settings.items():
+                saved_attributes.append(key)
                 if not key:
                     # If key is None, do not save.
                     continue
@@ -611,26 +629,23 @@ class SVGWriter:
                     continue
                 subelement.set(key, str(value))
         except AttributeError:
-            # Node does not have settings, write object dict
-            for key, value in node.__dict__.items():
-                if not key:
-                    # If key is None, do not save.
-                    continue
-                if key.startswith("_"):
-                    continue
-                if value is None:
-                    continue
-                if key in (
-                    "references",
-                    "tag",
-                    "type",
-                    "draw",
-                    "stroke_width",
-                    "matrix",
-                ):
-                    # References key from previous loaded version (filter out, rebuild)
-                    continue
-                subelement.set(key, str(value))
+            pass
+        # Node does not have settings, write object dict
+        for key, value in node.__dict__.items():
+            if not key or key.startswith("_") or key in saved_attributes or value is None:
+                continue
+            if key in (
+                "references",
+                "tag",
+                "type",
+                "draw",
+                "stroke_width",
+                "matrix",
+                "settings",
+            ):
+                # References key from previous loaded version (filter out, rebuild)
+                continue
+            subelement.set(key, str(value))
 
         # Store current node reference values.
         SVGWriter._write_references(subelement, node)

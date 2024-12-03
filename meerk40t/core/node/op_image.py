@@ -19,9 +19,18 @@ Methods:
     preprocess(context, matrix, plan): Preprocesses the operation for execution based on the provided context and matrix.
     as_cutobjects(closed_distance=15, passes=1): Generates cut objects for the image operation.
 """
-
+from copy import copy
 from math import isnan
-
+from meerk40t.constants import (
+    RASTER_T2B,
+    RASTER_B2T,
+    RASTER_R2L,
+    RASTER_L2R,
+    RASTER_HATCH,
+    RASTER_GREEDY_H,
+    RASTER_GREEDY_V,
+    RASTER_CROSSOVER,
+)
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
@@ -49,10 +58,17 @@ class ImageOpNode(Node, Parameters):
         self.overrule_dpi = False
         self._allowed_elements_dnd = ("elem image",)
         self._allowed_elements = ("elem image",)
+        self.consider_laserspot = False
+        self._spot_in_device_units = 0
+        self._instructions = {}
 
         self.allowed_attributes = []
         super().__init__(type="op image", **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
+        # They might come from a svg read, but shouldnt be in settings
+        for attrib in ("lock", "dangerous", "use_grayscale", "consider_laserspot", "overrule_dpi"):
+            if attrib in self.settings:
+                del self.settings[attrib]
 
     def __repr__(self):
         return "ImageOpNode()"
@@ -75,16 +91,22 @@ class ImageOpNode(Node, Parameters):
             raster_swing = "="
         else:
             raster_swing = "-"
-        if self.raster_direction == 0:
+        if self.raster_direction == RASTER_T2B:
             raster_dir = "T2B"
-        elif self.raster_direction == 1:
+        elif self.raster_direction == RASTER_B2T:
             raster_dir = "B2T"
-        elif self.raster_direction == 2:
+        elif self.raster_direction == RASTER_R2L:
             raster_dir = "R2L"
-        elif self.raster_direction == 3:
+        elif self.raster_direction == RASTER_L2R:
             raster_dir = "L2R"
-        elif self.raster_direction == 4:
+        elif self.raster_direction == RASTER_HATCH:
             raster_dir = "X"
+        elif self.raster_direction == RASTER_CROSSOVER:
+            raster_dir = "|-|-"
+        elif self.raster_direction == RASTER_GREEDY_H:
+            raster_dir = "GR-"
+        elif self.raster_direction == RASTER_GREEDY_V:
+            raster_dir = "GR|"
         else:
             raster_dir = str(self.raster_direction)
         default_map["direction"] = f"{raster_swing}{raster_dir} "
@@ -132,7 +154,7 @@ class ImageOpNode(Node, Parameters):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.add_reference(drag_node, pos=0)
+                self.add_reference(drag_node, pos=None if flag else 0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
@@ -229,7 +251,7 @@ class ImageOpNode(Node, Parameters):
             width_in_inches = (max_x - min_x) / UNITS_PER_INCH
             height_in_inches = (max_y - min_y) / UNITS_PER_INCH
             speed_in_per_s = self.speed / MM_PER_INCH
-            if self.raster_direction in (0, 1, 4):
+            if self.raster_direction in (RASTER_T2B, RASTER_B2T, RASTER_HATCH, RASTER_GREEDY_H, RASTER_CROSSOVER):
                 scanlines = height_in_inches * dpi
                 if not self.bidirectional:
                     scanlines *= 2
@@ -240,7 +262,7 @@ class ImageOpNode(Node, Parameters):
                 this_len = scanlines * width_in_inches + height_in_inches
                 estimate += this_len / speed_in_per_s
                 # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
-            if self.raster_direction in (2, 3, 4):
+            if self.raster_direction in (RASTER_L2R, RASTER_R2L, RASTER_HATCH, RASTER_GREEDY_V):
                 scanlines = width_in_inches * dpi
                 if not self.bidirectional:
                     scanlines *= 2
@@ -268,6 +290,21 @@ class ImageOpNode(Node, Parameters):
         @param plan:
         @return:
         """
+        self._spot_in_device_units = 0
+        self._instructions = {}
+        if hasattr(context, "device"):
+            if hasattr(context.device, "get_raster_instructions"):
+                self._instructions = context.device.get_raster_instructions()
+
+            if self.consider_laserspot:
+                try:
+                    laserspot = getattr(context.device, "laserspot", "0.3mm")
+                    spot = 2 * float(Length(laserspot)) / ( context.device.view.native_scale_x + context.device.view.native_scale_y)
+                    # print (f"Laserpot in device units: {spot:.2f} [{laserspot.length_mm}], scale: {context.device.view.native_scale_x + context.device.view.native_scale_y:.2f}")
+                except (ValueError, AttributeError):
+                    spot = 0
+                self._spot_in_device_units = spot
+
         try:
             overscan = float(Length(self.overscan))
         except ValueError:
@@ -313,29 +350,56 @@ class ImageOpNode(Node, Parameters):
             negative_scale_x = bool(dy < 0) if dx == 0 else bool(dx < 0)
             negative_scale_y = False if dx == 0 else bool(dy < 0)
         if rotated:
-            mapping = {0: 3, 1: 2, 2: 1, 3: 0, 4: 4}
+            mapping = {
+                RASTER_T2B: RASTER_L2R,
+                RASTER_B2T: RASTER_R2L,
+                RASTER_R2L: RASTER_B2T,
+                RASTER_L2R: RASTER_T2B,
+                RASTER_GREEDY_H: RASTER_GREEDY_V,
+                RASTER_GREEDY_V: RASTER_GREEDY_H,
+            }
             if self.raster_direction in mapping:
                 self.raster_direction = mapping[self.raster_direction]
         if negative_scale_y:
             # Y is negative scale, flip raster_direction if needed
             self.raster_preference_top = not self.raster_preference_top
-            if self.raster_direction == 0:
-                self.raster_direction = 1
-            elif self.raster_direction == 1:
-                self.raster_direction = 0
+            if self.raster_direction == RASTER_T2B:
+                self.raster_direction = RASTER_B2T
+            elif self.raster_direction == RASTER_B2T:
+                self.raster_direction = RASTER_T2B
         if negative_scale_x:
             # X is negative scale, flip raster_direction if needed
             self.raster_preference_left = not self.raster_preference_left
-            if self.raster_direction == 2:
-                self.raster_direction = 3
-            elif self.raster_direction == 3:
-                self.raster_direction = 2
+            if self.raster_direction == RASTER_R2L:
+                self.raster_direction = RASTER_L2R
+            elif self.raster_direction == RASTER_L2R:
+                self.raster_direction = RASTER_R2L
+
+        # Look for registered raster (image) preprocessors,
+        # these are routines that take one image as parameter
+        # and deliver a set of (result image, method (aka raster_direction) )
+        # that will be dealt with independently
+        # The registered datastructure is (rasterid, description, method)
+        def call_me(method):
+            def handler():
+                method(self)
+            return handler
+
+        for key, description, method in context.kernel.lookup_all("raster_preprocessor/.*"):
+            if key == self.raster_direction:
+                plan.commands.append(call_me(method))
+                # print (f"Found {description}")
+                break
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
         Generator of cutobjects for the image operation. This takes any image node children
         and converts them into rastercut cutobjects.
         """
+        unsupported = self._instructions.get("unsupported_opt", ())
+        if self.raster_direction in unsupported:
+            self.raster_direction = RASTER_T2B
+
         for image_node in self.children:
             cutcodes = []
             # Process each child. All settings are different for each child.
@@ -345,8 +409,8 @@ class ImageOpNode(Node, Parameters):
                 continue
             if getattr(image_node, "hidden", False):
                 continue
-            settings = self.derive()
-
+            cutsettings = self.derive()
+            settings = dict(cutsettings)
             # Set overscan
             overscan = self.overscan
             if not isinstance(overscan, float):
@@ -357,22 +421,25 @@ class ImageOpNode(Node, Parameters):
                 direction = image_node.direction
             else:
                 direction = self.raster_direction
+
             horizontal = False
-            start_on_top = self.raster_preference_top
-            start_on_left = self.raster_preference_left
-            if direction in [0, 4]:
-                horizontal = True
-                start_on_top = True
-            elif direction == 1:
-                horizontal = True
-                start_on_top = False
-            elif direction == 2:
-                horizontal = False
-                start_on_left = False
-            elif direction == 3:
-                horizontal = False
-                start_on_left = True
             bidirectional = self.bidirectional
+            start_on_left = self.raster_preference_left
+            start_on_top = self.raster_preference_top
+            if direction in (RASTER_GREEDY_V, RASTER_L2R, RASTER_R2L):
+                horizontal = False
+            if direction in (RASTER_B2T, RASTER_T2B, RASTER_HATCH, RASTER_CROSSOVER, RASTER_GREEDY_H):
+                horizontal = True
+            if direction in (RASTER_T2B, RASTER_CROSSOVER):
+                start_on_top = True
+            if direction == RASTER_B2T:
+                start_on_top = False
+            if direction == RASTER_R2L:
+                start_on_left = False
+            if direction == RASTER_L2R:
+                start_on_left = True
+            if direction in (RASTER_GREEDY_H, RASTER_GREEDY_V, RASTER_CROSSOVER):
+                bidirectional = True
 
             # Set variables
             pil_image, bounds = image_node.as_image()
@@ -385,6 +452,8 @@ class ImageOpNode(Node, Parameters):
             expected_height = bounds[3] - bounds[1]
             step_x = expected_width / image_width
             step_y = expected_height / image_height
+
+            dotwidth = 2 * self._spot_in_device_units / (step_x + step_y)
 
             if horizontal:
                 # Raster step is only along y for horizontal raster
@@ -467,28 +536,33 @@ class ImageOpNode(Node, Parameters):
                         continue
 
                     # Create Cut Object
+                    rasterimage = copy(cleared_image)
+                    cutsettings = dict(settings)
                     cut = RasterCut(
-                        image=cleared_image,
+                        image=rasterimage,
                         offset_x=offset_x,
                         offset_y=offset_y,
                         step_x=step_x,
                         step_y=step_y,
                         inverted=inverted,
+                        direction=direction,
                         bidirectional=bidirectional,
                         horizontal=horizontal,
-                        start_minimum_y=start_on_top,
                         start_minimum_x=start_on_left,
+                        start_minimum_y=start_on_top,
                         overscan=overscan,
-                        settings=settings,
+                        settings=cutsettings,
                         passes=passes,
                         post_filter=image_filter,
-                        label=f"Pass {gray}: cutoff={skip_pixel}"
+                        label=f"Pass {gray}: cutoff={skip_pixel}",
+                        laserspot=dotwidth,
+                        special=self._instructions,
                     )
                     cut.path = path
                     cut.original_op = self.type
                     cutcodes.append(cut)
 
-                    if direction == 4:
+                    if direction == RASTER_HATCH:
                         # Create optional crosshatch cut
                         horizontal = not horizontal
                         settings = dict(settings)
@@ -500,49 +574,133 @@ class ImageOpNode(Node, Parameters):
                             # Raster step is only along x for vertical raster
                             settings["raster_step_x"] = step_x
                             settings["raster_step_y"] = 0
+                        rasterimage = copy(cleared_image)
+                        cutsettings = dict(settings)
                         cut = RasterCut(
-                            image=cleared_image,
+                            image=rasterimage,
                             offset_x=offset_x,
                             offset_y=offset_y,
                             step_x=step_x,
                             step_y=step_y,
                             inverted=inverted,
+                            direction=direction,
                             bidirectional=bidirectional,
                             horizontal=horizontal,
-                            start_minimum_y=start_on_top,
                             start_minimum_x=start_on_left,
+                            start_minimum_y=start_on_top,
                             overscan=overscan,
-                            settings=settings,
+                            settings=cutsettings,
                             passes=passes,
                             post_filter=image_filter,
-                            label=f"Pass {gray}.2: cutoff={skip_pixel}"
+                            label=f"Pass {gray}.2: cutoff={skip_pixel}",
+                            laserspot=dotwidth,
+                            special=self._instructions,
                         )
                         cut.path = path
                         cut.original_op = self.type
                         cutcodes.append(cut)
             else:
                 # Create Cut Object for regular image
+                image_filter = None
+                do_optimize = self.raster_direction in (RASTER_GREEDY_H, RASTER_GREEDY_V)
+                if do_optimize:
+                    # get some image statistics
+                    white_pixels = 0
+                    used_colors = pil_image.getcolors()
+                    for col_count, col in used_colors:
+                        if col==255:
+                            white_pixels = col_count
+                            break
+                    white_pixel_ratio = white_pixels / (pil_image.width * pil_image.height)
+                    # print (f"white pixels: {white_pixels}, ratio = {white_pixel_ratio:.3f}")
+                    if white_pixel_ratio < 0.3:
+                        self.raster_direction = RASTER_T2B if self.raster_direction == RASTER_GREEDY_H else RASTER_L2R
+
+                if self.raster_direction == RASTER_CROSSOVER: # Crossover - need both
+                    settings["raster_step_x"] = step_x
+                    settings["raster_step_y"] = step_y
+                if self.raster_direction == RASTER_CROSSOVER and "split_crossover" in self._instructions:
+                    self._instructions["mode_filter"] = "ROW"
+                    horizontal=True
+                    bidirectional=True
+                    start_on_top = True
+                    start_on_left = True
+                    if horizontal:
+                        # Raster step is only along y for horizontal raster
+                        settings["raster_step_x"] = 0
+                        settings["raster_step_y"] = step_y
+                    else:
+                        # Raster step is only along x for vertical raster
+                        settings["raster_step_x"] = step_x
+                        settings["raster_step_y"] = 0
+                    # Create Cut Object for horizontal lines
+                    # The image may be manipulated inside RasterCut, so let's create a fresh copy
+                    rasterimage = copy(pil_image)
+                    cutsettings = dict(settings)
+                    cut = RasterCut(
+                        image=rasterimage,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        step_x=step_x,
+                        step_y=step_y,
+                        inverted=False,
+                        direction=direction,
+                        bidirectional=bidirectional,
+                        horizontal=horizontal,
+                        start_minimum_x=start_on_left,
+                        start_minimum_y=start_on_top,
+                        overscan=overscan,
+                        settings=cutsettings,
+                        passes=passes,
+                        post_filter=image_filter,
+                        laserspot=dotwidth,
+                        special=dict(self._instructions),
+                    )
+                    cut.path = path
+                    cut.original_op = self.type
+                    cutcodes.append(cut)
+
+                    # Now set it for the next pass
+                    horizontal=False
+                    if horizontal:
+                        # Raster step is only along y for horizontal raster
+                        settings["raster_step_x"] = 0
+                        settings["raster_step_y"] = step_y
+                    else:
+                        # Raster step is only along x for vertical raster
+                        settings["raster_step_x"] = step_x
+                        settings["raster_step_y"] = 0
+
+                    self._instructions["mode_filter"] = "COL"
+
+                # The image may be manipulated inside RasterCut, so let's create a fresh copy
+                rasterimage = copy(pil_image)
+                cutsettings = dict(settings)
                 cut = RasterCut(
-                    image=pil_image,
+                    image=rasterimage,
                     offset_x=offset_x,
                     offset_y=offset_y,
                     step_x=step_x,
                     step_y=step_y,
                     inverted=inverted,
                     bidirectional=bidirectional,
+                    direction=direction,
                     horizontal=horizontal,
-                    start_minimum_y=start_on_top,
                     start_minimum_x=start_on_left,
+                    start_minimum_y=start_on_top,
                     overscan=overscan,
-                    settings=settings,
+                    settings=cutsettings,
                     passes=passes,
+                    laserspot=dotwidth,
+                    special=self._instructions,
                 )
                 cut.path = path
                 cut.original_op = self.type
             cutcodes.append(cut)
-            if direction == 4:
+            if self.raster_direction == RASTER_HATCH:
                 # Create optional crosshatch cut
-                horizontal = not horizontal
+                direction = RASTER_L2R if start_on_left else RASTER_R2L
+                horizontal = False
                 settings = dict(settings)
                 if horizontal:
                     # Raster step is only along y for horizontal raster
@@ -552,27 +710,32 @@ class ImageOpNode(Node, Parameters):
                     # Raster step is only along x for vertical raster
                     settings["raster_step_x"] = step_x
                     settings["raster_step_y"] = 0
+                # The image may be manipulated inside RasterCut, so let's create a fresh copy
+                rasterimage = copy(pil_image)
+                cutsettings = dict(settings)
                 cut = RasterCut(
-                    image=pil_image,
+                    image=rasterimage,
                     offset_x=offset_x,
                     offset_y=offset_y,
                     step_x=step_x,
                     step_y=step_y,
                     inverted=inverted,
+                    direction=direction,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
-                    start_minimum_y=start_on_top,
                     start_minimum_x=start_on_left,
+                    start_minimum_y=start_on_top,
                     overscan=overscan,
-                    settings=settings,
+                    settings=cutsettings,
                     passes=passes,
+                    laserspot=dotwidth,
+                    special=self._instructions,
                 )
                 cut.path = path
                 cut.original_op = self.type
                 cutcodes.append(cut)
             # Yield all generated cutcodes of this image
-            for cut in cutcodes:
-                yield cut
+            yield from cutcodes
 
     @property
     def bounds(self):

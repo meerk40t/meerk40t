@@ -176,6 +176,7 @@ class TreePanel(wx.Panel):
             self.context.elements.signal("refresh_tree")
 
         def fix_unburnt(event):
+            to_reload = []
             for node in self.context.elements.elems():
                 will_be_burnt = False
                 first_op = None
@@ -194,12 +195,14 @@ class TreePanel(wx.Panel):
                 if not will_be_burnt and first_op is not None:
                     try:
                         first_op.output = True
-                        self.context.elements.signal(
-                            "element_property_update", first_op
-                        )
-                        self.context.elements.signal("warn_state_update")
+                        to_reload.append(first_op)
                     except AttributeError:
                         pass
+            if to_reload:
+                self.context.elements.signal(
+                    "element_property_reload", to_reload
+                )
+                self.context.elements.signal("warn_state_update")
 
         self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
         unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
@@ -1958,8 +1961,10 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
+        # Is the node expanded? If yes regular dnd applies, if not we will add the node to the end...
+        closed_leaf = (self.wxtree.ItemHasChildren(drop_item) and not self.wxtree.IsExpanded(drop_item))
         # We extend the logic by calling the appropriate elems routine
-        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node)
+        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node, flag=closed_leaf)
         if skip:
             event.Skip()
             self.dragging_nodes = None
