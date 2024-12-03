@@ -2246,7 +2246,7 @@ class RasterImagePreprocessor:
 
     @staticmethod
     def process_innerwhite(operation):
-        print (f"Innerwhite called: {len(operation.children)} children of {operation.type}")
+        # print (f"Innerwhite called: {len(operation.children)} children of {operation.type}")
         data = [inode for inode in operation.children if inode.type == "elem image"]
         for inode in data:
             pil_image, bounds = inode.as_image()
@@ -2274,7 +2274,7 @@ class RasterImagePreprocessor:
 
         operation.raster_direction = RASTER_T2B
         operation.bidirectional = True
-        print (f"Innerwhite exit: {len(operation.children)} children of {operation.type}")
+        # print (f"Innerwhite exit: {len(operation.children)} children of {operation.type}")
 
 
     def register_methods(self):
