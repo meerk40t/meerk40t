@@ -374,7 +374,8 @@ class ImageOpNode(Node, Parameters):
                 self.raster_direction = RASTER_L2R
             elif self.raster_direction == RASTER_L2R:
                 self.raster_direction = RASTER_R2L
-                # Look for registered raster (image) preprocessors,
+
+        # Look for registered raster (image) preprocessors,
         # these are routines that take one image as parameter
         # and deliver a set of (result image, method (aka raster_direction) )
         # that will be dealt with independently
