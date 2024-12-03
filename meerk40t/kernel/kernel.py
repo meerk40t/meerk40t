@@ -2837,19 +2837,28 @@ class Kernel(Settings):
                             winsound.Beep(2000, 100)
                     else:
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
-                except Exception:
+                except Exception as e:
+                    channel ("Encountered exception {e} during play")
                     pass
 
             def _play_darwin():
-                cmd = system_sound['Darwin'] if use_default else sys_snd
-                subprocess.run(['afplay', cmd], shell=False)
+                arg = system_sound['Darwin'] if use_default else sys_snd
+                cmd = ['afplay', arg]
+                try:
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel (f"Could not run {cmd[0]}: {e}")
 
             def _play_linux():
-                if not use_default:
-                    subprocess.run(['play', sys_snd], shell=False)
-                else:
-                    print("\a")
-                    subprocess.run(['say', 'Ding'], shell=False)
+                try:
+                    if not use_default:
+                        cmd = ['play', sys_snd]
+                    else:
+                        print("\a")
+                        cmd = ['say', 'Ding']
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel (f"Could not run {cmd[0]}: {e}")
 
             players = {
                 "Windows": _play_windows,
