@@ -898,6 +898,38 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+        @self.console_argument(
+            "index", type=int, help=_("macro to run (1-5).")
+        )
+        @self.console_command(
+            "macro",
+            help=_("Send a predefined macro to the device."),
+        )
+        def run_macro(command, channel, _, index=None, **kwargs):
+            for idx in range(5):
+                macrotext = self.setting(str, f"macro_{idx}", "")
+            if index is None:
+                for idx in range(5):
+                    macrotext = self.setting(str, f"macro_{idx}", "")
+                    channel(f"Content of macro {idx + 1}:")
+                    for no, line in enumerate(macrotext.splitlines()):
+                        channel (f"{no:2d}: {line}")
+                return
+            err = True
+            try:
+                macro_index = int(index) -1
+                if 0 <= macro_index <= 4:
+                    err = False
+            except ValueError:
+                pass
+            if err:
+                channel(f"Invalid macro-number '{index}', valid: 1-5")
+            macrotext = self.setting(str, f"macro_{macro_index}", "")
+            for line in macrotext.splitlines():
+                if line.startswith("#"):
+                    continue
+                self.driver(f"{line}{self.driver.line_end}")
+
     @property
     def safe_label(self):
         """
