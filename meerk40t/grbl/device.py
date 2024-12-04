@@ -905,7 +905,7 @@ class GRBLDevice(Service, Status):
             "macro",
             help=_("Send a predefined macro to the device."),
         )
-        def run_macro(command, channel, _, index=None, **kwargs):
+        def run_macro(command, channel, _, index=None, remainder=None, **kwargs):
             for idx in range(5):
                 macrotext = self.setting(str, f"macro_{idx}", "")
             if index is None:
@@ -924,6 +924,16 @@ class GRBLDevice(Service, Status):
                 pass
             if err:
                 channel(f"Invalid macro-number '{index}', valid: 1-5")
+            if remainder is not None:
+                remainder.strip()
+            if remainder:
+                channel(f"Redefining macro {index} to:")
+                macrotext = remainder.replace("|", "\n")
+                for line in macrotext.splitlines():
+                    channel(line)
+                setattr(self, f"macro_{macro_index}", macrotext)
+                return
+
             macrotext = self.setting(str, f"macro_{macro_index}", "")
             for line in macrotext.splitlines():
                 if line.startswith("#"):
