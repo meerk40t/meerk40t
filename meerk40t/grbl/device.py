@@ -926,6 +926,7 @@ class GRBLDevice(Service, Status):
                 channel(f"Invalid macro-number '{index}', valid: 1-5")
             if remainder is not None:
                 remainder.strip()
+            # channel(f"Remainder: {remainder}")
             if remainder:
                 channel(f"Redefining macro {index} to:")
                 macrotext = remainder.replace("|", "\n")
@@ -935,7 +936,9 @@ class GRBLDevice(Service, Status):
                 return
 
             macrotext = self.setting(str, f"macro_{macro_index}", "")
+            # channel(f"{macro_index}: {macrotext}")
             for line in macrotext.splitlines():
+                channel(f"> {line}")
                 if line.startswith("#"):
                     continue
                 self.driver(f"{line}{self.driver.line_end}")
