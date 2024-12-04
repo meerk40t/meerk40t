@@ -103,11 +103,25 @@ class GRBLControllerPanel(wx.Panel):
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
+
+        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+        self.macros = []
+        for idx in range(5):
+            macrotext = self.service.setting(str, f"macro_{idx}", "")
+            self.macros.append(macrotext)
+            btn = wxButton(self, wx.ID_ANY, f"Macro {idx+1}")
+            btn.Bind(wx.EVT_BUTTON, self.send_macro(idx))
+            btn.Bind(wx.EVT_RIGHT_DOWN, self.edit_macro(idx))
+            btn.SetToolTip(_("Send list of commands to device. Right click to edit."))
+            sizer_3.Add(btn, 1, wx.EXPAND, 0)
+
         self.btn_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.btn_clear.SetToolTip(_("Clear log window"))
         self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_log)
-        sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0
+        sizer_3.Add(self.btn_clear, 0, wx.EXPAND), 0
+
         sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_3, 0, wx.EXPAND, 0)
 
         self.gcode_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.gcode_text.SetToolTip(_("Enter a Gcode-Command and send it to the laser"))
@@ -231,6 +245,33 @@ class GRBLControllerPanel(wx.Panel):
             self.service(f"gcode_realtime {gcode_cmd}")
             if gcode_cmd == "$X" and self.service.extended_alarm_clear:
                 self.service("gcode_realtime \x18")
+
+        return handler
+
+    def send_macro(self, idx):
+        def handler(event):
+            macro = self.macros[idx]
+            for line in macro.splitlines():
+                if line.startswith("#"):
+                    self.command_log.append(f"Macro {idx + 1}: {line}")
+                else:
+                    self.service.driver(f"{line}{self.service.driver.line_end}")
+        return handler
+
+    def edit_macro(self, idx):
+        def handler(event):
+            macro = self.macros[idx]
+            dlg = wx.TextEntryDialog(
+                self, _("Content for macro {index}").format(index = idx + 1),
+                value=macro,
+                style=wx.TE_MULTILINE | wx.OK | wx.CANCEL | wx.CENTRE | wx.ICON_QUESTION,
+            )
+            dlg.ShowModal()
+            newmacro = dlg.GetValue()
+            dlg.Destroy()
+            if newmacro != macro:
+                self.macros[idx] = newmacro
+                setattr(self.service, f"macro_{idx}", newmacro)
 
         return handler
 
