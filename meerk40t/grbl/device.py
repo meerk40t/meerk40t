@@ -598,6 +598,18 @@ class GRBLDevice(Service, Status):
                 ),
                 "section": "_40_Validation",
             },
+            {
+                "attr": "startup_commands",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "multiline",
+                "label": _("Startup commands"),
+                "tip": _(
+                    "Which commands should be sent to the device on a successful connect?"
+                ),
+                "section": "_40_Validation",
+            },
         ]
         self.register_choices("protocol", choices)
 
