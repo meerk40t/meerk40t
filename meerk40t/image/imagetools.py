@@ -1261,7 +1261,7 @@ def plugin(kernel, lifecycle=None):
                 img_array[:, :, :3] = 255 - img_array[:, :, :3]
                 inode.image = Image.fromarray(img_array)
 
-                inode.image.convert(original_mode)
+                inode.image = inode.image.convert(original_mode)
                 update_image_node(inode)
                 channel(_("Image Inverted."))
             except OSError:
