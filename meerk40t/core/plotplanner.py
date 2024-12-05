@@ -3,7 +3,6 @@ import random
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..device.basedevice import (
-    PLOT_AXIS_SWAP,
     PLOT_AXIS,
     PLOT_DIRECTION,
     PLOT_FINISH,
@@ -74,6 +73,7 @@ class PlotPlanner(Parameters):
             self.shift = Shift(self)
         if group:
             self.group = Group(self)
+
         self.pos_x = None
         self.pos_y = None
         self.settings_then_jog = False
@@ -333,11 +333,6 @@ class Single(PlotManipulation):
         for event in plot:
             x = event[0]
             y = event[1]
-            on = event[2] if len(event) > 2 else 0
-            if on in (PLOT_AXIS, PLOT_AXIS_SWAP):
-                # Passthrough
-                yield event
-                continue
             if self.single_x is None or self.single_y is None:
                 # Our single_x or single_y position is not established.
                 self.single_x = x
@@ -401,10 +396,6 @@ class PPI(PlotManipulation):
         px = None
         py = None
         for x, y, on in plot:
-            if on in (PLOT_AXIS, PLOT_AXIS_SWAP):
-                # Passthrough
-                yield x, y, on
-                continue
             if x is None or y is None:
                 yield x, y, on
                 # Sequential, random, progressive, static.
@@ -463,10 +454,6 @@ class Shift(PlotManipulation):
         @return:
         """
         for x, y, on in plot:
-            if on in (PLOT_AXIS, PLOT_AXIS_SWAP):
-                # Passthrough
-                yield x, y, on
-                continue
             if (x is None or y is None) or (
                 not self.planner.force_shift and not self.planner.shift_enabled
             ):
@@ -551,13 +538,6 @@ class Group(PlotManipulation):
         px = None
         py = None
         for x, y, on in plot:
-            if on in (PLOT_AXIS, PLOT_AXIS_SWAP):
-                # Passthrough, but we must first flush all others...
-                yield from self.flush()
-                # print (f"GROUP OUT: {x}, {y}, {on}")
-                yield x, y, on
-                continue
-
             if x is None or y is None:
                 yield from self.flush()
                 continue
@@ -571,7 +551,6 @@ class Group(PlotManipulation):
                 self.last_x = x
                 self.last_y = y
                 self.last_on = on
-                # print (f"GROUP OUT: {x}, {y}, {on}")
                 yield x, y, on
                 continue
             # Group() is enabled
@@ -596,7 +575,6 @@ class Group(PlotManipulation):
                 self.last_x = self.group_x
                 self.last_y = self.group_y
                 self.last_on = self.group_on
-                # print (f"GROUP OUT: {self.group_x}, {self.group_y}, {self.group_on} <group output>")
                 yield self.group_x, self.group_y, self.group_on
             # If we do not have a defined direction, set our current direction.
             self.group_dx = x - self.group_x
@@ -621,7 +599,6 @@ class Group(PlotManipulation):
             self.last_y = self.group_y
             self.last_on = self.group_on
             if self.group_x is not None and self.group_y is not None:
-                # print (f"GROUP OUT: {self.group_x}, {self.group_y}, {self.group_on} <flush output>")
                 yield self.group_x, self.group_y, self.group_on
 
     def warp(self, x, y):
@@ -673,3 +650,4 @@ def grouped(plot):
         group_y = y
     # There are no more plots.
     yield group_x, group_y
+    

@@ -365,6 +365,19 @@ class LihuiyuDevice(Service, Status):
                 "section": "_00_" + _("General Options"),
                 "subsection": "_10_",
             },
+            {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _("Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)") + "\n" +
+                    _("Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)")
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_20_",
+            },
         ]
         self.register_choices("lhy-general", choices)
 
@@ -1004,6 +1017,7 @@ class LihuiyuDevice(Service, Status):
             "split_crossover": True,
             "unsupported_opt": (mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V),  # Greedy loses registration way too often to be reliable
             "gantry" : True,
+            "legacy" : self.legacy_raster,
         }
 
     @property

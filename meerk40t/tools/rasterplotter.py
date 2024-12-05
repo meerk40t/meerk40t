@@ -21,7 +21,6 @@ or only on forward swing.
 import numpy as np
 from math import sqrt
 from time import perf_counter, sleep
-from meerk40t.device.basedevice import PLOT_AXIS_SWAP
 from meerk40t.constants import (
     RASTER_T2B,
     RASTER_B2T,
@@ -208,89 +207,89 @@ class RasterPlotter:
     def distance_burn(self):
         return self._distance_burn
 
-    # def nextcolor_left(self, x, y, default=None):
-    #     """
-    #     Determine the next pixel change going left from the (x,y) point.
-    #     If no next pixel is found default is returned.
-    #     """
-    #     if x <= -1:
-    #         return default
-    #     if x == 0:
-    #         return -1
-    #     if x == self.width:
-    #         return self.width - 1
-    #     if self.width < x:
-    #         return self.width
+    def nextcolor_left(self, x, y, default=None):
+        """
+        Determine the next pixel change going left from the (x,y) point.
+        If no next pixel is found default is returned.
+        """
+        if x <= -1:
+            return default
+        if x == 0:
+            return -1
+        if x == self.width:
+            return self.width - 1
+        if self.width < x:
+            return self.width
 
-    #     v = self.px(x, y)
-    #     for ix in range(x, -1, -1):
-    #         pixel = self.px(ix, y)
-    #         if pixel != v:
-    #             return ix
-    #     return 0
+        v = self.px(x, y)
+        for ix in range(x, -1, -1):
+            pixel = self.px(ix, y)
+            if pixel != v:
+                return ix
+        return 0
 
-    # def nextcolor_top(self, x, y, default=None):
-    #     """
-    #     Determine the next pixel change going top from the (x,y) point.
-    #     If no next pixel is found default is returned.
-    #     """
-    #     if y <= -1:
-    #         return default
-    #     if y == 0:
-    #         return -1
-    #     if y == self.height:
-    #         return self.height - 1
-    #     if self.height < y:
-    #         return self.height
+    def nextcolor_top(self, x, y, default=None):
+        """
+        Determine the next pixel change going top from the (x,y) point.
+        If no next pixel is found default is returned.
+        """
+        if y <= -1:
+            return default
+        if y == 0:
+            return -1
+        if y == self.height:
+            return self.height - 1
+        if self.height < y:
+            return self.height
 
-    #     v = self.px(x, y)
-    #     for iy in range(y, -1, -1):
-    #         pixel = self.px(x, iy)
-    #         if pixel != v:
-    #             return iy
-    #     return 0
+        v = self.px(x, y)
+        for iy in range(y, -1, -1):
+            pixel = self.px(x, iy)
+            if pixel != v:
+                return iy
+        return 0
 
-    # def nextcolor_right(self, x, y, default=None):
-    #     """
-    #     Determine the next pixel change going right from the (x,y) point.
-    #     If no next pixel is found default is returned.
-    #     """
-    #     if x < -1:
-    #         return -1
-    #     if x == -1:
-    #         return 0
-    #     if x == self.width - 1:
-    #         return self.width
-    #     if self.width <= x:
-    #         return default
+    def nextcolor_right(self, x, y, default=None):
+        """
+        Determine the next pixel change going right from the (x,y) point.
+        If no next pixel is found default is returned.
+        """
+        if x < -1:
+            return -1
+        if x == -1:
+            return 0
+        if x == self.width - 1:
+            return self.width
+        if self.width <= x:
+            return default
 
-    #     v = self.px(x, y)
-    #     for ix in range(x, self.width):
-    #         pixel = self.px(ix, y)
-    #         if pixel != v:
-    #             return ix
-    #     return self.width - 1
+        v = self.px(x, y)
+        for ix in range(x, self.width):
+            pixel = self.px(ix, y)
+            if pixel != v:
+                return ix
+        return self.width - 1
 
-    # def nextcolor_bottom(self, x, y, default=None):
-    #     """
-    #     Determine the next pixel change going bottom from the (x,y) point.
-    #     If no next pixel is found default is returned.
-    #     """
-    #     if y < -1:
-    #         return -1
-    #     if y == -1:
-    #         return 0
-    #     if y == self.height - 1:
-    #         return self.height
-    #     if self.height <= y:
-    #         return default
+    def nextcolor_bottom(self, x, y, default=None):
+        """
+        Determine the next pixel change going bottom from the (x,y) point.
+        If no next pixel is found default is returned.
+        """
+        if y < -1:
+            return -1
+        if y == -1:
+            return 0
+        if y == self.height - 1:
+            return self.height
+        if self.height <= y:
+            return default
 
-    #     v = self.px(x, y)
-    #     for iy in range(y, self.height):
-    #         pixel = self.px(x, iy)
-    #         if pixel != v:
-    #             return iy
-    #     return self.height - 1
+        v = self.px(x, y)
+        for iy in range(y, self.height):
+            pixel = self.px(x, iy)
+            if pixel != v:
+                return iy
+        return self.height - 1
 
     def calculate_next_horizontal_pixel(self, y, dy=1, leftmost_pixel=True):
         """
@@ -586,16 +585,23 @@ class RasterPlotter:
         self._locked = False
 
     def _plot_pixels(self):
+        legacy = self.special.get("legacy", False)
         if self.direction in (RASTER_GREEDY_H, RASTER_GREEDY_V):
             yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
         elif self.direction == RASTER_CROSSOVER:
             yield from self._plot_crossover()
-        elif self.direction < 0:
-            yield from self.testpattern_generator()
+        # elif self.direction < 0:
+        #     yield from self.testpattern_generator()
         elif self.horizontal:
-            yield from self._plot_horizontal()
+            if legacy:
+                yield from self._legacy_plot_horizontal()
+            else:
+                yield from self._plot_horizontal()
         else:
-            yield from self._plot_vertical()
+            if legacy:
+                yield from self._legacy_plot_vertical()
+            else:
+                yield from self._plot_vertical()
             # yield from self._plot_vertical()
 
     def _debug_data(self, force=False):
@@ -821,6 +827,157 @@ class RasterPlotter:
                 last_y = y
                 yield last_x, last_y, 0
             y += dy
+    
+    # Legacy code for the m2nano - yes this has deficits for low dpi but it seems 
+    # to be finetuned to the needs of the m2nano controller.
+    # This will be called if the appropriate device setting is in place
+    def _legacy_plot_vertical(self):
+        """
+        This code is for vertical rastering.
+
+        @return:
+        """
+        width = self.width
+        unidirectional = not self.bidirectional
+        skip_pixel = self.skip_pixel
+
+        x, y = self.initial_position()
+        dx = 1 if self.start_minimum_x else -1
+        dy = 1 if self.start_minimum_y else -1
+
+        yield x, y, 0
+        while 0 <= x < width:
+            lower_bound = self.topmost_not_equal(x)
+            if lower_bound is None:
+                x += dx
+                yield x, y, 0
+                continue
+            upper_bound = self.bottommost_not_equal(x)
+            traveling_bottom = self.start_minimum_y if unidirectional else dy >= 0
+            next_traveling_bottom = self.start_minimum_y if unidirectional else dy <= 0
+
+            next_x, next_y = self.calculate_next_vertical_pixel(
+                x + dx, dx, topmost_pixel=next_traveling_bottom
+            )
+            if next_y is not None:
+                # If we have a next scanline, we must end after the last pixel of that scanline too.
+                upper_bound = max(next_y, upper_bound) + self.overscan
+                lower_bound = min(next_y, lower_bound) - self.overscan
+            pixel_chain = []
+            last_y = lower_bound if traveling_bottom else upper_bound
+            if traveling_bottom:
+                while y < upper_bound:
+                    try:
+                        pixel = self.px(x, y)
+                    except IndexError:
+                        pixel = 0
+                    y = self.nextcolor_bottom(x, y, upper_bound)
+                    y = min(y, upper_bound)
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        pixel_chain.append(())
+                        yield x, y, pixel
+                        pixel_chain.append([last_y, y, pixel])
+                    last_y = y + 1
+            else:
+                while lower_bound < y:
+                    try:
+                        pixel = self.px(x, y)
+                    except IndexError:
+                        pixel = 0
+                    y = self.nextcolor_top(x, y, lower_bound)
+                    y = max(y, lower_bound)
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+                        pixel_chain.append([y, last_y, pixel])
+                    last_y = y - 1
+            if pixel_chain:
+                self._consume_pixel_chains(pixel_chain, x, False)
+            if next_y is None:
+                # remaining image is blank, we stop right here.
+                return
+            yield next_x, y, 0
+            if y != next_y:
+                yield next_x, next_y, 0
+            x = next_x
+            y = next_y
+            dy = -dy
+
+    def _legacy_plot_horizontal(self):
+        """
+        This code is horizontal rastering.
+
+        @return:
+        """
+        height = self.height
+        unidirectional = not self.bidirectional
+        skip_pixel = self.skip_pixel
+
+        x, y = self.initial_position()
+        dx = 1 if self.start_minimum_x else -1
+        dy = 1 if self.start_minimum_y else -1
+        yield x, y, 0
+        while 0 <= y < height:
+            lower_bound = self.leftmost_not_equal(y)
+            if lower_bound is None:
+                y += dy
+                yield x, y, 0
+                continue
+            upper_bound = self.rightmost_not_equal(y)
+            traveling_right = self.start_minimum_x if unidirectional else dx >= 0
+            next_traveling_right = self.start_minimum_x if unidirectional else dx <= 0
+
+            next_x, next_y = self.calculate_next_horizontal_pixel(
+                y + dy, dy, leftmost_pixel=next_traveling_right
+            )
+            if next_x is not None:
+                # If we have a next scanline, we must end after the last pixel of that scanline too.
+                upper_bound = max(next_x, upper_bound) + self.overscan
+                lower_bound = min(next_x, lower_bound) - self.overscan
+            pixel_chain = []
+            last_x = lower_bound if traveling_right else upper_bound
+            if traveling_right:
+                while x < upper_bound:
+                    try:
+                        pixel = self.px(x, y)
+                    except IndexError:
+                        pixel = 0
+                    x = self.nextcolor_right(x, y, upper_bound)
+                    x = min(x, upper_bound)
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+                        pixel_chain.append([last_x, x, pixel])
+                    last_x = x + 1
+            else:
+                while lower_bound < x:
+                    try:
+                        pixel = self.px(x, y)
+                    except IndexError:
+                        pixel = 0
+                    x = self.nextcolor_left(x, y, lower_bound)
+                    x = max(x, lower_bound)
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+                        pixel_chain.append([x, last_x, pixel])
+                    last_x = x - 1
+            if pixel_chain:
+                self._consume_pixel_chains(pixel_chain, y, True)
+            if next_y is None:
+                # remaining image is blank, we stop right here.
+                return
+            yield x, next_y, 0
+            if x != next_x:
+                yield next_x, next_y, 0
+            x = next_x
+            y = next_y
+            dx = -dx
 
     def _plot_greedy_neighbour(self, horizontal: bool = True):
         """
@@ -1195,16 +1352,8 @@ class RasterPlotter:
 
             if not segments:
                 continue
-            if mode==ROW:
-                if not self.horizontal:
-                    # Axis change
-                    self.horizontal = True
-                    yield 0, None, PLOT_AXIS_SWAP
-            else:
-                if self.horizontal:
-                    # Axis change
-                    self.horizontal = False
-                    yield 1, None, PLOT_AXIS_SWAP
+            # NB: Axis change indication is no longer required, 
+            # the m2nano does not support it, the other devices do not need it...
             if mode == ROW:
                 if xy != last_y:
                     last_y = xy
@@ -1270,7 +1419,8 @@ class RasterPlotter:
         if self.debug_level > 1:
             print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
             print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
-
+    """
+    # Testpattern generation
     def testpattern_generator(self):
         def rectangle_h():
             # simple rectangle
@@ -1280,17 +1430,13 @@ class RasterPlotter:
             self.final_y = 0
             self.horizontal = True
 
-            yield 0, None, PLOT_AXIS_SWAP
             yield 0, 0, off
             yield self.width - 1, 0, on
 
-            yield 1, None, PLOT_AXIS_SWAP
             yield self.width - 1, self.height - 1, on
 
-            yield 0, None, PLOT_AXIS_SWAP
             yield 0, self.height - 1, on
 
-            yield 1, None, PLOT_AXIS_SWAP
             yield 0, 0, on
 
         def rectangle_v():
@@ -1301,17 +1447,13 @@ class RasterPlotter:
             self.final_y = 0
             self.horizontal = True
 
-            yield 1, None, PLOT_AXIS_SWAP
             yield 0, 0, off
             yield 0, self.height - 1, on
 
-            yield 0, None, PLOT_AXIS_SWAP
             yield self.width - 1, self.height - 1, on
 
-            yield 1, None, PLOT_AXIS_SWAP
             yield self.width - 1, 0, on
 
-            yield 0, None, PLOT_AXIS_SWAP
             yield 0, 0, on
 
 
@@ -1328,10 +1470,8 @@ class RasterPlotter:
             while y < self.height - 2:
                 x = wd if left else 0
                 self.horizontal = True
-                yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 self.horizontal = False
-                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y + 2, on
                 left = not left
                 y += 2
@@ -1349,10 +1489,8 @@ class RasterPlotter:
             while x < self.width - 2:
                 y = ht if top else 0
                 self.horizontal = False
-                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 self.horizontal = True
-                yield 0, None, PLOT_AXIS_SWAP
                 yield x + 2, y, on
                 top = not top
                 x += 2
@@ -1373,22 +1511,18 @@ class RasterPlotter:
                 x += width
                 y += 0
                 self.horizontal = True
-                yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 x += 0
                 y += height
                 self.horizontal = False
-                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 x -=(width - 2)
                 y += 0
                 self.horizontal = True
-                yield 0, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 x += 0
                 y -= (height - 2)
                 self.horizontal = False
-                yield 1, None, PLOT_AXIS_SWAP
                 yield x, y, on
                 width -= 4
                 height -= 4
@@ -1404,3 +1538,4 @@ class RasterPlotter:
             yield from methods[method]()
         except IndexError:
             print (f"Unknown testgenerator for {self.direction}")
+    """
