@@ -607,29 +607,31 @@ class SVGWriter:
                 "settings",
             ):
                 continue
-            if key in node.settings:
-                settings_value = node.settings[key]
-                if settings_value != value:
-                    # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
-                    node.settings[key] = value
+            if hasattr(node, "settings"):
+                if key in node.settings:
+                    settings_value = node.settings[key]
+                    if settings_value != value:
+                        # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
+                        node.settings[key] = value
 
         saved_attributes = []
-        try:
-            for key, value in node.settings.items():
-                saved_attributes.append(key)
-                if not key:
-                    # If key is None, do not save.
-                    continue
-                if key.startswith("_"):
-                    continue
-                if value is None:
-                    continue
-                if key in ("references", "tag", "type"):
-                    # References key from previous loaded version (filter out, rebuild)
-                    continue
-                subelement.set(key, str(value))
-        except AttributeError:
-            pass
+        if hasattr(node, "settings"):
+            try:
+                for key, value in node.settings.items():
+                    saved_attributes.append(key)
+                    if not key:
+                        # If key is None, do not save.
+                        continue
+                    if key.startswith("_"):
+                        continue
+                    if value is None:
+                        continue
+                    if key in ("references", "tag", "type"):
+                        # References key from previous loaded version (filter out, rebuild)
+                        continue
+                    subelement.set(key, str(value))
+            except AttributeError:
+                pass
         # Node does not have settings, write object dict
         for key, value in node.__dict__.items():
             if not key or key.startswith("_") or key in saved_attributes or value is None:
