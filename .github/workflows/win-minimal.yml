@@ -40,7 +40,6 @@ jobs:
         pip install scipy=1.10.0
         pip install pypotrace-windows
         pip install pyclipr
-        pip install numba
         pip install .
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
@@ -83,6 +82,8 @@ jobs:
         ##move external_plugins.py external_plugins_build.py
         ##move external_plugins.unused external_plugins.py
         ##cd ..
+        move dist/MeerK40t.exe dist/Meerk40t-minimal.exe
+
 
     - name: Upload Release Assets
       id: release
@@ -90,4 +91,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t.exe
+          dist/MeerK40t-minimal.exe
