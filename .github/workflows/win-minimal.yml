@@ -1,7 +1,7 @@
 # This workflow builds PyInstaller single-file executables
 # of Meerk40t for Windows
 
-name: Meerk40t (Windows)
+name: Meerk40t (Windows minimal)
 
 on:
   workflow_dispatch:
