@@ -114,7 +114,20 @@ class GroupNode(Node, LabelDisplay):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify, flag=flag)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                old_references = []
+                # changed = []
+                for e in self.flat():
+                    old_references.extend(e._references)
+                    if hasattr(drag_node, "color") and drag_node.color is not None and hasattr(e, "stroke"):
+                        e.stroke = drag_node.color
+                        # changed.append(e)
+                for ref in old_references:
+                    ref.remove_node()
+                # We would need to send a refresh signal to update the tree operations...
+                # signal("element_property_update", changed))
+            return result
         return False
 
     @property
