@@ -1285,6 +1285,8 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
         for outer in closed_groups:
+            if outer is None:
+                continue
             channel(
                 f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements"
             )
