@@ -909,7 +909,10 @@ class BalorDevice(Service, Status):
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
-        unit_size = float(Length(self.lens_size))
+        try:
+            unit_size = float(Length(self.lens_size))
+        except ValueError:
+            return
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 
