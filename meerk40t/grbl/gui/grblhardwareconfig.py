@@ -21,20 +21,24 @@ class GrblIoButtons(wx.Panel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.service.themes.set_window_colors(self)
         self.chart = chart
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
 
         self.button_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))
-        sizer_2.Add(self.button_refresh, 1, 0, 0)
+        sizer_2.Add(self.button_refresh, 0, wx.EXPAND, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_refresh, self.button_refresh)
 
         self.button_write = wxButton(self, wx.ID_ANY, _("Write"))
-        sizer_2.Add(self.button_write, 1, 0, 0)
+        sizer_2.Add(self.button_write, 0, wx.EXPAND, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_write, self.button_write)
 
         self.button_export = wxButton(self, wx.ID_ANY, _("Export"))
-        sizer_2.Add(self.button_export, 1, 0, 0)
+        self.button_export.SetToolTip(_("Export Settings"))
+        self.button_write.SetToolTip(_("This will write settings to hardware."))
+        self.button_refresh.SetToolTip(_("Reread settings from hardware."))
+        sizer_2.Add(self.button_export, 0, wx.EXPAND, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
 
         self.SetSizer(sizer_2)
@@ -109,7 +113,8 @@ class GrblHardwareProperties(ScrolledPanel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
-
+        if context is not None:
+            context.themes.set_window_colors(self)
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
 
         chart = EditableListCtrl(
@@ -124,10 +129,10 @@ class GrblHardwareProperties(ScrolledPanel):
         chart.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_label_start_edit)
         chart.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_label_end_edit)
 
-        sizer_1.Add(self.chart, 8, wx.EXPAND, 0)
+        sizer_1.Add(self.chart, 1, wx.EXPAND, 0)
 
         self.io_panel = GrblIoButtons(self, wx.ID_ANY, context=self.service, chart=self)
-        sizer_1.Add(self.io_panel, 1, wx.EXPAND, 0)
+        sizer_1.Add(self.io_panel, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
 
     def build_columns(self):
@@ -144,6 +149,7 @@ class GrblHardwareProperties(ScrolledPanel):
                 format=wx.LIST_FORMAT_LEFT,
                 width=width,
             )
+        chart.resize_columns()
 
     def fill_chart(self):
         chart = self.chart
@@ -233,4 +239,4 @@ class GRBLHardwareConfig(MWindow):
 
     @staticmethod
     def submenu():
-        return "Device-Control", "GRBL Hardware Config"
+        return "Device-Settings", "GRBL Hardware Config"

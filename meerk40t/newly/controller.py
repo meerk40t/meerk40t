@@ -90,6 +90,7 @@ class NewlyController:
         self.mode = "init"
         self.paused = False
         self._command_buffer = []
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __call__(self, cmd, *args, **kwargs):
         if isinstance(cmd, str):
@@ -190,7 +191,8 @@ class NewlyController:
         )
         x, y = self.service.view.iposition(self._last_x, self._last_y)
         self.sync()
-        self.service.signal("driver;position", (last_x, last_y, x, y))
+        if self._signal_updates:
+            self.service.signal("driver;position", (last_x, last_y, x, y))
 
     #######################
     # MODE SHIFTS
@@ -205,7 +207,7 @@ class NewlyController:
             return
         self._realtime = True
         self.mode = "realtime"
-        self(f"ZZZFile0")
+        self(f"ZZZFile{0}")
         self._clear_settings()
 
     def _clear_settings(self):
@@ -354,8 +356,11 @@ class NewlyController:
         self.service.laser_status = "active"
         self("ZED")
         cmd = b";".join(self._command_buffer) + b";"
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=cmd)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=cmd)
+        except ConnectionError:
+            pass
         self._command_buffer.clear()
         self._clear_settings()
         self.service.laser_status = "idle"
@@ -569,8 +574,11 @@ class NewlyController:
 
     def raw(self, data):
         data = bytes(data, "latin1")
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=data)
+        try:
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, data=data)
+        except ConnectionError:
+            return
 
     def frame(self, x, y):
         self._set_frame_mode()

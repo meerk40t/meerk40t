@@ -190,7 +190,7 @@ class HarmonographWidget(Widget):
             size * -2,
             size * 0.5,
             size * -1,
-            icons.icons8_circled_right.GetBitmap(use_theme=False, resize=50),
+            icons.icons8_circled_right.GetBitmap(use_theme=False, resize=icons.get_default_icon_size(self.context)),
             self.set_random_harmonograph,
         )
         random_widget.background_brush = wx.WHITE_BRUSH

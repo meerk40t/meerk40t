@@ -33,12 +33,14 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     create_menu_for_node,
-    matrix_scale,
+    get_gc_full_scale,
+    get_matrix_scale,
     wxButton,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import TYPE_END
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 # from time import perf_counter
 
@@ -126,17 +128,17 @@ def process_event(
             widget.master.check_rot_center()
             widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
             return RESPONSE_CONSUME
-    elif event_type == "middledown":
-        # Hmm, I think this is never called due to the consumption of this event by scene pane...
-        widget.was_lb_raised = False
-        widget.save_width = widget.master.width
-        widget.save_height = widget.master.height
-        widget.uniform = False
-        widget.master.total_delta_x = dx
-        widget.master.total_delta_y = dy
-        widget.master.tool_running = optimize_drawing
-        widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
-        return RESPONSE_CONSUME
+    # elif event_type == "middledown":
+    #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
+    #     widget.was_lb_raised = False
+    #     widget.save_width = widget.master.width
+    #     widget.save_height = widget.master.height
+    #     widget.uniform = False
+    #     widget.master.total_delta_x = dx
+    #     widget.master.total_delta_y = dy
+    #     widget.master.tool_running = optimize_drawing
+    #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
+    #     return RESPONSE_CONSUME
     elif event_type == "leftup":
         if widget.was_lb_raised:
             widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
@@ -231,14 +233,7 @@ class BorderWidget(Widget):
             # (even if they are dotted on a microscopic level)
             # To circumvent this issue, we scale the gc back
             gc.PushState()
-            gcmat = gc.GetTransform()
-            mat_param = gcmat.Get()
-            sx = mat_param[0]
-            sy = mat_param[3]
-            if sx == 0:
-                sx = 0.01
-            if sy == 0:
-                sy = 0.01
+            sx, sy = get_gc_full_scale(gc)
             gc.Scale(1 / sx, 1 / sy)
 
             # Create a copy of the pen
@@ -492,7 +487,7 @@ class RotationWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context, delayed=True)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
@@ -503,7 +498,8 @@ class RotationWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element rotated")
+            elements.prepare_undo("Element rotated")
             return
         elif event == 0:
             if self.rotate_cx is None:
@@ -572,7 +568,10 @@ class RotationWidget(Widget):
                     except AttributeError:
                         pass
                     e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+                    if e.type == "elem image":
+                        e._cache = None
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
+            elements.signal("updating")
 
         self.scene.request_refresh()
 
@@ -766,7 +765,7 @@ class CornerWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1:
+        if event == 1: # End
             images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 # modified no longer relevant
@@ -776,8 +775,9 @@ class CornerWidget(Widget):
                 #     pass
                 if hasattr(e, "update"):
                     images.append(e)
+                e.modified()
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context)
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
@@ -785,7 +785,8 @@ class CornerWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element scaled")
+            elements.prepare_undo("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -872,7 +873,10 @@ class CornerWidget(Widget):
                     except AttributeError:
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
+                    if node.type == "elem image":
+                        node._cache = None
+            elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -1014,10 +1018,11 @@ class SideWidget(Widget):
                 #     e.modified()
                 # except AttributeError:
                 #     pass
+                e.modified()
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context)
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
@@ -1025,7 +1030,8 @@ class SideWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element scaled")
+            elements.prepare_undo("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1116,8 +1122,10 @@ class SideWidget(Widget):
                     except AttributeError:
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
-
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
+                    if node.type == "elem image":
+                        node._cache = None
+            elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -1236,7 +1244,7 @@ class SkewWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(self.scene.context)
+                elements.do_image_update(e, self.scene.context, delayed=True)
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
@@ -1244,7 +1252,8 @@ class SkewWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element skewed")
+            elements.prepare_undo("Element skewed")
             return
         elif event == 0:  # move
             if self.is_x:
@@ -1279,7 +1288,9 @@ class SkewWidget(Widget):
                             (self.master.right + self.master.left) / 2,
                             (self.master.top + self.master.bottom) / 2,
                         )
-
+                    if e.type == "elem image":
+                        e._cache = None
+            elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -1374,6 +1385,8 @@ class MoveWidget(Widget):
         to_be_copied = []
         emph_list = list(elements.elems(emphasized=True))
         for e in emph_list:
+            if hasattr(e, "hidden") and e.hidden:
+                continue
             if e.type in ("file", "group"):
                 for f in e.children:
                     if not f.emphasized:
@@ -1413,7 +1426,7 @@ class MoveWidget(Widget):
                 if oldparent.label is None:
                     newlabel = "Copy"
                 else:
-                    newlabel = f"Copy of {oldparent.label}"
+                    newlabel = f"Copy of {oldparent.display_label()}"
                 if oldparent.id is None:
                     newid = "Copy"
                 else:
@@ -1511,9 +1524,9 @@ class MoveWidget(Widget):
                         e.matrix.post_translate(dx, dy)
                         # We would normally not adjust the node properties,
                         # but the pure adjustment of the bbox is hopefully not hurting
-                        e.translated(dx, dy)
+                        e.translated(dx, dy, interim=False)
                     self.translate(dx, dy)
-
+                elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
     def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
@@ -1521,7 +1534,7 @@ class MoveWidget(Widget):
         Change the position of the selected elements.
         """
 
-        def move_to(dx, dy):
+        def move_to(dx, dy, interim=True):
             if dx == 0 and dy == 0:
                 return
             self.total_dx += dx
@@ -1540,11 +1553,13 @@ class MoveWidget(Widget):
                     e.matrix.post_translate(dx, dy)
                     # We would normally not adjust the node properties,
                     # but the pure adjustment of the bbox is hopefully not hurting
-                    e.translated(dx, dy)
+                    e.translated(dx, dy, interim=interim)
             self.translate(dx, dy)
+            elements.signal("updating")
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
+        elements.set_start_time("movewidget")
         lastdx = 0
         lastdy = 0
         if nearest_snap is None:
@@ -1600,6 +1615,10 @@ class MoveWidget(Widget):
                     dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
                 # Find the minimum distance and its corresponding indices
                 min_dist = np.min(dist)
+                if np.isnan(min_dist):
+                    # print (f"Encountered the infamous bug: {p1} {p2}")
+                    # Still need an example when that happens
+                    return None, 0, 0
                 min_indices = np.argwhere(dist == min_dist)
 
                 # Return the coordinates of the two points
@@ -1615,7 +1634,7 @@ class MoveWidget(Widget):
                 and not "shift" in modifiers
                 and b is not None
             ):
-                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
                 # We gather all points of non-selected elements,
                 # but only those that lie within the boundaries
                 # of the selected area
@@ -1628,6 +1647,9 @@ class MoveWidget(Widget):
                 other_points = []
                 selected_points = []
                 for e in self.scene.context.elements.elems():
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
+
                     if e.emphasized:
                         target = selected_points
                     else:
@@ -1638,22 +1660,16 @@ class MoveWidget(Widget):
                     last = None
                     for seg in geom.segments[: geom.index]:
                         start = seg[0]
-                        seg_type = int(seg[2].real)
+                        seg_type = geom._segtype(seg)
                         end = seg[4]
-                        if seg_type != TYPE_END:
-                            if start != last:
-                                xx = start.real
-                                yy = start.imag
-                                ignore = (
-                                    xx < b[0] - gap
-                                    or xx > b[2] + gap
-                                    or yy < b[1] - gap
-                                    or yy > b[3] + gap
-                                )
-                                if not ignore:
-                                    target.append(start)
-                            xx = end.real
-                            yy = end.imag
+                        if seg_type in NON_GEOMETRY_TYPES:
+                            continue
+                        if np.isnan(start) or np.isnan(end):
+                            print (f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                            continue
+                        if start != last:
+                            xx = start.real
+                            yy = start.imag
                             ignore = (
                                 xx < b[0] - gap
                                 or xx > b[2] + gap
@@ -1661,8 +1677,18 @@ class MoveWidget(Widget):
                                 or yy > b[3] + gap
                             )
                             if not ignore:
-                                target.append(end)
-                            last = end
+                                target.append(start)
+                        xx = end.real
+                        yy = end.imag
+                        ignore = (
+                            xx < b[0] - gap
+                            or xx > b[2] + gap
+                            or yy < b[1] - gap
+                            or yy > b[3] + gap
+                        )
+                        if not ignore:
+                            target.append(end)
+                        last = end
                 # t2 = perf_counter()
                 if (
                     other_points is not None
@@ -1674,13 +1700,13 @@ class MoveWidget(Widget):
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
-                    if dist < gap:
+                    if dist is not None and dist < gap:
                         did_snap_to_point = True
                         dx = pt1.real - pt2.real
                         dy = pt1.imag - pt2.imag
                         self.total_dx = 0
                         self.total_dy = 0
-                        move_to(dx, dy)
+                        move_to(dx, dy, interim=False)
                 # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
@@ -1690,7 +1716,7 @@ class MoveWidget(Widget):
                 and not did_snap_to_point
             ):
                 # t1 = perf_counter()
-                gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
                 # Check for corner points + center:
                 selected_points = (
                     (b[0], b[1]),
@@ -1709,13 +1735,13 @@ class MoveWidget(Widget):
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                    if dist < gap:
+                    if dist is not None and dist < gap:
                         did_snap_to_point = True
                         dx = pt1[0] - pt2[0]
                         dy = pt1[1] - pt2[1]
                         self.total_dx = 0
                         self.total_dy = 0
-                        move_to(dx, dy)
+                        move_to(dx, dy, interim=False)
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
@@ -1725,10 +1751,10 @@ class MoveWidget(Widget):
 
             if not did_snap_to_point:
                 if nearest_snap is None:
-                    move_to(lastdx, lastdy)
+                    move_to(lastdx, lastdy, interim=False)
                 else:
                     move_to(
-                        lastdx - self.master.offset_x, lastdy - self.master.offset_y
+                        lastdx - self.master.offset_x, lastdy - self.master.offset_y, interim=False
                     )
                 self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
@@ -1743,6 +1769,13 @@ class MoveWidget(Widget):
             #             pass
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
+            for node in elements.elems(emphasized=True):
+                try:
+                    if node.lock:
+                        continue
+                except AttributeError:
+                    pass
+                node.modified()
 
             self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
@@ -1753,13 +1786,15 @@ class MoveWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element shifted")
+            elements.prepare_undo("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move
             # b = elements.selected_area()  # correct, but slow...
-            move_to(dx, dy)
+            move_to(dx, dy, interim=True)
         self.scene.request_refresh()
+        elements.set_end_time("movewidget")
 
     def event(
         self,
@@ -2187,11 +2222,12 @@ class RefAlign(wx.Dialog):
         # begin wxGlade: RefAlign.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
+        self.context.themes.set_window_colors(self)
         self.SetTitle(_("Align Selection"))
 
         sizer_ref_align = wx.BoxSizer(wx.VERTICAL)
 
-        label_1 = wx.StaticText(
+        label_1 = wxStaticText(
             self,
             wx.ID_ANY,
             _("Move the selection into the reference object and scale the elements."),
@@ -2491,6 +2527,8 @@ class SelectionWidget(Widget):
                 if e.lock:
                     continue
                 e.matrix.post_rotate(angle, cx, cy)
+                if e.type == "elem image":
+                    e._cache = None
             # Update bbox
             cc[0] = cx - dy / 2
             cc[2] = cc[0] + dy
@@ -2536,7 +2574,7 @@ class SelectionWidget(Widget):
                 if e is not refob:
                     e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
                     e.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
-
+        elements.signal("updating")
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
     def show_reference_align_dialog(self, event):

@@ -226,7 +226,11 @@ class GcodeJob:
 
     def write_blob(self, data):
         self.write_all(
-            [r for r in re.split("[\n|\r]", data.decode("utf-8", errors="ignore")) if r.strip()]
+            [
+                r
+                for r in re.split("[\n|\r]", data.decode("utf-8", errors="ignore"))
+                if r.strip()
+            ]
         )
 
     def execute(self, driver=None):
@@ -360,20 +364,29 @@ class GcodeJob:
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
                     try:
-                        self._driver.signal("coolant", True)
+                        self._driver.service.kernel.root.coolant.coolant_on(
+                            self._driver.service
+                        )
                     except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
                         pass
                 elif v == 8:
                     # Coolant Control: Flood coolant On
                     try:
-                        self._driver.signal("coolant", True)
+                        self._driver.service.kernel.root.coolant.coolant_on(
+                            self._driver.service
+                        )
                     except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
                         pass
                 elif v == 9:
                     # Coolant Control: Flood coolant Off
                     try:
-                        self._driver.signal("coolant", False)
+                        self._driver.service.kernel.root.coolant.coolant_off(
+                            self._driver.service
+                        )
                     except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
                         pass
                 elif v == 56:
                     # Parking motion override control.
@@ -691,6 +704,8 @@ class GcodeJob:
         if matrix is None:
             # Using job for something other than point plotting
             return
+        if power is None:
+            power = 1000
         power = min(1000, power)
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])

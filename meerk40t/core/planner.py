@@ -53,7 +53,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Cluster raster objects"),
                 "tip": _(
                     "Separate non-overlapping raster objects.\n"
-                    "Active: this will raster close (ie overlapping) objects as one,\n"
+                    "Active: this will raster close (i.e. overlapping) objects as one,\n"
                     "but will separately process objects lying apart from each other.\n"
                     "Inactive: all objects will be lasered as one single unit."
                 ),
@@ -254,6 +254,33 @@ def plugin(kernel, lifecycle=None):
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "hidden": True,
+            },
+            {
+                "attr": "opt_effect_combine",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Keep effect lines together"),
+                "tip": (
+                    _("Active: effects like hatches are dealt with as a bigger shape") + "\n" +
+                    _("Inactive: every single line segment will be dealt with individually.")
+                ),
+                "page": "Optimisations",
+                "section": "_25_Effects",
+            },
+            {
+                "attr": "opt_effect_optimize",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Optimize internally"),
+                "tip": (
+                    _("Active: hatch lines will be optimized internally") + "\n" +
+                    _("Inactive: hatch lines will be burnt sequentially.")
+                ),
+                "page": "Optimisations",
+                "section": "_25_Effects",
+                "conditional": (context, "opt_effect_combine"),
             },
             {
                 "attr": "opt_reduce_details",

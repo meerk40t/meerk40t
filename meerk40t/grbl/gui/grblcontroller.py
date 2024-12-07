@@ -13,8 +13,8 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton
-from meerk40t.kernel import signal_listener, get_safe_path
+from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
+from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
 
@@ -32,9 +32,10 @@ class GRBLControllerPanel(wx.Panel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.service.themes.set_window_colors(self)
         self.SetHelpText("grblcontoller")
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        self.iconsize = 0.75 * get_default_icon_size()
+        self.iconsize = 0.75 * get_default_icon_size(context)
         self.state = None
         self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
@@ -62,7 +63,7 @@ class GRBLControllerPanel(wx.Panel):
         static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
 
-        self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+        self.data_exchange = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
         self.data_exchange.SetMinSize(dip_size(self, -1, 100))
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
@@ -98,17 +99,31 @@ class GRBLControllerPanel(wx.Panel):
             if entry[3] is not None:
                 btn.SetBitmap(
                     entry[3].GetBitmap(
-                        resize=0.5 * get_default_icon_size(), use_theme=False
+                        resize=0.5 * get_default_icon_size(self.context), use_theme=False
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
+
+        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+        self.macros = []
+        for idx in range(5):
+            macrotext = self.service.setting(str, f"macro_{idx}", "")
+            self.macros.append(macrotext)
+            btn = wxButton(self, wx.ID_ANY, f"Macro {idx+1}")
+            btn.Bind(wx.EVT_BUTTON, self.send_macro(idx))
+            btn.Bind(wx.EVT_RIGHT_DOWN, self.edit_macro(idx))
+            btn.SetToolTip(_("Send list of commands to device. Right click to edit."))
+            sizer_3.Add(btn, 1, wx.EXPAND, 0)
+
         self.btn_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.btn_clear.SetToolTip(_("Clear log window"))
         self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_log)
-        sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0
-        sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
+        sizer_3.Add(self.btn_clear, 0, wx.EXPAND), 0
 
-        self.gcode_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
+        sizer_1.Add(sizer_3, 0, wx.EXPAND, 0)
+
+        self.gcode_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.gcode_text.SetToolTip(_("Enter a Gcode-Command and send it to the laser"))
         self.gcode_text.SetFocus()
         sizer_1.Add(self.gcode_text, 0, wx.EXPAND, 0)
@@ -205,6 +220,8 @@ class GRBLControllerPanel(wx.Panel):
             iface = f"{context.address}:{context.port}"
         elif context.permit_ws and context.interface == "tcp":
             iface = f"ws://{context.address}:{context.port}"
+        elif context.permit_ws and context.interface == "ws":
+            iface = f"ws://{context.address}:{context.port}"
         else:
             # Mock
             iface = "Mock"
@@ -228,6 +245,33 @@ class GRBLControllerPanel(wx.Panel):
             self.service(f"gcode_realtime {gcode_cmd}")
             if gcode_cmd == "$X" and self.service.extended_alarm_clear:
                 self.service("gcode_realtime \x18")
+
+        return handler
+
+    def send_macro(self, idx):
+        def handler(event):
+            macro = self.macros[idx]
+            for line in macro.splitlines():
+                if line.startswith("#"):
+                    self.command_log.append(f"Macro {idx + 1}: {line}")
+                else:
+                    self.service.driver(f"{line}{self.service.driver.line_end}")
+        return handler
+
+    def edit_macro(self, idx):
+        def handler(event):
+            macro = self.macros[idx]
+            dlg = wx.TextEntryDialog(
+                self, _("Content for macro {index}").format(index = idx + 1),
+                value=macro,
+                style=wx.TE_MULTILINE | wx.OK | wx.CANCEL | wx.CENTRE | wx.ICON_QUESTION,
+            )
+            dlg.ShowModal()
+            newmacro = dlg.GetValue()
+            dlg.Destroy()
+            if newmacro != macro:
+                self.macros[idx] = newmacro
+                setattr(self.service, f"macro_{idx}", newmacro)
 
         return handler
 
@@ -296,6 +340,10 @@ class GRBLControllerPanel(wx.Panel):
                 self._buffer += f"{data}\n"
             self.service.signal("grbl_controller_update", True)
 
+    @signal_listener("update_interface")
+    def update_button_gui(self, origin, *args):
+        self.on_status(origin, self.state)
+
     @signal_listener("grbl_controller_update")
     def update_text_gui(self, origin, *args):
         with self._buffer_lock:
@@ -351,7 +399,7 @@ class GRBLControllerPanel(wx.Panel):
     def on_status(self, origin, state):
         self.state = state
         self.set_color_according_to_state(state, self.button_device_connect)
-        if state == "uninitialized" or state == "disconnected":
+        if state == "uninitialized" or state == "disconnected" or state is None:
             self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)

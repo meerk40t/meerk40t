@@ -16,12 +16,56 @@ import wx
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_detective
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
+from meerk40t.gui.wxutils import get_gc_scale
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
+WIDTH_MULT = 10
+
+_ = wx.GetTranslation
+
+def test_pattern_geometry(s=0x6666):
+    path = Geomstr()
+    m = 0x7FFF
+
+    def c(x, y):
+        return complex(m + (s * x), m + (s * y))
+    # Rectangles
+    for half_size in range(12):
+        x = (half_size + 1) * 1 / 13
+        path.line(c(-x, -x), c(x, -x))
+        path.line(c(x, -x), c(x, x))
+        path.line(c(x, x), c(-x, x))
+        path.line(c(-x, x), c(-x, -x))
+    # diagonals
+    path.line(c(-1,-1), c(1, 1))
+    path.line(c(-1,1), c(1, -1))
+    # main axis
+    path.line(c(-1, 0), c(1, 0))
+    path.line(c(0, -1), c(0, 1))
+
+    # Letter A
+    x = 1 / 13
+    path.line(c(0, 0), c(x/2, -x))
+    path.line(c(x/2, -x), c(x, 0))
+    path.line(c(x/4, -x/2), c(3/4*x, -x/2))
+
+    path.settings(
+        0,
+        {
+            "power": 1000,
+            "delay_laser_on": 100,
+            "delay_laser_off": 100,
+            "delay_laser_polygon": 100,
+            "speed": 255,
+            "rapid_speed": 255,
+            "timing_enabled": True,
+        },
+    )
+    return path
 
 def cor_file_geometry(s=0x6666):
     path = Geomstr()
@@ -121,7 +165,8 @@ def register_scene(service):
         scene.push_stack(SceneSpaceWidget(scene))
         corfile_widget = CorFileWidget(scene)
         scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
-        scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), scene.gui.Size)
+        s_size = (0.9 * scene.gui.Size[0], 0.9 * scene.gui.Size[1])
+        scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), s_size)
         scene.request_refresh()
 
 
@@ -157,13 +202,14 @@ class CorFileWidget(Widget):
         self.geometry = cor_file_geometry()
         self.assoc = cor_file_line_associated()
 
+        self.standard_pen = wx.Pen()
+        self.standard_pen.SetColour(wx.BLACK)
+
         self.outline_pen = wx.Pen()
         self.outline_pen.SetColour(wx.BLACK)
-        self.outline_pen.SetWidth(4)
 
         self.highlight_pen = wx.Pen()
         self.highlight_pen.SetColour(wx.BLUE)
-        self.highlight_pen.SetWidth(200)
 
         self.background_brush = wx.Brush()
         self.background_brush.SetColour(wx.WHITE)
@@ -204,6 +250,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_delete.GetBitmap(use_theme=False),
                 self.close,
+                _("Close the correction definition"),
             ),
             (
                 -3000,
@@ -212,6 +259,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_rotate_left.GetBitmap(use_theme=False),
                 self.rotate_left,
+                _("Rotate the pattern by 90° ccw"),
             ),
             (
                 -3000,
@@ -220,6 +268,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_rotate_right.GetBitmap(use_theme=False),
                 self.rotate_right,
+                _("Rotate the pattern by 90° cw"),
             ),
             (
                 -3000,
@@ -228,6 +277,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_flip_horizontal.GetBitmap(use_theme=False),
                 self.hflip,
+                _("Flip the pattern horizontally"),
             ),
             (
                 -3000,
@@ -236,22 +286,25 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_flip_vertical.GetBitmap(use_theme=False),
                 self.vflip,
+                _("Flip the pattern vertically"),
             ),
             (
-                0xFFFF - 5000,
-                -6000,
+                -3000,
+                15000,
                 3000,
                 3000,
                 icons.icons8_up.GetBitmap(use_theme=False),
                 self.geometry_size_increase,
+                _("Increase the pattern size"),
             ),
             (
-                0xFFFF - 2000,
-                -6000,
+                -3000,
+                18000,
                 3000,
                 3000,
                 icons.icons8_down.GetBitmap(use_theme=False),
                 self.geometry_size_decrease,
+                _("Decrease the pattern size"),
             ),
             (
                 0xFFFF,
@@ -260,6 +313,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icon_balor_full.GetBitmap(use_theme=False),
                 self.corfile_outline,
+                _("Trace the pattern outline"),
             ),
             (
                 0xFFFF,
@@ -268,6 +322,7 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_gas_industry.GetBitmap(use_theme=False),
                 self.corfile_burn,
+                _("Burn the pattern"),
             ),
             (
                 0xFFFF,
@@ -276,6 +331,25 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_save.GetBitmap(use_theme=False),
                 self.corfile_save,
+                _("Save the pattern"),
+            ),
+            (
+                0xFFFF,
+                9000,
+                3000,
+                3000,
+                icons.icon_balor_full.GetBitmap(use_theme=False),
+                self.pattern_outline,
+                _("Trace the adjusted pattern outline"),
+            ),
+            (
+                0xFFFF,
+                12000,
+                3000,
+                3000,
+                icons.icons8_gas_industry.GetBitmap(use_theme=False),
+                self.pattern_burn,
+                _("Burn the adjusted pattern"),
             ),
         )
 
@@ -290,8 +364,6 @@ class CorFileWidget(Widget):
         self.brush_color = wx.Colour()
         self.pen_color = wx.Colour()
         self.font_color = wx.Colour()
-
-        self.toast_pen.SetWidth(10)
 
         self.toast_alpha = None
         self.set_toast_alpha(255)
@@ -317,7 +389,7 @@ class CorFileWidget(Widget):
             (p(0.45), p(-0.05), 5000, 1000, dev, "cf_10"),
             (p(-0.05), p(-0.45), 5000, 1000, dev, "cf_11"),
             (p(-0.05), p(0.45), 5000, 1000, dev, "cf_12"),
-            (0xFFFF - 5000, -2000, 5000, 1000, self, "geometry_size"),
+            (- 5000, 21000, 5000, 1000, self, "geometry_size"),
         )
 
     def set_toast_alpha(self, alpha):
@@ -451,9 +523,33 @@ class CorFileWidget(Widget):
         )
         service.spooler.send(self.job)
 
+    def pattern_outline(self):
+        service = self.scene.context.device
+        if self.job:
+            self.job.stop()
+            self.job = None
+            return
+        from meerk40t.balormk.livelightjob import LiveLightJob
+
+        geom = test_pattern_geometry(self.geometry_size)
+        self.job = LiveLightJob(
+            service,
+            "geometry",
+            geometry=geom,
+            travel_speed=8000,
+            jump_delay=10,
+            raw=True,
+        )
+        service.spooler.send(self.job)
+
     def corfile_burn(self):
         service = self.scene.context.device
         service.spooler.laserjob([self.geometry])
+
+    def pattern_burn(self):
+        service = self.scene.context.device
+        geom = test_pattern_geometry(self.geometry_size)
+        service.spooler.laserjob([geom])
 
     def corfile_save(self):
         root = self.scene.context.root
@@ -560,7 +656,10 @@ class CorFileWidget(Widget):
 
                         try:
                             # Set the obj.attr value as a float()
-                            setattr(obj, attr, float(text))
+                            # print (f"Setting {attr} to {text}")
+                            value = float(text)
+                            setattr(obj, attr, value)
+                            self.scene.context.signal(attr, value, obj)
                         except ValueError:
                             continue
                         # If we correctly set the value, update the cursor location.
@@ -604,9 +703,10 @@ class CorFileWidget(Widget):
             return was_hovered, index
         gc.SetBrush(self.background_brush)
         gc.SetPen(self.outline_pen)
+        any = False
         for i, button in enumerate(self.button_fields):
             index += 1
-            x, y, width, height, bmp, click = button
+            x, y, width, height, bmp, click, msg = button
             if self.active == index:
                 # If this is an active button, draw a white background.
                 gc.SetBrush(self.background_brush)
@@ -617,6 +717,8 @@ class CorFileWidget(Widget):
 
             if self._contains(self.mouse_location, x, y, width, height):
                 # If mouse contained this point, set this as active.
+                any = True
+                self.scene.context.signal("statusmsg", msg)
                 self.active = index
                 was_hovered = True
                 if self.was_clicked:
@@ -624,6 +726,10 @@ class CorFileWidget(Widget):
                     self.hot = index
                     self.was_clicked = False
                     click()
+
+        if not any:
+            self.scene.context.signal("statusmsg", "")
+
         return was_hovered, index
 
     def process_toast(self, gc: wx.GraphicsContext):
@@ -666,6 +772,24 @@ class CorFileWidget(Widget):
         """
         Draws the background on the scene.
         """
+        mat_fact = get_gc_scale(gc)
+        try:
+            linewidth = 2.0 / mat_fact
+        except ZeroDivisionError:
+            linewidth = 2000
+        if linewidth < 1:
+            linewidth = 1
+        try:
+            self.standard_pen.SetWidth(linewidth)
+            self.outline_pen.SetWidth(linewidth)
+            self.highlight_pen.SetWidth(3*linewidth)
+            self.toast_pen.SetWidth(linewidth)
+        except TypeError:
+            self.standard_pen.SetWidth(int(linewidth))
+            self.outline_pen.SetWidth(int(linewidth))
+            self.highlight_pen.SetWidth(int(3*linewidth))
+            self.toast_pen.SetWidth(int(linewidth))
+
         unit_width = 0xFFFF
         unit_height = 0xFFFF
         if self._geometry_size != self.geometry_size:
@@ -682,7 +806,7 @@ class CorFileWidget(Widget):
         gc.DrawRectangle(0, 0, unit_width, unit_height)
 
         # Draw the geometry
-        gc.SetPen(wx.BLACK_PEN)
+        gc.SetPen(self.standard_pen)
         wx_path_geom = self.render.make_geomstr(gc, self.geometry)
         gc.DrawPath(wx_path_geom)
 

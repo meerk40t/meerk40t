@@ -1,11 +1,15 @@
 # import threading
+from copy import copy
+from PIL import Image, ImageOps, ImageEnhance
+import numpy as np
 import wx
-from PIL import Image
-
+from meerk40t.kernel.kernel import Job
+from meerk40t.core.node.node import Node
+from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_INCH
 
-# from meerk40t.gui.icons import icons8_image
+# from meerk40t.gui.icons import icon_ignore
 # from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import (
     IdPanel,
@@ -19,13 +23,718 @@ from meerk40t.gui.wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
+    wxListCtrl,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
 )
-from meerk40t.svgelements import Matrix
+from meerk40t.image.imagetools import img_to_polygons, img_to_rectangles
+from meerk40t.svgelements import Matrix, Color
 
 _ = wx.GetTranslation
 
 # The default value needs to be true, as the static method will be called before init happened...
 HAS_VECTOR_ENGINE = True
+
+
+class ContourPanel(wx.Panel):
+    name = _("Contour recognition")
+    priority = 96
+
+    @staticmethod
+    def accepts(node):
+        return hasattr(node, "as_image")
+
+    def __init__(self, *args, context=None, node=None, simplified=False, direct_mode=False, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.node = node
+        self.direct_mode = direct_mode
+        self.check_enable_contrast = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset_contrast = wxButton(self, wx.ID_ANY, _("Reset"))
+        self.slider_contrast_contrast = wx.Slider(
+            self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
+        )
+        self.text_contrast_contrast = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.slider_contrast_brightness = wx.Slider(
+            self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
+        )
+        self.text_contrast_brightness = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.check_invert = wxCheckBox(self, wx.ID_ANY, _("Invert"))
+        self.check_original = wxCheckBox(self, wx.ID_ANY, _("Original picture"))
+
+        if simplified:
+            self.check_original.Hide()
+
+        self.text_minimum = TextCtrl(
+            self, wx.ID_ANY, "", limited=True, check="float"
+        )
+        self.text_maximum = TextCtrl(
+            self, wx.ID_ANY, "", limited=True, check="float"
+        )
+        self.check_inner = wxCheckBox(self, wx.ID_ANY, _("Ignore inner"))
+        self.radio_simplify = wxRadioBox(
+            self, wx.ID_ANY,
+            label=_("Contour simplification"),
+            choices = (_("None"), _("Visvalingam"), _("Douglas-Peucker"))
+        )
+        self.radio_method = wxRadioBox(
+            self, wx.ID_ANY,
+            label=_("Detection Method"),
+            choices = (_("Polygons"), _("Bounding rectangles"))
+        )
+
+        self.check_auto = wxCheckBox(self, wx.ID_ANY, _("Automatic update"))
+        self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Generate contours"))
+        self.button_create_placement = wxButton(self, wx.ID_ANY, _("Generate placements"))
+        placement_choices = (
+            _("Edge (prefer short side)"),
+            _("Edge (prefer long side)"),
+            _("Center (unrotated)"),
+            _("Center (rotated)"),
+        )
+        self.combo_placement = wxComboBox(self, wx.ID_ANY, choices=placement_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+
+        self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY)
+        self.label_info = wxStaticText(self, wx.ID_ANY)
+        self.list_contours = wxListCtrl(
+            self, wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_contours",
+        )
+        self.update_job = Job(
+            process=self.refresh_preview_job,
+            job_name="imageprop_contour",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
+
+        self.image = None
+        self.matrix = None
+        self.contours = []
+        self.auto_update = self.context.setting(bool, "contour_autoupdate", True)
+        self._changed = True
+        self.make_raster = self.context.lookup("render-op/make_raster")
+        self.parameters = {}
+        self._pane_is_active = False
+        self.__set_properties()
+        self.__do_layout()
+        self.__do_logic()
+        self.set_widgets(self.node)
+
+    def __do_logic(self):
+        self.check_auto.Bind(wx.EVT_CHECKBOX, self.on_auto_check)
+        self.check_original.Bind(wx.EVT_CHECKBOX, self.on_control_update)
+        self.button_update.Bind(wx.EVT_BUTTON, self.on_refresh)
+        self.button_create.Bind(wx.EVT_BUTTON, self.on_creation)
+        self.button_create_placement.Bind(wx.EVT_BUTTON, self.on_creation_placement)
+        self.button_reset_contrast.Bind(wx.EVT_BUTTON, self.on_button_reset_contrast)
+        self.check_invert.Bind(wx.EVT_CHECKBOX, self.on_control_update)
+        self.check_inner.Bind(wx.EVT_CHECKBOX, self.on_control_update)
+        self.check_enable_contrast.Bind(wx.EVT_CHECKBOX, self.on_control_update)
+        self.slider_contrast_brightness.Bind(wx.EVT_SLIDER, self.on_slider_contrast_brightness)
+        self.slider_contrast_contrast.Bind(wx.EVT_SLIDER, self.on_slider_contrast_contrast)
+        self.radio_method.Bind(wx.EVT_RADIOBOX, self.on_control_update)
+        self.radio_simplify.Bind(wx.EVT_RADIOBOX, self.on_control_update)
+        self.text_minimum.SetActionRoutine(self.on_control_update)
+        self.text_maximum.SetActionRoutine(self.on_control_update)
+        self.Bind(wx.EVT_SIZE, self.on_resize)
+        self.list_contours.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_selection)
+        self.list_contours.Bind(wx.EVT_LIST_COL_CLICK, self.on_list_selection)
+        self.list_contours.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
+
+    def __do_layout(self):
+        # begin wxGlade: PositionPanel.__do_layout
+        sizer_main = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_left = wx.BoxSizer(wx.VERTICAL)
+        sizer_right = wx.BoxSizer(wx.VERTICAL)
+        sizer_main.Add(sizer_left, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_right, 2, wx.EXPAND, 0)
+
+        sizer_right.Add(self.bitmap_preview, 4, wx.EXPAND, 0)
+        sizer_right.Add(self.list_contours, 1, wx.EXPAND, 0)
+
+        sizer_param_picture = StaticBoxSizer(
+            self, wx.ID_ANY, _("Image:"), wx.VERTICAL
+        )
+        sizer_contrast = StaticBoxSizer(self, wx.ID_ANY, _("Contrast"), wx.VERTICAL)
+
+        sizer_contrast_main = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_contrast_main.Add(self.check_enable_contrast, 0, 0, 0)
+        sizer_contrast_main.Add(self.button_reset_contrast, 0, 0, 0)
+
+        sizer_contrast_contrast = StaticBoxSizer(
+            self, wx.ID_ANY, _("Contrast Amount"), wx.HORIZONTAL
+        )
+        sizer_contrast_contrast.Add(self.slider_contrast_contrast, 5, wx.EXPAND, 0)
+        sizer_contrast_contrast.Add(self.text_contrast_contrast, 1, 0, 0)
+
+        sizer_contrast_brightness = StaticBoxSizer(
+            self, wx.ID_ANY, _("Brightness Amount"), wx.HORIZONTAL
+        )
+        sizer_contrast_brightness.Add(self.slider_contrast_brightness, 5, wx.EXPAND, 0)
+        sizer_contrast_brightness.Add(self.text_contrast_brightness, 1, 0, 0)
+
+        sizer_contrast.Add(sizer_contrast_main, 0, wx.EXPAND, 0)
+        sizer_contrast.Add(sizer_contrast_contrast, 0, wx.EXPAND, 0)
+        sizer_contrast.Add(sizer_contrast_brightness, 0, wx.EXPAND, 0)
+
+        sizer_param_picture.Add(sizer_contrast, 0, wx.EXPAND, 0)
+        option_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        option_sizer.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        option_sizer.Add(self.check_original, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_param_picture.Add(option_sizer, 0, wx.EXPAND, 0)
+
+        sizer_param_contour = StaticBoxSizer(
+            self, wx.ID_ANY, _("Parameters:"), wx.VERTICAL
+        )
+
+        min_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Minimal size:"), wx.HORIZONTAL)
+        label1 = wxStaticText(self, wx.ID_ANY, "%")
+        min_sizer.Add(self.text_minimum, 1, wx.EXPAND, 0)
+        min_sizer.Add(label1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        max_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Maximal size:"), wx.HORIZONTAL)
+        label2 = wxStaticText(self, wx.ID_ANY, "%")
+        max_sizer.Add(self.text_maximum, 1, wx.EXPAND, 0)
+        max_sizer.Add(label2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        minmax_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        minmax_sizer.Add(min_sizer, 1, wx.EXPAND, 0)
+        minmax_sizer.Add(max_sizer, 1, wx.EXPAND, 0)
+        sizer_param_contour.Add(minmax_sizer, 0, wx.EXPAND, 0)
+
+        sizer_param_contour.Add(self.check_inner, 0, wx.EXPAND, 0)
+        sizer_param_contour.Add(self.radio_method, 0, wx.EXPAND, 0)
+        sizer_param_contour.Add(self.radio_simplify, 0, wx.EXPAND, 0)
+
+        sizer_param_update = StaticBoxSizer(
+            self, wx.ID_ANY, _("Update:"), wx.HORIZONTAL
+        )
+        sizer_param_update.Add(self.check_auto, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_param_update.Add(self.button_update, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_generation = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_generation.Add(self.button_create, 0, wx.EXPAND, 0)
+        sizer_generation.Add(self.button_create_placement, 0, wx.EXPAND, 0)
+        sizer_generation.Add(self.combo_placement, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_left.Add(sizer_param_picture, 0, wx.EXPAND, 0)
+        sizer_left.Add(sizer_param_contour, 0, wx.EXPAND, 0)
+        sizer_left.Add(sizer_param_update, 0, wx.EXPAND, 0)
+        sizer_left.Add(sizer_generation, 0, wx.EXPAND, 0)
+        sizer_left.Add(self.label_info, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+        self.__do_defaults()
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+    def __do_defaults(self):
+        self.check_auto.SetValue(self.auto_update)
+        self.button_update.Enable(not self.auto_update)
+        last_val = self.context.setting(int, "contour_placement", 1) # Long side is default preference
+        if last_val < 0 or last_val >= self.combo_placement.GetCount():
+            last_val = 0
+        self.combo_placement.SetSelection(last_val)
+
+    def __set_properties(self):
+        self.button_create.SetToolTip(_("Creates the recognized contour elements / placements"))
+        self.check_enable_contrast.SetToolTip(_("Enable Contrast"))
+        self.check_enable_contrast.SetValue(False)
+        self.button_reset_contrast.SetToolTip(_("Reset Contrast"))
+        self.slider_contrast_contrast.SetToolTip(_("Contrast amount"))
+        self.text_contrast_contrast.SetToolTip(_("Contrast the lights and darks by how much?"))
+        self.slider_contrast_brightness.SetToolTip(_("Brightness amount"))
+        self.text_contrast_brightness.SetToolTip(_("Make the image how much more bright?"))
+        self.text_minimum.SetToolTip(_("What is the minimal size of objects (as percentage of the overall area)?"))
+        self.text_maximum.SetToolTip(_("What is the maximal size of objects (as percentage of the overall area)?"))
+        self.check_inner.SetToolTip(_("Do you want to recognize objects inside of another object?"))
+        self.radio_method.SetToolTip(_("Do you want to create the contour itself or the minimal rectangle enclosing it?"))
+        self.radio_simplify.SetToolTip(_("Shall we try to reduce the number of points for the created contour?"))
+
+        self.slider_contrast_brightness.SetMaxSize(wx.Size(200, -1))
+        self.slider_contrast_contrast.SetMaxSize(wx.Size(200, -1))
+        self.text_contrast_brightness.SetMaxSize(wx.Size(50, -1))
+        self.text_contrast_contrast.SetMaxSize(wx.Size(50, -1))
+
+        self.list_contours.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
+        self.list_contours.AppendColumn(
+            _("Area"), format=wx.LIST_FORMAT_LEFT, width=100
+        )
+        self.list_contours.resize_columns()
+
+        self.text_minimum.SetValue("2")
+        self.text_maximum.SetValue("95")
+        self.radio_method.SetSelection(0)
+        self.radio_simplify.SetSelection(0)
+        self.reset_contrast()
+
+    def pane_hide(self):
+        self.list_contours.save_column_widths()
+        try:
+            self.context.contour_placement = self.combo_placement.GetSelection()
+        except RuntimeError:
+            # Might have already been deleted...
+            pass
+
+    def pane_deactive(self):
+        self._pane_is_active = False
+
+    def pane_active(self):
+        self._pane_is_active = True
+        if self.auto_update and self._pane_is_active:
+            self.refresh_preview()
+
+    def pane_show(self):
+        if self.auto_update and self._pane_is_active:
+            self.refresh_preview()
+
+    def _set_widgets_hidden(self):
+        self.Hide()
+
+    def set_widgets(self, node):
+        self.node = node
+        if self.node is None:
+            return
+        self.refresh_preview()
+
+    def reset_contrast(self):
+        contrast = 0
+        brightness = 0
+        self.slider_contrast_contrast.SetValue(contrast)
+        self.text_contrast_contrast.SetValue(str(contrast))
+        self.slider_contrast_brightness.SetValue(brightness)
+        self.text_contrast_brightness.SetValue(str(brightness))
+
+    def on_button_reset_contrast(self, event=None):
+        self.reset_contrast()
+        self.on_control_update(None)
+
+    def on_slider_contrast_contrast(
+        self, event=None
+    ):
+        contrast = int(self.slider_contrast_contrast.GetValue())
+        self.text_contrast_contrast.SetValue(str(contrast))
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
+
+        self.on_control_update(None)
+
+    def on_slider_contrast_brightness(self, event=None):
+        brightness = int(self.slider_contrast_brightness.GetValue())
+        self.text_contrast_brightness.SetValue(str(brightness))
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
+        self.on_control_update(None)
+
+    def on_auto_check(self, event):
+        self.auto_update = self.check_auto.GetValue()
+        self.context.contour_autoupdate = self.auto_update
+
+        self.button_update.Enable(not self.auto_update)
+        if self.auto_update:
+            self.refresh_preview()
+
+    def on_creation(self, event):
+        for idx, (geom, area) in enumerate(self.contours):
+            node = PathNode(
+                geometry = geom,
+                stroke=Color("blue"),
+                label=f"Contour {self.node.display_label()} #{idx+1}",
+            )
+            self.context.elements.elem_branch.add_node(node)
+            # print (f"Having added: {node.display_label()}")
+        self.context.elements.signal("refresh_scene", "Scene")
+
+    def on_creation_placement(self, event):
+
+        def get_place_parameters(geom, method):
+            points = list(geom.as_points())
+            nx = None
+            mx = None
+            ny = None
+            my = None
+            for pt in points:
+                if nx is None:
+                    nx = pt.real
+                    mx = pt.real
+                    ny = pt.imag
+                    my = pt.imag
+                else:
+                    nx = min(nx, pt.real)
+                    mx = max(mx, pt.real)
+                    ny = min(ny, pt.imag)
+                    my = max(my, pt.imag)
+
+            # The geometry points are order in such a way,
+            # that the point with the smallest X-value comes first and then follows the rectangle clockwise
+            side1 = geom.distance(points[0], points[1])
+            side2 = geom.distance(points[1], points[2])
+            if method in (0, 1):
+                if method == 0:
+                # If the preference is for a long side then our reference point is pt0 if side1 is long and pt1 if side1 is short
+                    refidx = 0 if side1 < side2 else 1
+                else:
+                    # If the preference is for a short side then our reference point is pt1 if side1 is long and pt0 if side1 is short
+                    refidx = 1 if side1 < side2 else 0
+                ref_x = points[refidx].real
+                ref_y = points[refidx].imag
+                rotation_angle = geom.angle(points[refidx], points[refidx+1])
+                place_corner = 0
+            elif method == 2: # center - unrotated
+                ref_x = (nx + mx) / 2
+                ref_y = (ny + my) / 2
+                rotation_angle = 0
+                place_corner = 4
+            elif method == 3: # center - rotated
+                ref_x = (nx + mx) / 2
+                ref_y = (ny + my) / 2
+                rotation_angle = geom.angle(points[0], points[1])
+                place_corner = 4
+            return ref_x, ref_y, rotation_angle, place_corner
+
+        method = self.combo_placement.GetSelection()
+        if method < 0:
+            return
+        for idx, (geom, area) in enumerate(self.contours):
+            ref_x, ref_y, rotation_angle, place_corner = get_place_parameters(geom, method)
+            self.context.elements.op_branch.add(
+                type="place point",
+                label=f"Contour #{idx+1}",
+                x=ref_x,
+                y=ref_y,
+                rotation=rotation_angle,
+                corner=place_corner
+            )
+
+        self.context.elements.signal("refresh_scene")
+
+    def on_refresh(self, event):
+        self._changed = True
+        self.refresh_preview()
+
+    def on_control_update(self, event=None):
+        self._changed = True
+        # The following controls will only be used
+        # if we have surrounding rectangles selected
+        flag = self.radio_method.GetSelection() == 0
+        for ctrl in (self.radio_simplify,):
+            ctrl.Enable(flag)
+        for ctrl in (self.button_create_placement, self.combo_placement):
+            ctrl.Enable(not flag)
+        if self.auto_update and self._pane_is_active:
+            self.refresh_preview()
+
+    def refresh_preview_job(self):
+        if self.make_raster is None or not self._changed:
+            return
+        # That job may come too late, when the panel has already be destroyed,
+        # so just a simple check:
+        try:
+            _dummy = self.check_invert.GetValue()
+        except RuntimeError:
+            return
+        self.gather_parameters()
+        self.update_image()
+        self.calculate_contours()
+        self.populate_list()
+        self.display_contours()
+        self._changed = False
+
+    def refresh_preview(self):
+        if self._pane_is_active:
+            if self.direct_mode:
+                self.update_job()
+            else:
+                self.context.schedule(self.update_job)
+
+    def gather_parameters(self):
+        self.parameters["img_invert"] = self.check_invert.GetValue()
+        self.parameters["img_original"] = self.check_original.GetValue()
+        self.parameters["img_usecontrast"] = self.check_enable_contrast.GetValue()
+        self.parameters["img_contrast"] = self.slider_contrast_contrast.GetValue()
+        self.parameters["img_brightness"] = self.slider_contrast_brightness.GetValue()
+        self.parameters["cnt_method"] = self.radio_method.GetSelection()
+        self.parameters["cnt_ignoreinner"] = self.check_inner.GetValue()
+        try:
+            self.parameters["cnt_minimum"] = float(self.text_minimum.GetValue())
+        except ValueError:
+            self.parameters["cnt_minimum"] = 2
+        try:
+            self.parameters["cnt_maximum"] = float(self.text_maximum.GetValue())
+        except ValueError:
+            self.parameters["cnt_maximum"] = 95
+        self.parameters["cnt_simplify"] = self.radio_simplify.GetSelection()
+        # We are on pixel level
+        self.parameters["cnt_threshold"] = 0.25
+
+    def update_image(self):
+        if self.parameters["img_original"]:
+            if self.image.mode == "I":
+                image = self.image._as_convert_image_to_grayscale()
+            else:
+                image = self.node.image.convert("L")
+            self.matrix = self.node.matrix
+        else:
+            reapply = False
+            remembered_dither = self.node.dither
+            if remembered_dither:
+                reapply = True
+                self.node.dither = False
+                self.node.update(None)
+
+            image = self.node.active_image
+            if image is None:
+                if reapply:
+                    self.node.dither = remembered_dither
+                self.image = None
+                return
+            self.matrix = self.node.active_matrix
+            if reapply:
+                self.node.dither = remembered_dither
+                self.node.update(None)
+
+        if self.parameters["img_invert"]:
+            image = ImageOps.invert(image)
+        if self.parameters["img_usecontrast"]:
+            try:
+                contrast = ImageEnhance.Contrast(image)
+                c = (self.parameters["img_contrast"] + 128.0) / 128.0
+                image = contrast.enhance(c)
+            except ValueError:
+                # Not available for this type of image
+                pass
+
+            try:
+                brightness = ImageEnhance.Brightness(image)
+                b = (self.parameters["img_brightness"] + 128.0) / 128.0
+                image = brightness.enhance(b)
+            except ValueError:
+                # Not available for this type of image
+                pass
+        self.image = image
+
+    def calculate_contours(self):
+        import time
+        self.contours.clear()
+        if self.image is None:
+            return
+        t_a = time.perf_counter()
+
+        method = self.parameters["cnt_method"]
+        if method == 0:
+            self.contours = img_to_polygons(
+                self.image,
+                minimal=self.parameters["cnt_minimum"],
+                maximal=self.parameters["cnt_maximum"],
+                ignoreinner=self.parameters["cnt_ignoreinner"],
+                needs_invert=True,
+            )
+        else:
+            self.contours = img_to_rectangles(
+                self.image,
+                minimal=self.parameters["cnt_minimum"],
+                maximal=self.parameters["cnt_maximum"],
+                ignoreinner=self.parameters["cnt_ignoreinner"],
+                needs_invert=True,
+            )
+        for idx, (geom, area) in enumerate(self.contours):
+            if method == 0:
+                simple = self.parameters["cnt_simplify"]
+                # We are on pixel level
+                threshold = self.parameters["cnt_threshold"]
+                if simple==1:
+                    # Let's try Visvalingam line simplification
+                    geom = geom.simplify_geometry(threshold=threshold)
+                elif simple==2:
+                    # Use Douglas-Peucker instead
+                    geom = geom.simplify(threshold)
+            geom.transform(self.matrix)
+            self.contours[idx] = (geom, area)
+
+        t_b = time.perf_counter()
+
+        self.label_info.SetLabel (
+            _("Contours generated: {count} in {duration}").format(
+                count=len(self.contours),
+                duration=f"{t_b-t_a:.2f} sec"
+            )
+        )
+
+    def on_resize(self, event):
+        event.Skip()
+        if self.auto_update and self._pane_is_active:
+            idx = self.list_contours.GetFirstSelected()
+            self.display_contours(highlight_index=idx)
+
+    def on_right_click(self, event):
+
+        def compare_contour(operation, index, this_area, idx, area):
+            if operation == 'this':
+                return idx == index
+            elif operation == 'others':
+                return idx != index
+            elif operation == 'smaller':
+                return area < this_area
+            elif operation == 'bigger':
+                return area > this_area
+            return False
+
+        def delete_contours(operation, index):
+            def handler(event):
+                this_area = self.contours[index][1]
+                to_be_deleted = [
+                    idx for idx, (_, area) in enumerate(self.contours)
+                    if compare_contour(operation, index, this_area, idx, area)
+                ]
+                for idx in reversed(to_be_deleted):
+                    self.contours.pop(idx)
+                self.populate_list()
+                self.display_contours()
+            return handler
+
+        index = self.list_contours.GetFirstSelected()
+        if index < 0:
+            return
+        menu = wx.Menu()
+        operations = [
+            ('this', _("Delete this contour")),
+            ('others', _("Delete all others")),
+            ('bigger', _("Delete all bigger")),
+            ('smaller', _("Delete all smaller"))
+        ]
+
+        for op, label in operations:
+            item = menu.Append(wx.ID_ANY, label)
+            self.Bind(wx.EVT_MENU, delete_contours(op, index), item)
+
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def populate_list(self):
+        self.list_contours.DeleteAllItems()
+        for idx, (geom, area) in enumerate(self.contours):
+            list_id = self.list_contours.InsertItem(
+                self.list_contours.GetItemCount(), f"#{idx + 1}"
+            )
+            self.list_contours.SetItem(list_id, 1, f"{area:.2f}%")
+
+    def display_contours(self, highlight_index = -1):
+        if self.make_raster is None:
+            return
+        if self.image is None:
+            self.bitmap_preview.SetBitmap(wx.NullBitmap)
+            return
+        copynode = ImageNode(image=self.image, matrix=self.matrix, dither=False, prevent_crop=True)
+        data = [copynode]
+        for idx, (geom, area) in enumerate(self.contours):
+            node = PathNode(
+                geometry = geom,
+                stroke=Color("red") if highlight_index==idx else Color("blue"),
+                fill=Color("yellow") if highlight_index==idx else None,
+                label=f"Contour {self.node.display_label()} #{idx+1} [{area:.2f}%]",
+            )
+            data.append(node)
+        bounds = Node.union_bounds(data, attr="bounds")
+        width, height = self.bitmap_preview.GetClientSize()
+        bit_map = self.make_raster(
+            data,
+            bounds,
+            width=width,
+            height=height,
+            bitmap=True,
+            keep_ratio=True,
+        )
+        self.bitmap_preview.SetBitmap(bit_map)
+
+    def on_list_selection(self, event):
+        idx = self.list_contours.GetFirstSelected()
+        self.display_contours(highlight_index=idx)
+
+class KeyholePanel(wx.Panel):
+    name = _("Keyhole")
+    priority = 5
+
+    @staticmethod
+    def accepts(node):
+        return hasattr(node, "as_image")
+
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.node = node
+        self.button_release = wxButton(self, wx.ID_ANY, _("Remove keyhole"))
+        self.__set_properties()
+        self.__do_layout()
+        self.button_release.Bind(wx.EVT_BUTTON, self.on_release)
+        self.set_widgets(self.node)
+
+    def __do_layout(self):
+        # begin wxGlade: PositionPanel.__do_layout
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_release = StaticBoxSizer(
+            self, wx.ID_ANY, _("Keyhole:"), wx.HORIZONTAL
+        )
+        sizer_release.Add(self.button_release, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_main.Add(sizer_release, 0, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+    def __set_properties(self):
+        self.button_release.SetToolTip(
+            _(
+                "Remove the keyhole and show the complete image"
+            )
+        )
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def _set_widgets_hidden(self):
+        self.Hide()
+
+    def set_widgets(self, node):
+        self.node = node
+        if self.node.keyhole_reference is None:
+            self.button_release.Enable(False)
+        else:
+            self.button_release.Enable(True)
+        self.Show()
+
+    def on_release(self, event):
+        elements = self.context.elements
+        rid = self.node.keyhole_reference
+        elements.deregister_keyhole(rid, self.node)
+        self.set_widgets(self.node)
+        elements.process_keyhole_updates(self.context)
 
 
 class CropPanel(wx.Panel):
@@ -45,17 +754,22 @@ class CropPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self._width = None
         self._height = None
         self._bounds = None
+        self._cropleft = 0
+        self._cropright = 0
+        self._cropbottom = 0
+        self._croptop = 0
         self.op = None
         self._no_update = False
 
         self.check_enable_crop = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.button_reset = wxButton(self, wx.ID_ANY, _("Reset"))
 
-        self.label_info = wx.StaticText(self, wx.ID_ANY, "--")
+        self.label_info = wxStaticText(self, wx.ID_ANY, "--")
 
         self.slider_left = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
@@ -69,10 +783,10 @@ class CropPanel(wx.Panel):
         self.slider_bottom = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_left = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_right = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_top = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_bottom = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_left = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_right = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_top = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_bottom = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -106,6 +820,13 @@ class CropPanel(wx.Panel):
         self.node = node
         self.op = None
         self._width, self._height = self.node.image.size
+        for ctl in (self.slider_left, self.slider_right):
+            ctl.SetMin(0)
+            ctl.SetMax(self._width)
+        for ctl in (self.slider_top, self.slider_bottom):
+            ctl.SetMin(0)
+            ctl.SetMax(self._height)
+
         self._bounds = [0, 0, self._width, self._height]
         flag = False
         for n in node.operations:
@@ -121,15 +842,18 @@ class CropPanel(wx.Panel):
                 self._bounds = [0, 0, self._width, self._height]
                 self.op["bounds"] = self._bounds
 
-        self.set_slider_limits("lrtb", False)
-
         self.check_enable_crop.SetValue(flag)
         self.activate_controls(flag)
+        # We need to set the internal variables, as otherwise recalc will take place
+        self._cropleft = self._bounds[0]
+        self._cropright = self._width - self._bounds[2]
 
-        self.cropleft = self._bounds[0]
-        self.cropright = self._bounds[2]
-        self.croptop = self._bounds[1]
-        self.cropbottom = self._bounds[3]
+        self._croptop = self._bounds[1]
+        self._cropbottom = self._height - self._bounds[3]
+        # print (f"From {self._bounds} to l={self.cropleft}, r={self.cropright}, t={self.croptop}, b={self.cropbottom}")
+
+        self.set_slider_limits("lrtb", False)
+
         self._no_update = False
 
     def __set_properties(self):
@@ -159,13 +883,13 @@ class CropPanel(wx.Panel):
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bottom = wx.BoxSizer(wx.HORIZONTAL)
 
-        lbl_left = wx.StaticText(self, wx.ID_ANY, _("Left"))
+        lbl_left = wxStaticText(self, wx.ID_ANY, _("Left"))
         lbl_left.SetMinSize(dip_size(self, 60, -1))
-        lbl_right = wx.StaticText(self, wx.ID_ANY, _("Right"))
+        lbl_right = wxStaticText(self, wx.ID_ANY, _("Right"))
         lbl_right.SetMinSize(dip_size(self, 60, -1))
-        lbl_bottom = wx.StaticText(self, wx.ID_ANY, _("Bottom"))
+        lbl_bottom = wxStaticText(self, wx.ID_ANY, _("Bottom"))
         lbl_bottom.SetMinSize(dip_size(self, 60, -1))
-        lbl_top = wx.StaticText(self, wx.ID_ANY, _("Top"))
+        lbl_top = wxStaticText(self, wx.ID_ANY, _("Top"))
         lbl_top.SetMinSize(dip_size(self, 60, -1))
 
         self.text_left.SetMaxSize(dip_size(self, 60, -1))
@@ -204,9 +928,14 @@ class CropPanel(wx.Panel):
             return
         w, h = self.node.image.size
         self._bounds = [0, 0, w, h]
+        self._cropleft = 0
+        self._cropright = 0
+        self._croptop = 0
+        self._cropbottom = 0
         self.op["bounds"] = self._bounds
         self.set_slider_limits("lrtb")
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
+
 
     def on_check_enable_crop(self, event=None):
         flag = self.check_enable_crop.GetValue()
@@ -221,9 +950,9 @@ class CropPanel(wx.Panel):
                 last = self._no_update
                 self._no_update = True
                 self.cropleft = 0
-                self.cropright = w
+                self.cropright = 0
                 self.croptop = 0
-                self.cropbottom = h
+                self.cropbottom = 0
                 self._no_update = last
             else:
                 self.op["enable"] = flag
@@ -231,13 +960,17 @@ class CropPanel(wx.Panel):
             if self.op is not None:
                 self.op["enable"] = flag
         if self.op is not None and not self._no_update:
-            self.node.update(self.context)
+            self.context.elements.do_image_update(self.node, self.context)
+
         self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if (
+                not self.context.process_while_sliding
+                and wx.GetMouseState().LeftIsDown()
+            ):
                 event.Skip()
                 return
         self.cropleft = self.slider_left.GetValue()
@@ -245,7 +978,10 @@ class CropPanel(wx.Panel):
     def on_slider_right(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if (
+                not self.context.process_while_sliding
+                and wx.GetMouseState().LeftIsDown()
+            ):
                 event.Skip()
                 return
         self.cropright = self.slider_right.GetValue()
@@ -253,7 +989,10 @@ class CropPanel(wx.Panel):
     def on_slider_top(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if (
+                not self.context.process_while_sliding
+                and wx.GetMouseState().LeftIsDown()
+            ):
                 event.Skip()
                 return
         self.croptop = self.slider_top.GetValue()
@@ -261,68 +1000,82 @@ class CropPanel(wx.Panel):
     def on_slider_bottom(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if (
+                not self.context.process_while_sliding
+                and wx.GetMouseState().LeftIsDown()
+            ):
                 event.Skip()
                 return
         self.cropbottom = self.slider_bottom.GetValue()
 
     def set_slider_limits(self, pattern, constraint=True):
         if "l" in pattern:
-            value = self._bounds[2]
+            value = self._width - self.cropright
             self.slider_left.SetMin(0)
             self.slider_left.SetMax(value - 1 if constraint else self._width)
-            if self._bounds[0] != self.slider_left.GetValue():
-                self.slider_left.SetValue(int(self._bounds[0]))
-                dvalue = self._bounds[0]
+            if self.cropleft != self.slider_left.GetValue():
+                self.slider_left.SetValue(int(self.cropleft))
+                dvalue = self.cropleft
                 if dvalue == 0:
                     self.text_left.SetValue("---")
                 else:
                     self.text_left.SetValue(f"> {dvalue} px")
         if "r" in pattern:
-            value = self._bounds[0]
-            self.slider_right.SetMin(value + 1 if constraint else 0)
-            self.slider_right.SetMax(self._width)
-            if self._bounds[2] != self.slider_right.GetValue():
-                self.slider_right.SetValue(int(self._bounds[2]))
-                dvalue = self._width - self._bounds[2]
+            value = self._width - self.cropleft
+            self.slider_right.SetMin(0)
+            self.slider_right.SetMax(value - 1 if constraint else self._width)
+            if self.cropright != self.slider_right.GetValue():
+                self.slider_right.SetValue(int(self.cropright))
+                dvalue = self.cropright
                 if dvalue == 0:
                     self.text_right.SetValue("---")
                 else:
-                    self.text_right.SetValue(f"{dvalue} px <")
+                    self.text_right.SetValue(f"> {dvalue} px")
         if "t" in pattern:
-            value = self._bounds[3]
+            value = self._height - self.cropbottom
             self.slider_top.SetMin(0)
             self.slider_top.SetMax(value - 1 if constraint else self._height)
-            if self._bounds[1] != self.slider_top.GetValue():
-                self.slider_top.SetValue(int(self._bounds[1]))
-                dvalue = self._bounds[1]
+            if self.croptop != self.slider_top.GetValue():
+                self.slider_top.SetValue(int(self.croptop))
+                dvalue = self.croptop
                 if dvalue == 0:
                     self.text_top.SetValue("---")
                 else:
                     self.text_top.SetValue(f"> {dvalue} px")
         if "b" in pattern:
-            value = self._bounds[1]
-            self.slider_bottom.SetMin(value + 1 if constraint else 0)
-            self.slider_bottom.SetMax(self._height)
-            if self._bounds[3] != self.slider_bottom.GetValue():
-                self.slider_bottom.SetValue(int(self._bounds[3]))
-                dvalue = self._height - self._bounds[3]
+            value = self._height - self.croptop
+            self.slider_bottom.SetMin(0)
+            self.slider_bottom.SetMax(value - 1 if constraint else self._height)
+            if self.cropbottom != self.slider_bottom.GetValue():
+                self.slider_bottom.SetValue(int(self.cropbottom))
+                dvalue = self.cropbottom
                 if dvalue == 0:
                     self.text_bottom.SetValue("---")
                 else:
-                    self.text_bottom.SetValue(f"{dvalue} px <")
+                    self.text_bottom.SetValue(f"> {dvalue} px")
+
+
+    def _setbounds(self):
+        if self.op is None:
+            return
+
+        self.op["bounds"][0] = self.cropleft
+        self.op["bounds"][2] = self._width - self.cropright
+        self.op["bounds"][1] = self.croptop
+        self.op["bounds"][3] = self._height - self.cropbottom
+        self._bounds = self.op["bounds"]
+        # print (f"width: {self._width} from left: {self.cropleft}, from right {self.cropright}: {self.op['bounds'][0]} - {self.op['bounds'][2]}")
+        # print (f"height: {self._height} from top: {self.croptop}, from bottom {self.cropbottom}: {self.op['bounds'][1]} - {self.op['bounds'][3]}")
+        if not self._no_update:
+            self.context.elements.do_image_update(self.node, self.context)
 
     @property
     def cropleft(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[0]
+        return self._cropleft
 
     @cropleft.setter
     def cropleft(self, value):
-        # print(f"Set left to: {value}")
-        self._bounds[0] = value
+        self._cropleft = value
         if self.slider_left.GetValue() != value:
             self.slider_left.SetValue(int(value))
         if value == 0:
@@ -331,47 +1084,33 @@ class CropPanel(wx.Panel):
             self.text_left.SetValue(f"> {value} px")
         # We need to adjust the boundaries of the right slider.
         self.set_slider_limits("r")
-        if self.op is not None:
-            self.op["bounds"][0] = value
-            if not self._no_update:
-                self.node.update(self.context)
+        self._setbounds()
 
     @property
     def cropright(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[2]
+        return self._cropright
 
     @cropright.setter
     def cropright(self, value):
-        # print(f"Set right to: {value}")
-        self._bounds[2] = value
+        self._cropright = value
         if self.slider_right.GetValue() != value:
             self.slider_right.SetValue(int(value))
-        dvalue = self._width - value
-        if dvalue == 0:
+        if value == 0:
             self.text_right.SetValue("---")
         else:
-            self.text_right.SetValue(f"{dvalue} px <")
+            self.text_right.SetValue(f"{value} px <")
         # We need to adjust the boundaries of the left slider.
         self.set_slider_limits("l")
-        if self.op is not None:
-            self.op["bounds"][2] = value
-            if not self._no_update:
-                self.node.update(self.context)
+        self._setbounds()
 
     @property
     def croptop(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[1]
+        return self._croptop
 
     @croptop.setter
     def croptop(self, value):
         # print(f"Set top to: {value}")
-        self._bounds[1] = value
+        self._croptop = value
         if self.slider_top.GetValue() != value:
             self.slider_top.SetValue(int(value))
         if value == 0:
@@ -380,30 +1119,25 @@ class CropPanel(wx.Panel):
             self.text_top.SetValue(f"> {value} px")
         # We need to adjust the boundaries of the bottom slider.
         self.set_slider_limits("b")
-        if self.op is not None:
-            self.op["bounds"][1] = value
-            if not self._no_update:
-                self.node.update(self.context)
+        self._setbounds()
 
     @property
     def cropbottom(self):
-        if self._bounds is None:
-            return None
-        else:
-            return self._bounds[3]
+        return self._cropbottom
 
     @cropbottom.setter
     def cropbottom(self, value):
-        self._bounds[3] = value
+        # print(f"Set top to: {value}")
+        self._cropbottom = value
         if self.slider_bottom.GetValue() != value:
             self.slider_bottom.SetValue(int(value))
+        if value == 0:
+            self.text_bottom.SetValue("---")
+        else:
+            self.text_bottom.SetValue(f"{value} px <")
         # We need to adjust the boundaries of the top slider.
         self.set_slider_limits("t")
-        if self.op is not None:
-            self.op["bounds"][3] = value
-            if not self._no_update:
-                self.node.update(self.context)
-
+        self._setbounds()
 
 class ImageModificationPanel(ScrolledPanel):
     name = _("Modification")
@@ -414,13 +1148,14 @@ class ImageModificationPanel(ScrolledPanel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.scripts = []
         choices = []
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))
-        self.combo_scripts = wx.ComboBox(
+        self.combo_scripts = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN
         )
         self.combo_scripts.SetSelection(0)
@@ -430,10 +1165,11 @@ class ImageModificationPanel(ScrolledPanel):
         )
         self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Remove all image operations"))
-        self.list_operations = wx.ListCtrl(
+        self.list_operations = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_imageoperations",
         )
 
         self._do_layout()
@@ -451,9 +1187,9 @@ class ImageModificationPanel(ScrolledPanel):
         self.list_operations.AppendColumn(
             _("Parameters"), format=wx.LIST_FORMAT_LEFT, width=95
         )
-
+        self.list_operations.resize_columns()
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("RasterWizard"), wx.HORIZONTAL)
+        sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("Raster-Wizard"), wx.HORIZONTAL)
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
@@ -473,9 +1209,7 @@ class ImageModificationPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        if hasattr(node, "as_image"):
-            return True
-        return False
+        return hasattr(node, "as_image")
 
     def set_widgets(self, node=None):
         self.node = node
@@ -512,9 +1246,10 @@ class ImageModificationPanel(ScrolledPanel):
 
     def update_node(self):
         self.context.elements.emphasized()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
         self.context.signal("element_property_update", self.node)
         self.context.signal("selected", self.node)
+        self.fill_operations()
 
     def on_apply_replace(self, event):
         idx = self.combo_scripts.GetSelection()
@@ -640,11 +1375,17 @@ class ImageModificationPanel(ScrolledPanel):
             menu.Destroy()
 
     def pane_show(self):
+        self.list_operations.load_column_widths()
         self.fill_operations()
 
     def pane_active(self):
         self.fill_operations()
 
+    def pane_hide(self):
+        self.list_operations.save_column_widths()
+
+    def signal(self, signalstr, myargs):
+        return
 
 class ImageVectorisationPanel(ScrolledPanel):
     name = _("Vectorisation")
@@ -655,18 +1396,20 @@ class ImageVectorisationPanel(ScrolledPanel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # self.vector_lock = threading.Lock()
         # self.alive = True
         # Only display if we have a vector engine
+        self._pane_is_active = False
         make_vector = self.context.kernel.lookup("render-op/make_vector")
         if make_vector:
             global HAS_VECTOR_ENGINE
             HAS_VECTOR_ENGINE = True
         if not make_vector:
             main_sizer.Add(
-                wx.StaticText(
+                wxStaticText(
                     self, wx.ID_ANY, "No vector engine installed, you need potrace"
                 ),
                 1,
@@ -685,7 +1428,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_turn = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_turn, 0, wx.EXPAND, 0)
 
-        label_turn = wx.StaticText(self, wx.ID_ANY, _("Turnpolicy"))
+        label_turn = wxStaticText(self, wx.ID_ANY, _("Turnpolicy"))
         label_turn.SetMinSize(dip_size(self, 70, -1))
         sizer_turn.Add(label_turn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.turn_choices = [
@@ -697,7 +1440,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             "Majority",
             "Random",
         ]
-        self.combo_turnpolicy = wx.ComboBox(
+        self.combo_turnpolicy = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.turn_choices,
@@ -721,7 +1464,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_turd = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_turd, 0, wx.EXPAND, 0)
 
-        label_turd = wx.StaticText(self, wx.ID_ANY, _("Despeckle"))
+        label_turd = wxStaticText(self, wx.ID_ANY, _("Despeckle"))
         label_turd.SetMinSize(dip_size(self, 70, -1))
         sizer_turd.Add(label_turd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -734,7 +1477,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_alphamax = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_alphamax, 0, wx.EXPAND, 0)
 
-        label_alphamax = wx.StaticText(self, wx.ID_ANY, _("Corners"))
+        label_alphamax = wxStaticText(self, wx.ID_ANY, _("Corners"))
         label_alphamax.SetMinSize(dip_size(self, 70, -1))
         sizer_alphamax.Add(label_alphamax, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -749,7 +1492,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_opticurve = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_opticurve, 0, wx.EXPAND, 0)
 
-        label_opticurve = wx.StaticText(self, wx.ID_ANY, _("Simplify"))
+        label_opticurve = wxStaticText(self, wx.ID_ANY, _("Simplify"))
         label_opticurve.SetMinSize(dip_size(self, 70, -1))
         sizer_opticurve.Add(label_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -765,7 +1508,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_opttolerance = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_opttolerance, 0, wx.EXPAND, 0)
 
-        label_opttolerance = wx.StaticText(self, wx.ID_ANY, _("Tolerance"))
+        label_opttolerance = wxStaticText(self, wx.ID_ANY, _("Tolerance"))
         label_opttolerance.SetMinSize(dip_size(self, 70, -1))
         sizer_opttolerance.Add(label_opttolerance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -781,7 +1524,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_blacklevel = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_blacklevel, 0, wx.EXPAND, 0)
 
-        label_blacklevel = wx.StaticText(self, wx.ID_ANY, _("Black-Level"))
+        label_blacklevel = wxStaticText(self, wx.ID_ANY, _("Black-Level"))
         label_blacklevel.SetMinSize(dip_size(self, 70, -1))
         sizer_blacklevel.Add(label_blacklevel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -797,7 +1540,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.button_vector = wxButton(self, wx.ID_ANY, _("Vectorize"))
         sizer_buttons.Add(self.button_vector, 0, 0, 0)
 
-        label_spacer = wx.StaticText(self, wx.ID_ANY, " ")
+        label_spacer = wxStaticText(self, wx.ID_ANY, " ")
         sizer_buttons.Add(label_spacer, 1, 0, 0)
 
         self.button_generate = wxButton(self, wx.ID_ANY, _("Preview"))
@@ -807,10 +1550,10 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_preview = StaticBoxSizer(self, wx.ID_ANY, _("Preview"), wx.VERTICAL)
         main_sizer.Add(sizer_preview, 2, wx.EXPAND, 0)
 
-        self.bitmap_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
+        self.bitmap_preview = wxStaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
         sizer_preview.Add(self.bitmap_preview, 1, wx.EXPAND, 0)
 
-        self.vector_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
+        self.vector_preview = wxStaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
         sizer_preview.Add(self.vector_preview, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
@@ -823,7 +1566,6 @@ class ImageVectorisationPanel(ScrolledPanel):
 
         self.wximage = wx.NullBitmap
         self.wxvector = wx.NullBitmap
-        self._visible = False
 
         self.Layout()
         self.Centre()
@@ -850,11 +1592,11 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.set_images(True)
 
     def pane_active(self):
-        self._visible = True
+        self._pane_is_active = True
         self.set_images(True)
 
     def pane_deactive(self):
-        self._visible = False
+        self._pane_is_active = False
 
     def on_changes(self, event):
         # self._need_updates = True
@@ -892,7 +1634,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                     img = background
             return img
 
-        if not self._visible:
+        if not self._pane_is_active:
             return
         if self.node is None or self.node.image is None:
             self.wximage = wx.NullBitmap
@@ -923,7 +1665,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         make_vector = self.context.kernel.lookup("render-op/make_vector")
         make_raster = self.context.kernel.lookup("render-op/make_raster")
         # while self.alive:
-        if not self._visible:
+        if not self._pane_is_active:
             return
         self.wxvector = wx.NullBitmap
 
@@ -960,7 +1702,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             xmin, ymin, xmax, ymax = bounds
             width = xmax - xmin
             height = ymax - ymin
-            dpi = 500
+            dpi = 250
             dots_per_units = dpi / UNITS_PER_INCH
             new_width = width * dots_per_units
             new_height = height * dots_per_units
@@ -1030,9 +1772,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         # Changing the staticmethod into a regular method will cause a crash
         # Not the nicest thing in the world, as we need to instantiate the class once to reset the status flag
         global HAS_VECTOR_ENGINE
-        if hasattr(node, "as_image") and HAS_VECTOR_ENGINE:
-            return True
-        return False
+        return hasattr(node, "as_image") and HAS_VECTOR_ENGINE
 
     def img_2_wx(self, image):
         width, height = image.size
@@ -1045,19 +1785,23 @@ class ImageVectorisationPanel(ScrolledPanel):
             self._need_updates = True
         self.set_images()
 
+    def signal(self, signalstr, myargs):
+        return
 
 class ImagePropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
+        self.subpanels = list()
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.SetHelpText("imageproperty")
-
+        self.subpanels.append(self.panel_id)
         self.text_dpi = TextCtrl(
             self,
             wx.ID_ANY,
@@ -1067,21 +1811,39 @@ class ImagePropertyPanel(ScrolledPanel):
             limited=True,
             nonzero=True,
         )
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
+        self.check_keep_size = wxCheckBox(self, wx.ID_ANY, _("Keep size on change"))
+        self.check_keep_size.SetValue(True)
         self.check_prevent_crop = wxCheckBox(self, wx.ID_ANY, _("No final crop"))
 
         self.panel_lock = PreventChangePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_lock)
+
+        self.panel_keyhole = KeyholePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.subpanels.append(self.panel_keyhole)
+
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_xy)
 
         self.panel_crop = CropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.subpanels.append(self.panel_crop)
         self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
+            "Legacy-Floyd-Steinberg",
             "Atkinson",
             "Jarvis-Judice-Ninke",
             "Stucki",
@@ -1090,12 +1852,21 @@ class ImagePropertyPanel(ScrolledPanel):
             "Sierra2",
             "Sierra-2-4a",
         ]
-        self.combo_dither = wx.ComboBox(
+        self.combo_dither = wxComboBox(
             self,
             wx.ID_ANY,
             choices=self.choices,
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
+        self.check_enable_depthmap = wxCheckBox(self, wx.ID_ANY, _("Depthmap"))
+        resolutions = list((f"{2**p} - {p}bit" for p in range(8, 1, -1)))
+        self.combo_depthmap = wxComboBox(
+            self,
+            wx.ID_ANY,
+            choices=resolutions,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+
         # self.op_choices = []
         # self.image_ops = []
         # self.op_choices.append(_("Choose a script to apply"))
@@ -1104,7 +1875,7 @@ class ImagePropertyPanel(ScrolledPanel):
         #     self.op_choices.append(_("Apply: {script}").format(script=op))
         #     self.image_ops.append(op)
 
-        # self.combo_operations = wx.ComboBox(
+        # self.combo_operations = wxComboBox(
         #     self,
         #     wx.ID_ANY,
         #     choices=self.op_choices,
@@ -1117,23 +1888,23 @@ class ImagePropertyPanel(ScrolledPanel):
         self.slider_grayscale_red = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_red = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_grayscale_red = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_grayscale_green = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_green = wx.TextCtrl(
+        self.text_grayscale_green = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_grayscale_blue = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_blue = wx.TextCtrl(
+        self.text_grayscale_blue = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_grayscale_lightness = wx.Slider(
             self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_grayscale_lightness = wx.TextCtrl(
+        self.text_grayscale_lightness = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -1142,6 +1913,9 @@ class ImagePropertyPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_dither, self.check_enable_dither)
         self.Bind(wx.EVT_COMBOBOX, self.on_dither, self.combo_dither)
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_depthmap, self.check_enable_depthmap)
+        self.Bind(wx.EVT_COMBOBOX, self.on_depthmap, self.combo_depthmap)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
 
         self.Bind(wx.EVT_TEXT_ENTER, self.on_dither, self.combo_dither)
@@ -1180,9 +1954,7 @@ class ImagePropertyPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        if hasattr(node, "as_image"):
-            return True
-        return False
+        return hasattr(node, "as_image")
 
     def set_grayscale_values(self):
         self.check_invert_grayscale.SetValue(self.node.invert)
@@ -1202,23 +1974,40 @@ class ImagePropertyPanel(ScrolledPanel):
     def set_widgets(self, node=None):
         if node is None:
             node = self.node
-        self.panel_id.set_widgets(node)
-        self.panel_xy.set_widgets(node)
-        self.panel_lock.set_widgets(node)
-        self.panel_crop.set_widgets(node)
+        for p in self.subpanels:
+            p.set_widgets(node)
         self.node = node
         if node is None:
             return
-
+        if self.node.type == "elem image":
+            self.check_keep_size.Show(True)
+        else:
+            self.check_keep_size.Show(True)
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
+        self.combo_dither.Enable(bool(node.dither))
+        self.check_enable_depthmap.SetValue(node.is_depthmap)
+        resolutions =list((2**p for p in range(8, 1, -1)))
+        try:
+            idx = resolutions.index(node.depth_resolution)
+        except (IndexError, AttributeError, ValueError) as e:
+            # print(f"Caught error {e} for value {node.depth_resolution}")
+            idx = 0
+        self.combo_depthmap.SetSelection(idx)
+        self.combo_depthmap.Enable(bool(node.is_depthmap))
+
         self.check_prevent_crop.SetValue(node.prevent_crop)
 
     def __set_properties(self):
+        self.check_keep_size.SetToolTip(
+            _("Enabled: Keep size and amend internal resolution") + "\n" +
+            _("Disabled: Keep internal resolution and change size")
+        )
         self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
-        self.check_enable_dither.SetValue(1)
+        self.check_enable_dither.SetValue(True)
+        self.combo_dither.Enable(True)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
         self.combo_dither.SetSelection(0)
         # self.combo_operations.SetToolTip(_("Select image enhancement script to apply"))
@@ -1232,9 +2021,26 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_grayscale_blue.SetToolTip(_("Blue Factor"))
         self.slider_grayscale_lightness.SetToolTip(_("Lightness control"))
         self.text_grayscale_lightness.SetToolTip(_("Lightness"))
-        self.btn_reset_grayscale.SetToolTip(
-            _("Reset the grayscale modifiers to standard values")
+        self.btn_reset_grayscale.SetToolTip(_("Reset the grayscale modifiers to standard values"))
+
+        DEPTH_FLAG_TOOLTIP = _("Do you want to treat this bitmap as depthmap where every greyscal-level corresponds to the amount of times this pixel will be burnt")
+        self.check_enable_depthmap.SetToolTip(DEPTH_FLAG_TOOLTIP)
+        self.check_enable_depthmap.SetValue(False)
+        DEPTH_RES_TOOLTIP =(
+          _("How many grayscales do you want to distinguish?") + "\n" +
+            _(
+                "This operation will step through the image and process it per defined grayscale resolution."
+            ) + "\n" +
+            _(
+                "So for full resolution every grayscale level would be processed individually: a black line (or a white line if inverted) would be processed 255 times, a line with grayscale value 128 would be processed 128 times."
+            ) + "\n" +
+            _(
+                "You can define a coarser resolution e.g. 64: then very faint lines (grayscale 1-4) would be burned just once, very strong lines (level 252-255) would be burned 64 times."
+            )
         )
+        self.combo_depthmap.SetToolTip(DEPTH_RES_TOOLTIP)
+        self.combo_depthmap.SetSelection(0)
+        self.combo_depthmap.Enable(False)
         # end wxGlade
 
     def __do_layout(self):
@@ -1243,25 +2049,32 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
-        sizer_dpi_dither = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_dpi_crop = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi.Add(self.check_keep_size, 0, wx.EXPAND, 0)
 
-        sizer_dpi_dither.Add(sizer_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi_crop.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
         sizer_crop = StaticBoxSizer(self, wx.ID_ANY, _("Auto-Crop:"), wx.HORIZONTAL)
         sizer_crop.Add(self.check_prevent_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_dpi_dither.Add(sizer_crop, 1, wx.EXPAND, 0)
+        sizer_dpi_crop.Add(sizer_crop, 1, wx.EXPAND, 0)
 
+        sizer_dither_depth = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dither = StaticBoxSizer(self, wx.ID_ANY, _("Dither"), wx.HORIZONTAL)
         sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_dpi_dither.Add(sizer_dither, 2, wx.EXPAND, 0)
+        sizer_dither_depth.Add(sizer_dither, 1, wx.EXPAND, 0)
+        sizer_depth = StaticBoxSizer(self, wx.ID_ANY, _("3D-Treatment"), wx.HORIZONTAL)
+        sizer_depth.Add(self.check_enable_depthmap, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_depth.Add(self.combo_depthmap, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_dither_depth.Add(sizer_depth, 1, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dpi_crop, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dither_depth, 0, wx.EXPAND, 0)
 
         sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
@@ -1306,7 +2119,11 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 
-        sizer_main.Add(self.panel_lock, 0, wx.EXPAND, 0)
+        hor_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        hor_sizer.Add(self.panel_lock, 1, wx.EXPAND, 0)
+        hor_sizer.Add(self.panel_keyhole, 1, wx.EXPAND, 0)
+
+        sizer_main.Add(hor_sizer, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -1316,12 +2133,22 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def node_update(self):
         self.node.set_dirty_bounds()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
         self.context.elements.emphasized()
         self.context.signal("element_property_update", self.node)
 
     def on_text_dpi(self):
+        old_step = self.node.dpi
         new_step = float(self.text_dpi.GetValue())
+        if old_step == new_step:
+            return
+        if self.node.type == "elem image":
+            keep_size = self.check_keep_size.GetValue()
+            if not keep_size:
+                # We need to rescale the image
+                img_scale = old_step / new_step
+                bb = self.node.bounds
+                self.node.matrix.post_scale(img_scale, img_scale, bb[0], bb[1])
         self.node.dpi = new_step
         self.node_update()
 
@@ -1339,13 +2166,36 @@ class ImagePropertyPanel(ScrolledPanel):
                 dither_op = op
                 break
         dither_flag = self.check_enable_dither.GetValue()
+        self.combo_dither.Enable(dither_flag)
         dither_type = self.choices[self.combo_dither.GetSelection()]
         if dither_op is not None:
             dither_op["enable"] = dither_flag
             dither_op["type"] = dither_type
         self.node.dither = dither_flag
         self.node.dither_type = dither_type
+        if dither_flag:
+            self.node.is_depthmap = False
+            self.check_enable_depthmap.SetValue(False)
+            self.combo_depthmap.Enable(False)
         self.node_update()
+        self.context.signal("nodetype")
+
+    def on_depthmap(self, event=None):
+        depth_flag = self.check_enable_depthmap.GetValue()
+        self.combo_depthmap.Enable(depth_flag)
+        resolutions = (256, 128, 64, 32, 16, 8, 4)
+        idx = self.combo_depthmap.GetSelection()
+        if idx < 1:
+            idx = 0
+        depth_res = resolutions[idx]
+        self.node.is_depthmap = depth_flag
+        self.node.depth_resolution = depth_res
+        if depth_flag:
+            self.node.dither = False
+            self.check_enable_dither.SetValue(False)
+            self.combo_dither.Enable(False)
+        self.node_update()
+        self.context.signal("nodetype")
 
     def on_reset_grayscale(self, event):
         self.node.invert = False
@@ -1367,7 +2217,10 @@ class ImagePropertyPanel(ScrolledPanel):
     ):  # wxGlade: GrayscalePanel.<event_handler>
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if (
+                not self.context.process_while_sliding
+                and wx.GetMouseState().LeftIsDown()
+            ):
                 event.Skip()
                 return
 
@@ -1385,3 +2238,8 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
         self.node_update()
+
+    def signal(self, signalstr, myargs):
+        for p in self.subpanels:
+            if hasattr(p, "signal"):
+                p.signal(signalstr, myargs)

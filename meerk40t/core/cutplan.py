@@ -22,7 +22,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..svgelements import Group, Polygon
+from ..svgelements import Group, Matrix, Path, Polygon
 from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
@@ -30,8 +30,22 @@ from .cutcode.cutgroup import CutGroup
 from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
 from .node.node import Node
+from .node.util_console import ConsoleOperation
 from .units import Length
 
+"""
+The time to compile does outweigh the benefit...
+try:
+    from numba import jit
+except Exception as e:
+    # Jit does not exist, add a dummy decorator and continue.
+    # print (f"Encountered error: {e}")
+    def jit(*args, **kwargs):
+        def inner(func):
+            return func
+
+        return inner
+"""
 
 class CutPlanningFailedError(Exception):
     pass
@@ -87,12 +101,15 @@ class CutPlan:
         @return:
         """
         # Using copy of commands, so commands can add ops.
+        self._debug_me("At start of execute")
+
         while self.commands:
             # Executing command can add a command, complete them all.
             commands = self.commands[:]
             self.commands.clear()
             for command in commands:
                 command()
+                self._debug_me(f"At end of {command.__name__}")
 
     def final(self):
         """
@@ -142,10 +159,10 @@ class CutPlan:
                 self.outline = None
             else:
                 self.outline = (
-                    device.view.position(min_x, min_y),
-                    device.view.position(max_x, min_y),
-                    device.view.position(max_x, max_y),
-                    device.view.position(min_x, max_y),
+                    device.view.position(min_x, min_y, margins=False),
+                    device.view.position(max_x, min_y, margins=False),
+                    device.view.position(max_x, max_y, margins=False),
+                    device.view.position(min_x, max_y, margins=False),
                 )
 
         # ==========
@@ -194,6 +211,18 @@ class CutPlan:
                 self.context.elements.mywordlist.move_all_indices(1)
 
             for original_op in original_ops:
+                # First, do we have a valid coolant aka airassist command?
+                if hasattr(original_op, "coolant"):
+                    cool = original_op.coolant
+                    if cool is None:
+                        cool = 0
+                    if cool in (1, 2):  # Explicit on / off
+                        if cool == 1:
+                            cmd = "coolant_on"
+                        else:
+                            cmd = "coolant_off"
+                        coolop = ConsoleOperation(command=cmd)
+                        self.plan.append(coolop)
                 try:
                     op = original_op.copy_with_reified_tree()
                 except AttributeError:
@@ -403,10 +432,9 @@ class CutPlan:
                     cc.original_op = blob.original_op
                     cc.pass_index = blob.pass_index
                     last_item = cc
-                    yield last_item
                 else:
                     last_item = blob
-                    yield last_item
+                yield last_item
 
     def _should_merge(self, context, last_item, current_item):
         """
@@ -447,6 +475,34 @@ class CutPlan:
             return False
         return True  # No reason these should not be merged.
 
+    def _debug_me(self, message):
+        debug_level = 0
+        if not self.channel:
+            return
+        self.channel(f"Plan at {message}")
+        for pitem in self.plan:
+            if isinstance(pitem, (tuple, list)):
+                self.channel(f"-{type(pitem).__name__}: {len(pitem)} items")
+                if debug_level > 0:
+                    for cut in pitem:
+                        if isinstance(cut, (tuple, list)):
+                            self.channel(
+                                f"--{type(pitem).__name__}: {type(cut).__name__}: {len(cut)} items"
+                            )
+                        else:
+                            self.channel(
+                                f"--{type(pitem).__name__}: {type(cut).__name__}: --childless--"
+                            )
+
+            elif hasattr(pitem, "children"):
+                self.channel(
+                    f"  {type(pitem).__name__}: {len(pitem.children)} children"
+                )
+            else:
+                self.channel(f"  {type(pitem).__name__}: --childless--")
+
+        self.channel("------------")
+
     def geometry(self):
         """
         Geometry converts User operations to naked geomstr objects.
@@ -474,7 +530,12 @@ class CutPlan:
 
             if c_type in ("op cut", "op engrave"):
                 for elem in c.children:
-                    if hasattr(elem, "as_geometry"):
+                    if hasattr(elem, "final_geometry"):
+                        start_index = g.index
+                        g.append(elem.final_geometry())
+                        end_index = g.index
+                        g.flag_settings(settings_index, start_index, end_index)
+                    elif hasattr(elem, "as_geometry"):
                         start_index = g.index
                         g.append(elem.as_geometry())
                         end_index = g.index
@@ -541,6 +602,9 @@ class CutPlan:
         if not has_cutcode:
             return
 
+        if context.opt_effect_combine:
+            self.commands.append(self.combine_effects)
+
         if context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
         ):
@@ -556,6 +620,85 @@ class CutPlan:
             pass
         if context.opt_remove_overlap:
             pass
+
+    def combine_effects(self):
+        """
+        Will browse through the cutcode entries grouping everything together
+        that as a common 'source' attribute
+        """
+
+        def update_group_sequence(group):
+            if len(group) == 0:
+                return
+            glen = len(group)
+            for i, cut_obj in enumerate(group):
+                cut_obj.first = i == 0
+                cut_obj.last = i == glen - 1
+                next_idx = i + 1 if i < glen - 1 else 0
+                cut_obj.next = group[next_idx]
+                cut_obj.previous = group[i - 1]
+            group.path = group._geometry.as_path()
+
+        def update_busy_info(busy, idx, l_pitem, plan_idx, l_plan):
+            busy.change(
+                msg=_("Combine effect primitives")
+                + f" {idx + 1}/{l_pitem} ({plan_idx + 1}/{l_plan})",
+                keep=1,
+            )
+            busy.show()
+
+        def process_plan_item(pitem, busy, total, plan_idx, l_plan):
+            grouping = {}
+            l_pitem = len(pitem)
+            to_be_deleted = []
+            combined = 0
+            for idx, cut in enumerate(pitem):
+                total += 1
+                if busy.shown and total % 100 == 0:
+                    update_busy_info(busy, idx, l_pitem, plan_idx, l_plan)
+                if not isinstance(cut, CutGroup) or cut.origin is None:
+                    continue
+                combined += process_cut(cut, grouping, pitem, idx, to_be_deleted)
+            return grouping, to_be_deleted, combined, total
+
+        def process_cut(cut, grouping, pitem, idx, to_be_deleted):
+            if cut.origin not in grouping:
+                grouping[cut.origin] = idx
+                return 0
+            mastercut = grouping[cut.origin]
+            geom = cut._geometry
+            pitem[mastercut].skip = True
+            pitem[mastercut].extend(cut)
+            pitem[mastercut]._geometry.append(geom)
+            cut.clear()
+            to_be_deleted.append(idx)
+            return 1
+
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Combine effect primitives"), keep=1)
+            busy.show()
+        combined = 0
+        l_plan = len(self.plan)
+        total = -1
+        group_count = 0
+        for plan_idx, pitem in enumerate(self.plan):
+            # We don't combine across plan boundaries
+            if not isinstance(pitem, CutGroup):
+                continue
+            grouping, to_be_deleted, item_combined, total = process_plan_item(pitem, busy, total, plan_idx, l_plan)
+            combined += item_combined
+            group_count += len(grouping)
+
+            for key, item in grouping.items():
+                update_group_sequence(pitem[item])
+
+            for p in reversed(to_be_deleted):
+                pitem.pop(p)
+
+        if self.channel:
+            self.channel(f"Combined: {combined}, groups: {group_count}")
 
     def optimize_travel_2opt(self):
         """
@@ -681,6 +824,7 @@ class CutPlan:
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=grouped_inner,
+                    hatch_optimize=self.context.opt_effect_optimize,
                 )
                 last = self.plan[i].end
 
@@ -831,6 +975,43 @@ def is_inside(inner, outer, tolerance=0):
     @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
+
+    def convex_geometry(raster) -> Geomstr:
+        dx = raster.bounding_box[0]
+        dy = raster.bounding_box[1]
+        dw = raster.bounding_box[2] - raster.bounding_box[0]
+        dh = raster.bounding_box[3] - raster.bounding_box[1]
+        if raster.image is None:
+            return Geomstr.rect(dx, dy, dw, dh)
+        image_np = np.array(raster.image.convert("L"))
+        # Find non-white pixels
+        # Iterate over each row in the image
+        left_side = []
+        right_side = []
+        for y in range(image_np.shape[0]):
+            row = image_np[y]
+            non_white_indices = np.where(row < 255)[0]
+
+            if non_white_indices.size > 0:
+                leftmost = non_white_indices[0]
+                rightmost = non_white_indices[-1]
+                left_side.append((leftmost, y))
+                right_side.insert(0, (rightmost, y))
+        left_side.extend(right_side)
+        non_white_pixels = left_side
+        # Compute convex hull
+        pts = list(Geomstr.convex_hull(None, non_white_pixels))
+        if pts:
+            pts.append(pts[0])
+        geom = Geomstr.lines(*pts)
+        sx = dw / raster.image.width
+        sy = dh / raster.image.height
+        matrix = Matrix()
+        matrix.post_scale(sx, sy)
+        matrix.post_translate(dx, dy)
+        geom.transform(matrix)
+        return geom
+
     # We still consider a path to be inside another path if it is
     # within a certain tolerance
     inner_path = inner
@@ -849,29 +1030,31 @@ def is_inside(inner, outer, tolerance=0):
         return False
     if inner.bounding_box is None:
         return False
-    # Raster is inner if the bboxes overlap anywhere
     if isinstance(inner, RasterCut):
-        return (
-            inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
-            and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
-            and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
-            and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
-        )
-    if outer.bounding_box[0] > inner.bounding_box[0] + tolerance:
-        # outer minx > inner minx (is not contained)
+        if not hasattr(inner, "convex_path"):
+            inner.convex_path = convex_geometry(inner).as_path()
+        inner_path = inner.convex_path
+    # # Raster is inner if the bboxes overlap anywhere
+    # if isinstance(inner, RasterCut) and not hasattr(inner, "path"):
+    #     image = inner.image
+    #     return (
+    #         inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
+    #         and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
+    #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
+    #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
+    #     )
+    if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
+        # outer minx > inner maxx (is not contained)
         return False
-    if outer.bounding_box[1] > inner.bounding_box[1] + tolerance:
-        # outer miny > inner miny (is not contained)
+    if outer.bounding_box[1] > inner.bounding_box[3] + tolerance:
+        # outer miny > inner maxy (is not contained)
         return False
-    if outer.bounding_box[2] < inner.bounding_box[2] - tolerance:
-        # outer maxx < inner maxx (is not contained)
+    if outer.bounding_box[2] < inner.bounding_box[0] - tolerance:
+        # outer maxx < inner minx (is not contained)
         return False
-    if outer.bounding_box[3] < inner.bounding_box[3] - tolerance:
+    if outer.bounding_box[3] < inner.bounding_box[1] - tolerance:
         # outer maxy < inner maxy (is not contained)
         return False
-    if outer.bounding_box == inner.bounding_box:
-        if outer == inner:  # This is the same object.
-            return False
 
     # Inner bbox is entirely inside outer bbox,
     # however that does not mean that inner is actually inside outer
@@ -918,7 +1101,59 @@ def is_inside(inner, outer, tolerance=0):
         q = out_cut.sb.points_in_polygon(points)
         return q.all()
 
-    return sb_code(outer, outer_path, inner, inner_path)
+    def other_code(outer, outer_path, inner, inner_path):
+        # The time to compile is outweighing the benefits...
+        # @jit(nopython=True)
+        def ray_tracing(x, y, poly, tolerance):
+            def sq_length(a, b):
+                return a * a + b * b
+
+            tolerance_square = tolerance * tolerance
+            n = len(poly)
+            inside = False
+            xints = 0
+
+            p1x, p1y = poly[0]
+            old_sq_dist = sq_length(p1x - x, p1y - y)
+            for i in range(n+1):
+                p2x, p2y = poly[i % n]
+                new_sq_dist = sq_length(p2x - x, p2y - y)
+                # We are approximating the edge to an extremely thin ellipse and see
+                # whether our point is on that ellipse
+                reldist = (
+                    old_sq_dist + new_sq_dist +
+                    2.0 * np.sqrt(old_sq_dist * new_sq_dist) -
+                    sq_length(p2x - p1x, p2y - p1y)
+                )
+                if reldist < tolerance_square:
+                    return True
+
+                if y > min(p1y,p2y):
+                    if y <= max(p1y,p2y):
+                        if x <= max(p1x,p2x):
+                            if p1y != p2y:
+                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                            if p1x == p2x or x <= xints:
+                                inside = not inside
+                p1x, p1y = p2x, p2y
+                old_sq_dist = new_sq_dist
+            return inside
+
+        geom1 = Geomstr.svg(inner_path.d())
+        geom2 = Geomstr.svg(outer_path.d())
+        points = np.array(list((p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance = 10)))
+        vertices = np.array(list((p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance = 10)))
+        return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
+
+    # from time import perf_counter
+    # t0 = perf_counter()
+    # res1 = sb_code(outer, outer_path, inner, inner_path)
+    # t1 = perf_counter()
+    # res2 = other_code(outer, outer_path, inner, inner_path)
+    # t2 = perf_counter()
+    # print (f"Tolerance: {tolerance}, sb={res1} in {t1 - t0:.3f}s, other={res2} in {t2 - t1:.3f}s")
+    return other_code(outer, outer_path, inner, inner_path)
+    # return sb_code(outer, outer_path, inner, inner_path)
     # return vm_code(outer, outer_path, inner, inner_path)
 
 
@@ -1022,11 +1257,11 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             if is_inside(inner, outer, tolerance):
                 constrained = True
                 if outer.contains is None:
-                    outer.contains = list()
+                    outer.contains = []
                 outer.contains.append(inner)
 
                 if inner.inside is None:
-                    inner.inside = list()
+                    inner.inside = []
                 inner.inside.append(outer)
 
     context.constrained = constrained
@@ -1049,6 +1284,11 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             f"Inner paths identified in {time() - start_time:.3f} elapsed seconds: {constrained} "
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
+        for outer in closed_groups:
+            channel(
+                f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements"
+            )
+
     return context
 
 
@@ -1058,6 +1298,7 @@ def short_travel_cutcode(
     channel=None,
     complete_path: Optional[bool] = False,
     grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
 ):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
@@ -1076,12 +1317,15 @@ def short_travel_cutcode(
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
+    unordered = []
+    for idx in range(len(context) - 1, -1, -1):
+        c = context[idx]
+        if isinstance(c, CutGroup) and c.skip:
+            unordered.append(c)
+            context.pop(idx)
 
     curr = context.start
-    if curr is None:
-        curr = 0
-    else:
-        curr = complex(curr[0], curr[1])
+    curr = 0 if curr is None else complex(curr[0], curr[1])
 
     cutcode_len = 0
     for c in context.flat():
@@ -1095,7 +1339,7 @@ def short_travel_cutcode(
         _ = kernel.translation
     else:
         busy = None
-    # print (f"Cutcode-Len={cutcode_len}")
+    # print (f"Cutcode-Len={cutcode_len}, unordered: {len(unordered)}")
     while True:
         current_pass += 1
         if current_pass % 50 == 0 and busy and busy.shown:
@@ -1209,6 +1453,17 @@ def short_travel_cutcode(
         end = c.end
         curr = complex(end[0], end[1])
         ordered.append(c)
+    # print (f"Now we have {len(ordered)} items in list")
+    if hatch_optimize:
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                unordered[idx] = short_travel_cutcode(context=c, kernel=kernel, complete_path=False, grouped_inner=False, channel=channel)
+    # As these are reversed, we reverse again...
+    ordered.extend(reversed(unordered))
+    # print (f"And after extension {len(ordered)} items in list")
+    # for c in ordered:
+    #     print (f"{type(c).__name__} - {len(c) if isinstance(c, (list, tuple)) else '-childless-'}")
     if context.start is not None:
         ordered._start_x, ordered._start_y = context.start
     else:
@@ -1398,7 +1653,7 @@ def inner_selection_cutcode(
     iterations = 0
     while True:
         c = list(context.candidate(grouped_inner=grouped_inner))
-        if len(c) == 0:
+        if not c:
             break
         for o in c:
             o.burns_done += 1

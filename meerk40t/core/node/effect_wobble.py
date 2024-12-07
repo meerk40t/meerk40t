@@ -3,12 +3,13 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class WobbleEffectNode(Node):
+class WobbleEffectNode(Node, Suppressable):
     """
     Effect node performing a wobble. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -21,15 +22,23 @@ class WobbleEffectNode(Node):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
+        self.autohide = True
         self.wobble_radius = "1.5mm"
         self.wobble_interval = "0.1mm"
         self.wobble_speed = 50
         self.wobble_type = "circle"
-
-        Node.__init__(
+        self._interim = False
+        super().__init__(
             self, type="effect wobble", id=id, label=label, lock=lock, **kwargs
         )
-        self._formatter = "{element_type} - {type} {radius} ({children})"
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
+        self._formatter = "{element_type} {id} - {type} {radius} ({children})"
 
         if label is None:
             self.label = "Wobble"
@@ -57,19 +66,23 @@ class WobbleEffectNode(Node):
         nd["fill"] = copy(self.fill)
         return WobbleEffectNode(**nd)
 
-    def scaled(self, sx, sy, ox, oy):
+    def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
 
     def notify_attached(self, node=None, **kwargs):
         Node.notify_attached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = True
         self.altered()
 
     def notify_detached(self, node=None, **kwargs):
         Node.notify_detached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = False
         self.altered()
 
     def notify_modified(self, node=None, **kwargs):
@@ -84,17 +97,28 @@ class WobbleEffectNode(Node):
             return
         self.altered()
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        Node.notify_translated(self, node, dx, dy, **kwargs)
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+
+    def append_child(self, new_child):
+        if self.autohide and hasattr(new_child, "hidden"):
+            new_child.hidden = True
+        return super().append_child(new_child)
 
     @property
     def radius(self):
@@ -207,7 +231,7 @@ class WobbleEffectNode(Node):
         nodes = right_types(self)
         return nodes
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         """
         Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
         internal loops value is rotated each pass by the angle-delta.
@@ -222,6 +246,9 @@ class WobbleEffectNode(Node):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
+        if self._interim:
+            return outlines
+
         path = Geomstr()
         if self._radius is None or self._interval is None:
             self.recalculate()
@@ -325,13 +352,46 @@ class WobbleEffectNode(Node):
                     speed=self.wobble_speed,
                 )
             )
+        elif self.wobble_type == "dash":
+            path.append(
+                Geomstr.wobble_dash(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
+        elif self.wobble_type == "tabs":
+            path.append(
+                Geomstr.wobble_tab(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         return path
+
+    def set_interim(self):
+        self.empty_cache()
+        self._interim = True
+
+    def altered(self, *args, **kwargs):
+        self._interim = False
+        super().altered()
 
     def modified(self):
         self.altered()
 
-    def drop(self, drag_node, modify=True):
-        # Default routine for drag + drop for an op node - irrelevant for others...
+    def can_drop(self, drag_node):
+        if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or (drag_node.type.startswith("op ") and drag_node.type != "op dots"):
+            return True
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an effect node - irrelevant for others...
+        if not self.can_drop(drag_node):
+            return False
         if drag_node.type.startswith("effect"):
             if modify:
                 if drag_node.parent is self.parent:
@@ -360,7 +420,14 @@ class WobbleEffectNode(Node):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,
             # then we will do it only if this an element effect

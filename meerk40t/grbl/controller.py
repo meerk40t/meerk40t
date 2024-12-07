@@ -318,8 +318,10 @@ class GrblController:
             self.connection = TCPOutput(self.service, self)
         elif self.service.permit_ws and self.service.interface == "ws":
             from meerk40t.grbl.ws_connection import WSOutput
-
-            self.connection = WSOutput(self.service, self)
+            try:
+                self.connection = WSOutput(self.service, self)
+            except ModuleNotFoundError:
+                response = self.service.kernel.prompt(str, "Could not open websocket-connection (websocket installed?)")
         else:
             # Mock
             from .mock_connection import MockConnection
@@ -374,6 +376,15 @@ class GrblController:
                 self.validate_start("$")
             else:
                 self._validation_stage = 5
+        if self.service.startup_commands:
+            self.log("Queue startup commands", type="event")
+            lines = self.service.startup_commands.split("\n")
+            line_end = self.service.driver.line_end
+            for line in lines:
+                if line.startswith("#"):
+                    self.log(f"Startup: {line}", type="event")
+                else:
+                    self.service.driver(f"{line}{line_end}")
 
     def close(self):
         """
@@ -709,6 +720,15 @@ class GrblController:
                     self.validate_stop("$$")
                     self._validation_stage = 3
                 self._process_settings_message(response)
+            elif response.startswith("Alarm|"):
+                # There's no errorcode
+                error_num = 1
+                short, long = grbl_alarm_message(error_num)
+                alarm_desc = f"#{error_num}, {short}\n{long}"
+                self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
+                self.log(f"Alarm {alarm_desc}", type="recv")
+                self._assembled_response = []
+
             elif response.startswith("ALARM"):
                 try:
                     error_num = int(response[6:])
@@ -965,6 +985,6 @@ class GrblController:
                     pass
 
                 self.service.hardware_config[key] = value
-                self.service.signal(f"grbl:hwsettings", key, value)
+                self.service.signal("grbl:hwsettings", key, value)
             except ValueError:
                 pass

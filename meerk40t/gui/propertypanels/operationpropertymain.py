@@ -8,10 +8,23 @@ from meerk40t.gui.wxutils import (
     set_ctrl_value,
     wxButton,
     wxCheckBox,
+    wxComboBox,
     wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
+from meerk40t.constants import (
+    RASTER_T2B,
+    RASTER_B2T,
+    RASTER_R2L,
+    RASTER_L2R,
+    RASTER_HATCH,
+    RASTER_GREEDY_H,
+    RASTER_GREEDY_V,
+    RASTER_CROSSOVER,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
-
+from meerk40t.gui.icons import icon_letter_h
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Color
 from ..laserrender import swizzlecolor
@@ -28,12 +41,29 @@ _ = wx.GetTranslation
 # )
 
 
+def validate_raster_settings(node):
+    # Make sure things are properly set...
+    if node.raster_direction in (RASTER_T2B, ):
+        node.raster_preference_top = True
+    elif node.raster_direction in (RASTER_B2T, ):
+        node.raster_preference_top = False
+    elif node.raster_direction in (RASTER_R2L, ):
+        node.raster_preference_left = True
+    elif node.raster_direction in (RASTER_L2R, ):
+        node.raster_preference_left = False
+    elif node.raster_direction in (RASTER_HATCH, RASTER_CROSSOVER):
+        node.raster_preference_top = True
+        node.raster_preference_left = True
+    if node.raster_direction in (RASTER_CROSSOVER, RASTER_GREEDY_H, RASTER_GREEDY_V):
+        node.bidirectional = True
+
 class LayerSettingPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
 
         layer_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Layer:"), wx.HORIZONTAL)
@@ -110,7 +140,7 @@ class LayerSettingPanel(wx.Panel):
         ):
             layer_sizer.Add(h_classify_sizer, 1, wx.EXPAND, 0)
 
-        # self.combo_type = wx.ComboBox(
+        # self.combo_type = wxComboBox(
         #     self,
         #     wx.ID_ANY,
         #     choices=["Engrave", "Cut", "Raster", "Image", "Hatch", "Dots"],
@@ -252,6 +282,11 @@ class LayerSettingPanel(wx.Panel):
                 and len(self.operation.children) > 0
                 and (candidate_fill or candidate_stroke)
             ):
+                changed = []
+                for e in self.operation.children:
+                    if e.type.startswith("effect "):
+                        e.stroke = self.operation.color
+                        changed.append(e)
                 dlg = wx.MessageDialog(
                     None,
                     message=_(
@@ -263,8 +298,9 @@ class LayerSettingPanel(wx.Panel):
                 response = dlg.ShowModal()
                 dlg.Destroy()
                 if response == wx.ID_YES:
-                    changed = []
                     for refnode in self.operation.children:
+                        if refnode in changed:
+                            continue
                         if hasattr(refnode, "node"):
                             cnode = refnode.node
                         else:
@@ -280,9 +316,9 @@ class LayerSettingPanel(wx.Panel):
 
                         if add_to_change:
                             changed.append(cnode)
-                    if len(changed) > 0:
-                        self.context.elements.signal("element_property_update", changed)
-                        self.context.elements.signal("refresh_scene", "Scene")
+                if len(changed) > 0:
+                    self.context.elements.signal("element_property_update", changed)
+                    self.context.elements.signal("refresh_scene", "Scene")
 
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"
@@ -352,6 +388,7 @@ class SpeedPpiPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
 
         self.context.device.setting(bool, "use_percent_for_power_display", False)
@@ -377,7 +414,7 @@ class SpeedPpiPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
             nonzero=True,
         )
-        self.trailer_speed = wx.StaticText(self, id=wx.ID_ANY)
+        self.trailer_speed = wxStaticText(self, id=wx.ID_ANY)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
         speed_sizer.Add(self.trailer_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -394,7 +431,7 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.trailer_power = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
+        self.trailer_power = wxStaticText(self, id=wx.ID_ANY, label=_("/1000"))
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
         self.power_sizer.Add(self.trailer_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -626,6 +663,7 @@ class PassesPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         self.has_kerf = False
 
@@ -650,9 +688,26 @@ class PassesPanel(wx.Panel):
                 + "as a placeholder for another part (eg inlays)."
             )
         )
-        self.kerf_label = wx.StaticText(self, wx.ID_ANY, "")
+        self.kerf_label = wxStaticText(self, wx.ID_ANY, "")
         self.sizer_kerf.Add(self.text_kerf, 1, wx.EXPAND, 0)
         self.sizer_kerf.Add(self.kerf_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.sizer_coolant = StaticBoxSizer(
+            self, wx.ID_ANY, _("Coolant:"), wx.HORIZONTAL
+        )
+        cool_choices = [_("No changes"), _("Turn on"), _("Turn off")]
+        self.combo_coolant = wxComboBox(
+            self,
+            wx.ID_ANY,
+            choices=cool_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_coolant.SetToolTip(
+            _(
+                "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
+            )
+        )
+        self.sizer_coolant.Add(self.combo_coolant, 1, wx.EXPAND, 0)
 
         sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes:"), wx.HORIZONTAL)
 
@@ -688,12 +743,14 @@ class PassesPanel(wx.Panel):
 
         sizer_main.Add(sizer_passes, 1, wx.EXPAND, 0)
         sizer_main.Add(self.sizer_kerf, 1, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_coolant, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
 
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_coolant, self.combo_coolant)
 
         self.text_passes.SetActionRoutine(self.on_text_passes)
         self.text_kerf.SetActionRoutine(self.on_text_kerf)
@@ -746,8 +803,35 @@ class PassesPanel(wx.Panel):
         self.text_passes.Enable(on)
         self.sizer_kerf.ShowItems(self.has_kerf)
         self.sizer_kerf.Show(self.has_kerf)
+        if hasattr(self.operation, "coolant"):
+            show_cool = True
+            value = self.operation.coolant
+            if value is None:
+                value = 0
+            self.combo_coolant.SetSelection(value)
+        else:
+            show_cool = False
+        if hasattr(self.context.device, "device_coolant"):
+            enable_cool = True
+            if self.context.device.device_coolant is None:
+                enable_cool = False
+        else:
+            enable_cool = False
+        self.combo_coolant.Enable(enable_cool)
+        self.sizer_coolant.ShowItems(show_cool)
+        self.sizer_coolant.Show(show_cool)
         self.Layout()
         self.Show()
+
+    def on_combo_coolant(self, event=None):
+        value = self.combo_coolant.GetSelection()
+        if value < 0:
+            value = 0
+        self.operation.coolant = value
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "coolant"
+        )
+        event.Skip()
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
@@ -799,10 +883,10 @@ class InfoPanel(wx.Panel):
             self, wx.ID_ANY, _("Est. burn-time:"), wx.HORIZONTAL
         )
 
-        self.text_children = wx.TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
+        self.text_children = TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
         self.text_children.SetMinSize(dip_size(self, 25, -1))
         self.text_children.SetMaxSize(dip_size(self, 55, -1))
-        self.text_time = wx.TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
+        self.text_time = TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
         self.text_time.SetMinSize(dip_size(self, 55, -1))
         self.text_time.SetMaxSize(dip_size(self, 100, -1))
         self.text_children.SetToolTip(
@@ -909,34 +993,26 @@ class PanelStartPreference(wx.Panel):
         self.context = context
         self.operation = node
 
-        sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Start Preference:"), wx.VERTICAL)
+        sizer_main = StaticBoxSizer(self, wx.ID_ANY, _("Start Preference:"), wx.VERTICAL)
 
-        self.slider_top = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
-        sizer_2.Add(self.slider_top, 0, wx.EXPAND, 0)
+        self.slider_pref_left = wx.Slider(self, wx.ID_ANY, 1, 0, 1)
+        sizer_main.Add(self.slider_pref_left, 0, wx.EXPAND, 0)
 
-        sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2.Add(sizer_7, 0, wx.EXPAND, 0)
+        sizer_top_display = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_top_display, 1, wx.EXPAND, 0)
 
-        self.slider_left = wx.Slider(self, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
-        sizer_7.Add(self.slider_left, 0, wx.EXPAND, 0)
+        self.slider_pref_top = wx.Slider(self, wx.ID_ANY, 1, 0, 1, style=wx.SL_VERTICAL)
+        sizer_top_display.Add(self.slider_pref_top, 0, wx.EXPAND, 0)
 
         self.display_panel = wx.Panel(self, wx.ID_ANY)
-        sizer_7.Add(self.display_panel, 1, wx.EXPAND, 0)
+        sizer_top_display.Add(self.display_panel, 1, wx.EXPAND, 0)
 
-        self.slider_right = wx.Slider(self, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
-        sizer_7.Add(self.slider_right, 0, 0, 0)
-
-        self.slider_bottom = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
-        sizer_2.Add(self.slider_bottom, 0, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_2)
+        self.SetSizer(sizer_main)
 
         self.Layout()
 
-        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
-        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_pref_left, self.slider_pref_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_pref_top, self.slider_pref_top)
         # end wxGlade
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
@@ -960,18 +1036,6 @@ class PanelStartPreference(wx.Panel):
 
         self._Buffer = None
 
-        self.context.setting(bool, "developer_mode", False)
-        if not self.context.developer_mode:
-            # 0.6.1 freeze, drops.
-            self.slider_top.Enable(False)
-            self.slider_right.Enable(False)
-            self.slider_left.Enable(False)
-            self.slider_bottom.Enable(False)
-            self.toggle_sliders = False
-        else:
-            self.toggle_sliders = True
-            self._toggle_sliders()
-
     def pane_hide(self):
         pass
 
@@ -980,10 +1044,8 @@ class PanelStartPreference(wx.Panel):
 
     # @signal_listener("element_property_reload")
     def on_element_property_reload(self, *args):
-        self._toggle_sliders()
-        self.raster_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.set_widgets(self.operation)
+        self._reload_display()
 
     def accepts(self, node):
         return node.type in (
@@ -996,14 +1058,12 @@ class PanelStartPreference(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
-        if self.operation.raster_preference_top is not None:
-            self.slider_top.SetValue(self.operation.raster_preference_top + 1)
-        if self.operation.raster_preference_left is not None:
-            self.slider_left.SetValue(self.operation.raster_preference_left + 1)
-        if self.operation.raster_preference_right is not None:
-            self.slider_right.SetValue(self.operation.raster_preference_right + 1)
-        if self.operation.raster_preference_bottom is not None:
-            self.slider_bottom.SetValue(self.operation.raster_preference_bottom + 1)
+        if self.operation.raster_direction == RASTER_CROSSOVER: # Crossover
+            self.Hide()
+            return
+        validate_raster_settings(self.operation)
+        self._toggle_sliders()
+        self.refresh_display()
         self.Show()
 
     def on_display_paint(self, event=None):
@@ -1026,9 +1086,15 @@ class PanelStartPreference(wx.Panel):
     def on_size(self, event=None):
         self.Layout()
         self.set_buffer()
+        self.raster_lines = None
+        self.travel_lines = None
+        self.direction_lines = None
         wx.CallAfter(self.refresh_in_ui)
 
     def refresh_display(self):
+        if self._Buffer is None:
+            self.set_buffer()
+
         if not wx.IsMainThread():
             wx.CallAfter(self.refresh_in_ui)
         else:
@@ -1036,117 +1102,125 @@ class PanelStartPreference(wx.Panel):
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
+        if w<10 or h<10: # Ini initialisation phase and too small anyway...
+            return
 
-        right = True
-        top = True
+        from_left = self.operation.raster_preference_left
+        from_top = self.operation.raster_preference_top
 
         last = None
         direction = self.operation.raster_direction
-        r_start = list()
-        r_end = list()
-        t_start = list()
-        t_end = list()
-        d_start = list()
-        d_end = list()
+        # Rasterline Indicator
+        r_start = []
+        r_end = []
+        # Travel Indicator
+        t_start = []
+        t_end = []
+        # Direction Indicator
+        d_start = []
+        d_end = []
         factor = 3
         bidirectional = self.operation.bidirectional
-        dpi = self.operation.dpi
-        if dpi <= 1:
-            dpi = 1
+        dpi = max(1, self.operation.dpi)
 
-        if direction == 0 or direction == 1 or direction == 4:
-            # Direction Line
+        def dir_arrow_up_down(up: bool):
             d_start.append((w * 0.05, h * 0.05))
             d_end.append((w * 0.05, h * 0.95))
-            if direction == 1:
+            # Direction Arrow
+            d_start.append((w * 0.05, (h * 0.95) if up else (h * 0.05)))
+            d_end.append((w * 0.05 + 4, (h * 0.95 - 4) if up else (h * 0.05 + 4)))
+            d_start.append((w * 0.05, (h * 0.95) if up else (h * 0.05)))
+            d_end.append((w * 0.05 - 4, (h * 0.95 - 4) if up else (h * 0.05 + 4)))
+
+        def dir_arrow_left_right(left: bool):
+            # Direction Line
+            d_start.append((w * 0.05, h * 0.05))
+            d_end.append((w * 0.95, h * 0.05))
+            # Direction Arrow
+            d_start.append(((w * 0.95) if left else (w * 0.05), h * 0.05))
+            d_end.append(((w * 0.95 - 4) if left else (w * 0.05 + 4), h * 0.05 - 4))
+            d_start.append(((w * 0.95) if left else (w * 0.05), h * 0.05))
+            d_end.append(((w * 0.95 - 4) if left else (w * 0.05 + 4), h * 0.05 + 4))
+
+        if direction in (RASTER_T2B, RASTER_B2T, RASTER_HATCH, RASTER_GREEDY_H, RASTER_CROSSOVER): # Horizontal mode, raster will be built from top to bottom (or vice versa)
+            # Direction Line
+            if direction in (RASTER_B2T, ):
                 # Bottom to Top
-                if self.operation.raster_preference_bottom > 0:
-                    # if bottom preference is left
-                    right = False
-                # Direction Arrow
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 - 4, h * 0.05 + 4))
+                dir_arrow_up_down(False)
                 start = int(h * 0.9)
                 end = int(h * 0.1)
                 step = -1000 / dpi * factor
             else:
                 # Top to Bottom or Crosshatch
-                if self.operation.raster_preference_top > 0:
-                    # if top preference is left
-                    right = False
-                d_start.append((w * 0.05, h * 0.95))
-                d_end.append((w * 0.05 + 4, h * 0.95 - 4))
-                d_start.append((w * 0.05, h * 0.95))
-                d_end.append((w * 0.05 - 4, h * 0.95 - 4))
+                dir_arrow_up_down(True)
                 start = int(h * 0.1)
                 end = int(h * 0.9)
                 step = 1000 / dpi * factor
+            if step == 0:
+                step = abs(start-end) / 10
+            while abs(step) > abs(start - end):
+                step /= 2
+            while abs(start - end) / abs(step) > 100:
+                step *= 2
+
             pos = start
             while min(start, end) <= pos <= max(start, end):
-                # Primary Line Horizontal Raster
+                # Primary Line Horizontal Raster, no need to be fancy and be directional here...
                 r_start.append((w * 0.1, pos))
                 r_end.append((w * 0.9, pos))
 
-                # Arrow Segment
+                # Travel segment
                 if last is not None:
-                    # Travel Lines
+                    # Travel Lines, from end of last line to next
                     t_start.append((last[0], last[1]))
-                    t_end.append((w * 0.1 if right else w * 0.9, pos))
+                    t_end.append((w * 0.1 if from_left else w * 0.9, pos))
 
-                r_start.append((w * 0.9 if right else w * 0.1, pos))
-                r_end.append((w * 0.9 - 2 if right else w * 0.1 + 2, pos - 2))
+                # Arrow segment
+                r_start.append((w * 0.9 if from_left else w * 0.1, pos))
+                r_end.append((w * 0.9 - 2 if from_left else w * 0.1 + 2, pos - 2))
                 last = r_start[-1]
                 if bidirectional:
-                    right = not right
+                    from_left = not from_left
                 pos += step
-        if direction == 2 or direction == 3 or direction == 4:
-            # Direction Line
-            d_start.append((w * 0.05, h * 0.05))
-            d_end.append((w * 0.95, h * 0.05))
-            if direction == 2:
+        if direction in (RASTER_R2L, RASTER_L2R, RASTER_HATCH, RASTER_GREEDY_V, RASTER_CROSSOVER): # Vertical mode, raster will be built from left to right (or vice versa)
+            if direction in (RASTER_R2L, ):
                 # Right to Left
-                if self.operation.raster_preference_right > 0:
-                    # if right preference is bottom
-                    top = False
-                # Direction Arrow
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
-                d_start.append((w * 0.05, h * 0.05))
-                d_end.append((w * 0.05 + 4, h * 0.05 - 4))
+                dir_arrow_left_right(False)
                 start = int(w * 0.9)
                 end = int(w * 0.1)
                 step = -1000 / dpi * factor
             else:
                 # Left to Right or Crosshatch
-                if self.operation.raster_preference_left > 0:
-                    # if left preference is bottom
-                    top = False
-                d_start.append((w * 0.95, h * 0.05))
-                d_end.append((w * 0.95 - 4, h * 0.05 + 4))
-                d_start.append((w * 0.95, h * 0.05))
-                d_end.append((w * 0.95 - 4, h * 0.05 - 4))
+                dir_arrow_left_right(True)
                 start = int(w * 0.1)
                 end = int(w * 0.9)
                 step = 1000 / dpi * factor
+            if step == 0:
+                step = abs(start-end) / 10
+            while abs(step) > abs(start - end):
+                step /= 2
+            while abs(start - end) / abs(step) > 100:
+                step *= 2
+
             pos = start
             while min(start, end) <= pos <= max(start, end):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
                 r_end.append((pos, h * 0.9))
 
-                # Arrow Segment
+                # Travel Segment
                 if last is not None:
                     # Travel Lines
                     t_start.append((last[0], last[1]))
-                    t_end.append((pos, h * 0.1 if top else h * 0.9))
-                r_start.append((pos, h * 0.9 if top else h * 0.1))
-                r_end.append((pos - 2, (h * 0.9) - 2 if top else (h * 0.1) + 2))
+                    t_end.append((pos, h * 0.1 if from_top else h * 0.9))
+
+                # Arrow Segment
+                r_start.append((pos, h * 0.9 if from_top else h * 0.1))
+                r_end.append((pos - 2, (h * 0.9) - 2 if from_top else (h * 0.1) + 2))
 
                 last = r_start[-1]
                 if bidirectional:
-                    top = not top
+                    from_top = not from_top
                 pos += step
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
@@ -1189,55 +1263,38 @@ class PanelStartPreference(wx.Panel):
         self.display_panel.Update()
 
     def _toggle_sliders(self):
-        if self.toggle_sliders:
-            direction = self.operation.raster_direction
-            self.slider_top.Enable(False)
-            self.slider_right.Enable(False)
-            self.slider_left.Enable(False)
-            self.slider_bottom.Enable(False)
-            if direction == 0:
-                self.slider_top.Enable(True)
-            elif direction == 1:
-                self.slider_bottom.Enable(True)
-            elif direction == 2:
-                self.slider_right.Enable(True)
-            elif direction == 3:
-                self.slider_left.Enable(True)
-            elif direction == 4:
-                self.slider_top.Enable(True)
-                self.slider_left.Enable(True)
+        direction = self.operation.raster_direction
+        prefer_min_y = self.operation.raster_preference_top
+        prefer_min_x = self.operation.raster_preference_left
 
-    def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_top != self.slider_top.GetValue() - 1:
-            self.operation.raster_preference_top = self.slider_top.GetValue() - 1
+        self.slider_pref_left.Enable(direction in (RASTER_T2B, RASTER_B2T, RASTER_GREEDY_H, RASTER_GREEDY_V))
+        self.slider_pref_top.Enable(direction in (RASTER_L2R, RASTER_R2L, RASTER_GREEDY_H, RASTER_GREEDY_V))
+        self.slider_pref_left.SetValue(0 if prefer_min_x else 1)
+        self.slider_pref_top.SetValue(0 if prefer_min_y else 1)
+
+
+    def _reload_display(self):
+        self.raster_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+
+    def on_slider_pref_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        value = self.slider_pref_left.GetValue() == 0
+        if self.operation.raster_preference_left != value:
+            self.operation.raster_preference_left = value
+            self._reload_display()
             self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_top"
+                "element_property_update", self.operation, "slider_top"
             )
 
-    def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_left != self.slider_left.GetValue() - 1:
-            self.operation.raster_preference_left = self.slider_left.GetValue() - 1
+    def on_slider_pref_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        value = self.slider_pref_top.GetValue() == 0
+        if self.operation.raster_preference_top != value:
+            self.operation.raster_preference_top = value
+            self._reload_display()
             self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_left"
+                "element_property_update", self.operation, "slider_left"
             )
-
-    def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_right != self.slider_right.GetValue() - 1:
-            self.operation.raster_preference_right = self.slider_right.GetValue() - 1
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_right"
-            )
-
-    def on_slider_bottom(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
-        if self.operation.raster_preference_bottom != self.slider_bottom.GetValue() - 1:
-            self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "slider_bottom"
-            )
-
-
 # end of class PanelStartPreference
 
 
@@ -1248,82 +1305,118 @@ class RasterSettingsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        iconsize = dip_size(self, 30, 20)
+        bmpsize = min(iconsize[0], iconsize[1]) * self.context.root.bitmap_correction_scale
 
         raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Raster:"), wx.VERTICAL)
         param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
-        param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
 
+        sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
+        param_sizer.Add(sizer_dpi, 1, wx.EXPAND, 0)
+        self.check_overrule_dpi = wxCheckBox(self, wx.ID_ANY)
+        self.check_overrule_dpi.SetToolTip(_("Overrules image dpi settings and uses this value instead"))
         self.text_dpi = TextCtrl(
             self,
             wx.ID_ANY,
             "500",
             limited=True,
-            check="float",
+            check="int",
             style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
         )
         self.text_dpi.set_error_level(1, 100000)
         OPERATION_DPI_TOOLTIP = (
-            _(
-                'In a raster engrave, the step size is the distance between raster lines in 1/1000" '
-            )
-            + _("and also the number of raster dots that get combined together.")
-            + "\n"
-            + _(
-                'Because the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, '
-            )
-            + _(
-                "and consequently you can raster with steps > 1 without leaving gaps between the lines."
-            )
-            + "\n"
-            + _(
-                "The step size before you get gaps will depend on your focus and the size of your laser dot."
-            )
-            + "\n"
-            + _(
-                "Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase "
-            )
-            + _(
-                "power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed."
-            )
-            + "\n"
-            + _(
-                "Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed"
-            )
-            + _("this can prevent your laser from stuttering.")
+            _('In a raster engrave, the step size is the distance between raster lines in 1/1000" ') +
+            _("and also the number of raster dots that get combined together.") + "\n" +
+            _('Because the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, ') +
+            _("and consequently you can raster with steps > 1 without leaving gaps between the lines.") + "\n" +
+            _("The step size before you get gaps will depend on your focus and the size of your laser dot.") + "\n"+
+            _("Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase ") +
+            _("power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.") + "\n" +
+            _("Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed") +
+            _("this can prevent your laser from stuttering.")
         )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
-        sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
+        sizer_dpi.Add(self.check_overrule_dpi, 0, wx.EXPAND, 0)
+        sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        sizer_6 = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
-        param_sizer.Add(sizer_6, 1, wx.EXPAND, 0)
+        sizer_optimize = StaticBoxSizer(self, wx.ID_ANY, _("Optimize movement:"), wx.HORIZONTAL)
+        self.check_laserdot = wxCheckBox(self, wx.ID_ANY, _("Consider laserdot") )
+        self.check_laserdot.SetToolTip(
+            _("A laser dot has a certain diameter, so for high dpi values, lines will overlap a lot.") + "\n" +
+            _("Active: don't burn pixels already overlapped") + "\n" +
+            _("Inactive: burn all pixels regardless of a possible overlap.")
+        )
+        sizer_optimize.Add(self.check_laserdot, 1, wx.EXPAND, 0)
+        param_sizer.Add(sizer_optimize, 1, wx.EXPAND, 0)
 
-        raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
+        self.sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Override black/white image:"), wx.HORIZONTAL)
+        param_sizer.Add(self.sizer_grayscale, 1, wx.EXPAND, 0)
+        self.check_grayscale = wxCheckBox(self, wx.ID_ANY, _("Use grayscale instead") )
+        self.check_grayscale.SetToolTip(
+            _("Usually a raster will be created as a grayscale picture and the burn-power of a pixel will depend on its darkness.") + "\n" +
+            _("If you uncheck this value then every non-white pixel (even very light ones) will become black and will be burned at full power.")
+        )
+        self.sizer_grayscale.Add(self.check_grayscale, 1, wx.EXPAND, 0)
 
+        sizer_overscan = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
+        param_sizer.Add(sizer_overscan, 1, wx.EXPAND, 0)
         self.text_overscan = TextCtrl(
             self,
             wx.ID_ANY,
-            "1mm",
+            "0mm",
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_overscan.SetToolTip(_("Overscan amount"))
-        sizer_6.Add(self.text_overscan, 1, wx.EXPAND, 0)
+        self.text_overscan.SetToolTip(_("Padding that will be added at the end of a scanline to allow the laser to slow down"))
+        sizer_overscan.Add(self.text_overscan, 1, wx.EXPAND, 0)
+
+        raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
 
         sizer_4 = StaticBoxSizer(self, wx.ID_ANY, _("Direction:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
+        self.raster_terms = [
+            (RASTER_T2B, "Top To Bottom"),
+            (RASTER_B2T, "Bottom To Top"),
+            (RASTER_R2L, "Right To Left"),
+            (RASTER_L2R, "Left To Right"),
+            (RASTER_HATCH, "Crosshatch"),
+            (RASTER_GREEDY_H, "Greedy horizontal"),
+            (RASTER_GREEDY_V, "Greedy vertical"),
+            (RASTER_CROSSOVER, "Crossover"),
+        ]
+        # Look for registered raster (image) preprocessors,
+        # these are routines that take one image as parameter
+        # and deliver a set of (result image, method (aka raster_direction) )
+        # that will be dealt with independently
+        # The registered datastructure is (rasterid, description, method)
+        self.raster_terms.extend(
+            (key, description)
+            for key, description, method in self.context.kernel.lookup_all(
+                "raster_preprocessor/.*"
+            )
+        )
+        # Add a couple of testcases
+        # test_methods = (
+        #     (-1, "Test: Horizontal Rectangle"),
+        #     (-2, "Test: Vertical Rectangle"),
+        #     (-3, "Test: Horizontal Snake"),
+        #     (-4, "Test: Vertical Snake"),
+        #     (-5,  "Test: Spiral"),
+        # )
+        # self.raster_terms.extend(test_methods)
 
-        self.combo_raster_direction = wx.ComboBox(
+        self.raster_methods = [ key for key, info in self.raster_terms ]
+
+        self.combo_raster_direction = wxComboBox(
             self,
             wx.ID_ANY,
-            choices=[
-                "Top To Bottom",
-                "Bottom To Top",
-                "Right To Left",
-                "Left To Right",
-                "Crosshatch",
-            ],
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         OPERATION_RASTERDIRECTION_TOOLTIP = (
@@ -1355,6 +1448,10 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.btn_instruction = wxStaticBitmap(self, wx.ID_ANY)
+        self.btn_instruction.SetBitmap(icon_letter_h.GetBitmap(resize=bmpsize))
+        self.btn_instruction.SetToolTip(_("Quick info about the available modes"))
+        sizer_4.Add(self.btn_instruction, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.radio_raster_swing = wxRadioBox(
             self,
@@ -1382,12 +1479,14 @@ class RasterSettingsPanel(wx.Panel):
         self.panel_start = PanelStartPreference(
             self, wx.ID_ANY, context=context, node=node
         )
-        raster_sizer.Add(self.panel_start, 0, wx.EXPAND, 0)
+        raster_sizer.Add(self.panel_start, 1, wx.EXPAND, 0)
 
         self.SetSizer(raster_sizer)
 
         self.Layout()
-
+        self.Bind(wx.EVT_CHECKBOX, self.on_overrule, self.check_overrule_dpi)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_grayscale, self.check_grayscale)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_laserdot, self.check_laserdot)
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
         self.text_overscan.SetActionRoutine(self.on_text_overscan)
 
@@ -1395,11 +1494,29 @@ class RasterSettingsPanel(wx.Panel):
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
         )
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing)
+        self.btn_instruction.Bind(wx.EVT_LEFT_DOWN, self.on_raster_help)
+
+    def fill_raster_combo(self):
+        unsupported = ()
+        if hasattr(self.context.device, "get_raster_instructions"):
+            instructions = self.context.device.get_raster_instructions()
+            unsupported = instructions.get("unsupported_opt", ())
+        # print (f"fill raster called: {unsupported}")
+        self.raster_methods = [ key for key, info in self.raster_terms if key not in unsupported ]
+        choices = [ info for key, info in self.raster_terms if key not in unsupported ]
+        self.combo_raster_direction.Clear()
+        self.combo_raster_direction.SetItems(choices)
+
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        if self.Shown():
+            self.fill_raster_combo()
 
     def pane_hide(self):
         self.panel_start.pane_hide()
 
     def pane_show(self):
+        self.fill_raster_combo()
         self.panel_start.pane_show()
 
     def accepts(self, node):
@@ -1414,25 +1531,85 @@ class RasterSettingsPanel(wx.Panel):
             self.Hide()
             return
         if self.operation.dpi is not None:
-            set_ctrl_value(self.text_dpi, str(self.operation.dpi))
+            dpi = int(self.operation.dpi)
+            set_ctrl_value(self.text_dpi, str(dpi))
+        if hasattr(self.operation, "use_grayscale"):
+            self.sizer_grayscale.ShowItems(True)
+
+            self.check_grayscale.SetValue(self.operation.use_grayscale)
+        else:
+            self.sizer_grayscale.ShowItems(False)
+        if hasattr(self.operation, "overrule_dpi"):
+            self.check_overrule_dpi.Show(True)
+            overrule = self.operation.overrule_dpi
+            if overrule is None:
+                overrule = False
+            self.check_overrule_dpi.SetValue(overrule)
+            self.text_dpi.Enable(overrule)
+        else:
+            self.check_overrule_dpi.Show(False)
+            self.text_dpi.Enable(True)
         if self.operation.overscan is not None:
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
         if self.operation.raster_direction is not None:
-            self.combo_raster_direction.SetSelection(self.operation.raster_direction)
+            try:
+                idx = self.raster_methods.index(self.operation.raster_direction)
+            except ValueError:
+                idx = 0
+            self.combo_raster_direction.SetSelection(idx)
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
+        self.check_laserdot.SetValue(self.operation.consider_laserspot)
+        # Hide it for now...
+        # self.check_laserdot.Show(False)
+        self.allow_controls_according_to_optimization()
         self.Show()
+
+    def allow_controls_according_to_optimization(self):
+        direction = self.operation.raster_direction
+        overscan_okay = direction not in (RASTER_GREEDY_H, RASTER_GREEDY_V)
+        swing_okay = direction in (RASTER_B2T, RASTER_T2B, RASTER_R2L, RASTER_L2R, RASTER_HATCH)
+        self.text_overscan.Enable(overscan_okay)
+        self.radio_raster_swing.Enable(swing_okay)
+        if not swing_okay:
+            self.radio_raster_swing.SetSelection(True)
+
+    def on_overrule(self, event):
+        if self.operation is None or not hasattr(self.operation, "overrule_dpi"):
+            return
+        b = self.check_overrule_dpi.GetValue()
+        self.text_dpi.Enable(b)
+        if self.operation.overrule_dpi != b:
+            self.operation.overrule_dpi = b
+            self.context.signal(
+                "element_property_reload", self.operation, "text_dpi"
+            )
+            self.context.signal("warn_state_update")
 
     def on_text_dpi(self):
         try:
             value = int(self.text_dpi.GetValue())
-            if self.operation.dpi != value:
-                self.operation.dpi = value
-                self.context.signal(
-                    "element_property_reload", self.operation, "text_dpi"
-                )
-        except ValueError:
-            pass
+        except ValueError as e:
+            # print (e)
+            return
+        if self.operation.dpi != value:
+            self.operation.dpi = value
+            self.context.signal(
+                "element_property_reload", self.operation, "text_dpi"
+            )
+            self.context.signal("warn_state_update")
+
+    def on_check_grayscale(self, event):
+        value = self.check_grayscale.GetValue()
+        if self.operation.use_grayscale != value:
+            self.operation.use_grayscale = value
+            self.context.elements.signal("element_property_reload", self.operation)
+
+    def on_check_laserdot(self, event):
+        value = self.check_laserdot.GetValue()
+        if self.operation.consider_laserspot != value:
+            self.operation.consider_laserspot = value
+            self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_overscan(self):
         try:
@@ -1455,11 +1632,15 @@ class RasterSettingsPanel(wx.Panel):
             )
 
     def on_combo_raster_direction(self, event=None):
-        if (
-            self.operation.raster_direction
-            != self.combo_raster_direction.GetSelection()
-        ):
-            self.operation.raster_direction = self.combo_raster_direction.GetSelection()
+        idx = self.combo_raster_direction.GetSelection()
+        if idx < 0:
+            return
+        value = self.raster_methods[idx]
+
+        if (self.operation.raster_direction != value ):
+            self.operation.raster_direction = value
+            validate_raster_settings(self.operation)
+
             self.context.raster_direction = self.operation.raster_direction
             self.context.elements.signal(
                 "element_property_reload", self.operation, "combo_raster"
@@ -1473,6 +1654,43 @@ class RasterSettingsPanel(wx.Panel):
         )
         event.Skip()
 
+    def on_raster_help(self, event):
+        unsupported = ()
+        if hasattr(self.context.device, "get_raster_instructions"):
+            instructions = self.context.device.get_raster_instructions()
+            unsupported = instructions.get("unsupported_opt", ())
+
+        inform = {
+            RASTER_T2B: _("- Top To Bottom: follows the picture line by line starting at the top"),
+            RASTER_B2T: _("- Bottom To Top: follows the picture line by line starting at the bottom"),
+            RASTER_R2L: _("- Right To Left: follows the picture column by column starting at the right side"),
+            RASTER_L2R: _("- Left To Right: follows the picture column by column starting at the left side"),
+            RASTER_HATCH: _("- Crosshatch: Makes two passes: one horizontally then another one vertically"),
+            RASTER_GREEDY_H:
+                _("- Greedy horizontal: Instead of following a complete line,") + "\n" +
+                _("  this will choose the nearest to be drawn segment,") + "\n" +
+                _("  lasering these segments with vertical lines.") + "\n" +
+                _("  Usually much faster on an image with a lot of white pixels."),
+            RASTER_GREEDY_V:
+                _("- Greedy vertical: Instead of following a complete line,") + "\n" +
+                _("  this will choose the nearest to be drawn segment,") + "\n" +
+                _("  lasering these segments with vertical lines.") + "\n" +
+                _("  Usually much faster on an image with a lot of white pixels."),
+            RASTER_CROSSOVER:
+                _("- Crossover: Sweeping over the image drawing first all lines") + "\n" +
+                _("  with a majority of black pixels and then drawing the columns") + "\n" +
+                _("  where we have a majority.") + "\n" +
+                _("  Usually much faster on an image with a lot of white pixels."),
+        }
+        lines = [_("You can choose from the following modes to laser an image:")]
+        lines.extend( [info for key, info in inform.items() if key not in unsupported] )
+
+        message = "\n".join(lines)
+        wx.MessageBox(
+            caption=_("Help"),
+            message=message,
+            style=wx.OK|wx.ICON_INFORMATION
+        )
 
 # end of class RasterSettingsPanel
 
@@ -1583,7 +1801,7 @@ class ParameterPanel(ScrolledPanel):
         self.raster_panel = RasterSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
-        param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
+        param_sizer.Add(self.raster_panel, 1, wx.EXPAND, 0)
         self.panels.append(self.raster_panel)
 
         self.dwell_panel = DwellSettingsPanel(

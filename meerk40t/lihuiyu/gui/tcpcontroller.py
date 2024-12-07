@@ -6,7 +6,13 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -19,7 +25,7 @@ class TCPController(MWindow):
 
         self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_status = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_ip_host = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="empty"
         )
@@ -32,8 +38,8 @@ class TCPController(MWindow):
         self.text_port.lower_limit_err = 0
         self.text_port.upper_limit_err = 65535
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
-        self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_buffer_length = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_buffer_max = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -66,8 +72,6 @@ class TCPController(MWindow):
         self.SetIcon(_icon)
         # For whatever reason the windows backgroundcolor is a dark grey,
         # not sure why but, we just set it back to standard value
-        col = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        self.SetBackgroundColour(col)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
@@ -85,7 +89,7 @@ class TCPController(MWindow):
         )
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         self.text_status.SetToolTip(_("Connection status"))
@@ -119,11 +123,11 @@ class TCPController(MWindow):
         info_right = StaticBoxSizer(
             self, wx.ID_ANY, label=_("Connection"), orientation=wx.HORIZONTAL
         )
-        label_8 = wx.StaticText(self, wx.ID_ANY, _("Address"))
+        label_8 = wxStaticText(self, wx.ID_ANY, _("Address"))
         info_right.Add(label_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.Add(self.text_ip_host, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.AddSpacer(20)
-        label_9 = wx.StaticText(self, wx.ID_ANY, _("Port"))
+        label_9 = wxStaticText(self, wx.ID_ANY, _("Port"))
         info_right.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.Add(self.text_port, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -136,7 +140,7 @@ class TCPController(MWindow):
         )
         buffer_sizer.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
 
-        label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))
+        label_12 = wxStaticText(self, wx.ID_ANY, _("Buffer Size: "))
         total_write_buffer = wx.BoxSizer(wx.HORIZONTAL)
         left_buffer = wx.BoxSizer(wx.HORIZONTAL)
         right_buffer = wx.BoxSizer(wx.HORIZONTAL)
@@ -144,7 +148,7 @@ class TCPController(MWindow):
         left_buffer.Add(self.text_buffer_length, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         total_write_buffer.Add(left_buffer, 1, wx.EXPAND, 0)
 
-        label_13 = wx.StaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
+        label_13 = wxStaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
         right_buffer.Add(label_13, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         right_buffer.Add(self.text_buffer_max, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         total_write_buffer.Add(right_buffer, 1, wx.EXPAND, 0)
@@ -175,12 +179,12 @@ class TCPController(MWindow):
     def on_tcp_status(self, origin, state):
         self.text_status.SetValue(str(state))
         self.state = state
-        if state == "uninitialized" or state == "disconnected":
+        if state in ["uninitialized", "disconnected"]:
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -189,7 +193,7 @@ class TCPController(MWindow):
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()

@@ -19,7 +19,7 @@ from meerk40t.core.cutcode.waitcut import WaitCut
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, Length
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
 from ..tools.geomstr import Geomstr
@@ -50,11 +50,15 @@ class GRBLDriver(Parameters):
             self.settings, single=True, ppi=False, shift=False, group=True
         )
         self.queue = []
+        self._queue_current = 0
+        self._queue_total = 0
         self.plot_data = None
 
         self.on_value = 0
         self.power_dirty = True
         self.speed_dirty = True
+        # Zaxis should not be used by default, so we set the dirty flag to False
+        self.zaxis_dirty = False
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
@@ -77,6 +81,7 @@ class GRBLDriver(Parameters):
         self.elements = None
         self.power_scale = 1.0
         self.speed_scale = 1.0
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -86,6 +91,13 @@ class GRBLDriver(Parameters):
             self.out_real(e)
         else:
             self.out_pipe(e)
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     @signal_listener("line_end")
     def _set_line_end(self, origin=None, *args):
@@ -138,6 +150,8 @@ class GRBLDriver(Parameters):
             self.power_dirty = True
         if key == "speed":
             self.speed_dirty = True
+        if key == "zaxis":
+            self.zaxis_dirty = True
         self.settings[key] = value
 
     def status(self):
@@ -163,10 +177,11 @@ class GRBLDriver(Parameters):
         x, y = self.service.view.position(x, y)
         self._move(x, y)
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def move_rel(self, dx, dy):
         """
@@ -193,10 +208,11 @@ class GRBLDriver(Parameters):
         self._move(unit_dx, unit_dy)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def dwell(self, time_in_ms):
         """
@@ -388,7 +404,11 @@ class GRBLDriver(Parameters):
         else:
             self(f"M4{self.line_end}")
         first = True
+        total = len(self.queue)
+        current = 0
         for q in self.queue:
+            current += 1
+            self._set_queue_status(current, total)
             while self.hold_work(0):
                 if self.service.kernel.is_shutdown:
                     return
@@ -507,6 +527,7 @@ class GRBLDriver(Parameters):
                     self.on_value = on
                     self._move(x, y)
         self.queue.clear()
+        self._set_queue_status(0, 0)
 
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
@@ -532,7 +553,7 @@ class GRBLDriver(Parameters):
 
     def physical_home(self):
         """
-        Home the laser physically (ie run into endstops).
+        Home the laser physically (i.e. run into endstops).
 
         @return:
         """
@@ -544,14 +565,15 @@ class GRBLDriver(Parameters):
         else:
             self(f"G28{self.line_end}")
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def home(self):
         """
-        Home the laser (ie goto defined origin)
+        Home the laser (i.e. goto defined origin)
 
         @return:
         """
@@ -656,7 +678,7 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
-        if signal=="coolant":
+        if signal == "coolant":
             onoff = args[0]
             coolid = None
             if hasattr(self.service, "coolant"):
@@ -686,7 +708,10 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        self(f"!{self.line_end}", real=True)
+        # self(f"!{self.line_end}", real=True)
+        self(chr(0x21), real=True)  # Hex 21 = !
+        # Let's make sure we reestablish power...
+        self.power_dirty = True
         self.service.signal("pause")
 
     def resume(self, *args):
@@ -699,12 +724,14 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        self(f"~{self.line_end}", real=True)
+        # self(f"~{self.line_end}", real=True)
+        self(chr(0x7E), real=True)  # hex 7e = ~
         self.service.signal("pause")
 
     def clear_states(self):
         self.power_dirty = True
         self.speed_dirty = True
+        self.zaxis_dirty = True
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
@@ -729,6 +756,7 @@ class GRBLDriver(Parameters):
 
         self.power_dirty = True
         self.speed_dirty = True
+        self.zaxis_dirty = True
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
@@ -792,6 +820,16 @@ class GRBLDriver(Parameters):
         y /= self.unit_scale
         line.append(f"X{x:.3f}")
         line.append(f"Y{y:.3f}")
+        if self.zaxis_dirty:
+            self.zaxis_dirty = False
+            if self.zaxis is not None:
+                try:
+                    z = float(Length(self.zaxis) / self.service.view.native_scale_x)
+                    z /= self.unit_scale
+                    line.append(f"Z{z:.3f}")
+                except ValueError:
+                    pass
+
         if self.power_dirty:
             if self.power is not None:
                 line.append(f"S{self.power * self.on_value:.1f}")
@@ -801,10 +839,11 @@ class GRBLDriver(Parameters):
             self.speed_dirty = False
         self(" ".join(line) + self.line_end)
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _clean_motion(self):
         if self.absolute_dirty:

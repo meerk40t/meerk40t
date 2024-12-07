@@ -24,7 +24,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
-from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.gui.wxutils import get_matrix_scale
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
@@ -229,7 +229,8 @@ class Scene(Module, Job):
         self.clip = wx.Rect(0, 0, 0, 0)
 
         self.background_brush = wx.Brush(self.colors.color_background)
-        self.has_background = False
+        self._hasbackgrounds = {}
+        self._backgrounds = {}
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
 
@@ -246,6 +247,32 @@ class Scene(Module, Job):
         # Snap information
         self.snap_display_points = None
         self.snap_attraction_points = None
+
+    @property
+    def has_background(self):
+        devlabel = self.context.device.label
+        if devlabel not in self._hasbackgrounds:
+            self._hasbackgrounds[devlabel] = False
+        return self._hasbackgrounds[devlabel]
+
+    @has_background.setter
+    def has_background(self, value):
+        devlabel = self.context.device.label
+        self._hasbackgrounds[devlabel] = value
+        if not value:
+            self.active_background = None
+
+    @property
+    def active_background(self):
+        devlabel = self.context.device.label
+        if devlabel not in self._hasbackgrounds:
+            self._backgrounds[devlabel] = None
+        return self._backgrounds[devlabel]
+
+    @active_background.setter
+    def active_background(self, value):
+        devlabel = self.context.device.label
+        self._backgrounds[devlabel] = value
 
     def module_open(self, *args, **kwargs):
         context = self.context
@@ -832,7 +859,7 @@ class Scene(Module, Job):
 
                     sdx = new_x_space - space_pos[0]
                     if current_matrix is not None and not current_matrix.is_identity():
-                        sdx *= matrix_scale(current_matrix)
+                        sdx *= get_matrix_scale(current_matrix)
                     snap_x = window_pos[0] + sdx
                     sdy = new_y_space - space_pos[1]
                     if current_matrix is not None and not current_matrix.is_identity():
@@ -1010,7 +1037,7 @@ class Scene(Module, Job):
             self._calculate_attraction_points()
 
         matrix = self.widget_root.scene_widget.matrix
-        length = self.context.show_attract_len / matrix_scale(matrix)
+        length = self.context.show_attract_len / get_matrix_scale(matrix)
 
         if snap_points and self.snap_attraction_points:
             self._calculate_snap_points(my_x, my_y, length)
@@ -1040,7 +1067,7 @@ class Scene(Module, Job):
                     min_delta = delta
             if new_x is not None:
                 matrix = self.widget_root.scene_widget.matrix
-                pixel = self.context.action_attract_len / matrix_scale(matrix)
+                pixel = self.context.action_attract_len / get_matrix_scale(matrix)
                 if abs(new_x - my_x) <= pixel and abs(new_y - my_y) <= pixel:
                     # If the distance is small enough: snap.
                     res_x = new_x

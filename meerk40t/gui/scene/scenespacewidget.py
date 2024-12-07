@@ -322,7 +322,7 @@ class SceneSpaceWidget(Widget):
 class SceneAnimateMatrix:
     def __init__(self, widget):
         self.widget = widget
-        self.tick_max = 10
+        self.tick_max = 5
         self.tick_index = 0
         self._from_matrix = None
         self._to_matrix = None

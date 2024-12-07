@@ -1140,7 +1140,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:260
 msgid ""
-"- provided no elements are assigned to it yet (ie works only for an empty"
+"- provided no elements are assigned to it yet (i.e. works only for an empty"
 " op)!"
 msgstr ""
 "- desde que nenhum elemento ainda esteja atribuído a ele (ou seja, funciona apenas para uma operação vazia)!"
@@ -2027,7 +2027,6 @@ msgid ""
 "then)"
 msgstr ""
 "Por favor, forneça pelo menos um valor adicional (que atuará como raio "
-
 "então)"
 
 #: meerk40t/core/elements.py:3794
@@ -2657,7 +2656,7 @@ msgid "Note Set."
 msgstr "Nota Definida."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr "Método a ser usado (um dos rápidos, casco, complexo, segmento, círculo)"
 
 #: meerk40t/core/elements.py:6291
@@ -2665,7 +2664,7 @@ msgid "trace the given elements"
 msgstr "traçar os elementos fornecidos"
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr "Método inválido, por favor use um dos rápidos, casco, complexo, segmento, círculo."
 
 #: meerk40t/core/elements.py:6312
@@ -2755,7 +2754,7 @@ msgid "Convert to Dots"
 msgstr "Converter para Pontos"
 
 #: meerk40t/core/elements.py:6573 meerk40t/core/elements.py:6582
-msgid "RasterWizard"
+msgid "Raster-Wizard"
 msgstr "Assistente de Raster"
 
 #: meerk40t/core/elements.py:6574
@@ -2805,7 +2804,7 @@ msgid "Passes {passvalue}"
 msgstr "Passagens {passvalue}"
 
 #: meerk40t/core/elements.py:6683
-msgid "Burn Direction"
+msgid "Burn direction"
 msgstr "Direção de Queima"
 
 #: meerk40t/core/elements.py:6712
@@ -3003,7 +3002,7 @@ msgstr "Anexar Gravação"
 msgid "Append Cut"
 msgstr "Anexar Corte"
 #: meerk40t/core/elements.py:7202
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr "Anexar Hachura"
 
 #: meerk40t/core/elements.py:7207
@@ -4291,7 +4290,7 @@ msgid ""
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but\n"
+"who sincerely hoped his contributions would be but\n"
 "the barest trickle that becomes a raging river."
 msgstr ""
 "MeerK40t é um projeto de código aberto gratuito licenciado pelo MIT\n"
@@ -4661,7 +4660,7 @@ msgstr "Rearranjar todos os elementos selecionados"
 
 #: meerk40t/gui/alignment.py:1258
 msgid ""
-"Set if all columns need to have the same size (ie maximum width over all "
+"Set if all columns need to have the same size (i.e. maximum width over all "
 "columns)"
 msgstr ""
 "Defina se todas as colunas precisam ter o mesmo tamanho (ou seja, largura "
@@ -4669,7 +4668,7 @@ msgstr ""
 
 #: meerk40t/gui/alignment.py:1263
 msgid ""
-"Set if all rows need to have the same size (ie maximum height over all "
+"Set if all rows need to have the same size (i.e. maximum height over all "
 "row)"
 msgstr ""
 "Defina se todas as linhas precisam ter o mesmo tamanho (ou seja, altura "
@@ -6407,7 +6406,7 @@ msgstr "Estimativa de Tempo: Tempo de Gravação a Laser"
 msgid "Time Estimate: Traveling Time"
 msgstr "Estimativa de Tempo: Tempo em Movimento"
 
-msgid "Time Estimate: Extra Time (ie to swing around)"
+msgid "Time Estimate: Extra Time (i.e. to swing around)"
 msgstr "Estimativa de Tempo: Tempo Extra (por exemplo, para girar ao redor)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
@@ -8311,8 +8310,8 @@ msgid "Set: Put the image under a file-node created for it."
 msgstr "Definir: Colocar a imagem sob um nó de arquivo criado para ela."
 
 #: meerk40t/image/imagetools.py:36
-msgid "Unset: Use the image as if it were 1000 pixels per inch."
-msgstr "Não definido: Usar a imagem como se fosse 1000 pixels por polegada."
+msgid "Unset: Use the image as if it were 96 pixels per inch."
+msgstr "Não definido: Usar a imagem como se fosse 96 pixels por polegada."
 
 #: meerk40t/image/imagetools.py:37
 msgid ""
@@ -10208,20 +10207,16 @@ msgid "Warn level for maximum {unit}"
 msgstr "Nível de aviso para o máximo {unit}"
 
 #: meerk40t/device/gui/warningpanel.py:135
-msgid "Meerk40t can warn you if it believes the values for"
-msgstr "Meerk40t pode avisar se acredita que os valores para"
-
-#: meerk40t/device/gui/warningpanel.py:137
-msgid "power and speed are too ambitious for your machine."
-msgstr "potência e velocidade são muito ambiciosas para a sua máquina."
-
-#: meerk40t/device/gui/warningpanel.py:139
-msgid "It will display a warning indicator:"
-msgstr "Isso exibirá um indicador de aviso:"
-
-#: meerk40t/device/gui/warningpanel.py:142
-msgid "in the label of the associated operation-node"
-msgstr "no rótulo do nó de operação associado"
+msgid ""
+"Meerk40t can warn you if it believes the values for\n"
+"power and speed are too ambitious for your machine.\n"
+"It will display a warning indicator: '❌'\n"
+"in the label of the associated operation-node"
+msgstr ""
+"Meerk40t pode avisar se acredita que os valores para\n"
+"potência e velocidade são muito ambiciosas para a sua máquina.\n"
+"Isso exibirá um indicador de aviso: '❌'\n"
+"no rótulo do nó de operação associado"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:19
 msgid "GRBL-Configuration"
@@ -10251,7 +10246,7 @@ msgid "Successfully queried laser-data!"
 msgstr "Dados do laser consultados com sucesso!"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:48
-msgid "Global Settings"
+msgid "Global operation settings"
 msgstr "Configurações Globais"
 
 #: meerk40t/grbl/gui/grblserialcontroller.py:99
@@ -11937,7 +11932,7 @@ msgid "Board Setup"
 msgstr "Configuración de la placa"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:488
-msgid "Select the board to use. This has an effects the speedcodes used."
+msgid "Select the board to use. This affects the speedcodes used."
 msgstr "Seleccione la placa a utilizar. Esto afecta los códigos de velocidad utilizados."
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:498
@@ -15447,10 +15442,10 @@ msgstr "Clic izquierdo para ir a la posición guardada\nClic derecho para guarda
 msgid "Select all elements of same type"
 msgstr "Seleccionar todos los elementos del mismo tipo"
 
-msgid "Speed for Raster-Operation"
+msgid "Speed for Raster-operation"
 msgstr "Velocidad para la operación de trama"
 
-msgid "Speed for Vector-Operation"
+msgid "Speed for Vector-operation"
 msgstr "Velocidad para la operación de vector"
 
 msgid "Simplify group"
@@ -16049,6 +16044,7 @@ msgstr "Con qué frecuencia debería MeerK40t buscar nuevas versiones"
 
 msgid "Button repeat-interval"
 msgstr "Intervalo de repetición del botón"
+
 msgid ""
 "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
 "the movement action will be repeated. This value establishes\n"
@@ -16888,7 +16884,7 @@ msgid "Increase Wordlist-Reference"
 msgstr "Aumentar la referencia de la lista de palabras"
 
 #: ./meerk40t\core\elements\element_treeops.py:2237
-msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr "Ajusta el valor de referencia para una lista de palabras, es decir, {name} a {name#+1}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2258
@@ -16896,7 +16892,7 @@ msgid "Decrease Wordlist-Reference"
 msgstr "Disminuir la referencia de la lista de palabras"
 
 #: ./meerk40t\core\elements\element_treeops.py:2263
-msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr "Ajusta el valor de referencia para una lista de palabras, es decir, {name#+3} a {name#+2}"
 
 #: ./meerk40t\core\elements\element_treeops.py:2528
@@ -16904,7 +16900,7 @@ msgid "Create placement"
 msgstr "Crear colocación"
 
 #: ./meerk40t\core\elements\element_treeops.py:2556
-msgid "Toggle Magnet-Lines"
+msgid "Toggle magnet-lines"
 msgstr "Alternar líneas magnéticas"
 
 #: ./meerk40t\core\elements\element_treeops.py:2557
@@ -17477,7 +17473,7 @@ msgstr "Agrupar objetos de trama"
 #: ./meerk40t\core\planner.py:58
 msgid ""
 "Separate non-overlapping raster objects.\n"
-"Active: this will raster close (ie overlapping) objects as one,\n"
+"Active: this will raster close (i.e. overlapping) objects as one,\n"
 "but will separately process objects lying apart from each other.\n"
 "Inactive: all objects will be lasered as one single unit."
 msgstr ""

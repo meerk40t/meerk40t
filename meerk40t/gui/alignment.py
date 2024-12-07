@@ -26,6 +26,8 @@ from ..gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
 )
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
@@ -39,18 +41,19 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.context.themes.set_window_colors(self)
+        self.lbl_info_main = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -186,6 +189,7 @@ class AlignmentPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("alignment")
         self.scene = scene
         # Amount of currently selected
@@ -256,7 +260,7 @@ class AlignmentPanel(wx.Panel):
         self.rbox_treatment.SetSelection(0)
         self.btn_align = wxButton(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
@@ -390,6 +394,7 @@ class DistributionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("distribute")
         self.scene = scene
         # Amount of currently selected
@@ -501,7 +506,7 @@ class DistributionPanel(wx.Panel):
 
         self.btn_dist = wxButton(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_check = StaticBoxSizer(
@@ -535,10 +540,10 @@ class DistributionPanel(wx.Panel):
         self.Layout()
 
         self.btn_dist.Bind(wx.EVT_BUTTON, self.on_button_dist)
-        self.rbox_dist_x.Bind(wx.EVT_RADIOBOX, self.validate_data)
-        self.rbox_dist_y.Bind(wx.EVT_RADIOBOX, self.validate_data)
-        self.rbox_sort.Bind(wx.EVT_RADIOBOX, self.validate_data)
-        self.rbox_treatment.Bind(wx.EVT_RADIOBOX, self.validate_data)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_x)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_y)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_sort)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
         self.context.setting(int, "distribute_x", 0)
         self.context.setting(int, "distribute_y", 0)
         self.context.setting(int, "distribute_treatment", 0)
@@ -1096,6 +1101,7 @@ class ArrangementPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("arrangement")
         self.scene = scene
         # Amount of currently selected
@@ -1176,7 +1182,7 @@ class ArrangementPanel(wx.Panel):
 
         self.btn_arrange = wxButton(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
@@ -1203,12 +1209,12 @@ class ArrangementPanel(wx.Panel):
 
         sizer_gaps_x = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_x.Add(
-            wx.StaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
+            wxStaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_x.Add(self.txt_gap_x, 1, wx.EXPAND, 0)
         sizer_gaps_y = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_y.Add(
-            wx.StaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
+            wxStaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_y.Add(self.txt_gap_y, 1, wx.EXPAND, 0)
         sizer_gaps_xy = StaticBoxSizer(self, wx.ID_ANY, _("Gaps:"), wx.VERTICAL)
@@ -1238,12 +1244,12 @@ class ArrangementPanel(wx.Panel):
         # self.rbox_align_y.SetToolTip(_(""))
         self.check_same_x.SetToolTip(
             _(
-                "Set if all columns need to have the same size (ie maximum width over all columns)"
+                "Set if all columns need to have the same size (i.e. maximum width over all columns)"
             )
         )
         self.check_same_y.SetToolTip(
             _(
-                "Set if all rows need to have the same size (ie maximum height over all row)"
+                "Set if all rows need to have the same size (i.e. maximum height over all row)"
             )
         )
         # self.rbox_relation.SetToolTip(_(""))
@@ -1551,6 +1557,12 @@ class Alignment(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.scene = getattr(self.context.root, "mainscene", None)
         self.panel_align = AlignmentPanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene

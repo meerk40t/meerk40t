@@ -8,6 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.gui.wxutils import get_gc_scale
 
 _ = wx.GetTranslation
 
@@ -29,8 +30,8 @@ class RectTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            matrix = gc.GetTransform().Get()
-            pixel = 1.0 / matrix[0]
+            mat_fact = get_gc_scale(gc)
+            pixel = 1.0 / mat_fact
             if self.creation_mode == 1:
                 # From center (p1 center, p2 one corner)
                 p_x = self.p1.real - (self.p2.real - self.p1.real)
@@ -86,6 +87,15 @@ class RectTool(ToolWidget):
             )
             s += _(" (Press Alt-Key to draw from center)")
             self.scene.context.signal("statusmsg", s)
+
+    def end_tool(self, force=False):
+        self.p1 = None
+        self.p2 = None
+        self.scene.context.signal("statusmsg", "")
+        self.scene.request_refresh()
+        if force or self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context("tool none\n")
 
     def event(
         self,
@@ -150,10 +160,7 @@ class RectTool(ToolWidget):
                 dy = self.p1.imag - self.p2.imag
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     # Degenerate? Ignore!
-                    self.p1 = None
-                    self.p2 = None
-                    self.scene.request_refresh()
-                    self.scene.context.signal("statusmsg", "")
+                    self.end_tool()
                     response = RESPONSE_ABORT
                     return response
                 if self.creation_mode == 1:
@@ -184,23 +191,16 @@ class RectTool(ToolWidget):
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)
-                self.p1 = None
-                self.p2 = None
             except IndexError:
                 pass
-            self.scene.request_refresh()
-            self.scene.context.signal("statusmsg", "")
+            self.end_tool()
             response = RESPONSE_ABORT
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
             if self.scene.pane.tool_active:
-                self.scene.pane.tool_active = False
-                self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
-            self.p1 = None
-            self.p2 = None
-            self.scene.context.signal("statusmsg", "")
+            self.end_tool(force=True)
         elif update_required:
             self.scene.request_refresh()
             # Have we clicked already?

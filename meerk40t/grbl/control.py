@@ -36,7 +36,7 @@ class GRBLControl:
         root = self.root
         self._thread = root.threaded(
             self.thread_execute,
-            thread_name=f"grblcontrol-sender",
+            thread_name="grblcontrol-sender",
             daemon=True,
         )
 

@@ -12,6 +12,9 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
+    icon_air_off,
+    icon_air_on,
+    icon_ignore,
     icon_points,
     icons8_direction,
     icons8_image,
@@ -26,6 +29,9 @@ from .wxutils import (
     dip_size,
     wxButton,
     wxCheckBox,
+    wxComboBox,
+    wxStaticBitmap,
+    wxStaticText,
 )
 
 _ = wx.GetTranslation
@@ -43,7 +49,19 @@ class BasicOpPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+
+        # icons for coolant-indicator
+        isize = 20 * self.context.root.bitmap_correction_scale
+        self.cool_icons = {
+            0: icon_ignore.GetBitmap(resize=isize),
+            1: icon_air_on.GetBitmap(resize=isize, color="green"),
+            2: icon_air_off.GetBitmap(resize=isize, color="red"),
+        }
+
         # Refresh logic
+        self.visible = False
+        self.pending_ops = dict()
         self.ignore_refill = False
         self.filtered = True
         self._refill_job = Job(
@@ -58,7 +76,7 @@ class BasicOpPanel(wx.Panel):
             _("Op inherits color"),
             _("Elem inherits color"),
         ]
-        self.combo_apply_color = wx.ComboBox(
+        self.combo_apply_color = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,
@@ -101,6 +119,7 @@ class BasicOpPanel(wx.Panel):
         self.btn_config.Bind(wx.EVT_BUTTON, self.on_config)
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.op_panel = ScrolledPanel(self, wx.ID_ANY)
+        self.context.themes.set_window_colors(self.op_panel)
         self.op_panel.SetupScrolling()
         self.operation_sizer = None
         classif_sizer = StaticBoxSizer(
@@ -257,6 +276,26 @@ class BasicOpPanel(wx.Panel):
             myshow = showctrl
             return handler
 
+        def on_check_cool(node):
+            def handler(event):
+                cb = event.GetEventObject()
+                if hasattr(mynode, "coolant"):
+                    value = mynode.coolant
+                    if value is None:
+                        value = 0
+                    value += 1
+                    if value > 2:
+                        value = 0
+                    mynode.coolant = value
+                    mynode.updated()
+                    ops = [mynode]
+                    self.ignore_refill = True
+                    self.context.elements.signal("element_property_update", ops)
+                    cb.SetBitmap(self.cool_icons[mynode.coolant])
+
+            mynode = node
+            return handler
+
         def on_speed(node, tbox):
             def handler():
                 # print(f"Speed for {mynode.type}")
@@ -351,7 +390,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_direction.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -359,7 +398,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_image.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -367,7 +406,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -375,7 +414,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_laser_beam.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -383,7 +422,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icon_points.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -399,48 +438,57 @@ class BasicOpPanel(wx.Panel):
         except RuntimeError:
             return
         self.operation_sizer = StaticBoxSizer(
-            self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL
+            self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL, context=self.context,
         )
         self.op_panel.SetSizer(self.operation_sizer)
         elements = self.context.elements
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
-        check_filtered.SetToolTip(_("Suppress non-used operations"))
-        check_filtered.SetValue(self.filtered)
-        check_filtered.SetMinSize(
+        self.check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
+        self.check_filtered.SetToolTip(_("Suppress non-used operations"))
+        self.check_filtered.SetValue(self.filtered)
+        self.check_filtered.SetMinSize(
             dip_size(self, 25, -1)
         )  # 20 from button + 5 from spacer
-        check_filtered.SetMaxSize(dip_size(self, 25, -1))
-        info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
+        self.check_filtered.SetMaxSize(dip_size(self, 25, -1))
+        info_sizer.Add(self.check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="A")
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label="A")
+        self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Active"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="S")
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label="S")
+        self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
         header.SetToolTip(_("Show"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        if self.use_percent:
-            unit = " [%]"
-        else:
-            unit = ""
-        header = wx.StaticText(
+
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label="C")
+        self.context.themes.set_window_colors(header)
+        header.SetMinSize(dip_size(self, 20, -1))
+        header.SetMaxSize(dip_size(self, 20, -1))
+        header.SetToolTip(_("Coolant"))
+        info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        unit = " [%]" if self.use_percent else ""
+        header = wxStaticText(
             self.op_panel, wx.ID_ANY, label=_("Power {unit}").format(unit=unit)
         )
+        self.context.themes.set_window_colors(header)
         header.SetMaxSize(dip_size(self, 30, -1))
         header.SetMaxSize(dip_size(self, 70, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
+
+        header = wxStaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
+        self.context.themes.set_window_colors(header)
         header.SetMaxSize(dip_size(self, 30, -1))
         header.SetMaxSize(dip_size(self, 70, -1))
-
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.operation_sizer.Add(info_sizer, 0, wx.EXPAND, 0)
@@ -456,7 +504,7 @@ class BasicOpPanel(wx.Panel):
                     info = info[0] + ": " + op.display_label()
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 self.operation_sizer.Add(op_sizer, 0, wx.EXPAND, 0)
-                btn = wx.StaticBitmap(
+                btn = wxStaticBitmap(
                     self.op_panel,
                     id=wx.ID_ANY,
                     size=(BUTTONSIZE, BUTTONSIZE),
@@ -516,16 +564,37 @@ class BasicOpPanel(wx.Panel):
                 c_show.SetToolTip(
                     info + "\n" + _("Hide all contained elements on scene if not set.")
                 )
+                op_sizer.Add(c_show, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
-                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
                 if hasattr(op, "is_visible"):
                     flag = bool(op.is_visible)
                     c_show.SetValue(flag)
                 else:
                     showflag = False
                 c_show.Enable(showflag)
-                op_sizer.Add(c_show, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+                c_cool = wxStaticBitmap(self.op_panel, id=wx.ID_ANY)
+                c_cool.SetMinSize(dip_size(self, 20, -1))
+                c_cool.SetMaxSize(dip_size(self, 20, -1))
+
+                if hasattr(op, "coolant"):
+                    value = op.coolant
+                    if value is None or value > 2 or value < 0:
+                        value = 0
+                    c_cool.SetBitmap(self.cool_icons[value])
+                    c_cool.Enable(True)
+                else:
+                    c_cool.Enable(False)
+                c_cool.SetToolTip(
+                    info
+                    + "\n"
+                    + _("Set coolant to on/off or leave unchanged (default)")
+                )
+                op_sizer.Add(c_cool, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
+                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
+                c_cool.Bind(wx.EVT_LEFT_DOWN, on_check_cool(op))
 
                 t_power = TextCtrl(
                     self.op_panel,
@@ -541,10 +610,7 @@ class BasicOpPanel(wx.Panel):
                 t_power.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(t_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if hasattr(op, "power"):
-                    if op.power is not None:
-                        sval = op.power
-                    else:
-                        sval = 0
+                    sval = op.power if op.power is not None else 0
                     if self.use_percent:
                         t_power.SetValue(f"{sval / 10:.0f}")
                         unit = "%"
@@ -571,10 +637,7 @@ class BasicOpPanel(wx.Panel):
                 t_speed.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(t_speed, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if hasattr(op, "speed"):
-                    if op.speed is not None:
-                        sval = op.speed
-                    else:
-                        sval = 0
+                    sval = op.speed if op.speed is not None else 0
                     if self.use_mm_min:
                         t_speed.SetValue(f"{sval * 60:.0f}")
                         unit = "mm/min"
@@ -588,7 +651,7 @@ class BasicOpPanel(wx.Panel):
                     t_speed.Enable(False)
                 t_speed.SetActionRoutine(on_speed(op, t_speed))
 
-                header = wx.StaticText(
+                header = wxStaticText(
                     self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
                 )
                 header.SetToolTip(
@@ -611,12 +674,13 @@ class BasicOpPanel(wx.Panel):
         self.op_panel.SetupScrolling()
         self.operation_sizer.Layout()
         self.op_panel.Layout()
-        self.highlight_operations()
+        self.highlight_operations(source="fill_operations")
         self.op_panel.Thaw()
         self.op_panel.Refresh()
         # print (f"Fill operations called: {len(self.op_panel.GetChildren())}")
 
-    def highlight_operations(self):
+    def highlight_operations(self, source=None):
+        # print (f"Highlighting [{source}]")
         active_ops = []
         highlight_back = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
         highlight_fore = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
@@ -642,14 +706,29 @@ class BasicOpPanel(wx.Panel):
             ctrl.Refresh()
 
     def pane_show(self, *args):
-        pass
+        # print ("Showing")
+        self.visible = True
+        if "set_display" in self.pending_ops:
+            self.set_display()
+        if "ask_for_refill" in self.pending_ops:
+            self.ask_for_refill()
+            # Ask for refill will also highlight, so no need to check this
+        elif "highlight_operations" in self.pending_ops:
+            self.highlight_operations(source="pane_show")
+
+        self.pending_ops = dict()
 
     def pane_hide(self, *args):
-        pass
+        # print ("Hiding")
+        self.visible = False
 
     @signal_listener("element_property_update")
     @signal_listener("element_property_reload")
     def signal_handler_update(self, origin, *args, **kwargs):
+        if not self.visible:
+            self.pending_ops["ask_for_refill"] = True
+            return
+
         hadops = False
         if len(args) > 0:
             if isinstance(args[0], (list, tuple)):
@@ -675,6 +754,11 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("warn_state_update")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
+        if not self.visible:
+            # print ("Delay ask_for_refill")
+            self.pending_ops["ask_for_refill"] = True
+            return
+
         self.ask_for_refill()
 
     def ask_for_refill(self):
@@ -688,9 +772,20 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
+        if not self.visible:
+            self.pending_ops["set_display"] = True
+            self.pending_ops["ask_for_refill"] = True
+            return
+
         self.set_display()
         self.ask_for_refill()
 
     @signal_listener("emphasized")
     def signal_handler_emphasized(self, origin, *args, **kwargs):
-        self.highlight_operations()
+        if not self.IsShown():
+            # print ("Delay highlight_operations")
+            self.pending_ops["highlight_operations"] = True
+            return
+        self.context.elements.set_start_time("BasicOpPanel")
+        self.highlight_operations(source="emphasized")
+        self.context.elements.set_end_time("BasicOpPanel", message=f"vis={self.visible}")

@@ -9,7 +9,7 @@ class CutObject:
     """
 
     def __init__(
-        self, start=None, end=None, settings=None, parent=None, passes=1, color=None
+        self, start=None, end=None, settings=None, parent=None, passes=1, color=None, label=None,
     ):
         if settings is None:
             settings = dict()
@@ -44,6 +44,7 @@ class CutObject:
         self.closed = False
         self.original_op = None
         self.pass_index = -1
+        self.label = label
 
     @property
     def burns_done(self):
@@ -123,6 +124,12 @@ class CutObject:
 
     def extra(self):
         return 0
+
+    def internal_travel(self):
+        return 0
+
+    def internal_length(self):
+        return self.length()
 
     def major_axis(self):
         if abs(self._start_x - self._end_x) > abs(self._start_y - self._end_y):

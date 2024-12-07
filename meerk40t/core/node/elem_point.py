@@ -1,12 +1,12 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter
+from meerk40t.core.node.mixins import FunctionalParameter, LabelDisplay, Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PointNode(Node, FunctionalParameter):
+class PointNode(Node, FunctionalParameter, LabelDisplay, Suppressable):
     """
     PointNode is the bootstrapped node type for the 'elem point' type.
     """
@@ -26,6 +26,13 @@ class PointNode(Node, FunctionalParameter):
         self.stroke = None
         self.stroke_width = 1000.0
         super().__init__(type="elem point", **kwargs)
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
         self._formatter = "{element_type} {id} {stroke}"
         if self.x is None:
             self.x = 0
@@ -41,7 +48,7 @@ class PointNode(Node, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         return PointNode(**nd)
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         path = Geomstr()
         path.point(complex(self.x, self.y))
         path.transform(self.matrix)
@@ -77,16 +84,33 @@ class PointNode(Node, FunctionalParameter):
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            drag_node.type in ("op dots", "file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
-            # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            # then we will reverse the game, but we will take the operations color
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):

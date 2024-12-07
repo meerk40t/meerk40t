@@ -3,10 +3,12 @@ Newly Device
 """
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.units import Length
 from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class NewlyDevice(Service, Status):
@@ -105,6 +107,8 @@ class NewlyDevice(Service, Status):
         ]
         self.register_choices("newly-speedchart", choices)
 
+        self.register_choices("newly-effects", get_effect_choices(self))
+
         choices = [
             {
                 "attr": "label",
@@ -124,6 +128,7 @@ class NewlyDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
             },
@@ -135,8 +140,44 @@ class NewlyDevice(Service, Status):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": 0,
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
             },
             {
                 "attr": "home_corner",
@@ -242,6 +283,18 @@ class NewlyDevice(Service, Status):
                     "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
                 ),
                 "section": "_30_Output",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("newly", choices)
@@ -496,16 +549,38 @@ class NewlyDevice(Service, Status):
                 "type": str,
                 "style": "option",
                 "label": _("Coolant"),
-                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
-                "signals": "coolant_changed"
+                "signals": "coolant_changed",
             },
         ]
         self.register_choices("coolant", choices)
 
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
+
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
 
         self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
@@ -726,6 +801,8 @@ class NewlyDevice(Service, Status):
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     @signal_listener("home_corner")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -750,6 +827,7 @@ class NewlyDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
         self.view.transform(

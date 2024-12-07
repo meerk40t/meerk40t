@@ -54,7 +54,7 @@ def set_language(domain, localedir, language):
                 languages=[language],
                 fallback=ld is None,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError, OSError):
             continue
         el.install()
         global _gettext, _gettext_language

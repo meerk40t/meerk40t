@@ -16,6 +16,7 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -62,7 +63,7 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "subsection": "Dimensions",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -72,7 +73,17 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "subsection": "Dimensions",
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -84,7 +95,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
-                "subsection": "Scale",
+                "subsection": "_20_Scale",
             },
             {
                 "attr": "scale_y",
@@ -95,7 +106,29 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
-                "subsection": "Scale",
+                "subsection": "_20_Scale",
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "subsection": "_30_User Offset",
             },
             {
                 "attr": "flip_x",
@@ -106,7 +139,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "_10_Flip Axis",
+                "subsection": "_40_Flip Axis",
             },
             {
                 "attr": "flip_y",
@@ -117,7 +150,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "_10_Flip Axis",
+                "subsection": "_40_Flip Axis",
             },
             {
                 "attr": "swap_xy",
@@ -128,7 +161,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
-                "subsection": "_20_Axis corrections",
+                "subsection": "_50_Axis corrections",
             },
             {
                 "attr": "home_corner",
@@ -146,10 +179,25 @@ class GRBLDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
-                "subsection": "_30_" + _("Home position"),
+                "subsection": "_60_Home position",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("bed_dim", choices)
+
+        self.register_choices("grbl-effects", get_effect_choices(self))
+
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
         # This device prefers to display speed in mm/min
@@ -245,6 +293,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Address"),
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
+                "signals": "update_interface",
             },
             {
                 "attr": "port",
@@ -255,12 +304,16 @@ class GRBLDevice(Service, Status):
                 "tip": _("TCP Port of the GRBL device"),
                 "lower": 0,
                 "upper": 65535,
+                "signals": "update_interface",
             },
         ]
         if self.permit_tcp:
             self.register_choices("tcp", choices)
 
-
+        try:
+            import websocket
+        except ImportError:
+            self.permit_ws = False
         choices = [
             {
                 "attr": "address",
@@ -270,6 +323,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Address"),
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
+                "signals": "update_interface",
             },
             {
                 "attr": "port",
@@ -277,20 +331,35 @@ class GRBLDevice(Service, Status):
                 "default": 81,
                 "type": int,
                 "label": _("Port"),
-                "tip": _("TCP Port of the device"),
+                "tip": _("TCP Port of the device (usually 81)"),
+                "lower": 0,
+                "upper": 65535,
+                "signals": "update_interface",
             },
         ]
         if self.permit_ws:
             self.register_choices("ws", choices)
-
+        list_interfaces = []
+        list_display = []
+        if self.permit_serial:
+            list_interfaces.append("serial")
+            list_display.append(_("Serial"))
+        if self.permit_tcp:
+            list_interfaces.append("tcp")
+            list_display.append(_("TCP-Network"))
+        if self.permit_ws:
+            list_interfaces.append("ws")
+            list_display.append(_("WebSocket-Network"))
+        list_interfaces.append("mock")
+        list_display.append(_("Mock"))
         choices = [
             {
                 "attr": "interface",
                 "object": self,
                 "default": "serial",
                 "style": "combosmall",
-                "choices": ["serial", "tcp", "ws", "mock"],
-                "display": [_("Serial"), _("TCP-Network"), _("WebSocket-Network"), _("mock")],
+                "choices": list_interfaces,
+                "display": list_display,
                 "type": str,
                 "label": _("Interface Type"),
                 "tip": _("Select the interface type for the grbl device"),
@@ -378,7 +447,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Max vector speed"),
                 "trailer": "mm/s",
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_20_" + _("Maximum speeds"),
@@ -427,10 +496,12 @@ class GRBLDevice(Service, Status):
                 "type": str,
                 "style": "option",
                 "label": _("Coolant"),
-                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
-                "signals": "coolant_changed"
+                "signals": "coolant_changed",
             },
         ]
         self.register_choices("grbl-advanced", choices)
@@ -524,6 +595,18 @@ class GRBLDevice(Service, Status):
                 "label": _("Post Connection Delay"),
                 "tip": _(
                     "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
+                ),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "startup_commands",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "multiline",
+                "label": _("Startup commands"),
+                "tip": _(
+                    "Which commands should be sent to the device on a successful connect?"
                 ),
                 "section": "_40_Validation",
             },
@@ -815,6 +898,51 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+        @self.console_argument(
+            "index", type=int, help=_("macro to run (1-5).")
+        )
+        @self.console_command(
+            "macro",
+            help=_("Send a predefined macro to the device."),
+        )
+        def run_macro(command, channel, _, index=None, remainder=None, **kwargs):
+            for idx in range(5):
+                macrotext = self.setting(str, f"macro_{idx}", "")
+            if index is None:
+                for idx in range(5):
+                    macrotext = self.setting(str, f"macro_{idx}", "")
+                    channel(f"Content of macro {idx + 1}:")
+                    for no, line in enumerate(macrotext.splitlines()):
+                        channel (f"{no:2d}: {line}")
+                return
+            err = True
+            try:
+                macro_index = int(index) -1
+                if 0 <= macro_index <= 4:
+                    err = False
+            except ValueError:
+                pass
+            if err:
+                channel(f"Invalid macro-number '{index}', valid: 1-5")
+            if remainder is not None:
+                remainder.strip()
+            # channel(f"Remainder: {remainder}")
+            if remainder:
+                channel(f"Redefining macro {index} to:")
+                macrotext = remainder.replace("|", "\n")
+                for line in macrotext.splitlines():
+                    channel(line)
+                setattr(self, f"macro_{macro_index}", macrotext)
+                return
+
+            macrotext = self.setting(str, f"macro_{macro_index}", "")
+            # channel(f"{macro_index}: {macrotext}")
+            for line in macrotext.splitlines():
+                channel(f"> {line}")
+                if line.startswith("#"):
+                    continue
+                self.driver(f"{line}{self.driver.line_end}")
+
     @property
     def safe_label(self):
         """
@@ -890,6 +1018,8 @@ class GRBLDevice(Service, Status):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -914,6 +1044,7 @@ class GRBLDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
@@ -934,7 +1065,17 @@ class GRBLDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
+
+        # x, y = self.view.position(0, 0)
+        # print (f"Test for 0,0 gives: {x:.2f}, {y:.2f}")
+        # x, y = self.view.iposition(x, y)
+        # print (f"Reverse gives: {x:.2f}, {y:.2f}")
         self.signal("view;realized")
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_raster_instructions(self):
+        return {
+            "gantry": True,
+        }

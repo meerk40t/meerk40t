@@ -6,7 +6,7 @@ the given device type.
 """
 
 from hashlib import md5
-
+import meerk40t.constants as mkconst
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
@@ -17,6 +17,7 @@ from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class LihuiyuDevice(Service, Status):
@@ -46,7 +47,8 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Width of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
+                # _("Bed Dimensions")
+                "subsection": "_10_Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -57,7 +59,18 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
+                "subsection": "_10_Dimensions",
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_30_" + _("Laser Parameters"),
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
             },
             {
                 "attr": "user_scale_x",
@@ -69,7 +82,8 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                # _("User Scale Factor")
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
             },
             {
@@ -82,8 +96,33 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                # _("User Offset")
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                "subsection": "_30_User Offset",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -109,7 +148,7 @@ class LihuiyuDevice(Service, Status):
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
                 "tip": _(
-                    "Select the board to use. This has an effects the speedcodes used."
+                    "Select the board to use. This affects the speedcodes used."
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
@@ -165,6 +204,18 @@ class LihuiyuDevice(Service, Status):
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_50_" + _("Home position"),
             },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
+            },
         ]
         self.register_choices("bed_orientation", choices)
         choices = [
@@ -175,10 +226,12 @@ class LihuiyuDevice(Service, Status):
                 "type": str,
                 "style": "option",
                 "label": _("Coolant"),
-                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
-                "signals": "coolant_changed"
+                "signals": "coolant_changed",
             },
         ]
         self.register_choices("coolant", choices)
@@ -292,7 +345,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Max vector speed"),
                 "trailer": "mm/s",
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_00_" + _("General Options"),
@@ -312,8 +365,23 @@ class LihuiyuDevice(Service, Status):
                 "section": "_00_" + _("General Options"),
                 "subsection": "_10_",
             },
+            {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _("Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)") + "\n" +
+                    _("Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)")
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_20_",
+            },
         ]
         self.register_choices("lhy-general", choices)
+
+        self.register_choices("lhy-effects", get_effect_choices(self))
 
         choices = [
             {
@@ -941,8 +1009,16 @@ class LihuiyuDevice(Service, Status):
                         )
                     )
                 except KeyError:
-                    channel(_("Intepreter cannot be attached to any device."))
+                    channel(_("Interpreter cannot be attached to any device."))
                 return
+
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V),  # Greedy loses registration way too often to be reliable
+            "gantry" : True,
+            "legacy" : self.legacy_raster,
+        }
 
     @property
     def safe_label(self):
@@ -972,6 +1048,8 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("home_corner")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -1005,6 +1083,7 @@ class LihuiyuDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):

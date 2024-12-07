@@ -3,14 +3,28 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox
 
 _ = wx.GetTranslation
 
+"""
+Establishes property panels for some image operations
+The priority of appearance is defined dynamically based
+on the order within the node operations
 
+"""
 class ContrastPanel(wx.Panel):
     name = _("Contrast")
-    priority = 10
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "contrast"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -25,6 +39,7 @@ class ContrastPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_contrast = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -32,13 +47,13 @@ class ContrastPanel(wx.Panel):
         self.slider_contrast_contrast = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_contrast_contrast = wx.TextCtrl(
+        self.text_contrast_contrast = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_contrast_brightness = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_contrast_brightness = wx.TextCtrl(
+        self.text_contrast_brightness = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -120,7 +135,7 @@ class ContrastPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: ContrastPanel.<event_handler>
         self.op["enable"] = self.check_enable_contrast.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_button_reset_contrast(
         self, event=None
@@ -131,26 +146,35 @@ class ContrastPanel(wx.Panel):
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
         self.slider_contrast_contrast.SetValue(self.op["contrast"])
         self.slider_contrast_brightness.SetValue(self.op["brightness"])
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_contrast_contrast(
         self, event=None
     ):  # wxGlade: ContrastPanel.<event_handler>
         self.op["contrast"] = int(self.slider_contrast_contrast.GetValue())
         self.text_contrast_contrast.SetValue(str(self.op["contrast"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_contrast_brightness(
         self, event=None
     ):  # wxGlade: ContrastPanel.<event_handler>
         self.op["brightness"] = int(self.slider_contrast_brightness.GetValue())
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
 
 class HalftonePanel(wx.Panel):
     name = _("Halftone")
-    priority = 15
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "halftone"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -165,6 +189,7 @@ class HalftonePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_halftone = wxCheckBox(self, wx.ID_ANY, "Enable")
@@ -173,19 +198,19 @@ class HalftonePanel(wx.Panel):
         self.slider_halftone_sample = wx.Slider(
             self, wx.ID_ANY, 10, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_halftone_sample = wx.TextCtrl(
+        self.text_halftone_sample = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_halftone_angle = wx.Slider(
             self, wx.ID_ANY, 22, 0, 90, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_halftone_angle = wx.TextCtrl(
+        self.text_halftone_angle = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_halftone_oversample = wx.Slider(
             self, wx.ID_ANY, 2, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_halftone_oversample = wx.TextCtrl(
+        self.text_halftone_oversample = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -282,7 +307,7 @@ class HalftonePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["enable"] = self.check_enable_halftone.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_button_reset_halftone(
         self, event=None
@@ -299,39 +324,48 @@ class HalftonePanel(wx.Panel):
         self.slider_halftone_angle.SetValue(int(self.op["angle"]))
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
         self.slider_halftone_oversample.SetValue(int(self.op["oversample"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_check_halftone_black(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["black"] = self.check_halftone_black.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_halftone_sample(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["sample"] = int(self.slider_halftone_sample.GetValue())
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_halftone_angle(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["angle"] = int(self.slider_halftone_angle.GetValue())
         self.text_halftone_angle.SetValue(str(self.op["angle"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_halftone_oversample(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["oversample"] = int(self.slider_halftone_oversample.GetValue())
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
 
 class ToneCurvePanel(wx.Panel):
     name = _("Tone")
-    priority = 20
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "tone"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -346,6 +380,7 @@ class ToneCurvePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self._tone_panel_buffer = None
@@ -369,7 +404,7 @@ class ToneCurvePanel(wx.Panel):
 
         self.graph_brush = wx.Brush()
         self.graph_pen = wx.Pen()
-        c = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        c = self.context.themes.get("win_bg")
         self.graph_brush.SetColour(c)
         self.graph_pen.SetColour(wx.Colour(255 - c[0], 255 - c[1], 255 - c[2]))
         self.graph_pen.SetWidth(5)
@@ -439,7 +474,7 @@ class ToneCurvePanel(wx.Panel):
                         self.op["values"][pos[0]] = (pos[0], v)
                 else:
                     self.op["values"][self.point] = (pos[0], v)
-                self.node.update(self.context)
+                self.context.elements.do_image_update(self.node, self.context)
                 self.update_in_gui_thread()
             except (KeyError, IndexError):
                 pass
@@ -499,21 +534,30 @@ class ToneCurvePanel(wx.Panel):
 
     def on_check_enable_tone(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_tone.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_button_reset_tone(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.original_op["enable"]
         self.op["type"] = self.original_op["type"]
         self.op["values"].clear()
         self.op["values"].extend(self.original_op["values"])
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
         self.on_update_tone()
         self.update_in_gui_thread()
 
 
 class SharpenPanel(wx.Panel):
     name = _("Sharpen")
-    priority = 25
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "unsharp_mask"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -530,6 +574,7 @@ class SharpenPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_sharpen = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -537,19 +582,19 @@ class SharpenPanel(wx.Panel):
         self.slider_sharpen_percent = wx.Slider(
             self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_sharpen_percent = wx.TextCtrl(
+        self.text_sharpen_percent = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_sharpen_radius = wx.Slider(
             self, wx.ID_ANY, 20, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_sharpen_radius = wx.TextCtrl(
+        self.text_sharpen_radius = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.slider_sharpen_threshold = wx.Slider(
             self, wx.ID_ANY, 6, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_sharpen_threshold = wx.TextCtrl(
+        self.text_sharpen_threshold = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
 
@@ -647,7 +692,7 @@ class SharpenPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_sharpen.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_button_reset_sharpen(
         self, event=None
@@ -661,14 +706,14 @@ class SharpenPanel(wx.Panel):
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
         self.text_sharpen_threshold.SetValue(str(self.op["threshold"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_sharpen_percent(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["percent"] = int(self.slider_sharpen_percent.GetValue())
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_text_sharpen_percent(
         self, event=None
@@ -678,7 +723,7 @@ class SharpenPanel(wx.Panel):
     def on_slider_sharpen_radius(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op["radius"] = int(self.slider_sharpen_radius.GetValue())
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_text_sharpen_radius(
         self, event=None
@@ -690,7 +735,7 @@ class SharpenPanel(wx.Panel):
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["threshold"] = int(self.slider_sharpen_threshold.GetValue())
         self.text_sharpen_threshold.SetValue(str(self.op["threshold"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_text_sharpen_threshold(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -698,7 +743,16 @@ class SharpenPanel(wx.Panel):
 
 class GammaPanel(wx.Panel):
     name = _("Gamma")
-    priority = 30
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "gamma"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -713,6 +767,7 @@ class GammaPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable_gamma = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -720,7 +775,7 @@ class GammaPanel(wx.Panel):
         self.slider_gamma_factor = wx.Slider(
             self, wx.ID_ANY, 100, 0, 500, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
-        self.text_gamma_factor = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_gamma_factor = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -775,7 +830,7 @@ class GammaPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_gamma.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_button_reset_gamma(
         self, event=None
@@ -783,14 +838,14 @@ class GammaPanel(wx.Panel):
         self.op["factor"] = self.original_op["factor"]
         self.slider_gamma_factor.SetValue(int(self.op["factor"] * 100.0))
         self.text_gamma_factor.SetValue(str(self.op["factor"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_slider_gamma_factor(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["factor"] = self.slider_gamma_factor.GetValue() / 100.0
         self.text_gamma_factor.SetValue(str(self.op["factor"]))
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
     def on_text_gamma_factor(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -798,7 +853,16 @@ class GammaPanel(wx.Panel):
 
 class EdgePanel(wx.Panel):
     name = _("Edge Enhance")
-    priority = 40
+
+    @staticmethod
+    def priority(node):
+        base_priority = 20
+        prop = "edge_enhance"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -813,6 +877,7 @@ class EdgePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -851,12 +916,21 @@ class EdgePanel(wx.Panel):
 
     def on_check_enable(self, event=None):
         self.op["enable"] = self.check_enable.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)
 
 
 class AutoContrastPanel(wx.Panel):
     name = _("Auto Contrast")
-    priority = 45
+    @staticmethod
+
+    def priority(node):
+        base_priority = 20
+        prop = "auto_contrast"
+        if hasattr(node, "as_image"):
+            for idx, n in enumerate(node.operations):
+                if n.get("name") == prop:
+                    return base_priority + idx + 1
+        return base_priority
 
     @staticmethod
     def accepts(node):
@@ -871,6 +945,7 @@ class AutoContrastPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
 
         self.check_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
@@ -909,4 +984,4 @@ class AutoContrastPanel(wx.Panel):
 
     def on_check_enable(self, event=None):
         self.op["enable"] = self.check_enable.GetValue()
-        self.node.update(self.context)
+        self.context.elements.do_image_update(self.node, self.context)

@@ -2,25 +2,26 @@ import time
 
 """
 A driver is a class which implements a set of various functions that are expected to be called to control a particular
-laser. 
+laser.
 
 There is no guarantees with regard to what commands should exist other than `hold_work` which is required by the
 spooler. Anything that accesses a driver is expected to call any would-be function as if it may generate an
 AttributeError (because it might).
 """
 
-DRIVER_STATE_RAPID = 0
-DRIVER_STATE_FINISH = 1
-DRIVER_STATE_PROGRAM = 2
-DRIVER_STATE_RASTER = 3
-DRIVER_STATE_MODECHANGE = 4
+# Duplicate definitions as in meerk40t.device.basedevice
+# DRIVER_STATE_RAPID = 0
+# DRIVER_STATE_FINISH = 1
+# DRIVER_STATE_PROGRAM = 2
+# DRIVER_STATE_RASTER = 3
+# DRIVER_STATE_MODECHANGE = 4
 
-PLOT_FINISH = 256
-PLOT_RAPID = 4
-PLOT_JOG = 2
-PLOT_SETTING = 128
-PLOT_AXIS = 64
-PLOT_DIRECTION = 32
+# PLOT_FINISH = 256
+# PLOT_RAPID = 4
+# PLOT_JOG = 2
+# PLOT_SETTING = 128
+# PLOT_AXIS = 64
+# PLOT_DIRECTION = 32
 
 
 class Driver:
@@ -184,7 +185,7 @@ class Driver:
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
 
     def lock_rail(self):

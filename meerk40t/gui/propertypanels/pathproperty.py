@@ -15,7 +15,7 @@ from meerk40t.gui.propertypanels.attributes import (
     RoundedRectPanel,
     StrokeWidthPanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, wxButton, wxCheckBox
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -26,6 +26,7 @@ class PathPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
@@ -89,10 +90,10 @@ class PathPropertyPanel(ScrolledPanel):
         self.panels.append(panel_xy)
 
         # Property display
-        self.lbl_info_segments = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_segments = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_points = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_length = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_area = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.btn_info_get = wxButton(self, wx.ID_ANY, _("Retrieve"))
         self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
@@ -287,6 +288,10 @@ class PathPropertyPanel(ScrolledPanel):
         self.Refresh()
 
     def signal(self, signalstr, myargs):
+        if signalstr == "modified_by_tool":
+            self.set_widgets(self.node)
+            return
+
         for panel in self.panels:
             if hasattr(panel, "signal"):
                 panel.signal(signalstr, myargs)

@@ -48,6 +48,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(rotary.plugin)
 
+        from .cylinder import cylinder
+
+        plugins.append(cylinder.plugin)
+
         from .core import core
 
         plugins.append(core.plugin)
@@ -87,6 +91,10 @@ def plugin(kernel, lifecycle):
         from .extra import lbrn
 
         plugins.append(lbrn.plugin)
+
+        from .extra import xcs_reader
+
+        plugins.append(xcs_reader.plugin)
 
         from .extra import updater
 
@@ -131,6 +139,10 @@ def plugin(kernel, lifecycle):
         from .extra.imageactions import plugin as splitterplugin
 
         plugins.append(splitterplugin)
+
+        from .extra.outerworld import plugin as owplugin
+
+        plugins.append(owplugin)
 
         return plugins
 

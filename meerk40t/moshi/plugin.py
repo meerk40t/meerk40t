@@ -28,8 +28,7 @@ def plugin(kernel, lifecycle=None):
                     + "The boards are usually red and sport two large black heatsinks for their stepper motor chips."
                 ),
                 "priority": 0,
-                "family": _("CO2-Laser"),
-                "family_priority": 99,
+                "family": _("Generic CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",

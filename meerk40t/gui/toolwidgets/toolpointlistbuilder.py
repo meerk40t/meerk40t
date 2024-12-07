@@ -195,6 +195,10 @@ class PointListTool(ToolWidget):
         self.scene.request_refresh()
         if followup:
             self.scene.context(f"{followup}\n")
+        elif self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context.signal("statusmsg", "")
+            self.scene.context("tool none\n")
 
     # Routines that can be overloaded -------------------
 

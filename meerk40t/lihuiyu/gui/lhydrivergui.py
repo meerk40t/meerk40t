@@ -3,6 +3,7 @@ import wx
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -12,6 +13,7 @@ from meerk40t.gui.wxutils import (
     TextCtrl,
     dip_size,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.kernel import signal_listener
 
@@ -117,7 +119,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_buffer.Add(self.text_buffer_length, 1, wx.EXPAND, 0)
 
-        label_14 = wx.StaticText(self, wx.ID_ANY, "/")
+        label_14 = wxStaticText(self, wx.ID_ANY, "/")
         sizer_buffer.Add(label_14, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.spin_packet_buffer_max = wx.SpinCtrl(
@@ -395,6 +397,12 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         panel_config = ChoicePropertyPanel(
@@ -414,6 +422,8 @@ class LihuiyuDriverGui(MWindow):
             context=self.context,
             choices=("lhy-general", "lhy-jog", "lhy-rapid-override", "lhy-speed"),
         )
+
+        panel_effects = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_format = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -421,6 +431,7 @@ class LihuiyuDriverGui(MWindow):
         self.panels.append(panel_config)
         self.panels.append(panel_interface)
         self.panels.append(panel_setup)
+        self.panels.append(panel_effects)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_format)
@@ -428,6 +439,7 @@ class LihuiyuDriverGui(MWindow):
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
+        self.notebook_main.AddPage(panel_effects, _("Effects"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_format, _("Display Options"))

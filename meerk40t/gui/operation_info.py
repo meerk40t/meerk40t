@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, wxButton
+from meerk40t.gui.wxutils import ScrolledPanel, wxButton, wxListCtrl
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -20,12 +20,14 @@ class OpInfoPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("operationinfo")
 
-        self.list_operations = wx.ListCtrl(
+        self.list_operations = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_operationinfo",
         )
         self.list_operations.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
 
@@ -47,6 +49,7 @@ class OpInfoPanel(ScrolledPanel):
         self.list_operations.AppendColumn(
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
         )
+        self.list_operations.resize_columns()
         self.list_operations.SetToolTip(
             _("Right-Click for more options for ops and unassigned elements")
         )
@@ -108,7 +111,7 @@ class OpInfoPanel(ScrolledPanel):
                 info = self.opinfo[node.type]
             except KeyError:
                 continue
-            # print(f"{node.type} - {node.label} - {info[0]}, {info[2]}")
+            # print(f"{node.type} - {node.display_label()} - {info[0]}, {info[2]}")
             list_id = self.list_operations.InsertItem(
                 self.list_operations.GetItemCount(), f"#{idx}"
             )
@@ -173,10 +176,10 @@ class OpInfoPanel(ScrolledPanel):
         self.refresh_data()
 
     def pane_show(self):
-        pass
+        self.list_operations.load_column_widths()
 
     def pane_hide(self):
-        pass
+        self.list_operations.save_column_widths()
 
     def on_tree_popup_mark_elem(self, elemtype=""):
         def emphas(event=None):

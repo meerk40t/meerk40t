@@ -37,12 +37,23 @@ class BusyInfo:
         self.frame = None
         self.panel = None
         self.text = None
+        self.image = None
+        if "startup" in kwds:
+            try:
+                kwds["startup"](self)
+            except AttributeError:
+                pass
         self.update_keywords(kwds)
 
     def update_keywords(self, kwds):
         keep = 0
         if "keep" in kwds:
             keep = int(kwds["keep"])
+        if "image" in kwds:
+            self.image = kwds["image"]
+        else:
+            if keep == 0:
+                self.image = None
         if "msg" in kwds:
             newmsg = ""
             if self.msg:
@@ -73,10 +84,16 @@ class BusyInfo:
                 style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP,
             )
             self.panel = wx.Panel(self.frame, id=wx.ID_ANY)
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.display = wx.StaticBitmap(self.panel, wx.ID_ANY)
             self.text = wx.StaticText(
                 self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL
             )
+            sizer.Add(self.display, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            sizer.Add(self.text, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             self.update_keywords(kwds)
+            self.panel.SetSizer(sizer)
+            self.panel.Layout()
             self.show()
             if self.parent is not None:
                 self.parent.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
@@ -124,12 +141,28 @@ class BusyInfo:
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
             )
+            bm_w = 0
+            bm_h = 0
+            if self.image is None:
+                self.display.SetBitmap(wx.NullBitmap)
+                self.display.Hide()
+            else:
+                self.display.SetBitmap(self.image)
+                bm_w, bm_h = self.display.GetBitmap().Size
+                self.display.SetSize(bm_w + 2, bm_h + 2)
+
             self.text.SetFont(font)
-            self.text.SetLabel(self.msg)
-            size = self.text.GetBestSize()
-            self.frame.SetClientSize((size.width + 60, size.height + 40))
+            self.text.SetLabel(self.msg.replace("|", "\n"))
+
+            sizetext = self.text.GetBestSize()
+
+            wd = sizetext.width + 5 + bm_w
+            ht = max(sizetext.height, bm_h)
+
+            self.frame.SetClientSize((wd + 60, ht + 40))
             self.panel.SetSize(self.frame.GetClientSize())
-            self.text.Center()
+            self.panel.Layout()
+            # self.text.Center()
             self.frame.Center()
             # That may be a bit over the top, but we really want an update :-)
             self.frame.Show()

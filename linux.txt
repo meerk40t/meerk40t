@@ -1,0 +1,15 @@
+For the Linux afficionados:
+
+1) pypotrace is used for faster bitmap vectorisation - I was able to install it via
+
+	sudo apt install libagg-dev libpotrace-dev
+	pip3 install pypotrace
+
+
+2) pyclipr (used for faster and better offset calculation eg with kerf) needed
+
+	sudo apt install cmake libeigen3-dev
+	pip3 install pyclipr
+
+3) If you need to build wxpython yourself, you need to install the gtk development libraries
+	sudo apt install libgtk-3-dev

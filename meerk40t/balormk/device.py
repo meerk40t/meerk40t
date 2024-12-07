@@ -10,6 +10,7 @@ from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import Service, signal_listener
+from meerk40t.device.devicechoices import get_effect_choices
 
 
 class BalorDevice(Service, Status):
@@ -134,9 +135,22 @@ class BalorDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Lens Size"),
                 "section": "_00_General",
+                "subsection": "_00_",
                 "priority": "20",
                 "nonzero": True,
                 # intentionally not bed_size
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_00_",
+                "priority": "20",
+                "nonzero": True,
             },
             {
                 "attr": "flip_x",
@@ -187,6 +201,31 @@ class BalorDevice(Service, Status):
                 "subsection": "_10_Axis corrections",
             },
             {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_10_Parameters",
+                # _("User Offset")
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_30_User Offset",
+            },
+            {
                 "attr": "interp",
                 "object": self,
                 "default": 5,
@@ -217,6 +256,31 @@ class BalorDevice(Service, Status):
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
                 "section": "_00_General",
+                "subsection": "_10_Device Selection",
+            },
+            {   "attr": "serial_enable",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Check serial no"),
+                "tip": _(
+                    "Does the machine need to have a specific serial number?"
+                ),
+                "section": "_00_General",
+                "subsection": "_10_Device Selection",
+            },
+            {
+                "attr": "serial",
+                "object": self,
+                "default": "",
+                "type": str,
+                "tip": _(
+                    "Does the machine need to have a specific serial number?"
+                ),
+                "label": "",
+                "section": "_00_General",
+                "subsection": "_10_Device Selection",
+                "conditional": (self, "serial_enable")
             },
             {
                 "attr": "footpedal_pin",
@@ -241,19 +305,35 @@ class BalorDevice(Service, Status):
                 "signals": "balorpin",
             },
             {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
+            },
+            {
                 "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
                 "style": "option",
                 "label": _("Coolant"),
-                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
-                "signals": "coolant_changed"
+                "signals": "coolant_changed",
             },
         ]
         self.register_choices("balor", choices)
+
+        self.register_choices("balor-effects", get_effect_choices(self))
 
         choices = [
             {
@@ -688,6 +768,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=1),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_2",
@@ -695,6 +776,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=2),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_3",
@@ -702,6 +784,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=3),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_4",
@@ -709,6 +792,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=4),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_5",
@@ -716,6 +800,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=5),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_6",
@@ -723,6 +808,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=6),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_7",
@@ -730,6 +816,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=7),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_8",
@@ -737,6 +824,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=8),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_9",
@@ -744,6 +832,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=9),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_10",
@@ -751,6 +840,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=10),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_11",
@@ -758,6 +848,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=11),
+                "section": _("Correction-Values"),
             },
             {
                 "attr": "cf_12",
@@ -765,6 +856,7 @@ class BalorDevice(Service, Status):
                 "default": "50",
                 "type": float,
                 "label": _("Corfile distance {index}").format(index=12),
+                "section": _("Correction-Values"),
             },
         ]
         self.register_choices("balor-corfile", choices)
@@ -791,6 +883,7 @@ class BalorDevice(Service, Status):
 
         self.viewbuffer = ""
         self._simulate = False
+        self.laser_status = "idle"
 
     @property
     def safe_label(self):
@@ -811,6 +904,8 @@ class BalorDevice(Service, Status):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -819,6 +914,7 @@ class BalorDevice(Service, Status):
         units_per_galvo = unit_size / galvo_range
 
         self.view.set_dims(self.lens_size, self.lens_size)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.set_native_scale(units_per_galvo, units_per_galvo)
         self.view.transform(
             flip_x=self.flip_x,

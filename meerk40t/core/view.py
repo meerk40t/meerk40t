@@ -36,6 +36,8 @@ class View:
         self.dpi_x = dpi_x
         self.dpi_y = dpi_y
         self.dpi = (dpi_x + dpi_y) / 2.0
+        self.margin_x = 0.0
+        self.margin_y = 0.0
         self._source = None
         self._destination = None
         self._matrix = None
@@ -78,6 +80,11 @@ class View:
         self.width = width
         self.height = height
         self.reset()
+
+    def set_margins(self, offset_x, offset_y):
+        self.margin_x = offset_x
+        self.margin_y = offset_y
+        # print (f"Margins were set to {offset_x}, {offset_y}")
 
     def reset(self):
         width = float(Length(self.width))
@@ -265,7 +272,18 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
-    def position(self, x, y, vector=False):
+    def _get_offset(self):
+        try:
+            off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
+        except ValueError:
+            off_x = 0
+        try:
+            off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        except ValueError:
+            off_y = 0
+        return off_x, off_y
+
+    def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
         @param x:
@@ -273,14 +291,26 @@ class View:
         @param vector:
         @return:
         """
+        if margins:
+            off_x, off_y = self._get_offset()
+        else:
+            off_x = 0
+            off_y = 0
+        # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
         unit_x, unit_y = x, y
         if vector:
-            return self.matrix.transform_vector([unit_x, unit_y])
-        return self.matrix.point_in_matrix_space([unit_x, unit_y])
+            res = self.matrix.transform_vector([unit_x, unit_y])
+            res[0] = res[0] + off_x
+            res[1] = res[1] + off_y
+            return res
+        res = self.matrix.point_in_matrix_space([unit_x, unit_y])
+        res.x = res.x + off_x
+        res.y = res.y + off_y
+        return res
 
     def scene_position(self, x, y):
         if not isinstance(x, (int, float)):
@@ -298,7 +328,9 @@ class View:
         @param vector:
         @return:
         """
-        unit_x, unit_y = x, y
+        off_x, off_y = self._get_offset()
+        unit_x = x - off_x
+        unit_y = y - off_y
         matrix = ~self.matrix
         if vector:
             return matrix.transform_vector([unit_x, unit_y])
@@ -309,6 +341,26 @@ class View:
         if self._matrix is None:
             self._matrix = Matrix.map(*self._source, *self._destination)
         return self._matrix
+
+    def get_sensible_dpi_values(self) -> list:
+        # Look for dpis beyond 100 where we have an integer step value.
+        # We assume for this exercise that the x-axis is good enough
+        candidates = []
+        unit_x = UNITS_PER_INCH
+        matrix = self.matrix
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        lastdpi = None
+        for steps in range(1, 100):
+            dpi = int(round(oneinch_x / steps, 0))
+            if dpi < 75:
+                break
+            if dpi>1000:
+                continue
+            if lastdpi is None or dpi % 25 < 5 or dpi % 33 < 3:
+                lastdpi = dpi
+                candidates.append(dpi)
+        # print (candidates)
+        return candidates
 
     def dpi_to_steps(self, dpi):
         """

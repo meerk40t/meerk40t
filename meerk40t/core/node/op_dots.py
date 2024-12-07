@@ -69,7 +69,24 @@ class DotsOpNode(Node, Parameters):
             default_map["ppi"] = f"{self.power:.0f}"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.has_ancestor("branch reg"):
+            # Will be dealt with in elements -
+            # we don't implement a more sophisticated routine here
+            return False
+        if hasattr(drag_node, "as_geometry") and drag_node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+            return True
+        elif drag_node.type in op_nodes:
+            # Move operation to a different position.
+            return True
+        elif drag_node.type in ("file", "group"):
+            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if hasattr(drag_node, "as_geometry"):
             if (
@@ -79,7 +96,7 @@ class DotsOpNode(Node, Parameters):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.add_reference(drag_node, pos=0)
+                self.add_reference(drag_node, pos=None if flag else 0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
@@ -251,9 +268,13 @@ class DotsOpNode(Node, Parameters):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
         for point_node in self.children:
+            if point_node.type == "reference":
+                point_node = point_node.node
             if point_node.type != "elem point":
                 continue
             if point_node.point is None:
+                continue
+            if getattr(point_node, "hidden", False):
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
@@ -261,3 +282,15 @@ class DotsOpNode(Node, Parameters):
                 settings=settings,
                 passes=passes,
             )
+
+    @property
+    def bounds(self):
+        if not self._bounds_dirty:
+            return self._bounds
+
+        self._bounds = None
+        if self.output:
+            if self._children:
+                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+            self._bounds_dirty = False
+        return self._bounds

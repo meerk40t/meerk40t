@@ -11,7 +11,7 @@ import os.path
 import sys
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.4001"
+APPLICATION_VERSION = "0.9.6020"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -118,7 +118,7 @@ parser.add_argument(
     "--language",
     type=str,
     default=None,
-    help="force default language",
+    help="force default language (en, de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh)",
 )
 parser.add_argument(
     "-f",
@@ -126,6 +126,30 @@ parser.add_argument(
     type=str,
     default=None,
     help="run meerk40t with profiler file specified",
+)
+parser.add_argument(
+    "-u",
+    "--lock-device-config",
+    action="store_true",
+    help="lock device config from editing",
+)
+parser.add_argument(
+    "-U",
+    "--lock-general-config",
+    action="store_true",
+    help="lock general config from editing",
+)
+parser.add_argument(
+    "-m",
+    "--minimized",
+    action="store_true",
+    help="start window minimized",
+)
+parser.add_argument(
+    "-M",
+    "--maximized",
+    action="store_true",
+    help="start window maximized",
 )
 
 
@@ -165,11 +189,17 @@ def run():
         _run = _exe(False, args)
         while _run:
             _run = _exe(True, args)
+            # We only do it once...
+            if "nuke_settings" in args:
+                args.nuke_settings = False
         profiler.disable()
         profiler.dump_stats(args.profiler)
         return
     _run = _exe(False, args)
     while _run:
+        # We only do it once...
+        if "nuke_settings" in args:
+            args.nuke_settings = False
         _run = _exe(True, args)
 
 
@@ -184,7 +214,6 @@ def _exe(restarted, args):
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
         ignore_settings=args.nuke_settings,
-        language=args.language,
         restarted=restarted,
     )
     kernel.args = args
@@ -192,6 +221,9 @@ def _exe(restarted, args):
     kernel.add_plugin(external_plugins)
     auto = hasattr(kernel.args, "auto") and kernel.args.auto
     console = hasattr(kernel.args, "console") and kernel.args.console
+    for idx, attrib in enumerate(("mktablength", "mktabpositions")):
+        kernel.register(f"registered_mk_svg_parameters/tabs{idx}", attrib)
+
     if auto and not console:
         kernel(partial=True)
     else:

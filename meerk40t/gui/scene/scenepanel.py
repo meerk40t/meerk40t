@@ -1,7 +1,8 @@
 import wx
 
-from meerk40t.gui.wxutils import get_key_name
 from meerk40t.gui.scene.scene import RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_DROP
+from meerk40t.gui.wxutils import get_key_name
+
 
 class ScenePanel(wx.Panel):
     """
@@ -15,6 +16,7 @@ class ScenePanel(wx.Panel):
         self.scene_panel = wx.Window(self, wx.ID_ANY)
         self.scene = context.open_as("module/Scene", scene_name, self, pane=parent)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.scene_panel.SetDoubleBuffered(True)
 
         # The scene buffer is the updated image that is drawn to screen.
@@ -133,7 +135,9 @@ class ScenePanel(wx.Panel):
                 keycode=None,
             )
             if self._keybind_channel:
-                self._keybind_channel(f"scenepanel-on_key_down (rc={consumed}): {literal}")
+                self._keybind_channel(
+                    f"scenepanel-on_key_down (rc={consumed}): {literal}"
+                )
         self.last_event = "key_down"
         if not consumed:
             if hasattr(self.scene.pane, "tool_active"):
@@ -173,7 +177,9 @@ class ScenePanel(wx.Panel):
                 keycode=self.last_char,
             )
             if self._keybind_channel:
-                self._keybind_channel(f"scenepanel-on_key (rc={consumed}): {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}")
+                self._keybind_channel(
+                    f"scenepanel-on_key (rc={consumed}): {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}"
+                )
             self.last_event = "key_up"
             # self.SetFocus()
         if not consumed:
@@ -194,7 +200,9 @@ class ScenePanel(wx.Panel):
                     keycode=None,
                 )
                 if self._keybind_channel:
-                    self._keybind_channel(f"scenepanel-on_key_up (rc={consumed}): {literal}, last_char: {self.last_char}")
+                    self._keybind_channel(
+                        f"scenepanel-on_key_up (rc={consumed}): {literal}, last_char: {self.last_char}"
+                    )
                 # After consumption all is done
             self.last_char = None
         # else:

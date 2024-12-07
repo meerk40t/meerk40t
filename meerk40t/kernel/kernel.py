@@ -3,6 +3,7 @@ import inspect
 import os
 import platform
 import re
+import subprocess
 import threading
 import time
 from datetime import datetime
@@ -2062,16 +2063,23 @@ class Kernel(Settings):
         Process signals in the processing queue.
         @return:
         """
+        to_be_ignored = ("console_update", "statusmsg")
         queue = self._processing
         signal_channel = self.channel("signals")
+        signal_channel_all = self.channel("signals-all")
         for signal, payload in queue.items():
             origin, message = payload
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
                     listener(origin, *message)
-                    if signal_channel:
+                    if signal_channel and signal not in to_be_ignored:
                         signal_channel(
+                            f"Signal: {origin} {signal}: "
+                            f"{listener.__module__}:{listener.__name__}{str(message)}"
+                        )
+                    if signal_channel_all:
+                        signal_channel_all(
                             f"Signal: {origin} {signal}: "
                             f"{listener.__module__}:{listener.__name__}{str(message)}"
                         )
@@ -2300,7 +2308,6 @@ class Kernel(Settings):
             text = text[1:]
         else:
             channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
-
         data = None  # Initial command context data is null
         input_type = None  # Initial command context is None
         post = list()
@@ -2331,7 +2338,6 @@ class Kernel(Settings):
                     # Exact match only.
                     if regex != command:
                         continue
-
                 try:
                     data, remainder, input_type = funct(
                         command=command,
@@ -2385,7 +2391,6 @@ class Kernel(Settings):
                     ansi=True,
                 )
                 return None
-
         # If post execution commands were added along the way, run them now.
         for post_execute_command in post:
             post_execute_command(
@@ -2483,9 +2488,12 @@ class Kernel(Settings):
                         help_args.append(f"<{arg_name}:{arg_type}>")
                     if found:
                         channel("\n")
-                    if func.long_help is not None:
+                    helpstr = func.long_help
+                    if not helpstr:
+                        helpstr = func.help
+                    if helpstr:
                         channel(
-                            "\t" + inspect.cleandoc(func.long_help).replace("\n", " ")
+                            "\t" + inspect.cleandoc(helpstr).replace("\n", " ")
                         )
                         channel("\n")
 
@@ -2812,22 +2820,52 @@ class Kernel(Settings):
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
             OS_NAME = platform.system()
-            if OS_NAME == "Windows":
+            system_sound = {
+                "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
+                "Darwin": "/System/Library/Sounds/Ping.aiff",
+                "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
+            }
+
+            sys_snd = self.root.setting(str, "beep_soundfile", system_sound.get(OS_NAME, ""))
+            use_default = not sys_snd or not os.path.exists(sys_snd)
+
+            def _play_windows():
                 try:
                     import winsound
-
-                    for x in range(5):
-                        winsound.Beep(2000, 100)
-                except Exception:
+                    if use_default:
+                        for x in range(5):
+                            winsound.Beep(2000, 100)
+                    else:
+                        winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
+                except Exception as e:
+                    channel ("Encountered exception {e} during play")
                     pass
-            elif OS_NAME == "Darwin":  # Mac
-                os.system("afplay /System/Library/Sounds/Ping.aiff")
-            elif OS_NAME == "Linux":
-                print("\a")  # Beep.
-                os.system('say "Ding"')
 
-            else:  # Assuming other linux like system
-                print("\a")  # Beep.
+            def _play_darwin():
+                arg = system_sound['Darwin'] if use_default else sys_snd
+                cmd = ['afplay', arg]
+                try:
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel (f"Could not run {cmd[0]}: {e}")
+
+            def _play_linux():
+                try:
+                    if not use_default:
+                        cmd = ['play', sys_snd]
+                    else:
+                        print("\a")
+                        cmd = ['say', 'Ding']
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel (f"Could not run {cmd[0]}: {e}")
+
+            players = {
+                "Windows": _play_windows,
+                "Darwin": _play_darwin,
+                "Linux": _play_linux,
+            }
+            players.get(OS_NAME, lambda: print("\a"))()
 
         @self.console_argument(
             "sleeptime", type=float, help=_("Wait time in seconds"), default=1
@@ -3111,6 +3149,32 @@ class Kernel(Settings):
         # BATCH COMMANDS
         # ==========
         @self.console_command(
+            "execute",
+            help=_("Loads a given file and executes all lines as commmands (as long as they don't start with a #)"),
+        )
+        def load_and_execute(channel, _, remainder=None, **kwargs):
+            if not remainder:
+                channel(_("You need to provide a filename to execute"))
+                return
+            filename = remainder
+            if not os.path.exists(filename):
+                channel(_("The file does not exist"))
+                return
+
+            root = self.root
+            try:
+                with open(filename, "r") as f:
+                    data = f.readlines()
+                    for line in data:
+                        if line.startswith("#"):
+                            continue
+                        line = line.strip()
+                        if line:
+                            root(f"{line}\n")
+            except (FileNotFoundError, OSError, PermissionError):
+                channel(f"Could not load file: {filename}")
+
+        @self.console_command(
             "batch",
             output_type="batch",
             help=_("Base command to manipulate batch commands."),
@@ -3160,7 +3224,7 @@ class Kernel(Settings):
             except IndexError:
                 raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
-        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to execute")
         @self.console_command(
             "run",
             input_type="batch",
@@ -3173,7 +3237,7 @@ class Kernel(Settings):
             except IndexError:
                 raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
-        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to disable/enable")
         @self.console_command(
             ("disable", "enable"),
             input_type="batch",
@@ -3227,15 +3291,18 @@ class Kernel(Settings):
             return "channel", 0
 
         @self.console_argument("channel_name", help=_("name of the channel"))
+        @self.console_option("force", "f", type=bool, action="store_true")
         @self.console_command(
             "open",
             help=_("watch this channel in the console"),
             input_type="channel",
             output_type="channel",
         )
-        def channel_open(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, force=False, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
+            if force is None:
+                force = False
 
             try:
                 v = int(channel_name) - 1
@@ -3248,6 +3315,18 @@ class Kernel(Settings):
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
             else:
+                if not force and channel_name not in self.channels:
+                    channel(f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch.")
+                    channel(_("----------"))
+                    channel(_("Channels Active:"))
+                    for i, name in enumerate(self.channels):
+                        channel_name = self.channels[name]
+                        is_watched = (
+                            "* " if self._console_channel in channel_name.watchers else "  "
+                        )
+                        channel(f"{is_watched}{i + 1}: {name}")
+                    return "channel", None
+
                 self.channel(channel_name).watch(self._console_channel)
                 channel(_("Watching Channel: {name}").format(name=channel_name))
             return "channel", channel_name

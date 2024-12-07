@@ -35,7 +35,7 @@ def read_source():
     linecount = 0
     filecount = 0
     # debugit = False
-    ignoredirs = [".git", ".github", "venv"]
+    ignoredirs = [".git", ".github", "venv", ".venv"]
     for root, dirs, files in os.walk(sourcedir):
         mayignore = False
         for s in ignoredirs:
@@ -233,6 +233,8 @@ def read_po(locale):
                     pass
             if id_str and msgid_mode and id_str not in id_strings:
                 id_strings.append(id_str)
+            elif id_str and msgid_mode:
+                print (f"Duplicte entry found for {locale}: ´{id_str}´")
     print(f"Read {linecount} lines for {locale} and found {len(id_strings)} entries...")
     return id_strings
 
