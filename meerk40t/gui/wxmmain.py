@@ -208,6 +208,7 @@ class Autosaver:
 
                 v1_file = base_name + ".bak"
                 os.rename(self.autosave_file, v1_file)
+            elements.save(self.autosave_file, temporary=True)
         except (
             PermissionError,
             OSError,
@@ -218,7 +219,6 @@ class Autosaver:
             # print (f"Error happened: {e}")
             pass
 
-        elements.save(self.autosave_file, temporary=True)
         self.needs_saving = False
         # print ("Saved...")
 
