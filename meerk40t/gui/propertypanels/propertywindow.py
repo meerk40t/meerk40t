@@ -1,3 +1,4 @@
+from functools import lru_cache
 from time import perf_counter
 
 import wx
@@ -241,6 +242,27 @@ class PropertyWindow(MWindow):
     def on_emphasized(self, origin, *args):
         nodes = list(self.context.elements.flat(emphasized=True, cascade=False))
         self.validate_display(nodes, "emphasized")
+
+    @signal_listener("element_property_force")
+    def on_reload_signal(self, origin, nodes=None, *args):
+        # Forced reload, necessary if subpanels would change, e.g. image-nodes
+        # We try to jump back to the tab that was active
+        if nodes is None:
+            return
+        if not isinstance(nodes, (list, tuple)):
+            nodes = [nodes]
+        
+        pageno = self.notebook_main.GetSelection()
+        pageheader = "" if pageno < 0 else self.notebook_main.GetPageText(pageno)
+        self.nodes_displayed.clear()
+        self.validate_display(nodes, "reload")
+        if pageheader:
+            # resync to current tab if possible
+            for page in range(self.notebook_main.GetPageCount()):
+                header = self.notebook_main.GetPageText(page)
+                if header == pageheader:
+                    self.notebook_main.SetSelection(page)
+                    break
 
     @staticmethod
     def sub_register(kernel):
