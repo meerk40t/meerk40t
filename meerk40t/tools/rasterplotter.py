@@ -30,6 +30,7 @@ from meerk40t.constants import (
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_CROSSOVER,
+    RASTER_SPIRAL,
 )
 
 
@@ -89,7 +90,7 @@ class RasterPlotter:
 
         if special is None:
             special = {}
-        self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
+        self.debug_level = 2 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
@@ -476,6 +477,7 @@ class RasterPlotter:
             "Greedy Neighbor Hor",
             "Greedy Neighbor Ver",
             "Crossover",
+            "Spiral",
         )
         testmethods = (
             "Test: Horizontal Rectangle",
@@ -516,9 +518,6 @@ class RasterPlotter:
                     lasty = self.initial_y
                     failed = False
                     for lineno, (x, y, on) in enumerate(data, start=1):
-                        if x is None or y is None:
-                            f.write("Forced setting update, aka major axis change\n")
-                            continue
                         if lastx is not None:
                             dx = x - lastx
                             dy = y - lasty
@@ -590,6 +589,8 @@ class RasterPlotter:
             yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
         elif self.direction == RASTER_CROSSOVER:
             yield from self._plot_crossover()
+        elif self.direction == RASTER_SPIRAL:
+            yield from self._plot_spiral()
         # elif self.direction < 0:
         #     yield from self.testpattern_generator()
         elif self.horizontal:
@@ -1153,6 +1154,69 @@ class RasterPlotter:
             print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
         self.final_x = last_x
         self.final_y = last_y
+
+    def _plot_spiral(self):
+
+
+        rows = self.height 
+        cols = self.width
+        center_row, center_col = rows // 2, cols // 2
+        self.initial_x = center_col
+        self.initial_y = center_row
+
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Right, Down, Left, Up
+        edges = [0.5, 0.5, -0.5, -0.5]
+        direction_index = 0
+        steps = 1
+
+        row, col = center_row, center_col
+        last_x = col
+        last_y = row
+        yield last_x, last_y, 0
+        pixel = self.px(last_x, last_y)
+        if pixel == self.skip_pixel:
+            pixel = 0
+        if pixel:
+            yield last_x, last_y, pixel
+        last_val = pixel
+        count = 1
+
+        while count < rows * cols:
+            for _ in range(2): # do one x and one y 
+                edge_end = edges[direction_index]
+                for _ in range(steps):
+                    col += directions[direction_index][0]
+                    row += directions[direction_index][1]
+                    if 0 <= row < rows and 0 <= col < cols:
+                        count += 1
+                        # Valid pixel
+                        pixel = self.px(col, row)
+                        if pixel == self.skip_pixel:
+                            pixel = 0
+                        if pixel != last_val:
+                            yield last_x, last_y, last_val
+                            if last_val:
+                                self.final_x = last_x
+                                self.final_y = last_y 
+
+                            last_x, last_y, last_val = col, row, pixel
+                        else:
+                            last_x, last_y = col, row
+                    if count == rows * cols:
+                        if last_val:
+                            yield last_x, last_y, last_val
+                            self.final_x = last_x
+                            self.final_y = last_y 
+                            last_val = 0
+                        break
+                # Direction change, do we have a valid pixel value?
+                if last_val:
+                    yield last_x, last_y, last_val
+                    self.final_x = last_x
+                    self.final_y = last_y 
+                # last_val = 0 
+                direction_index = (direction_index + 1) % 4
+            steps += 1
 
     def _plot_crossover(self):
         """
