@@ -90,7 +90,7 @@ class RasterPlotter:
 
         if special is None:
             special = {}
-        self.debug_level = 2 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
+        self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
