@@ -1165,58 +1165,89 @@ class RasterPlotter:
         self.initial_y = center_row
 
         directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Right, Down, Left, Up
-        edges = [0.5, 0.5, -0.5, -0.5]
+        edges = [(0.5, 0), (0, 0.5), (-0.5, 0), (0, -0.5)]
         direction_index = 0
         steps = 1
 
         row, col = center_row, center_col
+        # is the very first pixel an on?
         last_x = col
         last_y = row
-        yield last_x, last_y, 0
-        pixel = self.px(last_x, last_y)
+        count = 1
+        pixel = self.px(col, row)
         if pixel == self.skip_pixel:
             pixel = 0
         if pixel:
-            yield last_x, last_y, pixel
-        last_val = pixel
-        count = 1
-
-        while count < rows * cols:
-            for _ in range(2): # do one x and one y 
-                edge_end = edges[direction_index]
-                for _ in range(steps):
-                    col += directions[direction_index][0]
-                    row += directions[direction_index][1]
+            yield col - 0.5, row, 0
+            last_x = col + 0.5
+            yield last_x, row, pixel
+        while count < rows * cols: 
+            for _ in range(2): 
+                last_pixel = None
+                segments = []
+                dx, dy = edges[direction_index]
+                edge_start_x = -dx
+                edge_start_y = -dy
+                edge_end_x = dx
+                edge_end_y = dy
+                for _ in range(steps): 
+                    row += directions[direction_index][1] 
+                    col += directions[direction_index][0] 
                     if 0 <= row < rows and 0 <= col < cols:
-                        count += 1
-                        # Valid pixel
                         pixel = self.px(col, row)
-                        if pixel == self.skip_pixel:
-                            pixel = 0
-                        if pixel != last_val:
-                            yield last_x, last_y, last_val
-                            if last_val:
-                                self.final_x = last_x
-                                self.final_y = last_y 
+                        on = 0 if pixel == self.skip_pixel else pixel
+                        if on:
+                            if on == last_pixel:
+                                segments[-1][1] = (col, row)
+                            else:
+                                segments.append ([(col, row), (col, row), on])
+                                last_pixel = on
 
-                            last_x, last_y, last_val = col, row, pixel
+                        count += 1
+                        if count == rows * cols: 
+                            break 
+                    # Deal with segments
+                for (sx, sy), (ex, ey), pixel in segments:
+                    sx += edge_start_x
+                    sy += edge_start_y
+                    ex += edge_end_x
+                    ey += edge_end_y
+                    if last_y != sy:
+                        yield last_x, sy, 0
+                        last_y = sy
+                    if last_x != sx:
+                        yield sx, last_y, 0
+                    last_x = ex
+                    last_y = ey
+                    yield last_x, last_y, pixel
+                    self.final_x, self.final_y = last_x, last_y
+
+                # Now we need to empty overlapping pixels...
+                if self.overlap > 0:
+                    BLANK = 255
+                    for (start_x, start_y), (end_x, end_y), on in segments:
+                        sx = min(start_x, end_x)
+                        ex = max(start_x, end_x)
+                        sy = min(start_y, end_y)
+                        ey = max(start_y, end_y)
+
+                        if direction_index in (0, 2): # horizontal
+                            for y_idx in range(-self.overlap, self.overlap + 1):
+                                ny = sy + y_idx
+                                for nx in range(sx, ex + 1):
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
                         else:
-                            last_x, last_y = col, row
-                    if count == rows * cols:
-                        if last_val:
-                            yield last_x, last_y, last_val
-                            self.final_x = last_x
-                            self.final_y = last_y 
-                            last_val = 0
-                        break
-                # Direction change, do we have a valid pixel value?
-                if last_val:
-                    yield last_x, last_y, last_val
-                    self.final_x = last_x
-                    self.final_y = last_y 
-                # last_val = 0 
-                direction_index = (direction_index + 1) % 4
+                            for x_idx in range(-self.overlap, self.overlap + 1):
+                                nx = sx + x_idx
+                                for ny in range(sy, ey + 1):
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+
+
+                direction_index = (direction_index + 1) % 4 
             steps += 1
+
 
     def _plot_crossover(self):
         """
