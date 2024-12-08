@@ -19,7 +19,7 @@ from math import isinf
 from os import times
 from time import perf_counter, time
 from typing import Optional
-
+from functools import lru_cache
 import numpy as np
 
 from ..svgelements import Group, Matrix, Path, Polygon
@@ -31,7 +31,7 @@ from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
 from .node.node import Node
 from .node.util_console import ConsoleOperation
-from .units import Length
+from .units import Length, UNITS_PER_MM
 
 """
 The time to compile does outweigh the benefit...
@@ -967,7 +967,7 @@ class CutPlan:
             )
 
 
-def is_inside(inner, outer, tolerance=0):
+def is_inside(inner, outer, tolerance=0, resolution=50):
     """
     Test that path1 is inside path2.
     @param inner: inner path
@@ -1068,42 +1068,36 @@ def is_inside(inner, outer, tolerance=0):
     # i.e. larger bboxes need more points and
     # tighter curves need more points (i.e. compare vector directions)
 
-    # def vm_code(outer, outer_path, inner, inner_path):
-    #     if not hasattr(outer, "vm"):
-    #         outer_path = Polygon(
-    #             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-    #         )
-    #         vm = VectorMontonizer()
-    #         vm.add_polyline(outer_path)
-    #         outer.vm = vm
-    #     for i in range(101):
-    #         p = inner_path.point(
-    #             i / 100.0, error=1e4
-    #         )  # Point(4633.110682926033,1788.413481872459)
-    #         if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-    #             return False
-    #     return True
+    def vm_code(outer, outer_polygon, inner, inner_polygon):
+        if not hasattr(outer, "vm"):
+            vm = VectorMontonizer()
+            vm.add_pointlist(outer_polygon)
+            outer.vm = vm
+        for gp in inner_polygon:
+            if not outer.vm.is_point_inside(gp[0], gp[1], tolerance=tolerance):
+                return False
+        return True
 
-    def sb_code(out_cut, out_path, in_cut, in_path):
+    def scanbeam_code_not_working_reliably(outer_cut, outer_path, inner_cut, inner_path):
         from ..tools.geomstr import Polygon as Gpoly
         from ..tools.geomstr import Scanbeam
 
-        if not hasattr(out_cut, "sb"):
-            pg = out_path.npoint(np.linspace(0, 1, 1001), error=1e4)
+        if not hasattr(outer_cut, "sb"):
+            pg = outer_path.npoint(np.linspace(0, 1, 1001), error=1e4)
             pg = pg[:, 0] + pg[:, 1] * 1j
 
-            out_path = Gpoly(*pg)
-            sb = Scanbeam(out_path.geomstr)
-            out_cut.sb = sb
-        p = in_path.npoint(np.linspace(0, 1, 101), error=1e4)
+            outer_path = Gpoly(*pg)
+            sb = Scanbeam(outer_path.geomstr)
+            outer_cut.sb = sb
+        p = inner_path.npoint(np.linspace(0, 1, 101), error=1e4)
         points = p[:, 0] + p[:, 1] * 1j
 
-        q = out_cut.sb.points_in_polygon(points)
+        q = outer_cut.sb.points_in_polygon(points)
         return q.all()
 
-    def other_code(outer, outer_path, inner, inner_path):
+    def raycasting_code_old(outer_polygon, inner_polygon):
         # The time to compile is outweighing the benefits...
-        # @jit(nopython=True)
+
         def ray_tracing(x, y, poly, tolerance):
             def sq_length(a, b):
                 return a * a + b * b
@@ -1139,23 +1133,173 @@ def is_inside(inner, outer, tolerance=0):
                 old_sq_dist = new_sq_dist
             return inside
 
-        geom1 = Geomstr.svg(inner_path.d())
-        geom2 = Geomstr.svg(outer_path.d())
-        points = np.array(list((p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance = 10)))
-        vertices = np.array(list((p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance = 10)))
+        points = inner_polygon
+        vertices = outer_polygon
         return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
 
-    # from time import perf_counter
-    # t0 = perf_counter()
-    # res1 = sb_code(outer, outer_path, inner, inner_path)
-    # t1 = perf_counter()
-    # res2 = other_code(outer, outer_path, inner, inner_path)
-    # t2 = perf_counter()
-    # print (f"Tolerance: {tolerance}, sb={res1} in {t1 - t0:.3f}s, other={res2} in {t2 - t1:.3f}s")
-    return other_code(outer, outer_path, inner, inner_path)
-    # return sb_code(outer, outer_path, inner, inner_path)
-    # return vm_code(outer, outer_path, inner, inner_path)
+    """
+    Unfortunately this does not work if one of the objects is concave.
 
+    def sat_code(outer_polygon, inner_polygon):
+        # https://en.wikipedia.org/wiki/Hyperplane_separation_theorem
+
+        # Separating Axis Theorem (SAT) for Polygon Containment
+
+        # The Separating Axis Theorem (SAT) is a powerful technique for collision detection 
+        # between convex polygons. It can also be adapted to determine polygon containment.
+
+        # How SAT Works:
+
+        # Generate Axes: For each edge of the outer polygon, create a perpendicular axis.
+        # Project Polygons: Project both the inner and outer polygons onto each axis.
+        # Check Overlap: If the projections of the inner polygon are completely contained 
+        # within the projections of the outer polygon on all axes, 
+        # then the inner polygon is fully contained.
+        
+        # Convex Polygons: SAT is most efficient for convex polygons. 
+        # For concave polygons, you might need to decompose them into convex sub-polygons.
+        # Computational Cost: SAT can be computationally expensive for large numbers of polygons. 
+        # In such cases, spatial indexing can be used to reduce the number of pairwise comparisons.
+        def project_polygon(polygon, axis):
+            # Projects a polygon onto a given axis.
+            min_projection, max_projection = np.dot(polygon, axis).min(), np.dot(polygon, axis).max()
+            return min_projection, max_projection
+
+        def is_polygon_inside_polygon_sat(inner_polygon, outer_polygon):
+            # Determines if one polygon is fully inside another using the Separating Axis Theorem.
+
+            # Args:
+            #     inner_polygon: A 2D array of inner polygon vertices.
+            #     outer_polygon: A 2D array of outer polygon vertices.
+
+            # Returns:
+            #     True if the inner polygon is fully inside the outer polygon, False otherwise.
+
+            for i in range(len(outer_polygon)):
+                # Calculate the axis perpendicular to the current edge
+                edge = outer_polygon[i] - outer_polygon[(i+1) % len(outer_polygon)]
+                axis = np.array([-edge[1], edge[0]])
+
+                # Project both polygons onto the axis
+                min_inner, max_inner = project_polygon(inner_polygon, axis)
+                min_outer, max_outer = project_polygon(outer_polygon, axis)
+
+                # Check if the inner polygon's projection is fully contained within the outer polygon's projection
+                if not (min_inner >= min_outer and max_inner <= max_outer):
+                    return False
+
+            return True
+
+        return is_polygon_inside_polygon_sat(inner_polygon, outer_polygon)
+    """
+
+    def raycasting_code_new(outer_polygon, inner_polygon):
+
+        def precompute_intersections(polygon):
+            slopes = []
+            intercepts = []
+            is_vertical = []
+            for i in range(len(polygon)):
+                p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
+                dx = p2[0] - p1[0]
+                dy = p2[1] - p1[1]
+
+                if dx == 0:
+                    slopes.append(np.nan)  # Use NaN to indicate vertical line
+                    intercepts.append(p1[0])
+                    is_vertical.append(True)
+                else:
+                    slope = dy / dx
+                    intercept = p1[1] - slope * p1[0]
+                    slopes.append(slope)
+                    intercepts.append(intercept)
+                    is_vertical.append(False)
+
+            return np.array(slopes), np.array(intercepts), np.array(is_vertical)
+
+        def point_in_polygon(x, y, slopes, intercepts, is_vertical, polygon):
+            inside = False
+            for i in range(len(slopes)):
+                slope = slopes[i]
+                intercept = intercepts[i]
+                p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
+                
+                if np.isnan(slope):  # Vertical line
+                    if x == intercept and y >= min(p1[1], p2[1]) and y <= max(p1[1], p2[1]):
+                        inside = not inside
+                else:
+                    if y > min(p1[1], p2[1]):
+                        if y <= max(p1[1], p2[1]):
+                            if x <= max(p1[0], p2[0]):
+                                if p1[1] != p2[1]:
+                                    xints = (y - intercept) / slope
+                                if p1[0] == p2[0] or x <= xints:
+                                    inside = not inside
+                                
+            return inside
+                
+        def is_polygon_inside(outer_polygon, inner_polygon):
+            slopes, intercepts, is_vertical = precompute_intersections(outer_polygon)
+            for point in inner_polygon:
+                if not point_in_polygon(point[0], point[1], slopes, intercepts, is_vertical, outer_polygon):
+                    return False
+            return True
+
+        return is_polygon_inside(outer_polygon=outer_polygon, inner_polygon=inner_polygon)
+
+    def shapely_code(outer_polygon, inner_polygon):
+        from shapely.geometry import Polygon
+
+        # Create Shapely Polygon objects
+        poly_a = Polygon(inner_polygon)
+        poly_b = Polygon(outer_polygon)
+        # Check for containment
+        return poly_a.within(poly_b)
+            
+    @lru_cache(maxsize=128)
+    def get_polygon(path, resolution):
+        geom = Geomstr.svg(path)
+        polygon = np.array(
+            list((p.real, p.imag) for p in geom.as_equal_interpolated_points(distance = resolution))
+        )
+        return polygon
+    
+    """
+    # Testroutines
+    from time import perf_counter
+    inner_polygon = get_polygon(inner_path.d(), resolution)
+    outer_polygon = get_polygon(outer_path.d(), resolution)
+
+    t0 = perf_counter()
+    res0 = vm_code(outer, outer_polygon, inner, inner_polygon)
+    t1 = perf_counter()
+    res1 = scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
+    t2 = perf_counter()
+    res2 = raycasting_code_old(outer_polygon, inner_polygon)
+    t3 = perf_counter()
+    # res3 = sat_code(outer, outer_path, inner, inner_path)
+    res3 = raycasting_code_new(outer_polygon, inner_polygon)
+    t4 = perf_counter()
+    try:
+        import shapely
+        res4 = shapely_code(outer_polygon, inner_polygon)
+        t5 = perf_counter()
+    except ImportError:
+        res4 = "Shapely missing"
+        t5 = t4     
+    print (f"Tolerance: {tolerance}, vm={res0} in {t1 - t0:.3f}s, sb={res1} in {t1 - t0:.3f}s, ray-old={res2} in {t2 - t1:.3f}s, ray-new={res3} in {t3 - t2:.3f}s, shapely={res4} in {t4 - t3:.3f}s")
+    """
+    inner_polygon = get_polygon(inner_path.d(), resolution)
+    outer_polygon = get_polygon(outer_path.d(), resolution)        
+    try:
+        import shapely
+        return shapely_code(outer_polygon, inner_polygon)
+    except ImportError:
+        return vm_code(outer, outer_polygon, inner, inner_polygon)
+    # return raycasting_code_new(outer_polygon, inner_polygon)
+    # return scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
+    # return vm_code(outer, outer_path, inner, inner_path)
+    return
 
 def reify_matrix(self):
     """Apply the matrix to the path and reset matrix."""
@@ -1236,8 +1380,13 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
     if kernel:
         busy = kernel.busyinfo
         _ = kernel.translation
+        min_res = min(kernel.device.view.native_scale_x, kernel.device.view.native_scale_y)
+        # a 0.5 mm resolution is enough
+        resolution = int(0.5 * UNITS_PER_MM / min_res)
+        # print(f"Chosen resolution: {resolution} - minscale = {min_res}")
     else:
         busy = None
+        resolution = 10 
     for outer in closed_groups:
         for inner in groups:
             current_pass += 1
@@ -1254,7 +1403,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
                 busy.change(msg=message, keep=2)
                 busy.show()
 
-            if is_inside(inner, outer, tolerance):
+            if is_inside(inner, outer, tolerance, resolution):
                 constrained = True
                 if outer.contains is None:
                     outer.contains = []
