@@ -1177,36 +1177,40 @@ class RasterPlotter:
         pixel = self.px(col, row)
         if pixel == self.skip_pixel:
             pixel = 0
+        last_pixel = pixel
         if pixel:
             yield col - 0.5, row, 0
             last_x = col + 0.5
             yield last_x, row, pixel
         while count < rows * cols: 
             for _ in range(2): 
-                last_pixel = None
                 segments = []
                 dx, dy = edges[direction_index]
                 edge_start_x = -dx
                 edge_start_y = -dy
                 edge_end_x = dx
                 edge_end_y = dy
+                # msg = f"[({col}, {row}) - {steps}] " 
                 for _ in range(steps): 
                     row += directions[direction_index][1] 
-                    col += directions[direction_index][0] 
+                    col += directions[direction_index][0]
                     if 0 <= row < rows and 0 <= col < cols:
                         pixel = self.px(col, row)
                         on = 0 if pixel == self.skip_pixel else pixel
+                        # msg = f"{msg} {'X' if on else '.'}"
                         if on:
-                            if on == last_pixel:
+                            if on == last_pixel and len(segments):
                                 segments[-1][1] = (col, row)
                             else:
                                 segments.append ([(col, row), (col, row), on])
-                                last_pixel = on
-
+                        
+                        last_pixel = on
                         count += 1
                         if count == rows * cols: 
                             break 
-                    # Deal with segments
+                # Deal with segments
+                # print (msg)
+                # print (segments)
                 for (sx, sy), (ex, ey), pixel in segments:
                     sx += edge_start_x
                     sy += edge_start_y
@@ -1221,7 +1225,6 @@ class RasterPlotter:
                     last_y = ey
                     yield last_x, last_y, pixel
                     self.final_x, self.final_y = last_x, last_y
-
                 # Now we need to empty overlapping pixels...
                 if self.overlap > 0:
                     BLANK = 255
