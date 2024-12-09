@@ -30,6 +30,7 @@ from meerk40t.constants import (
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_CROSSOVER,
+    RASTER_SPIRAL,
 )
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.elements.element_types import *
@@ -107,6 +108,8 @@ class ImageOpNode(Node, Parameters):
             raster_dir = "GR-"
         elif self.raster_direction == RASTER_GREEDY_V:
             raster_dir = "GR|"
+        elif self.raster_direction == RASTER_SPIRAL:
+            raster_dir = "(.)"
         else:
             raster_dir = str(self.raster_direction)
         default_map["direction"] = f"{raster_swing}{raster_dir} "
@@ -251,7 +254,10 @@ class ImageOpNode(Node, Parameters):
             width_in_inches = (max_x - min_x) / UNITS_PER_INCH
             height_in_inches = (max_y - min_y) / UNITS_PER_INCH
             speed_in_per_s = self.speed / MM_PER_INCH
-            if self.raster_direction in (RASTER_T2B, RASTER_B2T, RASTER_HATCH, RASTER_GREEDY_H, RASTER_CROSSOVER):
+            if self.raster_direction in (
+                RASTER_T2B, RASTER_B2T, RASTER_HATCH, 
+                RASTER_GREEDY_H, RASTER_CROSSOVER, RASTER_SPIRAL,
+            ):
                 scanlines = height_in_inches * dpi
                 if not self.bidirectional:
                     scanlines *= 2
@@ -269,7 +275,6 @@ class ImageOpNode(Node, Parameters):
                 this_len = scanlines * height_in_inches + width_in_inches
                 estimate += this_len / speed_in_per_s
                 # print (f"Vertical scanlines: {scanlines}, Length: {this_len:.1f}")
-
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
 
@@ -616,7 +621,7 @@ class ImageOpNode(Node, Parameters):
                     if white_pixel_ratio < 0.3:
                         self.raster_direction = RASTER_T2B if self.raster_direction == RASTER_GREEDY_H else RASTER_L2R
 
-                if self.raster_direction == RASTER_CROSSOVER: # Crossover - need both
+                if self.raster_direction in (RASTER_CROSSOVER, RASTER_SPIRAL): # Crossover - need both
                     settings["raster_step_x"] = step_x
                     settings["raster_step_y"] = step_y
                 if self.raster_direction == RASTER_CROSSOVER and "split_crossover" in self._instructions:

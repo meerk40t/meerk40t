@@ -30,6 +30,7 @@ from meerk40t.constants import (
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_CROSSOVER,
+    RASTER_SPIRAL,
 )
 
 
@@ -476,6 +477,7 @@ class RasterPlotter:
             "Greedy Neighbor Hor",
             "Greedy Neighbor Ver",
             "Crossover",
+            "Spiral",
         )
         testmethods = (
             "Test: Horizontal Rectangle",
@@ -516,9 +518,6 @@ class RasterPlotter:
                     lasty = self.initial_y
                     failed = False
                     for lineno, (x, y, on) in enumerate(data, start=1):
-                        if x is None or y is None:
-                            f.write("Forced setting update, aka major axis change\n")
-                            continue
                         if lastx is not None:
                             dx = x - lastx
                             dy = y - lasty
@@ -590,6 +589,8 @@ class RasterPlotter:
             yield from self._plot_greedy_neighbour(horizontal=self.horizontal)
         elif self.direction == RASTER_CROSSOVER:
             yield from self._plot_crossover()
+        elif self.direction == RASTER_SPIRAL:
+            yield from self._plot_spiral()
         # elif self.direction < 0:
         #     yield from self.testpattern_generator()
         elif self.horizontal:
@@ -1153,6 +1154,103 @@ class RasterPlotter:
             print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
         self.final_x = last_x
         self.final_y = last_y
+
+    def _plot_spiral(self):
+
+
+        rows = self.height 
+        cols = self.width
+        center_row, center_col = rows // 2, cols // 2
+        self.initial_x = center_col
+        self.initial_y = center_row
+
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # Right, Down, Left, Up
+        edges = [(0.5, 0), (0, 0.5), (-0.5, 0), (0, -0.5)]
+        direction_index = 0
+        steps = 1
+
+        row, col = center_row, center_col
+        # is the very first pixel an on?
+        last_x = col
+        last_y = row
+        count = 1
+        pixel = self.px(col, row)
+        if pixel == self.skip_pixel:
+            pixel = 0
+        last_pixel = pixel
+        if pixel:
+            yield col - 0.5, row, 0
+            last_x = col + 0.5
+            yield last_x, row, pixel
+        while count < rows * cols: 
+            for _ in range(2): 
+                segments = []
+                dx, dy = edges[direction_index]
+                edge_start_x = -dx
+                edge_start_y = -dy
+                edge_end_x = dx
+                edge_end_y = dy
+                # msg = f"[({col}, {row}) - {steps}] " 
+                for _ in range(steps): 
+                    row += directions[direction_index][1] 
+                    col += directions[direction_index][0]
+                    if 0 <= row < rows and 0 <= col < cols:
+                        pixel = self.px(col, row)
+                        on = 0 if pixel == self.skip_pixel else pixel
+                        # msg = f"{msg} {'X' if on else '.'}"
+                        if on:
+                            if on == last_pixel and len(segments):
+                                segments[-1][1] = (col, row)
+                            else:
+                                segments.append ([(col, row), (col, row), on])
+                        
+                        last_pixel = on
+                        count += 1
+                        if count == rows * cols: 
+                            break 
+                # Deal with segments
+                # print (msg)
+                # print (segments)
+                for (sx, sy), (ex, ey), pixel in segments:
+                    sx += edge_start_x
+                    sy += edge_start_y
+                    ex += edge_end_x
+                    ey += edge_end_y
+                    if last_y != sy:
+                        yield last_x, sy, 0
+                        last_y = sy
+                    if last_x != sx:
+                        yield sx, last_y, 0
+                    last_x = ex
+                    last_y = ey
+                    yield last_x, last_y, pixel
+                    self.final_x, self.final_y = last_x, last_y
+                # Now we need to empty overlapping pixels...
+                if self.overlap > 0:
+                    BLANK = 255
+                    for (start_x, start_y), (end_x, end_y), on in segments:
+                        sx = min(start_x, end_x)
+                        ex = max(start_x, end_x)
+                        sy = min(start_y, end_y)
+                        ey = max(start_y, end_y)
+
+                        if direction_index in (0, 2): # horizontal
+                            for y_idx in range(-self.overlap, self.overlap + 1):
+                                ny = sy + y_idx
+                                for nx in range(sx, ex + 1):
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+                        else:
+                            for x_idx in range(-self.overlap, self.overlap + 1):
+                                nx = sx + x_idx
+                                for ny in range(sy, ey + 1):
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+
+
+                direction_index = (direction_index + 1) % 4 
+            steps += 1
+
 
     def _plot_crossover(self):
         """

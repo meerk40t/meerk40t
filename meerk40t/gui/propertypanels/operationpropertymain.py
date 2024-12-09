@@ -22,6 +22,7 @@ from meerk40t.constants import (
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_CROSSOVER,
+    RASTER_SPIRAL,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.gui.icons import icon_letter_h
@@ -54,7 +55,7 @@ def validate_raster_settings(node):
     elif node.raster_direction in (RASTER_HATCH, RASTER_CROSSOVER):
         node.raster_preference_top = True
         node.raster_preference_left = True
-    if node.raster_direction in (RASTER_CROSSOVER, RASTER_GREEDY_H, RASTER_GREEDY_V):
+    if node.raster_direction in (RASTER_CROSSOVER, RASTER_GREEDY_H, RASTER_GREEDY_V, RASTER_SPIRAL):
         node.bidirectional = True
 
 class LayerSettingPanel(wx.Panel):
@@ -1058,7 +1059,9 @@ class PanelStartPreference(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
-        if self.operation.raster_direction == RASTER_CROSSOVER: # Crossover
+        if self.operation.raster_direction in (
+            RASTER_CROSSOVER, RASTER_SPIRAL,
+        ): # Crossover
             self.Hide()
             return
         validate_raster_settings(self.operation)
@@ -1390,6 +1393,7 @@ class RasterSettingsPanel(wx.Panel):
             (RASTER_GREEDY_H, "Greedy horizontal"),
             (RASTER_GREEDY_V, "Greedy vertical"),
             (RASTER_CROSSOVER, "Crossover"),
+            (RASTER_SPIRAL, "Spiral"),
         ]
         # Look for registered raster (image) preprocessors,
         # these are routines that take one image as parameter
@@ -1681,6 +1685,8 @@ class RasterSettingsPanel(wx.Panel):
                 _("  with a majority of black pixels and then drawing the columns") + "\n" +
                 _("  where we have a majority.") + "\n" +
                 _("  Usually much faster on an image with a lot of white pixels."),
+            RASTER_SPIRAL:
+                _("- Spiral: Starting in the center spiralling outwards"),
         }
         lines = [_("You can choose from the following modes to laser an image:")]
         lines.extend( [info for key, info in inform.items() if key not in unsupported] )
