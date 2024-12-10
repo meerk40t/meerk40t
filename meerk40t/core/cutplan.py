@@ -965,6 +965,48 @@ class CutPlan:
             self.channel(
                 f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
             )
+    
+    def postprocess(self):
+        import numpy as np
+
+        def distance(p1, p2):
+            return np.linalg.norm(np.array(p1) - np.array(p2))
+
+        def is_collinear(p1, p2, p3, tolerance=1e-6):
+            # Check if the points are collinear using the area of the triangle formed by them
+            area = 0.5 * np.abs(p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1]))
+            return area < tolerance
+
+        def preprocess_commands(commands, resolution, tolerance=1e-6):
+            filtered_commands = []
+            i = 0
+            while i < len(commands):
+                cmd = commands[i]
+                if i > 0 and cmd['speed'] == commands[i-1]['speed'] and cmd['power'] == commands[i-1]['power']:
+                    if distance(cmd['coordinate'], commands[i-1]['coordinate']) < resolution:
+                        i += 1
+                        continue
+                    if i < len(commands) - 1 and cmd['speed'] == commands[i+1]['speed'] and cmd['power'] == commands[i+1]['power']:
+                        if is_collinear(commands[i-1]['coordinate'], cmd['coordinate'], commands[i+1]['coordinate'], tolerance):
+                            i += 1
+                            continue
+                filtered_commands.append(cmd)
+                i += 1
+            return filtered_commands
+
+        # Example usage
+        commands = [
+            {'coordinate': (0, 0), 'speed': 10, 'power': 5},
+            {'coordinate': (0.01, 0.01), 'speed': 10, 'power': 5},
+            {'coordinate': (1, 1), 'speed': 10, 'power': 5},
+            {'coordinate': (2, 2), 'speed': 10, 'power': 5},
+            {'coordinate': (3, 3), 'speed': 10, 'power': 5},
+            {'coordinate': (4, 4), 'speed': 10, 'power': 5},
+        ]
+
+        resolution = 0.1
+        filtered_commands = preprocess_commands(commands, resolution)
+        print("Filtered commands:", filtered_commands)
 
 
 def is_inside(inner, outer, tolerance=0, resolution=50):

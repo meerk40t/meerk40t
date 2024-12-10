@@ -1838,6 +1838,19 @@ class Geomstr:
         return Geomstr.lines(*pts)
 
     @classmethod
+    def hull_convex(cls, geom, distance=50):
+        return Geomstr.hull(geom, distance) 
+
+    @classmethod
+    def hull_concave(cls, geom, distance=50, concavity=10):
+        # concavity is the amount of neighbours to check
+        ipts = list(geom.as_equal_interpolated_points(distance=distance))
+        pts = list(Geomstr.concave_hull(None, points_list=ipts, concavity=concavity))
+        if pts:
+            pts.append(pts[0])
+        return Geomstr.lines(*pts)
+
+    @classmethod
     def regular_polygon(
         cls,
         number_of_vertex,
@@ -4627,6 +4640,34 @@ class Geomstr:
             point_on_hull = endpoint
             if first_point_on_hull is point_on_hull:
                 break
+    
+    def concave_hull(self, points_list, concavity=10):
+        
+        def k_nearest_neighbors(points, k):
+            distances = np.abs(points[:, np.newaxis] - points[np.newaxis, :]) 
+            neighbors = np.argsort(distances, axis=1)[:, 1:k+1] 
+            return neighbors
+        
+        k = concavity
+        points = np.array(points_list) 
+        hull = [] 
+        start_point = points[np.argmin(points.imag)] 
+        hull.append(start_point) 
+        current_point = start_point 
+        visited = set() 
+        visited.add(current_point) 
+        while True: 
+            neighbors = k_nearest_neighbors(points, k) 
+            for neighbor in neighbors[np.where(points == current_point)[0][0]]: 
+                next_point = points[neighbor] 
+                if next_point not in visited: 
+                    hull.append(next_point) 
+                    visited.add(next_point) 
+                    current_point = next_point 
+                    break 
+            else: 
+                break        
+        return hull
 
     def orientation(self, p, q, r):
         """

@@ -266,7 +266,7 @@ def generate_hull_shape_quick(data):
     ]
 
 
-def generate_hull_shape_hull(data):
+def generate_hull_shape_hull_convex(data):
     # pts = []
     # for node in data:
     #     if hasattr(node, "convex_hull"):
@@ -314,6 +314,27 @@ def generate_hull_shape_hull(data):
     # cpts = list(hull.as_points())
     pts = list((p.real, p.imag) for p in hull.as_points())
     if len(pts) != 0:
+        pts.append(pts[0])  # loop
+    return pts
+
+def generate_hull_shape_hull_concave(data):
+    geometry = Geomstr()
+    for node in data:
+        try:
+            e = None
+            if hasattr(node, "concave_hull"):
+                e = node.concave_hull()
+            if e is None:
+                e = node.as_geometry()
+        except AttributeError:
+            continue
+        geometry.append(e)
+
+    # Convert to hull.
+    resolution = float(Length("1mm"))
+    hull = Geomstr.hull_concave(geometry, distance=int(resolution))
+    pts = [(p.real, p.imag) for p in hull.as_points()]
+    if pts:
         pts.append(pts[0])  # loop
     return pts
 
@@ -474,10 +495,10 @@ def init_commands(kernel):
         if force is None:
             force = False
         method = method.lower()
-        if method not in ("segment", "quick", "hull", "circle"):
+        if method not in ("segment", "quick", "hull", "concave", "circle"):
             channel(
                 _(
-                    "Invalid method, please use one of quick, hull, segment, circle."
+                    "Invalid method, please use one of quick, hull, concave, segment, circle."
                 )
             )
             return
@@ -525,7 +546,9 @@ def init_commands(kernel):
         elif method == "quick":
             hull = generate_hull_shape_quick(target_data)
         elif method == "hull":
-            hull = generate_hull_shape_hull(target_data)
+            hull = generate_hull_shape_hull_convex(target_data)
+        elif method == "concave":
+            hull = generate_hull_shape_hull_concave(target_data)
         # elif method == "complex":
         #     hull = generate_hull_shape_complex(target_data, resolution)
         elif method == "circle":
@@ -596,10 +619,10 @@ def init_commands(kernel):
         if method is None:
             method = "quick"
         method = method.lower()
-        if not method in ("segment", "quick", "hull", "circle"):
+        if not method in ("segment", "quick", "hull", "concave", "circle"):
             channel(
                 _(
-                    "Invalid method, please use one of quick, hull, segment, circle."
+                    "Invalid method, please use one of quick, hull, concave, segment, circle."
                 )
             )
             return
@@ -615,7 +638,9 @@ def init_commands(kernel):
         elif method == "quick":
             hull = generate_hull_shape_quick(data)
         elif method == "hull":
-            hull = generate_hull_shape_hull(data)
+            hull = generate_hull_shape_hull_convex(data)
+        elif method == "concave":
+            hull = generate_hull_shape_hull_concave(data)
         # elif method == "complex":
         #     hull = generate_hull_shape_complex(data, resolution)
         elif method == "circle":

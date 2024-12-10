@@ -108,11 +108,18 @@ def plugin(service, lifecycle):
     #     service.job = LiveLightJob(service, mode="regmarks")
     #     service.spooler.send(service.job)
 
-    @service.console_command("hull-light", help=_("Execute convex hull light idle job"))
-    def hull_light(**kwargs):
+    @service.console_command(("hull-light", "convex-light"), help=_("Execute convex hull light idle job"))
+    def hull_light_convex(**kwargs):
         if service.job is not None:
             service.job.stop()
         service.job = LiveLightJob(service, mode="hull")
+        service.spooler.send(service.job)
+
+    @service.console_command("concave-light", help=_("Execute concave hull light idle job"))
+    def hull_light_concave(**kwargs):
+        if service.job is not None:
+            service.job.stop()
+        service.job = LiveLightJob(service, mode="concave")
         service.spooler.send(service.job)
 
     @service.console_command(
@@ -156,12 +163,12 @@ def plugin(service, lifecycle):
         return "geometry", geometry
 
     @service.console_command(
-        "hull",
+        ("hull", "hull-convex"),
         help=_("convex hull of the current selected elements"),
         input_type=(None, "elements"),
         output_type="geometry",
     )
-    def shapes_hull(channel, _, data=None, **kwargs):
+    def shapes_hull_convex(channel, _, data=None, **kwargs):
         """
         Draws an outline of the current shape.
         """
@@ -184,6 +191,40 @@ def plugin(service, lifecycle):
             else:
                 g.append(e.as_geometry())
         hull = Geomstr.hull(g)
+        if len(hull) == 0:
+            channel(_("No elements bounds to trace."))
+            return
+        return "geometry", hull
+
+    @service.console_command(
+        "hull-concave",
+        help=_("convex hull of the current selected elements"),
+        input_type=(None, "elements"),
+        output_type="geometry",
+    )
+    def shapes_hull_concave(channel, _, data=None, **kwargs):
+        """
+        Draws an outline of the current shape.
+        """
+        if data is None:
+            data = list(service.elements.elems(emphasized=True))
+        g = Geomstr()
+        for e in data:
+            if hasattr(e, "as_image"):
+                bounds = e.bounds
+                g.append(
+                    Geomstr.rect(
+                        bounds[0],
+                        bounds[1],
+                        bounds[2] - bounds[0],
+                        bounds[3] - bounds[1],
+                    )
+                )
+            elif e.type == "elem text":
+                continue  # We can't outline text.
+            else:
+                g.append(e.as_geometry())
+        hull = Geomstr.hull_concave(g)
         if len(hull) == 0:
             channel(_("No elements bounds to trace."))
             return

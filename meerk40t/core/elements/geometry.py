@@ -286,16 +286,28 @@ def init_commands(kernel):
         return "geometry", data
 
     @self.console_command(
-        "hull",
+        ("hull", "hull_convex"),
         help=_("convex hull of the current selected elements"),
         input_type="geometry",
         output_type="geometry",
     )
-    def geometry_hull(channel, _, data: Geomstr, **kwargs):
+    def geometry_hull_complex(channel, _, data: Geomstr, **kwargs):
         """
         Provides the convex hull of the given geometry.
         """
         return "geometry", Geomstr.hull(data)
+
+    @self.console_command(
+        "hull_concave",
+        help=_("concave hull of the current selected elements"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def geometry_hull_concave(channel, _, data: Geomstr, **kwargs):
+        """
+        Provides the convex hull of the given geometry.
+        """
+        return "geometry", Geomstr.hull_concave(data)
 
     @self.console_option(
         "chunk",
