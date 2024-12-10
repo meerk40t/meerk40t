@@ -2278,7 +2278,7 @@ class Kernel(Settings):
         it will execute that in the console_parser. This works like a
         terminal, where each letter of data can be sent to the console and
         execution will occur at the carriage return.
-
+        Additionally you can provide a '|' character that will separate commands on a single line 
         @param data:
         @return:
         """
@@ -2287,6 +2287,18 @@ class Kernel(Settings):
                 data = data.decode()
             except UnicodeDecodeError:
                 return
+        start = 0
+        while True:
+            idx = data.find("|", start)
+            if idx < 0:
+                break
+            # Is the amount of quotation marks odd (ie non-even)?
+            # Yes: we are in the middle of a str
+            # No: we can split the command
+            quotations = data.count('"', 0, idx)
+            if quotations % 2 == 0:
+                data = data[:idx].rstrip() + "\n" + data[idx+1:].lstrip()
+            start = idx + 1
         self._console_buffer += data
         data_out = None
         while "\n" in self._console_buffer:
@@ -2313,7 +2325,6 @@ class Kernel(Settings):
         post = list()
         post_data = dict()
         _ = self.translation
-
         while len(text) > 0:
             # Split command from remainder.
             pos = text.find(" ")
