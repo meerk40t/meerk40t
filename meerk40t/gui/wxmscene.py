@@ -1282,8 +1282,12 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
-        mx = float(Length(self.context.device.view.margin_x))
-        my = float(Length(self.context.device.view.margin_y))
+        try:
+            mx = float(Length(self.context.device.view.margin_x))
+            my = float(Length(self.context.device.view.margin_y))
+        except ValueError:
+            mx = 0
+            my = 0
         # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
         if mx != 0.0 or my != 0.0:
             menu.AppendSeparator()
