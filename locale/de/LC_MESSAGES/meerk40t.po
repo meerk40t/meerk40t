@@ -3407,7 +3407,7 @@ msgstr "Vertikal vertauschen"
 
 #: meerk40t/gui/statusbarwidgets/statusbar.py:42
 msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
-msgstr "Links-Click: zum nächsten Panel springen\nRechts-Click: zum vorherigen Panel springen"
+msgstr "Links-Click: zum nächsten Panel springen\nRechtsclick: zum vorherigen Panel springen"
 
 #: meerk40t/core/elements.py:7732 meerk40t/gui/navigationpanels.py:1485
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:160
@@ -6042,7 +6042,7 @@ msgid "Send laser to home position"
 msgstr "Laser in Home-Position fahren"
 
 msgid "Send laser to home position (right click: to physical home)"
-msgstr "Laser in Home-Position fahren (Rechts-Click: zu Physikalischem Home)"
+msgstr "Laser in Home-Position fahren (Rechtsclick: zu Geräte-Home)"
 
 #: meerk40t/gui/navigationpanels.py:776
 msgid "Unlock the laser rail"
@@ -6065,7 +6065,7 @@ msgid "Move to the set position"
 msgstr "Zu eingestellter Position bewegen"
 
 msgid "Right click to activate mouse-click mode to set position"
-msgstr "Mit Rechts-Click wird 'Position setzen' Modus aktiviert"
+msgstr "Mit Rechtsclick wird 'Position setzen' Modus aktiviert"
 
 msgid "Current laserhead position. Double-click to use."
 msgstr "Aktuelle Position des Lasers. Mit Doppel-Klick übernehmen."
@@ -6376,7 +6376,7 @@ msgstr "Laufzeit"
 #: meerk40t/gui/operation_info.py:52
 msgid "Right-Click for more options for ops and unassigned elements"
 msgstr ""
-"Rechts-Click für mehr Optionen bei Arbeitsabläufen und unzugeordneten "
+"Rechtsclick für mehr Optionen bei Arbeitsabläufen und unzugeordneten "
 "Elementen"
 
 #: meerk40t/gui/operation_info.py:54
@@ -6892,7 +6892,7 @@ msgid "Clear History"
 msgstr "Historie löschen"
 
 msgid "Clear spooler history (right click for more options)"
-msgstr "Lösche Spooler-Historie (Rechts-Click für mehr Optionen)"
+msgstr "Lösche Spooler-Historie (Rechtsclick für mehr Optionen)"
 
 msgid "-- All available devices --"
 msgstr "-- Alle Geräte --"
@@ -7101,11 +7101,11 @@ msgstr "Wortlisten-Einträge ändern/erstellen"
 
 #: ./meerk40t\gui\wordlisteditor.py:55
 msgid "Wordlist: go to next page (right-click to next entry)"
-msgstr "Wortliste: springe zum letzten Eintrag (Rechts-Click: zum nächsten Eintrag)"
+msgstr "Wortliste: springe zum letzten Eintrag (Rechtsclick: zum nächsten Eintrag)"
 
 #: ./meerk40t\gui\wordlisteditor.py:61
 msgid "Wordlist: go to previous page (right-click to previous entry)"
-msgstr "Wortliste: springe zum ersten Eintrag (Rechts-Click: zum vorherigen Eintrag)"
+msgstr "Wortliste: springe zum ersten Eintrag (Rechtsclick: zum vorherigen Eintrag)"
 
 #: ./meerk40t\gui\wordlisteditor.py:296
 msgid "Autosave"
@@ -7117,11 +7117,11 @@ msgstr "Änderungen an der Wortliste werden sofort gespeichert"
 
 #: ./meerk40t\gui\wxmmain.py:1624
 msgid " (right go to next entry)"
-msgstr " (Rechts-Click: zum nächsten Eintrag)"
+msgstr " (Rechtsclick: zum nächsten Eintrag)"
 
 #: ./meerk40t\gui\wxmmain.py:1643
 msgid " (right go to prev entry)"
-msgstr " (Rechts-Click: zum vorherigen Eintrag)"
+msgstr " (Rechtsclick: zum vorherigen Eintrag)"
 
 #: meerk40t/gui/wxmeerk40t.py:89
 msgid "Processing and sending..."
@@ -11698,7 +11698,7 @@ msgid ""
 "if right-click"
 msgstr ""
 "Ordne auch andere Elemente mit derselben Umriss-Farbe zu (Füll-Farbe bei "
-"Rechts-Click)"
+"Rechtsclick)"
 
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:24
 msgid "Resize"
@@ -15045,7 +15045,7 @@ msgstr "Ordne ausgewählte Elemente zu:"
 
 #: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:46
 msgid "Right click for options"
-msgstr "Rechts-Click für mehr Optionen"
+msgstr "Rechtsclick für mehr Optionen"
 
 #: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:258
 msgid "Use settings from tree for this button"
@@ -15153,7 +15153,7 @@ msgstr "Hängt diese Operation ans Ende der Liste an"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:402
 msgid "Apply image modification script\nRight click: append to existing script"
-msgstr "Verwende Bildbearbeitungs-Script\nRechts-Click: an bestehende Operationen anhängen"
+msgstr "Verwende Bildbearbeitungs-Script\nRechtsclick: an bestehende Operationen anhängen"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:405
 msgid "Remove all image operations"
@@ -15954,7 +15954,7 @@ msgstr "Aus System-Zwischenablage einfügen"
 
 #: ./meerk40t\gui\wxmmain.py:1350
 msgid "(Right click removes the hatch)"
-msgstr "(Rechts-Click entfernt Füllmuster)"
+msgstr "(Rechtsclick entfernt Füllmuster)"
 
 #: ./meerk40t\gui\wxmmain.py:1394
 msgid "Remove hatch"
@@ -16414,7 +16414,7 @@ msgstr "Passend Bibliotheks-Einträge"
 
 #: ./meerk40t\gui\materialmanager.py:357
 msgid "Click to select / Right click for actions"
-msgstr "Click für Auswahl, Rechts-Click für Aktionen"
+msgstr "Click für Auswahl, Rechtsclick für Aktionen"
 
 #: ./meerk40t\gui\materialmanager.py:413
 msgid "Title"
@@ -17402,7 +17402,7 @@ msgstr "Aktion bei Links-Click"
 
 #: meerk40t/gui/wxmribbon.py:1344 meerk40t/gui/wxmribbon.py:1387
 msgid "Action right click"
-msgstr "Aktion bei Rechts-Click"
+msgstr "Aktion bei Rechtsclick"
 
 #: meerk40t/gui/wxmribbon.py:1349
 msgid "Always"
@@ -17566,7 +17566,7 @@ msgstr "Falls diese Option aktiv ist, wird nur ein einziges Eelemt erzeugt und d
 
 #: meerk40t/gui/wxmmain.py:1252
 msgid "Hint: Escape or a right-click will leave creation mode as well."
-msgstr "Tip: Escape bzw. Rechts-Click beenden den Erzeugungs-Modus ebenfalls."
+msgstr "Tip: Escape bzw. Rechtsclick beenden den Erzeugungs-Modus ebenfalls."
 
 #: meerk40t/gui/wxmmain.py:4545
 msgid "<Multiple files loaded>"
@@ -19511,3 +19511,47 @@ msgstr "  im Anschluß daran alle Spalten, bei denen Schwarz häufiger war."
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1685
 msgid "You can choose from the following modes to laser an image:"
 msgstr "Folgende Modi stehen beim Lasern eines Bilds zur Auswahl:"
+
+#: meerk40t/lihuiyu/device.py:373 meerk40t/moshi/device.py:211
+msgid "Use legacy raster method"
+msgstr "Nutze bisherige Raster Methode"
+
+#: meerk40t/lihuiyu/device.py:375 meerk40t/moshi/device.py:213
+msgid "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
+msgstr ""
+"Aktiv: Verwende alte Methode (scheint besser bei hohen Geschwindigkeiten zu funktionieren,\n" 
+"hat aber ein paar Artifakte bei niedrigen Auflösungen)"
+
+#: meerk40t/lihuiyu/device.py:376 meerk40t/moshi/device.py:214
+msgid "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
+msgstr ""
+"Inaktiv: Verwende Standard-Methode (keine Artifakte,\n" 
+"aber anfälliger für Stottern bei hohen Geschwindigkeiten)"
+
+#: meerk40t/grbl/gui/grblcontroller.py:115
+msgid "Send list of commands to device. Right click to edit."
+msgstr "Sende Liste von Befehlen zum Laser. Rechtsclick zum anpassen."
+
+#: meerk40t/grbl/gui/grblcontroller.py:265
+msgid "Content for macro {index}"
+msgstr "Inhalt von Makro {index}"
+
+#: meerk40t/gui/gui_mixins.py:701
+msgid "- Raster/Images have a raster method that is unsupported on this device: no optimisation will be applied in these cases"
+msgstr "- Raster/Bilder nutzen eine Methode, die auf dem aktuellen Gerät nicht unterstützt wird: es findet keine Optimierung in diesen Fällen statt"
+
+#: meerk40t/gui/simulation.py:1690
+msgid "Calculating"
+msgstr "Berechne..."
+
+#: meerk40t/gui/simulation.py:2394
+msgid "(Right click: no optimisation)"
+msgstr "(Rechtsclick: ohne Optimerung)"
+
+#: meerk40t/gui/wxmmain.py:311
+msgid "Loading panels..."
+msgstr "Lade Fenster..."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1689
+msgid "- Spiral: Starting in the center spiralling outwards"
+msgstr "- Spirale: startet in der Mitte und bewegt sich spiralförmig nach außen"
