@@ -135,6 +135,28 @@ class RasterPlotter:
         self._distance_travel = 0
         self._distance_burn = 0
 
+    def __repr__(self):
+        methods = (
+            "Top2Bottom",
+            "Bottom2Top",
+            "Right2Left",
+            "Left2Right",
+            "Hatch",
+            "Greedy Neighbor Hor",
+            "Greedy Neighbor Ver",
+            "Crossover",
+            "Spiral",
+        )
+        if self.direction in methods:
+            s_meth = f"Rasterplotter: {methods[self.direction]} ({self.direction})"
+        else:
+            s_meth = f"Rasterplotter: Unknown {self.direction}"
+        s_direc = 'Bidirectional' if self.bidirectional else 'Unidirectional'
+        s_axis = {'horizontal' if self.horizontal else 'vertical'}
+        s_ystart = 'top' if self.start_minimum_y else 'bottom'
+        s_xstart = 'left' if self.start_minimum_x else 'right'
+        return f"{s_meth}, {s_direc} {s_axis} plot starting at {s_ystart}-{s_xstart}"
+    
     def reset(self):
         self._cache = None
 
