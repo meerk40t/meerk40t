@@ -148,9 +148,9 @@ class RasterPlotter:
             "Spiral",
         )
         if 0 <= self.direction < len(methods):
-            s_meth = f"Rasterplotter: {methods[self.direction]} ({self.direction})"
+            s_meth = f"Rasterplotter ({self.width}x{self.height}): {methods[self.direction]} ({self.direction})"
         else:
-            s_meth = f"Rasterplotter: Unknown {self.direction}"
+            s_meth = f"Rasterplotter ({self.width}x{self.height}): Unknown {self.direction}"
         s_direc = 'Bidirectional' if self.bidirectional else 'Unidirectional'
         s_axis = 'horizontal' if self.horizontal else 'vertical'
         s_ystart = 'top' if self.start_minimum_y else 'bottom'
