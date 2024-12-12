@@ -2278,7 +2278,7 @@ class Kernel(Settings):
         it will execute that in the console_parser. This works like a
         terminal, where each letter of data can be sent to the console and
         execution will occur at the carriage return.
-
+        Additionally you can provide a '|' character that will separate commands on a single line 
         @param data:
         @return:
         """
@@ -2287,6 +2287,18 @@ class Kernel(Settings):
                 data = data.decode()
             except UnicodeDecodeError:
                 return
+        start = 0
+        while True:
+            idx = data.find("|", start)
+            if idx < 0:
+                break
+            # Is the amount of quotation marks odd (ie non-even)?
+            # Yes: we are in the middle of a str
+            # No: we can split the command
+            quotations = data.count('"', 0, idx)
+            if quotations % 2 == 0:
+                data = data[:idx].rstrip() + "\n" + data[idx+1:].lstrip()
+            start = idx + 1
         self._console_buffer += data
         data_out = None
         while "\n" in self._console_buffer:
@@ -2313,7 +2325,6 @@ class Kernel(Settings):
         post = list()
         post_data = dict()
         _ = self.translation
-
         while len(text) > 0:
             # Split command from remainder.
             pos = text.find(" ")
@@ -2837,19 +2848,28 @@ class Kernel(Settings):
                             winsound.Beep(2000, 100)
                     else:
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
-                except Exception:
+                except Exception as e:
+                    channel ("Encountered exception {e} during play")
                     pass
 
             def _play_darwin():
-                cmd = system_sound['Darwin'] if use_default else sys_snd
-                subprocess.run(['afplay', cmd], shell=False)
+                arg = system_sound['Darwin'] if use_default else sys_snd
+                cmd = ['afplay', arg]
+                try:
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel (f"Could not run {cmd[0]}: {e}")
 
             def _play_linux():
-                if not use_default:
-                    subprocess.run(['play', sys_snd], shell=False)
-                else:
-                    print("\a")
-                    subprocess.run(['say', 'Ding'], shell=False)
+                try:
+                    if not use_default:
+                        cmd = ['play', sys_snd]
+                    else:
+                        print("\a")
+                        cmd = ['say', 'Ding']
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel (f"Could not run {cmd[0]}: {e}")
 
             players = {
                 "Windows": _play_windows,

@@ -1247,8 +1247,8 @@ class ImageModificationPanel(ScrolledPanel):
     def update_node(self):
         self.context.elements.emphasized()
         self.context.elements.do_image_update(self.node, self.context)
-        self.context.signal("element_property_update", self.node)
-        self.context.signal("selected", self.node)
+        self.context.signal("element_property_force", self.node)
+        # self.context.signal("selected", self.node)
         self.fill_operations()
 
     def on_apply_replace(self, event):

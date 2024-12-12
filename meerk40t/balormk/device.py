@@ -256,6 +256,31 @@ class BalorDevice(Service, Status):
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
                 "section": "_00_General",
+                "subsection": "_10_Device Selection",
+            },
+            {   "attr": "serial_enable",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Check serial no"),
+                "tip": _(
+                    "Does the machine need to have a specific serial number?"
+                ),
+                "section": "_00_General",
+                "subsection": "_10_Device Selection",
+            },
+            {
+                "attr": "serial",
+                "object": self,
+                "default": "",
+                "type": str,
+                "tip": _(
+                    "Does the machine need to have a specific serial number?"
+                ),
+                "label": "",
+                "section": "_00_General",
+                "subsection": "_10_Device Selection",
+                "conditional": (self, "serial_enable")
             },
             {
                 "attr": "footpedal_pin",
@@ -960,7 +985,10 @@ class BalorDevice(Service, Status):
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
-        unit_size = float(Length(self.lens_size))
+        try:
+            unit_size = float(Length(self.lens_size))
+        except ValueError:
+            return
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 

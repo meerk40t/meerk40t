@@ -131,3 +131,6 @@ dmypy.json
 # Others
 *.bat
 MeerK40t-*.txt
+
+# Sourcery settings
+.sourcery.yaml

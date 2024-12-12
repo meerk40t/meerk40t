@@ -208,6 +208,7 @@ class Autosaver:
 
                 v1_file = base_name + ".bak"
                 os.rename(self.autosave_file, v1_file)
+            elements.save(self.autosave_file, temporary=True)
         except (
             PermissionError,
             OSError,
@@ -218,7 +219,6 @@ class Autosaver:
             # print (f"Error happened: {e}")
             pass
 
-        elements.save(self.autosave_file, temporary=True)
         self.needs_saving = False
         # print ("Saved...")
 
@@ -4451,6 +4451,7 @@ class MeerK40t(MWindow):
         self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     @signal_listener("warn_state_update")
+    @signal_listener("element_property_reload")
     @signal_listener("updateop_tree")
     @signal_listener("tree_changed")
     @signal_listener("modified_by_tool")

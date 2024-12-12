@@ -196,38 +196,31 @@ class TestCutcode(unittest.TestCase):
         laserop.add_node(inode2)  # crosshatch
         for i in range(2):  # Check for knockon
             cutcode = CutCode(laserop.as_cutobjects())
-            self.assertEqual(len(cutcode), 3)
+            self.assertEqual(len(cutcode), 2)
 
-            rastercut = cutcode[0]
-            self.assertTrue(isinstance(rastercut, RasterCut))
-            self.assertEqual(rastercut.offset_x, 100)
-            self.assertEqual(rastercut.offset_y, 100)
-            image = rastercut.image
+            rastercut1 = cutcode[0]
+            rastercut2 = cutcode[1]
+            # print("Cut0", rastercut2.path, rastercut2.offset_x, rastercut2.offset_y)
+            # print("Cut1", rastercut1.path, rastercut1.offset_x, rastercut1.offset_y)
+
+            self.assertTrue(isinstance(rastercut1, RasterCut))
+            self.assertEqual(rastercut1.offset_x, 100)
+            self.assertEqual(rastercut1.offset_y, 100)
+            image = rastercut1.image
             self.assertTrue(isinstance(image, Image.Image))
             self.assertIn(image.mode, ("L", "1"))
             self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
             self.assertEqual(
-                rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+                rastercut1.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
             )
 
-            rastercut1 = cutcode[1]
-            self.assertTrue(isinstance(rastercut1, RasterCut))
-            self.assertEqual(rastercut1.offset_x, 80)
-            self.assertEqual(rastercut1.offset_y, 80)
-            image1 = rastercut1.image
-            self.assertTrue(isinstance(image1, Image.Image))
-            self.assertIn(image1.mode, ("L", "1"))
-            self.assertEqual(image1.size, (21, 21))  # default step value 2, 40/2 + 1
-            self.assertEqual(rastercut1.path, "M 80,80 L 80,122 L 122,122 L 122,80 Z")
-
-            rastercut2 = cutcode[2]
             self.assertTrue(isinstance(rastercut2, RasterCut))
             self.assertEqual(rastercut2.offset_x, 80)
             self.assertEqual(rastercut2.offset_y, 80)
-            image2 = rastercut2.image
-            self.assertTrue(isinstance(image2, Image.Image))
-            self.assertIn(image2.mode, ("L", "1"))
-            self.assertEqual(image2.size, (21, 21))  # default step value 2, 40/2 + 1
+            image1 = rastercut2.image
+            self.assertTrue(isinstance(image1, Image.Image))
+            self.assertIn(image1.mode, ("L", "1"))
+            self.assertEqual(image1.size, (21, 21))  # default step value 2, 40/2 + 1
             self.assertEqual(rastercut2.path, "M 80,80 L 80,122 L 122,122 L 122,80 Z")
 
     def test_cutcode_image_crosshatch(self):

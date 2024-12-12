@@ -376,6 +376,15 @@ class GrblController:
                 self.validate_start("$")
             else:
                 self._validation_stage = 5
+        if self.service.startup_commands:
+            self.log("Queue startup commands", type="event")
+            lines = self.service.startup_commands.split("\n")
+            line_end = self.service.driver.line_end
+            for line in lines:
+                if line.startswith("#"):
+                    self.log(f"Startup: {line}", type="event")
+                else:
+                    self.service.driver(f"{line}{line_end}")
 
     def close(self):
         """

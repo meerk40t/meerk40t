@@ -650,3 +650,4 @@ def grouped(plot):
         group_y = y
     # There are no more plots.
     yield group_x, group_y
+    

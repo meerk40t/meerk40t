@@ -17,6 +17,7 @@ def plugin(service, lifecycle):
             icons8_connected,
             icons8_emergency_stop_button,
             icons8_pause,
+            icons8_home_filled,
         )
         from meerk40t.lihuiyu.gui.lhyaccelgui import LihuiyuAccelerationChart
         from meerk40t.lihuiyu.gui.lhycontrollergui import LihuiyuControllerGui
@@ -100,6 +101,20 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("estop\n"),
             },
         )
+
+
+        service.register(
+            "button/control/GoHome",
+            {
+                "label": _("Home"),
+                "icon": icons8_home_filled,
+                "tip": _("Send laser to home position (right click: to physical home)") ,
+                "help": "devicek40",
+                "action": lambda v: service("home\n"),
+                "action_right": lambda v: service("physical_home\n"),
+            },
+        )
+
         service.add_service_delegate(LihuiyuGui(service))
 
 

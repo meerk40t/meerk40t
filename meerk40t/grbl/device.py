@@ -598,6 +598,18 @@ class GRBLDevice(Service, Status):
                 ),
                 "section": "_40_Validation",
             },
+            {
+                "attr": "startup_commands",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "multiline",
+                "label": _("Startup commands"),
+                "tip": _(
+                    "Which commands should be sent to the device on a successful connect?"
+                ),
+                "section": "_40_Validation",
+            },
         ]
         self.register_choices("protocol", choices)
 
@@ -886,6 +898,51 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+        @self.console_argument(
+            "index", type=int, help=_("macro to run (1-5).")
+        )
+        @self.console_command(
+            "macro",
+            help=_("Send a predefined macro to the device."),
+        )
+        def run_macro(command, channel, _, index=None, remainder=None, **kwargs):
+            for idx in range(5):
+                macrotext = self.setting(str, f"macro_{idx}", "")
+            if index is None:
+                for idx in range(5):
+                    macrotext = self.setting(str, f"macro_{idx}", "")
+                    channel(f"Content of macro {idx + 1}:")
+                    for no, line in enumerate(macrotext.splitlines()):
+                        channel (f"{no:2d}: {line}")
+                return
+            err = True
+            try:
+                macro_index = int(index) -1
+                if 0 <= macro_index <= 4:
+                    err = False
+            except ValueError:
+                pass
+            if err:
+                channel(f"Invalid macro-number '{index}', valid: 1-5")
+            if remainder is not None:
+                remainder.strip()
+            # channel(f"Remainder: {remainder}")
+            if remainder:
+                channel(f"Redefining macro {index} to:")
+                macrotext = remainder.replace("|", "\n")
+                for line in macrotext.splitlines():
+                    channel(line)
+                setattr(self, f"macro_{macro_index}", macrotext)
+                return
+
+            macrotext = self.setting(str, f"macro_{macro_index}", "")
+            # channel(f"{macro_index}: {macrotext}")
+            for line in macrotext.splitlines():
+                channel(f"> {line}")
+                if line.startswith("#"):
+                    continue
+                self.driver(f"{line}{self.driver.line_end}")
+
     @property
     def safe_label(self):
         """
@@ -1017,3 +1074,8 @@ class GRBLDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_raster_instructions(self):
+        return {
+            "gantry": True,
+        }

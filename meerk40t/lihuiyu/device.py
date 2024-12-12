@@ -6,7 +6,7 @@ the given device type.
 """
 
 from hashlib import md5
-
+import meerk40t.constants as mkconst
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
@@ -364,6 +364,19 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_00_" + _("General Options"),
                 "subsection": "_10_",
+            },
+            {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _("Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)") + "\n" +
+                    _("Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)")
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_20_",
             },
         ]
         self.register_choices("lhy-general", choices)
@@ -998,6 +1011,16 @@ class LihuiyuDevice(Service, Status):
                 except KeyError:
                     channel(_("Interpreter cannot be attached to any device."))
                 return
+
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (
+                mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V, mkconst.RASTER_SPIRAL,
+            ),  # Greedy loses registration way too often to be reliable
+            "gantry" : True,
+            "legacy" : self.legacy_raster,
+        }
 
     @property
     def safe_label(self):

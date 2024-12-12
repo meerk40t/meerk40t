@@ -260,6 +260,8 @@ class GalvoController:
         self._goto_speed = goto_speed
         self._light_speed = light_speed
         self._dark_speed = dark_speed
+        self.serial_confirmed = False
+        self.serial_number_found = None
 
         self._ready = None
         self._speed = None
@@ -342,6 +344,7 @@ class GalvoController:
         except (ConnectionError, ConnectionRefusedError, AttributeError):
             pass
         self.connection = None
+        self.serial_number_found = None
         # Reset error to allow another attempt
         self.set_disable_connect(False)
 
@@ -808,7 +811,21 @@ class GalvoController:
 
         self.usb_log("Initializing Laser")
         serial_number = self.get_serial_number()
-        self.usb_log(f"Serial Number: {serial_number}")
+        content = "0x"
+        for nibble in serial_number:
+            content += f"{nibble:04x}"
+        self.usb_log(f"Serial Number: {serial_number} ({content})")
+        if self.service.serial_enable and self.service.serial and not self.serial_confirmed:
+            self.usb_log(f"Requires serial number confirmation against {self.service.serial}.")
+            if content == self.service.serial:
+                self.serial_confirmed = True
+
+            if not self.serial_confirmed:
+                self.disconnect()
+                raise ConnectionRefusedError("Serial number confirmation failed.")
+            else:
+                self.usb_log("Serial number confirmed.")
+
         version = self.get_version()
         self.usb_log(f"Version: {version}")
 
@@ -1373,7 +1390,9 @@ class GalvoController:
         return self._command(GetVersion)
 
     def get_serial_number(self):
-        return self._command(GetSerialNo)
+        if self.serial_number_found is None:
+            self.serial_number_found = self._command(GetSerialNo)
+        return self.serial_number_found
 
     def get_list_status(self):
         return self._command(GetListStatus)

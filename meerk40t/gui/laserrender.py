@@ -590,12 +590,7 @@ class LaserRender:
                 _gcscale = get_gc_scale(gc)
                 try:
                     cache = cut._cache
-                    cache_id = cut._cache_id
                 except AttributeError:
-                    cache = None
-                    cache_id = -1
-                if cache_id != id(image):
-                    # Cached image is invalid.
                     cache = None
                 if cache is None:
                     # No valid cache. Generate.
@@ -627,20 +622,14 @@ class LaserRender:
                 gc.PopState()
 
             def process_as_raster():
-                p.MoveToPoint(start[0] + x, start[1] + y)
                 try:
-                    cache = cut._cache
-                    cache_id = cut._cache_id
+                    cache = cut._plotcache
                 except AttributeError:
                     cache = None
-                    cache_id = -1
-                if cache_id != "raster":
-                    # Cached plot is invalid.
-                    cache = None
                 if cache is None:
-                    cache = list(cut.plot.plot())
-                    cut._cache = cache
-                    cut._cache_id = "raster"
+                    process_as_image()
+                    return
+                p.MoveToPoint(start[0] + x, start[1] + y)
                 todraw = cache
                 if residual is None:
                     maxcount = -1
@@ -648,6 +637,9 @@ class LaserRender:
                     maxcount = int(len(todraw) * residual)
                 count = 0
                 for px, py, pon in todraw:
+                    if px is None or py is None:
+                        # Passthrough
+                        continue
                     if pon == 0:
                         p.MoveToPoint(px + x, py + y)
                     else:
@@ -659,18 +651,11 @@ class LaserRender:
             def process_as_plot():
                 p.MoveToPoint(start[0] + x, start[1] + y)
                 try:
-                    cache = cut._cache
-                    cache_id = cut._cache_id
+                    cache = cut._plotcache
                 except AttributeError:
                     cache = None
-                    cache_id = -1
-                if cache_id != "plot":
-                    # Cached plot is invalid.
-                    cache = None
                 if cache is None:
-                    cache = list(cut.plot)
-                    cut._cache = cache
-                    cut._cache_id = "plot"
+                    return
                 todraw = cache
                 if residual is None:
                     maxcount = -1

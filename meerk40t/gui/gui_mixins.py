@@ -536,6 +536,10 @@ class Warnings:
             except ValueError:
                 diameter = float(Length("0.3mm"))
             for op in self.context.elements.ops():
+                if getattr(op, "consider_laserspot", False) and check_type=="high":
+                    # This isn't a relevant comparison, as we have a relevant flag in the op set
+                    continue
+
                 if (
                     hasattr(op, "output")
                     and op.output
@@ -569,6 +573,24 @@ class Warnings:
 
             return flag, count
 
+        def check_optimisation():
+            flag = False
+            count = 0
+            active = self.context.setting(bool, "warning_optimisation", True)
+            if not active:
+                return flag, count
+            unsupported = ()
+            if hasattr(self.context.device, "get_raster_instructions"):
+                instructions = self.context.device.get_raster_instructions()
+                unsupported = instructions.get("unsupported_opt", ())
+            if not unsupported:
+                return flag, count
+            for op in self.context.elements.ops():
+                if hasattr(op, "raster_direction") and op.raster_direction in unsupported:
+                    flag = True
+                    count += 1
+
+            return flag, count
 
         self._concerns.clear()
 
@@ -669,6 +691,15 @@ class Warnings:
                 (
                     _("- Raster/Images have a high dpi and lines will overlap") + f" ({info})\n",
                     CONCERN_LOW
+                )
+            )
+
+        invalid_opt, info = check_optimisation()
+        if invalid_opt:
+            self._concerns.append(
+                (
+                    _("- Raster/Images have a raster method that is unsupported on this device: no optimisation will be applied in these cases") + f" ({info})\n",
+                    CONCERN_NORMAL
                 )
             )
 

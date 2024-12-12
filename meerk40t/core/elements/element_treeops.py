@@ -444,6 +444,59 @@ def init_tree(kernel):
                 data.append(e)
         return data
 
+    def set_vis(dataset, mode):
+        updated = []
+        for e in dataset:
+            if not hasattr(e, "hidden"):
+                continue
+            if mode==0:
+                e.hidden = True
+            elif mode==1:
+                e.hidden = False
+            else:
+                e.hidden = not e.hidden
+            if e.hidden:
+                e.emphasized = False
+            updated.append(e)
+        return updated
+
+    @tree_submenu(_("Toggle visibility"))
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Hide elements"),
+        node_type=elem_group_nodes,
+        help=_("When invisible the element will neither been displayed nor burnt"),
+        grouping="30_ELEM_VISIBLE",
+    )
+    def element_visibility_hide(node, **kwargs):
+        data = list(self.flat(selected=True))
+        if not data:
+            return
+        with self.undoscope("Hide elements"):
+            updated = set_vis(data, 0)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
+
+    @tree_submenu(_("Toggle visibility"))
+    @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
+    @tree_operation(
+        _("Show elements"),
+        node_type=elem_group_nodes,
+        help=_("When invisible the element will neither been displayed nor burnt"),
+        grouping="30_ELEM_VISIBLE",
+    )
+    def element_visibility_show(node, **kwargs):
+        data = list(self.flat(selected=True))
+        if not data:
+            return
+        with self.undoscope("Show elements"):
+            updated = set_vis(data, 1)
+        self.signal("refresh_scene", "Scene")
+        self.signal("element_property_reload", updated)
+        self.signal("warn_state_update")
+
+    @tree_submenu(_("Toggle visibility"))
     @tree_conditional(lambda node: len(list(self.elems(selected=True))) > 0)
     @tree_operation(
         _("Toggle visibility"),
@@ -452,28 +505,11 @@ def init_tree(kernel):
         grouping="30_ELEM_VISIBLE",
     )
     def element_visibility_toggle(node, **kwargs):
-        raw_data = list(self.elems(selected=True))
-        data = self.condense_elements(raw_data, expand_at_end=False)
+        data = list(self.flat(selected=True))
         if not data:
             return
-
-        def toggle_vis(dataset):
-            updated = []
-            for e in dataset:
-                if hasattr(e, "hidden"):
-                    e.hidden = not e.hidden
-                    if e.hidden:
-                        e.emphasized = False
-                if e.type in ("file", "group"):
-                    childset = toggle_vis(e.children)
-                    updated.extend(childset)
-                else:
-                    updated.append(e)
-            return updated
-
-        updated = []
         with self.undoscope("Toggle visibility"):
-            updated = toggle_vis(data)
+            updated = set_vis(data, 2)
         self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", updated)
         self.signal("warn_state_update")
@@ -1821,7 +1857,25 @@ def init_tree(kernel):
         if not cancelled:
             with self.undoscope("Convert to Elements"):
                 d2p.parse(node.data_type, node.data, self)
+                node.remove_node()
         return True
+
+    @tree_conditional_try(
+        lambda node: node.data_type == "egv"
+    )
+    @tree_operation(
+        _("Convert to Elements"),
+        node_type="blob",
+        help=_("Convert attached binary object to elements"),
+        grouping="85_OPS_BLOB",
+    )
+    def egv2path(node, **kwargs):
+        from meerk40t.lihuiyu.parser import LihuiyuParser
+        parser = LihuiyuParser()
+        parser.fix_speeds = True
+        parser.parse(node.data, self)
+        node.remove_node()
+        self.signal("refresh_scene", "Scene")
 
     @tree_conditional_try(
         lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
@@ -2794,16 +2848,10 @@ def init_tree(kernel):
 
         self.signal("refresh_tree")
 
-    @tree_operation(
-        _("Make raster image"),
-        node_type=op_burnable_nodes,
-        help=_("Create an image from the assigned elements."),
-        grouping="OPS_75_CONVERTIMAGE"
-    )
-    def make_raster_image(node, **kwargs):
+    def create_image_from_operation(node):
         data = list(node.flat(types=elem_ref_nodes))
         if not data:
-            return
+            return None, None
         try:
             bounds = Node.union_bounds(data, attr="paint_bounds", ignore_hidden=True)
             width = bounds[2] - bounds[0]
@@ -2826,12 +2874,105 @@ def init_tree(kernel):
         )
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
+        return image, matrix
 
+    @tree_submenu(_("Create image/path"))
+    @tree_operation(
+        _("Make raster image"),
+        node_type=op_burnable_nodes,
+        help=_("Create an image from the assigned elements."),
+        grouping="OPS_75_CONVERTIMAGE"
+    )
+    def make_raster_image(node, **kwargs):
+        image, matrix = create_image_from_operation(node)
+        if image is None:
+            return
         with self.undoscope("Make raster image"):
             image_node = ImageNode(image=image, matrix=matrix, dpi=node.dpi)
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
         self.signal("refresh_scene", "Scene")
+
+    def convert_raster_to_path(node, mode):
+        def feedback(msg):
+            busy.change(msg=msg, keep=1)
+            busy.show()
+
+        busy = self.kernel.busyinfo
+        busy.start(msg="Converting Raster")
+        busy.show()
+        with self.undoscope(f"To path: {mode}"):
+            busy.change(msg=_("Creating image"), keep=1)
+            busy.show()
+            image, matrix = create_image_from_operation(node)
+            if image is None:
+                busy.end()
+                return
+            vertical = mode.lower() != "horizontal"
+            bidirectional = self._image_2_path_bidirectional
+            threshold = 0.5 if self._image_2_path_optimize else None # Half a percent
+            geom = Geomstr.image(
+                    image, vertical=vertical,
+                    bidirectional=bidirectional,
+                )
+            if threshold:
+                geom.two_opt_distance(auto_stop_threshold=threshold, feedback=feedback)
+            # self.context
+            try:
+                spot_value = float(Length(getattr(self.device, "laserspot", "0.3mm")))
+            except ValueError:
+                spot_value = 1000
+
+            n = self.elem_branch.add(
+                type="elem path",
+                geometry=geom,
+                stroke=self.default_stroke,
+                stroke_width=spot_value,
+                matrix=matrix,
+            )
+            if self.classify_new:
+                self.classify([n])
+        busy.end()
+
+    @tree_submenu(_("Create image/path"))
+    @tree_separate_before()
+    @tree_operation(
+        _("Horizontal"), node_type="op raster", help=_("Create a horizontal linepattern from the raster"), grouping="OPS_75_CONVERTIMAGE"
+    )
+    def raster_convert_to_path_horizontal(node, **kwargs):
+        # Language hint _("To path: Horizontal")
+        convert_raster_to_path(node, "Horizontal")
+
+    @tree_submenu(_("Create image/path"))
+    @tree_operation(
+        _("Vertical"), node_type="op raster", help=_("Create a vertical linepattern from the raster"), grouping="OPS_75_CONVERTIMAGE"
+    )
+    def raster_convert_to_path_vertical(node, **kwargs):
+        convert_raster_to_path(node, "Vertical")
+
+    @tree_submenu(_("Create image/path"))
+    @tree_separate_before()
+    @tree_check(load_for_path_1)
+    @tree_operation(
+        _("Bidirectional"),
+        node_type="op raster",
+        help=_("Shall the line pattern be able to travel back and forth or will it always start at the same side"),
+        grouping="OPS_75_CONVERTIMAGE",
+    )
+    def set_raster_2_path_option_1(node, **kwargs):
+        self._image_2_path_bidirectional = not self._image_2_path_bidirectional
+
+    @tree_submenu(_("Create image/path"))
+    @tree_check(load_for_path_2)
+    @tree_operation(
+        _("Optimize travel"),
+        node_type="op raster",
+        help=_("Shall the line pattern be able to travel back and forth or will it always start at the same side"),
+        grouping="OPS_75_CONVERTIMAGE",
+    )
+    def set_raster_2_path_option_2(node, **kwargs):
+        self._image_2_path_optimize = not self._image_2_path_optimize
+
 
     def add_after_index(node=None):
         try:

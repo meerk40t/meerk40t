@@ -103,6 +103,7 @@ class CutCode(CutGroup):
                 "time_at_start": 0,
                 "time_at_end_of_travel": 0,
                 "time_at_end_of_burn": 0,
+                "total_internal_travel": 0,
             }
             result.append(item)
             return result
@@ -112,6 +113,7 @@ class CutCode(CutGroup):
         total_extra = 0
         total_duration_cut = 0
         total_duration_travel = 0
+        total_internal_travel = 0
         if include_start:
             if self.start is not None:
                 total_distance_travel += abs(
@@ -129,15 +131,16 @@ class CutCode(CutGroup):
                 prev = cutcode[i - 1]
                 length_of_previous_travel = Point.distance(prev.end, current.start)
                 total_distance_travel += length_of_previous_travel
-
             rapid_speed = self._native_speed(cutcode)
             if rapid_speed is not None:
                 total_duration_travel = total_distance_travel / rapid_speed
                 duration_of_this_travel = length_of_previous_travel / rapid_speed
 
             cut_type = type(current).__name__
-            current_length = current.length()
-            total_distance_cut += current_length
+            current_length = current.internal_length()
+            current_travel = current.internal_travel()
+            total_internal_travel += current_travel
+            total_distance_cut += current_length + current_travel
             current_extra = current.extra()
             total_extra += current_extra
             cs = current.settings
@@ -148,7 +151,7 @@ class CutCode(CutGroup):
             native_speed *= 0.91
             default_speed *= 0.91
             if native_speed != 0:
-                duration_of_this_burn = current_length / native_speed
+                duration_of_this_burn = (current_length + current_travel) / native_speed
                 total_duration_cut += duration_of_this_burn
 
             end_of_this_travel = previous_total_time + duration_of_this_travel
@@ -168,6 +171,7 @@ class CutCode(CutGroup):
                 "time_at_start": previous_total_time,
                 "time_at_end_of_travel": end_of_this_travel,
                 "time_at_end_of_burn": end_of_this_burn,
+                "total_internal_travel": total_internal_travel,
             }
             # print (item)
             result.append(item)

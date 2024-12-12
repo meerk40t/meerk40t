@@ -2019,7 +2019,7 @@ class Elemental(Service):
             if node.id in uid:
                 # ID already used. Clear.
                 node.id = None
-            if node.id is None:
+            if not node.id:
                 # Unused IDs need new IDs
                 missing.append(node)
             else:
