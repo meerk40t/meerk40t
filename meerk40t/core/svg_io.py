@@ -179,10 +179,7 @@ def rulestr(fillrule):
     @param fillrule:
     @return:
     """
-    if fillrule == Fillrule.FILLRULE_EVENODD:
-        return "evenodd"
-    else:
-        return "nonzero"
+    return "evenodd" if fillrule == Fillrule.FILLRULE_EVENODD else "nonzero"
 
 
 class SVGWriter:
@@ -487,9 +484,8 @@ class SVGWriter:
             subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
         if hasattr(c, "fillrule"):
             subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
-        if hasattr(c, "stroke_dash"):
-            if c.stroke_dash:
-                subelement.set(SVG_ATTR_STROKE_DASH, c.stroke_dash)
+        if hasattr(c, "stroke_dash") and c.stroke_dash:
+            subelement.set(SVG_ATTR_STROKE_DASH, c.stroke_dash)
 
         ###############
         # SAVE LABEL
@@ -500,10 +496,7 @@ class SVGWriter:
         ###############
         # SAVE STROKE
         ###############
-        if hasattr(c, "stroke"):
-            stroke = c.stroke
-        else:
-            stroke = None
+        stroke = c.stroke if hasattr(c, "stroke") else None
         if stroke is not None:
             stroke_opacity = stroke.opacity
             stroke = (
@@ -534,10 +527,7 @@ class SVGWriter:
         ###############
         # SAVE FILL
         ###############
-        if hasattr(c, "fill"):
-            fill = c.fill
-        else:
-            fill = None
+        fill = c.fill if hasattr(c, "fill") else None
         if fill is not None:
             fill_opacity = fill.opacity
             fill = (
@@ -749,15 +739,11 @@ class SVGProcessor:
         @param pathname:
         @return:
         """
-        # Caveat: we will not delete operations that have already a content,
-        # otherwise existing elements that had been classified before
-        # will become orphaned!
-        # When is this needed: not on a load with an empty set but when
-        # you load elements on top of an existing set!
-        retain_op_list = list()
-        for child in list(self.elements.ops()):
-            if child._children is not None and len(child._children) > 0:
-                retain_op_list.append(child)
+        retain_op_list = [
+            child
+            for child in list(self.elements.ops())
+            if child._children is not None and len(child._children) > 0
+        ]
         self.pathname = pathname
 
         context_node = self.elements.elem_branch
@@ -890,7 +876,7 @@ class SVGProcessor:
                 nlj = Linejoin.JOIN_MITER_CLIP
             elif lj == "round":
                 nlj = Linejoin.JOIN_ROUND
-            node.linejoin = nlj
+        node.linejoin = nlj
         lj = element.values.get(SVG_ATTR_STROKE_DASH)
         if lj not in (None, "", "none"):
             node.stroke_dash = lj
@@ -1499,11 +1485,7 @@ class SVGProcessor:
 
         ident = element.id
 
-        if uselabel:
-            _label = uselabel
-        else:
-            _label = self.get_tag_label(element)
-
+        _label = uselabel if uselabel else self.get_tag_label(element)
         _lock = None
         try:
             _lock = bool(element.values.get("lock") == "True")
