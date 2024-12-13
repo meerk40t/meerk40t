@@ -21245,7 +21245,7 @@ msgstr "Dimensione dello spot laser"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1354
 msgid "A laser dot has a certain diameter, so for high dpi values, lines will overlap a lot."
 msgstr ""
-"Un punto laser ha un diametro rilevante, il che significa che i modelli focali”
+"Un punto laser ha un diametro rilevante, il che significa che i modelli focali"
 "di linee strettamente distanziate si sovrappongono fortemente"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1355
@@ -21267,8 +21267,8 @@ msgstr "Utilizza la scala di grigi"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1362
 msgid "Usually a raster will be created as a grayscale picture and the burn-power of a pixel will depend on its darkness."
 msgstr ""
-"Normalmente, un raster viene generato come immagine in scala di grigi e l'intensità”
-"del raggio laser in una posizione del pixel dipende dalla scala di grigi del pixel.”
+"Normalmente, un raster viene generato come immagine in scala di grigi e l'intensità"
+"del raggio laser in una posizione del pixel dipende dalla scala di grigi del pixel."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1366
 msgid "If you uncheck this value then every non-white pixel (even very light ones) will become black and will be burned at full power."

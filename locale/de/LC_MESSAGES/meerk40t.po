@@ -19518,14 +19518,12 @@ msgstr "Nutze bisherige Raster Methode"
 
 #: meerk40t/lihuiyu/device.py:375 meerk40t/moshi/device.py:213
 msgid "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
-msgstr ""
-"Aktiv: Verwende alte Methode (scheint besser bei hohen Geschwindigkeiten zu funktionieren,\n" 
+msgstr "Aktiv: Verwende alte Methode (scheint besser bei hohen Geschwindigkeiten zu funktionieren,\n" 
 "hat aber ein paar Artifakte bei niedrigen Auflösungen)"
 
 #: meerk40t/lihuiyu/device.py:376 meerk40t/moshi/device.py:214
 msgid "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
-msgstr ""
-"Inaktiv: Verwende Standard-Methode (keine Artifakte,\n" 
+msgstr "Inaktiv: Verwende Standard-Methode (keine Artifakte,\n" 
 "aber anfälliger für Stottern bei hohen Geschwindigkeiten)"
 
 #: meerk40t/grbl/gui/grblcontroller.py:115
