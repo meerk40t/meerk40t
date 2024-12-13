@@ -845,14 +845,14 @@ class SVGProcessor:
         @return:
         """
         lc = element.values.get(SVG_ATTR_FILL_RULE)
+        nlc = Fillrule.FILLRULE_NONZERO
         if lc is not None:
-            nlc = Fillrule.FILLRULE_NONZERO
             lc = lc.lower()
             if lc == SVG_RULE_EVENODD:
                 nlc = Fillrule.FILLRULE_EVENODD
             elif lc == SVG_RULE_NONZERO:
                 nlc = Fillrule.FILLRULE_NONZERO
-            node.fillrule = nlc
+        node.fillrule = nlc
 
     def check_for_line_attributes(self, node, element):
         """
