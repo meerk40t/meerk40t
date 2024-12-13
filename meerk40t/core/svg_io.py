@@ -845,14 +845,15 @@ class SVGProcessor:
         @return:
         """
         lc = element.values.get(SVG_ATTR_FILL_RULE)
+        # SVG default is nonzero
+        nlc = Fillrule.FILLRULE_NONZERO
         if lc is not None:
-            nlc = Fillrule.FILLRULE_NONZERO
             lc = lc.lower()
             if lc == SVG_RULE_EVENODD:
                 nlc = Fillrule.FILLRULE_EVENODD
             elif lc == SVG_RULE_NONZERO:
                 nlc = Fillrule.FILLRULE_NONZERO
-            node.fillrule = nlc
+        node.fillrule = nlc
 
     def check_for_line_attributes(self, node, element):
         """
@@ -864,16 +865,19 @@ class SVGProcessor:
         @return:
         """
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
+        # SVG default is butt
+        nlc = Linecap.CAP_BUTT
         if lc is not None:
-            nlc = Linecap.CAP_ROUND
             if lc == "butt":
                 nlc = Linecap.CAP_BUTT
             elif lc == "round":
                 nlc = Linecap.CAP_ROUND
             elif lc == "square":
                 nlc = Linecap.CAP_SQUARE
-            node.linecap = nlc
+        node.linecap = nlc
         lj = element.values.get(SVG_ATTR_STROKE_JOIN)
+        # SVG default is miter
+        nlj = Linejoin.JOIN_MITER
         if lj is not None:
             nlj = Linejoin.JOIN_MITER
             if lj == "arcs":
