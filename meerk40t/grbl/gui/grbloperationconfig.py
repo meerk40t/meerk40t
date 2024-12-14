@@ -25,12 +25,12 @@ class GRBLAdvancedPanel(wx.Panel):
         )
         extras_sizer.Add(advanced_sizer, 0, wx.EXPAND, 0)
 
-        sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
-        advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
+        sizer_z_axis = wx.BoxSizer(wx.HORIZONTAL)
+        advanced_sizer.Add(sizer_z_axis, 0, wx.EXPAND, 0)
 
         self.check_zaxis = wxCheckBox(self, wx.ID_ANY, _("Set Z-Axis value"))
         self.check_zaxis.SetToolTip(_("Enables the ability to set a specific z-Value."))
-        sizer_11.Add(self.check_zaxis, 1, 0, 0)
+        sizer_z_axis.Add(self.check_zaxis, 1, 0, 0)
 
         self.text_zaxis = TextCtrl(
             self,
@@ -45,14 +45,20 @@ class GRBLAdvancedPanel(wx.Panel):
         )
 
         self.text_zaxis.SetToolTip(OPERATION_ZAXIS_TOOLTIP)
-        sizer_11.Add(self.text_zaxis, 1, 0, 0)
+        sizer_z_axis.Add(self.text_zaxis, 1, 0, 0)
 
+        sizer_commands = StaticBoxSizer(self, wx.ID_ANY, _("Custom Code:"))
+        advanced_sizer.Add(sizer_commands, 1, wx.EXPAND, 0)
+        self.text_commands = TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.text_commands.SetToolTip(_("Any custom GRBL code that will be executed at the start of the operation"))
+        sizer_commands.Add(self.text_commands, 1, wx.EXPAND, 0)
         self.SetSizer(extras_sizer)
 
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_zaxis, self.check_zaxis)
         self.text_zaxis.SetActionRoutine(self.on_text_zaxis)
+        self.text_commands.Bind(wx.EVT_TEXT, self.on_text_commands)
 
     def pane_hide(self):
         pass
@@ -64,9 +70,10 @@ class GRBLAdvancedPanel(wx.Panel):
         self.operation = node
         value = ""
         flag = False
-        if self.operation.zaxis is not None:
+        z_val = getattr(self.operation, "zaxis", None)
+        if z_val is not None:
             try:
-                value = Length(self.operation.zaxis).preferred_length
+                value = Length(z_val).preferred_length
                 flag = True
             except ValueError:
                 pass
@@ -74,8 +81,10 @@ class GRBLAdvancedPanel(wx.Panel):
         self.check_zaxis.SetValue(flag)
         self.text_zaxis.SetValue(value)
         self.text_zaxis.Enable(flag)
+        value = getattr(self.operation, "custom_commands", "")
+        self.text_commands.SetValue(value)
 
-    def on_check_zaxis(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_zaxis(self, event=None):
         on = self.check_zaxis.GetValue()
         self.text_zaxis.Enable(on)
 
@@ -85,3 +94,10 @@ class GRBLAdvancedPanel(wx.Panel):
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)
+
+    def on_text_commands(self, event):
+        value = self.text_commands.GetValue()
+        if value == "":
+            value = None
+        self.operation.custom_commands = value
+        # self.context.elements.signal("element_property_update", self.operation)
