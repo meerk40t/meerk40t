@@ -2265,7 +2265,7 @@ class RasterImagePreprocessor:
                 else:
                     was_covered = True
                 e.direction = RASTER_T2B if idx % 2 == 0 else RASTER_B2T
-            if not was_covered:
+            if not was_covered and data_out:
                 inode.remove_node()
 
         operation.raster_direction = RASTER_T2B
