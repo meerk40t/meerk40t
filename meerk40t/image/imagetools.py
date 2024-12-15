@@ -2736,6 +2736,7 @@ class ImageLoader:
             if sx > 1 or sy > 1:
                 sx = max(sx, sy)
                 n.matrix.post_scale(1 / sx, 1 / sx)
+                n.update(context)
 
         context.setting(bool, "center_image_on_load", True)
         if context.center_image_on_load:
