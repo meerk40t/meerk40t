@@ -47,7 +47,7 @@ class GRBLDriver(Parameters):
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, ppi=False, shift=False, group=True
+            self.settings, single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
         )
         self.queue = []
         self._queue_current = 0

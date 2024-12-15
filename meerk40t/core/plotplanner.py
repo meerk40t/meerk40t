@@ -47,6 +47,7 @@ class PlotPlanner(Parameters):
         ppi=True,
         shift=True,
         group=True,
+        require_uniform_movement = True,
         **kwargs,
     ):
         super().__init__(settings, **kwargs)
@@ -57,6 +58,7 @@ class PlotPlanner(Parameters):
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
         self.phase_type = 0  # Sequential, random, progressive, static.
         self.phase_value = 0
+        self.require_uniform_movement = require_uniform_movement
 
         self.queue = []
 
@@ -306,6 +308,7 @@ class PlotManipulation:
 class Single(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
         super().__init__(planner)
+        self.planner = planner
         self.single_default = 1
         self.single_x = None
         self.single_y = None
@@ -346,7 +349,7 @@ class Single(PlotManipulation):
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
 
-            if total_dy * dx != total_dx * dy:
+            if total_dy * dx != total_dx * dy and self.planner.require_uniform_movement:
                 # Check for cross-equality.
                 raise ValueError(
                     f"Must be uniformly diagonal or orthogonal: ({total_dx}, {total_dy}) is not."

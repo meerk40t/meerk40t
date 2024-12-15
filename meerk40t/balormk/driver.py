@@ -44,7 +44,7 @@ class BalorDriver:
         self._queue_current = 0
         self._queue_total = 0
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True
+            dict(), single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
         )
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
