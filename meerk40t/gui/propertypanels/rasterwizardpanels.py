@@ -30,10 +30,12 @@ class ContrastPanel(wx.Panel):
     def accepts(node):
         if not hasattr(node, "as_image"):
             return False
-        for n in node.operations:
-            if n.get("name") == "contrast":
-                return True
-        return False
+        # Show it for all images...
+        return True
+        # for n in node.operations:
+        #     if n.get("name") == "contrast":
+        #         return True
+        # return False
 
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -83,7 +85,14 @@ class ContrastPanel(wx.Panel):
             if n.get("name") == "contrast":
                 op = n
         if op is None:
-            raise ValueError
+            op = {
+                    "name": "contrast",
+                    "enable": False,
+                    "contrast": 0,
+                    "brightness": 0,
+                }
+            node.operations.append(op)
+            # raise ValueError
         self.op = op
         self.original_op = deepcopy(op)
         self.check_enable_contrast.SetValue(self.op["enable"])
