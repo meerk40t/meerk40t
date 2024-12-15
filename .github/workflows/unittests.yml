@@ -1,6 +1,8 @@
 name: Unittest
 
 on:
+  workflow_dispatch:
+  
   push:
     branches: [main, legacy6, legacy7, legacy8]
     paths:
