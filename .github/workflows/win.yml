@@ -16,11 +16,11 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: 3.8
-        # Latest version of python support by Windows 7 is Python 3.8
+        python-version: 3.11
+        # Latest version of python support by Windows 7 is Python 3.11
         architecture: x86
         # 32-bit architecture required for libusb to connect properly
 
