@@ -172,6 +172,7 @@ def plugin(kernel, lifecycle):
         channel(f"Loaded {len(elements_service.added_elements)} elements")
 
         with elements_service.undofree():
+            require_updates = []
             if width is not None:
                 bb = union_box(elements_service.added_elements)
                 if bb is not None:
@@ -188,6 +189,8 @@ def plugin(kernel, lifecycle):
                 for n in elements_service.added_elements:
                     if hasattr(n, "matrix"):
                         n.matrix.post_scale(sx, sy)
+                        if n.type == "elem image":
+                            require_updates.append(n)
 
             if x is not None and y is not None:
                 bb = union_box(elements_service.added_elements)
@@ -215,6 +218,8 @@ def plugin(kernel, lifecycle):
                     for n in elements_service.added_elements:
                         if hasattr(n, "matrix"):
                             n.matrix.post_translate(dx, dy)
+            for n in require_updates:
+                n.update(context=None)
         elements_service.clear_loaded_information()
 
         context.signal("refresh_scene", "Scene")
