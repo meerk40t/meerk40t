@@ -4091,7 +4091,7 @@ msgstr "Faktor X-Achse"
 #: meerk40t/lihuiyu/device.py:130 meerk40t/lihuiyu/gui/lhydrivergui.py:352
 #: meerk40t/moshi/device.py:161 meerk40t/ruida/device.py:243
 msgid "Scale factor for the X-axis. Board units to actual physical units."
-msgstr ""
+msgstr "Skalierung X-Achse. Sollte normalerweise 1.0 sein."
 
 #: meerk40t/device/dummydevice.py:63 meerk40t/lihuiyu/device.py:139
 #: meerk40t/ruida/device.py:252
@@ -4102,7 +4102,7 @@ msgstr "Faktor Y-Achse"
 #: meerk40t/lihuiyu/device.py:140 meerk40t/lihuiyu/gui/lhydrivergui.py:370
 #: meerk40t/moshi/device.py:172 meerk40t/ruida/device.py:253
 msgid "Scale factor for the Y-axis. Board units to actual physical units."
-msgstr ""
+msgstr "Skalierung X-Achse. Sollte normalerweise 1.0 sein."
 
 #: meerk40t/dxf/plugin.py:25
 msgid "DXF Center and Fit"
@@ -4353,11 +4353,11 @@ msgstr ""
 
 #: meerk40t/grbl/device.py:138 meerk40t/moshi/device.py:183
 msgid "+X is standard for grbl but sometimes settings can flip that."
-msgstr "+X ist z.B. Standard für GRBL aber manchmal können Einstellungen das verkehren."
+msgstr "+X ist z.B. Standard für GRBL aber manchmal können Einstellungen das umkehren."
 
 #: meerk40t/grbl/device.py:150 meerk40t/moshi/device.py:195
 msgid "-Y is standard for grbl but sometimes settings can flip that."
-msgstr "-Y ist z.B. Standard für GRBL aber manchmal können Einstellungen das verkehren."
+msgstr "-Y ist z.B. Standard für GRBL aber manchmal können Einstellungen das umkehren."
 
 #: meerk40t/grbl/device.py:162 meerk40t/lihuiyu/gui/lhydrivergui.py:528
 #: meerk40t/moshi/device.py:207
@@ -4414,6 +4414,14 @@ msgstr "Abstand der Interpolationspunkte für Kurven in mils"
 #: meerk40t/grbl/device.py:289
 msgid "Use M3"
 msgstr "Nutze M3"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:50
+msgid "Custom Code:"
+msgstr "Start-Befehle:"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:53
+msgid "Any custom GRBL code that will be executed at the start of the operation"
+msgstr "Spezielle GRBL-Befehle, die zu Beginn des Arbeitsvorgangs ausgeführt werden."
 
 #: meerk40t/grbl/device.py:290
 msgid "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
@@ -19518,12 +19526,12 @@ msgstr "Nutze bisherige Raster Methode"
 
 #: meerk40t/lihuiyu/device.py:375 meerk40t/moshi/device.py:213
 msgid "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
-msgstr "Aktiv: Verwende alte Methode (scheint besser bei hohen Geschwindigkeiten zu funktionieren,\n" 
+msgstr "Aktiv: Verwende alte Methode (scheint besser bei hohen Geschwindigkeiten zu funktionieren,\n"
 "hat aber ein paar Artifakte bei niedrigen Auflösungen)"
 
 #: meerk40t/lihuiyu/device.py:376 meerk40t/moshi/device.py:214
 msgid "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
-msgstr "Inaktiv: Verwende Standard-Methode (keine Artifakte,\n" 
+msgstr "Inaktiv: Verwende Standard-Methode (keine Artifakte,\n"
 "aber anfälliger für Stottern bei hohen Geschwindigkeiten)"
 
 #: meerk40t/grbl/gui/grblcontroller.py:115
