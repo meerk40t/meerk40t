@@ -25,9 +25,9 @@ jobs:
         # 32-bit architecture required for libusb to connect properly
     
     - name: add mingw32 to path
-        shell: bash
-        run: |
-          echo "C:\msys64\mingw32\bin" >> $GITHUB_PATH
+      shell: bash
+      run: |
+        echo "C:\msys64\mingw32\bin" >> $GITHUB_PATH
 
     - name: Install dependencies
       # Numpy-locked 1.23.5 on 2023-9-28, beyond this crashes in 32-bit python for Windows 7
