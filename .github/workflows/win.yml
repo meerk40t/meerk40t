@@ -37,7 +37,7 @@ jobs:
         pip install ezdxf
         pip install pyserial
         pip install bitarray
-        pip install scipy=1.10.0
+        pip install scipy==1.10.0
         pip install pypotrace-windows
         pip install pyclipr
         pip install numba
