@@ -745,10 +745,7 @@ class CropPanel(wx.Panel):
     def accepts(node):
         if not hasattr(node, "as_image"):
             return False
-        for n in node.operations:
-            if n.get("name") == "crop":
-                return True
-        return False
+        return any(n.get("name") == "crop" for n in node.operations)
 
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -965,47 +962,40 @@ class CropPanel(wx.Panel):
         self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
-        if event:
-            # Wait until the user has stopped to move the slider
-            if (
-                not self.context.process_while_sliding
-                and wx.GetMouseState().LeftIsDown()
-            ):
-                event.Skip()
-                return
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
         self.cropleft = self.slider_left.GetValue()
 
     def on_slider_right(self, event=None):
-        if event:
-            # Wait until the user has stopped to move the slider
-            if (
-                not self.context.process_while_sliding
-                and wx.GetMouseState().LeftIsDown()
-            ):
-                event.Skip()
-                return
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
         self.cropright = self.slider_right.GetValue()
 
     def on_slider_top(self, event=None):
-        if event:
-            # Wait until the user has stopped to move the slider
-            if (
-                not self.context.process_while_sliding
-                and wx.GetMouseState().LeftIsDown()
-            ):
-                event.Skip()
-                return
+        # Wait until the user has stopped to move the slider
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
         self.croptop = self.slider_top.GetValue()
 
     def on_slider_bottom(self, event=None):
-        if event:
-            # Wait until the user has stopped to move the slider
-            if (
-                not self.context.process_while_sliding
-                and wx.GetMouseState().LeftIsDown()
-            ):
-                event.Skip()
-                return
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
         self.cropbottom = self.slider_bottom.GetValue()
 
     def set_slider_limits(self, pattern, constraint=True):
@@ -1626,12 +1616,11 @@ class ImageVectorisationPanel(ScrolledPanel):
     def set_images(self, refresh=False):
         def opaque(source):
             img = source
-            if img is not None:
-                if img.mode == "RGBA":
-                    r, g, b, a = img.split()
-                    background = Image.new("RGB", img.size, "white")
-                    background.paste(img, mask=a)
-                    img = background
+            if img is not None and img.mode == "RGBA":
+                r, g, b, a = img.split()
+                background = Image.new("RGB", img.size, "white")
+                background.paste(img, mask=a)
+                img = background
             return img
 
         if not self._pane_is_active:
@@ -1851,6 +1840,10 @@ class ImagePropertyPanel(ScrolledPanel):
             "Sierra3",
             "Sierra2",
             "Sierra-2-4a",
+            "Shiau-Fan",
+            "Shiau-Fan-2",
+            "Bayer",
+            "Bayer-Blue",
         ]
         self.combo_dither = wxComboBox(
             self,
@@ -2215,14 +2208,12 @@ class ImagePropertyPanel(ScrolledPanel):
     def on_slider_grayscale_component(
         self, event=None
     ):  # wxGlade: GrayscalePanel.<event_handler>
-        if event:
-            # Wait until the user has stopped to move the slider
-            if (
-                not self.context.process_while_sliding
-                and wx.GetMouseState().LeftIsDown()
-            ):
-                event.Skip()
-                return
+        if event and (
+            not self.context.process_while_sliding
+            and wx.GetMouseState().LeftIsDown()
+        ):
+            event.Skip()
+            return
 
         self.node.red = float(int(self.slider_grayscale_red.GetValue()) / 500.0)
         self.text_grayscale_red.SetValue(str(self.node.red))
