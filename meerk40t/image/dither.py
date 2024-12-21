@@ -396,7 +396,7 @@ def bayer_blue_dither(image):
     tiled_blue_noise = tiled_blue_noise[:height, :width]
 
     # Add blue noise to the image
-    noisy_image = image + tiled_blue_noise * np.random.uniform(-1.0, 1.0, image.shape)
+    noisy_image = dithered_image + tiled_blue_noise * np.random.uniform(-1.0, 1.0, image.shape)
     noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
     return noisy_image
 
