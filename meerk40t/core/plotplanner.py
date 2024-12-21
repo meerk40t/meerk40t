@@ -69,8 +69,8 @@ class PlotPlanner(Parameters):
 
         if single:
             self.single = Single(self)
-        if ppi:
-            self.ppi = PPI(self)
+        self.set_ppi(ppi)
+
         if shift:
             self.shift = Shift(self)
         if group:
@@ -79,6 +79,11 @@ class PlotPlanner(Parameters):
         self.pos_x = None
         self.pos_y = None
         self.settings_then_jog = False
+
+    def set_ppi(self, ppi):
+        self.ppi = None
+        if ppi:
+            self.ppi = PPI(self)
 
     def push(self, plot):
         self.abort = False
