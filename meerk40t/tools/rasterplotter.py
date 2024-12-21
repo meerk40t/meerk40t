@@ -156,7 +156,7 @@ class RasterPlotter:
         s_ystart = 'top' if self.start_minimum_y else 'bottom'
         s_xstart = 'left' if self.start_minimum_x else 'right'
         return f"{s_meth}, {s_direc} {s_axis} plot starting at {s_ystart}-{s_xstart}"
-    
+
     def reset(self):
         self._cache = None
 
@@ -850,8 +850,8 @@ class RasterPlotter:
                 last_y = y
                 yield last_x, last_y, 0
             y += dy
-    
-    # Legacy code for the m2nano - yes this has deficits for low dpi but it seems 
+
+    # Legacy code for the m2nano - yes this has deficits for low dpi but it seems
     # to be finetuned to the needs of the m2nano controller.
     # This will be called if the appropriate device setting is in place
     def _legacy_plot_vertical(self):
@@ -899,7 +899,6 @@ class RasterPlotter:
                     if pixel == skip_pixel:
                         yield x, y, 0
                     else:
-                        pixel_chain.append(())
                         yield x, y, pixel
                         pixel_chain.append([last_y, y, pixel])
                     last_y = y + 1
@@ -1180,7 +1179,7 @@ class RasterPlotter:
     def _plot_spiral(self):
 
 
-        rows = self.height 
+        rows = self.height
         cols = self.width
         center_row, center_col = rows // 2, cols // 2
         self.initial_x = center_col
@@ -1204,17 +1203,17 @@ class RasterPlotter:
             yield col - 0.5, row, 0
             last_x = col + 0.5
             yield last_x, row, pixel
-        while count < rows * cols: 
-            for _ in range(2): 
+        while count < rows * cols:
+            for _ in range(2):
                 segments = []
                 dx, dy = edges[direction_index]
                 edge_start_x = -dx
                 edge_start_y = -dy
                 edge_end_x = dx
                 edge_end_y = dy
-                # msg = f"[({col}, {row}) - {steps}] " 
-                for _ in range(steps): 
-                    row += directions[direction_index][1] 
+                # msg = f"[({col}, {row}) - {steps}] "
+                for _ in range(steps):
+                    row += directions[direction_index][1]
                     col += directions[direction_index][0]
                     if 0 <= row < rows and 0 <= col < cols:
                         pixel = self.px(col, row)
@@ -1225,11 +1224,11 @@ class RasterPlotter:
                                 segments[-1][1] = (col, row)
                             else:
                                 segments.append ([(col, row), (col, row), on])
-                        
+
                         last_pixel = on
                         count += 1
-                        if count == rows * cols: 
-                            break 
+                        if count == rows * cols:
+                            break
                 # Deal with segments
                 # print (msg)
                 # print (segments)
@@ -1270,7 +1269,7 @@ class RasterPlotter:
                                         self.data[nx, ny] = BLANK
 
 
-                direction_index = (direction_index + 1) % 4 
+                direction_index = (direction_index + 1) % 4
             steps += 1
 
 
@@ -1472,7 +1471,7 @@ class RasterPlotter:
 
             if not segments:
                 continue
-            # NB: Axis change indication is no longer required, 
+            # NB: Axis change indication is no longer required,
             # the m2nano does not support it, the other devices do not need it...
             if mode == ROW:
                 if xy != last_y:
