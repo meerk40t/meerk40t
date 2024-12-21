@@ -1466,7 +1466,7 @@ class SimulationPanel(wx.Panel, Job):
             my = float(Length(self.context.device.view.margin_y))
         except ValueError:
             mx = 0
-            my = 0 
+            my = 0
         # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
         if mx != 0.0 or my != 0.0:
             menu.AppendSeparator()
@@ -1698,8 +1698,12 @@ class SimulationPanel(wx.Panel, Job):
                     cut._plotcache = list(cut.plot)
                 self.context.signal("refresh_scene", self.widget_scene.name)
         self.reload_statistics()
-        self.button_spool.SetLabel(msg)
-        self.button_spool.Enable(True)
+        try:
+            self.button_spool.SetLabel(msg)
+            self.button_spool.Enable(True)
+        except RuntimeError:
+            # No longer existing
+            pass
 
     def update_fields(self):
         def len_str(value):
