@@ -1851,6 +1851,10 @@ class ImagePropertyPanel(ScrolledPanel):
             "Sierra3",
             "Sierra2",
             "Sierra-2-4a",
+            "Shiau-Fan",
+            "Shiau-Fan-2",
+            "Bayer",
+            "Bayer-Blue",
         ]
         self.combo_dither = wxComboBox(
             self,
