@@ -4883,7 +4883,7 @@ msgstr "Modalità esperto"
 
 #: meerk40t/gui/alignment.py:1617
 msgid "Open alignment dialog with advanced options"
-msgstr "Apre un dialogo con opzioni avanzate per l'allineamento/distribuzione degli elementi"
+msgstr "Apre una finestra di dialogo con opzioni avanzate per l'allineamento/distribuzione degli elementi"
 
 #: meerk40t/gui/bufferview.py:25
 msgid "Could not find buffer.\n"
@@ -21296,39 +21296,39 @@ msgstr "- Da sinistra a destra: segue l'immagine colonna per colonna partendo da
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1672
 msgid "- Crosshatch: Makes two passes: one horizontally then another one vertically"
-msgstr "- Tratteggio incrociato: Esegue due passate: una in orizzontale e una in verticale"
+msgstr "- Tratto incrociato: Esegue due passate: una in orizzontale e una in verticale"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1674
 msgid "- Greedy horizontal: Instead of following a complete line,"
-msgstr ""
+msgstr "- Orizzontale algotitmo Greedy: invece di seguire una linea completa,"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1675 meerk40t/gui/propertypanels/operationpropertymain.py:1680
 msgid "  this will choose the nearest to be drawn segment,"
-msgstr ""
+msgstr "   sceglierà il segmento più vicino da disegnare,"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1676 meerk40t/gui/propertypanels/operationpropertymain.py:1681
 msgid "  lasering these segments with vertical lines."
-msgstr ""
+msgstr "   tracciando questi segmenti con linee verticali."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1677 meerk40t/gui/propertypanels/operationpropertymain.py:1682 meerk40t/gui/propertypanels/operationpropertymain.py:1687
 msgid "  Usually much faster on an image with a lot of white pixels."
-msgstr ""
+msgstr "   Di solito è molto più veloce su un'immagine con molti pixel bianchi"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1679
 msgid "- Greedy vertical: Instead of following a complete line,"
-msgstr ""
+msgstr "- Verticale algotitmo Greedy: invece di seguire una linea completa,"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1684
 msgid "- Crossover: Sweeping over the image drawing first all lines"
-msgstr "- Incrocio: Passare sopra l'immagine disegnando prima tutte le linee"
+msgstr "- Crossover: Esegue un'analisi dell'immagine tracciando prima tutte le linee"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1685
 msgid "  with a majority of black pixels and then drawing the columns"
-msgstr " con una maggioranza di pixel neri e poi disegna le colonne"
+msgstr "   con una maggioranza di pixel neri e poi disegnando le colonne"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1686
 msgid "  where we have a majority."
-msgstr " dove abbiamo una maggioranza"
+msgstr "   dove abbiamo una maggioranza"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1689
 msgid "- Spiral: Starting in the center spiralling outwards"
@@ -21336,7 +21336,7 @@ msgstr "- Spirale: Partendo dal centro, si estende a spirale verso l'esterno"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1691
 msgid "You can choose from the following modes to laser an image:"
-msgstr ""
+msgstr "È possibile scegliere una delle seguenti modalità per la realizzazione di un'immagine:"
 
 #: meerk40t/lihuiyu/device.py:373 meerk40t/moshi/device.py:211
 msgid "Use legacy raster method"
@@ -21369,3 +21369,11 @@ msgstr "Creazione dell'immagine"
 #: meerk40t/core/elements/element_treeops.py:2940
 msgid "Create a horizontal linepattern from the raster"
 msgstr ""
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:50
+msgid "Custom Code:"
+msgstr "Codice personalizzato:"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:53
+msgid "Any custom GRBL code that will be executed at the start of the operation"
+msgstr "Qualsiasi codice GRBL personalizzato che verrà eseguito all'inizio dei processi"
