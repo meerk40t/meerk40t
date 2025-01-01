@@ -224,8 +224,6 @@ class WobbleEffectNode(Node, Suppressable):
                 if e._children:
                     subs = right_types(e)
                     res.extend(subs)
-                elif hasattr(e, "hidden") and e.hidden:
-                    continue
                 elif e.type.startswith("elem"):
                     res.append(e)
             return res
