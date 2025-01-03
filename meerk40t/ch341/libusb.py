@@ -573,6 +573,11 @@ class LibCH341Driver:
             raise ConnectionError
         self.driver.CH341EppWriteAddr(self.driver_index, packet)
 
+    def read(self, packet):
+        if not self.is_connected():
+            raise ConnectionError
+        self.driver.CH341EppReadData(self.driver_index, packet)
+
     def get_status(self):
         if not self.is_connected():
             raise ConnectionError
