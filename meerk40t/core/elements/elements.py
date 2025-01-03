@@ -838,18 +838,17 @@ class Elemental(Service):
 
     def have_burnable_elements(self):
         canburn = False
-        for node in self.elems():
-            will_be_burnt = False
-            for refnode in node._references:
-                op = refnode.parent
-                if op is not None:
-                    try:
-                        if op.output:
-                            will_be_burnt = True
-                            break
-                    except AttributeError:
-                        pass
-            if will_be_burnt:
+        # We might still have an effect to look for
+        for node in self.ops():
+            if not node.output:
+                continue
+            for child in node.children:
+                if hasattr(child, "node"):
+                    child = child.node
+                if getattr(child, "hidden", False):
+                    continue
+                if hasattr(child, "affected_children")  and len(child.affected_children()) == 0:
+                    continue
                 canburn = True
                 break
         return canburn
