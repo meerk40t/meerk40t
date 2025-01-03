@@ -289,10 +289,8 @@ def init_tree(kernel):
         _("Remove effect"), node_type=effect_nodes, help=_("Remove hatch/wobble"), grouping="10_ELEM_DELETION"
     )
     def remove_effect(node, **kwargs):
-        childs = [e for e in node._children]
-        if not childs:
-            return
         with self.undoscope("Remove effect"):
+            childs = [e for e in node._children]
             for e in childs:
                 e._parent = None  # Otherwise add_node will fail below
                 node.parent.add_node(e)
