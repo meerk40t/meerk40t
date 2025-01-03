@@ -316,7 +316,7 @@ class WarpEffectNode(Node, FunctionalParameter):
             return True
         if hasattr(drag_node, "as_geometry"):
             # Dragging element onto operation adds that element to the op.
-            if not modify:
+            if modify:
                 if self.has_ancestor("branch ops"):
                     self.add_reference(drag_node)
                 else:
