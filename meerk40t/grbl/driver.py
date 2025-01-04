@@ -412,7 +412,8 @@ class GRBLDriver(Parameters):
             #   M4=used for Raster/Engrave operations, as grblHAL will 
             #   adjust power based on gantry speed including acceleration. 
 
-            if cmd_string := q.settings.get("custom_commands", ""):
+            cmd_string = q.settings.get("custom_commands", "")
+            if cmd_string:
                 for cmd in cmd_string.splitlines():
                     self(f"{cmd}{self.line_end}")
 
