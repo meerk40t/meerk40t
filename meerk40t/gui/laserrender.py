@@ -195,6 +195,11 @@ class LaserRender:
         self.color = wx.Colour()
         self.caches_generated = 0
         self.nodes_rendered = 0
+        self.nodes_skipped = 0
+        self._visible_area = None
+
+    def set_visible_area(self, box):
+        self._visible_area = box
 
     def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         if not self.render_node(
@@ -216,9 +221,13 @@ class LaserRender:
         @param alpha: render transparency
         @return:
         """
+        # gc_win = gc.GetWindow()
+        # gc_mat = gc.GetTransform().Get()
+        # print (f"Window handle: {gc_win}, matrix: {gc_mat}")
         self.context.elements.set_start_time(f"renderscene_{msg}")
         self.caches_generated = 0
         self.nodes_rendered = 0
+        self.nodes_skipped = 0
         if draw_mode is None:
             draw_mode = self.context.draw_mode
         if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
@@ -257,7 +266,7 @@ class LaserRender:
             self.render_node(
                 node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
             )
-        self.context.elements.set_end_time(f"renderscene_{msg}", message=f"Rendered: {self.nodes_rendered}, caches created: {self.caches_generated}")
+        self.context.elements.set_end_time(f"renderscene_{msg}", message=f"Rendered: {self.nodes_rendered}, skipped: {self.nodes_skipped}, caches created: {self.caches_generated}")
 
     def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -269,16 +278,27 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
+        if self._visible_area and hasattr(node, "bounds"):
+            node_bb = node.bounds
+            vis_bb = self._visible_area
+            if (
+                node_bb[0] > vis_bb[2] or
+                node_bb[1] > vis_bb[3] or
+                node_bb[2] < vis_bb[0] or
+                node_bb[3] < vis_bb[1] 
+            ):
+                self.nodes_skipped += 1
+                return False
+        if hasattr(node, "hidden") and node.hidden:
+            self.nodes_skipped += 1
+            return False
+        if hasattr(node, "is_visible") and not node.is_visible:
+            self.nodes_skipped += 1
+            return False
+        if hasattr(node, "output") and not node.output:
+            self.nodes_skipped += 1
+            return False
         self.nodes_rendered += 1
-        if hasattr(node, "hidden"):
-            if node.hidden:
-                return False
-        if hasattr(node, "is_visible"):
-            if not node.is_visible:
-                return False
-        if hasattr(node, "output"):
-            if not node.output:
-                return False
         if not hasattr(node, "draw"): # or not hasattr(node, "_make_cache"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
