@@ -82,6 +82,8 @@ class GRBLAdvancedPanel(wx.Panel):
         self.text_zaxis.SetValue(value)
         self.text_zaxis.Enable(flag)
         value = getattr(self.operation, "custom_commands", "")
+        if value is None:
+            value = ""
         self.text_commands.SetValue(value)
 
     def on_check_zaxis(self, event=None):

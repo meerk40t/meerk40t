@@ -413,8 +413,9 @@ class GRBLDriver(Parameters):
             #   adjust power based on gantry speed including acceleration. 
 
             cmd_string = q.settings.get("custom_commands", "")
-            for cmd in cmd_string.splitlines():
-                self(f"{cmd}{self.line_end}")
+            if cmd_string:
+                for cmd in cmd_string.splitlines():
+                    self(f"{cmd}{self.line_end}")
 
             current += 1
             self._set_queue_status(current, total)
