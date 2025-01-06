@@ -286,6 +286,7 @@ class TreePanel(wx.Panel):
         )
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.shadow_tree.on_collapse, self.wxtree)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.shadow_tree.on_expand, self.wxtree)
+        self.Bind(wx.EVT_TREE_STATE_IMAGE_CLICK, self.shadow_tree.on_state_icon, self.wxtree)
 
         self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
         self.wxtree.Bind(wx.EVT_LEAVE_WINDOW, self.on_lost_focus, self.wxtree)
@@ -2267,6 +2268,21 @@ class ShadowTree:
             return
         node = self.wxtree.GetItemData(item)
         node.expanded = True
+
+    def on_state_icon(self, event):
+        if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
+            return
+        item = event.GetItem()
+        if not item:
+            return
+        node = self.wxtree.GetItemData(item)
+        if hasattr(node, "hidden"):
+            node.hidden = False
+            self.context.elements.set_emphasis([node])
+            # self.context.signal("refresh_scene", "Scene")
+            self.update_decorations(node)
 
     def on_item_selection_changed(self, event):
         """
