@@ -119,6 +119,7 @@ class Node:
 
         self._selected = False
         self._emphasized = False
+        self._expanded = False
         self._emphasized_time = None
         self._highlighted = False
         self._target = False
@@ -186,6 +187,16 @@ class Node:
     def targeted(self, value):
         self._target = value
         self.notify_targeted(self)
+    
+    @property
+    def expanded(self):
+        return self._expanded
+
+    @expanded.setter
+    def expanded(self, value):
+        self._expanded = value
+        # No use case for notify expand
+        # self.notify_expand(self)
 
     @property
     def highlighted(self):

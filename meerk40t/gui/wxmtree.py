@@ -284,6 +284,9 @@ class TreePanel(wx.Panel):
             self.shadow_tree.on_item_right_click,
             self.wxtree,
         )
+        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.shadow_tree.on_collapse, self.wxtree)
+        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.shadow_tree.on_expand, self.wxtree)
+
         self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
         self.wxtree.Bind(wx.EVT_LEAVE_WINDOW, self.on_lost_focus, self.wxtree)
 
@@ -877,6 +880,8 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
+        print (f"expanding: {node.type}")
+        node.expanded = True
         item = node._item
         self.check_validity(item)
         self.wxtree.ExpandAllChildren(item)
@@ -911,6 +916,8 @@ class ShadowTree:
         """
         if node is None:
             return
+        node.expanded = False
+        print (f"collapsing: {node.type}")
         item = node._item
         if item is None:
             return
@@ -1266,6 +1273,18 @@ class ShadowTree:
         self.wxtree.Expand(node_operations._item)
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
+        startnode = elemtree._item
+        
+        def expand_leaf(snode):
+            child, cookie = self.wxtree.GetFirstChild(snode)
+            while child.IsOk():
+                node = self.wxtree.GetItemData(child)  
+                if node.expanded:
+                    self.wxtree.Expand(child)
+                expand_leaf(child)
+                child, cookie = self.wxtree.GetNextChild(startnode, cookie)
+        
+        expand_leaf(startnode)
         self.elements.signal("warn_state_update")
 
         # Restore emphasis
@@ -2226,6 +2245,28 @@ class ShadowTree:
         activate = self.elements.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(first_element)
+
+    def on_collapse(self, event):
+        if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
+            return
+        item = event.GetItem()
+        if not item:
+            return
+        node = self.wxtree.GetItemData(item)
+        node.expanded = False
+
+    def on_expand(self, event):
+        if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
+            return
+        item = event.GetItem()
+        if not item:
+            return
+        node = self.wxtree.GetItemData(item)
+        node.expanded = True
 
     def on_item_selection_changed(self, event):
         """
