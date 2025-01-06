@@ -633,7 +633,7 @@ class GRBLDevice(Service, Status):
             self._register_console_serial()
 
         @self.console_command(
-            "gcode",
+            ("gcode", "grbl"),
             help=_("Send raw gcode to the device"),
             input_type=None,
         )
@@ -644,7 +644,7 @@ class GRBLDevice(Service, Status):
                 # self.channel("grbl/send")(remainder + self.driver.line_end)
 
         @self.console_command(
-            "gcode_realtime",
+            ("gcode_realtime", "grbl_realtime"),
             help=_("Send raw gcode to the device (via realtime channel)"),
             input_type=None,
         )
