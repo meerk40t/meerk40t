@@ -63,7 +63,9 @@ def init_commands(kernel):
         "redo",
     )
     def undo_redo(command, channel, _, data=None, **kwgs):
-        if not self.undo.redo():
+        with self.static("redo"):
+            redo_done = self.undo.redo()
+        if not redo_done:
             channel("No redo available.")
             return
         channel(f"Redo: {self.undo}")

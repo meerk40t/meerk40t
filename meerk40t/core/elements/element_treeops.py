@@ -295,7 +295,7 @@ def init_tree(kernel):
                 e._parent = None  # Otherwise add_node will fail below
                 node.parent.add_node(e)
             node._children.clear()
-            node.remove_node()
+            node.remove_node(fast=True)
         self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: is_hatched(node))
@@ -334,7 +334,7 @@ def init_tree(kernel):
                     pass
                 nparent.parent.add_node(e)
                 if len(nparent.children) == 0:
-                    nparent.remove_node()
+                    nparent.remove_node(fast=True)
                 else:
                     nparent.altered()
         self.signal("rebuild_tree")
@@ -569,9 +569,8 @@ def init_tree(kernel):
             return
         # Language hint: _("Remove all items from operation")
         with self.undoscope("Remove all items from operation"):
-            with self.static("clear_all_op"):
-                for item in data:
-                    item.remove_all_children()
+            for item in data:
+                item.remove_all_children()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(
@@ -1322,8 +1321,7 @@ def init_tree(kernel):
                 caption=_("Operations"),
             ):
                 with self.undoscope("Clear unused"):
-                    with self.static("clear_unused"):
-                        self.remove_operations(to_delete)
+                    self.remove_operations(to_delete)
 
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
@@ -1462,8 +1460,7 @@ def init_tree(kernel):
         ):
             # Language hint _("Clear all elements")
             with self.undoscope("Clear all elements"):
-                with self.static("clear_elems"):
-                    self.elem_branch.remove_all_children()
+                self.elem_branch.remove_all_children()
 
     # ==========
     # General menu-entries for regmark branch
@@ -1478,8 +1475,7 @@ def init_tree(kernel):
         ):
             # Language hint _("Clear all regmarks")
             with self.undoscope("Clear all regmarks"):
-                with self.static("clear_regmarks"):
-                    self.reg_branch.remove_all_children()
+                self.reg_branch.remove_all_children()
 
     # ==========
     # REMOVE MULTI (Tree Selected)
@@ -1940,12 +1936,11 @@ def init_tree(kernel):
         if not nodes:
             return
         with self.undoscope("Clone reference"):
-            with self.static("clone_elem_op"):
-                for snode in nodes:
-                    index = snode.parent.children.index(snode)
-                    for i in range(copies):
-                        snode.parent.add_reference(snode.node, pos=index)
-                    snode.modified()
+            for snode in nodes:
+                index = snode.parent.children.index(snode)
+                for i in range(copies):
+                    snode.parent.add_reference(snode.node, pos=index)
+                snode.modified()
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_operation(
@@ -2582,10 +2577,9 @@ def init_tree(kernel):
     def remove_all_assignments(node, **kwargs):
         # Language hint _("Clear classification")
         with self.undoscope("Clear classification"):
-            with self.static("remove_all_assign"):
-                for node in self.elems():
-                    for ref in list(node.references):
-                        ref.remove_node()
+            for node in self.elems():
+                for ref in list(node.references):
+                    ref.remove_node()
         self.signal("refresh_tree")
 
     hatchable_elems = (
@@ -2792,19 +2786,18 @@ def init_tree(kernel):
             return
         operations = self._tree.get(type="branch ops").children
         with self.undoscope("Duplicate operation(s)"):
-            with self.static("duplicate_operation"):
-                for op in data:
+            for op in data:
+                try:
+                    pos = operations.index(op) + 1
+                except ValueError:
+                    pos = None
+                copy_op = copy(op)
+                self.add_op(copy_op, pos=pos)
+                for child in op.children:
                     try:
-                        pos = operations.index(op) + 1
-                    except ValueError:
-                        pos = None
-                    copy_op = copy(op)
-                    self.add_op(copy_op, pos=pos)
-                    for child in op.children:
-                        try:
-                            copy_op.add_reference(child.node)
-                        except AttributeError:
-                            pass
+                        copy_op.add_reference(child.node)
+                    except AttributeError:
+                        pass
 
 
     @tree_conditional(lambda node: node.count_children() > 1)
@@ -3382,13 +3375,12 @@ def init_tree(kernel):
 
         copy_nodes = []
         with self.undoscope("Duplicate element(s)"):
-            with self.static("duplicate_n"):
-                _dx = self.length_x("3mm")
-                _dy = self.length_y("3mm")
-                delta_wordlist = 0
-                for n in range(copies):
-                    delta_wordlist += 1
-                    copy_a_group(node, node.parent, (n + 1 ) * _dx, (n + 1) * _dy)
+            _dx = self.length_x("3mm")
+            _dy = self.length_y("3mm")
+            delta_wordlist = 0
+            for n in range(copies):
+                delta_wordlist += 1
+                copy_a_group(node, node.parent, (n + 1 ) * _dx, (n + 1) * _dy)
         if copy_nodes:
             if self.classify_new:
                 self.classify(copy_nodes)
@@ -3458,26 +3450,25 @@ def init_tree(kernel):
 
         copy_nodes = []
         with self.undoscope("Duplicate element(s)"):
-            with self.static("duplicate_n"):
-                _dx = self.length_x("3mm")
-                _dy = self.length_y("3mm")
-                alldata = list(self.elems(emphasized=True))
-                if len(alldata) == 0:
-                    alldata = [node]
-                if alldata:
-                    # Special case: did we select all elements inside one group?
-                    first_parent = alldata[0].parent
-                    justonegroup = all(node.parent is first_parent for node in alldata)
-                    if justonegroup:
-                        minimaldata = alldata
-                    else:
-                        minimaldata = self.condense_elements(alldata, expand_at_end=False)
-                    for e in minimaldata:
-                        parent = e.parent
-                        copy_single_node(e, parent, copies, _dx, _dy)
+            _dx = self.length_x("3mm")
+            _dy = self.length_y("3mm")
+            alldata = list(self.elems(emphasized=True))
+            if len(alldata) == 0:
+                alldata = [node]
+            if alldata:
+                # Special case: did we select all elements inside one group?
+                first_parent = alldata[0].parent
+                justonegroup = all(node.parent is first_parent for node in alldata)
+                if justonegroup:
+                    minimaldata = alldata
+                else:
+                    minimaldata = self.condense_elements(alldata, expand_at_end=False)
+                for e in minimaldata:
+                    parent = e.parent
+                    copy_single_node(e, parent, copies, _dx, _dy)
 
-                    if self.classify_new:
-                        self.classify(copy_nodes)
+                if self.classify_new:
+                    self.classify(copy_nodes)
         if copy_nodes:
             self.signal("element_property_reload", copy_nodes)
         self.set_emphasis(None)
@@ -4194,16 +4185,15 @@ def init_tree(kernel):
     def move_back(node, **kwargs):
         # Drag and Drop
         with self.undoscope("Move back to elements"):
-            with self.static("move_back"):
-                drop_node = self.elem_branch
-                data = list()
-                for item in list(self.regmarks_nodes()):
-                    # print (item.type, item.emphasized, item.selected, item.highlighted)
-                    if item.emphasized:
-                        data.append(item)
-                if not data:
-                    data.append(node)
-                self.drag_and_drop(data, drop_node)
+            drop_node = self.elem_branch
+            data = list()
+            for item in list(self.regmarks_nodes()):
+                # print (item.type, item.emphasized, item.selected, item.highlighted)
+                if item.emphasized:
+                    data.append(item)
+            if not data:
+                data.append(node)
+            self.drag_and_drop(data, drop_node)
 
     @tree_conditional(lambda node: not is_regmark(node))
     ## @tree_separate_before()
@@ -4216,17 +4206,16 @@ def init_tree(kernel):
     def move_to_regmark(node, **kwargs):
         # Drag and Drop
         with self.undoscope("Move to regmarks"):
-            with self.static("move_to_reg"):
-                drop_node = self.reg_branch
-                data = list()
-                for item in list(self.elems_nodes()):
-                    if item.selected:
-                        data.append(item)
-                for item in data:
-                    # No usecase for having a locked regmark element
-                    if hasattr(item, "lock"):
-                        item.lock = False
-                    drop_node.drop(item)
+            drop_node = self.reg_branch
+            data = list()
+            for item in list(self.elems_nodes()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                # No usecase for having a locked regmark element
+                if hasattr(item, "lock"):
+                    item.lock = False
+                drop_node.drop(item)
 
     @tree_conditional(lambda node: is_regmark(node))
     ## @tree_separate_before()
