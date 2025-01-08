@@ -719,6 +719,8 @@ class Elemental(Service):
 
     @contextlib.contextmanager
     def undoscope(self, message:str, static:bool = True):
+        busy = self.kernel.busyinfo
+        busy.start(msg=self.kernel.translation(message))
         self.undo.mark(message)
         source = message.replace(" ", "_")
         try:
@@ -730,6 +732,7 @@ class Elemental(Service):
             if static:
                 self.resume_updates(source)
             self.do_undo = True
+            busy.end()
 
     def stop_visual_updates(self):
         self._tree.notify_frozen(True)
@@ -2185,7 +2188,7 @@ class Elemental(Service):
         self.clear_elements(fast=fast)
         self.clear_operations(fast=fast)
         if fast:
-            self.signal("rebuild_tree")
+            self.signal("rebuild_tree", "all")
 
     def clear_all(self, ops_too=True):
         fast = True
@@ -2204,7 +2207,7 @@ class Elemental(Service):
                 routine()
             self.validate_selected_area()
         if fast:
-            self.signal("rebuild_tree")
+            self.signal("rebuild_tree", "all")
         self.set_end_time("clear_all", display=True)
         self._filename = None
         self.signal("file;cleared")
@@ -2332,7 +2335,7 @@ class Elemental(Service):
             n.remove_node(children=False, references=False, fast=fastmode)
         self.set_end_time("remove_nodes")
         if fastmode:
-            self.signal("rebuild_tree")
+            self.signal("rebuild_tree", "all")
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
@@ -3987,8 +3990,10 @@ class Elemental(Service):
         l1, d1 = descend_group(self.elem_branch)
         l2, d2 = descend_group(self.reg_branch)
         self.set_end_time("empty_groups", display=True, message=f"{l1} / {l2}")
-        if d1 != 0 or d2 != 0:
-            self.signal("rebuild_tree")
+        if d1:
+            self.signal("rebuild_tree", "elements")
+        if d2:
+            self.signal("rebuild_tree", "regmarks")
 
     @staticmethod
     def element_classify_color(element: SVGElement):
