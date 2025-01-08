@@ -90,7 +90,18 @@ def register_panel_laser(window, context):
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
     notebook.AddPage(move_panel, _("Move"))
+    
+    def on_page_change(event):
+        event.Skip()
+        page = notebook.GetCurrentPage()
+        if page is None:
+            return
+        pages = [jog_panel, drag_panel] if page is jog_drag else [page]
+        for p in pages:
+            if hasattr(p, "pane_show"):
+                p.pane_show()
 
+    notebook.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_page_change)
     window.on_pane_create(pane)
     window.context.register("pane/laser", pane)
     choices = [

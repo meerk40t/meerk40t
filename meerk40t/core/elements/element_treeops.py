@@ -1154,6 +1154,14 @@ def init_tree(kernel):
         self.signal("rebuild_tree", "operations")
         self.signal("refresh_scene", "Scene")
 
+    @tree_operation(
+        _("Move laser to placement"),
+        node_type="place point",
+        help=_("Move the laserhead to the jobstart position"),
+        grouping="OPS_70_MODIFY",
+    )
+    def move_laser_to_placement(node, **kwargs):
+        self(f"move_absolute {node.x}, {node.y}\n")
 
     # ---- Burn Direction
     def get_direction_values():
