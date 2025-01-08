@@ -102,6 +102,16 @@ and a wxpython version <= 4.1.1."""
     elif lifecycle == "postboot":
         choices = [
             {
+                "attr": "supress_non_visible",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Optimize element display"),
+                "tip": _("Suppresses the drawing of non-visible elements (disable only if you face display issues)"),
+                "page": "Gui",
+                "section": "General",
+            },
+            {
                 "attr": "windows_save",
                 "object": kernel.root,
                 "default": True,
