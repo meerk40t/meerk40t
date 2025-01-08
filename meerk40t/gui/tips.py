@@ -261,7 +261,14 @@ class TipPanel(wx.Panel):
             return False
 
         bmp = wx.Bitmap()
-        res = bmp.LoadFile(local_path)
+        try:
+            res = bmp.LoadFile(local_path)
+            if res:
+                new_x, new_y = bmp.Size
+                if new_x == 0 or new_y == 0:
+                    res = False
+        except Exception:
+            res = False
         if not res:
             # Bitmap failed to load.
             self.no_image_message.Show(True)
