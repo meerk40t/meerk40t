@@ -57,7 +57,7 @@ def init_commands(kernel):
         self.validate_selected_area()
         channel(f"Undo: {self.undo}")
         self.signal("refresh_scene", "Scene")
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "all")
 
     @self.console_command(
         "redo",
@@ -71,7 +71,7 @@ def init_commands(kernel):
         channel(f"Redo: {self.undo}")
         self.validate_selected_area()
         self.signal("refresh_scene", "Scene")
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "all")
 
     @self.console_command(
         "undolist",
