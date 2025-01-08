@@ -353,7 +353,7 @@ def init_tree(kernel):
                 keep_children=True,
                 label=_("Content of {filenode}").format(filenode=node.name),
             )
-        self.signal("rebuild_tree", "elements")
+        # self.signal("rebuild_tree", "elements")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
