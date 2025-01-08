@@ -279,7 +279,7 @@ class SVGWriter:
             if len(c.children) > 1:
                 flag = False
             return flag
-
+                    
         if c.type == "elem ellipse":
             subelement = SubElement(xml_tree, SVG_TAG_ELLIPSE)
             subelement.set(SVG_ATTR_CENTER_X, str(c.cx))
@@ -545,6 +545,14 @@ class SVGWriter:
             subelement.set("visibility", "hidden")
 
         subelement.set(SVG_ATTR_ID, str(c.id))
+        if hasattr(c, "bounds"):
+            bb = c.bounds
+            bbstr = f"{bb[0]}, {bb[1]}, {bb[2]}, {bb[3]}"
+            subelement.set("bounds", bbstr)
+        if hasattr(c, "paint_bounds"):
+            bb = c.paint_bounds
+            bbstr = f"{bb[0]}, {bb[1]}, {bb[2]}, {bb[3]}"
+            subelement.set("paint_bounds", bbstr)
 
     @staticmethod
     def _write_operations(xml_tree, op_tree, version):
@@ -780,6 +788,39 @@ class SVGProcessor:
         if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
 
+    def check_for_bound_information(self, node, element):
+        # Do we have existing boundary information? 
+        if "bounds" not in element.values:
+            return False
+        bbstr = element.values["bounds"]
+        if not bbstr:
+            return False
+        bb_info = bbstr.split(",")
+        if len(bb_info) == 4:
+            bbox = [0, 0, 0, 0]
+            try:
+                for idx in range(4):
+                    val = float(bb_info[idx])
+                    bbox[idx] = val
+            except ValueError:
+                return False
+            node._bounds = list(bbox)
+            node._bounds_dirty = False
+            if "paint_bounds" in element.values:
+                try:
+                    bbstr = element.values["paint_bounds"]
+                    bb_info = bbstr.split(",")
+                    if len(bb_info) == 4:
+                        for idx in range(4):
+                            val = float(bb_info[idx])
+                            bbox[idx] = val
+                except Exception:
+                    # Whatever it was, we don't continue...
+                    pass                    
+            node._paint_bounds = list(bbox)
+            node._paint_bounds_dirty = False
+            return True
+
     def check_for_mk_path_attributes(self, node, element):
         """
         Checks for some mk special parameters starting with mk. Especially mkparam, and uses this property to fill in
@@ -980,6 +1021,7 @@ class SVGProcessor:
             hidden=set_hidden,
         )
         self.check_for_label_display(node, element)
+        self.check_for_bound_information(node, element)
         e_list.append(node)
 
     def _parse_path(self, element, ident, label, lock, context_node, e_list, set_hidden):
@@ -1019,6 +1061,7 @@ class SVGProcessor:
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
+        self.check_for_bound_information(node, element)
         e_list.append(node)
 
     def _parse_polyline(self, element, ident, label, lock, context_node, e_list, set_hidden):
@@ -1047,7 +1090,7 @@ class SVGProcessor:
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
-        if self.precalc_bbox:
+        if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             if element.transform.is_identity():
                 points = element.points
@@ -1095,6 +1138,7 @@ class SVGProcessor:
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
+        self.check_for_bound_information(node, element)
         e_list.append(node)
 
     def _parse_rect(self, element, ident, label, lock, context_node, e_list, set_hidden):
@@ -1122,7 +1166,7 @@ class SVGProcessor:
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
-        if self.precalc_bbox:
+        if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
                 Point(element.x, element.y),
@@ -1172,7 +1216,7 @@ class SVGProcessor:
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
-        if self.precalc_bbox:
+        if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
                 Point(element.x1, element.y1),
@@ -1321,6 +1365,7 @@ class SVGProcessor:
                     hidden=set_hidden,
                 )
                 self.check_for_label_display(node, element)
+                self.check_for_bound_information(node, element)
                 e_list.append(node)
         except OSError:
             pass
@@ -1441,6 +1486,7 @@ class SVGProcessor:
             elem = context_node.add(type=node_type, **attrs)
             # This could be an elem point
             self.check_for_label_display(elem, element)
+            self.check_for_bound_information(elem, element)
             try:
                 elem.validate()
             except AttributeError:
@@ -1505,6 +1551,7 @@ class SVGProcessor:
                 hidden=set_hidden,
             )
             self.check_for_label_display(node, element)
+            self.check_for_bound_information(node, element)
             e_list.append(node)
         elif isinstance(element, SVGText):
             self._parse_text(element, ident, _label, _lock, context_node, e_list, set_hidden)
@@ -1621,6 +1668,7 @@ class SVGProcessor:
                     type=e_type, id=ident, label=_label, **e_dict
                 )
                 self.check_for_label_display(context_node, element)
+                self.check_for_bound_information(context_node, element)
             context_node._ref_load = element.values.get("references")
             e_list.append(context_node)
             if hasattr(context_node, "validate"):

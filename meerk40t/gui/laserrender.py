@@ -197,6 +197,7 @@ class LaserRender:
         self.nodes_rendered = 0
         self.nodes_skipped = 0
         self._visible_area = None
+        self.suppress_it = False
 
     def set_visible_area(self, box):
         self._visible_area = box
@@ -224,6 +225,7 @@ class LaserRender:
         # gc_win = gc.GetWindow()
         # gc_mat = gc.GetTransform().Get()
         # print (f"Window handle: {gc_win}, matrix: {gc_mat}")
+        self.suppress_it = self.context.setting(bool, "supress_non_visible", True)
         self.context.elements.set_start_time(f"renderscene_{msg}")
         self.caches_generated = 0
         self.nodes_rendered = 0
@@ -278,7 +280,7 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
-        if self._visible_area and hasattr(node, "bounds"):
+        if self.suppress_it and self._visible_area and hasattr(node, "bounds"):
             node_bb = node.bounds
             vis_bb = self._visible_area
             if (

@@ -702,7 +702,7 @@ class Elemental(Service):
             self.signal(source)
 
     @contextlib.contextmanager
-    def static(self, source):
+    def static(self, source:str):
         try:
             self.stop_updates(source, False)
             yield self
@@ -718,12 +718,17 @@ class Elemental(Service):
             self.do_undo = True
 
     @contextlib.contextmanager
-    def undoscope(self, message):
+    def undoscope(self, message:str, static:bool = True):
         self.undo.mark(message)
+        source = message.replace(" ", "_")
         try:
+            if static:
+                self.stop_updates(message, False)
             self.do_undo = False
             yield self
         finally:
+            if static:
+                self.resume_updates(source)
             self.do_undo = True
 
     def stop_visual_updates(self):
@@ -2308,17 +2313,26 @@ class Elemental(Service):
         return success
 
     def remove_nodes(self, node_list):
+        self.set_start_time("remove_nodes")
+        to_be_deleted = 0
+        fastmode = False
         for node in node_list:
             for n in node.flat():
                 n._mark_delete = True
+                to_be_deleted += 1
                 for ref in list(n._references):
                     ref._mark_delete = True
+                    to_be_deleted += 1
+        fastmode = to_be_deleted >= 100
         for n in reversed(list(self.flat())):
             if not hasattr(n, "_mark_delete"):
                 continue
             if n.type in ("root", "branch elems", "branch reg", "branch ops"):
                 continue
-            n.remove_node(children=False, references=False)
+            n.remove_node(children=False, references=False, fast=fastmode)
+        self.set_end_time("remove_nodes")
+        if fastmode:
+            self.signal("rebuild_tree")
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
