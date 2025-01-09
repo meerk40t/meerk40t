@@ -280,17 +280,16 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
-        if self.suppress_it and self._visible_area and hasattr(node, "bounds"):
-            node_bb = node.bounds
-            vis_bb = self._visible_area
-            if (
-                node_bb[0] > vis_bb[2] or
-                node_bb[1] > vis_bb[3] or
-                node_bb[2] < vis_bb[0] or
-                node_bb[3] < vis_bb[1] 
-            ):
-                self.nodes_skipped += 1
-                return False
+        node_bb = node.bounds if hasattr(node, "bounds") else None
+        vis_bb = self._visible_area
+        if self.suppress_it and vis_bb is not None and node_bb is not None and (
+            node_bb[0] > vis_bb[2] or
+            node_bb[1] > vis_bb[3] or
+            node_bb[2] < vis_bb[0] or
+            node_bb[3] < vis_bb[1] 
+        ):
+            self.nodes_skipped += 1
+            return False
         if hasattr(node, "hidden") and node.hidden:
             self.nodes_skipped += 1
             return False
