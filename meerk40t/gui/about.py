@@ -1514,6 +1514,7 @@ class DavidPanel(ScrolledPanel):
         )
 
         self.__do_layout()
+        self.david_text.Bind(wx.EVT_LEFT_DCLICK, self.on_eulogy)
 
 
     def __do_layout(self):
@@ -1553,6 +1554,11 @@ class DavidPanel(ScrolledPanel):
         self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
+    
+    def on_eulogy(self, event):
+        import webbrowser
+        url = "https://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
+        webbrowser.open(url, new=0, autoraise=True)
 
 class InformationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
