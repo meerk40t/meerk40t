@@ -1450,7 +1450,7 @@ class RasterSettingsPanel(wx.Panel):
         )
 
         self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
-        self.combo_raster_direction.SetSelection(0)
+        # self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.btn_instruction = wxStaticBitmap(self, wx.ID_ANY)
         self.btn_instruction.SetBitmap(icon_letter_h.GetBitmap(resize=bmpsize))
