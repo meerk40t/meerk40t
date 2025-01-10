@@ -20,8 +20,9 @@ class PropertyWindow(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Properties"))
-        self.panel_instances = list()
-        self.nodes_displayed = list()
+        self.panel_instances = []
+        self.nodes_displayed = []
+        self._validate_running = False
 
         self.notebook_main = aui.AuiNotebook(
             self,
@@ -114,12 +115,14 @@ class PropertyWindow(MWindow):
                     prio = p
             return prio
 
+        if self._validate_running:
+            if self.channel:
+                self.channel("Reentrant call of validate_display, exiting")
+                return
+        self._validate_running = True
         # Are the new nodes identical to the displayed ones?
         different = False
-        if nodes is None:
-            nodes = list()
-        else:
-            nodes = list(nodes)
+        nodes = [] if nodes is None else list(nodes)
         to_be_deleted = []
         for idx, e in enumerate(nodes):
             # We remove reference nodes and insert the 'real' thing instead.
@@ -205,6 +208,7 @@ class PropertyWindow(MWindow):
             t2 = perf_counter()
             if self.channel:
                 self.channel(f"Took {t2-t1:.2f} seconds to load")
+        self._validate_running = False
 
     def propagate_signal(self, signal, *args):
         myargs = list(args)
