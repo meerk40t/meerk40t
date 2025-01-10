@@ -19561,3 +19561,15 @@ msgstr "Lade Fenster..."
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1689
 msgid "- Spiral: Starting in the center spiralling outwards"
 msgstr "- Spirale: startet in der Mitte und bewegt sich spiralförmig nach außen"
+
+#: meerk40t/gui/plugin.py:109
+msgid "Optimize element display"
+msgstr "Darstellung optimieren"
+
+#: meerk40t/gui/plugin.py:110
+msgid "Suppresses the drawing of non-visible elements (disable only if you face display issues)"
+msgstr "Unterdrückt das Zeichnen von nicht-sichtbaren Elementen\n(Nur auscchalten, wenn es Darstellungsprobleme gibt)"
+
+#: meerk40t/gui/navigationpanels.py:1253
+msgid "(Middle Button: jump to first jobstart)"
+msgstr "(Mittler Button: bewege Laser zum ersten Jobstart)"
