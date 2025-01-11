@@ -106,7 +106,11 @@ class Themes(Service):
         elif self.forced_theme == "light":
             self._dark = False
         else:
-            res1 = wx.SystemSettings().GetAppearance().IsDark()
+            try:
+                res1 = wx.SystemSettings().GetAppearance().IsDark()
+            except AttributeError:
+                # Old wxpython version
+                res1 = False
             res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
             self._dark = res1 or res2
 
