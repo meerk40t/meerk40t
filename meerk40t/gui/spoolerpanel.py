@@ -1220,3 +1220,7 @@ class JobSpooler(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Spooler"
+
+    @staticmethod
+    def helptext():
+        return _("Opens the spooler window with all job information")

@@ -24,7 +24,8 @@ def register_panel(window, context):
     pane.dock_proportion = 100
     pane.control = panel
     pane.submenu = "_50_" + _("Tools")
-
+    pane.helptext = _("Edit job notes")
+ 
     window.on_pane_create(pane)
     context.register("pane/notes", pane)
 

@@ -83,6 +83,7 @@ def register_panel_laser(window, context):
         .Name("laser")
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Laser job control panel")
     pane.control = notebook
     pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))

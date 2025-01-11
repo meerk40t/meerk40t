@@ -46,6 +46,7 @@ def register_panel_camera(window, context):
         pane.dock_proportion = 200
         pane.control = panel
         pane.submenu = "_60_" + _("Camera")
+        pane.helptext = _("Show camera capture panel")
         window.on_pane_create(pane)
         context.register(f"pane/camera{index}", pane)
 
@@ -1047,6 +1048,9 @@ class CameraInterface(MWindow):
     def submenu():
         return "Camera", "Camera"
 
+    @staticmethod
+    def helptext():
+        return _("Display the camera window")
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
@@ -1231,3 +1235,7 @@ class CameraURI(MWindow):
     @staticmethod
     def submenu():
         return "Camera", "Sources"
+
+    @staticmethod
+    def helptext():
+        return _("Edit camera sources")
