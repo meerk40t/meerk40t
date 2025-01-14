@@ -83,33 +83,35 @@ def plugin(kernel, lifecycle):
                 else:
                     solution_path += Path(r)
             if solution_path:
-                if node is None:
-                    new_node = elements.elem_branch.add(
-                        path=solution_path,
-                        type="elem path",
-                    )
-                else:
-                    try:
-                        stroke = node.stroke if node is not None else None
-                    except AttributeError:
-                        stroke = Color("blue")
-                    try:
-                        fill = node.fill if node is not None else None
-                    except AttributeError:
-                        fill = None
-                    try:
-                        stroke_width = node.stroke_width if node is not None else None
-                    except AttributeError:
-                        stroke_width = elements.default_strokewidth
-                    new_node = elements.elem_branch.add(
-                        path=solution_path,
-                        type="elem path",
-                        stroke=stroke,
-                        fill=fill,
-                        stroke_width=stroke_width,
-                    )
+                with elements.undoscope("Constructive Additive Geometry: Add"):
+                    if node is None:
+                        new_node = elements.elem_branch.add(
+                            path=solution_path,
+                            type="elem path",
+                        )
+                    else:
+                        try:
+                            stroke = node.stroke if node is not None else None
+                        except AttributeError:
+                            stroke = Color("blue")
+                        try:
+                            fill = node.fill if node is not None else None
+                        except AttributeError:
+                            fill = None
+                        try:
+                            stroke_width = node.stroke_width if node is not None else None
+                        except AttributeError:
+                            stroke_width = elements.default_strokewidth
+                        new_node = elements.elem_branch.add(
+                            path=solution_path,
+                            type="elem path",
+                            stroke=stroke,
+                            fill=fill,
+                            stroke_width=stroke_width,
+                        )
                 context.signal("refresh_scene", "Scene")
-                elements.classify([new_node])
+                if elements.classify_new:
+                    elements.classify([new_node])
                 return "elements", [node]
             else:
                 channel(_("No solution found (empty path)"))

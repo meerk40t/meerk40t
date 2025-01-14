@@ -543,14 +543,16 @@ class MeerK40t(MWindow):
                 image = imageToPil(WxBitmapToWxImage(bmp))
                 dpi = DEFAULT_PPI
                 matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
-                node = self.context.elements.elem_branch.add(
-                    image=image,
-                    matrix=matrix,
-                    type="elem image",
-                    dpi=dpi,
-                )
-                if self.context.elements.classify_new:
-                    self.context.elements.classify([node])
+                # _("Paste image")
+                with self.context.elements.undoscope("Paste image"):
+                    node = self.context.elements.elem_branch.add(
+                        image=image,
+                        matrix=matrix,
+                        type="elem image",
+                        dpi=dpi,
+                    )
+                    if self.context.elements.classify_new:
+                        self.context.elements.classify([node])
                 self.context.elements.set_emphasis([node])
 
             def paste_files(filelist):
@@ -579,18 +581,20 @@ class MeerK40t(MWindow):
                     self.context(f"webimage {content}\n")
                     return
                 size = 16.0
-                node = self.context.elements.elem_branch.add(
-                    text=content,
-                    matrix=Matrix(f"scale({UNITS_PER_PIXEL})"),
-                    type="elem text",
-                )
-                node.font_size = size
-                node.stroke = self.context.elements.default_stroke
-                node.stroke_width = self.context.elements.default_strokewidth
-                node.fill = self.context.elements.default_fill
-                node.altered()
-                if self.context.elements.classify_new:
-                    self.context.elements.classify([node])
+                # _("Paste text")
+                with self.context.elements.undoscope("Paste text"):
+                    node = self.context.elements.elem_branch.add(
+                        text=content,
+                        matrix=Matrix(f"scale({UNITS_PER_PIXEL})"),
+                        type="elem text",
+                    )
+                    node.font_size = size
+                    node.stroke = self.context.elements.default_stroke
+                    node.stroke_width = self.context.elements.default_strokewidth
+                    node.fill = self.context.elements.default_fill
+                    node.altered()
+                    if self.context.elements.classify_new:
+                        self.context.elements.classify([node])
                 self.context.elements.set_emphasis([node])
 
             # Read the image
@@ -2795,8 +2799,11 @@ class MeerK40t(MWindow):
                 path = Path(dlg.GetValue())
                 path.stroke = "blue"
                 p = abs(path)
-                node = context.elements.elem_branch.add(path=p, type="elem path")
-                context.elements.classify([node])
+                # _("Add path")
+                with context.elements.undoscope("Add path"):
+                    node = context.elements.elem_branch.add(path=p, type="elem path")
+                    if context.elements.classify_new:
+                        context.elements.classify([node])
             dlg.Destroy()
 
         @context.console_command("dialog_fill", hidden=True)
@@ -4758,8 +4765,11 @@ class MeerK40t(MWindow):
             elements = self.context.elements
             img = Image.fromarray(frame)
             matrix = Matrix(f"scale({UNITS_PER_PIXEL}, {UNITS_PER_PIXEL})")
-            node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
-            elements.classify([node])
+            # _("Export image")
+            with elements.undoscope("Export image"):
+                node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
+                if elements.classify_new:
+                    elements.classify([node])
             self.context.signal("refresh_scene", "Scene")
 
     @signal_listener("statusmsg")

@@ -1621,51 +1621,53 @@ def init_commands(kernel):
             channel("----------")
             return
         self.set_start_time("full_load")
-        if color == "none":
-            self.set_start_time("stroke")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.stroke = None
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("stroke")
-        else:
-            self.set_start_time("stroke")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.stroke = Color(color)
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("stroke")
-        if classify is None:
-            classify = False
-        if classify:
-            self.set_start_time("classify")
-            self.remove_elements_from_operations(apply)
-            self.classify(apply)
-            if was_emphasized:
+        # _("Set stroke")
+        with self.undoscope("Set stroke"):
+            if color == "none":
+                self.set_start_time("stroke")
                 for e in apply:
-                    e.emphasized = True
-                if len(apply) == 1:
-                    apply[0].focus()
-            if old_first is not None and old_first in apply:
-                self.first_emphasized = old_first
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(name=str(e))
+                        )
+                        continue
+                    e.stroke = None
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("stroke")
             else:
-                self.first_emphasized = None
-            self.set_end_time("classify")
-            # self.signal("rebuild_tree")
-            self.signal("refresh_tree", apply)
-        else:
-            self.signal("element_property_update", apply)
-            self.signal("refresh_scene", "Scene")
+                self.set_start_time("stroke")
+                for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(name=str(e))
+                        )
+                        continue
+                    e.stroke = Color(color)
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("stroke")
+            if classify is None:
+                classify = False
+            if classify:
+                self.set_start_time("classify")
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
+                if old_first is not None and old_first in apply:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
+                self.set_end_time("classify")
+                # self.signal("rebuild_tree")
+                self.signal("refresh_tree", apply)
+            else:
+                self.signal("element_property_update", apply)
+                self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option(
@@ -1727,51 +1729,54 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return "elements", data
-        elif color == "none":
-            self.set_start_time("fill")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.fill = None
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("fill")
-        else:
-            self.set_start_time("fill")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.fill = Color(color)
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("fill")
-        if classify is None:
-            classify = False
-        if classify:
-            self.set_start_time("classify")
-            self.remove_elements_from_operations(apply)
-            self.classify(apply)
-            if was_emphasized:
+        # _("Set fill")
+        with self.undoscope("Set fill"):
+
+            if color == "none":
+                self.set_start_time("fill")
                 for e in apply:
-                    e.emphasized = True
-                if len(apply) == 1:
-                    apply[0].focus()
-            if old_first is not None and old_first in apply:
-                self.first_emphasized = old_first
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(name=str(e))
+                        )
+                        continue
+                    e.fill = None
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("fill")
             else:
-                self.first_emphasized = None
-            self.signal("refresh_tree", apply)
-            #                self.signal("rebuild_tree")
-            self.set_end_time("classify")
-        else:
-            self.signal("element_property_update", apply)
-            self.signal("refresh_scene", "Scene")
+                self.set_start_time("fill")
+                for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(name=str(e))
+                        )
+                        continue
+                    e.fill = Color(color)
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("fill")
+            if classify is None:
+                classify = False
+            if classify:
+                self.set_start_time("classify")
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
+                if old_first is not None and old_first in apply:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
+                self.signal("refresh_tree", apply)
+                #                self.signal("rebuild_tree")
+                self.set_end_time("classify")
+            else:
+                self.signal("element_property_update", apply)
+                self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument(
@@ -2001,33 +2006,34 @@ def init_commands(kernel):
             return
         matrix = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
         images = []
-        try:
-            if not absolute:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    node.matrix *= matrix
-                    node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
-                    if hasattr(node, "update"):
-                        images.append(node)
-            else:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    osx = node.matrix.value_scale_x()
-                    osy = node.matrix.value_scale_y()
-                    nsx = scale_x / osx
-                    nsy = scale_y / osy
-                    matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
-                    node.matrix *= matrix
-                    node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
-                    if hasattr(node, "update"):
-                        images.append(node)
-        except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            self.do_image_update(node)
-        self.process_keyhole_updates(None)
+        with self.undoscope("Scale"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        node.matrix *= matrix
+                        node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
+                        if hasattr(node, "update"):
+                            images.append(node)
+                else:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        osx = node.matrix.value_scale_x()
+                        osy = node.matrix.value_scale_y()
+                        nsx = scale_x / osx
+                        nsy = scale_y / osy
+                        matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
+                        node.matrix *= matrix
+                        node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
+                        if hasattr(node, "update"):
+                            images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
+            self.process_keyhole_updates(None)
         self.signal("refresh_scene", "Scene")
         self.signal("modified_by_tool")
         return "elements", data
@@ -2157,29 +2163,30 @@ def init_commands(kernel):
             ty = 0
         changes = False
         matrix = Matrix.translate(tx, ty)
-        try:
-            if not absolute:
-                for node in data:
-                    if not node.can_move(self.lock_allows_move):
-                        continue
+        with self.undoscope("Translate"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if not node.can_move(self.lock_allows_move):
+                            continue
 
-                    node.matrix *= matrix
-                    node.translated(tx, ty)
-                    changes = True
-            else:
-                for node in data:
-                    if not node.can_move(self.lock_allows_move):
-                        continue
-                    otx = node.matrix.value_trans_x()
-                    oty = node.matrix.value_trans_y()
-                    ntx = tx - otx
-                    nty = ty - oty
-                    matrix = Matrix.translate(ntx, nty)
-                    node.matrix *= matrix
-                    node.translated(ntx, nty)
-                    changes = True
-        except ValueError:
-            raise CommandSyntaxError
+                        node.matrix *= matrix
+                        node.translated(tx, ty)
+                        changes = True
+                else:
+                    for node in data:
+                        if not node.can_move(self.lock_allows_move):
+                            continue
+                        otx = node.matrix.value_trans_x()
+                        oty = node.matrix.value_trans_y()
+                        ntx = tx - otx
+                        nty = ty - oty
+                        matrix = Matrix.translate(ntx, nty)
+                        node.matrix *= matrix
+                        node.translated(ntx, nty)
+                        changes = True
+            except ValueError:
+                raise CommandSyntaxError
         if changes:
             self.signal("refresh_scene", "Scene")
             self.signal("modified_by_tool")
@@ -2204,23 +2211,24 @@ def init_commands(kernel):
         if tx is None or ty is None:
             channel(_("You need to provide a new position."))
             return
-        changes = False
-        dbounds = Node.union_bounds(data)
-        for node in data:
-            if not node.can_move(self.lock_allows_move):
-                continue
-            nbounds = node.bounds
-            dx = tx - dbounds[0]
-            dy = ty - dbounds[1]
-            if dx != 0 or dy != 0:
-                node.matrix.post_translate(dx, dy)
-                # node.modified()
-                node.translated(dx, dy)
-                changes = True
-        if changes:
-            self.process_keyhole_updates(None)
-            self.signal("refresh_scene", "Scene")
-            self.signal("modified_by_tool")
+        with self.undoscope("Position"):
+            changes = False
+            dbounds = Node.union_bounds(data)
+            for node in data:
+                if not node.can_move(self.lock_allows_move):
+                    continue
+                nbounds = node.bounds
+                dx = tx - dbounds[0]
+                dy = ty - dbounds[1]
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                    # node.modified()
+                    node.translated(dx, dy)
+                    changes = True
+            if changes:
+                self.process_keyhole_updates(None)
+                self.signal("refresh_scene", "Scene")
+                self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_command(
@@ -2236,20 +2244,21 @@ def init_commands(kernel):
             channel(_("No selected elements."))
             return
         tx, ty = self.device.current
-        try:
-            bounds = Node.union_bounds(data)
-            otx = bounds[0]
-            oty = bounds[1]
-            ntx = tx - otx
-            nty = ty - oty
-            for node in data:
-                if not node.can_move(self.lock_allows_move):
-                    continue
-                node.matrix.post_translate(ntx, nty)
-                # node.modified()
-                node.translated(ntx, nty)
-        except ValueError:
-            raise CommandSyntaxError
+        with self.undoscope("Translate to laser"):
+            try:
+                bounds = Node.union_bounds(data)
+                otx = bounds[0]
+                oty = bounds[1]
+                ntx = tx - otx
+                nty = ty - oty
+                for node in data:
+                    if not node.can_move(self.lock_allows_move):
+                        continue
+                    node.matrix.post_translate(ntx, nty)
+                    # node.modified()
+                    node.translated(ntx, nty)
+            except ValueError:
+                raise CommandSyntaxError
         return "elements", data
 
     @self.console_argument(
@@ -2295,37 +2304,38 @@ def init_commands(kernel):
         px = area[0]
         py = area[2]
         matrix = Matrix(f"scale({sx},{sy},{px},{py})")
-        images = []
-        if sx != 1.0 or sy != 1.0:
-            # Don't do anything if scale is 1
-            for node in data:
-                if not hasattr(node, "matrix"):
-                    continue
-                if hasattr(node, "lock") and node.lock:
-                    continue
-                node.matrix *= matrix
-                node.modified()
-                if hasattr(node, "update"):
-                    if node not in images:
-                        images.append(node)
+        with self.undoscope("Resize"):
+            images = []
+            if sx != 1.0 or sy != 1.0:
+                # Don't do anything if scale is 1
+                for node in data:
+                    if not hasattr(node, "matrix"):
+                        continue
+                    if hasattr(node, "lock") and node.lock:
+                        continue
+                    node.matrix *= matrix
+                    node.modified()
+                    if hasattr(node, "update"):
+                        if node not in images:
+                            images.append(node)
 
-        # Calculate again
-        area = Node.union_bounds(data)
-        dx = x_pos - area[0]
-        dy = y_pos - area[1]
-        if dx != 0.0 or dy != 0.0:
-            # Don't do anything if scale is 1
-            for node in data:
-                if not hasattr(node, "matrix"):
-                    continue
-                node.matrix.post_translate(dx, dy)
-                node.modified()
-                if hasattr(node, "update"):
-                    if node not in images:
-                        images.append(node)
+            # Calculate again
+            area = Node.union_bounds(data)
+            dx = x_pos - area[0]
+            dy = y_pos - area[1]
+            if dx != 0.0 or dy != 0.0:
+                # Don't do anything if scale is 1
+                for node in data:
+                    if not hasattr(node, "matrix"):
+                        continue
+                    node.matrix.post_translate(dx, dy)
+                    node.modified()
+                    if hasattr(node, "update"):
+                        if node not in images:
+                            images.append(node)
 
-        for node in images:
-            self.do_image_update(node)
+            for node in images:
+                self.do_image_update(node)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -2361,30 +2371,31 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        images = []
-        try:
-            # SVG 7.15.3 defines the matrix form as:
-            # [a c  e]
-            # [b d  f]
-            m = Matrix(
-                sx,
-                kx,
-                ky,
-                sy,
-                tx,
-                ty,
-            )
-            for node in data:
-                if hasattr(node, "lock") and node.lock:
-                    continue
-                node.matrix = Matrix(m)
-                node.modified()
-                if hasattr(node, "update"):
-                    images.append(node)
-        except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            self.do_image_update(node)
+        with self.undoscope("Matrix"):
+            images = []
+            try:
+                # SVG 7.15.3 defines the matrix form as:
+                # [a c  e]
+                # [b d  f]
+                m = Matrix(
+                    sx,
+                    kx,
+                    ky,
+                    sy,
+                    tx,
+                    ty,
+                )
+                for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        continue
+                    node.matrix = Matrix(m)
+                    node.modified()
+                    if hasattr(node, "update"):
+                        images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
         self.signal("refresh_scene", "Scene")
         return
 
@@ -2397,20 +2408,21 @@ def init_commands(kernel):
     def reset(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        images = []
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                continue
-            name = str(e)
-            if len(name) > 50:
-                name = name[:50] + "…"
-            channel(_("reset - {name}").format(name=name))
-            e.matrix.reset()
-            e.modified()
-            if hasattr(e, "update"):
-                images.append(e)
-        for e in images:
-            self.do_image_update(e)
+        with self.undoscope("Reset"):
+            images = []
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    continue
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                channel(_("reset - {name}").format(name=name))
+                e.matrix.reset()
+                e.modified()
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                self.do_image_update(e)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -2423,35 +2435,36 @@ def init_commands(kernel):
     def element_reify(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        for e in data:
-            try:
-                if e.lock:
-                    continue
-            except AttributeError:
-                pass
-
-            name = str(e)
-            if len(name) > 50:
-                name = name[:50] + "…"
-            try:
-                e.stroke_reify()
-            except AttributeError:
-                pass
-
-            try:
-                e.shape.reify()
-            except AttributeError as err:
+        with self.undoscope("Reify"):
+            for e in data:
                 try:
-                    e.path.reify()
+                    if e.lock:
+                        continue
                 except AttributeError:
-                    channel(_("Couldn't reify - %s - %s") % (name, err))
-                    return "elements", data
-            try:
-                e.stroke_width_zero()
-            except AttributeError:
-                pass
-            e.altered()
-            channel(_("reified - %s") % name)
+                    pass
+
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                try:
+                    e.stroke_reify()
+                except AttributeError:
+                    pass
+
+                try:
+                    e.shape.reify()
+                except AttributeError as err:
+                    try:
+                        e.path.reify()
+                    except AttributeError:
+                        channel(_("Couldn't reify - %s - %s") % (name, err))
+                        return "elements", data
+                try:
+                    e.stroke_width_zero()
+                except AttributeError:
+                    pass
+                e.altered()
+                channel(_("reified - %s") % name)
         return "elements", data
 
     @self.console_command(
@@ -2463,18 +2476,20 @@ def init_commands(kernel):
     def element_circ_arc_path(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        for e in data:
-            try:
-                if e.lock:
-                    continue
-            except AttributeError:
-                pass
-            if e.type == "elem path":
-                g = e.geometry
-                path = g.as_path()
-                path.approximate_bezier_with_circular_arcs()
-                e.geometry = Geomstr.svg(path)
-                e.altered()
+        # _("Convert paths")
+        with self.undoscope("Convert paths"):
+            for e in data:
+                try:
+                    if e.lock:
+                        continue
+                except AttributeError:
+                    pass
+                if e.type == "elem path":
+                    g = e.geometry
+                    path = g.as_path()
+                    path.approximate_bezier_with_circular_arcs()
+                    e.geometry = Geomstr.svg(path)
+                    e.altered()
 
         return "elements", data
 
@@ -2495,7 +2510,8 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        self.classify(data)
+        with self.undoscope("Classify"):
+            self.classify(data)
         if was_emphasized:
             for e in data:
                 e.emphasized = True

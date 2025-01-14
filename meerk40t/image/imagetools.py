@@ -569,7 +569,11 @@ def plugin(kernel, lifecycle=None):
                 from PIL import Image
 
                 img = Image.open(filename)
-                inode = elements.elem_branch.add(image=img, type="elem image")
+                # _("Add image")
+                with elements.undoscope("Add image"):
+                    inode = elements.elem_branch.add(image=img, type="elem image")
+                    if elements.classify_new:
+                        elements.classify([inode])
                 return "image", [inode]
         elif data_type == "image-array":
             # Camera Image-Array, convert to image.
@@ -577,7 +581,11 @@ def plugin(kernel, lifecycle=None):
 
             width, height, frame = data
             img = Image.fromarray(frame)
-            images = [elements.elem_branch.add(image=img, type="elem image")]
+            # _("Add image")
+            with elements.undoscope("Add image"):
+                images = [elements.elem_branch.add(image=img, type="elem image")]
+                if elements.classify_new:
+                    elements.classify(images)
             return "image", images
         else:
             raise CommandSyntaxError
@@ -591,18 +599,22 @@ def plugin(kernel, lifecycle=None):
     def image_path(data, **kwargs):
         elements = context.elements
         paths = []
-        for inode in data:
-            bounds = inode.bounds
-            p = Path()
-            p.move(
-                (bounds[0], bounds[1]),
-                (bounds[0], bounds[3]),
-                (bounds[2], bounds[3]),
-                (bounds[2], bounds[1]),
-            )
-            p.closed()
-            paths.append(p)
-            elements.elem_branch.add(p, type="elem path")
+        if not data:
+            return
+        # _("Paths around images")
+        with elements.undoscope("Paths around images"):
+            for inode in data:
+                bounds = inode.bounds
+                p = Path()
+                p.move(
+                    (bounds[0], bounds[1]),
+                    (bounds[0], bounds[3]),
+                    (bounds[2], bounds[3]),
+                    (bounds[2], bounds[1]),
+                )
+                p.closed()
+                paths.append(p)
+                elements.elem_branch.add(p, type="elem path")
         return "elements", paths
 
     @context.console_argument("script", help=_("script to apply"), type=str)
@@ -716,10 +728,13 @@ def plugin(kernel, lifecycle=None):
             img = img.point(lut)
 
             elements = context.elements
-            node = elements.elem_branch.add(
-                image=img, type="elem image", matrix=copy(node.matrix)
-            )
-            elements.classify([node])
+            # _("Paths around images")
+            with elements.undoscope("Image threshold"):
+                node = elements.elem_branch.add(
+                    image=img, type="elem image", matrix=copy(node.matrix)
+                )
+                if elements.classify_new:
+                    elements.classify([node])
         return "image", data
 
     # @context.console_command(
@@ -1663,9 +1678,12 @@ def plugin(kernel, lifecycle=None):
             inode.remove_node()
 
             elements = context.elements
-            node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
-            node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
-            elements.classify([node1, node2])
+            # _("Paths around images")
+            with elements.undoscope("Image pop"):
+                node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
+                node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
+                if elements.classify_new:
+                    elements.classify([node1, node2])
 
         return "image", data
 
@@ -1912,17 +1930,19 @@ def plugin(kernel, lifecycle=None):
             data=data,
         )
         if len(data_out):
-            needs_adding = [True]*len(data_out)
-            if breakdown or whiten:
-                for inode in data:
-                    if inode in data_out:
-                        idx = data_out.index(inode)
-                        needs_adding[idx] = False
-                    else:
-                        inode.remove_node()
-            for idx, inode in enumerate(data_out):
-                if needs_adding[idx]:
-                    context.elements.elem_branch.add_node(inode)
+            # _("Image white")
+            with context.elements.undoscope("Image white"):
+                needs_adding = [True]*len(data_out)
+                if breakdown or whiten:
+                    for inode in data:
+                        if inode in data_out:
+                            idx = data_out.index(inode)
+                            needs_adding[idx] = False
+                        else:
+                            inode.remove_node()
+                for idx, inode in enumerate(data_out):
+                    if needs_adding[idx]:
+                        context.elements.elem_branch.add_node(inode)
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
@@ -2016,49 +2036,51 @@ def plugin(kernel, lifecycle=None):
         data_out = list()
 
         remembered_dithers = list()
-        for idx, inode in enumerate(data):
-            if inode.type != "elem image":
-                continue
-            if inode.dither:
-                remembered_dithers.append(inode)
-                inode.dither = False
-                inode.update(None)
+        # _("Contour generation")
+        with context.elements.undoscope("Contour generation"):
+            for idx, inode in enumerate(data):
+                if inode.type != "elem image":
+                    continue
+                if inode.dither:
+                    remembered_dithers.append(inode)
+                    inode.dither = False
+                    inode.update(None)
 
-            # node_image = inode.image
-            node_image = inode.active_image
-            width, height = node_image.size
-            if width == 0 or height == 0:
-                continue
-            if not hasattr(inode, "bounds"):
-                continue
-            # Extract polygons from the image
-            if rectangles:
-                contours = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
-                msg = "Bounding"
-            else:
-                contours = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
-                msg = "Contour"
-            pidx = 0
-            for (geom, c_info) in contours:
-                pidx += 1
-                channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
-                if simplified:
-                    # Let's try Visvalingam line simplification
-                    geom = geom.simplify_geometry(threshold=threshold)
+                # node_image = inode.image
+                node_image = inode.active_image
+                width, height = node_image.size
+                if width == 0 or height == 0:
+                    continue
+                if not hasattr(inode, "bounds"):
+                    continue
+                # Extract polygons from the image
+                if rectangles:
+                    contours = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                    msg = "Bounding"
                 else:
-                    # Use Douglas-Peucker instead
-                    geom = geom.simplify(threshold)
-                geom.transform(inode.active_matrix)
-                node = context.elements.elem_branch.add(
-                    geometry=geom,
-                    stroke=Color("blue"),
-                    label=f"{msg} {idx+1}.{pidx}",
-                    type="elem path",
-                )
-                data_out.append(node)
-        for inode in remembered_dithers:
-            inode.dither = True
-            inode.update(None)
+                    contours = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                    msg = "Contour"
+                pidx = 0
+                for (geom, c_info) in contours:
+                    pidx += 1
+                    channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
+                    if simplified:
+                        # Let's try Visvalingam line simplification
+                        geom = geom.simplify_geometry(threshold=threshold)
+                    else:
+                        # Use Douglas-Peucker instead
+                        geom = geom.simplify(threshold)
+                    geom.transform(inode.active_matrix)
+                    node = context.elements.elem_branch.add(
+                        geometry=geom,
+                        stroke=Color("blue"),
+                        label=f"{msg} {idx+1}.{pidx}",
+                        type="elem path",
+                    )
+                    data_out.append(node)
+            for inode in remembered_dithers:
+                inode.dither = True
+                inode.update(None)
 
         t_total_overall = time.perf_counter() - t0
         channel(f"Done, created: {len(data_out)} contour elements >= {minimal}% (Total time: {t_total_overall:.2f} sec)")

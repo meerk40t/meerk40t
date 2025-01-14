@@ -186,7 +186,8 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
         counted = 0
-        with self.static("grid"):
+        # _("Create grid")
+        with self.undoscope("Create grid"):
             if relative:
                 x += width
                 y += height
@@ -295,7 +296,8 @@ def init_commands(kernel):
         # print ("Center: %.1f, %.1f" % (center_x, center_y))
         # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
         counted = 0
-        with self.static("radial"):
+        # _("Create radial")
+        with self.undoscope("Create radial"):
             currentangle = segment_len
             for cc in range(1, repeats):
                 # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
@@ -399,7 +401,8 @@ def init_commands(kernel):
         center_y = (bounds[3] + bounds[1]) / 2.0
         images = []
         counted = 0
-        with self.static("circ_copy"):
+        # _("Create circular copy")
+        with self.undoscope("Create circular copy"):
             for cc in range(copies):
                 # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
                 add_elem = list(map(copy, data))
