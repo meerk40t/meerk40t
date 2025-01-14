@@ -597,7 +597,7 @@ def init_commands(kernel):
                 name = f"{select_piece} {i}: {str(item)}"
                 channel(f"{name}: {len(item.children)}")
                 item.remove_all_children()
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @self.console_command(
         "list",

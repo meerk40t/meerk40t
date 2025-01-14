@@ -959,6 +959,8 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
+        self.button_navigate_home.Bind(wx.EVT_MIDDLE_DOWN, self.on_button_navigate_jobstart)
+
         self.button_navigate_home.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
         )
@@ -1207,6 +1209,13 @@ class Jog(wx.Panel):
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context, dx, dy)
         self.context(f".move_relative {nx} {ny}\n")
+    
+    def on_button_navigate_jobstart(self, event):
+        ops = self.context.elements.op_branch
+        for op in ops.children:
+            if op.type == "place point" and op.output:
+                self.context(f"move_absolute {op.x}, {op.y}\n")
+                break
 
     def on_button_navigate_home(
         self, event=None
@@ -1238,6 +1247,11 @@ class Jog(wx.Panel):
         if hasattr(self.context.device, "has_endstops"):
             if self.context.device.has_endstops:
                 tip = _("Send laser to home position (right click: to physical home)")
+        ops = self.context.elements.op_branch
+        for op in ops.children:
+            if op.type == "place point" and op.output:
+                tip += "\n" + _("(Middle Button: jump to first jobstart)")
+                break
         self.button_navigate_home.SetToolTip(tip)
 
     def on_update(self, origin, *args):

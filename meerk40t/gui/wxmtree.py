@@ -156,7 +156,7 @@ class TreePanel(wx.Panel):
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self._keybind_channel = self.context.channel("keybinds")
 
-        self.context.signal("rebuild_tree")
+        self.context.signal("rebuild_tree", "all")
 
     def setup_warn_panel(self):
         def fix_unassigned_create(event):
@@ -461,7 +461,9 @@ class TreePanel(wx.Panel):
         #     self.shadow_tree.wxtree.Expand(startnode)
         # else:
         #     self.shadow_tree.rebuild_tree()
-        self.shadow_tree.rebuild_tree("signal")
+        if target is None:
+            target = "all"
+        self.shadow_tree.rebuild_tree(source="signal", target=target)
 
     @signal_listener("refresh_tree")
     def on_refresh_tree_signal(self, origin, nodes=None, *args):
@@ -754,7 +756,7 @@ class ShadowTree:
     def check_validity(self, item):
         if item is None or not item.IsOk():
             # raise ValueError("Bad Item")
-            self.rebuild_tree("validity")
+            self.rebuild_tree(source="validity", target="all")
             self.elements.signal("refresh_scene", "Scene")
             return False
         return True
@@ -964,7 +966,20 @@ class ShadowTree:
         @param node:
         @return:
         """
-        self.rebuild_tree("reorder")
+        target = "all"
+        while node.parent is not None:
+            if node.parent.type == "branch reg":
+                target = "regmarks"
+                break
+            if node.parent.type == "branch elem":
+                target = "elements"
+                break
+            if node.parent.type == "branch ops":
+                target = "operations"
+                break
+            node = node.parent
+        
+        self.rebuild_tree("reorder", target=target)
 
     def update(self, node):
         """
@@ -1206,7 +1221,7 @@ class ShadowTree:
         self.dragging_nodes = None
         self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
-    def rebuild_tree(self, source):
+    def rebuild_tree(self, source:str, target:str="all" ):
         """
         Tree requires being deleted and completely rebuilt.
 
@@ -1215,7 +1230,7 @@ class ShadowTree:
         # print (f"Rebuild called from {source}")
         # let's try to remember which branches were expanded:
         busy = wx.BusyCursor()
-        self.context.elements.set_start_time("rebuild_tree")
+        self.context.elements.set_start_time(f"rebuild_tree_{target}")
         self.freeze_tree(True)
 
         # self.reset_expanded()
@@ -1228,72 +1243,86 @@ class ShadowTree:
 
         # self.parse_tree(self.wxtree.GetRootItem(), 0)
         # Rebuild tree destroys the emphasis, so let's store it...
+        def delete_items(target):
+            if target == "regmarks":
+                node = self.elements.reg_branch
+                item = node._item
+                self.wxtree.DeleteChildren(item)
+            elif target == "operations":
+                node = self.elements.op_branch
+                item = node._item
+                self.wxtree.DeleteChildren(item)
+            elif target == "elements":
+                node = self.elements.elem_branch
+                item = node._item
+                self.wxtree.DeleteChildren(item)
+            else:
+                self.wxtree.DeleteAllItems()
+        
+        def rebuild_items(target):
+            if target == "all":
+                if self.tree_images is not None:
+                    self.tree_images.Destroy()
+                    self.image_cache = []
+                self.tree_images = wx.ImageList()
+                self.tree_images.Create(width=self.iconsize, height=self.iconsize)
+
+                self.wxtree.SetImageList(self.tree_images)
+            if target == "regmarks":
+                elemtree = self.elements.reg_branch
+            elif target == "operations":
+                elemtree = self.elements.op_branch
+            elif target == "elements":
+                elemtree = self.elements.elem_branch
+            else:
+                elemtree = self.elements._tree
+                elemtree._item = self.wxtree.AddRoot(self.name)
+                self.wxtree.SetItemData(elemtree._item, elemtree)
+                self.set_icon(
+                    elemtree,
+                    icon_meerk40t.GetBitmap(
+                        False,
+                        resize=(self.iconsize, self.iconsize),
+                        noadjustment=True,
+                        buffer=1,
+                    ),
+                )
+            self.register_children(elemtree)
+            branch_list = (
+                ("branch ops", "operations", icons8_laser_beam),
+                ("branch reg", "regmarks", icon_regmarks),
+                ("branch elems", "elements", icon_canvas),
+            )
+            for branch_name, branch_type, icon in branch_list:
+                if target not in ("all", branch_type):
+                    continue
+                node_branch = elemtree.get(type=branch_name)
+                self.set_icon(
+                    node_branch,
+                    icon.GetBitmap(
+                        resize=(self.iconsize, self.iconsize),
+                        noadjustment=True,
+                        buffer=1,
+                    ),
+                )
+                for n in node_branch.children:
+                    self.set_icon(n, force=True)
+            if target in {"all", "operations"}:
+                self.update_op_labels()
+            if target in {"all", "elements"}:
+                self.update_group_labels("rebuild_tree")
+
         emphasized_list = list(self.elements.elems(emphasized=True))
-        elemtree = self.elements._tree
-        self.wxtree.DeleteAllItems()
-        if self.tree_images is not None:
-            self.tree_images.Destroy()
-            self.image_cache = []
 
-        self.tree_images = wx.ImageList()
-        self.tree_images.Create(width=self.iconsize, height=self.iconsize)
+        delete_items(target)
+        rebuild_items(target)
 
-        self.wxtree.SetImageList(self.tree_images)
-        elemtree._item = self.wxtree.AddRoot(self.name)
-
-        self.wxtree.SetItemData(elemtree._item, elemtree)
-
-        self.set_icon(
-            elemtree,
-            icon_meerk40t.GetBitmap(
-                False,
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-        self.register_children(elemtree)
-
-        node_operations = elemtree.get(type="branch ops")
-        self.set_icon(
-            node_operations,
-            icons8_laser_beam.GetBitmap(
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-
-        for n in node_operations.children:
-            self.set_icon(n, force=True)
-
-        node_elements = elemtree.get(type="branch elems")
-        self.set_icon(
-            node_elements,
-            icon_canvas.GetBitmap(
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-
-        node_registration = elemtree.get(type="branch reg")
-        self.set_icon(
-            node_registration,
-            icon_regmarks.GetBitmap(
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-        self.update_op_labels()
-        self.update_group_labels("rebuild_tree")
         # Expand Ops, Element, and Regmarks nodes only
-        self.wxtree.CollapseAll()
-        self.wxtree.Expand(node_operations._item)
-        self.wxtree.Expand(node_elements._item)
-        self.wxtree.Expand(node_registration._item)
-        startnode = elemtree._item
+        # self.wxtree.CollapseAll()
+        self.wxtree.Expand(self.elements.op_branch._item)
+        self.wxtree.Expand(self.elements.elem_branch._item)
+        self.wxtree.Expand(self.elements.reg_branch._item)
+        startnode = self.elements._tree
         
         def expand_leaf(snode):
             child, cookie = self.wxtree.GetFirstChild(snode)
@@ -1312,7 +1341,7 @@ class ShadowTree:
             e.emphasized = True
         # self.restore_tree(self.wxtree.GetRootItem(), 0)
         self.freeze_tree(False)
-        self.context.elements.set_end_time("rebuild_tree", display=True)
+        self.context.elements.set_end_time(f"rebuild_tree_{target}", display=True)
         # print(f"Rebuild done for {source}")
         del busy
 
@@ -1775,7 +1804,7 @@ class ShadowTree:
             force = False
         if node._item is None:
             # This node is not registered the tree has desynced.
-            self.rebuild_tree("desync")
+            self.rebuild_tree(source="desync", target="all")
             return
 
         self.set_icon(node, force=force)

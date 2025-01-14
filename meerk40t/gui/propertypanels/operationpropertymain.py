@@ -1451,6 +1451,8 @@ class RasterSettingsPanel(wx.Panel):
         )
 
         self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
+        # OSX needs an early population, as events might occur before pane_show has been called
+        self.fill_raster_combo()
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.btn_instruction = wxStaticBitmap(self, wx.ID_ANY)
@@ -1511,6 +1513,8 @@ class RasterSettingsPanel(wx.Panel):
         choices = [ info for key, info in self.raster_terms if key not in unsupported ]
         self.combo_raster_direction.Clear()
         self.combo_raster_direction.SetItems(choices)
+        if self.operation is not None:
+            self.set_raster_combo()
 
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
@@ -1556,12 +1560,7 @@ class RasterSettingsPanel(wx.Panel):
             self.text_dpi.Enable(True)
         if self.operation.overscan is not None:
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
-        if self.operation.raster_direction is not None:
-            try:
-                idx = self.raster_methods.index(self.operation.raster_direction)
-            except ValueError:
-                idx = 0
-            self.combo_raster_direction.SetSelection(idx)
+        self.set_raster_combo()
         if self.operation.bidirectional is not None:
             self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.check_laserdot.SetValue(self.operation.consider_laserspot)
@@ -1658,6 +1657,15 @@ class RasterSettingsPanel(wx.Panel):
             "element_property_reload", self.operation, "radio_direct"
         )
         event.Skip()
+
+    def set_raster_combo(self):
+        idx = -1
+        if self.operation is not None and self.operation.raster_direction is not None:
+            try:
+                idx = self.raster_methods.index(self.operation.raster_direction)
+            except ValueError:
+                idx = 0
+        self.combo_raster_direction.SetSelection(idx)
 
     def on_raster_help(self, event):
         unsupported = ()

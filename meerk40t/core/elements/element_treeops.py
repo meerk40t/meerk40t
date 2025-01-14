@@ -355,7 +355,7 @@ def init_tree(kernel):
                 label=_("Content of {filenode}").format(filenode=node.name),
             )
             n.expanded = node_exp
-        self.signal("rebuild_tree")
+        # self.signal("rebuild_tree", "elements")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -421,7 +421,7 @@ def init_tree(kernel):
         with self.undoscope("Simplify group"):
             res = straighten(node)
         if res > 0:
-            self.signal("rebuild_tree")
+            self.signal("rebuild_tree", "elements")
 
     # @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
     # @tree_operation(
@@ -691,7 +691,7 @@ def init_tree(kernel):
         #     print (f"threw an error: {e}")
         #     return
         # print (f"Index is now {idx}")
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @tree_submenu(_("Burning sequence"))
     @tree_operation(
@@ -751,7 +751,7 @@ def init_tree(kernel):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op image"
                 n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(
@@ -769,7 +769,7 @@ def init_tree(kernel):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op raster"
                 n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(
@@ -787,7 +787,7 @@ def init_tree(kernel):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op engrave"
                 n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(
@@ -805,7 +805,7 @@ def init_tree(kernel):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op cut"
                 n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(
@@ -823,7 +823,7 @@ def init_tree(kernel):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op dots"
                 n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @tree_submenu(_("Raster-Wizard"))
     @tree_operation(
@@ -1153,9 +1153,17 @@ def init_tree(kernel):
             return
         with self.undoscope("Remove placements"):
             self.remove_operations(data)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
         self.signal("refresh_scene", "Scene")
 
+    @tree_operation(
+        _("Move laser to placement"),
+        node_type="place point",
+        help=_("Move the laserhead to the jobstart position"),
+        grouping="OPS_70_MODIFY",
+    )
+    def move_laser_to_placement(node, **kwargs):
+        self(f"move_absolute {node.x}, {node.y}\n")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -1673,7 +1681,7 @@ def init_tree(kernel):
             for enode in data:
                 enode.remove_node()
 
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "elements")
 
     # ==========
     # Remove Operations (If No Tree Selected)
@@ -3658,7 +3666,7 @@ def init_tree(kernel):
                 self.classify(data)
         self.set_node_emphasis(node, True)
         self.signal("refresh_scene", "Scene")
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "elements")
         node.focus()
 
     def has_vectorize(node):
@@ -3874,7 +3882,7 @@ def init_tree(kernel):
             if data:
                 if self.classify_new:
                     self.classify(data)
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "elements")
         self.signal("refresh_scene", "Scene")
 
     @tree_conditional(

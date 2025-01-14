@@ -252,10 +252,10 @@ class LaserRender:
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
                 nodes = [e for e in nodes if e._parent.type != "branch reg"]
-                nodes = [e for e in nodes if not e.type in place_nodes]
+                nodes = [e for e in nodes if e.type not in place_nodes]
         _nodes = list(nodes)
         variable_translation = draw_mode & DRAW_MODE_VARIABLES
-        nodecopy = [e for e in _nodes]
+        nodecopy = list(_nodes)
         self.validate_text_nodes(nodecopy, variable_translation)
 
         for node in _nodes:
@@ -280,17 +280,16 @@ class LaserRender:
         @param alpha:
         @return: True if rendering was done, False if rendering could not be done.
         """
-        if self.suppress_it and self._visible_area and hasattr(node, "bounds"):
-            node_bb = node.bounds
-            vis_bb = self._visible_area
-            if (
-                node_bb[0] > vis_bb[2] or
-                node_bb[1] > vis_bb[3] or
-                node_bb[2] < vis_bb[0] or
-                node_bb[3] < vis_bb[1] 
-            ):
-                self.nodes_skipped += 1
-                return False
+        node_bb = node.bounds if hasattr(node, "bounds") else None
+        vis_bb = self._visible_area
+        if self.suppress_it and vis_bb is not None and node_bb is not None and (
+            node_bb[0] > vis_bb[2] or
+            node_bb[1] > vis_bb[3] or
+            node_bb[2] < vis_bb[0] or
+            node_bb[3] < vis_bb[1] 
+        ):
+            self.nodes_skipped += 1
+            return False
         if hasattr(node, "hidden") and node.hidden:
             self.nodes_skipped += 1
             return False
@@ -407,9 +406,8 @@ class LaserRender:
             end = None
             for e in subpath.segments:
                 seg_type = int(e[2].real)
-                if settings is not None:
-                    if settings != int(e[2].imag):
-                        continue
+                if settings is not None and settings != int(e[2].imag):
+                    continue
                 start = e[0]
                 if end != start:
                     # Start point does not equal previous end point.
@@ -420,13 +418,11 @@ class LaserRender:
 
                 if seg_type == TYPE_LINE:
                     p.AddLineToPoint(end.real, end.imag)
-                    pts.append(start)
-                    pts.append(end)
+                    pts.extend((start, end))
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                     pts.append(c0)
-                    pts.append(start)
-                    pts.append(end)
+                    pts.extend((start, end))
                 elif seg_type == TYPE_ARC:
                     radius = Geomstr.arc_radius(None, line=e)
                     center = Geomstr.arc_center(None, line=e)
@@ -438,19 +434,15 @@ class LaserRender:
                         radius,
                         start_t,
                         end_t,
-                        clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
+                        clockwise=Geomstr.orientation(None, start, c0, end) != "ccw",
                     )
                     pts.append(c0)
-                    pts.append(start)
-                    pts.append(end)
+                    pts.extend((start, end))
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
                     )
-                    pts.append(c0)
-                    pts.append(c1)
-                    pts.append(start)
-                    pts.append(end)
+                    pts.extend((c0, c1, start, end))
                 else:
                     print(f"Unknown seg_type: {seg_type}")
             if subpath.first_point == end:
@@ -496,11 +488,10 @@ class LaserRender:
     def _get_fillstyle(self, node):
         if not hasattr(node, "fillrule") or node.fillrule is None:
             return wx.WINDING_RULE
+        if node.fillrule == Fillrule.FILLRULE_EVENODD:
+            return wx.ODDEVEN_RULE
         else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                return wx.ODDEVEN_RULE
-            else:
-                return wx.WINDING_RULE
+            return wx.WINDING_RULE
 
     @staticmethod
     def _penwidth(pen, width):
@@ -845,11 +836,7 @@ class LaserRender:
             q = ~cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
             # Applying the matrix will scale our stroke, so we scale the stroke back down.
-            if q.determinant == 0:
-                # That should not be the case, but is often true for degenerate objects...
-                stroke_factor = 1.0
-            else:
-                stroke_factor = 1.0 / sqrt(abs(q.determinant))
+            stroke_factor = 1.0 if q.determinant == 0 else 1.0 / sqrt(abs(q.determinant))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
         sw = node.implied_stroke_width * stroke_factor
@@ -1040,10 +1027,7 @@ class LaserRender:
         if not node.label:
             return
         try:
-            if node.type == "group":
-                bbox = node.bbox_group()
-            else:
-                bbox = node.bbox()
+            bbox = node.bbox_group() if node.type == "group" else node.bbox()
             # print (f"{node.type}: {bbox}")
         except AttributeError:
             # print (f"This node has no bbox: {self.node.type}")
@@ -1368,7 +1352,7 @@ class LaserRender:
 
         # if it's a raster we will always translate text variables...
         variable_translation = True
-        nodecopy = [e for e in _nodes]
+        nodecopy = list(_nodes)
         self.validate_text_nodes(nodecopy, variable_translation)
 
         for item in _nodes:
@@ -1443,9 +1427,7 @@ class LaserRender:
         gc.Destroy()
         del gc.dc
         del dc
-        if bitmap:
-            return bmp
-        return image
+        return bmp if bitmap else image
 
     def make_thumbnail(
         self, pil_data, maximum=None, width=None, height=None, alphablack=True
