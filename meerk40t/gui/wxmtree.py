@@ -713,6 +713,10 @@ class ShadowTree:
         """
         self.node_register(node, **kwargs)
         self.register_children(node)
+        if node.expanded:
+            item = node._item
+            self.wxtree.Expand(item)
+
 
     def node_changed(self, node):
         """
@@ -881,7 +885,6 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
-        print (f"expanding: {node.type}")
         node.expanded = True
         item = node._item
         self.check_validity(item)
@@ -918,7 +921,6 @@ class ShadowTree:
         if node is None:
             return
         node.expanded = False
-        print (f"collapsing: {node.type}")
         item = node._item
         if item is None:
             return
