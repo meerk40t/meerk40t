@@ -1240,24 +1240,24 @@ class Elemental(Service):
         else:
             groupdx, groupdy = calc_dx_dy()
             # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
-
-        for q in data_to_align:
-            # print(f"Node to be treated: {q.type}")
-            if q.bounds is None:
-                continue
-            if as_group == 0:
+        with self.undoscope("Align"):
+            for q in data_to_align:
+                # print(f"Node to be treated: {q.type}")
                 if q.bounds is None:
                     continue
-                left_edge = q.bounds[0]
-                top_edge = q.bounds[1]
-                right_edge = q.bounds[2]
-                bottom_edge = q.bounds[3]
-                dx, dy = calc_dx_dy()
-            else:
-                dx = groupdx
-                dy = groupdy
-            # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
-            self.translate_node(q, dx, dy)
+                if as_group == 0:
+                    if q.bounds is None:
+                        continue
+                    left_edge = q.bounds[0]
+                    top_edge = q.bounds[1]
+                    right_edge = q.bounds[2]
+                    bottom_edge = q.bounds[3]
+                    dx, dy = calc_dx_dy()
+                else:
+                    dx = groupdx
+                    dy = groupdy
+                # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
+                self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
         self.signal("warn_state_update")
 
