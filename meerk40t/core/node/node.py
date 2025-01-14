@@ -479,6 +479,9 @@ class Node:
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
+            if node_copy.expanded != c.expanded:
+                # print ("Strange not identical, fixing")
+                node_copy.expanded = c.expanded
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links
