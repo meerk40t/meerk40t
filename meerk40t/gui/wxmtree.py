@@ -1322,7 +1322,7 @@ class ShadowTree:
         self.wxtree.Expand(self.elements.op_branch._item)
         self.wxtree.Expand(self.elements.elem_branch._item)
         self.wxtree.Expand(self.elements.reg_branch._item)
-        startnode = self.elements._tree
+        startnode = self.elements._tree._item
         
         def expand_leaf(snode):
             child, cookie = self.wxtree.GetFirstChild(snode)
