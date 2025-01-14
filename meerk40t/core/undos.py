@@ -77,7 +77,7 @@ class Undo:
                 # Hit a concurrent issue.
                 pass
             del self._undo_stack[self._undo_index + 1 :]
-            self.debug_me(f"Mark done")
+            # self.debug_me(f"Mark done")
             self.message = None
         self.service.signal("undoredo")
 
@@ -98,7 +98,7 @@ class Undo:
                 return False
             # print (f"Index: {self._undo_index} / {len(self._undo_stack)}")
             to_be_restored = self._undo_index - 1     
-            self.debug_me(f"Undo requested: {to_be_restored}")
+            # self.debug_me(f"Undo requested: {to_be_restored}")
             if self._undo_index == len(self._undo_stack) - 1 and self._undo_stack[self._undo_index].message != self.LAST_STATE:
                 # We store the current state
                 self._undo_stack.append(
@@ -118,7 +118,7 @@ class Undo:
             # except KeyError:
             #     pass
             self.service.signal("undoredo")
-            self.debug_me("Undo done")
+            # self.debug_me("Undo done")
             return True
 
     def redo(self):
@@ -128,7 +128,7 @@ class Undo:
         with self._lock:
             if self._undo_index >= len(self._undo_stack) - 1:
                 return False
-            self.debug_me(f"Redo requested: {self._undo_index + 1}")
+            # self.debug_me(f"Redo requested: {self._undo_index + 1}")
             self._undo_index += 1
             try:
                 redo = self._undo_stack[self._undo_index]
@@ -142,7 +142,7 @@ class Undo:
             # except KeyError:
             #     pass
             self.service.signal("undoredo")
-            self.debug_me("Redo done")
+            # self.debug_me("Redo done")
             return True
 
     def undolist(self):
