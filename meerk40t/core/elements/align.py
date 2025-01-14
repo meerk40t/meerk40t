@@ -581,22 +581,24 @@ def init_commands(kernel):
             dim_pos = left_edge
             distributed_distance = dim_available / (len(elements) - 1)
 
-        for node in elements:
-            subbox = node.bounds
-            if distance:
-                delta = subbox[idx] - dim_pos
-                dim_pos += subbox[idx + 2] - subbox[idx] + distributed_distance
-            else:
-                delta = (subbox[idx] + subbox[idx + 2]) / 2 - dim_pos
-                dim_pos += distributed_distance
-            if in_x:
-                dx = -delta
-                dy = 0
-            else:
-                dx = 0
-                dy = -delta
-            if dx != 0 or dy != 0:
-                self.translate_node(node, dx, dy)
+        # _("Distribute")
+        with self.undofree("Distribute"):
+            for node in elements:
+                subbox = node.bounds
+                if distance:
+                    delta = subbox[idx] - dim_pos
+                    dim_pos += subbox[idx + 2] - subbox[idx] + distributed_distance
+                else:
+                    delta = (subbox[idx] + subbox[idx + 2]) / 2 - dim_pos
+                    dim_pos += distributed_distance
+                if in_x:
+                    dx = -delta
+                    dy = 0
+                else:
+                    dx = 0
+                    dy = -delta
+                if dx != 0 or dy != 0:
+                    self.translate_node(node, dx, dy)
 
     @self.console_command(
         "spaceh",

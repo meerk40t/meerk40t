@@ -126,7 +126,7 @@ class FormatPainter:
     def on_emphasis(self, *args):
         if self.state == INACTIVE:
             return
-        elif self.state == WAITING:
+        if self.state == WAITING:
             node = self.context.elements.first_emphasized
             if node is None:
                 return
@@ -135,7 +135,7 @@ class FormatPainter:
             self.template = node
             self.state = PASTING
             return
-        elif self.state == PASTING:
+        if self.state == PASTING:
             try:
                 _id = self.template.id
             except (RuntimeError, AttributeError):
@@ -144,36 +144,39 @@ class FormatPainter:
             nodes_changed = []
             nodes_classify = []
             nodes_images = []
-            for node in self.context.elements.elems(emphasized=True):
-                if node is self.template:
-                    continue
-                flag_changed = False
-                flag_classify = False
-                flag_pathupdate = False
-                for entry in self.possible_attributes:
-                    attr = entry[0]
-                    generic = entry[1]
-                    if not generic and node.type != self.template.type:
+            data = list(self.context.elements.elems(emphasized=True))
+            if not data:
+                return
+            with self.context.elements.undoscope("Paste format"):
+                for node in data:
+                    if node is self.template:
                         continue
-                    if hasattr(self.template, attr) and hasattr(node, attr):
-                        value = getattr(self.template, attr, None)
-                        if isinstance(value, (list, tuple)):
-                            value = copy(value)
-                        try:
-                            setattr(node, attr, value)
-                            flag_changed = True
-                            if attr in ("stroke", "fill"):
-                                flag_classify = True
-                            if attr in self.path_update_needed:
-                                flag_pathupdate = True
-                        except ValueError:
+                    flag_changed = False
+                    flag_classify = False
+                    flag_pathupdate = False
+                    for entry in self.possible_attributes:
+                        attr = entry[0]
+                        generic = entry[1]
+                        if not generic and node.type != self.template.type:
                             continue
-                if flag_changed:
-                    nodes_changed.append(node)
-                    if node.type == "elem image":
-                        nodes_images.append(node)
-                if flag_pathupdate:
-                    if hasattr(node, "mktext"):
+                        if hasattr(self.template, attr) and hasattr(node, attr):
+                            value = getattr(self.template, attr, None)
+                            if isinstance(value, (list, tuple)):
+                                value = copy(value)
+                            try:
+                                setattr(node, attr, value)
+                                flag_changed = True
+                                if attr in ("stroke", "fill"):
+                                    flag_classify = True
+                                if attr in self.path_update_needed:
+                                    flag_pathupdate = True
+                            except ValueError:
+                                continue
+                    if flag_changed:
+                        nodes_changed.append(node)
+                        if node.type == "elem image":
+                            nodes_images.append(node)
+                    if flag_pathupdate and hasattr(node, "mktext"):
                         newtext = self.context.elements.wordlist_translate(
                             node.mktext, elemnode=node, increment=False
                         )
@@ -186,15 +189,15 @@ class FormatPainter:
                         if hasattr(node, "_cache"):
                             node._cache = None
 
-                if flag_classify:
-                    nodes_classify.append(node)
-            if len(nodes_changed) > 0:
-                for node in nodes_images:
-                    self.context.elements.do_image_update(node, self.context)
-                if len(nodes_classify) > 0 and self.context.elements.classify_new:
-                    self.context.elements.classify(nodes_classify)
-                self.context.signal("element_property_update", nodes_changed)
-                self.context.signal("refresh_scene", "Scene")
+                    if flag_classify:
+                        nodes_classify.append(node)
+                if nodes_changed:
+                    for node in nodes_images:
+                        self.context.elements.do_image_update(node, self.context)
+                    if nodes_classify and self.context.elements.classify_new:
+                        self.context.elements.classify(nodes_classify)
+                    self.context.signal("element_property_update", nodes_changed)
+                    self.context.signal("refresh_scene", "Scene")
 
     def on_click(self, *args):
         # print(f"On_click called, state was : {self.state}")

@@ -120,8 +120,11 @@ class CyclocycloidWidget(Widget):
             t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
             for m in self.series:
                 t.line((m[0] + self.x, m[1] + self.y))
-            node = elements.elem_branch.add(path=t, type="elem path")
-            elements.classify([node])
+            # _("Create path")
+            with elements.undoscope("Create path"):
+                node = elements.elem_branch.add(path=t, type="elem path")
+                if elements.classify_new:
+                    elements.classify([node])
             self.parent.remove_widget(self)
         except IndexError:
             pass

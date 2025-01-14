@@ -447,7 +447,8 @@ class DriverToPath:
             elements (class): context for elements
             options (disctionary, optional): A dictionary with settings. Defaults to None.
         """
-        with elements.static("driver_to_path"):
+        # _("Driver to path")
+        with elements.undoscope("Driver to path"):
             plotter = PlotterDriver()
             for opt in self.options:
                 if hasattr(plotter, opt["attr"]):

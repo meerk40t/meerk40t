@@ -136,17 +136,19 @@ def init_commands(kernel):
             matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
-        if len(pasted) > 1:
-            group = self.elem_branch.add(type="group", label="Group", id="Copy")
-        else:
-            group = self.elem_branch
-        target = []
-        for p in pasted:
-            if hasattr(p, "label"):
-                s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
-                p.label = s
-            group.add_node(p)
-            target.append(p)
+        # _("Clipboard paste")
+        with self.undoscope("Clipboard paste"):
+            if len(pasted) > 1:
+                group = self.elem_branch.add(type="group", label="Group", id="Copy", expanded=True)
+            else:
+                group = self.elem_branch
+            target = []
+            for p in pasted:
+                if hasattr(p, "label"):
+                    s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
+                    p.label = s
+                group.add_node(p)
+                target.append(p)
         # Make sure we are selecting the right thing...
         if len(pasted) > 1:
             self.set_emphasis([group])
@@ -177,7 +179,9 @@ def init_commands(kernel):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
-        self.remove_elements(data)
+        # _("Clipboard cut")
+        with self.undoscope("Clipboard cut"):
+            self.remove_elements(data)
         # Let the world know we have filled the clipboard
         self.signal("icons")
         return "elements", self._clipboard[destination]

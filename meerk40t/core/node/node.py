@@ -93,21 +93,7 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
-        self._default_map = dict()
-        for k, v in kwargs.items():
-            if k.startswith("_"):
-                continue
-            if isinstance(v, str) and k not in ("text", "id", "label"):
-                try:
-                    v = ast.literal_eval(v)
-                except (ValueError, SyntaxError):
-                    pass
-            try:
-                setattr(self, k, v)
-            except AttributeError:
-                # If this is already an attribute, just add it to the node dict.
-                self.__dict__[k] = v
-
+        self._expanded = False
         self._children = list()
         self._root = None
         self._parent = None
@@ -133,6 +119,27 @@ class Node:
 
         self._item = None
         self._cache = None
+        self._default_map = dict()
+        if "expanded" in kwargs:
+            # print (f"Require expanded: {kwargs}")
+            exp_value = kwargs["expanded"]
+            self._expanded = exp_value
+            del kwargs["expanded"]
+
+        for k, v in kwargs.items():
+            if k.startswith("_"):
+                continue
+            if isinstance(v, str) and k not in ("text", "id", "label"):
+                try:
+                    v = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    pass
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                # If this is already an attribute, just add it to the node dict.
+                self.__dict__[k] = v
+
         super().__init__()
 
     def __repr__(self):
@@ -186,6 +193,16 @@ class Node:
     def targeted(self, value):
         self._target = value
         self.notify_targeted(self)
+    
+    @property
+    def expanded(self):
+        return self._expanded
+
+    @expanded.setter
+    def expanded(self, value):
+        self._expanded = value
+        # No use case for notify expand
+        # self.notify_expand(self)
 
     @property
     def highlighted(self):
@@ -468,6 +485,9 @@ class Node:
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
+            if node_copy.expanded != c.expanded:
+                # print ("Strange not identical, fixing")
+                node_copy.expanded = c.expanded
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links

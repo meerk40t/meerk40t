@@ -258,15 +258,17 @@ class PolygonTool(PointListTool):
         lines = list(self.point_series)
         polyline = Polygon(*lines)
         elements = self.scene.context.elements
-        node = elements.elem_branch.add(
-            shape=polyline,
-            type="elem polyline",
-            stroke_width=elements.default_strokewidth,
-            stroke=elements.default_stroke,
-            fill=elements.default_fill,
-        )
-        if elements.classify_new:
-            elements.classify([node])
+        # _("Create polyline")
+        with elements.undoscope("Create polyline"):
+            node = elements.elem_branch.add(
+                shape=polyline,
+                type="elem polyline",
+                stroke_width=elements.default_strokewidth,
+                stroke=elements.default_stroke,
+                fill=elements.default_fill,
+            )
+            if elements.classify_new:
+                elements.classify([node])
         self.notify_created(node)
 
     def create_node(self):

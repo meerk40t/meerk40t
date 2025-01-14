@@ -348,11 +348,13 @@ def init_tree(kernel):
     )
     def convert_file_to_group(node, **kwargs):
         with self.undoscope("Convert to normal group"):
+            node_exp = node.expanded
             n = node.replace_node(
                 type="group",
                 keep_children=True,
                 label=_("Content of {filenode}").format(filenode=node.name),
             )
+            n.expanded = node_exp
         # self.signal("rebuild_tree", "elements")
 
     @tree_conditional(lambda node: not is_regmark(node))
@@ -547,7 +549,7 @@ def init_tree(kernel):
             return
         with self.undoscope("Group elements"):
             parent_node = minimal_parent(data)
-            group_node = parent_node.add(type="group", label="Group")
+            group_node = parent_node.add(type="group", label="Group", expanded=True)
             for e in data:
                 group_node.append_child(e)
 
@@ -3270,8 +3272,8 @@ def init_tree(kernel):
             else:
                 for ref in list(rnode.references):
                     ref.remove_node()
-
-        with self.static("remove_assign"):
+        # _("Remove assignments")
+        with self.undoscope("Remove assignments"):
             for node in list(self.elems(emphasized=True)):
                 rem_node(node)
         self.signal("refresh_tree")

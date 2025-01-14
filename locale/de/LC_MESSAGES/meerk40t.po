@@ -19573,3 +19573,155 @@ msgstr "Unterdrückt das Zeichnen von nicht-sichtbaren Elementen\n(Nur auscchalt
 #: meerk40t/gui/navigationpanels.py:1253
 msgid "(Middle Button: jump to first jobstart)"
 msgstr "(Mittler Button: bewege Laser zum ersten Jobstart)"
+
+#: meerk40t/grbl/gui/grblconfiguration.py:53
+msgid "WebSocket"
+msgstr "WebSocket"
+
+#: meerk40t/tools/driver_to_path.py:450
+msgid "Driver to path"
+msgstr "Laserdaten zu Pfad"
+
+#: meerk40t/gui/wxmmain.py:546
+msgid "Paste image"
+msgstr "Bild einfügen"
+
+#: meerk40t/gui/wxmmain.py:584
+msgid "Paste text"
+msgstr "Text einfügen"
+
+#: meerk40t/gui/wxmmain.py:2804
+msgid "Add path"
+msgstr "Pfad hinzufügen"
+
+#: meerk40t/gui/wxmmain.py:4770
+msgid "Export image"
+msgstr "Bild exportieren"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:248
+msgid "Color classify"
+msgstr "Reklassifizierung"
+
+#: meerk40t/gui/propertypanels/placementproperty.py:1129
+msgid "Create template"
+msgstr "Erzeuge Vorlage"
+
+#: meerk40t/gui/toolwidgets/tooldraw.py:81 meerk40t/gui/toolwidgets/toolribbon.py:585 meerk40t/gui/toolwidgets/toolvector.py:196 meerk40t/gui/utilitywidgets/cyclocycloidwidget.py:123 meerk40t/gui/utilitywidgets/harmonograph.py:327
+msgid "Create path"
+msgstr "Erzeuge Pfad"
+
+#: meerk40t/gui/toolwidgets/toolellipse.py:189
+msgid "Create ellipse"
+msgstr "Erzeuge Ellipse"
+
+#: meerk40t/gui/toolwidgets/toolline.py:21
+msgid "Create line"
+msgstr "Erzeuge Linie"
+
+#: meerk40t/gui/toolwidgets/toollinetext_inline.py:165 meerk40t/gui/toolwidgets/tooltext.py:60
+msgid "Create text"
+msgstr "Erzeuge Text"
+
+#: meerk40t/gui/toolwidgets/toolpoint.py:47
+msgid "Create point"
+msgstr "Erzeuge Punkt"
+
+#: meerk40t/gui/toolwidgets/toolpolygon.py:261 meerk40t/gui/toolwidgets/toolpolyline.py:20
+msgid "Create polyline"
+msgstr "Erzeuge Linienzug"
+
+#: meerk40t/gui/toolwidgets/toolrect.py:181
+msgid "Create rectangle"
+msgstr "Erzeuge Rechteck"
+
+#: meerk40t/image/imagetools.py:572 meerk40t/image/imagetools.py:584
+msgid "Add image"
+msgstr "Bild hinzufügen"
+
+#: meerk40t/image/imagetools.py:1933
+msgid "Image white"
+msgstr "Weiße Bereiche markieren"
+
+#: meerk40t/image/imagetools.py:2039
+msgid "Contour generation"
+msgstr "Erzeuge Konturen"
+
+#: meerk40t/core/elements/branches.py:591
+msgid "Clear operations"
+msgstr "Arbeitsabläufe löschen"
+
+#: meerk40t/core/elements/branches.py:1486
+msgid "Regmarks -> Elements"
+msgstr "Registriermarken -> Elemente"
+
+#: meerk40t/core/elements/branches.py:1486
+msgid "Elements -> Regmarks"
+msgstr "Elemente -> Registriermarken"
+
+#: meerk40t/core/elements/branches.py:1805
+msgid "Break elements"
+msgstr "In Unterpfade zerlegen"
+
+#: meerk40t/core/elements/clipboard.py:139
+msgid "Clipboard paste"
+msgstr "Aus Zwischenablage"
+
+#: meerk40t/core/elements/clipboard.py:182
+msgid "Clipboard cut"
+msgstr "In Zwischenablage"
+
+#: meerk40t/core/elements/elements.py:1542
+msgid "Load operations"
+msgstr "Lade Arbeitsabläufe"
+
+#: meerk40t/core/elements/elements.py:1997 meerk40t/core/elements/elements.py:2007
+msgid "Load default operations"
+msgstr "Lade Arbeitsabläufe"
+
+#: meerk40t/core/elements/elements.py:2285
+msgid "Drag and drop"
+msgstr "Drag and drop"
+
+#: meerk40t/core/elements/elements.py:4038
+msgid "Load elements"
+msgstr "Elemente laden"
+
+#: meerk40t/core/elements/element_treeops.py:466
+msgid "Hide elements"
+msgstr "Elemente verbergen"
+
+#: meerk40t/core/elements/element_treeops.py:484
+msgid "Show elements"
+msgstr "Elemente zeigen"
+
+#: meerk40t/core/elements/element_treeops.py:2872 meerk40t/core/elements/element_treeops.py:2930 meerk40t/core/elements/element_treeops.py:2939 meerk40t/core/elements/element_treeops.py:2946 meerk40t/core/elements/element_treeops.py:2958
+msgid "Create image/path"
+msgstr "Erzeuge Bild/Pfad"
+
+#: meerk40t/core/elements/element_treeops.py:2898
+msgid "Creating image"
+msgstr "Bild erzeugen"
+
+#: meerk40t/core/elements/element_treeops.py:2933
+msgid "Create a horizontal linepattern from the raster"
+msgstr "Erzeuge horizontales Linienmuster aus dem Raster"
+
+#: meerk40t/core/elements/element_treeops.py:2941
+msgid "Create a vertical linepattern from the raster"
+msgstr "Erzeuge vertikales Linienmuster aus dem Raster"
+
+#: meerk40t/core/elements/element_treeops.py:3267
+msgid "Remove assignments"
+msgstr "Zuordnungen löschen"
+
+#: meerk40t/core/elements/grid.py:189
+msgid "Create grid"
+msgstr "Erzeuge Gitter"
+
+#: meerk40t/core/elements/grid.py:299
+msgid "Create radial"
+msgstr "Erzeuge Radialkopien"
+
+#: meerk40t/core/elements/grid.py:404
+msgid "Create circular copy"
+msgstr "Kopien auf Kreisbogen"

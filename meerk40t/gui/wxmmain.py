@@ -543,14 +543,16 @@ class MeerK40t(MWindow):
                 image = imageToPil(WxBitmapToWxImage(bmp))
                 dpi = DEFAULT_PPI
                 matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
-                node = self.context.elements.elem_branch.add(
-                    image=image,
-                    matrix=matrix,
-                    type="elem image",
-                    dpi=dpi,
-                )
-                if self.context.elements.classify_new:
-                    self.context.elements.classify([node])
+                # _("Paste image")
+                with self.context.elements.undoscope("Paste image"):
+                    node = self.context.elements.elem_branch.add(
+                        image=image,
+                        matrix=matrix,
+                        type="elem image",
+                        dpi=dpi,
+                    )
+                    if self.context.elements.classify_new:
+                        self.context.elements.classify([node])
                 self.context.elements.set_emphasis([node])
 
             def paste_files(filelist):
@@ -579,18 +581,20 @@ class MeerK40t(MWindow):
                     self.context(f"webimage {content}\n")
                     return
                 size = 16.0
-                node = self.context.elements.elem_branch.add(
-                    text=content,
-                    matrix=Matrix(f"scale({UNITS_PER_PIXEL})"),
-                    type="elem text",
-                )
-                node.font_size = size
-                node.stroke = self.context.elements.default_stroke
-                node.stroke_width = self.context.elements.default_strokewidth
-                node.fill = self.context.elements.default_fill
-                node.altered()
-                if self.context.elements.classify_new:
-                    self.context.elements.classify([node])
+                # _("Paste text")
+                with self.context.elements.undoscope("Paste text"):
+                    node = self.context.elements.elem_branch.add(
+                        text=content,
+                        matrix=Matrix(f"scale({UNITS_PER_PIXEL})"),
+                        type="elem text",
+                    )
+                    node.font_size = size
+                    node.stroke = self.context.elements.default_stroke
+                    node.stroke_width = self.context.elements.default_strokewidth
+                    node.fill = self.context.elements.default_fill
+                    node.altered()
+                    if self.context.elements.classify_new:
+                        self.context.elements.classify([node])
                 self.context.elements.set_emphasis([node])
 
             # Read the image
@@ -2377,14 +2381,15 @@ class MeerK40t(MWindow):
                         lets_do_it = True
 
             if lets_do_it:
-                for node in data:
-                    if group_node is None:
-                        group_node = node.parent.add(type="group", label="Group")
-                    group_node.append_child(node)
-                    node.emphasized = True
-                if group_node is not None:
-                    group_node.emphasized = True
-                    kernel.signal("element_property_reload", "Scene", group_node)
+                with kernel.elements.undoscope("Group"):
+                    for node in data:
+                        if group_node is None:
+                            group_node = node.parent.add(type="group", label="Group", expanded=True)
+                        group_node.append_child(node)
+                        node.emphasized = True
+                    if group_node is not None:
+                        group_node.emphasized = True
+                        kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         # buttonsize = STD_ICON_SIZE
@@ -2410,20 +2415,21 @@ class MeerK40t(MWindow):
                     node.insert_sibling(n)
                 node.remove_node()  # Removing group/file node.
 
-            found_some = False
-            for node in list(kernel.elements.elems(emphasized=True)):
-                if node is not None:
-                    if node.type in ("group", "file"):
-                        found_some = True
-                        release_em(node)
-            if not found_some:
-                # So let's see that we address the parents...
+            with kernel.elements.undoscope("Ungroup"):
+                found_some = False
                 for node in list(kernel.elements.elems(emphasized=True)):
                     if node is not None:
-                        if hasattr(node, "parent"):
-                            if hasattr(node.parent, "type"):
-                                if node.parent.type in ("group", "file"):
-                                    release_em(node.parent)
+                        if node.type in ("group", "file"):
+                            found_some = True
+                            release_em(node)
+                if not found_some:
+                    # So let's see that we address the parents...
+                    for node in list(kernel.elements.elems(emphasized=True)):
+                        if node is not None:
+                            if hasattr(node, "parent"):
+                                if hasattr(node.parent, "type"):
+                                    if node.parent.type in ("group", "file"):
+                                        release_em(node.parent)
 
         def part_of_group():
             result = False
@@ -2795,8 +2801,11 @@ class MeerK40t(MWindow):
                 path = Path(dlg.GetValue())
                 path.stroke = "blue"
                 p = abs(path)
-                node = context.elements.elem_branch.add(path=p, type="elem path")
-                context.elements.classify([node])
+                # _("Add path")
+                with context.elements.undoscope("Add path"):
+                    node = context.elements.elem_branch.add(path=p, type="elem path")
+                    if context.elements.classify_new:
+                        context.elements.classify([node])
             dlg.Destroy()
 
         @context.console_command("dialog_fill", hidden=True)
@@ -2981,13 +2990,13 @@ class MeerK40t(MWindow):
         @context.console_option("ops_too", "o", action="store_true", type=bool)
         @context.console_command("clear_project")
         def reset_workspace(command, channel, ops_too=False, **kwargs):
-            self.set_working_file_name(None)
-            self.context.elements.clear_all(ops_too=ops_too)
-            self.context(".planz clear\n")
-            self.context(".laserpath_clear\n")
-            self.validate_save()
-            self.context(".tool none\n")
-            self.context.elements.undo.mark("Clear Project")
+            with self.context.elements.undoscope("Clear project"):
+                self.set_working_file_name(None)
+                self.context.elements.clear_all(ops_too=ops_too)
+                self.context(".planz clear\n")
+                self.context(".laserpath_clear\n")
+                self.validate_save()
+                self.context(".tool none\n")
 
     def __set_panes(self):
         if self.context.root.faulty_bitmap_scaling:
@@ -4758,8 +4767,11 @@ class MeerK40t(MWindow):
             elements = self.context.elements
             img = Image.fromarray(frame)
             matrix = Matrix(f"scale({UNITS_PER_PIXEL}, {UNITS_PER_PIXEL})")
-            node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
-            elements.classify([node])
+            # _("Export image")
+            with elements.undoscope("Export image"):
+                node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
+                if elements.classify_new:
+                    elements.classify([node])
             self.context.signal("refresh_scene", "Scene")
 
     @signal_listener("statusmsg")
