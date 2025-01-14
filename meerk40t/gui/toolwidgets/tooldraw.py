@@ -78,15 +78,17 @@ class DrawTool(ToolWidget):
                 for m in self.series:
                     t.line(m)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(
-                    path=t,
-                    type="elem path",
-                    stroke_width=elements.default_strokewidth,
-                    stroke=elements.default_stroke,
-                    fill=elements.default_fill,
-                )
-                if elements.classify_new:
-                    elements.classify([node])
+                # _("Create path")
+                with elements.undoscope("Create path"):
+                    node = elements.elem_branch.add(
+                        path=t,
+                        type="elem path",
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
+                    )
+                    if elements.classify_new:
+                        elements.classify([node])
                 self.notify_created(node)
             except IndexError:
                 pass
