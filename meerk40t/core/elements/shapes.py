@@ -2315,9 +2315,8 @@ def init_commands(kernel):
                         continue
                     node.matrix *= matrix
                     node.modified()
-                    if hasattr(node, "update"):
-                        if node not in images:
-                            images.append(node)
+                    if hasattr(node, "update") and node not in images:
+                        images.append(node)
 
             # Calculate again
             area = Node.union_bounds(data)
@@ -2330,9 +2329,8 @@ def init_commands(kernel):
                         continue
                     node.matrix.post_translate(dx, dy)
                     node.modified()
-                    if hasattr(node, "update"):
-                        if node not in images:
-                            images.append(node)
+                    if hasattr(node, "update") and node not in images:
+                        images.append(node)
 
             for node in images:
                 self.do_image_update(node)

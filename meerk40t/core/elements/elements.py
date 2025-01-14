@@ -589,15 +589,15 @@ class Elemental(Service):
 
         # Point / Segments selected.
         # points in format: points.append((g, idx, 0, node, geom))
-        self.points = list()
-        self.segments = list()
+        self.points = []
+        self.segments = []
 
         # Will be filled with a list of newly added nodes after a load operation
-        self.added_elements = list()
+        self.added_elements = []
 
         # keyhole-logic
-        self.registered_keyholes = dict()
-        self.remembered_keyhole_nodes = list()
+        self.registered_keyholes = {}
+        self.remembered_keyhole_nodes = []
 
         self.undo = Undo(self, self._tree)
         self.do_undo = True
@@ -763,10 +763,7 @@ class Elemental(Service):
 
     @property
     def basename(self):
-        result = None
-        if self._filename is not None:
-            result = os.path.basename(self._filename)
-        return result
+        return os.path.basename(self._filename) if self._filename is not None else None
 
     @property
     def default_strokewidth(self):
@@ -783,9 +780,7 @@ class Elemental(Service):
     @property
     def default_stroke(self):
         # We don't allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
-        if self._default_stroke is not None:
-            return self._default_stroke
-        return Color("blue")
+        return Color("blue") if self._default_stroke is None else self._default_stroke
 
     @default_stroke.setter
     def default_stroke(self, color):
@@ -1020,9 +1015,7 @@ class Elemental(Service):
                 if hasattr(n, attrib):
                     c = getattr(n, attrib)
                     try:
-                        if c is not None and c.argb is not None:
-                            pass
-                        else:
+                        if c.argb is None:
                             c = None
                     except AttributeError:
                         c = None
@@ -1048,12 +1041,11 @@ class Elemental(Service):
                     for ref in list(n._references):
                         ref.remove_node()
                 op_assign.drop(n, modify=True)
-                if impose == "to_elem" and target_color is not None:
-                    if hasattr(n, attrib):
-                        setattr(n, attrib, target_color)
-                        if set_fill_to_none and hasattr(n, "fill"):
-                            n.fill = None
-                        needs_refresh = True
+                if impose == "to_elem" and target_color is not None and hasattr(n, attrib):
+                    setattr(n, attrib, target_color)
+                    if set_fill_to_none and hasattr(n, "fill"):
+                        n.fill = None
+                    needs_refresh = True
         # Refresh the operation so any changes like color materialize...
         self.signal("element_property_reload", op_assign)
         if needs_refresh:
@@ -1086,7 +1078,7 @@ class Elemental(Service):
                     if t1 is None or t2 < t1:
                         parent_node._emphasized_time = t2
 
-        align_data = [e for e in data]
+        align_data = list(data)
         needs_repetition = True
         while needs_repetition:
             # Will be set only if we add a parent, as the process needs then to be repeated
@@ -1136,9 +1128,8 @@ class Elemental(Service):
                     # node_1 in the count
                     for idx2 in range(idx1, data_len, 1):
                         node_2 = align_data[idx2]
-                        if node_2 is not None:
-                            if node_2.parent is parent:
-                                identified += 1
+                        if node_2 is not None and node_2.parent is parent:
+                            identified += 1
                 if identified == candidates:
                     # All children of the parent object are contained
                     # So we add the parent instead...
@@ -1154,7 +1145,7 @@ class Elemental(Service):
             if needs_repetition:
                 # We copy the data and do it again....
                 # print ("Repetition required")
-                align_data = [e for e in data_to_align]
+                align_data = list(data_to_align)
         # One special case though: if we have selected all
         # elements within a single group then we still deal
         # with all children
@@ -1162,7 +1153,7 @@ class Elemental(Service):
             while len(data_to_align) == 1:
                 node = data_to_align[0]
                 if node is not None and node.type in ("file", "group"):
-                    data_to_align = [e for e in node.children]
+                    data_to_align = list(node.children)
                 else:
                     break
         return data_to_align
@@ -1223,12 +1214,12 @@ class Elemental(Service):
         for node in data_to_align:
             if node.bounds is not None:
                 boundary_points.append(node.bounds)
-        if len(boundary_points) == 0:
+        if not boundary_points:
             return
-        left_edge = min([e[0] for e in boundary_points])
-        top_edge = min([e[1] for e in boundary_points])
-        right_edge = max([e[2] for e in boundary_points])
-        bottom_edge = max([e[3] for e in boundary_points])
+        left_edge = min(e[0] for e in boundary_points)
+        top_edge = min(e[1] for e in boundary_points)
+        right_edge = max(e[2] for e in boundary_points)
+        bottom_edge = max(e[3] for e in boundary_points)
         if alignbounds is None:
             # print ("Alignbounds were not set...")
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
@@ -1310,9 +1301,9 @@ class Elemental(Service):
                 if hasattr(node, opatt):
                     value = getattr(node, opatt, None)
                     found = True
-                    if opatt == "passes":  # We need to look at one more info
-                        if not node.passes_custom or value < 1:
-                            value = 1
+                    if opatt == "passes" and (not node.passes_custom or value < 1):
+                        # We need to look at one more info
+                        value = 1
                 else:  # Try setting
                     if hasattr(node, "settings"):
                         try:
@@ -1377,12 +1368,8 @@ class Elemental(Service):
         if oplist is None:
             oplist = self.op_branch.children
         if opinfo is None:
-            opinfo = dict()
-        if use_settings is None:
-            settings = self.op_data
-        else:
-            settings = use_settings
-
+            opinfo = {}
+        settings = self.op_data if use_settings is None else use_settings
         self.clear_persistent_operations(name, flush=False, use_settings=settings)
         if len(opinfo) > 0:
             section = f"{name} info"
@@ -1408,14 +1395,10 @@ class Elemental(Service):
         @return:
         """
         name = self.safe_section_name(name)
-        if use_settings is None:
-            settings = self.op_data
-        else:
-            settings = use_settings
+        settings = self.op_data if use_settings is None else use_settings
         for i, op in enumerate(oplist):
-            if hasattr(op, "allow_save"):
-                if not op.allow_save():
-                    continue
+            if hasattr(op, "allow_save") and not op.allow_save():
+                continue
             if op.type == "reference":
                 # We do not save references.
                 continue
@@ -1445,10 +1428,7 @@ class Elemental(Service):
         @return:
         """
         name = self.safe_section_name(name)
-        if use_settings is None:
-            settings = self.op_data
-        else:
-            settings = use_settings
+        settings = self.op_data if use_settings is None else use_settings
         for section in list(settings.derivable(name)):
             settings.clear_persistent(section)
         if not flush:
@@ -1457,11 +1437,8 @@ class Elemental(Service):
 
     def load_persistent_op_info(self, name, use_settings=None):
         name = self.safe_section_name(name)
-        if use_settings is None:
-            settings = self.op_data
-        else:
-            settings = use_settings
-        op_info = dict()
+        settings = self.op_data if use_settings is None else use_settings
+        op_info = {}
         for section in list(settings.derivable(name)):
             if section.endswith("info"):
                 for key in settings.keylist(section):
@@ -1492,13 +1469,9 @@ class Elemental(Service):
 
     def load_persistent_op_list(self, name, use_settings=None):
         name = self.safe_section_name(name)
-        if use_settings is None:
-            settings = self.op_data
-        else:
-            settings = use_settings
-
-        op_tree = dict()
-        op_info = dict()
+        settings = self.op_data if use_settings is None else use_settings
+        op_tree = {}
+        op_info = {}
         for section in list(settings.derivable(name)):
             if section.endswith("info"):
                 for key in settings.keylist(section):
@@ -1508,7 +1481,7 @@ class Elemental(Service):
                 continue
 
             op_type = settings.read_persistent(str, section, "type")
-            op_attr = dict()
+            op_attr = {}
             for key in settings.keylist(section):
                 if key == "type":
                     # We need to ignore it to avoid double attribute issues.
@@ -1522,7 +1495,7 @@ class Elemental(Service):
                 continue
             # op.load(settings, section)
             op_tree[section] = op
-        op_list = list()
+        op_list = []
         for section in op_tree:
             parent = " ".join(section.split(" ")[:-1])
             if parent == name:
@@ -1650,7 +1623,7 @@ class Elemental(Service):
         std_list = "_default"
         needs_signal = len(self.default_operations) != 0
         oplist = []
-        opinfo = dict()
+        opinfo = {}
         if hasattr(self, "device"):
             std_list = f"_default_{self.device.label}"
             # We need to replace all ' ' by an underscore
@@ -2023,7 +1996,7 @@ class Elemental(Service):
         changes = False
         idx = 1
         uid = {}
-        missing = list()
+        missing = []
         if nodelist is None:
             nodelist = list(self.flat())
         for node in nodelist:
@@ -2729,10 +2702,7 @@ class Elemental(Service):
                 continue
             classif_info = [False, False]
             # Even for fuzzy we check first a direct hit
-            if fuzzy:
-                fuzzy_param = (False, True)
-            else:
-                fuzzy_param = (False,)
+            fuzzy_param = (False, True) if fuzzy else (False, )
             do_stroke = True
             do_fill = True
             for tempfuzzy in fuzzy_param:
@@ -3028,10 +2998,7 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    if fuzzy:
-                        fuzzy_param = (False, True)
-                    else:
-                        fuzzy_param = (False,)
+                    fuzzy_param = (False, True) if fuzzy else (False, )
                     was_classified = False
                     for tempfuzzy in fuzzy_param:
                         if debug:
@@ -3113,10 +3080,7 @@ class Elemental(Service):
                             "white"
                         ) == abs(node.fill)
                     node_fill = Color("black") if is_black else abs(node.fill)
-                    if fuzzy:
-                        fuzzy_param = (False, True)
-                    else:
-                        fuzzy_param = (False,)
+                    fuzzy_param = (False, True) if fuzzy else (False, )
                     was_classified = False
                     for tempfuzzy in fuzzy_param:
                         if debug:
@@ -3975,7 +3939,7 @@ class Elemental(Service):
         def descend_group(gnode):
             gres = 0
             gdel = 0
-            to_be_deleted = list()
+            to_be_deleted = []
             for cnode in gnode.children:
                 if cnode.type in ("file", "group"):
                     cres, cdel = descend_group(cnode)
