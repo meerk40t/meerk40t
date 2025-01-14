@@ -93,21 +93,7 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
-        self._default_map = dict()
-        for k, v in kwargs.items():
-            if k.startswith("_"):
-                continue
-            if isinstance(v, str) and k not in ("text", "id", "label"):
-                try:
-                    v = ast.literal_eval(v)
-                except (ValueError, SyntaxError):
-                    pass
-            try:
-                setattr(self, k, v)
-            except AttributeError:
-                # If this is already an attribute, just add it to the node dict.
-                self.__dict__[k] = v
-
+        self._expanded = False
         self._children = list()
         self._root = None
         self._parent = None
@@ -119,7 +105,6 @@ class Node:
 
         self._selected = False
         self._emphasized = False
-        self._expanded = False
         self._emphasized_time = None
         self._highlighted = False
         self._target = False
@@ -134,6 +119,27 @@ class Node:
 
         self._item = None
         self._cache = None
+        self._default_map = dict()
+        if "expanded" in kwargs:
+            # print (f"Require expanded: {kwargs}")
+            exp_value = kwargs["expanded"]
+            self._expanded = exp_value
+            del kwargs["expanded"]
+
+        for k, v in kwargs.items():
+            if k.startswith("_"):
+                continue
+            if isinstance(v, str) and k not in ("text", "id", "label"):
+                try:
+                    v = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    pass
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                # If this is already an attribute, just add it to the node dict.
+                self.__dict__[k] = v
+
         super().__init__()
 
     def __repr__(self):

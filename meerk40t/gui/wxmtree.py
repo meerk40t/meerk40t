@@ -428,6 +428,10 @@ class TreePanel(wx.Panel):
     def on_reset_formatter(self, origin, target=None, *args):
         self.shadow_tree.reset_formatter_cache()
 
+    @signal_listener("sync_expansion")
+    def on_sync_expansion(self, origin, target=None, *args):
+        self.shadow_tree.sync_expansion()
+
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, target=None, *args):
         """
@@ -578,6 +582,7 @@ class ShadowTree:
         self.iconsize = testsize[1]
         self.iconstates = {}
         self.last_call = 0
+        self._nodes_to_expand = []
 
         # fact = get_default_scale_factor()
         # if fact > 1.0:
@@ -714,9 +719,21 @@ class ShadowTree:
         self.node_register(node, **kwargs)
         self.register_children(node)
         if node.expanded:
-            item = node._item
-            self.wxtree.Expand(item)
+            # Needs to be done later...
+            self._nodes_to_expand.append(node)
+            if not self.context.elements.suppress_signalling:
+                self.context.elements.signal("sync_expansion")
 
+    def sync_expansion(self):
+        for node in self._nodes_to_expand:
+            item = node._item
+            if item is None or not item.IsOk():
+                continue
+            if node.expanded:
+                self.wxtree.Expand(item)
+            else:
+                self.wxtree.Collapse(item)
+        self._nodes_to_expand.clear()
 
     def node_changed(self, node):
         """
