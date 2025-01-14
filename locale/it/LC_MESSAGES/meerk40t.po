@@ -13773,8 +13773,7 @@ msgstr ""
 msgid ""
 "This allows to execute an arbitrary command during the engrave process"
 msgstr ""
-"Consente l'esecuzione di un Meerk40t-proprieta\n"
-"comando durante il processo di cottura"
+"Consente di eseguire un comando arbitrario durante il processo di incisione"
 
 msgid ""
 "This will send the laser back to its logical start position"
@@ -13800,7 +13799,7 @@ msgstr ""
 msgid ""
 "This will pause the engrave process for a given period"
 msgstr ""
-"Interrompe il processo di cottura per un periodo di tempo definito"
+"Questo mette in pausa il processo di incisione per un determinato periodo di tempo"
 
 msgid ""
 "The elements under this section will not be engraved,\n"
@@ -16559,7 +16558,7 @@ msgstr "Cancella i Processi"
 
 #: ./meerk40t\gui\materialmanager.py:1580
 msgid "Do you want to use the operations in the tree for the current entry?"
-msgstr "I processi di lavoro attuali devono essere caricati nell'albero dei progetti?"
+msgstr "I valori dell'albero dei processi devono essere caricati\nnella voce corrente della libreria dei materiali?"
 
 #: ./meerk40t\gui\materialmanager.py:1877
 msgid "Create minimal"
@@ -16610,9 +16609,7 @@ msgstr "Eliminazione i dati"
 
 #: ./meerk40t\gui\materialmanager.py:1542
 msgid "Do you want to remove all existing operations before loading this set?"
-msgstr ""
-"Si devono cancellare tutti i processi di cottura esistenti, \n"
-"prima che queste voci vengano caricate?"
+msgstr "Si desidera rimuovere tutti i processi esistenti prima di caricare questo set?"
 
 msgid "Old:"
 msgstr "Vecchio:"
@@ -21377,3 +21374,11 @@ msgstr "Codice personalizzato:"
 #: meerk40t/grbl/gui/grbloperationconfig.py:53
 msgid "Any custom GRBL code that will be executed at the start of the operation"
 msgstr "Qualsiasi codice GRBL personalizzato che verrà eseguito all'inizio dei processi"
+
+#: meerk40t/gui/plugin.py:109
+msgid "Optimize element display"
+msgstr "Ottimizzare la visualizzazione degli elementi"
+
+#: meerk40t/gui/plugin.py:110
+msgid "Suppresses the drawing of non-visible elements (disable only if you face display issues)"
+msgstr ""
