@@ -1539,19 +1539,21 @@ class Elemental(Service):
         @param clear:
         @return:
         """
-        settings = self.op_data
-        if clear:
-            self.clear_operations()
-        operation_branch = self.op_branch
-        oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
-        for op in oplist:
-            operation_branch.add_node(op)
-        if classify is None:
-            classify = self.classify_new
-        if not classify:
-            return
-        if len(list(self.elems())) > 0:
-            self.classify(list(self.elems()))
+        # _("Load operations")
+        with self.undoscope("Load operations"):
+            settings = self.op_data
+            if clear:
+                self.clear_operations()
+            operation_branch = self.op_branch
+            oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
+            for op in oplist:
+                operation_branch.add_node(op)
+            if classify is None:
+                classify = self.classify_new
+            if not classify:
+                return
+            if len(list(self.elems())) > 0:
+                self.classify(list(self.elems()))
         self.signal("updateop_tree")
 
     # --------------- Default Operations logic
@@ -1992,7 +1994,8 @@ class Elemental(Service):
         return oplist
 
     def load_default(self, performclassify=True):
-        with self.static("load default"):
+        # _("Load default operations")
+        with self.undoscope("Load default operations"):
             self.clear_operations()
             nodes = self.create_minimal_op_list()
             for node in nodes:
@@ -2001,7 +2004,8 @@ class Elemental(Service):
                 self.classify(list(self.elems()))
 
     def load_default2(self, performclassify=True):
-        with self.static("load default"):
+        # _("Load default operations")
+        with self.undoscope("Load default operations"):
             self.clear_operations()
             nodes = self.create_basic_op_list()
             for node in nodes:
@@ -2278,36 +2282,38 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
-        for drag_node in data:
-            op_treatment = (
-                drop_node.type in op_parent_nodes and (
-                    not drag_node.has_ancestor("branch reg") or
-                    (drag_node.has_ancestor("branch reg") and self.allow_reg_to_op_dragging)
+        # _("Drag and drop")
+        with self.undoscope("Drag and drop"):
+            for drag_node in data:
+                op_treatment = (
+                    drop_node.type in op_parent_nodes and (
+                        not drag_node.has_ancestor("branch reg") or
+                        (drag_node.has_ancestor("branch reg") and self.allow_reg_to_op_dragging)
+                    )
                 )
-            )
-            if drop_node is drag_node:
-                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
-                continue
-            if op_treatment and drag_node.has_ancestor("branch reg"):
-                # We need to first relocate the drag_node to the elem branch
-                # print(f"Relocate {drag_node.type} to elem branch")
-                self.elem_branch.drop(drag_node, flag=flag)
-            if drop_node.can_drop(drag_node):
-                # Is the drag node coming from the regmarks branch?
-                # If yes then we might need to classify.
-                if drag_node.has_ancestor("branch reg"):
-                    if drag_node.type in ("file", "group"):
-                        for e in drag_node.flat(elem_nodes):
-                            to_classify.append(e)
-                    else:
-                        to_classify.append(drag_node)
-                drop_node.drop(drag_node, modify=True, flag=flag)
-                success = True
-            else:
-                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
-                pass
-        if self.classify_new and len(to_classify) > 0:
-            self.classify(to_classify)
+                if drop_node is drag_node:
+                    # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
+                    continue
+                if op_treatment and drag_node.has_ancestor("branch reg"):
+                    # We need to first relocate the drag_node to the elem branch
+                    # print(f"Relocate {drag_node.type} to elem branch")
+                    self.elem_branch.drop(drag_node, flag=flag)
+                if drop_node.can_drop(drag_node):
+                    # Is the drag node coming from the regmarks branch?
+                    # If yes then we might need to classify.
+                    if drag_node.has_ancestor("branch reg"):
+                        if drag_node.type in ("file", "group"):
+                            for e in drag_node.flat(elem_nodes):
+                                to_classify.append(e)
+                        else:
+                            to_classify.append(drag_node)
+                    drop_node.drop(drag_node, modify=True, flag=flag)
+                    success = True
+                else:
+                    # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+                    pass
+            if self.classify_new and len(to_classify) > 0:
+                self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
         self.signal("element_property_reload", drop_node)
         return success
