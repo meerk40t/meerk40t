@@ -201,33 +201,34 @@ class CircleTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
-                if self.creation_mode == 1:
-                    elements = self.scene.context.elements
-                    node = elements.elem_branch.add(
-                        cx=cx,
-                        cy=cy,
-                        rx=radius,
-                        ry=radius,
-                        stroke_width=elements.default_strokewidth,
-                        stroke=elements.default_stroke,
-                        fill=elements.default_fill,
-                        type="elem ellipse",
-                    )
-                else:
-                    elements = self.scene.context.elements
-                    r = abs(self.p1 - self.p2) / 2
-                    node = elements.elem_branch.add(
-                        cx=(x1 + x0) / 2.0,
-                        cy=(y1 + y0) / 2.0,
-                        rx=r,
-                        ry=r,
-                        stroke_width=elements.default_strokewidth,
-                        stroke=elements.default_stroke,
-                        fill=elements.default_fill,
-                        type="elem ellipse",
-                    )
-                if elements.classify_new:
-                    elements.classify([node])
+                elements = self.scene.context.elements
+                # _("Create circle")
+                with elements.undoscope("Create circle"):
+                    if self.creation_mode == 1:
+                        node = elements.elem_branch.add(
+                            cx=cx,
+                            cy=cy,
+                            rx=radius,
+                            ry=radius,
+                            stroke_width=elements.default_strokewidth,
+                            stroke=elements.default_stroke,
+                            fill=elements.default_fill,
+                            type="elem ellipse",
+                        )
+                    else:
+                        r = abs(self.p1 - self.p2) / 2
+                        node = elements.elem_branch.add(
+                            cx=(x1 + x0) / 2.0,
+                            cy=(y1 + y0) / 2.0,
+                            rx=r,
+                            ry=r,
+                            stroke_width=elements.default_strokewidth,
+                            stroke=elements.default_stroke,
+                            fill=elements.default_fill,
+                            type="elem ellipse",
+                        )
+                    if elements.classify_new:
+                        elements.classify([node])
                 self.notify_created(node)
             except IndexError:
                 pass

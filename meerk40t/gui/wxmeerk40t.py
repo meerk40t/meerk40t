@@ -544,7 +544,8 @@ class wxMeerK40t(wx.App, Module):
     def MacNewFile(self):
         try:
             if self.context is not None:
-                self.context.elements.clear_all()
+                with self.context.elements.undoscope("New"):
+                    self.context.elements.clear_all()
         except AttributeError:
             pass
 

@@ -635,21 +635,22 @@ class HingePanel(wx.Panel):
             return
         if hasattr(path, "as_path"):
             path = path.as_path()
-        node = self.context.elements.elem_branch.add(
-            path=path,
-            stroke_width=500,
-            stroke=Color("red"),
-            type="elem path",
-        )
-        # Let's simplify things...
-        self.context.elements.simplify_node(node)
-
-        if self.hinge_generator.outershape is not None:
-            group_node = self.hinge_generator.outershape.parent.add(
-                type="group", label="Hinge"
+        with self.context.elements.undoscope("Living hinge"):
+            node = self.context.elements.elem_branch.add(
+                path=path,
+                stroke_width=500,
+                stroke=Color("red"),
+                type="elem path",
             )
-            group_node.append_child(self.hinge_generator.outershape)
-            group_node.append_child(node)
+            # Let's simplify things...
+            self.context.elements.simplify_node(node)
+
+            if self.hinge_generator.outershape is not None:
+                group_node = self.hinge_generator.outershape.parent.add(
+                    type="group", label="Hinge"
+                )
+                group_node.append_child(self.hinge_generator.outershape)
+                group_node.append_child(node)
         end_time = time()
         self.Parent.SetTitle(_("Living-Hinges") + f" ({end_time-start_time:.2f}s.)")
 

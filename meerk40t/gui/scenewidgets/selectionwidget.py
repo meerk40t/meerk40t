@@ -177,6 +177,19 @@ def process_event(
     else:
         return RESPONSE_CHAIN
 
+def update_elements(scene):
+    elements = scene.context.elements
+    with elements.undofree():
+        images = []
+        for e in elements.flat(types=elem_group_nodes, emphasized=True):
+            e.modified()
+            if hasattr(e, "update"):
+                images.append(e)
+        for e in images:
+            elements.do_image_update(e, scene.context, delayed=True)
+    scene.pane.modif_active = False
+    scene.context.signal("modified_by_tool")
+
 
 class BorderWidget(Widget):
     """
@@ -481,25 +494,17 @@ class RotationWidget(Widget):
 
         elements = self.scene.context.elements
         if event == 1:
-            images = []
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                e.modified()
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                elements.do_image_update(e, self.scene.context, delayed=True)
+            update_elements(self.scene)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
             # Hint for translate check: _("Element rotated")
-            elements.prepare_undo("Element rotated")
+            elements.undo.mark("Element rotated")
             return
         elif event == 0:
             if self.rotate_cx is None:
@@ -766,27 +771,14 @@ class CornerWidget(Widget):
             # dy = position[5]
 
         if event == 1: # End
-            images = []
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                # modified no longer relevant
-                # try:
-                #     e.modified()
-                # except AttributeError:
-                #     pass
-                if hasattr(e, "update"):
-                    images.append(e)
-                e.modified()
-            for e in images:
-                elements.do_image_update(e, self.scene.context)
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
             # Hint for translate check: _("Element scaled")
-            elements.prepare_undo("Element scaled")
+            elements.undo.mark("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1011,27 +1003,14 @@ class SideWidget(Widget):
             # dy = position[5]
 
         if event == 1:
-            images = []
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                # No longer needed
-                # try:
-                #     e.modified()
-                # except AttributeError:
-                #     pass
-                e.modified()
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                elements.do_image_update(e, self.scene.context)
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
             # Hint for translate check: _("Element scaled")
-            elements.prepare_undo("Element scaled")
+            elements.undo.mark("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1235,25 +1214,14 @@ class SkewWidget(Widget):
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
-            images = []
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                elements.do_image_update(e, self.scene.context, delayed=True)
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
             # Hint for translate check: _("Element skewed")
-            elements.prepare_undo("Element skewed")
+            elements.undo.mark("Element skewed")
             return
         elif event == 0:  # move
             if self.is_x:
@@ -1392,97 +1360,100 @@ class MoveWidget(Widget):
                     if not f.emphasized:
                         f.emphasized = True
                         emph_list.append(f)
-        for e in emph_list:
-            new_parent = None
-            org_parent = e.parent
-            # First make sure we have all child elements as well
-            if e.type in ("file", "group"):
-                for f in e.children:
-                    if not f.emphasized:
-                        f.emphasized = True
+        if not emph_list:
+            return
+        with elements.undoscope("Create copy"):
+            for e in emph_list:
+                new_parent = None
+                org_parent = e.parent
+                # First make sure we have all child elements as well
+                if e.type in ("file", "group"):
+                    for f in e.children:
+                        if not f.emphasized:
+                            f.emphasized = True
 
-            if org_parent is elements.elem_branch:
-                new_parent = elements.elem_branch
-            else:
-                # Are all other elements of this group selected as well?
-                # If yes create another group...
-                # (that would actually need to travel down?!)
-                all_selected = True
-                if not org_parent.emphasized:
-                    for sibling in org_parent.children:
-                        if not sibling.emphasized:
-                            all_selected = False
-                            break
-                if not all_selected:
-                    new_parent = org_parent
-            to_be_copied.append([e, org_parent, new_parent])
-
-        for entry in to_be_copied:
-            e = entry[0]
-            oldparent = entry[1]
-            newparent = entry[2]
-            if newparent is None:
-                # Add a new group...
-                if oldparent.label is None:
-                    newlabel = "Copy"
+                if org_parent is elements.elem_branch:
+                    new_parent = elements.elem_branch
                 else:
-                    newlabel = f"Copy of {oldparent.display_label()}"
-                if oldparent.id is None:
-                    newid = "Copy"
-                else:
-                    newid = f"Copy of {oldparent.id}"
-                newparent = oldparent.parent.add(
-                    type="group",
-                    label=newlabel,
-                    id=newid,
-                )
-                # and amend all other entries
-                for others in to_be_copied:
-                    if others[1] is oldparent and others[2] is None:
-                        others[2] = newparent
+                    # Are all other elements of this group selected as well?
+                    # If yes create another group...
+                    # (that would actually need to travel down?!)
+                    all_selected = True
+                    if not org_parent.emphasized:
+                        for sibling in org_parent.children:
+                            if not sibling.emphasized:
+                                all_selected = False
+                                break
+                    if not all_selected:
+                        new_parent = org_parent
+                to_be_copied.append([e, org_parent, new_parent])
 
-            copy_node = copy(e)
-            copy_node.emphasized = False
-            copy_node.selected = False
-            had_optional = False
-            # Need to add stroke and fill, as copy will take the
-            # default values for these attributes
-            options = ["fill", "stroke", "wxfont"]
-            for optional in options:
-                if hasattr(e, optional):
-                    setattr(copy_node, optional, getattr(e, optional))
-            options = []
-            for prop in dir(e):
-                if prop.startswith("mk"):
-                    options.append(prop)
-            for optional in options:
-                if hasattr(e, optional):
-                    setattr(copy_node, optional, getattr(e, optional))
-                    had_optional = True
+            for entry in to_be_copied:
+                e = entry[0]
+                oldparent = entry[1]
+                newparent = entry[2]
+                if newparent is None:
+                    # Add a new group...
+                    if oldparent.label is None:
+                        newlabel = "Copy"
+                    else:
+                        newlabel = f"Copy of {oldparent.display_label()}"
+                    if oldparent.id is None:
+                        newid = "Copy"
+                    else:
+                        newid = f"Copy of {oldparent.id}"
+                    newparent = oldparent.parent.add(
+                        type="group",
+                        label=newlabel,
+                        id=newid,
+                    )
+                    # and amend all other entries
+                    for others in to_be_copied:
+                        if others[1] is oldparent and others[2] is None:
+                            others[2] = newparent
 
-            newparent.add_node(copy_node)
-            copy_nodes.append(copy_node)
-            # The copy remains at the same place, we are moving the originals,
-            # to provide the impression we are doing the right thing, we amend
-            # consequently the original.
-            if elements.copy_increases_wordlist_references and hasattr(e, "text"):
-                e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
-                e.altered()
-                changed_nodes.append(e)
-            elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
-                e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
-                e.altered()
-                changed_nodes.append(e)
-            delta_wordlist = 1
-            if had_optional:
-                for property_op in self.scene.context.kernel.lookup_all(
-                    "path_updater/.*"
-                ):
-                    property_op(self.scene.context, e)
+                copy_node = copy(e)
+                copy_node.emphasized = False
+                copy_node.selected = False
+                had_optional = False
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                options = []
+                for prop in dir(e):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                        had_optional = True
 
-        if len(changed_nodes) > 0:
-            self.scene.context.signal("element_property_update", changed_nodes)
-        elements.classify(copy_nodes)
+                newparent.add_node(copy_node)
+                copy_nodes.append(copy_node)
+                # The copy remains at the same place, we are moving the originals,
+                # to provide the impression we are doing the right thing, we amend
+                # consequently the original.
+                if elements.copy_increases_wordlist_references and hasattr(e, "text"):
+                    e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
+                    e.altered()
+                    changed_nodes.append(e)
+                elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                    e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
+                    e.altered()
+                    changed_nodes.append(e)
+                delta_wordlist = 1
+                if had_optional:
+                    for property_op in self.scene.context.kernel.lookup_all(
+                        "path_updater/.*"
+                    ):
+                        property_op(self.scene.context, e)
+
+            if len(changed_nodes) > 0:
+                self.scene.context.signal("element_property_update", changed_nodes)
+            elements.classify(copy_nodes)
 
     def process_draw(self, gc):
         if self.master.tool_running:  # We don't need that overhead
@@ -1769,16 +1740,7 @@ class MoveWidget(Widget):
             #             pass
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
-            for node in elements.elems(emphasized=True):
-                try:
-                    if node.lock:
-                        continue
-                except AttributeError:
-                    pass
-                node.modified()
-
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
@@ -1787,11 +1749,10 @@ class MoveWidget(Widget):
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
             # Hint for translate check: _("Element shifted")
-            elements.prepare_undo("Element shifted")
+            elements.undo.mark("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move
-            # b = elements.selected_area()  # correct, but slow...
             move_to(dx, dy, interim=True)
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
