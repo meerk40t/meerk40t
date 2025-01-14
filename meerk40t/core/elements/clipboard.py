@@ -139,7 +139,7 @@ def init_commands(kernel):
         # _("Clipboard paste")
         with self.undoscope("Clipboard paste"):
             if len(pasted) > 1:
-                group = self.elem_branch.add(type="group", label="Group", id="Copy")
+                group = self.elem_branch.add(type="group", label="Group", id="Copy", expanded=True)
             else:
                 group = self.elem_branch
             target = []

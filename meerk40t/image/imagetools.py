@@ -2223,26 +2223,25 @@ def plugin(kernel, lifecycle=None):
                 return idx
 
             with context.elements.undoscope("Create lines"):
-                with context.elements.static("linefill"):
-                    idx = 0
-                    for path in multiple:
-                        # Notabene: the axes are swapped between np array and pil image!!
-                        if len(path) == 1:
-                            y_prev, x_prev, y, x = path[0]
-                            if x_prev < 0:
-                                # print (f"Single point at {idx}")
-                                continue
-                        geom = Geomstr()
-                        for i in range(len(path)):
-                            y_prev, x_prev, y, x = path[i]
-                            dx = x - x_prev
-                            dy = y - y_prev
-                            if (dx * dx + dy * dy) >= 4: # Thats too wide by definition, new subpath
-                                idx = save_geom(geom, idx, matrix)
-                                geom = Geomstr()
-                                continue
-                            geom.line(complex(x_prev, y_prev), complex(x, y))
-                        idx = save_geom(geom, idx, matrix)
+                idx = 0
+                for path in multiple:
+                    # Notabene: the axes are swapped between np array and pil image!!
+                    if len(path) == 1:
+                        y_prev, x_prev, y, x = path[0]
+                        if x_prev < 0:
+                            # print (f"Single point at {idx}")
+                            continue
+                    geom = Geomstr()
+                    for i in range(len(path)):
+                        y_prev, x_prev, y, x = path[i]
+                        dx = x - x_prev
+                        dy = y - y_prev
+                        if (dx * dx + dy * dy) >= 4: # Thats too wide by definition, new subpath
+                            idx = save_geom(geom, idx, matrix)
+                            geom = Geomstr()
+                            continue
+                        geom.line(complex(x_prev, y_prev), complex(x, y))
+                    idx = save_geom(geom, idx, matrix)
         t1 = perf_counter()
 
         # Save the result

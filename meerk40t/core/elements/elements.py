@@ -2194,7 +2194,7 @@ class Elemental(Service):
     def clear_all(self, ops_too=True):
         fast = True
         self.set_start_time("clear_all")
-        with self.static("clear_all"):
+        with self.static("Clear all"):
             self.clear_elements(fast=fast)
             if ops_too:
                 self.clear_operations(fast=fast)
@@ -4035,7 +4035,8 @@ class Elemental(Service):
                 if valid:
                     self.set_start_time("load")
                     self.set_start_time("full_load")
-                    with self.static("load elements"):
+                    # _("Load elements")
+                    with self.undoscope("Load elements"):
                         try:
                             # We could stop the attachment to shadowtree for the duration
                             # of the load to avoid unnecessary actions, this will provide

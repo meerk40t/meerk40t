@@ -2381,14 +2381,15 @@ class MeerK40t(MWindow):
                         lets_do_it = True
 
             if lets_do_it:
-                for node in data:
-                    if group_node is None:
-                        group_node = node.parent.add(type="group", label="Group")
-                    group_node.append_child(node)
-                    node.emphasized = True
-                if group_node is not None:
-                    group_node.emphasized = True
-                    kernel.signal("element_property_reload", "Scene", group_node)
+                with kernel.elements.undoscope("Group"):
+                    for node in data:
+                        if group_node is None:
+                            group_node = node.parent.add(type="group", label="Group", expanded=True)
+                        group_node.append_child(node)
+                        node.emphasized = True
+                    if group_node is not None:
+                        group_node.emphasized = True
+                        kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         # buttonsize = STD_ICON_SIZE
@@ -2414,20 +2415,21 @@ class MeerK40t(MWindow):
                     node.insert_sibling(n)
                 node.remove_node()  # Removing group/file node.
 
-            found_some = False
-            for node in list(kernel.elements.elems(emphasized=True)):
-                if node is not None:
-                    if node.type in ("group", "file"):
-                        found_some = True
-                        release_em(node)
-            if not found_some:
-                # So let's see that we address the parents...
+            with kernel.elements.undoscope("Ungroup"):
+                found_some = False
                 for node in list(kernel.elements.elems(emphasized=True)):
                     if node is not None:
-                        if hasattr(node, "parent"):
-                            if hasattr(node.parent, "type"):
-                                if node.parent.type in ("group", "file"):
-                                    release_em(node.parent)
+                        if node.type in ("group", "file"):
+                            found_some = True
+                            release_em(node)
+                if not found_some:
+                    # So let's see that we address the parents...
+                    for node in list(kernel.elements.elems(emphasized=True)):
+                        if node is not None:
+                            if hasattr(node, "parent"):
+                                if hasattr(node.parent, "type"):
+                                    if node.parent.type in ("group", "file"):
+                                        release_em(node.parent)
 
         def part_of_group():
             result = False
@@ -2988,13 +2990,13 @@ class MeerK40t(MWindow):
         @context.console_option("ops_too", "o", action="store_true", type=bool)
         @context.console_command("clear_project")
         def reset_workspace(command, channel, ops_too=False, **kwargs):
-            self.set_working_file_name(None)
-            self.context.elements.clear_all(ops_too=ops_too)
-            self.context(".planz clear\n")
-            self.context(".laserpath_clear\n")
-            self.validate_save()
-            self.context(".tool none\n")
-            self.context.elements.undo.mark("Clear Project")
+            with self.context.elements.undoscope("Clear project"):
+                self.set_working_file_name(None)
+                self.context.elements.clear_all(ops_too=ops_too)
+                self.context(".planz clear\n")
+                self.context(".laserpath_clear\n")
+                self.validate_save()
+                self.context(".tool none\n")
 
     def __set_panes(self):
         if self.context.root.faulty_bitmap_scaling:
