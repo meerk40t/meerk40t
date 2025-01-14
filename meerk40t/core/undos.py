@@ -15,11 +15,29 @@ class UndoState:
         if self.message is None:
             self.message = str(id(state))
 
+    @property
+    def tree_representation(self):
+        def node_representation(node):
+            t = node.type 
+            if node.children:
+                t = f"{t}{'+' if node.expanded else ''}("
+                for n in node.children:
+                    t = f"{t}{node_representation(n)},"
+                t += ")"
+            return t
+
+        s = ""
+        for node in self.state:
+            s += f"{node_representation(node)}, "
+        return s
+    
     def __str__(self):
-        return self.message
+        return self.message + " " + self.tree_representation
 
 
 class Undo:
+    LAST_STATE = "Last status"
+
     def __init__(self, service, tree):
         self.service = service
         self.tree = tree
@@ -41,7 +59,13 @@ class Undo:
         @return:
         """
         with self._lock:
-            self._undo_index += 1
+            if (
+                self._undo_index < 0
+                or self._undo_index != len(self._undo_stack) - 1
+                or self._undo_stack[self._undo_index].message != self.LAST_STATE
+            ):
+                # Only if the active message is not a placeholder
+                self._undo_index += 1
             if message is None:
                 message = self.message
             try:
@@ -53,6 +77,7 @@ class Undo:
                 # Hit a concurrent issue.
                 pass
             del self._undo_stack[self._undo_index + 1 :]
+            self.debug_me(f"Mark done")
             self.message = None
         self.service.signal("undoredo")
 
@@ -73,14 +98,14 @@ class Undo:
                 return False
             # print (f"Index: {self._undo_index} / {len(self._undo_stack)}")
             to_be_restored = self._undo_index - 1     
-            if self._undo_index == len(self._undo_stack) - 1 and self._undo_stack[self._undo_index].message != "Last status":
+            self.debug_me(f"Undo requested: {to_be_restored}")
+            if self._undo_index == len(self._undo_stack) - 1 and self._undo_stack[self._undo_index].message != self.LAST_STATE:
                 # We store the current state
                 self._undo_stack.append(
-                    UndoState(self.tree.backup_tree(), message="Last status"),
+                    UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
                 )
-                self._undo_index = to_be_restored + 1
-            else:
-                self._undo_index = to_be_restored
+                to_be_restored = len(self._undo_stack) - 2
+            self._undo_index = to_be_restored
             try:
                 undo = self._undo_stack[to_be_restored]
             except IndexError:
@@ -88,11 +113,12 @@ class Undo:
                 self._undo_index = 0
                 return False
             self.tree.restore_tree(undo.state)
-            try:
-                undo.state = self.tree.backup_tree()  # Get unused copy
-            except KeyError:
-                pass
+            # try:
+            #     undo.state = self.tree.backup_tree()  # Get unused copy
+            # except KeyError:
+            #     pass
             self.service.signal("undoredo")
+            self.debug_me("Undo done")
             return True
 
     def redo(self):
@@ -102,6 +128,7 @@ class Undo:
         with self._lock:
             if self._undo_index >= len(self._undo_stack) - 1:
                 return False
+            self.debug_me(f"Redo requested: {self._undo_index + 1}")
             self._undo_index += 1
             try:
                 redo = self._undo_stack[self._undo_index]
@@ -110,11 +137,12 @@ class Undo:
                 self._undo_index = len(self._undo_stack)
                 return False
             self.tree.restore_tree(redo.state)
-            try:
-                redo.state = self.tree.backup_tree()  # Get unused copy
-            except KeyError:
-                pass
+            # try:
+            #     redo.state = self.tree.backup_tree()  # Get unused copy
+            # except KeyError:
+            #     pass
             self.service.signal("undoredo")
+            self.debug_me("Redo done")
             return True
 
     def undolist(self):
@@ -126,18 +154,19 @@ class Undo:
         print (f"Wanted: {index}, stack-index: {self._undo_index} - stack-size: {len(self._undo_stack)}")
         for idx, s in enumerate(self._undo_stack):
             print (f"[{idx}]{'*' if idx==self._undo_index else ' '} {'#' if idx==index else ' '} {str(s)}")
-        for idx in range(len(self._undo_stack) + 4):
-            print (f"[{idx}]: undo-label: '{self.undo_string(idx, debug=False)}', redo-label: '{self.redo_string(idx, debug=False)}'")
+        # for idx in range(len(self._undo_stack)):
+        #     print (f"[{idx}]: undo-label: '{self.undo_string(idx=idx, debug=False)}', redo-label: '{self.redo_string(idx=idx, debug=False)}'")
 
 
-    def undo_string(self, *args, **kwargs):
-        idx = self._undo_index
+    def undo_string(self, idx = -1, **kwargs):
+        if idx < 0:
+            idx = self._undo_index
         if idx >= len(self._undo_stack):
             idx = len(self._undo_stack) - 1
         if idx <= 0 or len(self._undo_stack) == 0:
             # At bottom of stack / empty stack
             return ""
-        return str(self._undo_stack[idx])
+        return self._undo_stack[idx].message
 
     def has_undo(self, *args):
         if self._undo_index == 0:
@@ -146,11 +175,12 @@ class Undo:
         # Stack is entirely empty.
         return len(self._undo_stack) > 0
 
-    def redo_string(self, *args, **kwargs):
-        idx = self._undo_index
+    def redo_string(self, idx = -1, **kwargs):
+        if idx < 0:
+            idx = self._undo_index
         if idx > len(self._undo_stack) - 2 or len(self._undo_stack) == 0:
             return ""
-        return str(self._undo_stack[idx + 1])
+        return str(self._undo_stack[idx + 1].message)
 
     def has_redo(self, *args):
         return self._undo_index < len(self._undo_stack) - 1 and (len(self._undo_stack) > 0)
