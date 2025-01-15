@@ -136,3 +136,8 @@ class Notes(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Edit job notes")
+    

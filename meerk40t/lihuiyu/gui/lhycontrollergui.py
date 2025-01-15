@@ -735,3 +735,7 @@ class LihuiyuControllerGui(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device controller window")

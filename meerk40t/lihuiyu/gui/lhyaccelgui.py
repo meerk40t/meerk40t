@@ -371,3 +371,7 @@ class LihuiyuAccelerationChart(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Acceleration Chart"
+
+    @staticmethod
+    def helptext():
+        return _("Amend the driver specific acceleration values")

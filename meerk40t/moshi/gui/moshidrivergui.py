@@ -81,3 +81,7 @@ class MoshiDriverGui(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Configuration"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device configuration window")

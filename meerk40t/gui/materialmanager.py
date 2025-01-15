@@ -2911,3 +2911,7 @@ class MaterialManager(MWindow):
     def submenu():
         # Suppress to avoid double menu-appearance
         return "", "Material Library", True
+
+    @staticmethod
+    def helptext():
+        return _("Manage and choose material specific settings")

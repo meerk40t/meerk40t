@@ -281,7 +281,11 @@ class GRBLConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "GRBL-Configuration"
-
+    
+    @staticmethod
+    def helptext():
+        return _("Edit device configuration")
+    
     @property
     def hw_config(self):
         # Not relevant

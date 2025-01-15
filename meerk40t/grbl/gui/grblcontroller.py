@@ -479,3 +479,7 @@ class GRBLController(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "GRBL Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Open the device controller window")

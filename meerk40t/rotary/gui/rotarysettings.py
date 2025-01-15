@@ -234,3 +234,7 @@ class RotarySettings(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Rotary-Settings"
+
+    @staticmethod
+    def helptext():
+        return _("Activate and configure rotary")

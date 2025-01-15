@@ -1146,6 +1146,10 @@ class LivingHingeTool(MWindow):
         return "Laser-Tools", "Living-Hinges"
 
     @staticmethod
+    def helptext():
+        return _("Create a living hinges pattern")
+
+    @staticmethod
     def sub_register(kernel):
         kernel.register(
             "button/extended_tools/LivingHinge",

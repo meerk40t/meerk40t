@@ -47,6 +47,7 @@ def register_panel_wordlist(window, context):
     pane.dock_proportion = 225
     pane.control = WordlistMiniPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_50_" + _("Tools")
+    pane.helptext = _("Display wordlist advancement controls")
     window.on_pane_create(pane)
     context.register("pane/wordlist", pane)
 
@@ -978,3 +979,7 @@ class WordlistEditor(MWindow):
     def submenu():
         # Suppress to avoid double menu-appearance
         return "Editing", "Variables + Wordlists", True
+
+    @staticmethod
+    def helptext():
+        return _("Configure the wordlist (text variable) entries")

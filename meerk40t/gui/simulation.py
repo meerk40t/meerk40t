@@ -2425,3 +2425,7 @@ class Simulation(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Simulation"
+
+    @staticmethod
+    def helptext():
+        return _("Display the job simulation window to see what will happen...")

@@ -3490,6 +3490,7 @@ class MeerK40t(MWindow):
         item = self.main_menubar.lockpane = self.panes_menu.Append(
             wx.ID_ANY, _("Lock Panes"), "", wx.ITEM_CHECK
         )
+        item.SetHelp(_("Lock the pane positions / allow panes to be moved"))
         item.Check(self.context.pane_lock)
         self.Bind(
             wx.EVT_MENU,
@@ -3501,6 +3502,7 @@ class MeerK40t(MWindow):
         self.main_menubar.panereset = self.panes_menu.Append(
             wx.ID_ANY, _("Reset Panes"), ""
         )
+        self.main_menubar.panereset.SetHelp(_("Reset pane positions to a default value"))
         self.Bind(
             wx.EVT_MENU,
             self.on_pane_reset,
@@ -3635,6 +3637,7 @@ class MeerK40t(MWindow):
         self.window_menu.windowreset = self.window_menu.Append(
             wx.ID_ANY, _("Reset Windows"), ""
         )
+        self.window_menu.windowreset.SetHelp(_("Forget stored window positions"))
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),

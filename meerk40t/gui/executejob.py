@@ -310,3 +310,7 @@ class ExecuteJob(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Execute Job"
+
+    @staticmethod
+    def helptext():
+        return _("Execute a laser job")

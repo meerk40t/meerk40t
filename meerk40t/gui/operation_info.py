@@ -304,3 +304,7 @@ class OperationInformation(MWindow):
     @staticmethod
     def submenu():
         return "Operations", "Operation Information"
+
+    @staticmethod
+    def helptext():
+        return _("Display and edit operation information")

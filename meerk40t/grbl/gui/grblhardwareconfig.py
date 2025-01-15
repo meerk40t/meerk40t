@@ -240,3 +240,7 @@ class GRBLHardwareConfig(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "GRBL Hardware Config"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device configuration window")
