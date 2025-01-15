@@ -2194,6 +2194,7 @@ class MeerK40t(MWindow):
                 "size": bsize_small,
                 "identifier": "editundo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_undo(),
+                "rule_visible": lambda cond: kernel.elements.undo.active,
             },
         )
         kernel.register(
@@ -2207,6 +2208,7 @@ class MeerK40t(MWindow):
                 "size": bsize_small,
                 "identifier": "editredo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_redo(),
+                "rule_visible": lambda cond: kernel.elements.undo.active,
             },
         )
 

@@ -38,9 +38,11 @@ class UndoState:
 class Undo:
     LAST_STATE = "Last status"
 
-    def __init__(self, service, tree):
+    def __init__(self, service, tree, active=True, levels=20):
         self.service = service
         self.tree = tree
+        self.active = active
+        self.levels = levels
         self._lock = threading.Lock()
         self._undo_stack = []
         self._undo_index = -1
@@ -58,6 +60,8 @@ class Undo:
 
         @return:
         """
+        if not self.active:
+            return
         with self._lock:
             if (
                 self._undo_index < 0
@@ -66,6 +70,7 @@ class Undo:
             ):
                 # Only if the active message is not a placeholder
                 self._undo_index += 1
+
             if message is None:
                 message = self.message
             try:
@@ -77,6 +82,9 @@ class Undo:
                 # Hit a concurrent issue.
                 pass
             del self._undo_stack[self._undo_index + 1 :]
+            while len(self._undo_stack) > self.levels:
+                self._undo_stack.pop(0)
+                self._undo_index -= 1
             # self.debug_me(f"Mark done")
             self.message = None
         self.service.signal("undoredo")

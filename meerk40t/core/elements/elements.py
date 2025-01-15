@@ -211,6 +211,31 @@ def plugin(kernel, lifecycle=None):
             #     "section": "",
             # },
             {
+                "attr": "use_undo",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Track changes and allow undo"),
+                "tip": _(
+                    "MK will save intermediate states to undo/redo changes") + "\n" + 
+                    _("This may consume a significant amount of memory"),
+                "page": "Start",
+                "section": "_60_Undo",
+                "signals": "restart",
+            },
+            {
+                "attr": "undo_levels",
+                "object": elements,
+                "default": 20,
+                "type": int,
+                "label": _("Levels of Undo-States"),
+                "tip": _("How may undo-levels shall MeerK40t hold in memory"),
+                "page": "Start",
+                "section": "_60_Undo",
+                "conditional": (elements, "use_undo"),
+                "signals": "restart",
+            },
+            {
                 "attr": "classify_new",
                 "object": elements,
                 "default": True,
@@ -598,8 +623,11 @@ class Elemental(Service):
         # keyhole-logic
         self.registered_keyholes = {}
         self.remembered_keyhole_nodes = []
-
-        self.undo = Undo(self, self._tree)
+        self.setting(bool, "use_undo", True)
+        self.setting(int, "undo_levels", 20)
+        undo_active = self.use_undo
+        undo_levels = self.undo_levels
+        self.undo = Undo(self, self._tree, active=undo_active, levels=undo_levels)
         self.do_undo = True
         self.suppress_updates = False
         self.suppress_signalling = False
