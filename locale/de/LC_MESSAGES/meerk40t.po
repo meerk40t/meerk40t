@@ -14155,7 +14155,7 @@ msgid "Device-Manager"
 msgstr "Geräte-Manager"
 
 msgid "Manage the Laser devices"
-msgstr "Hinzufügen, Ändern, Löschen con Geräten"
+msgstr "Hinzufügen, Ändern, Löschen von Geräten"
 
 msgid "Device-Configuration"
 msgstr "Geräte-Konfiguration"
@@ -19725,3 +19725,287 @@ msgstr "Erzeuge Radialkopien"
 #: meerk40t/core/elements/grid.py:404
 msgid "Create circular copy"
 msgstr "Kopien auf Kreisbogen"
+
+#: meerk40t/tools/kerftest.py:904
+msgid "Help establish the laser kerf width"
+msgstr "Ermittle die Laserstrahlbreite"
+
+#: meerk40t/tools/livinghinges.py:1150
+msgid "Create a living hinges pattern"
+msgstr "Erzeuge einen Flex-Bereich"
+
+#: meerk40t/balormk/gui/balorconfig.py:237
+msgid "Display and edit device configuration"
+msgstr "Anzeige und Ändern der Geräte-Konfiguration"
+
+#: meerk40t/balormk/gui/balorcontroller.py:191 meerk40t/lihuiyu/gui/lhycontrollergui.py:741 meerk40t/moshi/gui/moshicontrollergui.py:538 meerk40t/newly/gui/newlycontroller.py:193 meerk40t/ruida/gui/ruidacontroller.py:187
+msgid "Display the device controller window"
+msgstr "Zeige das Geräte-Kontroll-Fenster an"
+
+#: meerk40t/camera/gui/camerapanel.py:49
+msgid "Show camera capture panel"
+msgstr "Anzeige des Kamera-Bildes"
+
+#: meerk40t/camera/gui/camerapanel.py:1053
+msgid "Display the camera window"
+msgstr "Anzeige der Kamera nebst Kalibrierung"
+
+#: meerk40t/camera/gui/camerapanel.py:1196
+msgid "URI-Manager"
+msgstr "Externe Kamera-Quellen"
+
+#: meerk40t/camera/gui/camerapanel.py:1241
+msgid "Edit camera sources"
+msgstr "Kamera-Quellen bearbeiten"
+
+#: meerk40t/cylinder/gui/cylindersettings.py:37
+msgid "Edit and activate planar cylinder correction"
+msgstr "Konfiguration der Zylinderkorrektur"
+
+#: meerk40t/core/elements/tree_commands.py:105
+msgid "Drag and Drop"
+msgstr "Drag and Drop"
+
+#: meerk40t/grbl/gui/grblconfiguration.py:287
+msgid "Edit device configuration"
+msgstr "Anzeige und Ändern der Geräte-Konfiguration"
+
+#: meerk40t/grbl/gui/grblcontroller.py:485
+msgid "Open the device controller window"
+msgstr "Zeige das Geräte-Kontroll-Fenster an"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:246 meerk40t/lihuiyu/gui/lhydrivergui.py:470 meerk40t/moshi/gui/moshidrivergui.py:87 meerk40t/ruida/gui/ruidaconfig.py:239
+msgid "Display the device configuration window"
+msgstr "Zeige das Geräte-Kontroll-Fenster an"
+
+#: meerk40t/gui/alignment.py:1632
+msgid "Align elements to each other"
+msgstr "Richte Elemente an einander aus"
+
+#: meerk40t/gui/autoexec.py:198
+msgid "Edit commands to be executed on file load"
+msgstr "Kommandos, die beim Laden einer Datei ausgeführt werden sollen"
+
+#: meerk40t/gui/bufferview.py:77
+msgid "Display the command flow buffer to a device"
+msgstr "Anzeige des Kommunikationsdaten-Puffers"
+
+#: meerk40t/gui/consolepanel.py:90 meerk40t/gui/consolepanel.py:706
+msgid "Open command interface"
+msgstr "Öffne Kommandozeilen Fenster"
+
+#: meerk40t/gui/devicepanel.py:35 meerk40t/gui/devicepanel.py:680
+msgid "Manage and add devices to be used by MeerK40t"
+msgstr "Konfiguration und Neuanlage von Geräten"
+
+#: meerk40t/gui/executejob.py:316
+msgid "Execute a laser job"
+msgstr "Laserjob ausführen"
+
+#: meerk40t/gui/helper.py:35
+msgid "Permanently displays tooltip information"
+msgstr "Permanente Anzeige von Steuerelement-Hilfstexten"
+
+#: meerk40t/gui/hersheymanager.py:939
+msgid "Pick a font to use for vector text"
+msgstr "Wähle einen Zeichensatz für den Vektortext aus"
+
+#: meerk40t/gui/hersheymanager.py:1414
+msgid "Manage the fonts available to MeerK40t"
+msgstr "Zeichensatz-Verwaltung"
+
+#: meerk40t/gui/imagesplitter.py:546
+msgid "Split images for large jobs"
+msgstr "Bilder aufteilen"
+
+#: meerk40t/gui/keymap.py:354
+msgid "Configure key-shortcuts to MeerK40ts tool arsenal"
+msgstr "Tastaturbelegung editieren"
+
+#: meerk40t/gui/laserpanel.py:86
+msgid "Laser job control panel"
+msgstr "Laserjob Kontrollpanel"
+
+#: meerk40t/gui/lasertoolpanel.py:805
+msgid "Define and use some templates for repetitive laser jobs"
+msgstr "Definition von Templates für wiederholgenaue Laserjobs"
+
+#: meerk40t/gui/materialmanager.py:2917
+msgid "Manage and choose material specific settings"
+msgstr "Verwalten und Nutzen von Materialspezifischen Arbeitsabläufen"
+
+#: meerk40t/gui/materialtest.py:1722
+msgid "Figure out the right settings for your material"
+msgstr "Ermitteln der richtigen Parameter für ein Material"
+
+#: meerk40t/gui/mkdebug.py:45
+msgid "Some internal debugging routines"
+msgstr "Einige interne Debugging-Routinen"
+
+#: meerk40t/gui/mkdebug.py:64
+msgid "Display available color information"
+msgstr "Anzeige der verfügbaren UI-Farben"
+
+#: meerk40t/gui/mkdebug.py:75
+msgid "Icons"
+msgstr "Icons"
+
+#: meerk40t/gui/mkdebug.py:83
+msgid "Display available icons"
+msgstr "Anzeige der verfügbaren Icons"
+
+#: meerk40t/gui/mkdebug.py:94
+msgid "Shutdown Test"
+msgstr "Shutdown-Test"
+
+#: meerk40t/gui/mkdebug.py:102
+msgid "Try some shutdown routines to figure out exit crashes"
+msgstr "Ein paar Shutdown-Varianten um Exit-Crashes zu identifizieren"
+
+#: meerk40t/gui/mkdebug.py:113
+msgid "Window Test"
+msgstr "Window-Test"
+
+#: meerk40t/gui/mkdebug.py:121
+msgid "Show available windows"
+msgstr "Zeigt verfügbare Fenster an"
+
+#: meerk40t/gui/navigationpanels.py:92
+msgid "Align and drag laserhead around to be burned elements"
+msgstr "Bewegen des Lasers relativ zur Objektauswahl"
+
+#: meerk40t/gui/navigationpanels.py:118
+msgid "Display laser jogging controls"
+msgstr "Manuelle Laserbewegung"
+
+#: meerk40t/gui/navigationpanels.py:139
+msgid "Display laser/element movement/dragging controls"
+msgstr "Laser-Bewegung und -Ausrichtung"
+
+#: meerk40t/gui/navigationpanels.py:158
+msgid "Display laser pulse panel"
+msgstr "Laserpuls abfeuern"
+
+#: meerk40t/gui/navigationpanels.py:202
+msgid "Display element transformation panel"
+msgstr "Element-Matrix ändern"
+
+#: meerk40t/gui/navigationpanels.py:221
+msgid "Edit default jog distance"
+msgstr "Schrittweite für Laserbewegung verändern"
+
+#: meerk40t/gui/navigationpanels.py:2605
+msgid "Open a control window to move the laser around"
+msgstr "Steuerelemente für Laserbewegung"
+
+#: meerk40t/gui/notes.py:27 meerk40t/gui/notes.py:142
+msgid "Edit job notes"
+msgstr "Editieren der Job-Notizen"
+
+#: meerk40t/gui/opassignment.py:35
+msgid "Assign elements to operations"
+msgstr "Zuordnen von Elementen zu Arbeitsabläufen"
+
+#: meerk40t/gui/operation_info.py:310
+msgid "Display and edit operation information"
+msgstr "Anzeige und Ändern der Arbeitsablauf-Eigenschaften"
+
+#: meerk40t/gui/position.py:34
+msgid "Edit object dimensions and position"
+msgstr "Setze Objekt-Position und -Abmessungen"
+
+#: meerk40t/gui/preferences.py:901
+msgid "Configure MeerK40ts behaviour"
+msgstr "MeerK40t-Konfiguration verändern"
+
+#: meerk40t/gui/simpleui.py:357
+msgid "A very basic user interface"
+msgstr "Eine sehr simple Benutzeroberfläche"
+
+#: meerk40t/gui/simulation.py:2431
+msgid "Display the job simulation window to see what will happen..."
+msgstr "Anzeige der Job-Simulation"
+
+#: meerk40t/gui/snapoptions.py:25
+msgid "Edit element movement snap options"
+msgstr "Setzen der Einrast-Optionen beim Verschieben von Elementen"
+
+#: meerk40t/gui/spoolerpanel.py:70 meerk40t/gui/spoolerpanel.py:1227
+msgid "Opens the spooler window with all job information"
+msgstr "Öffne Spooler-Fenster mit allen Job-Informationen"
+
+#: meerk40t/gui/tips.py:587
+msgid "Display some tips and tricks how to best use MeerK40t"
+msgstr "Tips und Tricks rund um die Nutzung von MeerK40t"
+
+#: meerk40t/gui/usbconnect.py:98
+msgid "Display the USB communication control window"
+msgstr "Zeige USB-Kommunikations-Fenster an"
+
+#: meerk40t/gui/wordlisteditor.py:50
+msgid "Display wordlist advancement controls"
+msgstr "Wortlisten-Navigations-Knöpfe"
+
+#: meerk40t/gui/wordlisteditor.py:985
+msgid "Configure the wordlist (text variable) entries"
+msgstr "konfigurieren der Wortlisten(Textvariablen)-Einträge"
+
+#: meerk40t/gui/wxmeerk40t.py:279
+msgid "Display a laser start button"
+msgstr "Zeigt Job-Start Knopf an"
+
+#: meerk40t/gui/wxmeerk40t.py:304
+msgid "Display a job abort button"
+msgstr "Zeigt Job-Abbruch Knopf an"
+
+#: meerk40t/gui/wxmeerk40t.py:342
+msgid "Display a laser homing button"
+msgstr "Zeigt Laser-Home Knopf an"
+
+#: meerk40t/gui/wxmeerk40t.py:379
+msgid "Display a job pause button"
+msgstr "Zeigt Job-Pause Knopf an"
+
+#: meerk40t/gui/wxmmain.py:3493
+msgid "Lock the pane positions / allow panes to be moved"
+msgstr "Fixiere Panelpositionen / erlaube das Verschieben der Panels"
+
+#: meerk40t/gui/wxmmain.py:3505
+msgid "Reset pane positions to a default value"
+msgstr "Setze gespeicherte Panelpositionen zurück"
+
+#: meerk40t/gui/wxmmain.py:3640
+msgid "Forget stored window positions"
+msgstr "Setze gespeicherte Fensterpositionen zurück"
+
+#: meerk40t/gui/wxmribbon.py:67
+msgid "Toolbar with the main commands to control jobs and devices"
+msgstr "Iconleiste zum Kontrollieren von Laser-Jobs und Geräten"
+
+#: meerk40t/gui/wxmribbon.py:84
+msgid "Icon-bar with the main object creation tools"
+msgstr "Iconleiste mit Tools zum Erzeugen von Objekten"
+
+#: meerk40t/gui/wxmtree.py:114
+msgid "Tree containing all objects"
+msgstr "Baumdiagramm mit allen Objekten"
+
+#: meerk40t/gui/propertypanels/propertywindow.py:313
+msgid "Display and edit the object properties"
+msgstr "Anzeige und Veränderung der Objekt-Eigenschaften"
+
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:377
+msgid "Amend the driver specific acceleration values"
+msgstr "Verändere die gerätspezifischen Beschleunigungswerte"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:226
+msgid "Display the TCP communication controller window"
+msgstr "Zeige TCP-Kommunikations-Fenster an"
+
+#: meerk40t/grbl/gui/grblcontroller.py:92 meerk40t/gui/preferences.py:316 meerk40t/gui/preferences.py:355
+msgid "Info"
+msgstr "Info"
+
+#: meerk40t/rotary/gui/rotarysettings.py:240
+msgid "Activate and configure rotary"
+msgstr "Rotationseinheit konfigurieren und aktivieren"
