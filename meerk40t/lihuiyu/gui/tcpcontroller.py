@@ -220,3 +220,7 @@ class TCPController(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "TCP Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Display the TCP communication controller window")

@@ -42,6 +42,7 @@ def register_panel_debugger(window, context):
     pane.dock_proportion = 225
     pane.control = DebugTreePanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Some internal debugging routines")
     window.on_pane_create(pane)
     context.register("pane/debug_tree", pane)
 
@@ -60,6 +61,7 @@ def register_panel_color(window, context):
     pane.dock_proportion = 225
     pane.control = DebugColorPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Display available color information")
     window.on_pane_create(pane)
     context.register("pane/debug_color", pane)
 
@@ -78,6 +80,7 @@ def register_panel_icon(window, context):
     pane.dock_proportion = 225
     pane.control = DebugIconPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Display available icons")
     window.on_pane_create(pane)
     context.register("pane/debug_icons", pane)
 
@@ -96,6 +99,7 @@ def register_panel_crash(window, context):
     pane.dock_proportion = 225
     pane.control = ShutdownPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Try some shutdown routines to figure out exit crashes")
     window.on_pane_create(pane)
     context.register("pane/debug_shutdown", pane)
 
@@ -114,6 +118,7 @@ def register_panel_window(window, context):
     pane.dock_proportion = 225
     pane.control = DebugWindowPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Show available windows")
     window.on_pane_create(pane)
     context.register("pane/debug_window", pane)
 

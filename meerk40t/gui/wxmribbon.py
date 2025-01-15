@@ -64,6 +64,7 @@ def register_panel_ribbon(window, context):
         window, wx.ID_ANY, context=context, pane=pane_ribbon, identifier="primary"
     )
     pane_ribbon.control = ribbon
+    pane_ribbon.helptext = _("Toolbar with the main commands to control jobs and devices")
 
     window.on_pane_create(pane_ribbon)
     context.register("pane/ribbon", pane_ribbon)
@@ -80,6 +81,7 @@ def register_panel_ribbon(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane_tool.dock_proportion = 640
+    pane_tool.helptext = _("Icon-bar with the main object creation tools")
     ribbon = MKRibbonBarPanel(
         window,
         wx.ID_ANY,

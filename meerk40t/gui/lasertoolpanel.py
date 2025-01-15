@@ -799,3 +799,7 @@ class LaserTool(MWindow):
     @staticmethod
     def submenu():
         return "Laser-Tools", "Place Template"
+
+    @staticmethod
+    def helptext():
+        return _("Define and use some templates for repetitive laser jobs")

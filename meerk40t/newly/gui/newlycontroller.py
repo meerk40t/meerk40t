@@ -187,3 +187,7 @@ class NewlyController(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Newly-Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device controller window")

@@ -1716,3 +1716,7 @@ class TemplateTool(MWindow):
     @staticmethod
     def submenu():
         return "Laser-Tools", "Parameter-Test"
+
+    @staticmethod
+    def helptext():
+        return _("Figure out the right settings for your material")

@@ -67,6 +67,7 @@ def register_panel_spooler(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Opens the spooler window with all job information")
 
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
@@ -1220,3 +1221,7 @@ class JobSpooler(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Spooler"
+
+    @staticmethod
+    def helptext():
+        return _("Opens the spooler window with all job information")

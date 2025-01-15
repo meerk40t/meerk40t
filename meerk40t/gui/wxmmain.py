@@ -3432,14 +3432,18 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
             try:
+                helptext = pane.helptext
+            except AttributeError:
+                helptext = ""
+            try:
                 submenu = pane.submenu
             except AttributeError:
                 submenu = ""
             if submenu == "":
                 submenu = "_ZZZZZZZZZZZZZZZZ_"
-            panedata.append([pane, _path, suffix_path, submenu])
+            panedata.append([pane, _path, suffix_path, submenu, helptext])
         panedata.sort(key=lambda row: row[3])
-        for pane, _path, suffix_path, dummy in panedata:
+        for pane, _path, suffix_path, dummy, helptext in panedata:
             submenu = None
             try:
                 submenu_name = pane.submenu
@@ -3469,6 +3473,7 @@ class MeerK40t(MWindow):
                 pane_caption = pane_name[0].upper() + pane_name[1:] + "."
 
             menu_item = menu_context.Append(wx.ID_ANY, pane_caption, "", wx.ITEM_CHECK)
+            menu_item.SetHelp(helptext)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_pane(pane_name),
@@ -3485,6 +3490,7 @@ class MeerK40t(MWindow):
         item = self.main_menubar.lockpane = self.panes_menu.Append(
             wx.ID_ANY, _("Lock Panes"), "", wx.ITEM_CHECK
         )
+        item.SetHelp(_("Lock the pane positions / allow panes to be moved"))
         item.Check(self.context.pane_lock)
         self.Bind(
             wx.EVT_MENU,
@@ -3496,6 +3502,7 @@ class MeerK40t(MWindow):
         self.main_menubar.panereset = self.panes_menu.Append(
             wx.ID_ANY, _("Reset Panes"), ""
         )
+        self.main_menubar.panereset.SetHelp(_("Reset pane positions to a default value"))
         self.Bind(
             wx.EVT_MENU,
             self.on_pane_reset,
@@ -3540,6 +3547,10 @@ class MeerK40t(MWindow):
             win_caption = ""
             submenu_name = None
             try:
+                helptext = window.helptext()
+            except AttributeError:
+                helptext = ""
+            try:
                 returnvalue = window.submenu()
                 if isinstance(returnvalue, str):
                     submenu_name = returnvalue
@@ -3580,11 +3591,11 @@ class MeerK40t(MWindow):
 
             if suppress:
                 continue
-            menudata.append([submenu_name, caption, name, window, suffix_path])
+            menudata.append([submenu_name, caption, name, window, suffix_path, helptext])
         # Now that we have everything let's sort...
         menudata.sort(key=lambda row: row[0])
 
-        for submenu_name, caption, name, window, suffix_path in menudata:
+        for submenu_name, caption, name, window, suffix_path, helptext in menudata:
             submenu = None
             submenu_name = unsorted_label(submenu_name)
             if submenu_name != "":
@@ -3612,6 +3623,7 @@ class MeerK40t(MWindow):
             menuitem = menu_context.Append(
                 menu_id, menu_label, menu_tip, wx.ITEM_NORMAL
             )
+            menuitem.SetHelp(helptext)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -3625,6 +3637,7 @@ class MeerK40t(MWindow):
         self.window_menu.windowreset = self.window_menu.Append(
             wx.ID_ANY, _("Reset Windows"), ""
         )
+        self.window_menu.windowreset.SetHelp(_("Forget stored window positions"))
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),

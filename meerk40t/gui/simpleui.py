@@ -351,3 +351,7 @@ class SimpleUI(MWindow):
     @staticmethod
     def submenu():
         return "Interface", "SimpleUI"
+
+    @staticmethod
+    def helptext():
+        return _("A very basic user interface")

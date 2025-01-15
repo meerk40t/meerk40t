@@ -934,6 +934,10 @@ class HersheyFontSelector(MWindow):
         # Suppress = True
         return "", "Font-Selector", True
 
+    @staticmethod
+    def helptext():
+        return _("Pick a font to use for vector text")
+
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
         # Signal provides a tuple with (togglegroup, id)
@@ -1404,6 +1408,10 @@ class HersheyFontManager(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Font-Manager", True
+
+    @staticmethod
+    def helptext():
+        return _("Manage the fonts available to MeerK40t")
 
 
 def register_hershey_stuff(kernel):

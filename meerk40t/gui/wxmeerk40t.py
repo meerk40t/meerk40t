@@ -276,6 +276,7 @@ def register_panel_go(window, context):
         .Hide()
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a laser start button")
     pane.dock_proportion = 98
     panel = GoPanel(window, wx.ID_ANY, context=context)
     pane.control = panel
@@ -300,6 +301,7 @@ def register_panel_stop(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a job abort button")
     pane.dock_proportion = 98
     fgcol = context.themes.get("stop_fg")
     bgcol = context.themes.get("stop_bg")
@@ -337,6 +339,7 @@ def register_panel_home(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a laser homing button")
     pane.dock_proportion = 98
 
     fgcol = None
@@ -373,6 +376,7 @@ def register_panel_pause(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a job pause button")
     pane.dock_proportion = 98
 
     bgcol = context.themes.get("pause_bg")

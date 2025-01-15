@@ -1626,3 +1626,7 @@ class Alignment(MWindow):
     @staticmethod
     def submenu():
         return "Editing", "Element Alignment"
+
+    @staticmethod
+    def helptext():
+        return _("Align elements to each other")

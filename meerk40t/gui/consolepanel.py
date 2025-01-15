@@ -87,6 +87,7 @@ def register_panel_console(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Open command interface")
 
     window.on_pane_create(pane)
     context.register("pane/console", pane)
@@ -699,3 +700,7 @@ class Console(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Open command interface")

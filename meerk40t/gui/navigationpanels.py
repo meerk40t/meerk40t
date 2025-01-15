@@ -89,6 +89,7 @@ def register_panel_navigation(window, context):
 
     dragpanel.Bind(wx.EVT_SIZE, on_drag_resize)
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Align and drag laserhead around to be burned elements")
 
     window.on_pane_create(pane)
     context.register("pane/drag", pane)
@@ -114,6 +115,7 @@ def register_panel_navigation(window, context):
 
     jogpanel.Bind(wx.EVT_SIZE, on_jog_resize)
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Display laser jogging controls")
 
     window.on_pane_create(pane)
     context.register("pane/jog", pane)
@@ -134,6 +136,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = iconsize + 100
     pane.control = panel
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Display laser/element movement/dragging controls")
 
     window.on_pane_create(pane)
     context.register("pane/move", pane)
@@ -152,6 +155,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = iconsize + 60
     pane.control = panel
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Display laser pulse panel")
 
     window.on_pane_create(pane)
     context.register("pane/pulse", pane)
@@ -195,6 +199,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = max(3 * iconsize, 3 * 57)
     pane.control = panel
     pane.submenu = "_40_" + _("Editing")
+    pane.helptext = _("Display element transformation panel")
 
     window.on_pane_create(pane)
     context.register("pane/transform", pane)
@@ -213,6 +218,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = 110
     pane.control = panel
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Edit default jog distance")
 
     window.on_pane_create(pane)
     context.register("pane/jogdist", pane)
@@ -2593,3 +2599,7 @@ class Navigation(MWindow):
     @staticmethod
     def submenu():
         return "Editing", "Jog, Move and Transform"
+
+    @staticmethod
+    def helptext():
+        return _("Open a control window to move the laser around")

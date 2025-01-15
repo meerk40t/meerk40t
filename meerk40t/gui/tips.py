@@ -581,3 +581,7 @@ class Tips(MWindow):
     def submenu():
         # Suppress...
         return "Tips", "Tips", True
+
+    @staticmethod
+    def helptext():
+        return _("Display some tips and tricks how to best use MeerK40t")
