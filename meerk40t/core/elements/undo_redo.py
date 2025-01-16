@@ -46,11 +46,15 @@ def init_commands(kernel):
     def undo_mark(data=None, message=None, **kwgs):
         self.undo.mark(message)
 
+    @self.console_argument("index", type=int, default=None)
     @self.console_command(
         "undo",
     )
-    def undo_undo(command, channel, _, **kwgs):
-        if not self.undo.undo():
+    def undo_undo(command, channel, _, index=None, **kwgs):
+        if index is not None and (index < 0 or index > len(self.undo._undo_stack)):
+            channel(f"Invalid index: {index}")
+            index = None
+        if not self.undo.undo(index=index):
             # At bottom of stack.
             channel("No undo available.")
             return
@@ -59,12 +63,16 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree", "all")
 
+    @self.console_argument("index", type=int, default=None)
     @self.console_command(
         "redo",
     )
-    def undo_redo(command, channel, _, data=None, **kwgs):
+    def undo_redo(command, channel, _, data=None, index=None, **kwgs):
+        if index is not None and (index < 0 or index > len(self.undo._undo_stack)):
+            channel(f"Invalid index: {index}")
+            index = None
         with self.static("redo"):
-            redo_done = self.undo.redo()
+            redo_done = self.undo.redo(index=index)
         if not redo_done:
             channel("No redo available.")
             return
