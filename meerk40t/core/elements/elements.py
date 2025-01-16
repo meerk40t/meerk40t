@@ -231,7 +231,7 @@ def plugin(kernel, lifecycle=None):
                 "lower": 3,
                 "upper": 250,
                 "label": _("Levels of Undo-States"),
-                "tip": _("How may undo-levels shall MeerK40t hold in memory"),
+                "tip": _("How many undo-levels shall MeerK40t hold in memory"),
                 "page": "Start",
                 "section": "_60_Undo",
                 "conditional": (elements, "use_undo"),
