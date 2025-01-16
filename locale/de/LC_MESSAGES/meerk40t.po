@@ -20009,3 +20009,55 @@ msgstr "Info"
 #: meerk40t/rotary/gui/rotarysettings.py:240
 msgid "Activate and configure rotary"
 msgstr "Rotationseinheit konfigurieren und aktivieren"
+
+#: meerk40t/core/elements/elements.py:218
+msgid "Track changes and allow undo"
+msgstr "Zustände für Undo/Redo zwischenspeichern"
+
+#: meerk40t/core/elements/elements.py:220
+msgid "MK will save intermediate states to undo/redo changes"
+msgstr "Veränderungen am Design können rückgängig gemacht werden"
+
+#: meerk40t/core/elements/elements.py:221
+msgid "This may consume a significant amount of memory"
+msgstr "Abhängig von der Elementanzahl kann dies erheblich Speicher konsumieren"
+
+#: meerk40t/core/elements/elements.py:233
+msgid "Levels of Undo-States"
+msgstr "Anzahl Undo-Schritte"
+
+#: meerk40t/core/elements/elements.py:234
+msgid "How many undo-levels shall MeerK40t hold in memory"
+msgstr "Wieviele Zustände soll sich MeerK40t für Undo/Redo merken"
+
+#: meerk40t/core/elements/element_treeops.py:1160
+msgid "Move laser to placement"
+msgstr "Bewege Laser zum Jobstart"
+
+#: meerk40t/core/elements/element_treeops.py:1162
+msgid "Move the laserhead to the jobstart position"
+msgstr "Bewege den Laserkopf zur Jobstart-Position"
+
+#: meerk40t/core/elements/materials.py:80
+msgid "Name of the user for the library entry"
+msgstr "Benutzername für Bibliotheks-Eintrag"
+
+#: meerk40t/core/elements/materials.py:83
+msgid "Description of the library entry"
+msgstr "Beschreibung des Bibliotheks-Eintrags"
+
+#: meerk40t/gui/wxmmain.py:3862
+msgid "Undo/Redo States"
+msgstr "Undo/Redo Liste"
+
+#: meerk40t/grbl/gui/grblcontroller.py:447
+msgid "GRBL Controller"
+msgstr "GRBL-Controller"
+
+#: meerk40t/balormk/gui/balorconfig.py:61
+msgid "Test"
+msgstr "Test"
+
+#: meerk40t/balormk/gui/balorconfig.py:72
+msgid "Bits"
+msgstr "Bits"
