@@ -98,13 +98,7 @@ class Undo:
         @return:
         """
         with self._lock:
-            if index is not None:
-                # A bit misleading: 
-                # we want to jump back to the state at index, so we need to adjust it...
-                to_be_restored = index
-            else:
-                to_be_restored = self._undo_index - 1     
-
+            to_be_restored = index if index is not None else self._undo_index - 1
             if to_be_restored == 0:
                 # At bottom of stack.
                 return False
@@ -139,10 +133,7 @@ class Undo:
         Performs a redo operation restoring the tree state.
         """
         with self._lock:
-            if index is not None:
-                to_be_restored = index + 1
-            else:
-                to_be_restored = self._undo_index + 1
+            to_be_restored = index + 1 if index is not None else self._undo_index + 1
             # self.debug_me(f"Redo requested: {self._undo_index + 1}")
             self._undo_index = to_be_restored
             try:
@@ -174,8 +165,9 @@ class Undo:
 
 
     def undo_string(self, idx = -1, **kwargs):
+        self.validate()
         if idx < 0:
-            idx = self._undo_index
+            idx = self._undo_index - 1
         return str(self._undo_stack[idx].message) if self.has_undo() else ""
 
     def has_undo(self, *args):
@@ -183,8 +175,9 @@ class Undo:
         return self.active and self._undo_index > 0
 
     def redo_string(self, idx = -1, **kwargs):
+        self.validate()
         if idx < 0:
-            idx = self._undo_index
+            idx = self._undo_index - 1
         return str(self._undo_stack[idx + 1].message) if self.has_redo() else ""
 
     def has_redo(self, *args):
@@ -206,6 +199,6 @@ class Undo:
         upper_end = len(self._undo_stack) - 1 # Ignore last
         if scope == "undo":
             upper_end = self._undo_index
-        if scope == "redo":
+        elif scope == "redo":
             lower_end = self._undo_index
         return ((idx, self._undo_stack[idx]) for idx in range(lower_end, upper_end))
