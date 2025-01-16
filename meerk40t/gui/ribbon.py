@@ -2050,7 +2050,11 @@ class Art:
         # Now that we have gathered all information we can assign
         # the space...
         available_space = 0
-        for p, panel in enumerate(page.panels):
+        p = -1
+        for panel in page.panels:
+            if panel.visible_button_count == 0:
+                continue
+            p += 1
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
