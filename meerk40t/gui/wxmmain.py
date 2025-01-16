@@ -701,6 +701,7 @@ class MeerK40t(MWindow):
                 "action": on_click_undo,
                 "id": wx.ID_UNDO,
                 "enabled": self.context.elements.undo.has_undo,
+                "visible": self.context.elements.undo.active,
                 "level": 1,
                 "segment": "",
             },
@@ -710,6 +711,7 @@ class MeerK40t(MWindow):
                 "action": on_click_redo,
                 "id": wx.ID_REDO,
                 "enabled": self.context.elements.undo.has_redo,
+                "visible": self.context.elements.undo.active,
                 "level": 1,
                 "segment": "",
             },
@@ -959,6 +961,10 @@ class MeerK40t(MWindow):
     @signal_listener("element_clicked")
     def on_element_clicked(self, origin, *args):
         self.format_painter.on_emphasis(args)
+
+    @signal_listener("undoredo")
+    def on_undo_redo_performed(self, origin, *args):
+        self._update_undo_redo_submenu()
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
@@ -2194,6 +2200,7 @@ class MeerK40t(MWindow):
                 "size": bsize_small,
                 "identifier": "editundo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_undo(),
+                "rule_visible": lambda cond: kernel.elements.undo.active,
             },
         )
         kernel.register(
@@ -2207,6 +2214,7 @@ class MeerK40t(MWindow):
                 "size": bsize_small,
                 "identifier": "editredo",
                 "rule_enabled": lambda cond: kernel.elements.undo.has_redo(),
+                "rule_visible": lambda cond: kernel.elements.undo.active,
             },
         )
 
@@ -3661,6 +3669,9 @@ class MeerK40t(MWindow):
         current_subsegment = ""
         current_level = 1
         for choice in choices:
+            visible = choice.get("visible", True)
+            if not visible:
+                continue
             try:
                 c_level = choice["level"]
                 if c_level < 1:
@@ -3836,12 +3847,53 @@ class MeerK40t(MWindow):
         local_choices = choices
         return handler
 
+    def _update_undo_redo_submenu(self):
+        def undo_jump(index):
+            def handler(event):
+                self.context(f"undo {index}\n")
+            return handler
+
+        def redo_jump(index):
+            def handler(event):
+                self.context(f"undo {index + 1}\n")
+            return handler
+
+        edit_menu = self.edit_menu
+        label = _("Undo/Redo States")
+        index = edit_menu.FindItem(label)
+        if index != -1:
+            item = edit_menu.Remove(index)
+            if item:
+                item.Destroy()
+        undo = self.context.elements.undo
+        if not (undo.has_undo() or undo.has_redo()):
+            return
+        undo.validate()
+        item, redo_index = edit_menu.FindChildItem(wx.ID_REDO)
+        submenu = wx.Menu()
+        menuitem : wx.MenuItem = submenu.Append(wx.ID_ANY, _("Undo"), "")           
+        menuitem.Enable(False)
+        for idx, state in undo.states("undo"):
+            # print (f"{idx}{'*' if idx == undo._undo_index else ' '}: {state.message}")
+            menuitem = submenu.Append(wx.ID_ANY, _(state.message))
+            self.Bind(wx.EVT_MENU, undo_jump(idx), id=menuitem.GetId())
+        if undo.has_redo():
+            submenu.AppendSeparator()
+            menuitem : wx.MenuItem = submenu.Append(wx.ID_ANY, _("Redo"), "")           
+            menuitem.Enable(False)
+            for idx, state in undo.states("redo"):
+                menuitem = submenu.Append(wx.ID_ANY, _(state.message))
+                self.Bind(wx.EVT_MENU, redo_jump(idx), id=menuitem.GetId())
+        edit_menu.Insert(redo_index + 1, wx.ID_ANY, label, submenu)
+
     def __set_edit_menu(self):
         """
         Edit MENU
         """
         self.edit_menu = wx.Menu()
         self._create_menu_from_choices(self.edit_menu, self.edit_menu_choice)
+        self._update_undo_redo_submenu()
+
         label = _("Edit")
         index = self.main_menubar.FindMenu(label)
         if index != -1:
@@ -3849,10 +3901,12 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        self.edit_menu.Bind(
-            wx.EVT_MENU_OPEN,
-            self._update_status_menu(self.edit_menu, self.edit_menu_choice),
-        )
+        def update_edit_menu(event):
+            # self._update_undo_redo_submenu()
+            handler = self._update_status_menu(self.edit_menu, self.edit_menu_choice)
+            handler(None)
+
+        self.edit_menu.Bind(wx.EVT_MENU_OPEN, update_edit_menu)
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
