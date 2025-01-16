@@ -1331,7 +1331,7 @@ class ShadowTree:
                 if node.expanded:
                     self.wxtree.Expand(child)
                 expand_leaf(child)
-                child, cookie = self.wxtree.GetNextChild(startnode, cookie)
+                child, cookie = self.wxtree.GetNextChild(snode, cookie)
         
         expand_leaf(startnode)
         self.elements.signal("warn_state_update")
