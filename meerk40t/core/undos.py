@@ -42,7 +42,7 @@ class Undo:
         self.service = service
         self.tree = tree
         self.active = active
-        self.levels = levels
+        self.levels = max(3, levels) # at least three
         self._lock = threading.Lock()
         self._undo_stack = []
         self._undo_index = -1
