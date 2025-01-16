@@ -1,5 +1,5 @@
 @echo off
-set ver=0.9.7b2
+set ver=0.9.7b3
 echo Converting master image to a couple of smaller images
 echo This requires imagemagick (https://imagemagick.org)
 echo Superimposing Version information: '%ver%'
