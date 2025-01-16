@@ -701,6 +701,7 @@ class MeerK40t(MWindow):
                 "action": on_click_undo,
                 "id": wx.ID_UNDO,
                 "enabled": self.context.elements.undo.has_undo,
+                "visible": self.context.elements.undo.active,
                 "level": 1,
                 "segment": "",
             },
@@ -710,6 +711,7 @@ class MeerK40t(MWindow):
                 "action": on_click_redo,
                 "id": wx.ID_REDO,
                 "enabled": self.context.elements.undo.has_redo,
+                "visible": self.context.elements.undo.active,
                 "level": 1,
                 "segment": "",
             },
@@ -3663,6 +3665,9 @@ class MeerK40t(MWindow):
         current_subsegment = ""
         current_level = 1
         for choice in choices:
+            visible = choice.get("visible", True)
+            if not visible:
+                continue
             try:
                 c_level = choice["level"]
                 if c_level < 1:
