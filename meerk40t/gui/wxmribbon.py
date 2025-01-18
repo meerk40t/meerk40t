@@ -97,6 +97,32 @@ def register_panel_ribbon(window, context):
     context.register("pane/tools", pane_tool)
     context.register("ribbonbar/tools", ribbon)
 
+    pane_edittool = (
+        aui.AuiPaneInfo()
+        .Name("edittools")
+        .Left()
+        .BestSize(minh, 300)
+        .FloatingSize(minh, 640)
+        .Caption(_("Modify"))
+        .CaptionVisible(not context.pane_lock)
+    )
+    pane_edittool.dock_proportion = 640
+    pane_edittool.helptext = _("Icon-bar with object modification tools")
+    ribbon = MKRibbonBarPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        pane=pane_edittool,
+        identifier="edittools",
+        orientation="auto",
+        show_labels=False,
+    )
+    pane_edittool.control = ribbon
+
+    window.on_pane_create(pane_edittool)
+    context.register("pane/edittools", pane_edittool)
+    context.register("ribbonbar/edittools", ribbon)
+
     choices = [
         {
             "attr": "ribbon_show_labels",
@@ -143,7 +169,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
             self.art.show_labels = show_labels
         # Make myself known in context
         if not hasattr(context, "_ribbons"):
-            self.context._ribbons = dict()
+            self.context._ribbons = {}
         self.context._ribbons[self.identifier] = self
 
         self.storage = Settings(
@@ -287,6 +313,41 @@ class MKRibbonBarPanel(RibbonBarPanel):
                     "seq": 3,
                 },
             ]
+        elif self.identifier == "edittools":
+            ribbon_config = [
+                {
+                    "id": "modify",
+                    "label": "Modify",
+                    "panels": [
+                        {
+                            "id": "undo",
+                            "label": "Undo",
+                            "seq": 1,
+                        },
+                        {
+                            "id": "group",
+                            "label": "Group",
+                            "seq": 2,
+                        },
+                        {
+                            "id": "modify",
+                            "label": "Modification",
+                            "seq": 3,
+                        },
+                        {
+                            "id": "geometry",
+                            "label": "Geometry",
+                            "seq": 4,
+                        },
+                        {
+                            "id": "align",
+                            "label": "Alignment",
+                            "seq": 5,
+                        },
+                    ],
+                    "seq": 1,
+                },
+            ]
         else:
             ribbon_config = []
 
@@ -352,7 +413,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                     or len(panel_info) < 3
                 ):
                     break
-                panel_dict = dict()
+                panel_dict = {}
                 panel_dict["id"] = panel_info[0]
                 panel_dict["seq"] = int(panel_info[1])
                 panel_dict["label"] = panel_info[2]
@@ -361,7 +422,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 panel_idx += 1
 
             newpage["panels"] = panel_list
-            if len(panel_list) > 0:
+            if panel_list:
                 newconfig.append(newpage)
 
             page_idx += 1
@@ -452,7 +513,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
             button_config.append(userbutton)
             button_idx += 1
 
-        if len(newconfig) > 0:
+        if newconfig:
             ribbon_config = newconfig
         return ribbon_config, button_config
 
@@ -464,8 +525,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 ppath = f"button/{panel_entry['id']}/*"
                 if ppath not in paths:
                     new_values = []
-                    for obj, kname, sname in self.context.kernel.find(ppath):
-                        new_values.append((obj, kname, sname))
+                    new_values.extend(
+                        (obj, kname, sname)
+                        for obj, kname, sname in self.context.kernel.find(ppath)
+                    )
                     self.set_panel_buttons(panel_entry["id"], new_values)
                     paths.append(ppath)
 
@@ -502,8 +565,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 ppath = f"button/{panel_entry['id']}/*"
                 if ppath not in paths:
                     new_values = []
-                    for obj, kname, sname in self.context.kernel.find(ppath):
-                        new_values.append((obj, kname, sname))
+                    new_values.extend(
+                        (obj, kname, sname)
+                        for obj, kname, sname in self.context.kernel.find(ppath)
+                    )
                     self.set_panel_buttons(panel_entry["id"], new_values)
                     paths.append(ppath)
         self.art.current_page = self.first_page()
@@ -936,11 +1001,12 @@ class RibbonEditor(wx.Panel):
     # ---- Generic routines to access data
 
     def current_ribbon(self):
-        result = None
-        if hasattr(self.context, "_ribbons"):
-            if self.ribbon_identifier in self.context._ribbons:
-                result = self.context._ribbons[self.ribbon_identifier]
-        return result
+        return (
+            self.context._ribbons[self.ribbon_identifier]
+            if hasattr(self.context, "_ribbons")
+            and self.ribbon_identifier in self.context._ribbons
+            else None
+        )
 
     def get_page(self, pageid=None):
         if pageid is None:
@@ -978,7 +1044,7 @@ class RibbonEditor(wx.Panel):
             if reposition is not None and page_entry["id"] == reposition:
                 idx = p_idx
         self.list_pages.SetItems(pages)
-        if len(pages) > 0:
+        if pages:
             self.list_pages.SetSelection(idx)
         self.on_list_pages_click(None)
 
@@ -995,7 +1061,7 @@ class RibbonEditor(wx.Panel):
             if reposition is not None and button_entry["id"] == reposition:
                 idx = b_idx
         self.list_buttons.SetItems(buttons)
-        if len(buttons) > 0:
+        if buttons:
             self.list_buttons.SetSelection(idx)
             self.on_list_buttons_click(None)
 
@@ -1016,7 +1082,7 @@ class RibbonEditor(wx.Panel):
                     cidx += 1
 
         self.list_panels.SetItems(panels)
-        if len(panels) > 0:
+        if panels:
             self.list_panels.SetSelection(tidx)
 
     def fill_options(self):
@@ -1091,9 +1157,9 @@ class RibbonEditor(wx.Panel):
         page_label = ""
         if idx >= 0:
             term = self.list_pages.GetStringSelection()
-            idx = term.find(" (")
-            if idx >= 0:
-                page = term[0:idx]
+            tidx = term.find(" (")
+            if tidx >= 0:
+                page = term[:tidx]
                 self.current_page = page
                 self.fill_panels()
                 p = self.get_page(page)
@@ -1103,9 +1169,7 @@ class RibbonEditor(wx.Panel):
 
     def on_button_page_delete(self, event):
         new_config = []
-        for p in self._config:
-            if p["id"] != self.current_page:
-                new_config.append(p)
+        new_config.extend(p for p in self._config if p["id"] != self.current_page)
         if len(new_config) != self._config:
             self._config = new_config
             self.current_page = None
@@ -1290,10 +1354,7 @@ class RibbonEditor(wx.Panel):
 
     def on_list_buttons_click(self, event):
         idx = self.list_buttons.GetSelection()
-        if idx < 0:
-            self.current_button = None
-        else:
-            self.current_button = self._config_buttons[idx]["id"]
+        self.current_button = None if idx < 0 else self._config_buttons[idx]["id"]
         flag1 = idx >= 0
         self.button_del_button.Enable(flag1)
         self.button_down_button.Enable(flag1)
@@ -1332,9 +1393,9 @@ class RibbonEditor(wx.Panel):
 
     def on_button_button_delete(self, event):
         new_config = []
-        for p in self._config_buttons:
-            if p["id"] != self.current_button:
-                new_config.append(p)
+        new_config.extend(
+            p for p in self._config_buttons if p["id"] != self.current_button
+        )
         if len(new_config) != self._config_buttons:
             self._config_buttons = new_config
             self.current_button = None
