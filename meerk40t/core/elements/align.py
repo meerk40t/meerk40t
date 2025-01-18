@@ -582,7 +582,7 @@ def init_commands(kernel):
             distributed_distance = dim_available / (len(elements) - 1)
 
         # _("Distribute")
-        with self.undofree("Distribute"):
+        with self.undoscope("Distribute"):
             for node in elements:
                 subbox = node.bounds
                 if distance:
