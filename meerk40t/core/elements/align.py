@@ -132,6 +132,7 @@ Functions:
   Returns:
     A tuple containing the alignment type and the updated alignment data.
 """
+
 """
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
@@ -554,15 +555,10 @@ def init_commands(kernel):
             elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
         else:
             elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        boundary_points = [node.bounds for node in elements]
+        if not boundary_points:
             return
-        if in_x:
-            idx = 0
-        else:
-            idx = 1
+        idx = 0 if in_x else 1
         if distance:
             left_edge = boundary_points[0][idx]
             right_edge = boundary_points[-1][idx + 2]
@@ -732,10 +728,8 @@ def init_commands(kernel):
         "none"
         """
         mode, group, bound, elements = data
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        boundary_points = [node.bounds for node in elements]
+        if not boundary_points:
             return
 
         haslock = False
@@ -747,9 +741,9 @@ def init_commands(kernel):
             channel(_("Your selection contains a locked element, that cannot be moved"))
             return
         left_edge = min([e[0] for e in boundary_points])
-        top_edge = min([e[1] for e in boundary_points])
-        right_edge = max([e[2] for e in boundary_points])
-        bottom_edge = max([e[3] for e in boundary_points])
+        top_edge = min(e[1] for e in boundary_points)
+        right_edge = max(e[2] for e in boundary_points)
+        bottom_edge = max(e[3] for e in boundary_points)
 
         if preserve_aspect_ratio in (
             "xminymin",
