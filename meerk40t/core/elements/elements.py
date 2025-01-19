@@ -2288,9 +2288,11 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
+        to_be_refreshed = list(drop_node.flat())
         # _("Drag and drop")
         with self.undoscope("Drag and drop"):
             for drag_node in data:
+                to_be_refreshed.extend(drag_node.flat())
                 op_treatment = (
                     drop_node.type in op_parent_nodes and (
                         not drag_node.has_ancestor("branch reg") or
@@ -2309,19 +2311,18 @@ class Elemental(Service):
                     # If yes then we might need to classify.
                     if drag_node.has_ancestor("branch reg"):
                         if drag_node.type in ("file", "group"):
-                            for e in drag_node.flat(elem_nodes):
-                                to_classify.append(e)
+                            to_classify.extend(iter(drag_node.flat(elem_nodes)))
                         else:
                             to_classify.append(drag_node)
                     drop_node.drop(drag_node, modify=True, flag=flag)
                     success = True
-                else:
-                    # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
-                    pass
-            if self.classify_new and len(to_classify) > 0:
+                # else:
+                #     print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+            if self.classify_new and to_classify:
                 self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
-        self.signal("element_property_reload", drop_node)
+        # print (f"Success: {success}\n{','.join(e.type for e in to_be_refreshed)}")
+        self.signal("element_property_reload", to_be_refreshed)
         return success
 
     def remove_nodes(self, node_list):
