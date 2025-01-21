@@ -123,10 +123,10 @@ def init_commands(kernel):
     # GRID SUBTYPE
     # ==========
 
-    @self.console_argument("c", type=int, help=_("Number of columns"))
-    @self.console_argument("r", type=int, help=_("Number of rows"))
-    @self.console_argument("x", type=str, help=_("x distance"))
-    @self.console_argument("y", type=str, help=_("y distance"))
+    @self.console_argument("columns", type=int, help=_("Number of columns"))
+    @self.console_argument("rows", type=int, help=_("Number of rows"))
+    @self.console_argument("x_distance", type=str, help=_("x distance"))
+    @self.console_argument("y_distance", type=str, help=_("y distance"))
     @self.console_option(
         "origin",
         "o",
@@ -151,17 +151,17 @@ def init_commands(kernel):
         command,
         channel,
         _,
-        c: int,
-        r: int,
-        x: str,
-        y: str,
+        columns: int,
+        rows: int,
+        x_distance: str,
+        y_distance: str,
         origin=None,
         relative=None,
         data=None,
         post=None,
         **kwargs,
     ):
-        if r is None:
+        if rows is None:
             raise CommandSyntaxError
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -176,21 +176,21 @@ def init_commands(kernel):
             height = bounds[3] - bounds[1]
         except TypeError:
             raise CommandSyntaxError
-        if x is None:
-            x = "100%"
-        if y is None:
-            y = "100%"
+        if x_distance is None:
+            x_distance = "100%"
+        if y_distance is None:
+            y_distance = "100%"
         try:
-            x = float(Length(x, relative_length=Length(amount=width).length_mm))
-            y = float(Length(y, relative_length=Length(amount=height).length_mm))
+            x_distance = float(Length(x_distance, relative_length=Length(amount=width).length_mm))
+            y_distance = float(Length(y_distance, relative_length=Length(amount=height).length_mm))
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
         counted = 0
         # _("Create grid")
         with self.undoscope("Create grid"):
             if relative:
-                x += width
-                y += height
+                x_distance += width
+                y_distance += height
             if origin is None:
                 origin = (1, 1)
             cx, cy = origin
@@ -199,12 +199,12 @@ def init_commands(kernel):
                 cx = 1
             if cy is None:
                 cy = 1
-            start_x = -1 * x * (cx - 1)
-            start_y = -1 * y * (cy - 1)
+            start_x = -1 * x_distance * (cx - 1)
+            start_y = -1 * y_distance * (cy - 1)
             y_pos = start_y
-            for j in range(r):
+            for j in range(rows):
                 x_pos = start_x
-                for k in range(c):
+                for k in range(columns):
                     if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
@@ -212,8 +212,8 @@ def init_commands(kernel):
                             self.elem_branch.add_node(e)
                         data_out.extend(add_elem)
                         counted += 1
-                    x_pos += x
-                y_pos += y
+                    x_pos += x_distance
+                y_pos += y_distance
             channel(f"{counted} copies created")
             # Newly created! Classification needed?
             post.append(classify_new(data_out))
