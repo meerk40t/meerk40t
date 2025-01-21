@@ -68,12 +68,6 @@ class GridUI(MWindow):
     def preview_radial(self, variables):
         return None
 
-    # @signal_listener("emphasized")
-    # def on_emphasize_signal(self, origin, *args):
-    #     has_emph = self.context.elements.has_emphasis()
-    #     self.panel_split.show_stuff(has_emph)
-    #     self.panel_keyhole.show_stuff(has_emph)
-
     @staticmethod
     def sub_register(kernel):
         bsize_normal = STD_ICON_SIZE
@@ -96,16 +90,20 @@ class GridUI(MWindow):
         )
 
     def window_open(self):
-        pass
+        self.on_update("internal")
 
     def window_close(self):
         pass
     
+    def done(self):
+        self.Close()
+
     @signal_listener("emphasized")
     def on_update(self, origin, *args):
         value = self.context.elements.has_emphasis()
         for panel in self.panels:
-            panel.Enabled = value
+            if hasattr(panel, "show_stuff"):
+                panel.show_stuff(value)
 
     @staticmethod
     def submenu():

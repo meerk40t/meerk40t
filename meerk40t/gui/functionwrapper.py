@@ -10,6 +10,7 @@ from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     TextCtrl,
     dip_size,
+    wxButton,
     wxCheckBox,
     wxStaticText,
 )
@@ -18,9 +19,10 @@ _ = wx.GetTranslation
 
 
 class ConsoleCommandUI(wx.Panel):
-    def __init__(self, *args, context=None, command_string: str, preview_routine: Callable=None, **kwds):
+    def __init__(self, parent, id, *args, context=None, command_string: str, preview_routine: Callable=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        wx.Panel.__init__(self, parent, id, *args, **kwds)
+        self.parent_window = parent
         self.context:Any = context
         self.cmd_string:str = ""
         self.var_set:list = []
@@ -28,7 +30,7 @@ class ConsoleCommandUI(wx.Panel):
         self._establish_base(command_string)
         self.TAG:str = f"FUNCTION_{self.cmd_string}"
         self._build_panel()
-        self.context.elements.undo.mark(self.TAG)
+        # self.context.elements.undo.mark(self.TAG)
 
     def _build_panel(self):
         def get_tbox_param(entry):
@@ -60,18 +62,18 @@ class ConsoleCommandUI(wx.Panel):
         )
         for e in self.var_set:
             varname = e["name"]
-            varname = "" if varname is None else varname.replace("_", " ")
+            varname = "" if varname is None else varname.replace("_", " ").capitalize()
+            control_line = wx.BoxSizer(wx.HORIZONTAL)
+            label = wxStaticText(self, wx.ID_ANY, _(varname))
+            label.SetMinSize(dip_size(self, 75, -1))
+            control_line.Add(label, 0, wx.EXPAND, 0)
             if e["type"] == bool:
-                control = wxCheckBox(self, wx.ID_ANY, _(varname))
+                control = wxCheckBox(self, wx.ID_ANY)
                 control.SetValue(bool(e["value"]))
                 control.Bind(wx.EVT_CHECKBOX, self.on_check_boxes(e))
-                control.SetToolTip(e["help"])
             else:
                 checker, small = get_tbox_param(e)
-                control = wx.BoxSizer(wx.HORIZONTAL)
-                label = wxStaticText(self, wx.ID_ANY, _(varname))
-                label.SetMinSize(dip_size(self, 75, -1))
-                text_box = TextCtrl(
+                control = TextCtrl(
                     self,
                     wx.ID_ANY,
                     value=e["value"],
@@ -79,15 +81,14 @@ class ConsoleCommandUI(wx.Panel):
                     limited=small,
                     nonzero=True,
                 )
-                text_box.SetToolTip(e["help"])
-                control.Add(label, 0, wx.EXPAND, 0)
-                control.Add(text_box, 1, wx.EXPAND, 0)
-                text_box.Bind(wx.EVT_TEXT, self.on_text_boxes(e))
+                control.Bind(wx.EVT_TEXT, self.on_text_boxes(e))
+            control.SetToolTip(e["help"])
+            control_line.Add(control, 1, wx.EXPAND, 0)
             if e["optional"]:
-                o_sizer.Add(control, 0, wx.EXPAND, 0)
+                o_sizer.Add(control_line, 0, wx.EXPAND, 0)
                 has_options = True
             else:
-                p_sizer.Add(control, 0, wx.EXPAND, 0)
+                p_sizer.Add(control_line, 0, wx.EXPAND, 0)
                 has_params = True
         if self.preview_routine is None:
             target = main_sizer
@@ -107,6 +108,14 @@ class ConsoleCommandUI(wx.Panel):
             target.Add(p_sizer, 1, wx.EXPAND, 0)
         if has_options:
             target.Add(o_sizer, 1, wx.EXPAND, 0)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_okay = wxButton(self, wx.ID_OK, _("Apply"))
+        self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
+        self.btn_okay.Bind(wx.EVT_BUTTON, self.accept_it)
+        self.btn_cancel.Bind(wx.EVT_BUTTON, self.cancel_it)
+        button_sizer.Add(self.btn_okay)
+        button_sizer.Add(self.btn_cancel)
+        main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
 
@@ -151,6 +160,8 @@ class ConsoleCommandUI(wx.Panel):
     def command_string(self) -> str:
         var_string: str = ""
         for entry in self.var_set:
+            if entry["value"] is None:
+                continue
             if entry["type"] == Length:
                 var_repr = Length(entry["value"]).length_mm
             elif entry["type"] == Angle:
@@ -158,14 +169,11 @@ class ConsoleCommandUI(wx.Panel):
             else:
                 var_repr = str(entry["type"](entry["value"]))
             if entry["optional"] == "optional":
-                var_string = f" {var_string}-{entry['short']} {var_repr}"
+                var_string = f"{var_string} -{entry['short']} {var_repr}"
             else:
-                var_string = f" {var_string}{var_repr}"
+                var_string = f"{var_string} {var_repr}"
 
         return f"{self.cmd_string}{var_string}\n"
-
-    def variable_set(self) -> dict:
-        return {entry.name: entry.value for entry in self.var_set}
 
 
     def on_check_boxes(self, var_dict):
@@ -188,22 +196,36 @@ class ConsoleCommandUI(wx.Panel):
 
         return handler
 
+    def show_stuff(self, has_emph):
+        for ctrl in self.GetChildren():
+            ctrl.Enable(has_emph)
+
     def updated(self):
         if self.preview_routine:
-            bmp = self.preview_routine(self.variable_set())
+            bmp = self.preview_routine(self.var_set)
             if bmp:
                 self.preview_control.SetBitmap(bmp)
             else:
                 self.preview_control.SetBitmap(wx.NullBitmap)
 
     def cancel_it(self, event):
-        idx = self.context.elements.undo.find(self.TAG)
-        if idx <= 0:
-            return
-        self.context.elements.undo.undo(index=idx)
+        # idx = self.context.elements.undo.find(self.TAG)
+        # if idx <= 0:
+        #     return
+        # self.context.elements.undo.undo(index=idx)
+        try:
+            self.parent_window.done()
+        except AttributeError:
+            pass
 
     def accept_it(self, event):
-        idx = self.context.elements.undo.find(self.TAG)
-        if idx <= 0:
-            return
-        self.context.elements.undo.rename(index=idx, message=_(self.cmd_string))
+        cmd = self.command_string()
+        self.context(cmd)
+        # idx = self.context.elements.undo.find(self.TAG)
+        # if idx <= 0:
+        #     return
+        # self.context.elements.undo.rename(index=idx, message=_(self.cmd_string))
+        try:
+            self.parent_window.done()
+        except AttributeError:
+            pass
