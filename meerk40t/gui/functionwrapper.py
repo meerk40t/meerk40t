@@ -30,10 +30,12 @@ class ConsoleCommandUI(wx.Panel):
         self._establish_base(command_string)
         self.TAG:str = f"FUNCTION_{self.cmd_string}"
         self._build_panel()
-        # self.context.elements.undo.mark(self.TAG)
+        self.context.elements.undo.mark(self.TAG)
 
     def _build_panel(self):
         def get_tbox_param(entry):
+            checker = ""
+            small = False
             if entry["type"] == Length:
                 checker = "length"
                 small = True
@@ -41,14 +43,12 @@ class ConsoleCommandUI(wx.Panel):
                 checker = "angle"
                 small = True
             elif entry["type"] == int:
-                checker = "int"
-                small = True
+                if entry["nargs"] == 1:
+                    checker = "int"
+                    small = True
             elif entry["type"] == float:
                 checker = "float"
                 small = True
-            else:
-                checker = ""
-                small = False
             return checker, small
 
         main_sizer:wx.BoxSizer = wx.BoxSizer(wx.VERTICAL)
@@ -97,13 +97,13 @@ class ConsoleCommandUI(wx.Panel):
             preview_sizer = wx.BoxSizer(wx.HORIZONTAL)
             left_side = wx.BoxSizer(wx.VERTICAL)
             right_side = wx.BoxSizer(wx.VERTICAL)
-            preview_sizer.Add(left_side, 0, wx.EXPAND, 0)
-            preview_sizer.Add(right_side, 1, wx.EXPAND, 0)
+            preview_sizer.Add(left_side, 1, wx.EXPAND, 0)
+            preview_sizer.Add(right_side, 2, wx.EXPAND, 0)
             main_sizer.Add(preview_sizer, 1, wx.EXPAND, 0)
 
             self.preview_control = wx.StaticBitmap(self, wx.ID_ANY, style = wx.SB_FLAT)
             target = left_side
-            right_side.Add(self.preview_control)
+            right_side.Add(self.preview_control, 1, wx.EXPAND, 0)
         if has_params:
             target.Add(p_sizer, 1, wx.EXPAND, 0)
         if has_options:
@@ -118,6 +118,7 @@ class ConsoleCommandUI(wx.Panel):
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
+        # print(self.cmd_string, self.var_set)
 
     def _establish_base(self, command_string:str):
         # Look inside the register commands...
@@ -142,6 +143,7 @@ class ConsoleCommandUI(wx.Panel):
                     "optional": False,
                     "default": a.get("default", None),
                     "value": a.get("default", None),
+                    "nargs": a.get("nargs", 1),
                 }
                 self.var_set.append(var_info)
             for b in func.options:
@@ -153,6 +155,7 @@ class ConsoleCommandUI(wx.Panel):
                     "optional": True,
                     "default": b.get("default", None),
                     "value": b.get("default", None),
+                    "nargs": b.get("nargs", 1),
                 }
                 self.var_set.append(var_info)
             break
@@ -188,7 +191,10 @@ class ConsoleCommandUI(wx.Panel):
         def handler(event: wx.CommandEvent):
             obj = event.GetEventObject()
             try:
-                value = var_dict["type"](obj.GetValue())
+                if var_dict["nargs"] > 1:
+                    value = obj.GetValue()
+                else:
+                    value = var_dict["type"](obj.GetValue())
                 var_dict["value"] = value
                 self.updated()
             except ValueError:
@@ -202,30 +208,36 @@ class ConsoleCommandUI(wx.Panel):
 
     def updated(self):
         if self.preview_routine:
-            bmp = self.preview_routine(self.var_set)
+            psize = self.preview_control.Size
+            pdimension = min(psize[0], psize[1])
+            bmp = self.preview_routine(self.var_set, dimension=pdimension)
             if bmp:
                 self.preview_control.SetBitmap(bmp)
             else:
                 self.preview_control.SetBitmap(wx.NullBitmap)
+        # idx = self.context.elements.undo.find(self.TAG)
+        # if idx >= 0:
+        #     self.context.elements.undo.undo(index=idx)
+        # cmd = self.command_string()
+        # self.context(cmd)
+        # self.context.signal("refresh_scene", "Scene")
 
     def cancel_it(self, event):
         # idx = self.context.elements.undo.find(self.TAG)
         # if idx <= 0:
         #     return
         # self.context.elements.undo.undo(index=idx)
-        try:
+        if hasattr(self.parent_window, "done"):
             self.parent_window.done()
-        except AttributeError:
-            pass
 
     def accept_it(self, event):
         cmd = self.command_string()
-        self.context(cmd)
+        with self.context.elements.undoscope(_(self.cmd_string)):
+            self.context(cmd)
+
         # idx = self.context.elements.undo.find(self.TAG)
         # if idx <= 0:
         #     return
         # self.context.elements.undo.rename(index=idx, message=_(self.cmd_string))
-        try:
+        if hasattr(self.parent_window, "done"):
             self.parent_window.done()
-        except AttributeError:
-            pass

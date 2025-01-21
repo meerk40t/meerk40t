@@ -1,5 +1,6 @@
 import wx
-
+from PIL import Image, ImageDraw
+from meerk40t.core.units import Length, Angle
 from meerk40t.gui.functionwrapper import ConsoleCommandUI
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_copies
 from meerk40t.gui.mwindow import MWindow
@@ -59,13 +60,98 @@ class GridUI(MWindow):
     def delegates(self):
         yield from self.panels
 
-    def preview_grid(self, variables):
+    def preview_grid(self, variables, dimension=400):
+        def PIL2wx (image):
+            width, height = image.size
+            return wx.Bitmap.FromBuffer(width, height, image.tobytes())
+
+        example_dimension = Length("1cm")
+        origin="0,0"
+        col_count = 1
+        row_count = 1
+        xgap = Length("1cm")
+        ygap = Length("1cm")
+        mypos_c = 0
+        mypos_r = 0
+        relative = False
+        for vari in variables:
+            var_name = vari["name"]
+            var_value = vari["value"]
+            if var_value is None:
+                continue
+            try:
+                if var_name == "columns":
+                    col_count = var_value
+                elif var_name == "rows":
+                    row_count = var_value
+                elif var_name == "x_distance":
+                    xgap = Length(var_value)
+                elif var_name == "y_distance":
+                    ygap = Length(var_value)
+                elif var_name == "relative":
+                    relative = var_value
+                elif var_name == "origin":
+                    origin = var_value
+            except ValueError:
+                continue
+        if isinstance(origin, str):
+            or_arr = origin.split(",")
+            if len(or_arr) > 1:
+                try:
+                    mypos_c = int(or_arr[0]) - 1
+                    mypos_r = int(or_arr[1]) - 1
+                except ValueError:
+                    pass
+        if mypos_c < 0 or mypos_c >= col_count:
+            mypos_c = 0
+        if mypos_r < 0 or mypos_r >= row_count:
+            mypos_r = 0
+        xd = example_dimension.cm
+        yd = xd
+        dx = xgap.cm
+        dy = ygap.cm
+        if relative:
+            dx += xd
+            dy += yd
+        if self.context.themes.dark:
+            backcolor = "black"
+            forecolor = "white"
+        else:
+            backcolor = "white"
+            forecolor = "black"
+        img = Image.new(mode="RGB", size=(dimension, dimension), color=backcolor)
+        draw = ImageDraw.Draw(img)
+
+        if relative:
+            maxx = col_count * (xd + dx) + xd
+            maxy = row_count * (yd + dy) + yd
+        else:
+            maxx = col_count * xd + xd
+            maxy = row_count * yd + yd
+        max_xy = max(maxx, maxy)
+        ixd = int(dimension * xd / max_xy)
+        iyd = int(dimension * yd / max_xy)
+        x = 0
+        for colidx in range(col_count):
+            y = 0
+            for rowidx in range(row_count):
+                if colidx == mypos_c and rowidx == mypos_r:
+                    color = "red"
+                else:
+                    color = forecolor
+                ix = int(dimension * x / max_xy)
+                iy = int(dimension * y / max_xy)
+                draw.rectangle([(ix, iy), (ix + ixd - 1, iy + iyd - 1)], outline=color)
+
+                y += dy
+            x += dx
+
+        return PIL2wx(img)
+
+    def preview_circular(self, variables, dimension=400):
         return None
 
-    def preview_circular(self, variables):
-        return None
-
-    def preview_radial(self, variables):
+    def preview_radial(self, variables, dimension=400):
         return None
 
     @staticmethod
