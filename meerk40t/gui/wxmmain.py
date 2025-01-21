@@ -2160,21 +2160,6 @@ class MeerK40t(MWindow):
             },
         )
 
-        # kernel.register(
-        #     "button/basicediting/Duplicate",
-        #     {
-        #         "label": _("Duplicate"),
-        #         "icon": icon_duplicate,
-        #         "tip": _("Duplicate selected elements"),
-        #         "action": exec("element copy --dx=3mm --dy=3mm\n"),
-        #         "size": bsize_small,
-        #         "identifier": "editduplicate",
-        #         "rule_enabled": lambda cond: len(
-        #             list(kernel.elements.elems(emphasized=True))
-        #         )
-        #         > 0,
-        #     },
-        # )
         def undo_tip():
             s = _("Undo last operation")
             t = kernel.elements.undo.undo_string()

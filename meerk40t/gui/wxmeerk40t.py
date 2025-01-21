@@ -46,6 +46,7 @@ from .icons import (
     icons8_pause,
 )
 from .imagesplitter import RenderSplit
+from .grid_ui import GridUI
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialmanager import MaterialManager
@@ -931,17 +932,16 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        if (
+        if not (
             hasattr(kernel.args, "lock_device_config")
             and kernel.args.lock_device_config
         ):
-            pass
-        else:
             kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
         kernel.register("window/SplitImage", RenderSplit)
+        kernel.register("window/GridUI", GridUI)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
