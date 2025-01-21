@@ -193,6 +193,20 @@ class Undo:
                 UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
             )
 
+    def find(self, scope:str):
+        return next(
+            (
+                idx
+                for idx, state in enumerate(self._undo_stack)
+                if state.message == scope
+            ),
+            -1,
+        )
+
+    def rename(self, index, message):
+        if 0 >= index < len(self._undo_stack):
+            self._undo_stack[index].message = message
+            
     def states(self, scope:str):
         self.validate()
         lower_end = 1 # Ignore First
