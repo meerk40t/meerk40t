@@ -921,7 +921,10 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         # Invert black to white if needed.
         if self.invert:
-            image = ImageOps.invert(image)
+            try:
+                image = ImageOps.invert(image)
+            except OSError as e:
+                print (f"Image inversion crashed: {e}\nMode: {image.mode}, {image.width}x{image.height} pixel")
 
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
