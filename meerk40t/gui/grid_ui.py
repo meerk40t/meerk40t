@@ -1,6 +1,6 @@
 import wx
 from PIL import Image, ImageDraw
-from meerk40t.core.units import Length, Angle
+from meerk40t.core.units import Length, Angle, UNITS_PER_CM
 from meerk40t.gui.functionwrapper import ConsoleCommandUI
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_copies
 from meerk40t.gui.mwindow import MWindow
@@ -50,6 +50,7 @@ class GridUI(MWindow):
         self.notebook_main.AddPage(panel_radial, _("Radial"))
 
         self.Layout()
+        self.notebook_main.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_activate)
         self.restore_aspect()
 
         _icon = wx.NullIcon
@@ -60,15 +61,19 @@ class GridUI(MWindow):
     def delegates(self):
         yield from self.panels
 
-    def preview_grid(self, variables, dimension=400):
+    def preview_grid(self, variables, dimension=400, xdim=None, ydim=None):
         def PIL2wx (image):
             width, height = image.size
             return wx.Bitmap.FromBuffer(width, height, image.tobytes())
-
+        if dimension < 50:
+            # print (f"Very small: {dimension}")
+            return None
         example_dimension = Length("1cm")
         origin="0,0"
         col_count = 1
         row_count = 1
+        xd = example_dimension.cm if xdim is None else xdim.cm
+        yd = example_dimension.cm if ydim is None else ydim.cm
         xgap = Length("1cm")
         ygap = Length("1cm")
         mypos_c = 0
@@ -85,9 +90,10 @@ class GridUI(MWindow):
                 elif var_name == "rows":
                     row_count = var_value
                 elif var_name == "x_distance":
-                    xgap = Length(var_value)
+                    xgap = Length(var_value, relative_length=float(xd) * UNITS_PER_CM)
+                    # print (f"{var_name}: {var_value} = {xgap.mm}")
                 elif var_name == "y_distance":
-                    ygap = Length(var_value)
+                    ygap = Length(var_value, relative_length=float(yd) * UNITS_PER_CM)
                 elif var_name == "relative":
                     relative = var_value
                 elif var_name == "origin":
@@ -106,8 +112,6 @@ class GridUI(MWindow):
             mypos_c = 0
         if mypos_r < 0 or mypos_r >= row_count:
             mypos_r = 0
-        xd = example_dimension.cm
-        yd = xd
         dx = xgap.cm
         dy = ygap.cm
         if relative:
@@ -123,14 +127,18 @@ class GridUI(MWindow):
         draw = ImageDraw.Draw(img)
 
         if relative:
-            maxx = col_count * (xd + dx) + xd
-            maxy = row_count * (yd + dy) + yd
+            maxx = col_count * xd + max(0, col_count - 1) * dx
+            maxy = row_count * yd + max(0, row_count - 1) * dy
         else:
-            maxx = col_count * xd + xd
-            maxy = row_count * yd + yd
+            maxx = col_count * xd + dx
+            maxy = row_count * yd + dy
+        maxx += xd / 2
+        maxy += yd / 2
         max_xy = max(maxx, maxy)
         ixd = int(dimension * xd / max_xy)
         iyd = int(dimension * yd / max_xy)
+        # print (f"x:{maxx}, y: {maxy} -> {max_xy} , xd={xd}, yd={yd}, ixd={ixd}, iyd={iyd}")
+
         x = 0
         for colidx in range(col_count):
             y = 0
@@ -148,10 +156,10 @@ class GridUI(MWindow):
 
         return PIL2wx(img)
 
-    def preview_circular(self, variables, dimension=400):
+    def preview_circular(self, variables, dimension=400, xdim=None, ydim=None):
         return None
 
-    def preview_radial(self, variables, dimension=400):
+    def preview_radial(self, variables, dimension=400, xdim=None, ydim=None):
         return None
 
     @staticmethod
@@ -191,6 +199,14 @@ class GridUI(MWindow):
             if hasattr(panel, "show_stuff"):
                 panel.show_stuff(value)
 
+    def on_page_activate(self, event):
+        idx = self.notebook_main.GetPage()
+        try:
+            panel = self.panels(idx)
+            panel.pane_show()
+        except (IndexError, AttributeError):
+            pass
+    
     @staticmethod
     def submenu():
         return "Editing", "Duplicate"

@@ -123,15 +123,16 @@ def init_commands(kernel):
     # GRID SUBTYPE
     # ==========
 
-    @self.console_argument("columns", type=int, help=_("Number of columns"))
-    @self.console_argument("rows", type=int, help=_("Number of rows"))
-    @self.console_argument("x_distance", type=str, help=_("x distance"))
-    @self.console_argument("y_distance", type=str, help=_("y distance"))
+    @self.console_argument("columns", type=int, help=_("Number of columns"), default=2,)
+    @self.console_argument("rows", type=int, help=_("Number of rows"), default=2,)
+    @self.console_argument("x_distance", type=str, help=_("x distance"), default="100%")
+    @self.console_argument("y_distance", type=str, help=_("y distance"), default="100%")
     @self.console_option(
         "origin",
         "o",
         type=int,
         nargs=2,
+        default = (1, 1),
         help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
     )
     @self.console_option(
