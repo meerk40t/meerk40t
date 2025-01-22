@@ -482,12 +482,14 @@ class Node:
         """
         if links is None:
             links = {id(self): (self, None)}
+        attrib_list = ("_selected", "_emphasized", "_emphasized_time", "_highlighted", "_expanded")
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
-            if node_copy.expanded != c.expanded:
-                # print ("Strange not identical, fixing")
-                node_copy.expanded = c.expanded
+            for att in attrib_list:
+                if getattr(node_copy, att) != getattr(c, att):
+                    # print (f"Strange {att} not identical, fixing")
+                    setattr(node_copy, att, getattr(c, att))
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links
