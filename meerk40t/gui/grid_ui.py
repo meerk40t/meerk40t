@@ -39,19 +39,20 @@ class GridUI(MWindow):
 
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
-        panel_grid = ConsoleCommandUI(self, wx.ID_ANY, context=self.context, command_string="grid", preview_routine=self.preview_grid)
+        panel_grid = ConsoleCommandUI(self, wx.ID_ANY, context=self.context, command_string="grid",)
         self.panels.append(panel_grid)
         self.notebook_main.AddPage(panel_grid, _("Grid"))
-        panel_circular = ConsoleCommandUI(self, wx.ID_ANY, context=self.context, command_string="circ_copy", preview_routine=self.preview_circular)
+        panel_circular = ConsoleCommandUI(self, wx.ID_ANY, context=self.context, command_string="circ_copy",)
         self.panels.append(panel_circular)
         self.notebook_main.AddPage(panel_circular, _("Circular grid"))
-        panel_radial = ConsoleCommandUI(self, wx.ID_ANY, context=self.context, command_string="radial", preview_routine=self.preview_radial)
+        panel_radial = ConsoleCommandUI(self, wx.ID_ANY, context=self.context, command_string="radial",)
         self.panels.append(panel_radial)
         self.notebook_main.AddPage(panel_radial, _("Radial"))
 
         self.Layout()
-        self.notebook_main.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_activate)
+        self.notebook_main.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_activate)
         self.restore_aspect()
+        self.on_update(None)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_copies.GetBitmap())
@@ -60,107 +61,6 @@ class GridUI(MWindow):
 
     def delegates(self):
         yield from self.panels
-
-    def preview_grid(self, variables, dimension=400, xdim=None, ydim=None):
-        def PIL2wx (image):
-            width, height = image.size
-            return wx.Bitmap.FromBuffer(width, height, image.tobytes())
-        if dimension < 50:
-            # print (f"Very small: {dimension}")
-            return None
-        example_dimension = Length("1cm")
-        origin="0,0"
-        col_count = 1
-        row_count = 1
-        xd = example_dimension.cm if xdim is None else xdim.cm
-        yd = example_dimension.cm if ydim is None else ydim.cm
-        xgap = Length("1cm")
-        ygap = Length("1cm")
-        mypos_c = 0
-        mypos_r = 0
-        relative = False
-        for vari in variables:
-            var_name = vari["name"]
-            var_value = vari["value"]
-            if var_value is None:
-                continue
-            try:
-                if var_name == "columns":
-                    col_count = var_value
-                elif var_name == "rows":
-                    row_count = var_value
-                elif var_name == "x_distance":
-                    xgap = Length(var_value, relative_length=float(xd) * UNITS_PER_CM)
-                    # print (f"{var_name}: {var_value} = {xgap.mm}")
-                elif var_name == "y_distance":
-                    ygap = Length(var_value, relative_length=float(yd) * UNITS_PER_CM)
-                elif var_name == "relative":
-                    relative = var_value
-                elif var_name == "origin":
-                    origin = var_value
-            except ValueError:
-                continue
-        if isinstance(origin, str):
-            or_arr = origin.split(",")
-            if len(or_arr) > 1:
-                try:
-                    mypos_c = int(or_arr[0]) - 1
-                    mypos_r = int(or_arr[1]) - 1
-                except ValueError:
-                    pass
-        if mypos_c < 0 or mypos_c >= col_count:
-            mypos_c = 0
-        if mypos_r < 0 or mypos_r >= row_count:
-            mypos_r = 0
-        dx = xgap.cm
-        dy = ygap.cm
-        if relative:
-            dx += xd
-            dy += yd
-        if self.context.themes.dark:
-            backcolor = "black"
-            forecolor = "white"
-        else:
-            backcolor = "white"
-            forecolor = "black"
-        img = Image.new(mode="RGB", size=(dimension, dimension), color=backcolor)
-        draw = ImageDraw.Draw(img)
-
-        if relative:
-            maxx = col_count * xd + max(0, col_count - 1) * dx
-            maxy = row_count * yd + max(0, row_count - 1) * dy
-        else:
-            maxx = col_count * xd + dx
-            maxy = row_count * yd + dy
-        maxx += xd / 2
-        maxy += yd / 2
-        max_xy = max(maxx, maxy)
-        ixd = int(dimension * xd / max_xy)
-        iyd = int(dimension * yd / max_xy)
-        # print (f"x:{maxx}, y: {maxy} -> {max_xy} , xd={xd}, yd={yd}, ixd={ixd}, iyd={iyd}")
-
-        x = 0
-        for colidx in range(col_count):
-            y = 0
-            for rowidx in range(row_count):
-                if colidx == mypos_c and rowidx == mypos_r:
-                    color = "red"
-                else:
-                    color = forecolor
-                ix = int(dimension * x / max_xy)
-                iy = int(dimension * y / max_xy)
-                draw.rectangle([(ix, iy), (ix + ixd - 1, iy + iyd - 1)], outline=color)
-
-                y += dy
-            x += dx
-
-        return PIL2wx(img)
-
-    def preview_circular(self, variables, dimension=400, xdim=None, ydim=None):
-        return None
-
-    def preview_radial(self, variables, dimension=400, xdim=None, ydim=None):
-        return None
 
     @staticmethod
     def sub_register(kernel):
@@ -194,17 +94,25 @@ class GridUI(MWindow):
 
     @signal_listener("emphasized")
     def on_update(self, origin, *args):
+        act_page = self.notebook_main.GetCurrentPage()
         value = self.context.elements.has_emphasis()
-        for panel in self.panels:
+        for panel in enumerate(self.panels):
             if hasattr(panel, "show_stuff"):
                 panel.show_stuff(value)
+            try:
+                if panel is act_page:
+                    panel.pane_show()
+                else:
+                    panel.pane_hide()
+            except AttributeError:
+                pass
+                
 
     def on_page_activate(self, event):
-        idx = self.notebook_main.GetPage()
+        panel = self.notebook_main.GetCurrentPage()
         try:
-            panel = self.panels(idx)
             panel.pane_show()
-        except (IndexError, AttributeError):
+        except AttributeError:
             pass
     
     @staticmethod

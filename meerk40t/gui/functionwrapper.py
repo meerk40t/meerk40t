@@ -19,9 +19,10 @@ _ = wx.GetTranslation
 
 
 class ConsoleCommandUI(wx.Panel):
-    def __init__(self, parent, id, *args, context=None, command_string: str, preview_routine: Callable=None, **kwds):
+    def __init__(self, parent, id, *args, context=None, command_string: str, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, id, *args, **kwds)
+        self.active = False
         self.parent_window = parent
         self.context:Any = context
         self.cmd_string:str = ""
@@ -30,11 +31,10 @@ class ConsoleCommandUI(wx.Panel):
         if units in ("inch", "inches"):
             units = "in"
         self.units = units
-        self.preview_routine = preview_routine
         self._establish_base(command_string)
         self.TAG:str = f"FUNCTION_{self.cmd_string}"
+        self.undo_index = None
         self._build_panel()
-        self.context.elements.undo.mark(self.TAG)
 
     def _build_panel(self):
         def get_tbox_param(entry):
@@ -104,24 +104,10 @@ class ConsoleCommandUI(wx.Panel):
             else:
                 p_sizer.Add(control_line, 0, wx.EXPAND, 0)
                 has_params = True
-        if self.preview_routine is None:
-            target = main_sizer
-            self.preview_control = None
-        else:
-            preview_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            left_side = wx.BoxSizer(wx.VERTICAL)
-            right_side = wx.BoxSizer(wx.VERTICAL)
-            preview_sizer.Add(left_side, 1, wx.EXPAND, 0)
-            preview_sizer.Add(right_side, 2, wx.EXPAND, 0)
-            main_sizer.Add(preview_sizer, 1, wx.EXPAND, 0)
-
-            self.preview_control = wx.StaticBitmap(self, wx.ID_ANY, style = wx.SB_FLAT)
-            target = left_side
-            right_side.Add(self.preview_control, 1, wx.EXPAND, 0)
         if has_params:
-            target.Add(p_sizer, 1, wx.EXPAND, 0)
+            main_sizer.Add(p_sizer, 0, wx.EXPAND, 0)
         if has_options:
-            target.Add(o_sizer, 1, wx.EXPAND, 0)
+            main_sizer.Add(o_sizer, 0, wx.EXPAND, 0)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.btn_okay = wxButton(self, wx.ID_OK, _("Apply"))
         self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
@@ -133,7 +119,6 @@ class ConsoleCommandUI(wx.Panel):
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
-        self.Bind(wx.EVT_SIZE, self.on_resized)
         # print(self.cmd_string, self.var_set)
 
     def _establish_base(self, command_string:str):
@@ -183,15 +168,26 @@ class ConsoleCommandUI(wx.Panel):
                 continue
             if entry["type"] == Length:
                 var_repr = Length(entry["value"]).length_mm
+            elif entry["type"] == bool:
+                if not entry["value"]:
+                    continue
             elif entry["type"] == Angle:
                 var_repr = Angle(entry["value"]).degrees
             else:
-                var_repr = str(entry["type"](entry["value"]))
-            if entry["optional"] == "optional":
+                if isinstance(entry["value"], (tuple, list)):
+                    var_repr = ""
+                    for idx, num in enumerate(entry["value"]):
+                        if idx > 0:
+                            var_repr = f"{var_repr},{num}"
+                        else:
+                            var_repr = f"{num}"
+                else:
+                    var_repr = str(entry["type"](entry["value"]))
+            if entry["optional"]:
                 var_string = f"{var_string} -{entry['short']} {var_repr}"
             else:
                 var_string = f"{var_string} {var_repr}"
-
+        print (f"{self.cmd_string}{var_string}")
         return f"{self.cmd_string}{var_string}\n"
 
 
@@ -218,40 +214,33 @@ class ConsoleCommandUI(wx.Panel):
 
         return handler
 
-    def on_resized(self, event):
-        event.Skip()
-        self.updated()
 
     def show_stuff(self, has_emph):
         for ctrl in self.GetChildren():
             ctrl.Enable(has_emph)
-        if has_emph:
-            self.updated()
 
     def updated(self):
-        if self.preview_routine:
-            bb = self.context.elements.selected_area()
-            xdim = Length(bb[2] - bb[0])
-            ydim = Length(bb[3] - bb[1])
-            psize = self.preview_control.Size
-            pdimension = min(psize[0], psize[1])
-            bmp = self.preview_routine(self.var_set, dimension=pdimension, xdim=xdim, ydim=ydim)
-            if bmp:
-                self.preview_control.SetBitmap(bmp)
-            else:
-                self.preview_control.SetBitmap(wx.NullBitmap)
-        # idx = self.context.elements.undo.find(self.TAG)
-        # if idx >= 0:
-        #     self.context.elements.undo.undo(index=idx)
-        # cmd = self.command_string()
-        # self.context(cmd)
-        # self.context.signal("refresh_scene", "Scene")
+        if not self.active:
+            return
+        if self.undo_index is None:
+            self.context.elements.undo.mark(self.TAG)
+            self.undo_index = self.context.elements.undo.find(self.TAG)
+
+        idx = self.context.elements.undo.find(self.TAG)
+        if idx >= 0:
+            self.context.elements.undo.undo(index=idx)
+        cmd = self.command_string()
+        self.context(cmd)
+        self.context.signal("refresh_scene", "Scene")
+        self.context.signal("rebuild_tree")
 
     def cancel_it(self, event):
-        # idx = self.context.elements.undo.find(self.TAG)
-        # if idx <= 0:
-        #     return
-        # self.context.elements.undo.undo(index=idx)
+        idx = self.context.elements.undo.find(self.TAG)
+        if idx >= 0:
+            self.context.elements.undo.undo(index=idx)
+            self.context.elements.undo.remove(index=idx)
+        self.context.signal("refresh_scene", "Scene")
+        self.context.signal("rebuild_tree")
         if hasattr(self.parent_window, "done"):
             self.parent_window.done()
 
@@ -260,15 +249,22 @@ class ConsoleCommandUI(wx.Panel):
         with self.context.elements.undoscope(_(self.cmd_string)):
             self.context(cmd)
 
-        # idx = self.context.elements.undo.find(self.TAG)
-        # if idx <= 0:
-        #     return
-        # self.context.elements.undo.rename(index=idx, message=_(self.cmd_string))
+        idx = self.context.elements.undo.find(self.TAG)
+        if idx >= 0:
+            self.context.elements.undo.remove(idx)
         if hasattr(self.parent_window, "done"):
             self.parent_window.done()
 
     def pane_show(self):
+        # print (f"Active {self.cmd_string}")
+        self.active = True
         self.updated()
 
     def pane_hide(self):
-        return
+        self.active = False
+        idx = self.context.elements.undo.find(self.TAG)
+        if idx >= 0:
+            self.context.elements.undo.remove(idx)
+        self.undo_index = None
+
+        # print (f"Inactive {self.cmd_string}")

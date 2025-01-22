@@ -105,7 +105,7 @@ class Undo:
             if len(self._undo_stack) == 0:
                 # Stack is entirely empty.
                 return False
-            # self.debug_me(f"Undo requested: {to_be_restored}")
+            self.debug_me(f"Undo requested: {to_be_restored}")
             if to_be_restored == len(self._undo_stack) - 1 and self._undo_stack[to_be_restored].message != self.LAST_STATE:
                 # We store the current state
                 self._undo_stack.append(
@@ -125,7 +125,7 @@ class Undo:
             # except KeyError:
             #     pass
             self.service.signal("undoredo")
-            # self.debug_me("Undo done")
+            self.debug_me("Undo done")
             return True
 
     def redo(self, index=None):
@@ -194,6 +194,7 @@ class Undo:
             )
 
     def find(self, scope:str):
+        self.debug_me(f"Looking for {scope}")
         return next(
             (
                 idx
@@ -203,8 +204,15 @@ class Undo:
             -1,
         )
 
+    def remove(self, index):
+        if 0 <= index < len(self._undo_stack):
+            print (f"Removing index {index}")
+            self.debug_me("before")
+            self._undo_stack.pop(index)
+            self.debug_me("after")
+
     def rename(self, index, message):
-        if 0 >= index < len(self._undo_stack):
+        if 0 <= index < len(self._undo_stack):
             self._undo_stack[index].message = message
             
     def states(self, scope:str):
