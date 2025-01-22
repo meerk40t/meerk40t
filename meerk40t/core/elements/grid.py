@@ -221,10 +221,10 @@ def init_commands(kernel):
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
-    @self.console_argument("repeats", type=int, help=_("Number of repeats"))
-    @self.console_argument("radius", type=self.length, help=_("Radius"))
-    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"))
-    @self.console_argument("endangle", type=Angle, help=_("End-Angle"))
+    @self.console_argument("repeats", type=int, help=_("Number of repeats"), default=2)
+    @self.console_argument("radius", type=self.length, help=_("Radius"), default=0)
+    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"), default="0deg")
+    @self.console_argument("endangle", type=Angle, help=_("End-Angle"), default="360deg")
     @self.console_option(
         "rotate",
         "r",
@@ -326,16 +326,17 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
-    @self.console_argument("copies", type=int, help=_("Number of copies"))
+    @self.console_argument("copies", type=int, help=_("Number of copies"), default=1)
     @self.console_argument("radius", type=self.length, help=_("Radius"))
-    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"))
-    @self.console_argument("endangle", type=Angle, help=_("End-Angle"))
+    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"), default="0deg")
+    @self.console_argument("endangle", type=Angle, help=_("End-Angle"), default="360deg")
     @self.console_option(
         "rotate",
         "r",
         type=bool,
         action="store_true",
         help=_("Rotate copies towards center?"),
+        default=False,
     )
     @self.console_option(
         "deltaangle",
