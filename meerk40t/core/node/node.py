@@ -457,7 +457,39 @@ class Node:
 
     def restore_tree(self, tree_data):
         self._children.clear()
-        self._children.extend(tree_data)
+        links = {id(self): (self, None)}
+        attrib_list = ("_selected", "_emphasized", "_emphasized_time", "_highlighted", "_expanded")
+        for c in tree_data:
+            c._build_copy_nodes(links=links)
+            node_copy = copy(c)
+            for att in attrib_list:
+                if getattr(node_copy, att) != getattr(c, att):
+                    # print (f"Strange {att} not identical, fixing")
+                    setattr(node_copy, att, getattr(c, att))
+            node_copy._root = self._root
+            links[id(c)] = (c, node_copy)
+
+        # Rebuild structure.
+        for uid, n in links.items():
+            node, node_copy = n
+            if node._parent is None:
+                # Root.
+                continue
+            # Find copy-parent of copy-node and link.
+            original_parent, copied_parent = links[id(node._parent)]
+            if copied_parent is None:
+                # copy_parent should have been copied root, but roots don't copy
+                node_copy._parent = self._root
+                continue
+            node_copy._parent = copied_parent
+            copied_parent._children.append(node_copy)
+            if node.type == "reference":
+                original_referenced, copied_referenced = links[id(node.node)]
+                node_copy.node = copied_referenced
+                copied_referenced._references.append(node_copy)
+        branches = [links[id(c)][1] for c in tree_data]
+
+        self._children.extend(branches)
         self._validate_tree()
 
     def _validate_tree(self):
