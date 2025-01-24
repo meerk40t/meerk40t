@@ -211,7 +211,8 @@ class ConsoleCommandUI(wx.Dialog):
             obj = event.GetEventObject()
             try:
                 if var_dict["nargs"] > 1:
-                    value = obj.GetValue()
+                    tvalue = obj.GetValue()
+                    value = tvalue.split(",")
                 else:
                     value = var_dict["type"](obj.GetValue())
                 var_dict["value"] = value
