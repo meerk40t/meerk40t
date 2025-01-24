@@ -18,11 +18,11 @@ from meerk40t.gui.wxutils import (
 _ = wx.GetTranslation
 
 
-class ConsoleCommandUI(wx.Panel):
+class ConsoleCommandUI(wx.Dialog):
     def __init__(self, parent, id, *args, context=None, command_string: str, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, parent, id, *args, **kwds)
-        self.active = False
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.DEFAULT_DIALOG_STYLE
+        wx.Dialog.__init__(self, parent, id, *args, **kwds)
+        self.startup = True
         self.parent_window = parent
         self.context:Any = context
         self.cmd_string:str = ""
@@ -33,8 +33,10 @@ class ConsoleCommandUI(wx.Panel):
         self.units = units
         self._establish_base(command_string)
         self.TAG:str = f"FUNCTION_{self.cmd_string}"
-        self.undo_index = None
+        self.context.elements.undo.mark(self.TAG)
         self._build_panel()
+        self.startup = False
+        self.updated("Init")
 
     def _build_panel(self):
         def get_tbox_param(entry):
@@ -103,18 +105,12 @@ class ConsoleCommandUI(wx.Panel):
                 has_options = True
             else:
                 p_sizer.Add(control_line, 0, wx.EXPAND, 0)
-                has_params = True
+                has_params = True   
         if has_params:
             main_sizer.Add(p_sizer, 0, wx.EXPAND, 0)
         if has_options:
             main_sizer.Add(o_sizer, 0, wx.EXPAND, 0)
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.btn_okay = wxButton(self, wx.ID_OK, _("Apply"))
-        self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
-        self.btn_okay.Bind(wx.EVT_BUTTON, self.accept_it)
-        self.btn_cancel.Bind(wx.EVT_BUTTON, self.cancel_it)
-        button_sizer.Add(self.btn_okay)
-        button_sizer.Add(self.btn_cancel)
+        button_sizer = self.CreateStdDialogButtonSizer(flags=wx.OK | wx.CANCEL)
         # button_sizer.Add(self.check_preview)
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
@@ -195,7 +191,7 @@ class ConsoleCommandUI(wx.Panel):
         def handler(event: wx.CommandEvent):
             obj = event.GetEventObject()
             var_dict["value"] = obj.GetValue()
-            self.updated()
+            self.updated("Checkbox")
 
         return handler
 
@@ -208,63 +204,36 @@ class ConsoleCommandUI(wx.Panel):
                 else:
                     value = var_dict["type"](obj.GetValue())
                 var_dict["value"] = value
-                self.updated()
+                self.updated("textbox")
             except ValueError:
                 return
 
         return handler
 
-
-    def show_stuff(self, has_emph):
-        for ctrl in self.GetChildren():
-            ctrl.Enable(has_emph)
-
-    def updated(self):
-        if not self.active:
+    def updated(self, source=None):
+        if self.startup: 
             return
-        if self.undo_index is None:
-            self.context.elements.undo.mark(self.TAG)
-            self.undo_index = self.context.elements.undo.find(self.TAG)
+        print (f"Updated from {'unknown' if source is None else source}")
+        self.context(f'undo "{self.TAG}"\n')
 
-        idx = self.context.elements.undo.find(self.TAG)
-        if idx >= 0:
-            self.context.elements.undo.undo(index=idx)
         cmd = self.command_string()
         self.context(cmd)
         self.context.signal("refresh_scene", "Scene")
         self.context.signal("rebuild_tree")
 
-    def cancel_it(self, event):
+    def _remove_undo_traces(self):
+        self.context(f'undo "{self.TAG}"\n')
         idx = self.context.elements.undo.find(self.TAG)
         if idx >= 0:
-            self.context.elements.undo.undo(index=idx)
-            self.context.elements.undo.remove(index=idx)
-        self.context.signal("refresh_scene", "Scene")
-        self.context.signal("rebuild_tree")
-        if hasattr(self.parent_window, "done"):
-            self.parent_window.done()
+            self.context.elements.undo.remove(idx)
 
-    def accept_it(self, event):
+    def cancel_it(self):
+        print ("Cancel it")
+        self._remove_undo_traces()
+
+    def accept_it(self):
+        print ("Accept it")
+        self._remove_undo_traces()
         cmd = self.command_string()
-        with self.context.elements.undoscope(_(self.cmd_string)):
-            self.context(cmd)
+        self.context(cmd)
 
-        idx = self.context.elements.undo.find(self.TAG)
-        if idx >= 0:
-            self.context.elements.undo.remove(idx)
-        if hasattr(self.parent_window, "done"):
-            self.parent_window.done()
-
-    def pane_show(self):
-        # print (f"Active {self.cmd_string}")
-        self.active = True
-        self.updated()
-
-    def pane_hide(self):
-        self.active = False
-        idx = self.context.elements.undo.find(self.TAG)
-        if idx >= 0:
-            self.context.elements.undo.remove(idx)
-        self.undo_index = None
-
-        # print (f"Inactive {self.cmd_string}")

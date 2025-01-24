@@ -46,38 +46,63 @@ def init_commands(kernel):
     def undo_mark(data=None, message=None, **kwgs):
         self.undo.mark(message)
 
-    @self.console_argument("index", type=int, default=None)
+    def statistics(channel):
+        def show_em(branch, message):
+            nodes = len(list(branch.flat()))
+            channel(f"{message}: {nodes}")
+
+        show_em(self.op_branch, "Operations")
+        show_em(self.elem_branch, "Elements")
+        show_em(self.reg_branch, "Regmarks")
+
+    @self.console_argument("index", type=str, default=None)
     @self.console_command(
         "undo",
     )
     def undo_undo(command, channel, _, index=None, **kwgs):
-        if index is not None and (index < 0 or index > len(self.undo._undo_stack)):
-            channel(f"Invalid index: {index}")
-            index = None
+        if index is not None:
+            try:
+                idx = int(index)
+            except ValueError:
+                idx = self.undo.find(index)
+            if  (idx < 0 or idx > len(self.undo._undo_stack)):
+                channel(f"Invalid index: {index}, performing standard undo")
+                index = None
+            else:
+                index = idx
         if not self.undo.undo(index=index):
             # At bottom of stack.
             channel("No undo available.")
             return
         self.validate_selected_area()
         channel(f"Undo: {self.undo}")
+        statistics(channel)
         self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree", "all")
 
-    @self.console_argument("index", type=int, default=None)
+    @self.console_argument("index", type=str, default=None)
     @self.console_command(
         "redo",
     )
     def undo_redo(command, channel, _, data=None, index=None, **kwgs):
-        if index is not None and (index < 0 or index > len(self.undo._undo_stack)):
-            channel(f"Invalid index: {index}")
-            index = None
+        if index is not None:
+            try:
+                idx = int(index)
+            except ValueError:
+                idx = self.undo.find(index)
+            if  (idx < 0 or idx > len(self.undo._undo_stack)):
+                channel(f"Invalid index: {index}, performing standard redo")
+                index = None
+            else:
+                index = idx
         with self.static("redo"):
             redo_done = self.undo.redo(index=index)
         if not redo_done:
             channel("No redo available.")
             return
-        channel(f"Redo: {self.undo}")
         self.validate_selected_area()
+        channel(f"Redo: {self.undo}")
+        statistics(channel)
         self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree", "all")
 

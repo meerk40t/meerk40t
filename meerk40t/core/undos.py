@@ -194,7 +194,7 @@ class Undo:
             )
 
     def find(self, scope:str):
-        self.debug_me(f"Looking for {scope}")
+        # self.debug_me(f"Looking for {scope}")
         return next(
             (
                 idx
@@ -206,10 +206,13 @@ class Undo:
 
     def remove(self, index):
         if 0 <= index < len(self._undo_stack):
-            print (f"Removing index {index}")
-            self.debug_me("before")
-            self._undo_stack.pop(index)
-            self.debug_me("after")
+            # print (f"Removing index {index}")
+            # self.debug_me("before")
+            del self._undo_stack[index :]
+            self._undo_index = len(self._undo_stack) - 1
+            self.validate()
+            # self._undo_stack.pop(index)
+            # self.debug_me("after")
 
     def rename(self, index, message):
         if 0 <= index < len(self._undo_stack):

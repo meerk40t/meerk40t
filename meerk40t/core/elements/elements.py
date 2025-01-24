@@ -2671,7 +2671,8 @@ class Elemental(Service):
 
         def post_classify_function(**kwargs):
             if self.classify_new and len(data) > 0:
-                self.classify(data)
+                with self.undoscope("Classify elements"):
+                    self.classify(data)
                 self.signal("tree_changed")
 
         return post_classify_function

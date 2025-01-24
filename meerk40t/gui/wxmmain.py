@@ -45,6 +45,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_cag_union,
     icon_cag_xor,
     icon_closed_door,
+    icon_copies,
     icon_effect_wobble,
     icon_hatch,
     icon_line,
@@ -2157,6 +2158,53 @@ class MeerK40t(MWindow):
                 "size": bsize_small,
                 "identifier": "editpaste",
                 "rule_enabled": lambda cond: clipboard_filled(),
+            },
+        )
+        kernel.register(
+            "button/basicediting/Duplicate",
+            {
+                "label": _("Grid"),
+                "icon": icon_copies,
+                "tip": _("Create copies of the current selection"),
+                "help": "duplicate",
+                "action": lambda v: kernel.console("gui grid\n"),
+                "size": bsize_normal,
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+                "identifier": "copy_grid",
+                "default": "copy_grid",
+                "multi": [
+                    {
+                        "identifier": "copy_grid",
+                        "icon": icon_copies,
+                        "tip": _("Create copies of the current selection"),
+                        "help": "duplicate",
+                        "label": _("Grid"),
+                        "action": lambda v: kernel.console("gui grid\n"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                    {
+                        "identifier": "copy_circ",
+                        "icon": icon_copies,
+                        "tip": _("Create copies of the current selection on a circle"),
+                        "help": "duplicate",
+                        "label": _("Circular"),
+                        "action": lambda v: kernel.console("gui circular\n"),
+                        "action_right": lambda v: kernel.console("gui grid\n"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                    {
+                        "identifier": "copy_circ",
+                        "icon": icon_copies,
+                        "tip": _("Create copies of the current selection on a circle"),
+                        "help": "duplicate",
+                        "label": _("Circular"),
+                        "action": lambda v: kernel.console("gui radial\n"),
+                        "action_right": lambda v: kernel.console("gui grid\n"),
+                    },
+                ],
             },
         )
 
