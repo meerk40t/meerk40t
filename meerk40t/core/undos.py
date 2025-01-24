@@ -12,6 +12,9 @@ class UndoState:
     def __init__(self, state, message=None):
         self.state = state
         self.message = message
+        self.op_count = 0
+        self.elem_count = 0
+        self.reg_count = 0
         if self.message is None:
             self.message = str(id(state))
 
@@ -74,19 +77,28 @@ class Undo:
             if message is None:
                 message = self.message
             try:
+                c_ops = len(list(self.tree.get(type="branch ops").flat()))
+                c_elem = len(list(self.tree.get(type="branch elems").flat()))
+                c_reg = len(list(self.tree.get(type="branch reg").flat()))
                 self._undo_stack.insert(
                     self._undo_index,
                     UndoState(self.tree.backup_tree(), message=message),
                 )
-            except KeyError:
+                self._undo_stack[self._undo_index].op_count = c_ops
+                self._undo_stack[self._undo_index].elem_count = c_elem
+                self._undo_stack[self._undo_index].reg_count = c_reg
+            except KeyError as e:
                 # Hit a concurrent issue.
-                pass
+                print(f"Could not save state: {e}")
+                return
             del self._undo_stack[self._undo_index + 1 :]
             while len(self._undo_stack) > self.levels:
                 self._undo_stack.pop(0)
                 self._undo_index -= 1
             # self.debug_me(f"Mark done")
-            self.message = None
+            print (f"Successfully inserted {message} at {self._undo_index}")
+            self.debug_me("After mark, before pop")
+        self.message = None
         self.service.signal("undoredo")
 
     def undo(self, index = None):
@@ -119,6 +131,8 @@ class Undo:
                 # Invalid? Reset to bottom of stack
                 self._undo_index = 0
                 return False
+            print (f"Will restore: {undo.message}, ops={undo.op_count}, elem={undo.elem_count}, reg={undo.reg_count}")
+            self.debug_tree(undo.state)
             self.tree.restore_tree(undo.state)
             # try:
             #     undo.state = self.tree.backup_tree()  # Get unused copy
@@ -160,6 +174,7 @@ class Undo:
         print (f"Wanted: {index}, stack-index: {self._undo_index} - stack-size: {len(self._undo_stack)}")
         for idx, s in enumerate(self._undo_stack):
             print (f"[{idx}]{'*' if idx==self._undo_index else ' '} {'#' if idx==index else ' '} {str(s)}")
+            self.debug_tree(s.state)
         # for idx in range(len(self._undo_stack)):
         #     print (f"[{idx}]: undo-label: '{self.undo_string(idx=idx, debug=False)}', redo-label: '{self.redo_string(idx=idx, debug=False)}'")
 
@@ -227,3 +242,12 @@ class Undo:
         elif scope == "redo":
             lower_end = self._undo_index
         return ((idx, self._undo_stack[idx]) for idx in range(lower_end, upper_end))
+
+    def debug_tree(self, state):
+        def show_children(parent, header):
+            for e in parent._children:
+                print (f"{header} {e.type}")
+                show_children(e, header + "--")
+        for idx, n in enumerate(state):
+            print(f"[{idx}] {n.type}")
+            show_children(n, "--")

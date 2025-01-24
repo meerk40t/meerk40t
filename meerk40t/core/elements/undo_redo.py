@@ -70,6 +70,8 @@ def init_commands(kernel):
                 index = None
             else:
                 index = idx
+        idx = self.undo._undo_index if index is None else idx
+        channel(f"Supposed to restore: ops={self.undo._undo_stack[idx].op_count}, elem={self.undo._undo_stack[idx].elem_count}, reg={self.undo._undo_stack[idx].reg_count}")
         if not self.undo.undo(index=index):
             # At bottom of stack.
             channel("No undo available.")
