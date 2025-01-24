@@ -176,6 +176,7 @@ class Undo:
             yield f"{q}{str(i).ljust(5)}: state {str(v)}"
 
     def debug_me(self, index):
+        return
         print (f"Wanted: {index}, stack-index: {self._undo_index} - stack-size: {len(self._undo_stack)}")
         for idx, s in enumerate(self._undo_stack):
             print (f"[{idx}]{'*' if idx==self._undo_index else ' '} {'#' if idx==index else ' '} {str(s)}")
