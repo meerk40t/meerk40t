@@ -2200,7 +2200,7 @@ class MeerK40t(MWindow):
                         "icon": icon_copies,
                         "tip": _("Create copies of the current selection on a circle"),
                         "help": "duplicate",
-                        "label": _("Circular"),
+                        "label": _("Radial"),
                         "action": lambda v: kernel.console("gui radial\n"),
                         "action_right": lambda v: kernel.console("gui grid\n"),
                     },
