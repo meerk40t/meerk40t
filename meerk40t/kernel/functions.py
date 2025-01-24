@@ -224,7 +224,10 @@ def console_command(
                 k = stack[idx]
                 value = k.get("default")
                 if "type" in k and value is not None:
-                    value = k["type"](value)
+                    try:
+                        value = k["type"](value)
+                    except (TypeError, ValueError):
+                        pass
                 key = k["name"]
                 current = kwargs.get(key)
                 if current is None:
