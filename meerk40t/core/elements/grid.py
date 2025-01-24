@@ -98,7 +98,7 @@ Functions:
 """
 
 from copy import copy
-from math import cos, sin
+from math import cos, sin, tau
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
@@ -162,6 +162,10 @@ def init_commands(kernel):
         post=None,
         **kwargs,
     ):
+        """
+        The grid command wil take the selection and crete copies orienting them in a rectangualr grid like fashion.
+        You can define the amount of rows/columns and how the grid should be orientated around the original elements
+        """
         if rows is None:
             raise CommandSyntaxError
         if data is None:
@@ -221,16 +225,16 @@ def init_commands(kernel):
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
-    @self.console_argument("repeats", type=int, help=_("Number of repeats"), default=2)
-    @self.console_argument("radius", type=self.length, help=_("Radius"), default=0)
+    @self.console_argument("repeats", type=int, help=_("Number of repeats"), default=3)
+    @self.console_argument("radius", type=self.length, help=_("Radius"), default="2cm")
     @self.console_argument("startangle", type=Angle, help=_("Start-Angle"), default="0deg")
     @self.console_argument("endangle", type=Angle, help=_("End-Angle"), default="360deg")
     @self.console_option(
-        "rotate",
-        "r",
+        "unrotated",
+        "u",
         type=bool,
         action="store_true",
-        help=_("Rotate copies towards center?"),
+        help=_("Leave copies unrotated?"),
     )
     @self.console_option(
         "deltaangle",
@@ -252,18 +256,25 @@ def init_commands(kernel):
         radius=None,
         startangle=None,
         endangle=None,
-        rotate=None,
+        unrotated=None,
         deltaangle=None,
         data=None,
         post=None,
         **kwargs,
     ):
+        """
+        Radial copy takes some parameters to create (potentially rotated) copies on a circular arc around a defined center
+        Notabene: While circ_copy is creating copies around the original elements, radial is creating all the copies 
+        around a center just -1*radius to the left. So the original elements will be part of the circle.
+        """
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0 and self._emphasized_bounds is None:
             channel(_("No item selected."))
             return
-
+        if unrotated is None:
+            unrotated = False
+        rotate = not unrotated
         if repeats is None:
             raise CommandSyntaxError
         if repeats <= 1:
@@ -283,27 +294,29 @@ def init_commands(kernel):
         if bounds is None:
             return
         data_out = list(data)
-        if deltaangle is None:
-            segment_len = (endangle - startangle) / repeats
-        else:
-            segment_len = deltaangle
+
+        segment_len = (endangle - startangle) / repeats if deltaangle is None else deltaangle
+        channel(f"Angle per step: {segment_len.angle_degrees}")
 
         # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
         # the perceived angle travel is CCW (which is counter-intuitive)
         center_x = (bounds[2] + bounds[0]) / 2.0 - radius
         center_y = (bounds[3] + bounds[1]) / 2.0
 
-        # print ("repeats: %d, Radius: %.1f" % (repeats, radius))
-        # print ("Center: %.1f, %.1f" % (center_x, center_y))
-        # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
+        # print (f"repeats: {repeats}, Radius: {radius}")
+        # print (f"Center: ({center_x}, {center_y})")
+        # print (f"Startangle, Endangle, segment_len: {startangle.angle_degrees}, {endangle.angle_degrees}, {segment_len.angle_degrees}")
+        images = []
         counted = 0
         # _("Create radial")
         with self.undoscope("Create radial"):
-            currentangle = segment_len
+            currentangle = Angle(segment_len)
             for cc in range(1, repeats):
-                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                # print (f"Angle: {currentangle.angle_degrees}")
                 add_elem = list(map(copy, data))
                 for e in add_elem:
+                    if hasattr(e, "as_image"):
+                        images.append(e)
                     if rotate:
                         # x_pos = -1 * radius
                         # y_pos = 0
@@ -319,6 +332,12 @@ def init_commands(kernel):
                 data_out.extend(add_elem)
 
                 currentangle += segment_len
+                while (currentangle.angle >= tau):
+                    currentangle.angle -= tau
+                while (currentangle.angle <= -tau):
+                    currentangle.angle += tau
+            for e in images:
+                self.do_image_update(e)
 
         channel(f"{counted} copies created")
         # Newly created! Classification needed?
@@ -327,7 +346,7 @@ def init_commands(kernel):
         return "elements", data_out
 
     @self.console_argument("copies", type=int, help=_("Number of copies"), default=1)
-    @self.console_argument("radius", type=self.length, help=_("Radius"))
+    @self.console_argument("radius", type=self.length, help=_("Radius"), default="2cm")
     @self.console_argument("startangle", type=Angle, help=_("Start-Angle"), default="0deg")
     @self.console_argument("endangle", type=Angle, help=_("End-Angle"), default="360deg")
     @self.console_option(
@@ -364,6 +383,11 @@ def init_commands(kernel):
         post=None,
         **kwargs,
     ):
+        """
+        Circular copy takes some parameters to create (potentially rotated) copies on a circular arc around the orginal element(s)
+        Notabene: While circ_copy is creating copies around the original elements, radial is creating all the copies 
+        around a center just -1*radius to the left. So the original elements will be part of the circle.
+        """
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0 and self._emphasized_bounds is None:
@@ -397,7 +421,7 @@ def init_commands(kernel):
             segment_len = deltaangle
         # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
         # the perceived angle travel is CCW (which is counter-intuitive)
-        currentangle = startangle
+        currentangle = Angle(startangle)
         # bounds = self._emphasized_bounds
         center_x = (bounds[2] + bounds[0]) / 2.0
         center_y = (bounds[3] + bounds[1]) / 2.0
@@ -409,6 +433,8 @@ def init_commands(kernel):
                 # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
                 add_elem = list(map(copy, data))
                 for e in add_elem:
+                    if hasattr(e, "as_image"):
+                        images.append(e)
                     if rotate:
                         x_pos = radius
                         y_pos = 0
@@ -426,6 +452,10 @@ def init_commands(kernel):
                 counted += 1
                 data_out.extend(add_elem)
                 currentangle += segment_len
+                while (currentangle.angle >= tau):
+                    currentangle.angle -= tau
+                while (currentangle.angle <= -tau):
+                    currentangle.angle += tau
             for e in images:
                 self.do_image_update(e)
         channel(f"{counted} copies created")
