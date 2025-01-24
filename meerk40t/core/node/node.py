@@ -456,9 +456,52 @@ class Node:
         return self._points
 
     def restore_tree(self, tree_data):
+        # Takes a backup and reapplies it again to the tree
+        # Caveat: we can't just simply take the backup and load it into the tree, 
+        # although it is already a perfectly independent copy. 
+        #           self._children.extend(tree_data)
+        # If loaded directly as above then this stored state will be used 
+        # as the basis for further modifications consequently changing the 
+        # original data (as it is still the original structure) used in the undostack.
+        # tree_data contains the copied branch nodes
+        
         self._children.clear()
-        self._children.extend(tree_data)
+        links = {id(self): (self, None)}
+        attrib_list = ("_selected", "_emphasized", "_emphasized_time", "_highlighted", "_expanded")
+        for c in tree_data:
+            c._build_copy_nodes(links=links)
+            node_copy = copy(c)
+            for att in attrib_list:
+                if getattr(node_copy, att) != getattr(c, att):
+                    # print (f"Strange {att} not identical, fixing")
+                    setattr(node_copy, att, getattr(c, att))
+            node_copy._root = self._root
+            links[id(c)] = (c, node_copy)
+
+        # Rebuild structure.
+        self._validate_links(links)
+        branches = [links[id(c)][1] for c in tree_data]
+        self._children.extend(branches)
         self._validate_tree()
+
+    def _validate_links(self, links):
+        for uid, n in links.items():
+            node, node_copy = n
+            if node._parent is None:
+                # Root.
+                continue
+            # Find copy-parent of copy-node and link.
+            original_parent, copied_parent = links[id(node._parent)]
+            if copied_parent is None:
+                # copy_parent should have been copied root, but roots don't copy
+                node_copy._parent = self._root
+                continue
+            node_copy._parent = copied_parent
+            copied_parent._children.append(node_copy)
+            if node.type == "reference":
+                original_referenced, copied_referenced = links[id(node.node)]
+                node_copy.node = copied_referenced
+                copied_referenced._references.append(node_copy)
 
     def _validate_tree(self):
         for c in self._children:
@@ -482,12 +525,14 @@ class Node:
         """
         if links is None:
             links = {id(self): (self, None)}
+        attrib_list = ("_selected", "_emphasized", "_emphasized_time", "_highlighted", "_expanded")
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
-            if node_copy.expanded != c.expanded:
-                # print ("Strange not identical, fixing")
-                node_copy.expanded = c.expanded
+            for att in attrib_list:
+                if getattr(node_copy, att) != getattr(c, att):
+                    # print (f"Strange {att} not identical, fixing")
+                    setattr(node_copy, att, getattr(c, att))
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links
@@ -503,23 +548,7 @@ class Node:
         links = self._build_copy_nodes()
 
         # Rebuild structure.
-        for uid, n in links.items():
-            node, node_copy = n
-            if node._parent is None:
-                # Root.
-                continue
-            # Find copy-parent of copy-node and link.
-            original_parent, copied_parent = links[id(node._parent)]
-            if copied_parent is None:
-                # copy_parent should have been copied root, but roots don't copy
-                node_copy._parent = self._root
-                continue
-            node_copy._parent = copied_parent
-            copied_parent._children.append(node_copy)
-            if node.type == "reference":
-                original_referenced, copied_referenced = links[id(node.node)]
-                node_copy.node = copied_referenced
-                copied_referenced._references.append(node_copy)
+        self._validate_links(links)
         branches = [links[id(c)][1] for c in self._children]
         return branches
 

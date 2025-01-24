@@ -543,6 +543,8 @@ class TextCtrl(wx.TextCtrl):
         limited=False,
         nonzero=False,
     ):
+        if value is None:
+            value = ""
         super().__init__(
             parent,
             id=id,

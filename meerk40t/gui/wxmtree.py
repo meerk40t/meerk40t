@@ -1247,15 +1247,18 @@ class ShadowTree:
             if target == "regmarks":
                 node = self.elements.reg_branch
                 item = node._item
-                self.wxtree.DeleteChildren(item)
+                if item is not None:
+                    self.wxtree.DeleteChildren(item)
             elif target == "operations":
                 node = self.elements.op_branch
                 item = node._item
-                self.wxtree.DeleteChildren(item)
+                if item is not None:
+                    self.wxtree.DeleteChildren(item)
             elif target == "elements":
                 node = self.elements.elem_branch
                 item = node._item
-                self.wxtree.DeleteChildren(item)
+                if item is not None:
+                    self.wxtree.DeleteChildren(item)
             else:
                 self.wxtree.DeleteAllItems()
         

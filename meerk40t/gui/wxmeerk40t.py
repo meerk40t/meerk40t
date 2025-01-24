@@ -89,6 +89,7 @@ from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
+from .functionwrapper import ConsoleCommandUI
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -809,6 +810,28 @@ class wxMeerK40t(wx.App, Module):
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
+        @kernel.console_argument("func", type=str, help=_("Function to call interactively"))
+        @kernel.console_command("gui", help=_("Provides a GUI wrapper around a console command"))
+        def gui_func(command, channel, _, func=None, **kwargs):
+            if func is None:
+                channel(_("You need to provide a function name"))
+                return
+            if func in ("gui", "help", "?", "??", "quit", "shutdown", "exit"):
+                channel (_("It does not make sense, to run '{command}' in a GUI").format(command=func))
+                return
+            context = kernel.root
+            try:
+                parent = context.gui
+            except AttributeError:
+                parent = None
+            dialog: wx.Dialog = ConsoleCommandUI(parent, wx.ID_ANY, title=_("Command {command}").format(command=func), context=context, command_string=func)
+            res = dialog.ShowModal()
+            if res == wx.ID_OK:
+                dialog.accept_it()
+            else:
+                dialog.cancel_it()
+            dialog.Destroy()
+
     def module_open(self, *args, **kwargs):
         context = self.context
         kernel = context.kernel
@@ -931,12 +954,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        if (
+        if not (
             hasattr(kernel.args, "lock_device_config")
             and kernel.args.lock_device_config
         ):
-            pass
-        else:
             kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
