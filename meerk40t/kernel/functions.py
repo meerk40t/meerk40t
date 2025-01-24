@@ -241,7 +241,10 @@ def console_command(
                 if "default" in pk and key not in kwargs:
                     value = pk.get("default")
                     if "type" in pk and value is not None:
-                        value = pk["type"](value)
+                        try:
+                            value = pk["type"](value)
+                        except (TypeError, ValueError):
+                            pass
                     kwargs[key] = value
 
             # Any parallel_cast opts should be cast in parallel
