@@ -33,7 +33,7 @@ class ConsoleCommandUI(wx.Dialog):
         self.units = units
         self._establish_base(command_string)
         self.TAG:str = f"FUNCTION_{self.cmd_string}"
-        self.context.elements.undo.mark(self.TAG)
+        self.context.elements.undo.mark(message=self.TAG, hold=True)
         self._build_panel()
         self.startup = False
         self.updated("Init")
@@ -183,7 +183,6 @@ class ConsoleCommandUI(wx.Dialog):
                 var_string = f"{var_string} -{entry['short']} {var_repr}"
             else:
                 var_string = f"{var_string} {var_repr}"
-        print (f"{self.cmd_string}{var_string}")
         return f"{self.cmd_string}{var_string}\n"
 
 
@@ -213,8 +212,8 @@ class ConsoleCommandUI(wx.Dialog):
     def updated(self, source=None):
         if self.startup: 
             return
-        print (f"Updated from {'unknown' if source is None else source}")
-        self.context(f'undo "{self.TAG}"\n')
+        # print (f"Updated from {'unknown' if source is None else source}")
+        self.context(f'.undo "{self.TAG}"\n')
 
         cmd = self.command_string()
         self.context(cmd)
@@ -222,17 +221,15 @@ class ConsoleCommandUI(wx.Dialog):
         self.context.signal("rebuild_tree")
 
     def _remove_undo_traces(self):
-        self.context(f'undo "{self.TAG}"\n')
+        self.context(f'.undo "{self.TAG}"\n')
         idx = self.context.elements.undo.find(self.TAG)
         if idx >= 0:
             self.context.elements.undo.remove(idx)
 
     def cancel_it(self):
-        print ("Cancel it")
         self._remove_undo_traces()
 
     def accept_it(self):
-        print ("Accept it")
         self._remove_undo_traces()
         cmd = self.command_string()
         self.context(cmd)

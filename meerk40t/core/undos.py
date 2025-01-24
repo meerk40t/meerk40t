@@ -18,9 +18,10 @@ import threading
 
 
 class UndoState:
-    def __init__(self, state, message=None):
+    def __init__(self, state, message=None, hold=False):
         self.state = state
         self.message = message
+        self.hold = hold
         if self.message is None:
             self.message = str(id(state))
 
@@ -61,7 +62,7 @@ class Undo:
     def __str__(self):
         return f"Undo(#{self._undo_index} in list of {len(self._undo_stack)} states)"
 
-    def mark(self, message=None):
+    def mark(self, message=None, hold=False):
         """
         Marks an undo state require a backup the tree information.
 
@@ -75,6 +76,9 @@ class Undo:
             old_idx = self._undo_index
             if self._undo_index < 0:
                 self._undo_index = 0
+            elif self._undo_stack[self._undo_index].hold:
+                # Just add another one on top of it
+                self._undo_index += 1
             elif self._undo_stack[self._undo_index].message == self.LAST_STATE:
                 # Will be overwritten
                 pass
@@ -90,19 +94,17 @@ class Undo:
             try:
                 self._undo_stack.insert(
                     self._undo_index,
-                    UndoState(self.tree.backup_tree(), message=message),
+                    UndoState(self.tree.backup_tree(), message=message, hold=hold),
                 )
             except KeyError as e:
                 # Hit a concurrent issue.
-                print(f"Could not save state: {e}")
+                print(f"Could not save undo state: {e}")
                 return
             del self._undo_stack[self._undo_index + 1 :]
             while len(self._undo_stack) > self.levels:
                 self._undo_stack.pop(0)
                 self._undo_index -= 1
-            # self.debug_me(f"Mark done")
-            print (f"Successfully inserted {message} at {self._undo_index} (old index was {old_idx})")
-            self.debug_me("After mark")
+            self.debug_me(f"Successfully inserted {message} at {self._undo_index} (old index was {old_idx})")
         self.message = None
         self.service.signal("undoredo")
 
@@ -230,7 +232,7 @@ class Undo:
             self._undo_index = len(self._undo_stack) - 1
             self.validate()
             # self._undo_stack.pop(index)
-            # self.debug_me("after")
+            # self.debug_me(f"after removing {index}")
 
     def rename(self, index, message):
         if 0 <= index < len(self._undo_stack):
