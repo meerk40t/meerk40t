@@ -20,12 +20,13 @@ _ = wx.GetTranslation
 
 class ConsoleCommandUI(wx.Dialog):
     def __init__(self, parent, id, *args, context=None, command_string: str, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.DEFAULT_DIALOG_STYLE
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, id, *args, **kwds)
         self.startup = True
         self.parent_window = parent
         self.context:Any = context
         self.cmd_string:str = ""
+        self.help_string:str = ""
         self.var_set:list = []
         units = self.context.units_name
         if units in ("inch", "inches"):
@@ -68,6 +69,13 @@ class ConsoleCommandUI(wx.Dialog):
             return checker, small, cval
 
         main_sizer:wx.BoxSizer = wx.BoxSizer(wx.VERTICAL)
+
+        if self.help_string:
+            help_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Help"))
+            label = wxStaticText(self, wx.ID_ANY, label=self.help_string)
+            help_sizer.Add(label, 1, wx.EXPAND, 0)
+            main_sizer.Add(help_sizer, 0, wx.EXPAND, 0)
+
         has_params:bool = False
         has_options:bool = False
         p_sizer = StaticBoxSizer(
@@ -95,7 +103,7 @@ class ConsoleCommandUI(wx.Dialog):
                     value=cval,
                     check=checker,
                     limited=small,
-                    nonzero=True,
+                    nonzero=not e["optional"],
                 )
                 control.Bind(wx.EVT_TEXT, self.on_text_boxes(e))
             control.SetToolTip(e["help"])
@@ -115,12 +123,15 @@ class ConsoleCommandUI(wx.Dialog):
         main_sizer.Add(button_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
+        self.Fit()
+        
         # print(self.cmd_string, self.var_set)
 
     def _establish_base(self, command_string:str):
         # Look inside the register commands...
         self.var_set.clear()
         self.cmd_string = ""
+        self.help_string = ""
         for func, command_name, sname in self.context.kernel.find(
             "command", ".*", command_string
         ):
@@ -131,6 +142,7 @@ class ConsoleCommandUI(wx.Dialog):
                 command_item if input_type == "None" else f"{input_type} {command_item}"
             )
             func = self.context.kernel.lookup(command_name)
+            self.help_string = f"{func.help}\n{func.long_help}"
             for a in func.arguments:
                 var_info:dict = {
                     "name": a.get("name", ""),
@@ -168,7 +180,7 @@ class ConsoleCommandUI(wx.Dialog):
                 if not entry["value"]:
                     continue
             elif entry["type"] == Angle:
-                var_repr = Angle(entry["value"]).degrees
+                var_repr = Angle(entry["value"]).angle_degrees
             else:
                 if isinstance(entry["value"], (tuple, list)):
                     var_repr = ""
