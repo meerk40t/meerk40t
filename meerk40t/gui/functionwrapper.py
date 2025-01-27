@@ -138,9 +138,11 @@ class ConsoleCommandUI(wx.Dialog):
             parts = command_name.split("/")
             input_type = parts[1]
             command_item = parts[2]
-            self.cmd_string = (
-                command_item if input_type == "None" else f"{input_type} {command_item}"
-            )
+            # This this does not seem to work properly, so "rect" works but "elements rect" doesn't 
+            # self.cmd_string = (
+            #     command_item if input_type == "None" else f"{input_type} {command_item}"
+            # )
+            self.cmd_string = command_item
             func = self.context.kernel.lookup(command_name)
             self.help_string = f"{func.help}\n{func.long_help}"
             for a in func.arguments:
@@ -171,31 +173,30 @@ class ConsoleCommandUI(wx.Dialog):
 
     def command_string(self) -> str:
         var_string: str = ""
+        missing_required = False
         for entry in self.var_set:
-            if entry["value"] is None:
-                continue
+            if not entry["value"]:
+                if entry["optional"]:
+                    continue
+                missing_required = True
+                break
             if entry["type"] == Length:
                 var_repr = Length(entry["value"]).length_mm
             elif entry["type"] == bool:
-                if not entry["value"]:
-                    continue
+                pass
             elif entry["type"] == Angle:
                 var_repr = Angle(entry["value"]).angle_degrees
+            elif isinstance(entry["value"], (tuple, list)):
+                var_repr = ""
+                for idx, num in enumerate(entry["value"]):
+                    var_repr = f"{var_repr},{num}" if idx > 0 else f"{num}"
             else:
-                if isinstance(entry["value"], (tuple, list)):
-                    var_repr = ""
-                    for idx, num in enumerate(entry["value"]):
-                        if idx > 0:
-                            var_repr = f"{var_repr},{num}"
-                        else:
-                            var_repr = f"{num}"
-                else:
-                    var_repr = str(entry["type"](entry["value"]))
+                var_repr = str(entry["type"](entry["value"]))
             if entry["optional"]:
                 var_string = f"{var_string} -{entry['short']} {var_repr}"
             else:
                 var_string = f"{var_string} {var_repr}"
-        return f"{self.cmd_string}{var_string}\n"
+        return "" if missing_required else f"{self.cmd_string}{var_string}\n"
 
 
     def on_check_boxes(self, var_dict):
@@ -226,9 +227,11 @@ class ConsoleCommandUI(wx.Dialog):
         if self.startup: 
             return
         # print (f"Updated from {'unknown' if source is None else source}")
-        self.context(f'.undo "{self.TAG}"\n')
-
         cmd = self.command_string()
+        if not cmd:
+            return
+        
+        self.context(f'.undo "{self.TAG}"\n')
         self.context(cmd)
         self.context.signal("refresh_scene", "Scene")
         self.context.signal("rebuild_tree")
