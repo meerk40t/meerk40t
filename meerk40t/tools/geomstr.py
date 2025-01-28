@@ -1605,7 +1605,11 @@ class Geomstr:
     def svg(cls, path_d):
         obj = cls()
         if isinstance(path_d, str):
-            path = Path(path_d)
+            try:
+                path = Path(path_d)
+            except ValueError:
+                # Invalid or empty path
+                return obj
         else:
             path = path_d
         last_point = None

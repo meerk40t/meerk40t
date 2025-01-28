@@ -184,8 +184,9 @@ def init_commands(kernel):
             self.tolerance = 0.5 * factor2 * 0.5 * factor2
             geom_list = []
             g = Geomstr.svg(path)
-            geom_list.append(g)
-            self.add_geometries(geom_list)
+            if g.index:
+                geom_list.append(g)
+                self.add_geometries(geom_list)
 
         def process_data(self, offset, jointype="round", separate=False):
             self.clipr_offset.clear()
