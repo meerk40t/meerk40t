@@ -124,6 +124,14 @@ class FormatPainter:
         self.context.signal(self.identifier, toggle)
 
     def on_emphasis(self, *args):
+
+        def get_effect_parent(node):
+            while node.parent is not None:
+                if node.parent.type.startswith("effect "):
+                    return node.parent
+                node = node.parent
+            return None
+
         if self.state == INACTIVE:
             return
         if self.state == WAITING:
@@ -147,6 +155,7 @@ class FormatPainter:
             data = list(self.context.elements.elems(emphasized=True))
             if not data:
                 return
+            effect_parent = get_effect_parent(self.template)
             with self.context.elements.undoscope("Paste format"):
                 for node in data:
                     if node is self.template:
@@ -172,6 +181,17 @@ class FormatPainter:
                                     flag_pathupdate = True
                             except ValueError:
                                 continue
+                    this_effect_parent = get_effect_parent(node)
+                    # print (f"template: {'no effect' if effect_parent is None else 'effect'}, target: {'no effect' if this_effect_parent is None else 'effect'}")
+                    if this_effect_parent is not effect_parent:
+                        if effect_parent is None:
+                            # print (f"Will reparent to own effect parent: {this_effect_parent.parent.type}")
+                            self.context.elements.drag_and_drop([node], this_effect_parent.parent)
+                        else:
+                            # print (f"Will reparent to template effect: {effect_parent.type}")
+                            self.context.elements.drag_and_drop([node], effect_parent)
+                        flag_changed = True
+
                     if flag_changed:
                         nodes_changed.append(node)
                         if node.type == "elem image":
