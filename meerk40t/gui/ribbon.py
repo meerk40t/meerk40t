@@ -703,7 +703,10 @@ class RibbonPanel:
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
             item.Enable(v.enabled)
-            item.SetHelp(v.tip)
+            if callable(v.tip):
+                item.SetHelp(v.tip())
+            else:
+                item.SetHelp(v.tip)
             if v.icon:
                 item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2, buffer=2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
