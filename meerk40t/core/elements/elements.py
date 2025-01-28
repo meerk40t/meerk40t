@@ -751,7 +751,10 @@ class Elemental(Service):
     def undoscope(self, message:str, static:bool = True):
         busy = self.kernel.busyinfo
         busy.start(msg=self.kernel.translation(message))
-        self.undo.mark(message)
+        undo_active = self.do_undo
+        # No need to mark the state if we are already in a scope...
+        if undo_active:
+            self.undo.mark(message)
         source = message.replace(" ", "_")
         try:
             if static:
@@ -761,7 +764,8 @@ class Elemental(Service):
         finally:
             if static:
                 self.resume_updates(source)
-            self.do_undo = True
+            if undo_active:
+                self.do_undo = True
             busy.end()
 
     def stop_visual_updates(self):
