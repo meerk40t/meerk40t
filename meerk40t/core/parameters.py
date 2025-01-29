@@ -701,7 +701,7 @@ class Parameters:
 
     @property
     def coolant(self):
-        return self.settings.get("coolant", True)
+        return self.settings.get("coolant", 0)
 
     @coolant.setter
     def coolant(self, value):
