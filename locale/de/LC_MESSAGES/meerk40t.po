@@ -20061,3 +20061,51 @@ msgstr "Test"
 #: meerk40t/balormk/gui/balorconfig.py:72
 msgid "Bits"
 msgstr "Bits"
+
+#: meerk40t/core/elements/grid.py:143
+msgid "Distance not absolute but as relative gap"
+msgstr "Abstand als relative Lücke angeben"
+
+#: meerk40t/core/elements/grid.py:237
+msgid "Leave copies unrotated?"
+msgstr "Sollen Kopien unrotiert bleiben?"
+
+#: meerk40t/gui/laserpanel.py:91
+msgid "Plan"
+msgstr "Plan"
+
+#: meerk40t/gui/wxmeerk40t.py:813
+msgid "Function to call interactively"
+msgstr "Funktion, die interaktiv ausgeführt werden soll"
+
+#: meerk40t/gui/wxmeerk40t.py:814
+msgid "Provides a GUI wrapper around a console command"
+msgstr "Interaktive Ausführung eines Konsolen-Kommandos"
+
+#: meerk40t/gui/wxmeerk40t.py:817
+msgid "You need to provide a function name"
+msgstr "Es muss ein Funktionsname angegeben werden"
+
+#: meerk40t/gui/wxmeerk40t.py:820
+msgid "It does not make sense, to run '{command}' in a GUI"
+msgstr "Es ergibt keinen Sinn, '{command}' interaktiv auszuführen"
+
+#: meerk40t/gui/wxmeerk40t.py:827
+msgid "Command {command}"
+msgstr "Kommando {command}"
+
+#: meerk40t/gui/wxmmain.py:2168 meerk40t/gui/wxmmain.py:2182
+msgid "Create copies of the current selection"
+msgstr "Erzeugt Kopien der aktuellen Auswahl"
+
+#: meerk40t/gui/wxmmain.py:2191 meerk40t/gui/wxmmain.py:2201
+msgid "Create copies of the current selection on a circle"
+msgstr "Erzeugt Kopien der akuellen Auswahl auf einem Kreis"
+
+#: meerk40t/gui/wxmmain.py:2203
+msgid "Radial"
+msgstr "Radialkopie"
+
+#: meerk40t/gui/wxmribbon.py:110
+msgid "Icon-bar with object modification tools"
+msgstr "Icon-Leiste mit Objekt Modifikations-Tools"
