@@ -210,6 +210,7 @@ class CutPlan:
             if idx > 0:
                 self.context.elements.mywordlist.move_all_indices(1)
 
+            current_cool = 0
             for original_op in original_ops:
                 # First, do we have a valid coolant aka airassist command?
                 if hasattr(original_op, "coolant"):
@@ -217,12 +218,11 @@ class CutPlan:
                     if cool is None:
                         cool = 0
                     if cool in (1, 2):  # Explicit on / off
-                        if cool == 1:
-                            cmd = "coolant_on"
-                        else:
-                            cmd = "coolant_off"
-                        coolop = ConsoleOperation(command=cmd)
-                        self.plan.append(coolop)
+                        if cool != current_cool:
+                            cmd = "coolant_on" if cool == 1 else "coolant_off"
+                            coolop = ConsoleOperation(command=cmd)
+                            self.plan.append(coolop)
+                        current_cool = cool
                 try:
                     op = original_op.copy_with_reified_tree()
                 except AttributeError:
@@ -444,9 +444,11 @@ class CutPlan:
         """
         if not isinstance(last_item, CutCode):
             # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
+            self.channel (f"last_item is no cutcode ({type(last_item).__name__}), can't merge")
             return False
         if not isinstance(current_item, CutObject):
             # The object to be merged is not a cutObject and cannot be added to Cutcode.
+            self.channel (f"current_item is no cutcode ({type(current_item).__name__}), can't merge")
             return False
         last_op = last_item.original_op
         if last_op is None:
@@ -455,6 +457,7 @@ class CutPlan:
         if current_op is None:
             current_op = ""
         if last_op.startswith("util") or current_op.startswith("util"):
+            self.channel (f"{last_op} / {current_op} - at least one is a util operation, can't merge")
             return False
 
         if (
@@ -462,16 +465,20 @@ class CutPlan:
             and last_item.pass_index != current_item.pass_index
         ):
             # Do not merge if opt_merge_passes is off, and pass_index do not match
+            self.channel (f"{last_item.pass_index} / {current_item.pass_index} - pass indices are different, can't merge")
             return False
+
         if (
             not context.opt_merge_ops
             and last_item.settings is not current_item.settings
         ):
             # Do not merge if opt_merge_ops is off, and the original ops do not match
             # Same settings object implies same original operation
+            self.channel (f"Settings do differ from {last_op} to {current_op} and merge ops= {context.opt_merge_ops}")
             return False
         if not context.opt_inner_first and last_item.original_op == "op cut":
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
+            self.channel (f"Inner first {context.opt_inner_first}, last op= {last_item.original_op} - Last op was a cut, can't merge")
             return False
         return True  # No reason these should not be merged.
 
@@ -1437,7 +1444,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             if outer is None:
                 continue
             channel(
-                f"Outer {type(outer).__name__} contains: {len(outer.contains)} cutcode elements"
+                f"Outer {type(outer).__name__} contains: {'None' if outer.contains is None else str(len(outer.contains))} cutcode elements"
             )
 
     return context
