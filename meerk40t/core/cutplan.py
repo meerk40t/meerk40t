@@ -223,6 +223,13 @@ class CutPlan:
                             coolop = ConsoleOperation(command=cmd)
                             self.plan.append(coolop)
                         current_cool = cool
+                # Is there already a coolant operation?
+                if original_op.type == "util console":
+                    if original_op.command == "coolant_on":
+                        current_cool = 1
+                    elif original_op.command == "coolant_off":
+                        current_cool = 2
+
                 try:
                     op = original_op.copy_with_reified_tree()
                 except AttributeError:
@@ -233,10 +240,8 @@ class CutPlan:
                 if op.type.startswith("place "):
                     continue
                 self.plan.append(op)
-                if op.type.startswith("op") or op.type.startswith("util"):
-                    # Call preprocess on any op or util ops in our list.
-                    if hasattr(op, "preprocess"):
-                        op.preprocess(self.context, placement, self)
+                if (op.type.startswith("op") or op.type.startswith("util")) and hasattr(op, "preprocess"):
+                    op.preprocess(self.context, placement, self)
                 if op.type.startswith("op"):
                     for node in op.flat():
                         if node is op:
