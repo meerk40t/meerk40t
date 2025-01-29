@@ -213,6 +213,8 @@ class CutPlan:
             current_cool = 0
             for original_op in original_ops:
                 # First, do we have a valid coolant aka airassist command?
+                # And is this relevant, as in does the device support it?
+                coolid = getattr(self.context.device, "device_coolant", "")
                 if hasattr(original_op, "coolant"):
                     cool = original_op.coolant
                     if cool is None:
@@ -220,8 +222,11 @@ class CutPlan:
                     if cool in (1, 2):  # Explicit on / off
                         if cool != current_cool:
                             cmd = "coolant_on" if cool == 1 else "coolant_off"
-                            coolop = ConsoleOperation(command=cmd)
-                            self.plan.append(coolop)
+                            if coolid:
+                                coolop = ConsoleOperation(command=cmd)
+                                self.plan.append(coolop)
+                            else:
+                                self.channel("The current device does not support a coolant method")
                         current_cool = cool
                 # Is there already a coolant operation?
                 if original_op.type == "util console":
