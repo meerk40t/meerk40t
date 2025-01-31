@@ -172,17 +172,16 @@ class CutPlan:
         for place in self.plan:
             if not hasattr(place, "type"):
                 continue
-            if place.type.startswith("place "):
-                if hasattr(place, "output") and place.output:
-                    loops = 1
-                    if hasattr(place, "loops") and place.loops > 1:
-                        loops = place.loops
-                    for idx in range(loops):
-                        placements.extend(
-                            place.placements(
-                                self.context, self.outline, scene_to_device_matrix, self
-                            )
+            if place.type.startswith("place ") and (hasattr(place, "output") and place.output):
+                loops = 1
+                if hasattr(place, "loops") and place.loops > 1:
+                    loops = place.loops
+                for idx in range(loops):
+                    placements.extend(
+                        place.placements(
+                            self.context, self.outline, scene_to_device_matrix, self
                         )
+                    )
         if not placements:
             # Absolute coordinates.
             placements.append(scene_to_device_matrix)
@@ -229,7 +228,7 @@ class CutPlan:
                                 self.channel("The current device does not support a coolant method")
                         current_cool = cool
                 # Is there already a coolant operation?
-                if original_op.type == "util console":
+                if getattr(original_op, "type", "") == "util console":
                     if original_op.command == "coolant_on":
                         current_cool = 1
                     elif original_op.command == "coolant_off":
@@ -242,12 +241,13 @@ class CutPlan:
                 if not hasattr(op, "type") or op.type is None:
                     self.plan.append(op)
                     continue
-                if op.type.startswith("place "):
+                op_type = getattr(op, "type", "")
+                if op_type.startswith("place "):
                     continue
                 self.plan.append(op)
-                if (op.type.startswith("op") or op.type.startswith("util")) and hasattr(op, "preprocess"):
+                if (op_type.startswith("op") or op_type.startswith("util")) and hasattr(op, "preprocess"):
                     op.preprocess(self.context, placement, self)
-                if op.type.startswith("op"):
+                if op_type.startswith("op"):
                     for node in op.flat():
                         if node is op:
                             continue
@@ -406,9 +406,10 @@ class CutPlan:
             )
             if len(cutcode) == 0:
                 break
-            cutcode.constrained = op.type == "op cut" and context.opt_inner_first
+            op_type = getattr(op, "type", "")
+            cutcode.constrained = op_type == "op cut" and context.opt_inner_first
             cutcode.pass_index = pass_idx if force_idx is None else force_idx
-            cutcode.original_op = op.type
+            cutcode.original_op = op_type
             yield cutcode
 
     def _to_merged_plan(self, blob_plan):
