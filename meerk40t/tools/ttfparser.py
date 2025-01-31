@@ -319,7 +319,7 @@ class TrueTypeFont:
             except Exception as e:
                 raise TTFParsingError(
                     f"invalid format: {e}"
-                )
+                ) from e
 
 
     def parse_head(self):
