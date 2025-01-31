@@ -154,7 +154,8 @@ class TrueTypeFont:
                     if font_family and font_subfamily and font_name:
                         break
                 return font_family, font_subfamily, font_name
-        except (OSError, FileNotFoundError, PermissionError):
+        except Exception as e:
+            # Anything fishy
             return None
 
     def render(
@@ -291,29 +292,35 @@ class TrueTypeFont:
 
     def parse_ttf(self, font_path, require_checksum=True):
         with open(font_path, "rb") as f:
-            header = f.read(12)
-            (
-                sfnt_version,
-                num_tables,
-                search_range,
-                entry_selector,
-                range_shift,
-            ) = struct.unpack(">LHHHH", header)
-            for i in range(num_tables):
-                tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
-                p = f.tell()
-                f.seek(offset)
-                data = f.read(length)
-                f.seek(p)
-                if require_checksum:
-                    for b, byte in enumerate(data):
-                        checksum -= byte << 24 - (8 * (b % 4))
-                    if tag == b"head":
-                        if checksum % (1 << 32) != 0:
-                            raise TTFParsingError(
-                                f"invalid checksum: {checksum % (1 << 32)} != 0"
-                            )
-                self._raw_tables[tag] = data
+            try:
+                header = f.read(12)
+                (
+                    sfnt_version,
+                    num_tables,
+                    search_range,
+                    entry_selector,
+                    range_shift,
+                ) = struct.unpack(">LHHHH", header)
+                for i in range(num_tables):
+                    tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
+                    p = f.tell()
+                    f.seek(offset)
+                    data = f.read(length)
+                    f.seek(p)
+                    if require_checksum:
+                        for b, byte in enumerate(data):
+                            checksum -= byte << 24 - (8 * (b % 4))
+                        if tag == b"head":
+                            if checksum % (1 << 32) != 0:
+                                raise TTFParsingError(
+                                    f"invalid checksum: {checksum % (1 << 32)} != 0"
+                                )
+                    self._raw_tables[tag] = data
+            except Exception as e:
+                raise TTFParsingError(
+                    f"invalid format: {e}"
+                )
+
 
     def parse_head(self):
         data = self._raw_tables[b"head"]
