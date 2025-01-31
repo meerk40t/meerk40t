@@ -525,7 +525,7 @@ class RasterPlotter:
                 has_duplicates = 0
                 tstamp = int(perf_counter() * 100)
                 with open(f"{defaultdir}plot_{tstamp}.txt", mode="w") as f:
-                    f.write(f"0.9.6\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
+                    f.write(f"0.9.7\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
                     f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
                     f.write(f"Image dimensions: {self.width}x{self.height}\n")
                     f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
