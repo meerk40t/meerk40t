@@ -42,13 +42,14 @@ class UndoState:
         return s
     
     def __str__(self):
-        return self.message # + " " + self.tree_representation
+        return self.message # + ". " + self.tree_representation
 
 
 class Undo:
     LAST_STATE = "Last status"
 
     def __init__(self, service, tree, active=True, levels=20):
+        self.debug_active = False
         self.service = service
         self.tree = tree
         self.active = active
@@ -73,10 +74,11 @@ class Undo:
         if not self.active:
             return
         with self._lock:
+            # print (f"** Mark {message} requested, current {self._undo_index} / {len(self._undo_stack)} **")
             old_idx = self._undo_index
             if self._undo_index < 0:
                 self._undo_index = 0
-            elif self._undo_stack[self._undo_index].hold:
+            elif self._undo_index < len(self._undo_stack) and self._undo_stack[self._undo_index].hold:
                 # Just add another one on top of it
                 self._undo_index += 1
             elif self._undo_stack[self._undo_index].message == self.LAST_STATE:
@@ -99,7 +101,9 @@ class Undo:
             except KeyError as e:
                 # Hit a concurrent issue.
                 print(f"Could not save undo state: {e}")
+                self._undo_index = old_idx
                 return
+            # print (f"Deleting #{self._undo_index + 1} and above...")
             del self._undo_stack[self._undo_index + 1 :]
             while len(self._undo_stack) > self.levels:
                 self._undo_stack.pop(0)
@@ -126,10 +130,18 @@ class Undo:
                 return False
             self.debug_me(f"Undo requested: {to_be_restored}")
             if to_be_restored == len(self._undo_stack) - 1 and self._undo_stack[to_be_restored].message != self.LAST_STATE:
-                # We store the current state
+                # We store the current state, as none was stored so far
                 self._undo_stack.append(
                     UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
                 )
+                # print ("**** Did add a last state to go back to if needed ****")
+            elif to_be_restored == len(self._undo_stack) - 2 and self._undo_stack[to_be_restored + 1].message == self.LAST_STATE:
+                # We are at the last actively monitored index but we already have a current state -> replace it
+                self._undo_stack.pop(-1)
+                self._undo_stack.append(
+                    UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
+                )
+                # print ("**** Did add a last state to go back to if needed, and overwrote the last state ****")
             # print (f"Index: {self._undo_index} / {len(self._undo_stack)} - To be restored: {to_be_restored}, param: {index}")
             self._undo_index = to_be_restored
             try:
@@ -153,7 +165,8 @@ class Undo:
         """
         with self._lock:
             to_be_restored = index + 1 if index is not None else self._undo_index + 1
-            # self.debug_me(f"Redo requested: {self._undo_index + 1}")
+            to_be_restored = min(len(self._undo_stack) - 1, to_be_restored)
+            self.debug_me(f"Redo requested: {index} -> will restore #{to_be_restored}")
             self._undo_index = to_be_restored
             try:
                 redo = self._undo_stack[to_be_restored]
@@ -167,19 +180,24 @@ class Undo:
             # except KeyError:
             #     pass
             self.service.signal("undoredo")
-            # self.debug_me("Redo done")
+            self.debug_me("Redo done")
             return True
 
     def undolist(self):
+        covered = False
         for i, v in enumerate(self._undo_stack):
             q = "*" if i == self._undo_index else " "
+            covered = covered or (i == self._undo_index)
             yield f"{q}{str(i).ljust(5)}: state {str(v)}"
+        if not covered:
+            yield f"Strange: {self._undo_index} out of bounds..."
 
-    def debug_me(self, index):
-        return
-        print (f"Wanted: {index}, stack-index: {self._undo_index} - stack-size: {len(self._undo_stack)}")
+    def debug_me(self, request):
+        if not self.debug_active:
+            return
+        print (f"{request}, stack-index: {self._undo_index} - stack-size: {len(self._undo_stack)}")
         for idx, s in enumerate(self._undo_stack):
-            print (f"[{idx}]{'*' if idx==self._undo_index else ' '} {'#' if idx==index else ' '} {str(s)}")
+            print (f"[{idx}]{'*' if idx==self._undo_index else ' '} {'#' if idx==request else ' '} {str(s)}")
             # self.debug_tree(s.state)
         # for idx in range(len(self._undo_stack)):
         #     print (f"[{idx}]: undo-label: '{self.undo_string(idx=idx, debug=False)}', redo-label: '{self.redo_string(idx=idx, debug=False)}'")
@@ -207,9 +225,10 @@ class Undo:
 
     def validate(self):
         if self.active and self._undo_stack and self._undo_stack[-1].message != self.LAST_STATE:
-            # We store the current state
+            # We store the current state, just to have something to fall back to if needed
             if self._undo_index >= len(self._undo_stack) - 1:
                 self._undo_index += 1
+            # print ("** Validate called and appending last state **")
             self._undo_stack.append(
                 UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
             )
