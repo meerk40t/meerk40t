@@ -1004,6 +1004,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
 
+        from meerk40t.gui.magnetoptions import register_panel_magnetoptions
+
+        kernel.register("wxpane/magnet", register_panel_magnetoptions)
+
         from meerk40t.gui.wordlisteditor import register_panel_wordlist
 
         kernel.register("wxpane/wordlist", register_panel_wordlist)

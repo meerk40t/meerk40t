@@ -20109,3 +20109,183 @@ msgstr "Radialkopie"
 #: meerk40t/gui/wxmribbon.py:110
 msgid "Icon-bar with object modification tools"
 msgstr "Icon-Leiste mit Objekt Modifikations-Tools"
+
+#: meerk40t/gui/magnetoptions.py:19
+msgid "Magnet-Options"
+msgstr "Magnet-Optionen"
+
+#: meerk40t/gui/magnetoptions.py:26
+msgid "Edit magnet snapping options"
+msgstr "Magnetlinien definieren / konfigurieren"
+
+#: meerk40t/gui/magnetoptions.py:46
+msgid "Will a magnet line attract the left/right edges of an object"
+msgstr "Soll eine Magnetlinie die linke/rechte Kante eines Objekts anziehen"
+
+#: meerk40t/gui/magnetoptions.py:48
+msgid "Will a magnet line attract the top/bottom edges of an object"
+msgstr "Soll eine Magnetlinie die obere/untere Kante eines Objekts anziehen"
+
+#: meerk40t/gui/magnetoptions.py:50
+msgid "Will a magnet line attract the center of an object"
+msgstr "Soll eine Magnetlinie den Mittelpunkt eines Objekts anziehen"
+
+#: meerk40t/gui/magnetoptions.py:65
+msgid "Define the attraction strength from weak (very close) to enormous (from far away)"
+msgstr ""
+
+#: meerk40t/gui/magnetoptions.py:68
+msgid "Save/Load settings"
+msgstr "Einstellungen sichern/laden"
+
+#: meerk40t/gui/magnetoptions.py:71
+msgid "Name to save to / load from the current settings"
+msgstr "Name fürs Laden/Speichern der Einstellungen"
+
+#: meerk40t/gui/magnetoptions.py:73
+msgid "Load an existing setting configuration"
+msgstr "Lädt eine existierende Konfiguration"
+
+#: meerk40t/gui/magnetoptions.py:75
+msgid "Save the current configuration for later reuse"
+msgstr "Speciher die aktuelle Konfiguration zur späteren Wiederverwendung"
+
+#: meerk40t/gui/magnetoptions.py:201
+msgid "Set single line"
+msgstr "Einzelne Linie festlegen"
+
+#: meerk40t/gui/magnetoptions.py:202
+msgid "Position:"
+msgstr "Position:"
+
+#: meerk40t/gui/magnetoptions.py:206
+msgid "Define the position of the magnet line"
+msgstr "Festlegen der Position der umzuschaltenden Magnetlinie"
+
+#: meerk40t/gui/magnetoptions.py:207
+msgid "Toggle a magnet line at the position on the X-axis"
+msgstr "Umschalten der Magnetlinie an der gegebenen Position auf der X-Achse"
+
+#: meerk40t/gui/magnetoptions.py:208
+msgid "Toggle a magnet line at the position on the Y-axis"
+msgstr "Umschalten der Magnetlinie an der gegebenen Position auf der Y-Achse"
+
+#: meerk40t/gui/magnetoptions.py:216
+msgid "Set around selection"
+msgstr "Rund um Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:227
+msgid "Toggle a magnet line at the left edge of the selection"
+msgstr "Umschalten der Magnetlinien entlang der linken Kante der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:228
+msgid "Toggle a magnet line at the horizontal center of the selection"
+msgstr "Umschalten der Magnetlinien entlang der horizontalen Mitte der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:229
+msgid "Toggle a magnet line at the right edge of the selection"
+msgstr "Umschalten der Magnetlinien entlang der rechten Kante der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:230
+msgid "Toggle magnet lines at 1/3 and 2/3 across the horizontal extent of the selection"
+msgstr "Umschalten der Magnetlinien bei 1/3 und 2/3 der horizontalen Abmessungen der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:231
+msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the horizontal extent of the selection"
+msgstr "Umschalten der Magnetlinien bei 1/4, 2/4 und 3/4 der horizontalen Abmessungen der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:232
+msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the horizontal extent of the selection"
+msgstr "Umschalten der Magnetlinien bei 1/5, 2/5, 3/5 und 4/5 der horizontalen Abmessungen der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:249
+msgid "Toggle a magnet line at the top edge of the selection"
+msgstr "Umschalten der Magnetlinien entlang der oberen Kante der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:250
+msgid "Toggle a magnet line at the vertical center of the selection"
+msgstr "Umschalten der Magnetlinien entlang der vertikalen Mitte der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:251
+msgid "Toggle a magnet line at the bottom edge of the selection"
+msgstr "Umschalten der Magnetlinien entlang der unteren Kante der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:252
+msgid "Toggle magnet lines at 1/3 and 2/3 across the vertical extent of the selection"
+msgstr "Umschalten der Magnetlinien bei 1/3 und 2/3 der vertikalen Abmessungen der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:253
+msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the vertical extent of the selection"
+msgstr "Umschalten der Magnetlinien bei 1/4, 2/4 und 3/4 der vertikalen Abmessungen der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:254
+msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the vertical extent of the selection"
+msgstr "Umschalten der Magnetlinien bei 1/5, 2/5, 3/5 und 4/5 der vertikalen Abmessungen der Objektauswahl"
+
+#: meerk40t/gui/magnetoptions.py:274
+msgid "Clears all magnet lines"
+msgstr "Löscht alle vorhandenen Magnetlinien"
+
+#: meerk40t/gui/magnetoptions.py:275
+msgid "Clear X"
+msgstr "Lösche X"
+
+#: meerk40t/gui/magnetoptions.py:276
+msgid "Clears magnet lines on X-axis"
+msgstr "Löscht Magnetlinien entlang der Y-Achse"
+
+#: meerk40t/gui/magnetoptions.py:277
+msgid "Clear Y"
+msgstr "Lösche Y"
+
+#: meerk40t/gui/magnetoptions.py:278
+msgid "Clears magnet lines on Y-axis"
+msgstr "Löscht Magnetlinien entlang der Y-Achse"
+
+#: meerk40t/gui/magnetoptions.py:407
+msgid "Actions"
+msgstr "Aktionen"
+
+#: meerk40t/core/elements/element_treeops.py:4492 meerk40t/core/elements/element_treeops.py:4501 meerk40t/core/elements/element_treeops.py:4510 meerk40t/core/elements/element_treeops.py:4527 meerk40t/core/elements/element_treeops.py:4537 meerk40t/core/elements/element_treeops.py:4545
+msgid "Magnets"
+msgstr "Magnetlinien"
+
+#: meerk40t/core/elements/element_treeops.py:4493
+msgid "...around horizontal edges"
+msgstr "...entlang der horizontalen Kanten"
+
+#: meerk40t/core/elements/element_treeops.py:4493
+msgid "Create magnets around horizontal edges"
+msgstr "Erzeuge Magnetlinien entlang der horizontalen Kanten"
+
+#: meerk40t/core/elements/element_treeops.py:4502 meerk40t/core/elements/element_treeops.py:4538
+msgid "...including center"
+msgstr "..inklusive Mitte"
+
+#: meerk40t/core/elements/element_treeops.py:4502
+msgid "Create magnets around horizontal edges + center"
+msgstr "Erzeuge Magnetlinien entlang der horizontalen Kanten und Mitte"
+
+#: meerk40t/core/elements/element_treeops.py:4512 meerk40t/core/elements/element_treeops.py:4548
+msgid "...create edges plus every 1/{steps}"
+msgstr "...entlang der Kanten und jedem 1/{steps}."
+
+#: meerk40t/core/elements/element_treeops.py:4512
+msgid "Create magnets equally spaced along horizontal extension"
+msgstr "Erzeugt Magnetlinien im gleichen Abstand entlang der horizontalen Abmessungen"
+
+#: meerk40t/core/elements/element_treeops.py:4529
+msgid "...around vertical edges"
+msgstr "...entlang vertikaler Kanten"
+
+#: meerk40t/core/elements/element_treeops.py:4529
+msgid "Create magnets around vertical edges"
+msgstr "Erzeuge Magnetlinien entlang der vertikalen Kanten"
+
+#: meerk40t/core/elements/element_treeops.py:4538
+msgid "Create magnets around vertical edges + center"
+msgstr "Erzeuge Magnetlinien entlang der horizontalen Kanten und Mitte"
+
+#: meerk40t/core/elements/element_treeops.py:4548
+msgid "Create magnets equally spaced along vertical extension"
+msgstr "Erzeugt Magnetlinien im gleichen Abstand entlang der vertikalen Abmessungen"
