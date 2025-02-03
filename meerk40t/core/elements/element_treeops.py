@@ -4490,7 +4490,7 @@ def init_tree(kernel):
         node.notify_collapse()
 
     @tree_submenu(_("Magnets"))
-    @tree_operation(_("...around horizontal edges"), node_type=elem_group_nodes, help=_("Create magnets around horizontal edges"), grouping="TEST")
+    @tree_operation(_("...around horizontal edges"), node_type=elem_group_nodes, help=_("Create magnets around horizontal edges"), grouping="Magnet")
     def create_horiz_edges(node, **kwargs):
         if not hasattr(node, "bounds") or node.bounds is None:
             return
@@ -4499,7 +4499,7 @@ def init_tree(kernel):
         self.signal("create_magnets", to_create)
 
     @tree_submenu(_("Magnets"))
-    @tree_operation(_("...including center"), node_type=elem_group_nodes, help=_("Create magnets around horizontal edges + center"), grouping="TEST")
+    @tree_operation(_("...including center"), node_type=elem_group_nodes, help=_("Create magnets around horizontal edges + center"), grouping="Magnet")
     def create_horiz_edges_plus_center(node, **kwargs):
         if not hasattr(node, "bounds") or node.bounds is None:
             return
@@ -4509,7 +4509,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Magnets"))
     @tree_iterate("steps", 3, 6)
-    @tree_operation(_("...create edges plus every 1/{steps}"), node_type=elem_group_nodes, help=_("Create magnets equally spaced along horizontal extension"), grouping="TEST")
+    @tree_operation(_("...create edges plus every 1/{steps}"), node_type=elem_group_nodes, help=_("Create magnets equally spaced along horizontal extension"), grouping="Magnet")
     def create_x_horiz_edges(node, steps=3, **kwargs):
         if not hasattr(node, "bounds") or node.bounds is None:
             return
@@ -4524,7 +4524,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Magnets"))
     @tree_separator_before()
-    @tree_operation(_("...around vertical edges"), node_type=elem_group_nodes, help=_("Create magnets around vertical edges"), grouping="TEST")
+    @tree_operation(_("...around vertical edges"), node_type=elem_group_nodes, help=_("Create magnets around vertical edges"), grouping="Magnet")
     def create_vert_edges(node, **kwargs):
         if not hasattr(node, "bounds") or node.bounds is None:
             return
@@ -4533,7 +4533,7 @@ def init_tree(kernel):
         self.signal("create_magnets", to_create)
 
     @tree_submenu(_("Magnets"))
-    @tree_operation(_("...including center"), node_type=elem_group_nodes, help=_("Create magnets around vertical edges + center"), grouping="TEST")
+    @tree_operation(_("...including center"), node_type=elem_group_nodes, help=_("Create magnets around vertical edges + center"), grouping="Magnet")
     def create_vert_edges_plus_center(node, **kwargs):
         if not hasattr(node, "bounds") or node.bounds is None:
             return
@@ -4543,7 +4543,7 @@ def init_tree(kernel):
     @tree_submenu(_("Magnets"))
 
     @tree_iterate("steps", 3, 6)
-    @tree_operation(_("...create edges plus every 1/{steps}"), node_type=elem_group_nodes, help=_("Create magnets equally spaced along vertical extension"), grouping="TEST")
+    @tree_operation(_("...create edges plus every 1/{steps}"), node_type=elem_group_nodes, help=_("Create magnets equally spaced along vertical extension"), grouping="Magnet")
     def create_x_vert_edges(node, steps=3, **kwargs):
         if not hasattr(node, "bounds") or node.bounds is None:
             return
