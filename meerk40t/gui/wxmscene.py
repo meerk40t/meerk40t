@@ -1102,6 +1102,16 @@ class MeerK40tScenePanel(wx.Panel):
         self.reference_object = node
         self.context.signal("reference")
 
+    @signal_listener("create_magnets")
+    def listen_magnet_creation(self, origin, creation_list, *args):
+        for (info, value) in creation_list:
+            if info == "x":
+                self.toggle_x_magnet(value)
+            else:
+                self.toggle_y_magnet(value)
+        self.save_magnets()
+        self.request_refresh()
+
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
         if self._tool_widget is not None:
