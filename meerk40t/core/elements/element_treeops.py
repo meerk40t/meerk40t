@@ -4517,6 +4517,8 @@ def init_tree(kernel):
         to_create = []
         x = bb[0]
         delta = (bb[2] - bb[0]) / steps
+        if delta == 0:
+            return
         while x <= bb[2]:
             to_create.append(("x", x))
             x += delta
@@ -4551,6 +4553,8 @@ def init_tree(kernel):
         to_create = []
         y = bb[1]
         delta = (bb[3] - bb[1]) / steps
+        if delta == 0:
+            return
         while y <= bb[3]:
             to_create.append(("y", y))
             y += delta
