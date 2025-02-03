@@ -223,7 +223,7 @@ def tree_separator_after():
     return decor
 
 
-def tree_separate_before():
+def tree_separator_before():
     """
     Decorator to flag this operation as having a separator before it.
 

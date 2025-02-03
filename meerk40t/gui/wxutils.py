@@ -1242,6 +1242,19 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
 
+    def Enable(self, enable:bool=True):
+        """Enable or disable the StaticBoxSizer and its children.
+
+        Enables or disables all children of the sizer recursively.
+        """
+        def enem(wind, flag):
+            for c in wind.GetChildren():
+                enem(c, flag)
+            if hasattr(wind, "Enable"):
+                wind.Enable(flag)
+
+        enem(self.sbox, enable)
+
 class ScrolledPanel(SP):
     """
     We sometimes delete things fast enough that they call _SetupAfter when dead and crash.

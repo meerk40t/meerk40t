@@ -102,7 +102,7 @@ from meerk40t.core.treeop import (
     tree_prompt,
     tree_radio,
     tree_separator_after,
-    tree_separate_before,
+    tree_separator_before,
     tree_submenu,
     tree_submenu_list,
     tree_values,
@@ -935,7 +935,7 @@ def init_tree(kernel):
         return self._image_2_path_optimize
 
     @tree_submenu(_("Convert to Path"))
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_check(load_for_path_1)
     @tree_operation(
         _("Bidirectional"),
@@ -1260,7 +1260,7 @@ def init_tree(kernel):
             result = 1
         return result
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_conditional(lambda cond: selected_active_ops() > 0)
     @tree_operation(
         _("Execute operation(s)"),
@@ -1424,7 +1424,7 @@ def init_tree(kernel):
         self.signal("element_property_update", ops)
         self.signal("warn_state_update", "")
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Enable all operations"),
         node_type="branch ops",
@@ -2022,7 +2022,7 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_submenu(_("Classification"))
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_operation(
         _("Use only existing operations"),
         node_type=("branch ops", "branch elems"),
@@ -2071,7 +2071,7 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_submenu(_("Classification"))
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_operation(
         _("Clear all assignments"),
         node_type=("branch ops", "branch elems"),
@@ -2102,7 +2102,7 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("refresh_scene", "Scene")
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Material Manager"),
         node_type="branch ops",
@@ -2233,7 +2233,7 @@ def init_tree(kernel):
     def load_for_statusbar(node, **kwargs):
         return self.update_statusbar_on_material_load
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Materials"))
     @tree_check(load_for_statusbar)
     @tree_operation(
@@ -2287,7 +2287,7 @@ def init_tree(kernel):
         self.signal("element_property_update", [effect])
         self.signal("updateop_tree")
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Append operation"))
     @tree_operation(
         _("Append Image"), node_type="branch ops", help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
@@ -2936,7 +2936,7 @@ def init_tree(kernel):
         busy.end()
 
     @tree_submenu(_("Create image/path"))
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_operation(
         _("Horizontal"), node_type="op raster", help=_("Create a horizontal linepattern from the raster"), grouping="OPS_75_CONVERTIMAGE"
     )
@@ -2952,7 +2952,7 @@ def init_tree(kernel):
         convert_raster_to_path(node, "Vertical")
 
     @tree_submenu(_("Create image/path"))
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_check(load_for_path_1)
     @tree_operation(
         _("Bidirectional"),
@@ -2984,7 +2984,7 @@ def init_tree(kernel):
         except (ValueError, IndexError):
             return None
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Insert operation"))
     @tree_operation(
         _("Add Image"), node_type=op_nodes, help=_("Add an operation to the tree"), grouping="OPS_40_ADDITION"
@@ -3255,7 +3255,7 @@ def init_tree(kernel):
     def exclusive_match(node, **kwargs):
         return self.classify_inherit_exclusive
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Assign Operation"))
     @tree_operation(
         _("Remove all assignments from operations"),
@@ -3278,7 +3278,7 @@ def init_tree(kernel):
                 rem_node(node)
         self.signal("refresh_tree")
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Assign Operation"))
     @tree_check(exclusive_match)
     @tree_operation(
@@ -3295,7 +3295,7 @@ def init_tree(kernel):
     def stroke_match(node, **kwargs):
         return self.classify_inherit_stroke
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Assign Operation"))
     @tree_check(stroke_match)
     @tree_operation(
@@ -3748,7 +3748,7 @@ def init_tree(kernel):
         current = self.setting(bool, "contour_inner", True)
         return current
 
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_submenu(_("Vectorization..."))
     @tree_check(inner_check)
     @tree_operation(
@@ -3761,7 +3761,7 @@ def init_tree(kernel):
         current = self.setting(bool, "contour_inner", True)
         self.contour_inner = not self.contour_inner
 
-    @tree_separate_before()
+    @tree_separator_before()
     @tree_submenu(_("Vectorization..."))
     @tree_check(sizecheck("big"))
     @tree_operation(
@@ -3990,7 +3990,7 @@ def init_tree(kernel):
         self.signal("modified_by_tool")
 
     @tree_submenu(_("Flip"))
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional_try(lambda node: node.can_scale)
     @tree_operation(
@@ -4155,7 +4155,7 @@ def init_tree(kernel):
                 node.remove_node()
 
     @tree_conditional(lambda node: node.lock)
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Unlock element, allows manipulation"), node_type=elem_nodes, help=_("Remove manipulation protection flag")
     )
@@ -4163,7 +4163,7 @@ def init_tree(kernel):
         self("element unlock\n")
 
     @tree_conditional(lambda node: not node.lock)
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Lock elements, prevents manipulations"),
         node_type=elem_nodes,
@@ -4174,7 +4174,7 @@ def init_tree(kernel):
         self("element lock\n")
 
     @tree_conditional(lambda node: node.type == "branch reg")
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Toggle visibility of regmarks"),
         node_type="branch reg",
@@ -4185,7 +4185,7 @@ def init_tree(kernel):
         self.signal("toggle_regmarks")
 
     @tree_conditional(lambda node: is_regmark(node))
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Move back to elements"),
         node_type=elem_group_nodes,
@@ -4206,7 +4206,7 @@ def init_tree(kernel):
             self.drag_and_drop(data, drop_node)
 
     @tree_conditional(lambda node: not is_regmark(node))
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Move to regmarks"),
         node_type=elem_group_nodes,
@@ -4228,7 +4228,7 @@ def init_tree(kernel):
                 drop_node.drop(item)
 
     @tree_conditional(lambda node: is_regmark(node))
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Create placement"),
         node_type=elem_nodes,
@@ -4380,7 +4380,7 @@ def init_tree(kernel):
             self("image ccw\n")
 
     @tree_conditional(lambda node: not node.lock)
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Image"))
     @tree_operation(
         _("Identify inner white areas"),
@@ -4407,7 +4407,7 @@ def init_tree(kernel):
             self("image innerwhite -w -o -m 2\n")
 
     @tree_submenu(_("Image"))
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Save original image to output.png"),
         node_type="elem image",
@@ -4427,7 +4427,7 @@ def init_tree(kernel):
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
 
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_submenu(_("Image"))
     @tree_conditional(lambda node: node.keyhole_reference is not None)
     @tree_operation(
@@ -4441,7 +4441,7 @@ def init_tree(kernel):
             self("remove_keyhole\n")
 
     @tree_conditional(lambda node: len(node.children) > 0)
-    ## @tree_separate_before()
+    ## @tree_separator_before()
     @tree_operation(
         _("Expand all children"),
         node_type=(
@@ -4488,3 +4488,74 @@ def init_tree(kernel):
     )
     def collapse_all_children(node, **kwargs):
         node.notify_collapse()
+
+    @tree_submenu(_("Magnets"))
+    @tree_operation(_("...around horizontal edges"), node_type=elem_group_nodes, help=_("Create magnets around horizontal edges"), grouping="Magnet")
+    def create_horiz_edges(node, **kwargs):
+        if not hasattr(node, "bounds") or node.bounds is None:
+            return
+        bb = node.bounds
+        to_create = (("x", bb[0]), ("x", bb[2]))
+        self.signal("create_magnets", to_create)
+
+    @tree_submenu(_("Magnets"))
+    @tree_operation(_("...including center"), node_type=elem_group_nodes, help=_("Create magnets around horizontal edges + center"), grouping="Magnet")
+    def create_horiz_edges_plus_center(node, **kwargs):
+        if not hasattr(node, "bounds") or node.bounds is None:
+            return
+        bb = node.bounds
+        to_create = (("x", bb[0]), ("x", bb[2]), ("x", (bb[0] + bb[2]) / 2))
+        self.signal("create_magnets", to_create)
+
+    @tree_submenu(_("Magnets"))
+    @tree_iterate("steps", 3, 6)
+    @tree_operation(_("...create edges plus every 1/{steps}"), node_type=elem_group_nodes, help=_("Create magnets equally spaced along horizontal extension"), grouping="Magnet")
+    def create_x_horiz_edges(node, steps=3, **kwargs):
+        if not hasattr(node, "bounds") or node.bounds is None:
+            return
+        bb = node.bounds
+        to_create = []
+        x = bb[0]
+        delta = (bb[2] - bb[0]) / steps
+        if delta == 0:
+            return
+        while x <= bb[2]:
+            to_create.append(("x", x))
+            x += delta
+        self.signal("create_magnets", to_create)
+
+    @tree_submenu(_("Magnets"))
+    @tree_separator_before()
+    @tree_operation(_("...around vertical edges"), node_type=elem_group_nodes, help=_("Create magnets around vertical edges"), grouping="Magnet")
+    def create_vert_edges(node, **kwargs):
+        if not hasattr(node, "bounds") or node.bounds is None:
+            return
+        bb = node.bounds
+        to_create = (("y", bb[1]), ("y", bb[3]))
+        self.signal("create_magnets", to_create)
+
+    @tree_submenu(_("Magnets"))
+    @tree_operation(_("...including center"), node_type=elem_group_nodes, help=_("Create magnets around vertical edges + center"), grouping="Magnet")
+    def create_vert_edges_plus_center(node, **kwargs):
+        if not hasattr(node, "bounds") or node.bounds is None:
+            return
+        bb = node.bounds
+        to_create = (("y", bb[1]), ("y", bb[3]), ("y", (bb[1] + bb[3]) / 2))
+        self.signal("create_magnets", to_create)
+    @tree_submenu(_("Magnets"))
+
+    @tree_iterate("steps", 3, 6)
+    @tree_operation(_("...create edges plus every 1/{steps}"), node_type=elem_group_nodes, help=_("Create magnets equally spaced along vertical extension"), grouping="Magnet")
+    def create_x_vert_edges(node, steps=3, **kwargs):
+        if not hasattr(node, "bounds") or node.bounds is None:
+            return
+        bb = node.bounds
+        to_create = []
+        y = bb[1]
+        delta = (bb[3] - bb[1]) / steps
+        if delta == 0:
+            return
+        while y <= bb[3]:
+            to_create.append(("y", y))
+            y += delta
+        self.signal("create_magnets", to_create)
