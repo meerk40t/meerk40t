@@ -194,7 +194,7 @@ class MagnetOptionPanel(wx.Panel):
             idx = max(0, idx) # Not lower than off
         except ValueError:
             idx = 2
-        p.magnet_attract_attraction = idx
+        p.magnet_attraction = idx
         self.update_values()
 
     @signal_listener("magnet_options")
