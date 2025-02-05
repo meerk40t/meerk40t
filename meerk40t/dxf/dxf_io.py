@@ -32,7 +32,7 @@ from ..svgelements import (
     Polyline,
     Viewbox,
 )
-
+from meerk40t.tools.geomstr import Geomstr
 
 class DxfLoader:
     @staticmethod
@@ -59,7 +59,6 @@ class DxfLoader:
                 raise BadFileError(str(e)) from e
 
         unit = dxf.header.get("$INSUNITS")
-
         if unit is not None and unit != 0:
             du = units.DrawingUnits(UNITS_PER_INCH, unit="in")
             scale = du.factor(decode(unit))
@@ -162,6 +161,16 @@ class DXFProcessor:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
+        print (f"Entity: {entity}")
+        if hasattr(entity, "dxf"):
+            for key in dir(entity.dxf):
+                if key.startswith("_"):
+                    continue
+                try:
+                    prop = getattr(entity.dxf, key)
+                    print (f"dxf.{key}={prop}")
+                except AttributeError:
+                    pass
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
@@ -213,6 +222,12 @@ class DXFProcessor:
             # TODO: needs more math, axis is vector, ratio is to minor.
             # major axis is vector
             # ratio is the ratio of major to minor.
+            print (f"""Center: {entity.dxf.center},
+                    start_point={entity.start_point},
+                    end_point={entity.end_point},
+                    start_angle={entity.dxf.start_param},
+                    end_angle={entity.dxf.end_param}""")
+
             element = Ellipse(
                 center=entity.dxf.center,
                 start_point=entity.start_point,
