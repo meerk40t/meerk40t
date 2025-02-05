@@ -1211,6 +1211,21 @@ class MeerK40t(MWindow):
                 "page": "Scene",
                 "section": "General",
             },
+            {
+                "attr": "coord_display",
+                "object": context.root,
+                "default": 0,
+                "type": int,
+                "label": _("Coordinate display"),
+                "tip": _(
+                    "What coordination information shall be displayed while moving: to all edges, left/upper edge or none at all"
+                ),
+                "page": "Scene",
+                "section": "General",
+                "style": "option",
+                "choices": (0, 1, 2),
+                "display": (_("All edges"), _("Left/upper edge"), _("None")),
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 
