@@ -253,7 +253,7 @@ class BorderWidget(Widget):
             sx, sy = get_gc_full_scale(gc)
             gc.Scale(1 / sx, 1 / sy)
             bed_w = self.scene.context.device.space.width
-            bed_h = self.scene.context.device.space.width
+            bed_h = self.scene.context.device.space.height
 
             # Create a copy of the pen
             mypen = wx.Pen(self.master.selection_pen)
