@@ -1,5 +1,5 @@
 """
-The selection widget deals with the manipulated of emphasized elements. It provides a series of related subwidgets:
+The selection widget deals with the manipulation of emphasized elements. It provides a series of related subwidgets:
 
 BorderWidget: Draws the border of the selected object.
 RotationWidget: Little arrow in the corner allowing the object to be rotated.
@@ -209,6 +209,10 @@ class BorderWidget(Widget):
             self.master.bottom,
         )
         self.update()
+        coord_display_mode = self.scene.context.root.setting(int, "coord_display", 0)
+        # 0 = all, 1 = to mk 0,0 only, 2=suppress
+        self.show_lt = coord_display_mode in (0, 1)
+        self.show_rb = coord_display_mode == 0
 
     def update(self):
         self.left = self.master.left
@@ -248,14 +252,23 @@ class BorderWidget(Widget):
             gc.PushState()
             sx, sy = get_gc_full_scale(gc)
             gc.Scale(1 / sx, 1 / sy)
+            bed_w = self.scene.context.device.space.width
+            bed_h = self.scene.context.device.space.width
 
             # Create a copy of the pen
             mypen = wx.Pen(self.master.selection_pen)
             mypen.SetWidth(1)
             mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
             gc.SetPen(mypen)
-            gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
-            gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            # Top to upper edge, lower edge to bottom
+            # Left to left edge, right edge to right
+            if self.show_lt:
+                gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
+                gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            if self.show_rb:
+                gc.StrokeLine(sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h)
+                gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
+    
             mypen.SetStyle(wx.PENSTYLE_DOT)
             gc.SetPen(mypen)
             gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
@@ -290,22 +303,42 @@ class BorderWidget(Widget):
                     wx.FONTWEIGHT_BOLD,
                 )
             gc.SetFont(font, self.scene.colors.color_manipulation)
-            # Show Y-Value
-            s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
-            (t_width, t_height) = gc.GetTextExtent(s_txt)
-            distance = 0.25 * t_height
-            pos = self.top / 2.0 - t_height / 2
-            if pos + t_height + distance >= self.top:
-                pos = self.top - t_height - distance
-            gc.DrawText(s_txt, center_x - t_width / 2, pos)
+            if self.show_lt:
+                # Show Y-Value
+                s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                distance = 0.25 * t_height
+                pos = self.top / 2.0 - t_height / 2
+                if pos + t_height + distance >= self.top:
+                    pos = self.top - t_height - distance
+                gc.DrawText(s_txt, center_x - t_width / 2, pos)
 
-            # Display X-Coordinate
-            s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
-            (t_width, t_height) = gc.GetTextExtent(s_txt)
-            pos = self.left / 2.0 - t_width / 2
-            if pos + t_width + distance >= self.left:
-                pos = self.left - t_width - distance
-            gc.DrawText(s_txt, pos, center_y)
+                # Display X-Coordinate from left
+                s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                pos = self.left / 2.0 - t_width / 2
+                if pos + t_width + distance >= self.left:
+                    pos = self.left - t_width - distance
+                gc.DrawText(s_txt, pos, center_y)
+            if self.show_rb:
+                rpos = bed_h - self.bottom
+                s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                distance = 0.25 * t_height
+                pos = self.bottom + rpos / 2 - t_height / 2
+                if pos - t_height - distance <= self.bottom:
+                    pos = self.bottom + distance
+                gc.DrawText(s_txt, center_x - t_width / 2, pos)
+
+                # Display X-Coordinate from right
+                rpos = bed_w - self.right
+                s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                pos = self.right + rpos / 2.0 - t_width / 2
+                if pos - t_width - distance <= self.right:
+                    pos = self.right + distance
+                gc.DrawText(s_txt, pos, center_y)
+
             # Display height
             s_txt = str(
                 Length(amount=(self.bottom - self.top), digits=2, preferred_units=units)
