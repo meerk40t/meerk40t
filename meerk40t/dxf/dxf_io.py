@@ -156,6 +156,16 @@ class DXFProcessor:
             node.stroke = color
 
     def parse(self, entity, context_node, e_list):
+        def full_ellipse(enti):
+            tolerance = 1E-4
+            if (
+                abs(entity.start_point[0] - entity.end_point[0]) < tolerance and
+                abs(entity.start_point[1] - entity.end_point[1]) < tolerance and
+                abs(entity.dxf.start_param + entity.dxf.end_param) < tolerance
+            ):
+                return True
+            return False
+
         if hasattr(entity, "transform_to_wcs"):
             try:
                 entity.transform_to_wcs(entity.ocs())
@@ -222,19 +232,21 @@ class DXFProcessor:
             # TODO: needs more math, axis is vector, ratio is to minor.
             # major axis is vector
             # ratio is the ratio of major to minor.
-            print (f"""Center: {entity.dxf.center},
-                    start_point={entity.start_point},
-                    end_point={entity.end_point},
-                    start_angle={entity.dxf.start_param},
-                    end_angle={entity.dxf.end_param}""")
-
-            element = Ellipse(
-                center=entity.dxf.center,
-                start_point=entity.start_point,
-                end_point=entity.end_point,
-                start_angle=entity.dxf.start_param,
-                end_angle=entity.dxf.end_param,
-            )
+            if full_ellipse(entity):
+                element = Ellipse(
+                    cx = entity.dxf.center[0],
+                    cy = entity.dxf.center[1],
+                    rx = entity.minor_axis[0],
+                    ry = entity.dxf.major_axis[1],
+                )
+            else:
+                element = Ellipse(
+                    center=entity.dxf.center,
+                    start_point=entity.start_point,
+                    end_point=entity.end_point,
+                    start_angle=entity.dxf.start_param,
+                    end_angle=entity.dxf.end_param,
+                )
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
             element.transform.post_translate_y(self.elements.device.view.unit_height)
