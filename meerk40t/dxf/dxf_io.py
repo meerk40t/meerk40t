@@ -171,16 +171,16 @@ class DXFProcessor:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
-        print (f"Entity: {entity}")
-        if hasattr(entity, "dxf"):
-            for key in dir(entity.dxf):
-                if key.startswith("_"):
-                    continue
-                try:
-                    prop = getattr(entity.dxf, key)
-                    print (f"dxf.{key}={prop}")
-                except AttributeError:
-                    pass
+        # print (f"Entity: {entity}")
+        # if hasattr(entity, "dxf"):
+        #     for key in dir(entity.dxf):
+        #         if key.startswith("_"):
+        #             continue
+        #         try:
+        #             prop = getattr(entity.dxf, key)
+        #             print (f"dxf.{key}={prop}")
+        #         except AttributeError:
+        #             pass
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
@@ -229,15 +229,16 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "ELLIPSE":
-            # TODO: needs more math, axis is vector, ratio is to minor.
-            # major axis is vector
-            # ratio is the ratio of major to minor.
+            major_axis = entity.major_axis if hasattr(entity, "major_axis") else entity.dxf.major_axis
+            minor_axis = entity.minor_axis if hasattr(entity, "minor_axis") else entity.dxf.minor_axis
+            # print (f"entity major: {hasattr(entity, 'major_axis')}, entitiy.dxf major {hasattr(entity.dxf, 'major_axis')} = {major_axis}")
+            # print (f"entity minor: {hasattr(entity, 'minor_axis')}, entitiy.dxf minor {hasattr(entity.dxf, 'minor_axis')} = {minor_axis}")
             if full_ellipse(entity):
                 element = Ellipse(
                     cx = entity.dxf.center[0],
                     cy = entity.dxf.center[1],
-                    rx = entity.minor_axis[0],
-                    ry = entity.dxf.major_axis[1],
+                    rx = abs(minor_axis[0]),
+                    ry = abs(major_axis[1]),
                 )
             else:
                 element = Ellipse(
@@ -246,6 +247,8 @@ class DXFProcessor:
                     end_point=entity.end_point,
                     start_angle=entity.dxf.start_param,
                     end_angle=entity.dxf.end_param,
+                    rx = abs(minor_axis[0]),
+                    ry = abs(major_axis[1]),
                 )
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
