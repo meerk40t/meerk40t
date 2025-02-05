@@ -20289,3 +20289,21 @@ msgstr "Erzeuge Magnetlinien entlang der horizontalen Kanten und Mitte"
 #: meerk40t/core/elements/element_treeops.py:4548
 msgid "Create magnets equally spaced along vertical extension"
 msgstr "Erzeugt Magnetlinien im gleichen Abstand entlang der vertikalen Abmessungen"
+
+#: meerk40t/gui/wxmmain.py:1219
+msgid "Coordinate display"
+msgstr "Abstandsanzeige"
+
+#: meerk40t/gui/wxmmain.py:1222
+msgid "What coordination information shall be displayed while moving: to all edges, left/upper edge or none at all"
+msgstr ""
+"Welche Abstandsinformationen soll bei selektierten Elementen angezeigt werden:\n"
+"Zu allen Rändern / zum linken/oberen Rand / Gar Keine"
+
+#: meerk40t/gui/wxmmain.py:1227
+msgid "All edges"
+msgstr "Zu allen Rändern"
+
+#: meerk40t/gui/wxmmain.py:1227
+msgid "Left/upper edge"
+msgstr "Linker/Oberer Rand"
