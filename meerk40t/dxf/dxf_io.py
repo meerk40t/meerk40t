@@ -14,9 +14,11 @@ except ImportError:
     from ezdxf import int2rgb
     from ezdxf.colors import DXF_DEFAULT_COLORS
 
+import math
+
 from ezdxf.units import decode
 
-from ..svgelements import (
+from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Angle,
@@ -33,6 +35,7 @@ from ..svgelements import (
     Viewbox,
 )
 from meerk40t.tools.geomstr import Geomstr
+
 
 class DxfLoader:
     @staticmethod
@@ -75,7 +78,7 @@ class DXFProcessor:
         self.elements = elements_modifier
         self.dxf = dxf
         self.scale = scale
-        self.elements_list = list()
+        self.elements_list = []
         self.reverse = False
         self.requires_classification = True
         self.pathname = None
@@ -156,15 +159,13 @@ class DXFProcessor:
             node.stroke = color
 
     def parse(self, entity, context_node, e_list):
-        def full_ellipse(enti):
-            tolerance = 1E-4
-            if (
-                abs(entity.start_point[0] - entity.end_point[0]) < tolerance and
-                abs(entity.start_point[1] - entity.end_point[1]) < tolerance and
-                abs(entity.dxf.start_param + entity.dxf.end_param) < tolerance
-            ):
-                return True
-            return False
+        # def full_ellipse(enti):
+        #     tolerance = 1e-4
+        #     return (
+        #         abs(entity.start_point[0] - entity.end_point[0]) < tolerance
+        #         and abs(entity.start_point[1] - entity.end_point[1]) < tolerance
+        #         and abs(entity.dxf.start_param + entity.dxf.end_param) < tolerance
+        #     )
 
         if hasattr(entity, "transform_to_wcs"):
             try:
@@ -229,36 +230,36 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "ELLIPSE":
-            major_axis = entity.major_axis if hasattr(entity, "major_axis") else entity.dxf.major_axis
-            minor_axis = entity.minor_axis if hasattr(entity, "minor_axis") else entity.dxf.minor_axis
-            # print (f"entity major: {hasattr(entity, 'major_axis')}, entitiy.dxf major {hasattr(entity.dxf, 'major_axis')} = {major_axis}")
-            # print (f"entity minor: {hasattr(entity, 'minor_axis')}, entitiy.dxf minor {hasattr(entity.dxf, 'minor_axis')} = {minor_axis}")
-            if full_ellipse(entity):
-                element = Ellipse(
-                    cx = entity.dxf.center[0],
-                    cy = entity.dxf.center[1],
-                    rx = abs(minor_axis[0]),
-                    ry = abs(major_axis[1]),
-                )
-            else:
-                element = Ellipse(
-                    center=entity.dxf.center,
-                    start_point=entity.start_point,
-                    end_point=entity.end_point,
-                    start_angle=entity.dxf.start_param,
-                    end_angle=entity.dxf.end_param,
-                    rx = abs(minor_axis[0]),
-                    ry = abs(major_axis[1]),
-                )
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.view.unit_height)
+            center = (
+                entity.dxf.center
+            )  # Center point of the ellipse (3D, but we'll use x,y)
+            major_axis = entity.dxf.major_axis  # Vector representing the major axis
+            ratio = entity.dxf.ratio  # Ratio of minor to major axis
+
+            # Calculate the angle of the major axis in the XY plane
+            angle = math.atan2(major_axis[1], major_axis[0])
+
+            # Calculate the lengths of the major and minor axes
+            a = math.sqrt(
+                major_axis[0] ** 2 + major_axis[1] ** 2
+            )  # Length of the major axis (in XY plane)
+            b = a * ratio  # Length of the minor axis
+            # print (f"cx = {center[0]}, cy = {center[1]}, rx = {a}, ry = {b}, rotation = {angle}")
+            geom = Geomstr.ellipse(
+                cx=center[0],
+                cy=center[1],
+                rx=a,
+                ry=b,
+                rotation=angle,
+            )
             node = context_node.add(
-                shape=element,
-                type="elem ellipse",
+                type="elem path",
+                geometry=geom,
                 stroke_scale=False,
                 stroke_width=self.std_stroke,
             )
+            node.matrix.post_scale(self.scale, -self.scale)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -305,9 +306,9 @@ class DXFProcessor:
                         element = Polygon([(p[0], p[1]) for p in entity.points()])
                     else:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
-                    element.values[
-                        SVG_ATTR_VECTOR_EFFECT
-                    ] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[SVG_ATTR_VECTOR_EFFECT] = (
+                        SVG_VALUE_NON_SCALING_STROKE
+                    )
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
@@ -345,9 +346,9 @@ class DXFProcessor:
                                 bulge=bulge,
                             )
                             element.closed()
-                    element.values[
-                        SVG_ATTR_VECTOR_EFFECT
-                    ] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[SVG_ATTR_VECTOR_EFFECT] = (
+                        SVG_VALUE_NON_SCALING_STROKE
+                    )
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
