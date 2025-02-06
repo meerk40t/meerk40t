@@ -4019,7 +4019,7 @@ msgid "Align laser with the first position"
 msgstr "将激光对准第一个位置"
 
 #: meerk40t/gui/navigationpanels.py:416
-msgid "Perform a convex hull trace of the selection (Right different algorithm)"
+msgid "Perform a convex hull trace of the selection"
 msgstr "对选择执行凸包跟踪（右键不同算法）"
 
 #: meerk40t/gui/navigationpanels.py:422

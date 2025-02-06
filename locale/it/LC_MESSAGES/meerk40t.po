@@ -5964,8 +5964,8 @@ msgid "Align laser with the first position"
 msgstr "Allinea il laser alla prima posizione"
 
 #: meerk40t/gui/navigationpanels.py:414
-msgid "Perform a convex hull trace of the selection (Right different algorithm)"
-msgstr "Traccia esattamente il contorno della selezione\n(Click destro: algoritmo diverso)"
+msgid "Perform a convex hull trace of the selection"
+msgstr "Traccia esattamente il contorno della selezione"
 
 #: meerk40t/gui/navigationpanels.py:420
 msgid "Perform a simple trace of the selection (Right=Circle around)"
