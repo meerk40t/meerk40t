@@ -143,45 +143,27 @@ class DXFProcessor:
                 node.stroke = Color(entity.rgb)
         else:
             c = entity.dxf.color
-            if c == 256:  # Bylayer.
-                if entity.dxf.layer in dxf.layers:
-                    layer = dxf.layers.get(entity.dxf.layer)
-                    c = layer.color
+            if c == 256 and entity.dxf.layer in dxf.layers:
+                layer = dxf.layers.get(entity.dxf.layer)
+                c = layer.color
             try:
-                if c == 7:
-                    color = Color(
-                        "black"
-                    )  # Color 7 is black on light backgrounds, light on black.
-                else:
-                    color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                color = (
+                    Color("black")
+                    if c == 7
+                    else Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                )
+                # Color 7 is black on light backgrounds, light on black.
             except Exception:
                 color = Color("black")
             node.stroke = color
 
     def parse(self, entity, context_node, e_list):
-        # def full_ellipse(enti):
-        #     tolerance = 1e-4
-        #     return (
-        #         abs(entity.start_point[0] - entity.end_point[0]) < tolerance
-        #         and abs(entity.start_point[1] - entity.end_point[1]) < tolerance
-        #         and abs(entity.dxf.start_param + entity.dxf.end_param) < tolerance
-        #     )
 
         if hasattr(entity, "transform_to_wcs"):
             try:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
-        # print (f"Entity: {entity}")
-        # if hasattr(entity, "dxf"):
-        #     for key in dir(entity.dxf):
-        #         if key.startswith("_"):
-        #             continue
-        #         try:
-        #             prop = getattr(entity.dxf, key)
-        #             print (f"dxf.{key}={prop}")
-        #         except AttributeError:
-        #             pass
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
@@ -293,13 +275,7 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "POLYLINE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/polyline.html
-            supported = entity.is_2d_polyline
-            if not supported:
-                # for _att in dir(entity):
-                #     if hasattr(entity, _att):
-                #         print (f"{_att}: {getattr(entity, _att, '')}")
-                if self.try_unsupported:
-                    supported = True
+            supported = entity.is_2d_polyline or self.try_unsupported
             if supported:
                 if not entity.has_arc:
                     if entity.is_closed:
@@ -319,9 +295,6 @@ class DXFProcessor:
                         stroke_scale=False,
                         stroke_width=self.std_stroke,
                     )
-                    self.check_for_attributes(node, entity)
-                    e_list.append(node)
-                    return
                 else:
                     element = Path()
                     bulge = 0
@@ -364,9 +337,9 @@ class DXFProcessor:
                         stroke_scale=False,
                         stroke_width=self.std_stroke,
                     )
-                    self.check_for_attributes(node, entity)
-                    e_list.append(node)
-                    return
+                self.check_for_attributes(node, entity)
+                e_list.append(node)
+                return
         elif entity.dxftype() == "LWPOLYLINE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
             if not entity.has_arc:
@@ -385,9 +358,6 @@ class DXFProcessor:
                     stroke_scale=False,
                     stroke_width=self.std_stroke,
                 )
-                self.check_for_attributes(node, entity)
-                e_list.append(node)
-                return
             else:
                 element = Path()
                 bulge = 0
@@ -425,9 +395,9 @@ class DXFProcessor:
                     stroke_scale=False,
                     stroke_width=self.std_stroke,
                 )
-                self.check_for_attributes(node, entity)
-                e_list.append(node)
-                return
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "HATCH":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
             element = Path()
@@ -679,9 +649,8 @@ class DXFProcessor:
             element.transform.post_scale(self.scale, -self.scale)
             element.transform.post_translate_y(self.elements.device.view.unit_height)
             path = abs(element)
-            if len(path) != 0:
-                if not isinstance(path[0], Move):
-                    path = Move(path.first_point) + path
+            if len(path) != 0 and not isinstance(path[0], Move):
+                path = Move(path.first_point) + path
             node = context_node.add(
                 path=path,
                 type="elem path",
