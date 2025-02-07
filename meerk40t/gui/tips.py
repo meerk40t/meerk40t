@@ -41,7 +41,7 @@ class TipPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
         self.tip_command = ""
         self.tip_image = ""
-        self.tips = list()
+        self.tips = []
 
         safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
         self.local_file = os.path.join(safe_dir, "tips.txt")
@@ -164,6 +164,10 @@ class TipPanel(wx.Panel):
         self.load_tip()
 
     def load_tip(self):
+        if len(self.tips) == 0:
+            return
+        if self._current_tip >= len(self.tips):
+            self._current_tip = 0
         my_tip = self.tips[self._current_tip]
         self.text_tip.SetValue(my_tip[0])
         if my_tip[1]:
