@@ -6003,8 +6003,8 @@ msgid "Align laser with the first position"
 msgstr "Richten Sie den Laser an der ersten Position aus"
 
 #: meerk40t/gui/navigationpanels.py:414
-msgid "Perform a convex hull trace of the selection (Right different algorithm)"
-msgstr "Umrisse der Auswahl genau nachfahren (Rechtsclick: anderer Algorithmus)"
+msgid "Perform a convex hull trace of the selection"
+msgstr "Umrisse der Auswahl genau nachfahren"
 
 #: meerk40t/gui/navigationpanels.py:420
 msgid "Perform a simple trace of the selection (Right=Circle around)"
@@ -17511,6 +17511,14 @@ msgstr "Aktuelle Einstellungen exportieren"
 #: meerk40t/grbl/gui/grblhardwareconfig.py:213
 msgid "GRBL Hardware Config"
 msgstr "GRBL Hardware Parameter"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:43
+msgid "Explanation"
+msgstr "Hinweise"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:44
+msgid "Open the GRBL wiki for a detailed explanation"
+msgstr "Öffnet die GRBL Wiki-Seite für Hinweise zur Nutzung"
 
 #: meerk40t/grbl/gui/grbloperationconfig.py:23
 msgid "Advanced Features:"

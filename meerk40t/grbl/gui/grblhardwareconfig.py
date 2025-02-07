@@ -39,7 +39,12 @@ class GrblIoButtons(wx.Panel):
         self.button_write.SetToolTip(_("This will write settings to hardware."))
         self.button_refresh.SetToolTip(_("Reread settings from hardware."))
         sizer_2.Add(self.button_export, 0, wx.EXPAND, 0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
+
+        self.btn_link = wxButton(self, wx.ID_ANY, _("Explanation"))
+        self.btn_link.SetToolTip(_("Open the GRBL wiki for a detailed explanation"))
+        sizer_2.AddSpacer(25)
+        sizer_2.Add(self.btn_link, 0, wx.EXPAND, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_url_click, self.btn_link)
 
         self.SetSizer(sizer_2)
 
@@ -60,7 +65,7 @@ class GrblIoButtons(wx.Panel):
                 value = float(chart.GetItemText(i, 2))
             except ValueError:
                 continue
-            if d[-1] == int:
+            if d[3] == int:
                 value = int(value)
             if value != self.service.hardware_config.get(hardware_index):
                 eeprom_writes.append(f"${hardware_index}={value}")
@@ -107,6 +112,11 @@ class GrblIoButtons(wx.Panel):
                         continue
                 f.write(f"{setting}={value}\n")
 
+    def on_url_click(self, event):
+        import webbrowser
+        url = "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md"
+        webbrowser.open(url, new=0, autoraise=True)
+
 
 class GrblHardwareProperties(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
@@ -128,6 +138,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
         chart.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_label_start_edit)
         chart.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_label_end_edit)
+        chart.Bind(wx.EVT_LEFT_DCLICK, self.on_double_click)
 
         sizer_1.Add(self.chart, 1, wx.EXPAND, 0)
 
@@ -142,7 +153,8 @@ class GrblHardwareProperties(ScrolledPanel):
             ("Parameter", 200),
             ("Value", 100),
             ("Unit", 100),
-            ("Description", 1000),
+            ("Description", 300),
+            ("Info", 1000),
         ):
             chart.AppendColumn(
                 column,
@@ -159,7 +171,7 @@ class GrblHardwareProperties(ScrolledPanel):
             d = settings(i)
             if d is None:
                 continue
-            ignore, parameter, units, data_type = d
+            ignore, parameter, units, data_type, url = d
             value = ""
             if i in self.service.hardware_config:
                 try:
@@ -173,6 +185,7 @@ class GrblHardwareProperties(ScrolledPanel):
             chart.SetItem(row_id, 2, str(value))
             chart.SetItem(row_id, 3, str(units))
             chart.SetItem(row_id, 4, str(parameter.upper()))
+            chart.SetItem(row_id, 5, str(url))
 
     def on_label_start_edit(self, event):
         col_id = event.GetColumn()  # Get the current column
@@ -191,12 +204,22 @@ class GrblHardwareProperties(ScrolledPanel):
             v = int(v[1:])
             settings = hardware_settings(v)
             if settings:
-                ignore, parameter, units, data_type = settings
+                ignore, parameter, units, data_type, url = settings
                 new_data = str(data_type(new_data))
         except ValueError:
             event.Veto()
             return
         self.chart.SetItem(row_id, col_id, new_data)
+
+    def on_double_click(self, event):
+        import webbrowser
+        x, y = event.GetPosition()
+        row_id, flags = self.chart.HitTest((x, y))
+        if row_id < 0:
+            return
+        url = self.chart.GetItemText(row_id, 5)
+        if url:
+            webbrowser.open(url, new=0, autoraise=True)
 
     @signal_listener("grbl:hwsettings")
     def hardware_settings_changed(self, origin, *args):

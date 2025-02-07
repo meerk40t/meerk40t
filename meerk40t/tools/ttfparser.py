@@ -68,12 +68,16 @@ class TrueTypeFont:
             and b"loca" not in self._raw_tables
         ):
             raise TTFParsingError("Format CFF font file is not supported.")
-        self.parse_head()
-        self.parse_hhea()
-        self.parse_hmtx()
-        self.parse_loca()
-        self.parse_cmap()
-        self.parse_name()
+        try:
+            self.parse_head()
+            self.parse_hhea()
+            self.parse_hmtx()
+            self.parse_loca()
+            self.parse_cmap()
+            self.parse_name()
+        except Exception as e:
+            print (f"TTF init for {filename} crashed: {e}")
+            raise TTFParsingError("Error while parsing data") from e
         self.glyph_data = list(self.parse_glyf())
         self._line_information = []
 
@@ -419,6 +423,9 @@ class TrueTypeFont:
         ) = struct.unpack(">HHHHHH", data.read(12))
         seg_count = int(seg_count_x2 / 2)
         data = data.read()
+        # We need to have an even amount of bytes for unpack
+        if len(data) % 2 == 1:
+            data = data[:-1]
         data = struct.unpack(f">{int(len(data)/2)}H", data)
         ends = data[:seg_count]
         starts = data[seg_count + 1 : seg_count * 2 + 1]

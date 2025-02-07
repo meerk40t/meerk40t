@@ -675,7 +675,7 @@ class LaserPanel(wx.Panel):
             self.context("element* trace hull\n")
 
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("element* trace complex\n")
+        self.context("element* trace quick\n")
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))

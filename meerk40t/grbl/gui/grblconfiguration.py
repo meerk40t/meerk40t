@@ -281,11 +281,11 @@ class GRBLConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "GRBL-Configuration"
-    
+
     @staticmethod
     def helptext():
         return _("Edit device configuration")
-    
+
     @property
     def hw_config(self):
         # Not relevant
@@ -340,7 +340,8 @@ class GRBLConfiguration(MWindow):
                 changes = False
                 if 21 in self.context.device.hardware_config:
                     value = self.context.device.hardware_config[21]
-                    flag = bool(int(value) == 1)
+                    # Some grbl controllers send something like "1 (hard limits,bool)"
+                    flag = value is not None and str(value).startswith("1")
                     self.context.has_endstops = flag
                     self.context.signal("has_endstops", flag, self.context)
                 if 130 in self.context.device.hardware_config:

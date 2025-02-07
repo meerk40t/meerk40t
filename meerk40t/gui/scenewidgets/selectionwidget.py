@@ -307,7 +307,7 @@ class BorderWidget(Widget):
                 # Show Y-Value
                 s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
-                distance = 0.25 * t_height
+                distance = 0.25 * t_height # No text in the way, so a minimal gap suffices
                 pos = self.top / 2.0 - t_height / 2
                 if pos + t_height + distance >= self.top:
                     pos = self.top - t_height - distance
@@ -324,7 +324,7 @@ class BorderWidget(Widget):
                 rpos = bed_h - self.bottom
                 s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
-                distance = 0.25 * t_height
+                distance = 1.5 * t_height # There's text in the way
                 pos = self.bottom + rpos / 2 - t_height / 2
                 if pos - t_height - distance <= self.bottom:
                     pos = self.bottom + distance
