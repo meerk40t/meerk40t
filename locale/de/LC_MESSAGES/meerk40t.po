@@ -17512,6 +17512,14 @@ msgstr "Aktuelle Einstellungen exportieren"
 msgid "GRBL Hardware Config"
 msgstr "GRBL Hardware Parameter"
 
+#: meerk40t/grbl/gui/grblhardwareconfig.py:43
+msgid "Explanation"
+msgstr "Hinweise"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:44
+msgid "Open the GRBL wiki for a detailed explanation"
+msgstr "Öffnet die GRBL Wiki-Seite für Hinweise zur Nutzung"
+
 #: meerk40t/grbl/gui/grbloperationconfig.py:23
 msgid "Advanced Features:"
 msgstr "Erweiterte Optionen:"
