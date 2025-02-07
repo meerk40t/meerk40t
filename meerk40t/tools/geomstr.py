@@ -1624,18 +1624,18 @@ class Geomstr:
                 ):
                     # This is a deliberate subpath break
                     obj.end()
-            elif isinstance(seg, (Line, Close)):
+            elif isinstance(seg, (Line, Close)) and seg.start is not None and seg.end is not None:
                 obj.line(complex(seg.start), complex(seg.end))
-            elif isinstance(seg, QuadraticBezier):
+            elif isinstance(seg, QuadraticBezier) and seg.start is not None and seg.end is not None and seg.control is not None:
                 obj.quad(complex(seg.start), complex(seg.control), complex(seg.end))
-            elif isinstance(seg, CubicBezier):
+            elif isinstance(seg, CubicBezier) and seg.start is not None and seg.end is not None and seg.control1 is not None and seg.control2 is not None:
                 obj.cubic(
                     complex(seg.start),
                     complex(seg.control1),
                     complex(seg.control2),
                     complex(seg.end),
                 )
-            elif isinstance(seg, Arc):
+            elif isinstance(seg, Arc) and seg.start is not None and seg.end is not None:
                 if seg.is_circular():
                     obj.arc(
                         complex(seg.start), complex(seg.point(0.5)), complex(seg.end)
