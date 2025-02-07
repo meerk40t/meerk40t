@@ -22,7 +22,7 @@ magick mk_big.png ^
 ( -clone 0 -resize 64x64 -extent 64x64 -background transparent ) ^
 ( -clone 0 -fill red -gravity SouthEast -pointsize 96 -annotate 0 %ver% -resize 128x128 -extent 128x128 -background transparent ) ^
 ( -clone 0 -fill red -gravity SouthEast -pointsize 96 -annotate 0 %ver% -resize 256x256 -extent 256x256 -background transparent ) ^
--delete 0 meerk40t.icns
+-delete 0 .github\workflows\mac\meerk40t.icns
 
 del mk_big.png
 del mk_small.png
