@@ -71,6 +71,13 @@ def plugin(service, lifecycle):
                 "priority": 1,
                 "multi": [
                     {
+                        "identifier": 0,
+                        "label": _("File {index}").format(index=0),
+                        "tip": _("File {index}").format(index=0),
+                        "help": "devicenewly",
+                        "action": lambda v: service("select_file 0\n"),
+                    },
+                    {
                         "identifier": 1,
                         "label": _("File {index}").format(index=1),
                         "tip": _("File {index}").format(index=1),
