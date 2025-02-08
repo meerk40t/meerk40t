@@ -157,22 +157,22 @@ class DXFProcessor:
                 color = Color("black")
             node.stroke = color
 
-    def debug_entity(self, entity):
-        print (f"Entitity: {entity.dxftype()}")
-        for key in dir(entity):
-            if key.startswith("_"):
-                continue
-            var = getattr(entity, key)
-            if callable(var):
-                continue
-            print (f"e.{key}={var}")
-        for key in dir(entity.dxf):
-            if key.startswith("_"):
-                continue
-            var = getattr(entity.dxf, key)
-            if callable(var):
-                continue
-            print (f"e.dxf.{key}={var}")
+    # def debug_entity(self, entity):
+    #     print (f"Entity: {entity.dxftype()}")
+    #     for key in dir(entity):
+    #         if key.startswith("_"):
+    #             continue
+    #         var = getattr(entity, key)
+    #         if callable(var):
+    #             continue
+    #         print (f"e.{key}={var}")
+    #     for key in dir(entity.dxf):
+    #         if key.startswith("_"):
+    #             continue
+    #         var = getattr(entity.dxf, key)
+    #         if callable(var):
+    #             continue
+    #         print (f"e.dxf.{key}={var}")
 
     def parse(self, entity, context_node, e_list):
 
