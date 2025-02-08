@@ -751,6 +751,19 @@ class NewlyDevice(Service, Status):
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
+            "select_file",
+            help=_("Sets the default file index to use"),
+            all_arguments_required=True,
+        )
+        def set_file_index(command, channel, _, file_index=None, data=None, remainder=None, **kwgs):
+            old_value = self.file_index
+            if file_index is None or file_index < 0 or file_index >= 10:
+                file_index = 0
+            self.file_index = file_index
+            channel(f"File index was set to #{file_index} (previous value: {old_value})")
+
+        @self.console_argument("file_index", type=int)
+        @self.console_command(
             "draw_frame",
             help=_("sends the newly draw_frame command"),
             all_arguments_required=True,
