@@ -157,13 +157,45 @@ class DXFProcessor:
                 color = Color("black")
             node.stroke = color
 
+    def debug_entity(self, entity):
+        print (f"Entitity: {entity.dxftype()}")
+        for key in dir(entity):
+            if key.startswith("_"):
+                continue
+            var = getattr(entity, key)
+            if callable(var):
+                continue
+            print (f"e.{key}={var}")
+        for key in dir(entity.dxf):
+            if key.startswith("_"):
+                continue
+            var = getattr(entity.dxf, key)
+            if callable(var):
+                continue
+            print (f"e.dxf.{key}={var}")
+
     def parse(self, entity, context_node, e_list):
+
+        def get_angles(entity):
+            start_angle = 0
+            end_angle = math.tau
+            if hasattr(entity.dxf, "start_angle"):
+                start_angle = Angle.degrees(entity.dxf.start_angle)
+                end_angle = Angle.degrees(entity.dxf.end_angle)
+            else:
+                # Due to the flipped nature of dxf we need to mirror them
+                start_angle = entity.dxf.start_param
+                end_angle = entity.dxf.end_param
+            if start_angle >= end_angle:
+                end_angle += Angle.turns(1)
+            return start_angle, end_angle
 
         if hasattr(entity, "transform_to_wcs"):
             try:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
+        # self.debug_entity(entity)
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
@@ -187,36 +219,37 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "ARC":
-            # TODO: Ellipse used to make circ.arc_angle path.
-            circ = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
-            start_angle = Angle.degrees(entity.dxf.start_angle)
-            end_angle = Angle.degrees(entity.dxf.end_angle)
-            if end_angle < start_angle:
-                end_angle += Angle.turns(1)
-            element = Path(circ.arc_angle(start_angle, end_angle))
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.view.unit_height)
-            path = abs(Path(element))
-            if len(path) != 0:
-                if not isinstance(path[0], Move):
-                    path = Move(path.first_point) + path
-                path.approximate_arcs_with_cubics()
+            center = (entity.dxf.center)  # Center point of the circle (3D, but we'll use x,y)
+            a = entity.dxf.radius
+            b = entity.dxf.radius
+            start_angle, end_angle = get_angles(entity)
+            angle = 0
+            geom = Geomstr()
+            geom.arc_as_cubics(
+                start_t=start_angle,
+                end_t=end_angle,
+                cx=center[0],
+                cy=center[1],
+                rx=a,
+                ry=b,
+                rotation=angle,
+            )
             node = context_node.add(
-                path=path,
                 type="elem path",
+                geometry=geom,
                 stroke_scale=False,
                 stroke_width=self.std_stroke,
             )
+            node.matrix.post_scale(self.scale, -self.scale)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
         elif entity.dxftype() == "ELLIPSE":
-            center = (
-                entity.dxf.center
-            )  # Center point of the ellipse (3D, but we'll use x,y)
+            center = (entity.dxf.center)  # Center point of the ellipse (3D, but we'll use x,y)
             major_axis = entity.dxf.major_axis  # Vector representing the major axis
             ratio = entity.dxf.ratio  # Ratio of minor to major axis
+            start_angle, end_angle = get_angles(entity)
 
             # Calculate the angle of the major axis in the XY plane
             angle = math.atan2(major_axis[1], major_axis[0])
@@ -226,8 +259,19 @@ class DXFProcessor:
                 major_axis[0] ** 2 + major_axis[1] ** 2
             )  # Length of the major axis (in XY plane)
             b = a * ratio  # Length of the minor axis
-            # print (f"cx = {center[0]}, cy = {center[1]}, rx = {a}, ry = {b}, rotation = {angle}")
-            geom = Geomstr.ellipse(
+            # geom = Geomstr.ellipse(
+            #     start_t=start_angle,
+            #     end_t=end_angle,
+            #     cx=center[0],
+            #     cy=center[1],
+            #     rx=a,
+            #     ry=b,
+            #     rotation=angle,
+            # )
+            geom = Geomstr()
+            geom.arc_as_cubics(
+                start_t=start_angle,
+                end_t=end_angle,
                 cx=center[0],
                 cy=center[1],
                 rx=a,
