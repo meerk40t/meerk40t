@@ -146,8 +146,8 @@ def init_commands(kernel):
 
     @self.console_argument("x_pos", type=Length)
     @self.console_argument("y_pos", type=Length)
-    @self.console_argument("rx_pos", type=Length)
-    @self.console_argument("ry_pos", type=Length)
+    @self.console_argument("rx", type=Length)
+    @self.console_argument("ry", type=Length)
     @self.console_command(
         "ellipse",
         help=_("ellipse <cx> <cy> <rx> <ry>"),
@@ -156,13 +156,13 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_ellipse(
-        channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs
+        channel, _, x_pos, y_pos, rx, ry, data=None, post=None, **kwargs
     ):
         node = self.elem_branch.add(
             cx=float(x_pos),
             cy=float(y_pos),
-            rx=float(rx_pos),
-            ry=float(ry_pos),
+            rx=float(rx),
+            ry=float(ry),
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
@@ -174,6 +174,66 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        post.append(classify_new(data))
+        return "elements", data
+
+    @self.console_argument("x_pos", type=Length, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=Length, help=_("Y-coordinate of center"))
+    @self.console_argument("rx", type=Length, help=_("Primary radius of ellipse"))
+    @self.console_argument("ry", type=Length, help=_("Secondary radius of ellipse (default equal to primary radius=circle)"))
+    @self.console_argument("start_angle", type=Angle, help=_("Start angle of arc (default 0°)"))
+    @self.console_argument("end_angle", type=Angle, help=_("End angle of arc (default 360°)"))
+    @self.console_option(
+        "rotation", "r", type=Angle, help=_("Rotation of arc")
+    )
+    @self.console_command(
+        "arc",
+        help=_("arc <cx> <cy> <rx> <ry> <start> <end>"),
+        input_type=("elements", None),
+        output_type="elements",
+        all_arguments_required=True,
+    )
+    def element_ellipse(
+        channel, _, x_pos, y_pos, rx, ry=None, start_angle=None, end_angle=None, rotation=None, data=None, post=None, **kwargs
+    ):
+        if start_angle is None:
+            start_angle = Angle("0deg")
+        if end_angle is None:
+            end_angle = Angle("360deg")
+        if rotation is None:
+            rotation = Angle("0deg")
+        if ry is None:
+            ry = rx
+        rx_val = float(rx)
+        ry_val = float(ry)
+        cx = float(x_pos)
+        cy = float(y_pos)
+        geom = Geomstr()
+        geom.arc_as_cubics(
+            start_t=start_angle.radians, 
+            end_t=end_angle.radians,
+            rx=rx_val,
+            ry=ry_val,
+            cx=cx,
+            cy=cy,
+            rotation=rotation.radians,
+        )
+        node = self.elem_branch.add(
+            label="Arc",
+            geometry=geom,
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem path",
+        )
+        node.altered()
+        self.set_emphasis([node])
+        node.focus()
+        if data is None:
+            data = list()
+        data.append(node)
+
         # Newly created! Classification needed?
         post.append(classify_new(data))
         return "elements", data
