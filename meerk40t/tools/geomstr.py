@@ -2719,7 +2719,7 @@ class Geomstr:
 
         @return:
         """
-        sweep = start_t - end_t
+        sweep = end_t - start_t 
         t_slice = sweep / float(slices)
         alpha = (
             math.sin(t_slice)
@@ -2768,7 +2768,6 @@ class Geomstr:
             p_c2 = complex(
                 p_end.real - alpha * ePrimen2x, p_end.imag - alpha * ePrimen2y
             )
-
             self.cubic(p_start, p_c1, p_c2, p_end)
             p_start = p_end
             current_t = next_t
