@@ -2647,7 +2647,7 @@ class Geomstr:
     #######################
 
     def arc_as_quads(
-        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=None, settings=0
     ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
@@ -2665,6 +2665,10 @@ class Geomstr:
         @return:
         """
         sweep = start_t - end_t
+        if slices is None:
+            # A full ellipse can be properly represented with 12 slices - we err on the side of caution here...
+            slices = int(1.5 * 12 * sweep / math.tau)
+            slices = max(2, slices)
         t_slice = sweep / float(slices)
         alpha_mid = (4.0 - math.cos(t_slice)) / 3.0
         current_t = start_t
@@ -2723,6 +2727,7 @@ class Geomstr:
         if slices is None:
             # A full ellipse can be properly represented with 12 slices - we err on the side of caution here...
             slices = int(1.5 * 12 * sweep / math.tau)
+            slices = max(2, slices)
         t_slice = sweep / float(slices)
         alpha = (
             math.sin(t_slice)
