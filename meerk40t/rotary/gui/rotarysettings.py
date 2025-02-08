@@ -8,8 +8,15 @@ import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icon_rotary
 from meerk40t.gui.mwindow import MWindow
-
-# from meerk40t.gui.wxutils import TextCtrl, wxButton, wxCheckBox, wxStaticText
+from meerk40t.gui.wxutils import (
+    dip_size,
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxButton,
+    wxCheckBox,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -20,9 +27,8 @@ _ = wx.GetTranslation
 #         wx.Panel.__init__(self, *args, **kwds)
 #         self.rotary = context
 #         self.scene = getattr(context.root, "mainscene", None)
-#
+
 #         self.checkbox_rotary = wxCheckBox(self, wx.ID_ANY, _("Enable Rotary"))
-#         self.Children[0].SetFocus()
 #         self.text_rotary_scalex = TextCtrl(
 #             self,
 #             wx.ID_ANY,
@@ -44,10 +50,10 @@ _ = wx.GetTranslation
 #         # self.checkbox_rotary_roller = wxCheckBox(self, wx.ID_ANY, _("Uses Roller"))
 #         # self.text_rotary_roller_circumference = TextCtrl(self, wx.ID_ANY, "50.0")
 #         # self.text_rotary_object_circumference = TextCtrl(self, wx.ID_ANY, "50.0")
-#
+
 #         self.__set_properties()
 #         self.__do_layout()
-#
+
 #         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
 #         self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_x)
 #         self.text_rotary_scaley.SetActionRoutine(self.on_text_rotary_scale_y)
@@ -67,16 +73,16 @@ _ = wx.GetTranslation
 #         #     self.text_rotary_object_circumference,
 #         # )
 #         self.SetupScrolling()
-#
+
 #     def pane_show(self):
 #         self.text_rotary_scalex.SetValue(str(self.rotary.scale_x))
 #         self.text_rotary_scaley.SetValue(str(self.rotary.scale_y))
 #         self.checkbox_rotary.SetValue(self.rotary.rotary_enabled)
 #         self.on_check_rotary(None)
-#
+
 #     def pane_hide(self):
 #         pass
-#
+
 #     def __set_properties(self):
 #         self.checkbox_rotary.SetFont(
 #             wx.Font(
@@ -118,7 +124,8 @@ _ = wx.GetTranslation
 #         # )
 #         # self.text_rotary_object_circumference.Enable(False)
 #         # end wxGlade
-#
+#         self.Children[0].SetFocus()
+
 #     def __do_layout(self):
 #         sizer_main = wx.BoxSizer(wx.VERTICAL)
 #         sizer_scale = wx.BoxSizer(wx.HORIZONTAL)
@@ -151,7 +158,7 @@ _ = wx.GetTranslation
 #         self.SetSizer(sizer_main)
 #         self.Layout()
 #         # end wxGlade
-#
+
 #     def on_check_rotary(self, event=None):
 #         self.rotary.rotary_enabled = self.checkbox_rotary.GetValue()
 #         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
@@ -167,7 +174,7 @@ _ = wx.GetTranslation
 #         # Forces guide and grid refresh
 #         self.rotary.signal("units")
 #         self.rotary.signal("refresh_scene", "Scene")
-#
+
 #     def on_text_rotary_scale_y(self):
 #         if self.rotary is None:
 #             return
@@ -178,7 +185,7 @@ _ = wx.GetTranslation
 #         self.scene.pane.grid_secondary_scale_y = self.rotary.scale_y
 #         self.rotary.signal("units")
 #         self.rotary.signal("refresh_scene", "Scene")
-#
+
 #     def on_text_rotary_scale_x(self):
 #         if self.rotary is None:
 #             return
@@ -189,7 +196,7 @@ _ = wx.GetTranslation
 #         self.scene.pane.grid_secondary_scale_x = self.rotary.scale_x
 #         self.rotary.signal("units")
 #         self.rotary.signal("refresh_scene")
-#
+
 #     # def on_check_rotary_loop(self, event):
 #     #     print("Event handler 'on_check_rotary_loop' not implemented!")
 #     #     event.Skip()
@@ -214,11 +221,19 @@ _ = wx.GetTranslation
 class RotarySettings(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(350, 250, *args, **kwds)
-        self.panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context.device, choices="rotary"
+        self.panels = []
+        self.roller_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context.device, choices="rotary_roller"
         )
-        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
-        self.add_module_delegate(self.panel)
+        self.chuck_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context.device, choices="rotary_chuck"
+        )
+        self.sizer.Add(self.roller_panel, 1, wx.EXPAND, 0)
+        self.sizer.Add(self.chuck_panel, 1, wx.EXPAND, 0)
+        self.panels.append(self.roller_panel)
+        self.panels.append(self.chuck_panel)
+        for panel in self.panels:
+            self.add_module_delegate(panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_rotary.GetBitmap())
         self.SetIcon(_icon)
@@ -226,10 +241,12 @@ class RotarySettings(MWindow):
         self.restore_aspect(honor_initial_values=True)
 
     def window_open(self):
-        self.panel.pane_show()
+        for panel in self.panels:
+            panel.pane_show()
 
     def window_close(self):
-        self.panel.pane_hide()
+        for panel in self.panels:
+            panel.pane_hide()
 
     @staticmethod
     def submenu():

@@ -9,7 +9,6 @@ def plugin(service, lifecycle=None):
         return [gui.plugin]
     if lifecycle == "service":
         # Responding to "service" makes this a service plugin for the specific services created via the provider
-        # We are only a provider of lhystudios devices for now.
         return (
             "provider/device/lhystudios",
             "provider/device/grbl",
@@ -34,13 +33,14 @@ class Rotary:
         _ = service._
         choices = [
             {
-                "attr": "rotary_active",
+                "attr": "rotary_active_roller",
                 "object": service,
                 "default": False,
                 "type": bool,
                 "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
+                "tip": _("Is the roller rotary mode active for this device"),
                 "signals": "device;modified",
+                "conditional": (service, "supports_rotary_roller"),
             },
             # {
             #     "attr": "axis",
@@ -57,7 +57,7 @@ class Rotary:
                 "type": float,
                 "label": _("X-Scale"),
                 "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (service, "rotary_active"),
+                "conditional": (service, "rotary_active_roller"),
                 "subsection": _("Scale"),
             },
             {
@@ -67,7 +67,7 @@ class Rotary:
                 "type": float,
                 "label": _("Y-Scale"),
                 "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (service, "rotary_active"),
+                "conditional": (service, "rotary_active_roller"),
                 "subsection": _("Scale"),
             },
             {
@@ -77,7 +77,7 @@ class Rotary:
                 "type": bool,
                 "label": _("Ignore Home"),
                 "tip": _("Ignore Home-Command"),
-                "conditional": (service, "rotary_active"),
+                "conditional": (service, "rotary_active_roller"),
             },
             {
                 "attr": "rotary_flip_x",
@@ -86,7 +86,7 @@ class Rotary:
                 "type": bool,
                 "label": _("Mirror X"),
                 "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (service, "rotary_active"),
+                "conditional": (service, "rotary_active_roller"),
                 "subsection": _("Mirror Output"),
             },
             {
@@ -96,11 +96,38 @@ class Rotary:
                 "type": bool,
                 "label": _("Mirror Y"),
                 "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (service, "rotary_active"),
+                "conditional": (service, "rotary_active_roller"),
                 "subsection": _("Mirror Output"),
             },
         ]
-        service.register_choices("rotary", choices)
+        service.register_choices("rotary_roller", choices)
+
+        choices = [
+            {
+                "attr": "rotary_active_chuck",
+                "object": service,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the chuck rotary mode active for this device"),
+                "signals": "device;modified",
+                "conditional": (service, "supports_rotary_chuck"),
+            },
+            {
+                "attr": "rotary_microsteps_per_revolution",
+                "object": service,
+                "default": False,
+                "type": int,
+                "label": _("Micro-Steps"),
+                "tip": _("How many microsteps are required for a single revolution"),
+                "style": "combosmall",
+                "exclusive": False,
+                "choices": (200, 400, 800, 1600, 3200, 6400, 12800, 25600, 1000, 2000, 4000, 8000, 10000, 20000, 25000),
+                "signals": "device;modified",
+                "conditional": (service, "rotary_active_chuck"),
+            },
+        ]
+        service.register_choices("rotary_chuck", choices)
 
         @service.console_command(
             "rotary",
@@ -142,7 +169,7 @@ class Rotary:
 
     @property
     def active(self):
-        return self.service.rotary_active
+        return self.service.rotary_active_roller
 
     @property
     def flip_x(self):
@@ -159,7 +186,7 @@ class Rotary:
     @lookup_listener("service/device/active")
     @signal_listener("rotary_scale_x")
     @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_active")
+    @signal_listener("rotary_active_roller")
     @signal_listener("rotary_flip_x")
     @signal_listener("rotary_flip_y")
     def rotary_settings_changed(self, origin=None, *args):
@@ -183,7 +210,7 @@ class Rotary:
         @param args:
         @return:
         """
-        if not self.service.rotary_active:
+        if not self.service.rotary_active_roller:
             return
         device = self.service.device
         device.view.scale(self.service.rotary_scale_x, self.service.rotary_scale_y)

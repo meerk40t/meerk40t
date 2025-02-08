@@ -763,6 +763,28 @@ class BalorDevice(Service, Status):
 
         choices = [
             {
+                "attr": "supports_rotary_roller",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Supports roller type rotaries"),
+                "tip": _("Supports roller type rotaries with simple axis motor replacement"),
+            },
+            {
+                "attr": "supports_rotary_chuck",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Supports chuck type rotaries"),
+                "tip": _("Supports chuck type rotaries with own microstepper driver"),
+            },
+
+        ]
+        self.register_choices("balor_device_features", choices)
+        
+
+        choices = [
+            {
                 "attr": "cf_1",
                 "object": self,
                 "default": "50",

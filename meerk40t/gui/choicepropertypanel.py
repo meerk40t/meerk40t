@@ -1460,16 +1460,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                     conditional = c["conditional"]
                     if len(conditional) == 2:
                         c_obj, c_attr = conditional
-                        enabled = bool(getattr(c_obj, c_attr))
+                        enabled = bool(getattr(c_obj, c_attr)) if hasattr(c_obj, c_attr) else False
                         c_equals = True
                         control.Enable(enabled)
                     elif len(conditional) == 3:
                         c_obj, c_attr, c_equals = conditional
-                        enabled = bool(getattr(c_obj, c_attr) == c_equals)
+                        enabled = bool(getattr(c_obj, c_attr) == c_equals) if hasattr(c_obj, c_attr) else False
                         control.Enable(enabled)
                     elif len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
+                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to) if hasattr(c_obj, c_attr) else False
                         c_equals = (c_from, c_to)
                         control.Enable(enabled)
 
