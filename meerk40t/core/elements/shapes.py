@@ -194,7 +194,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_ellipse(
+    def element_arc(
         channel, _, x_pos, y_pos, rx, ry=None, start_angle=None, end_angle=None, rotation=None, data=None, post=None, **kwargs
     ):
         if start_angle is None:
