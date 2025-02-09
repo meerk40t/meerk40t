@@ -294,6 +294,8 @@ class Camera(Service):
                 actual_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
                 msg = "(OK)"
             except Exception as e:
+                actual_height = 0
+                actual_width = 0
                 msg = f"(Fail: {e})"
             self.logger(f"Tried {width}x{height} ({description}) - received {actual_width}x{actual_height} {msg}")
             if int(actual_width) == width and int(actual_height) == height:
