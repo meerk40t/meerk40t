@@ -42,14 +42,20 @@ def plugin(kernel, lifecycle):
             # reorder elements
             data.sort(key=lambda n: n.emphasized_time)
 
-            node = None
+            last_fill = None
+            last_stroke = None
+            last_stroke_width = None
             segment_list = []
-            for i in range(len(data)):
-                node = data[i]
+            for i, node in enumerate(data):
                 try:
                     path = abs(node.as_path())
                 except AttributeError:
                     return "elements", data
+                if last_fill is None and hasattr(node, "fill"):
+                    last_fill = node.fill
+                if last_stroke is None and hasattr(node, "stroke"):
+                    last_stroke = node.stroke
+                    last_stroke_width = node.stroke_width
                 c = linearize_path(path)
                 try:
                     c = pb.Polygon(c)
@@ -57,23 +63,23 @@ def plugin(kernel, lifecycle):
                     segment_list.append(c)
                 except pb.PolyBoolException:
                     channel(_("Polybool could not solve."))
-            if len(segment_list) == 0:
+            if not segment_list:
                 return "elements", data
-            if not keep:
-                for node in data:
-                    node.remove_node()
             segs = segment_list[0]
             for s in segment_list[1:]:
-                combined = pb.combine(segs, s)
-                if command == "intersection":
-                    segs = pb.selectIntersect(combined)
-                elif command == "xor":
-                    segs = pb.selectXor(combined)
-                elif command == "union":
-                    segs = pb.selectUnion(combined)
-                else:
-                    # difference
-                    segs = pb.selectDifference(combined)
+                try:
+                    combined = pb.combine(segs, s)
+                    if command == "intersection":
+                        segs = pb.selectIntersect(combined)
+                    elif command == "xor":
+                        segs = pb.selectXor(combined)
+                    elif command == "union":
+                        segs = pb.selectUnion(combined)
+                    else:
+                        # difference
+                        segs = pb.selectDifference(combined)
+                except pb.PolyBoolException:
+                    channel(_("Polybool could not solve."))
 
             last_polygon = pb.polygon(segs)
             for se in last_polygon.regions:
@@ -84,34 +90,22 @@ def plugin(kernel, lifecycle):
                     solution_path += Path(r)
             if solution_path:
                 with elements.undoscope("Constructive Additive Geometry: Add"):
-                    if node is None:
-                        new_node = elements.elem_branch.add(
-                            path=solution_path,
-                            type="elem path",
-                        )
-                    else:
-                        try:
-                            stroke = node.stroke if node is not None else None
-                        except AttributeError:
-                            stroke = Color("blue")
-                        try:
-                            fill = node.fill if node is not None else None
-                        except AttributeError:
-                            fill = None
-                        try:
-                            stroke_width = node.stroke_width if node is not None else None
-                        except AttributeError:
-                            stroke_width = elements.default_strokewidth
-                        new_node = elements.elem_branch.add(
-                            path=solution_path,
-                            type="elem path",
-                            stroke=stroke,
-                            fill=fill,
-                            stroke_width=stroke_width,
-                        )
-                context.signal("refresh_scene", "Scene")
-                if elements.classify_new:
-                    elements.classify([new_node])
+                    if not keep:
+                        for node in data:
+                            node.remove_node()
+                    stroke = last_stroke if last_stroke is not None else Color("blue")
+                    fill = last_fill
+                    stroke_width = last_stroke_width if last_stroke_width is not None else elements.default_strokewidth
+                    new_node = elements.elem_branch.add(
+                        path=solution_path,
+                        type="elem path",
+                        stroke=stroke,
+                        fill=fill,
+                        stroke_width=stroke_width,
+                    )
+                    context.signal("refresh_scene", "Scene")
+                    if elements.classify_new:
+                        elements.classify([new_node])
                 return "elements", [node]
             else:
                 channel(_("No solution found (empty path)"))

@@ -2396,7 +2396,15 @@ class ShadowTree:
         """
         self.do_not_select = True
         self.wxtree.UnselectAll()
-
+        require_rebuild = False
         for e in self.elements.elems_nodes(emphasized=True):
-            self.wxtree.SelectItem(e._item, True)
+            if e._item:
+                self.wxtree.SelectItem(e._item, True)
+            else:
+                # That should not happen, apparently we have a not fully built tree
+                require_rebuild = True
+                break
+        if require_rebuild:
+            self.context.signal("rebuild_tree", "all")
+
         self.do_not_select = False

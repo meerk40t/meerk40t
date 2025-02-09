@@ -656,14 +656,22 @@ class ContourPanel(wx.Panel):
             data.append(node)
         bounds = Node.union_bounds(data, attr="bounds")
         width, height = self.bitmap_preview.GetClientSize()
-        bit_map = self.make_raster(
-            data,
-            bounds,
-            width=width,
-            height=height,
-            bitmap=True,
-            keep_ratio=True,
-        )
+        while width > 1024 or height > 1024:
+            width = width // 2
+            height = height // 2
+        width = max(1, width)
+        height = max(1, height)
+        try:
+            bit_map = self.make_raster(
+                data,
+                bounds,
+                width=width,
+                height=height,
+                bitmap=True,
+                keep_ratio=True,
+            )
+        except Exception:
+            return
         self.bitmap_preview.SetBitmap(bit_map)
 
     def on_list_selection(self, event):

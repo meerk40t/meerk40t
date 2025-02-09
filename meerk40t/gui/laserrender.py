@@ -1156,7 +1156,7 @@ class LaserRender:
                 )
                 node._cache_width, node._cache_height = image.size
                 node._cache = cache
-            except MemoryError:
+            except Exception:
                 pass
 
         min_x, min_y, max_x, max_y = bounds
@@ -1282,7 +1282,7 @@ class LaserRender:
                     scaling * img_bb[3],
                 )
                 node.raw_bbox = newbb
-        except MemoryError:
+        except Exception:
             node.text_cache = None
             node.raw_bbox = None
         node.ascent = f_height - f_descent

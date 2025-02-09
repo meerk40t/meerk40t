@@ -1517,6 +1517,9 @@ def plugin(kernel, lifecycle=None):
             elemimage, elemmatrix = create_image(
                 make_raster, [inode], b, inode.dpi, keep_ratio=True
             )
+            if elemimage is None:
+                channel(_("Intermediary images were none"))
+                return
 
             for g in geoms:
                 masknode = PathNode(geometry=g, stroke=None, fill=Color("black"))
@@ -1525,7 +1528,7 @@ def plugin(kernel, lifecycle=None):
                 maskimage, maskmatrix = create_image(
                     make_raster, (masknode, rectnode), b, inode.dpi, keep_ratio=True
                 )
-                if maskimage is None or elemimage is None:
+                if maskimage is None:
                     channel(_("Intermediary images were none"))
                     continue
 

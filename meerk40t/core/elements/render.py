@@ -71,13 +71,16 @@ def init_commands(kernel):
         new_height = height * dots_per_units
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
 
@@ -225,13 +228,16 @@ def init_commands(kernel):
         new_height = height * dots_per_units
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
         path = make_vector(
             image,
             interpolationpolicy=ipolicy,
@@ -483,13 +489,17 @@ def init_commands(kernel):
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
         dpi = 500
+        try:
+            data_image = make_raster(
+                mydata,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
 
-        data_image = make_raster(
-            mydata,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
         image_node_1 = ImageNode(
@@ -556,13 +566,16 @@ def init_commands(kernel):
             new_height = max(new_height, 1)
             new_width = max(new_width, 1)
             dpi = 500
-
-            image_2 = make_raster(
-                copy_data,
-                bounds=bounds,
-                width=new_width,
-                height=new_height,
-            )
+            try:
+                image_2 = make_raster(
+                    copy_data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+            except Exception:
+                channel(_("Too much memory required."))
+                return
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
             image_node_2 = ImageNode(
@@ -648,13 +661,16 @@ def init_commands(kernel):
                 new_height = max(new_height, 1)
                 new_width = max(new_width, 1)
                 dpi = 500
-
-                data_image = make_raster(
-                    copy_data,
-                    bounds=bounds,
-                    width=new_width,
-                    height=new_height,
-                )
+                try:
+                    data_image = make_raster(
+                        copy_data,
+                        bounds=bounds,
+                        width=new_width,
+                        height=new_height,
+                    )
+                except Exception:
+                    channel(_("Too much memory required."))
+                    return
                 matrix = Matrix.scale(width / new_width, height / new_height)
                 matrix.post_translate(bounds[0], bounds[1])
 
