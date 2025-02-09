@@ -65,7 +65,7 @@ def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
             height=new_height,
             keep_ratio=keep_ratio,
         )
-    except MemoryError:
+    except Exception:
         return None, None
     matrix = Matrix.scale(width / new_width, height / new_height)
     return image, matrix

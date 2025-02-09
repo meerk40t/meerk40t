@@ -222,7 +222,7 @@ class InformationWidget(SimpleInfoWidget):
                     # print(
                     #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
                     # )
-                except MemoryError:
+                except Exception:
                     black_pixel = 1
                     all_pixel = 1
                 ratio = black_pixel / all_pixel

@@ -78,7 +78,7 @@ def init_commands(kernel):
                 width=new_width,
                 height=new_height,
             )
-        except MemoryError:
+        except Exception:
             channel(_("Too much memory required."))
             return
         matrix = Matrix.scale(width / new_width, height / new_height)
@@ -235,7 +235,7 @@ def init_commands(kernel):
                 width=new_width,
                 height=new_height,
             )
-        except MemoryError:
+        except Exception:
             channel(_("Too much memory required."))
             return
         path = make_vector(
@@ -496,7 +496,7 @@ def init_commands(kernel):
                 width=new_width,
                 height=new_height,
             )
-        except MemoryError:
+        except Exception:
             channel(_("Too much memory required."))
             return
 
@@ -573,7 +573,7 @@ def init_commands(kernel):
                     width=new_width,
                     height=new_height,
                 )
-            except MemoryError:
+            except Exception:
                 channel(_("Too much memory required."))
                 return
             matrix = Matrix.scale(width / new_width, height / new_height)
@@ -668,7 +668,7 @@ def init_commands(kernel):
                         width=new_width,
                         height=new_height,
                     )
-                except MemoryError:
+                except Exception:
                     channel(_("Too much memory required."))
                     return
                 matrix = Matrix.scale(width / new_width, height / new_height)

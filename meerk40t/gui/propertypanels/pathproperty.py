@@ -179,7 +179,7 @@ class PathPropertyPanel(ScrolledPanel):
                     # print(
                     #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
                     # )
-                except MemoryError:
+                except Exception:
                     all_pixel = 1
                     black_pixel = 1
                 ratio = black_pixel / all_pixel

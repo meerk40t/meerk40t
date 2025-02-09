@@ -670,7 +670,7 @@ class ContourPanel(wx.Panel):
                 bitmap=True,
                 keep_ratio=True,
             )
-        except MemoryError:
+        except Exception:
             return
         self.bitmap_preview.SetBitmap(bit_map)
 

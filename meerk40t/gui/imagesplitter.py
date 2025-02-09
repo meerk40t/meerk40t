@@ -88,7 +88,7 @@ class InfoPanel(wx.Panel):
                         bitmap=True,
                         keep_ratio=True,
                     )
-                except MemoryError:
+                except Exception:
                     return None, None
 
             if c is None:

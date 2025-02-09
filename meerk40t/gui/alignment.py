@@ -106,7 +106,7 @@ class InfoPanel(wx.Panel):
                         bitmap=True,
                         keep_ratio=True,
                     )
-                except MemoryError:
+                except Exception:
                     return None, None
             elif node.type in ("group", "file"):
                 data = list(node.flat(types=elem_nodes))
@@ -121,7 +121,7 @@ class InfoPanel(wx.Panel):
                         bitmap=True,
                         keep_ratio=True,
                     )
-                except MemoryError:
+                except Exception:
                     return None, None
             if c is None:
                 c = Color("black")

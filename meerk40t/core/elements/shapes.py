@@ -654,7 +654,7 @@ def init_commands(kernel):
                 width=500,
                 height=500,
             )
-        except MemoryError:
+        except Exception:
             pass # Not relevant...
 
     @self.console_argument("prop", type=str, help=_("property to set"))
