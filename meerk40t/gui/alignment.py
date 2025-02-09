@@ -89,34 +89,40 @@ class InfoPanel(wx.Panel):
             image_from_node = None
             c = None
             # Do we have a standard representation?
-            if node.type.startswith("elem "):
-                if (
-                    hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
-                ):
-                    c = node.stroke
+            if (
+                node.type.startswith("elem ") 
+                and hasattr(node, "stroke")
+                and node.stroke is not None
+                and node.stroke.argb is not None
+            ):
+                c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                image_from_node = self.make_raster(
-                    node,
-                    node.paint_bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image_from_node = self.make_raster(
+                        node,
+                        node.paint_bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except MemoryError:
+                    return None, None
             elif node.type in ("group", "file"):
                 data = list(node.flat(types=elem_nodes))
                 bounds = Node.union_bounds(data, attr="paint_bounds")
 
-                image_from_node = self.make_raster(
-                    data,
-                    bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image_from_node = self.make_raster(
+                        data,
+                        bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except MemoryError:
+                    return None, None
             if c is None:
                 c = Color("black")
             if image_from_node is None:
@@ -142,6 +148,8 @@ class InfoPanel(wx.Panel):
             if count > 0:
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
@@ -154,6 +162,8 @@ class InfoPanel(wx.Panel):
                 node = data[0]
                 first_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
@@ -165,6 +175,8 @@ class InfoPanel(wx.Panel):
                 node = data[-1]
                 last_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
 
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(

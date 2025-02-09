@@ -647,12 +647,15 @@ def init_commands(kernel):
             e.set_dirty_bounds()
         # arbitrary bounds...
         bounds = (0, 0, float(Length("5cm")), float(Length("5cm")))
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=500,
-            height=500,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=500,
+                height=500,
+            )
+        except MemoryError:
+            pass # Not relevant...
 
     @self.console_argument("prop", type=str, help=_("property to set"))
     @self.console_argument("new_value", type=str, help=_("new property value"))

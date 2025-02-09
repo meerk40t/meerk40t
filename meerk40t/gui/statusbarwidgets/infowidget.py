@@ -198,26 +198,33 @@ class InformationWidget(SimpleInfoWidget):
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
-
+            while new_height > 1024 or new_width > 1024:
+                new_height //= 2
+                new_width //= 2
+                
             all_pixel = new_height * new_width
             if all_pixel > 0:
-                image = make_raster(
-                    data,
-                    bounds=bounds,
-                    width=new_width,
-                    height=new_height,
-                    keep_ratio=keep_ratio,
-                )
-                white_pixel = sum(
-                    image.point(lambda x: 255 if x else 0)
-                    .convert("L")
-                    .point(bool)
-                    .getdata()
-                )
-                black_pixel = all_pixel - white_pixel
-                # print(
-                #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
-                # )
+                try:
+                    image = make_raster(
+                        data,
+                        bounds=bounds,
+                        width=new_width,
+                        height=new_height,
+                        keep_ratio=keep_ratio,
+                    )
+                    white_pixel = sum(
+                        image.point(lambda x: 255 if x else 0)
+                        .convert("L")
+                        .point(bool)
+                        .getdata()
+                    )
+                    black_pixel = all_pixel - white_pixel
+                    # print(
+                    #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
+                    # )
+                except MemoryError:
+                    black_pixel = 1
+                    all_pixel = 1
                 ratio = black_pixel / all_pixel
                 area = (
                     ratio
