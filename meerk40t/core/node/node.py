@@ -1217,10 +1217,11 @@ class Node:
         If the node exists elsewhere in the tree it will be removed from that location.
         """
         reference_sibling = self
-        source_siblings = new_sibling.parent.children
+        source_siblings = None if new_sibling.parent is None else new_sibling.parent.children 
         destination_siblings = reference_sibling.parent.children
 
-        source_siblings.remove(new_sibling)
+        if source_siblings:
+            source_siblings.remove(new_sibling)
         try:
             reference_position = destination_siblings.index(reference_sibling)
             if below:
