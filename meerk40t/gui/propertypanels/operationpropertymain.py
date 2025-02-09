@@ -1870,9 +1870,13 @@ class ParameterPanel(ScrolledPanel):
         self.Layout()
 
     def set_widgets(self, node):
-        self.operation = node
-        for panel in self.panels:
-            panel.set_widgets(node)
+        try:
+            self.operation = node
+            for panel in self.panels:
+                panel.set_widgets(node)
+        except RuntimeError:
+            # Already deleted
+            return
 
     def pane_hide(self):
         for panel in self.panels:
