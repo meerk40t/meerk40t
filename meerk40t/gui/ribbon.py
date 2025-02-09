@@ -435,6 +435,26 @@ class Button:
             self.state_unpressed = key_id
             self._restore_button_aspect(key_id)
             # self.ensure_realize()
+            # And now execute it, provided it would be enabled...
+            auto_execute = self.context.setting(bool, "button_multi_menu_execute", True)
+            if auto_execute:
+                is_visible = True
+                is_enabled = True
+                if self.rule_visible:
+                    try:
+                        is_visible = self.rule_visible(0)
+                    except (AttributeError, TypeError):
+                        is_visible = False
+                if self.rule_enabled:
+                    try:
+                        is_enabled = self.rule_enabled(0)
+                    except (AttributeError, TypeError):
+                        is_enabled = False
+                if is_visible and is_enabled:
+                    try:
+                        self.action(None)
+                    except AttributeError:
+                        pass
 
         return menu_item_click
 
