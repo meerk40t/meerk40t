@@ -274,6 +274,8 @@ class Button:
             "client_data": self.client_data,
             "rule_enabled": self.rule_enabled,
             "rule_visible": self.rule_visible,
+            "toggle_attr": self.toggle_attr,
+            "object": self.object,
         }
         self._update_button_aspect(key, **kwargs)
 
@@ -474,6 +476,8 @@ class Button:
             # This is not a context, we tried.
             pass
         initial_value = getattr(self.object, self.save_id, "default")
+        if "signal" in self.button_dict and "attr" in self.button_dict:
+            self._create_generic_signal_for_multi(self.object, self.button_dict.get("attr"), self.button_dict.get("signal"))
 
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
@@ -494,7 +498,26 @@ class Button:
         @return:
         """
 
-        def multi_click(origin, set_value):
+        def multi_click(origin, *args):
+            self._restore_button_aspect(key)
+
+        self.context.listen(signal, multi_click)
+        self.parent._registered_signals.append((signal, multi_click))
+
+    def _create_generic_signal_for_multi(self, q_object, q_attr, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def multi_click(origin, *args):
+            try:
+                key = getattr(q_object, q_attr)
+            except AttributeError:
+                return
             self._restore_button_aspect(key)
 
         self.context.listen(signal, multi_click)
@@ -539,7 +562,8 @@ class Button:
         @return:
         """
 
-        def toggle_click(origin, set_value, *args):
+        def toggle_click(origin, *args):
+            set_value = getattr(self.object, self.toggle_attr) if self.toggle_attr else not self.toggle
             self.set_button_toggle(set_value)
 
         self.context.listen(signal, toggle_click)

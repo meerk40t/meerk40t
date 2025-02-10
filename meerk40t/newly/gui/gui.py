@@ -69,6 +69,8 @@ def plugin(service, lifecycle):
                 "identifier": "file_index",
                 "object": service,
                 "priority": 1,
+                "signal": "newly_file_index",
+                "attr": "file_index",
                 "multi": [
                     {
                         "identifier": 0,
@@ -153,12 +155,15 @@ def plugin(service, lifecycle):
                 "toggle_attr": "autoplay",
                 "object": service,
                 "priority": 1,
+                "signal": "newly_autoplay",
                 "toggle": {
                     "label": _("Send & Start"),
                     "tip": _("Automatically start the device after send"),
                     "help": "devicenewly",
                     "icon": icons8_circled_play,
-                    "signal": "autoplay",
+                    "toggle_attr": "autoplay",
+                    "object": service,
+                    "signal": "newly_autoplay",
                 },
             },
         )

@@ -272,6 +272,7 @@ class NewlyDevice(Service, Status):
                     "File0 is default and instantly executes. The remaining files need to be sent and told to start"
                 ),
                 "section": "_30_Output",
+                "signals": "newly_file_index",
             },
             {
                 "attr": "autoplay",
@@ -283,6 +284,7 @@ class NewlyDevice(Service, Status):
                     "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
                 ),
                 "section": "_30_Output",
+                "signals": "newly_autoplay",
             },
             {
                 "attr": "signal_updates",
@@ -761,6 +763,8 @@ class NewlyDevice(Service, Status):
                 file_index = 0
             self.file_index = file_index
             channel(f"File index was set to #{file_index} (previous value: {old_value})")
+            # Let propertypanels know that this value was updated
+            self.signal("file_index", file_index, self)
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
