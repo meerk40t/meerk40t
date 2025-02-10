@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import polib
 
 def are_curly_brackets_matched(input_str):
     stack = []
@@ -124,6 +123,12 @@ def find_erroneous_translations(file_path):
 
 # Simple tool to recursively translate all .po-files into their .mo-equivalents under ./locale/LC_MESSAGES
 def create_mo_files(force:bool, locales:list):
+    try:
+        import polib
+    except ImportError:
+        print ("polib missing - you need to install that library, eg. 'pip install polib'")
+        return
+
     data_files = []
     localedir = "./locale"
     po_dirs = []

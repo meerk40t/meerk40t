@@ -20315,3 +20315,27 @@ msgstr "Zu allen Rändern"
 #: meerk40t/gui/wxmmain.py:1227
 msgid "Left/upper edge"
 msgstr "Linker/Oberer Rand"
+
+#: meerk40t/core/elements/render.py:82 meerk40t/core/elements/render.py:239 meerk40t/core/elements/render.py:500 meerk40t/core/elements/render.py:577 meerk40t/core/elements/render.py:672
+msgid "Too much memory required."
+msgstr "Nicht ausreichend Speicher vorhanden."
+
+#: meerk40t/grbl/gui/grblcontroller.py:90
+msgid "Gcode"
+msgstr "Gcode"
+
+#: meerk40t/grbl/gui/grblcontroller.py:91
+msgid "GRBL"
+msgstr "GRBL"
+
+#: meerk40t/extra/coolant.py:289 meerk40t/extra/coolant.py:289 meerk40t/gui/dialogoptions.py:76 meerk40t/gui/hersheymanager.py:86 meerk40t/gui/materialmanager.py:65 meerk40t/gui/wxutils.py:261
+msgid "OK"
+msgstr "OK"
+
+#: meerk40t/extra/coolant.py:311
+msgid "GCode M7/M9"
+msgstr "GCode M7/M9"
+
+#: meerk40t/extra/coolant.py:318
+msgid "GCode M8/M9"
+msgstr "GCode M8/M9"

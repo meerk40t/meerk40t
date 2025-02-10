@@ -130,17 +130,24 @@ class SelectDevice(wx.Dialog):
         tree = self.tree_devices
         tree.DeleteAllItems()
         tree_root = tree.AddRoot(_("Devices"))
-        self.dev_infos = list(self.context.find("dev_info"))
-        self.dev_infos.sort(
-            key=lambda e: str(self.sort_family_name[e[0].get("family", 0)])
-            + "_"
-            + str(e[0].get("priority", 0)),
-            reverse=True,
-        )
+        self.dev_infos = []
+        for obj, name, sname in self.context.find("dev_info"):
+            fam = obj.get("family", "")
+            famnum = self.sort_family_name[fam] if fam in self.sort_family_name else 0
+            key = f"{famnum}_{obj.get('priority', 0)}"
+            self.dev_infos.append((obj, name, sname, key))
+        # self.dev_infos = list(self.context.find("dev_info"))
+        # self.dev_infos.sort(
+        #     key=lambda e: str(self.sort_family_name[e[0].get("family", 0)])
+        #     + "_"
+        #     + str(e[0].get("priority", 0)),
+        #     reverse=True,
+        # )
+        self.dev_infos.sort(key=lambda e: e[3], reverse=True)
         last_family = ""
         parent_item = tree_root
         index = -1
-        for obj, name, sname in self.dev_infos:
+        for obj, name, sname, key in self.dev_infos:
             index += 1
             family = obj.get("family", "")
             info = obj.get("friendly_name", "")
