@@ -2,8 +2,9 @@ import os
 import platform
 from functools import lru_cache
 from glob import glob
+from math import atan2
 from os.path import basename, exists, join, realpath, splitext
-
+from meerk40t.svgelements import Matrix
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, Length
@@ -17,35 +18,94 @@ from meerk40t.tools.ttfparser import TrueTypeFont, TTFParsingError
 
 
 class FontPath:
-    def __init__(self, weld):
+    def __init__(self, weld, bend_geometry=None, bend_align_x=None):
         self.total_list = list()
-        self.total_geometry = Geomstr()
+        self._structures = []
+        self.bend_geometry = bend_geometry
+        if bend_align_x not in ("left", "center", "right"):
+            bend_align_x = "center"
+        self.bend_align_x = bend_align_x
         self.geom = Geomstr()
-        self._index = 0
         self.start = None
         self.weld = weld
 
     def character_end(self):
-        if self.weld:
-            self.geom.as_interpolated_points()
-            c = Geomstr()
-            for sp in self.geom.as_subpaths():
-                for segs in sp.as_interpolated_segments(interpolate=10):
-                    c.polyline(segs)
-                    c.end()
-            c.flag_settings(flag=self._index)
-            self._index += 1
-            self.total_geometry.append(c)
-        else:
-            self.total_geometry.append(self.geom)
+        self._structures.append(Geomstr(self.geom))
         self.geom.clear()
 
     @property
     def geometry(self):
+        total_geometry = Geomstr()
+        index = 0
+        bounds = None
+        for structure in self._structures:
+            bb = structure.bbox()
+            bounds = (
+                bb[0] if bounds is None else min(bounds[0], bb[0]),
+                bb[1] if bounds is None else min(bounds[1], bb[1]),
+                bb[2] if bounds is None else max(bounds[2], bb[2]),
+                bb[3] if bounds is None else max(bounds[3], bb[3]),
+            )
+        
+        bend_length = self.bend_geometry.length() if self.bend_geometry else 0
+        if bend_length == 0:
+            bounds = None
+        
+        for structure in self._structures:
+            if self.bend_geometry and bounds:
+                bb = structure.bbox()
+                if self.bend_align_x == "left":
+                    plain_x = bb[0] - bounds[0]
+                elif self.bend_align_x == "center":
+                    plain_x = bend_length / 2 - (
+                        (bounds[0] + bounds[2]) / 2 - bb[0]
+                    )
+                elif self.bend_align_x == "right":
+                    plain_x = bend_length - (bounds[2] - (bb[2] - bb[0]))
+                
+                while plain_x < 0:
+                    plain_x += bend_length
+                while plain_x > bend_length:
+                    plain_x -= bend_length
+                fract = plain_x / bend_length
+                bend_pos = self.bend_geometry.position(e=range(self.bend_geometry.index), t=fract)
+                # We need to shift the character position
+                try:
+                    tangent = self.bend_geometry.tangent(e=range(self.bend_geometry.index), t=fract)
+                    normal = self.bend_geometry.normal(e=range(self.bend_geometry.index), t=fract)
+                except ValueError:
+                    tangent = complex(1, 0) # regular
+                    normal = complex(0, 1) # upwards
+                angle = atan2(tangent.real, tangent.imag)
+                matrix = Matrix()
+                # Rotate around center of character
+                matrix.post_rotate(angle, (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
+                # Now move to the point
+                # We use the relative position
+                rel_x = bb[0] - bounds[0]
+                rel_y = bb[1] - bounds[1]
+                matrix.post_translate(
+                    tx = bend_pos.real - bb[0] + rel_x,
+                    ty = bend_pos.image - bb[1] + rel_y,
+                )
+                structure.transform(matrix)
+            if self.weld:
+                # structure.as_interpolated_points()
+                c = Geomstr()
+                for sp in structure.as_subpaths():
+                    for segs in sp.as_interpolated_segments(interpolate=10):
+                        c.polyline(segs)
+                        c.end()
+                c.flag_settings(flag=index)
+                index += 1
+                total_geometry.append(c)
+            else:
+                total_geometry.append(structure)
+
         if not self.weld:
-            return self.total_geometry
-        bt = BeamTable(self.total_geometry.simplify())
-        union = bt.union(*list(range(self._index)))
+            return total_geometry
+        bt = BeamTable(total_geometry.simplify())
+        union = bt.union(*list(range(index)))
         # union.remove_0_length()
         union.greedy_distance()
         return union.simplify()
@@ -162,9 +222,7 @@ class Meerk40tFonts:
             item = self.fonts_registered[file_extension]
         except KeyError:
             return None
-        if item[2]:
-            return item[2](full_file_name)
-        return None
+        return item[2](full_file_name) if item[2] else None
 
     def _get_full_info(self, short):
         s_lower = short.lower()
@@ -178,9 +236,7 @@ class Meerk40tFonts:
 
     def is_system_font(self, short):
         info = self._get_full_info(short)
-        if info:
-            return info[4]
-        return True
+        return info[4] if info else True
 
     def face_to_full_name(self, short):
         s_lower = short.lower()
