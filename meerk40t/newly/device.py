@@ -272,6 +272,7 @@ class NewlyDevice(Service, Status):
                     "File0 is default and instantly executes. The remaining files need to be sent and told to start"
                 ),
                 "section": "_30_Output",
+                "signals": "newly_file_index",
             },
             {
                 "attr": "autoplay",
@@ -283,6 +284,7 @@ class NewlyDevice(Service, Status):
                     "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
                 ),
                 "section": "_30_Output",
+                "signals": "newly_autoplay",
             },
             {
                 "attr": "signal_updates",
