@@ -24,21 +24,31 @@ from wx import aui
 from meerk40t.gui.icons import (
     get_default_icon_size,
     icon_add_new,
-    icon_trash,
     icon_edit,
+    icon_trash,
     icons8_down,
     icons8_opened_folder,
     icons8_up,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxComboBox,
+    wxListBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 
 
 def register_panel_ribbon(window, context):
-    iconsize = get_default_icon_size()
+    iconsize = get_default_icon_size(context)
     minh = 3 * iconsize + 25
     pane_ribbon = (
         aui.AuiPaneInfo()
@@ -54,6 +64,7 @@ def register_panel_ribbon(window, context):
         window, wx.ID_ANY, context=context, pane=pane_ribbon, identifier="primary"
     )
     pane_ribbon.control = ribbon
+    pane_ribbon.helptext = _("Toolbar with the main commands to control jobs and devices")
 
     window.on_pane_create(pane_ribbon)
     context.register("pane/ribbon", pane_ribbon)
@@ -70,6 +81,7 @@ def register_panel_ribbon(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane_tool.dock_proportion = 640
+    pane_tool.helptext = _("Icon-bar with the main object creation tools")
     ribbon = MKRibbonBarPanel(
         window,
         wx.ID_ANY,
@@ -84,6 +96,32 @@ def register_panel_ribbon(window, context):
     window.on_pane_create(pane_tool)
     context.register("pane/tools", pane_tool)
     context.register("ribbonbar/tools", ribbon)
+
+    pane_edittool = (
+        aui.AuiPaneInfo()
+        .Name("edittools")
+        .Left()
+        .BestSize(minh, 300)
+        .FloatingSize(minh, 640)
+        .Caption(_("Modify"))
+        .CaptionVisible(not context.pane_lock)
+    )
+    pane_edittool.dock_proportion = 640
+    pane_edittool.helptext = _("Icon-bar with object modification tools")
+    ribbon = MKRibbonBarPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        pane=pane_edittool,
+        identifier="edittools",
+        orientation="auto",
+        show_labels=False,
+    )
+    pane_edittool.control = ribbon
+
+    window.on_pane_create(pane_edittool)
+    context.register("pane/edittools", pane_edittool)
+    context.register("ribbonbar/edittools", ribbon)
 
     choices = [
         {
@@ -131,7 +169,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
             self.art.show_labels = show_labels
         # Make myself known in context
         if not hasattr(context, "_ribbons"):
-            self.context._ribbons = dict()
+            self.context._ribbons = {}
         self.context._ribbons[self.identifier] = self
 
         self.storage = Settings(
@@ -275,6 +313,41 @@ class MKRibbonBarPanel(RibbonBarPanel):
                     "seq": 3,
                 },
             ]
+        elif self.identifier == "edittools":
+            ribbon_config = [
+                {
+                    "id": "modify",
+                    "label": "Modify",
+                    "panels": [
+                        {
+                            "id": "undo",
+                            "label": "Undo",
+                            "seq": 1,
+                        },
+                        {
+                            "id": "group",
+                            "label": "Group",
+                            "seq": 2,
+                        },
+                        {
+                            "id": "modify",
+                            "label": "Modification",
+                            "seq": 3,
+                        },
+                        {
+                            "id": "geometry",
+                            "label": "Geometry",
+                            "seq": 4,
+                        },
+                        {
+                            "id": "align",
+                            "label": "Alignment",
+                            "seq": 5,
+                        },
+                    ],
+                    "seq": 1,
+                },
+            ]
         else:
             ribbon_config = []
 
@@ -340,7 +413,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                     or len(panel_info) < 3
                 ):
                     break
-                panel_dict = dict()
+                panel_dict = {}
                 panel_dict["id"] = panel_info[0]
                 panel_dict["seq"] = int(panel_info[1])
                 panel_dict["label"] = panel_info[2]
@@ -349,7 +422,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 panel_idx += 1
 
             newpage["panels"] = panel_list
-            if len(panel_list) > 0:
+            if panel_list:
                 newconfig.append(newpage)
 
             page_idx += 1
@@ -440,7 +513,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
             button_config.append(userbutton)
             button_idx += 1
 
-        if len(newconfig) > 0:
+        if newconfig:
             ribbon_config = newconfig
         return ribbon_config, button_config
 
@@ -452,8 +525,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 ppath = f"button/{panel_entry['id']}/*"
                 if ppath not in paths:
                     new_values = []
-                    for obj, kname, sname in self.context.kernel.find(ppath):
-                        new_values.append((obj, kname, sname))
+                    new_values.extend(
+                        (obj, kname, sname)
+                        for obj, kname, sname in self.context.kernel.find(ppath)
+                    )
                     self.set_panel_buttons(panel_entry["id"], new_values)
                     paths.append(ppath)
 
@@ -490,8 +565,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 ppath = f"button/{panel_entry['id']}/*"
                 if ppath not in paths:
                     new_values = []
-                    for obj, kname, sname in self.context.kernel.find(ppath):
-                        new_values.append((obj, kname, sname))
+                    new_values.extend(
+                        (obj, kname, sname)
+                        for obj, kname, sname in self.context.kernel.find(ppath)
+                    )
                     self.set_panel_buttons(panel_entry["id"], new_values)
                     paths.append(ppath)
         self.art.current_page = self.first_page()
@@ -583,7 +660,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
+        # self.context.elements.set_start_time("Ribbon rule")
         self.apply_enable_rules()
+        # self.context.elements.set_end_time("Ribbon rule")
 
     @signal_listener("undoredo")
     def on_undostate_change(self, origin, *args):
@@ -676,9 +755,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
             return
         pagename = pagename.lower()
         if pagename == "":
-            pagename = "project"
+            pagename = "home"
         for p in self.pages:
-            if p.label.lower() == pagename:
+            # print (f"compare '{p.reference.lower()}' to '{pagename}'")
+            if p.reference.lower() == pagename:
                 self.art.current_page = p
                 self.modified()
                 if getattr(self.context.root, "_active_page", "") != pagename:
@@ -697,6 +777,7 @@ class RibbonEditor(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("ribboneditor")
         self.ribbon_identifier = "primary"
 
@@ -717,22 +798,23 @@ class RibbonEditor(wx.Panel):
         )
 
         choices = [v for v in self.context._ribbons]
-        self.combo_ribbons = wx.ComboBox(
+        self.combo_ribbons = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Show the Ribbon Labels"))
 
         sizer_ribbons.Add(self.combo_ribbons, 0, wx.EXPAND, 0)
         sizer_ribbons.Add(self.check_labels, 0, wx.EXPAND, 0)
-        self.list_pages = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.text_param_page = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
+        self.list_pages = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
 
-        self.list_panels = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.text_param_page = TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
+
+        self.list_panels = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         bsize = dip_size(self, 30, 30)
-        self.button_add_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_del_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_up_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_down_page = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_add_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_del_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_up_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_down_page = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
 
         testsize = dip_size(self, 20, 20)
         iconsize = testsize[0]
@@ -750,9 +832,9 @@ class RibbonEditor(wx.Panel):
             icons8_down.GetBitmap(resize=iconsize, buffer=1)
         )
 
-        self.button_del_panel = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_up_panel = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_down_panel = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_del_panel = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_up_panel = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_down_panel = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
 
         self.button_del_panel.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
         self.button_up_panel.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
@@ -760,7 +842,7 @@ class RibbonEditor(wx.Panel):
             icons8_down.GetBitmap(resize=iconsize, buffer=1)
         )
 
-        self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.list_options = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         self.button_add_panel = wxButton(self, wx.ID_ANY, _("Add to page"))
         self.button_apply = wxButton(self, wx.ID_ANY, _("Apply"))
         self.button_reset = wxButton(self, wx.ID_ANY, _("Reset to Default"))
@@ -800,14 +882,14 @@ class RibbonEditor(wx.Panel):
         sizer_buttons = StaticBoxSizer(
             self, wx.ID_ANY, _("User-defined buttons"), wx.VERTICAL
         )
-        self.list_buttons = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.list_buttons = wxListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         sizer_button_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_add_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_del_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_edit_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_up_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
-        self.button_down_button = wx.StaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_add_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_del_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_edit_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_up_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
+        self.button_down_button = wxStaticBitmap(self, wx.ID_ANY, size=bsize)
 
         self.button_add_button.SetBitmap(icon_add_new.GetBitmap(resize=iconsize))
         self.button_del_button.SetBitmap(
@@ -919,11 +1001,12 @@ class RibbonEditor(wx.Panel):
     # ---- Generic routines to access data
 
     def current_ribbon(self):
-        result = None
-        if hasattr(self.context, "_ribbons"):
-            if self.ribbon_identifier in self.context._ribbons:
-                result = self.context._ribbons[self.ribbon_identifier]
-        return result
+        return (
+            self.context._ribbons[self.ribbon_identifier]
+            if hasattr(self.context, "_ribbons")
+            and self.ribbon_identifier in self.context._ribbons
+            else None
+        )
 
     def get_page(self, pageid=None):
         if pageid is None:
@@ -961,7 +1044,7 @@ class RibbonEditor(wx.Panel):
             if reposition is not None and page_entry["id"] == reposition:
                 idx = p_idx
         self.list_pages.SetItems(pages)
-        if len(pages) > 0:
+        if pages:
             self.list_pages.SetSelection(idx)
         self.on_list_pages_click(None)
 
@@ -978,7 +1061,7 @@ class RibbonEditor(wx.Panel):
             if reposition is not None and button_entry["id"] == reposition:
                 idx = b_idx
         self.list_buttons.SetItems(buttons)
-        if len(buttons) > 0:
+        if buttons:
             self.list_buttons.SetSelection(idx)
             self.on_list_buttons_click(None)
 
@@ -999,7 +1082,7 @@ class RibbonEditor(wx.Panel):
                     cidx += 1
 
         self.list_panels.SetItems(panels)
-        if len(panels) > 0:
+        if panels:
             self.list_panels.SetSelection(tidx)
 
     def fill_options(self):
@@ -1074,9 +1157,9 @@ class RibbonEditor(wx.Panel):
         page_label = ""
         if idx >= 0:
             term = self.list_pages.GetStringSelection()
-            idx = term.find(" (")
-            if idx >= 0:
-                page = term[0:idx]
+            tidx = term.find(" (")
+            if tidx >= 0:
+                page = term[:tidx]
                 self.current_page = page
                 self.fill_panels()
                 p = self.get_page(page)
@@ -1086,9 +1169,7 @@ class RibbonEditor(wx.Panel):
 
     def on_button_page_delete(self, event):
         new_config = []
-        for p in self._config:
-            if p["id"] != self.current_page:
-                new_config.append(p)
+        new_config.extend(p for p in self._config if p["id"] != self.current_page)
         if len(new_config) != self._config:
             self._config = new_config
             self.current_page = None
@@ -1273,10 +1354,7 @@ class RibbonEditor(wx.Panel):
 
     def on_list_buttons_click(self, event):
         idx = self.list_buttons.GetSelection()
-        if idx < 0:
-            self.current_button = None
-        else:
-            self.current_button = self._config_buttons[idx]["id"]
+        self.current_button = None if idx < 0 else self._config_buttons[idx]["id"]
         flag1 = idx >= 0
         self.button_del_button.Enable(flag1)
         self.button_down_button.Enable(flag1)
@@ -1315,9 +1393,9 @@ class RibbonEditor(wx.Panel):
 
     def on_button_button_delete(self, event):
         new_config = []
-        for p in self._config_buttons:
-            if p["id"] != self.current_button:
-                new_config.append(p)
+        new_config.extend(
+            p for p in self._config_buttons if p["id"] != self.current_button
+        )
         if len(new_config) != self._config_buttons:
             self._config_buttons = new_config
             self.current_button = None
@@ -1353,29 +1431,30 @@ class RibbonEditor(wx.Panel):
             _("Edit Button"),
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
         )
+        self.context.themes.set_window_colors(dlg)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         line1 = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(dlg, wx.ID_ANY, _("Label"))
-        txt_label = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["label"])
+        label1 = wxStaticText(dlg, wx.ID_ANY, _("Label"))
+        txt_label = TextCtrl(dlg, wx.ID_ANY, value=entry["label"])
         line1.Add(label1, 0, wx.EXPAND, 0)
         line1.Add(txt_label, 1, wx.EXPAND, 0)
 
         line2 = wx.BoxSizer(wx.HORIZONTAL)
-        label2 = wx.StaticText(dlg, wx.ID_ANY, _("Tooltip"))
-        txt_tip = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["tip"])
+        label2 = wxStaticText(dlg, wx.ID_ANY, _("Tooltip"))
+        txt_tip = TextCtrl(dlg, wx.ID_ANY, value=entry["tip"])
         line2.Add(label2, 0, wx.EXPAND, 0)
         line2.Add(txt_tip, 1, wx.EXPAND, 0)
 
         line3 = wx.BoxSizer(wx.HORIZONTAL)
-        label3 = wx.StaticText(dlg, wx.ID_ANY, _("Action left click"))
-        txt_action_left = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["action_left"])
+        label3 = wxStaticText(dlg, wx.ID_ANY, _("Action left click"))
+        txt_action_left = TextCtrl(dlg, wx.ID_ANY, value=entry["action_left"])
         line3.Add(label3, 0, wx.EXPAND, 0)
         line3.Add(txt_action_left, 1, wx.EXPAND, 0)
 
         line4 = wx.BoxSizer(wx.HORIZONTAL)
-        label4 = wx.StaticText(dlg, wx.ID_ANY, _("Action right click"))
-        txt_action_right = wx.TextCtrl(dlg, wx.ID_ANY, value=entry["action_right"])
+        label4 = wxStaticText(dlg, wx.ID_ANY, _("Action right click"))
+        txt_action_right = TextCtrl(dlg, wx.ID_ANY, value=entry["action_right"])
         line4.Add(label4, 0, wx.EXPAND, 0)
         line4.Add(txt_action_right, 1, wx.EXPAND, 0)
 
@@ -1385,8 +1464,8 @@ class RibbonEditor(wx.Panel):
             _("When at least two elemente selected"),
         )
         line5 = wx.BoxSizer(wx.HORIZONTAL)
-        label5 = wx.StaticText(dlg, wx.ID_ANY, _("Rule to enable"))
-        combo_enable = wx.ComboBox(
+        label5 = wxStaticText(dlg, wx.ID_ANY, _("Rule to enable"))
+        combo_enable = wxComboBox(
             dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         if entry["enable"] == "selected2":
@@ -1400,8 +1479,8 @@ class RibbonEditor(wx.Panel):
         line5.Add(combo_enable, 1, wx.EXPAND, 0)
 
         line6 = wx.BoxSizer(wx.HORIZONTAL)
-        label6 = wx.StaticText(dlg, wx.ID_ANY, _("Rule to display"))
-        combo_visible = wx.ComboBox(
+        label6 = wxStaticText(dlg, wx.ID_ANY, _("Rule to display"))
+        combo_visible = wxComboBox(
             dlg, wx.ID_ANY, choices=rule_options, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         if entry["visible"] == "selected2":
@@ -1425,11 +1504,11 @@ class RibbonEditor(wx.Panel):
                     icon_list.append(icon)
 
         line7 = wx.BoxSizer(wx.HORIZONTAL)
-        label7 = wx.StaticText(dlg, wx.ID_ANY, _("Icon"))
-        combo_icon = wx.ComboBox(
+        label7 = wxStaticText(dlg, wx.ID_ANY, _("Icon"))
+        combo_icon = wxComboBox(
             dlg, wx.ID_ANY, choices=icon_list, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        preview = wx.StaticBitmap(dlg, wx.ID_ANY, size=dip_size(self, 30, 30))
+        preview = wxStaticBitmap(dlg, wx.ID_ANY, size=dip_size(self, 30, 30))
         if entry["icon"] in icon_list:
             combo_icon.SetValue(entry["icon"])
         line7.Add(label7, 0, wx.EXPAND, 0)

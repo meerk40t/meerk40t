@@ -90,6 +90,7 @@ class NewlyController:
         self.mode = "init"
         self.paused = False
         self._command_buffer = []
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __call__(self, cmd, *args, **kwargs):
         if isinstance(cmd, str):
@@ -151,6 +152,13 @@ class NewlyController:
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
                 self.connection = USBConnection(self.usb_log)
+        if self.connection is None:
+            self._is_opening = False
+            self.set_disable_connect(True)
+            self.usb_log("Could not connect to the controller.")
+            self.usb_log("Automatic connections disabled.")
+            raise ConnectionRefusedError("Could not connect to the controller.")
+
         self._is_opening = True
         self._abort_open = False
         count = 0
@@ -190,7 +198,8 @@ class NewlyController:
         )
         x, y = self.service.view.iposition(self._last_x, self._last_y)
         self.sync()
-        self.service.signal("driver;position", (last_x, last_y, x, y))
+        if self._signal_updates:
+            self.service.signal("driver;position", (last_x, last_y, x, y))
 
     #######################
     # MODE SHIFTS
@@ -205,7 +214,7 @@ class NewlyController:
             return
         self._realtime = True
         self.mode = "realtime"
-        self(f"ZZZFile0")
+        self(f"ZZZFile{0}")
         self._clear_settings()
 
     def _clear_settings(self):

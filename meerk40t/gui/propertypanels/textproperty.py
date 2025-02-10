@@ -3,31 +3,35 @@ import platform
 import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
+from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
+    wxBitmapButton,
     wxButton,
     wxCheckBox,
+    wxComboBox,
+    wxListBox,
     wxRadioBox,
+    wxStaticText,
     wxToggleButton,
 )
+from meerk40t.svgelements import Color
 
-from ...svgelements import Color
-from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
-from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
 _ = wx.GetTranslation
 
 
-class PromptingComboBox(wx.ComboBox):
+class PromptingComboBox(wxComboBox):
     def __init__(self, parent, choices=None, style=0, **kwargs):
         if choices is None:
             choices = []
-        wx.ComboBox.__init__(
+        wxComboBox.__init__(
             self,
             parent,
             wx.ID_ANY,
@@ -75,6 +79,7 @@ class FontHistory(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.FONTHISTORY = 4
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.last_font = []
         self.callback = callback
         self.textbox = textbox
@@ -84,7 +89,7 @@ class FontHistory(wx.Panel):
 
         for i in range(self.FONTHISTORY):
             self.last_font.append(
-                wx.StaticText(
+                wxStaticText(
                     self,
                     wx.ID_ANY,
                     _("<empty>"),
@@ -153,9 +158,10 @@ class TextVariables(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.textbox = textbox
+        self.context.themes.set_window_colors(self)
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
-        self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
+        self.lb_variables = wxListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
         sizer_h_variables = StaticBoxSizer(
             self,
@@ -180,12 +186,15 @@ class TextPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.renderer = LaserRender(self.context)
         self.SetHelpText("textproperty")
+        # We neeed this to avoid a crash under Linux when textselection is called too quickly
+        self._islinux = platform.system() == "Linux"
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_text = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
-        self.label_fonttest = wx.StaticText(
+        self.label_fonttest = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
         )
         self.label_fonttest.SetMinSize(dip_size(self, -1, 90))
@@ -199,8 +208,11 @@ class TextPropertyPanel(ScrolledPanel):
                 "Segoe UI",
             )
         )
-        self.button_choose_font = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2)
+        self.button_choose_font = wxBitmapButton(
+            self, wx.ID_ANY,
+            icons8_choose_font.GetBitmap(
+                resize=STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2
+            )
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -386,12 +398,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.rb_align = wxRadioBox(
             self,
             wx.ID_ANY,
-            "",
-            wx.DefaultPosition,
-            wx.DefaultSize,
-            align_options,
-            len(align_options),
-            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+            label="",
+            choices=align_options,
         )
         self.rb_align.SetToolTip(
             _("Define where to place the origin (i.e. current mouse position)")
@@ -429,6 +437,8 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_main.Add(sizer_anchor, 0, wx.EXPAND, 0)
 
         self.notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self.context.themes.set_window_colors(self.notebook)
+
         page_main = wx.Panel(self.notebook, wx.ID_ANY)
         sizer_page_main = wx.BoxSizer(wx.VERTICAL)
         self.panel_fill.Reparent(page_main)
@@ -720,13 +730,14 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
 
-    # @signal_listener("textselect")
-    # def on_signal_select(self, origin, *args):
-    #     try:
-    #         self.text_text.SelectAll()
-    #         self.text_text.SetFocus()
-    #     except RuntimeError:
-    #         pass
+    def signal(self, signal, *args):
+        if signal == "textselect" and self.IsShown():
+            # This can crash for completely unknown reasons under Linux!
+            # Hypothesis: you can't focus / SelectStuff if the control is not yet shown.
+            if self._islinux:
+                return
+            self.text_text.SelectAll()
+            self.text_text.SetFocus()
 
 
 class TextProperty(MWindow):

@@ -15,6 +15,8 @@ from meerk40t.gui.wxutils import (
     set_ctrl_value,
     wxButton,
     wxCheckBox,
+    wxComboBox,
+    wxStaticText,
 )
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
@@ -33,6 +35,7 @@ class PlacementPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetHelpText("placement")
@@ -45,7 +48,7 @@ class PlacementPanel(wx.Panel):
         )
         self.checkbox_output.SetValue(1)
         first_sizer.Add(self.checkbox_output, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        info_loops = wx.StaticText(self, wx.ID_ANY, _("Loops:"))
+        info_loops = wxStaticText(self, wx.ID_ANY, _("Loops:"))
         self.text_loops = TextCtrl(
             self,
             wx.ID_ANY,
@@ -66,7 +69,7 @@ class PlacementPanel(wx.Panel):
 
         # X and Y
         self.pos_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Placement:"), wx.HORIZONTAL)
-        info_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
+        info_x = wxStaticText(self, wx.ID_ANY, _("X:"))
         self.text_x = TextCtrl(
             self,
             wx.ID_ANY,
@@ -76,7 +79,7 @@ class PlacementPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_x.SetToolTip(_("X-Coordinate of placement"))
-        info_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
+        info_y = wxStaticText(self, wx.ID_ANY, _("Y:"))
         self.text_y = TextCtrl(
             self,
             wx.ID_ANY,
@@ -118,7 +121,7 @@ class PlacementPanel(wx.Panel):
         self.grid_sizer_1 = StaticBoxSizer(
             self, wx.ID_ANY, _("Repetitions in X-direction"), wx.HORIZONTAL
         )
-        info_x1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
+        info_x1 = wxStaticText(self, wx.ID_ANY, _("Repeats:"))
         self.text_repeats_x = TextCtrl(
             self,
             wx.ID_ANY,
@@ -128,7 +131,7 @@ class PlacementPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_repeats_x.lower_limit = 0
-        info_x2 = wx.StaticText(self, wx.ID_ANY, _("Gap:"))
+        info_x2 = wxStaticText(self, wx.ID_ANY, _("Gap:"))
         self.text_gap_x = TextCtrl(
             self,
             wx.ID_ANY,
@@ -146,7 +149,7 @@ class PlacementPanel(wx.Panel):
         self.grid_sizer_2 = StaticBoxSizer(
             self, wx.ID_ANY, _("Repetitions in Y-direction"), wx.HORIZONTAL
         )
-        info_y1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
+        info_y1 = wxStaticText(self, wx.ID_ANY, _("Repeats:"))
         self.text_repeats_y = TextCtrl(
             self,
             wx.ID_ANY,
@@ -156,7 +159,7 @@ class PlacementPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_repeats_y.lower_limit = 0
-        info_y2 = wx.StaticText(self, wx.ID_ANY, _("Gap:"))
+        info_y2 = wxStaticText(self, wx.ID_ANY, _("Gap:"))
         self.text_gap_y = TextCtrl(
             self,
             wx.ID_ANY,
@@ -181,7 +184,7 @@ class PlacementPanel(wx.Panel):
         self.grid_sizer_3 = StaticBoxSizer(
             self, wx.ID_ANY, _("Selection"), wx.HORIZONTAL
         )
-        info_y1 = wx.StaticText(self, wx.ID_ANY, _("Start-Index:"))
+        info_y1 = wxStaticText(self, wx.ID_ANY, _("Start-Index:"))
         self.text_start_idx = TextCtrl(
             self,
             wx.ID_ANY,
@@ -191,7 +194,7 @@ class PlacementPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_start_idx.lower_limit = 0
-        info_y2 = wx.StaticText(self, wx.ID_ANY, _("Count:"))
+        info_y2 = wxStaticText(self, wx.ID_ANY, _("Count:"))
         self.text_repetitions = TextCtrl(
             self,
             wx.ID_ANY,
@@ -278,8 +281,8 @@ class PlacementPanel(wx.Panel):
         self.corner_sizer = StaticBoxSizer(
             self, wx.ID_ANY, _("Orientation:"), wx.HORIZONTAL
         )
-        info_corner = wx.StaticText(self, wx.ID_ANY, _("Corner:"))
-        self.combo_corner = wx.ComboBox(
+        info_corner = wxStaticText(self, wx.ID_ANY, _("Corner:"))
+        self.combo_corner = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[
@@ -299,8 +302,8 @@ class PlacementPanel(wx.Panel):
         )
         self.corner_sizer.Add(info_corner, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.corner_sizer.Add(self.combo_corner, 1, wx.EXPAND, 0)
-        info_orientation = wx.StaticText(self, wx.ID_ANY, _("Orientation:"))
-        self.combo_orientation = wx.ComboBox(
+        info_orientation = wxStaticText(self, wx.ID_ANY, _("Orientation:"))
+        self.combo_orientation = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[
@@ -329,7 +332,7 @@ class PlacementPanel(wx.Panel):
             self, wx.ID_ANY, _("Grid Helper (Tiling):"), wx.HORIZONTAL
         )
 
-        info1 = wx.StaticText(self, wx.ID_ANY, _("Shape"))
+        info1 = wxStaticText(self, wx.ID_ANY, _("Shape"))
         self.shape_information = (
             (_("Quadratic"), _("Side"), self.generate_quadratic),
             (_("Hexagon"), _("Side"), self.generate_hexagon),
@@ -338,13 +341,13 @@ class PlacementPanel(wx.Panel):
         )
         choices = [e[0] for e in self.shape_information]
 
-        self.combo_shape = wx.ComboBox(
+        self.combo_shape = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         ttip = _("Please provide some data about the intended tiling")
         self.combo_shape.SetToolTip(ttip)
 
-        self.dimension_info = wx.StaticText(self, wx.ID_ANY, _("Dimension"))
+        self.dimension_info = wxStaticText(self, wx.ID_ANY, _("Dimension"))
         self.text_dimension = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         self.text_dimension.SetToolTip(ttip)
 
@@ -365,7 +368,7 @@ class PlacementPanel(wx.Panel):
 
         main_sizer.Add(self.helper_sizer, 0, wx.EXPAND, 0)
 
-        self.info_label = wx.StaticText(self, wx.ID_ANY)
+        self.info_label = wxStaticText(self, wx.ID_ANY)
         self.info_label.SetFont(
             wx.Font(
                 8, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
@@ -1123,16 +1126,18 @@ class PlacementPanel(wx.Panel):
         self.operation.rotation = 0
         self.updated()
         if self.check_generate.GetValue() and geom is not None:
-            node = self.context.elements.elem_branch.add(
-                type="elem path",
-                geometry=geom,
-                stroke=Color("blue"),
-                stroke_width=1000,
-                label="Template",
-            )
-            data = [node]
-            if self.context.elements.classify_new:
-                self.context.elements.classify(data)
+            # _("Create template")
+            with self.context.elements.undoscope("Create template"):
+                node = self.context.elements.elem_branch.add(
+                    type="elem path",
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    stroke_width=1000,
+                    label="Template",
+                )
+                data = [node]
+                if self.context.elements.classify_new:
+                    self.context.elements.classify(data)
             self.context.root.signal("refresh_scene", "Scene")
 
     def updated(self):
@@ -1149,6 +1154,7 @@ class PlacementParameterPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.operation = node
         self.panels = []
 

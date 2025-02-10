@@ -5,6 +5,7 @@ Moshiboard Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+import meerk40t.constants as mkconst
 from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
@@ -68,8 +69,8 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "section": "_10_Dimensions",
-                "subsection": "Bed",
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -79,8 +80,19 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "section": "_10_Dimensions",
-                "subsection": "Bed",
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -192,6 +204,18 @@ class MoshiDevice(Service, Status):
                 "section": "_20_Behaviour",
             },
             {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _("Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)") + "\n" +
+                    _("Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)")
+                ),
+                "section": "_20_Behaviour",
+            },
+            {
                 "attr": "mock",
                 "object": self,
                 "default": False,
@@ -201,6 +225,18 @@ class MoshiDevice(Service, Status):
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
                 "section": "_30_Interface",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -444,6 +480,16 @@ class MoshiDevice(Service, Status):
         )
         self.view.realize()
         self.signal("view;realized")
+
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (
+                mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V, mkconst.RASTER_SPIRAL,
+            ),  # Greedy loses registration way too often to be reliable
+            "gantry" : True,
+            "legacy" : self.legacy_raster,
+        }
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)

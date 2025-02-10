@@ -128,6 +128,7 @@ class NewlyDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
             },
@@ -139,7 +140,19 @@ class NewlyDevice(Service, Status):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "priority": "20",
+                "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -259,6 +272,7 @@ class NewlyDevice(Service, Status):
                     "File0 is default and instantly executes. The remaining files need to be sent and told to start"
                 ),
                 "section": "_30_Output",
+                "signals": "newly_file_index",
             },
             {
                 "attr": "autoplay",
@@ -270,6 +284,19 @@ class NewlyDevice(Service, Status):
                     "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
                 ),
                 "section": "_30_Output",
+                "signals": "newly_autoplay",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("newly", choices)
@@ -723,6 +750,21 @@ class NewlyDevice(Service, Status):
                     _("Connection was aborted. Manual connection required."),
                     _("Not Connected"),
                 )
+
+        @self.console_argument("file_index", type=int)
+        @self.console_command(
+            "select_file",
+            help=_("Sets the default file index to use"),
+            all_arguments_required=True,
+        )
+        def set_file_index(command, channel, _, file_index=None, data=None, remainder=None, **kwgs):
+            old_value = self.file_index
+            if file_index is None or file_index < 0 or file_index >= 10:
+                file_index = 0
+            self.file_index = file_index
+            channel(f"File index was set to #{file_index} (previous value: {old_value})")
+            # Let propertypanels know that this value was updated
+            self.signal("file_index", file_index, self)
 
         @self.console_argument("file_index", type=int)
         @self.console_command(

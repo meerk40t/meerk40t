@@ -4,7 +4,8 @@ from math import isinf, isnan
 from pathlib import Path
 
 import wx
-import wx.lib.mixins.listctrl as listmix
+
+# import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
@@ -14,7 +15,14 @@ from meerk40t.gui.icons import (
     icons8_route,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import HoverButton, wxButton
+from meerk40t.gui.wxutils import (
+    EditableListCtrl,
+    HoverButton,
+    wxButton,
+    wxComboBox,
+    wxListCtrl,
+    wxStaticText,
+)
 from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -59,21 +67,22 @@ def register_panel_spooler(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Opens the spooler window with all job information")
 
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
 
 
-class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
-    """TextEditMixin allows any column to be edited."""
+# class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+#     """TextEditMixin allows any column to be edited."""
 
-    # ----------------------------------------------------------------------
-    def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
-    ):
-        """Constructor"""
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        listmix.TextEditMixin.__init__(self)
+#     # ----------------------------------------------------------------------
+#     def __init__(
+#         self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+#     ):
+#         """Constructor"""
+#         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+#         listmix.TextEditMixin.__init__(self)
 
 
 class SpoolerPanel(wx.Panel):
@@ -82,7 +91,9 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("spooler")
+
         self.selected_device = selected_device
         self.available_devices = context.kernel.services("device")
         self.filter_device = None
@@ -101,38 +112,40 @@ class SpoolerPanel(wx.Panel):
         self.splitter.SetMinimumPaneSize(50)
         self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
         self.splitter.SetSashPosition(self.context.spooler_sash_position)
-        self.combo_device = wx.ComboBox(
+        self.combo_device = wxComboBox(
             self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(0)  # All by default...
         self.button_pause = wxButton(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
-            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button.GetBitmap(
-                resize=0.5 * get_default_icon_size(),
+                resize=0.5 * get_default_icon_size(self.context),
                 color=self.context.themes.get("stop_fg"),
                 keepalpha=True,
             )
         )
         self.button_stop.SetBitmapFocus(
-            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
         self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
         self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
 
-        self.list_job_spool = wx.ListCtrl(
+        self.list_job_spool = wxListCtrl(
             self.win_top,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context,
+            list_name="list_spoolerjobs",
         )
 
-        self.info_label = wx.StaticText(
+        self.info_label = wxStaticText(
             self.win_bottom, wx.ID_ANY, _("Completed jobs:")
         )
         self.button_clear_history = wxButton(
@@ -142,6 +155,8 @@ class SpoolerPanel(wx.Panel):
             self.win_bottom,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context,
+            list_name="list_spoolerhistory",
         )
 
         self.__set_properties()
@@ -237,6 +252,7 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool.AppendColumn(
             _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
         )
+        self.list_job_spool.resize_columns()
 
         self.list_job_history.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
 
@@ -270,7 +286,7 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.AppendColumn(
             _("Jobinfo"), format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE_USEHEADER
         )
-
+        self.list_job_history.resize_columns()
         # end wxGlade
 
     def __do_layout(self):
@@ -582,7 +598,7 @@ class SpoolerPanel(wx.Panel):
 
     def on_menu_popup_clear(self, element=None):
         def clear(event=None):
-            if self.kernel.yesno(
+            if self.context.kernel.yesno(
                 _("Do you really want to delete all entries?"), caption=_("Spooler")
             ):
                 spoolers = []
@@ -750,13 +766,15 @@ class SpoolerPanel(wx.Panel):
                     try:
                         if spool_obj.steps_total == 0:
                             spool_obj.calc_steps()
-                        self.list_job_spool.SetItem(
-                            list_id,
-                            JC_STEPS,
-                            f"{spool_obj.steps_done}/{spool_obj.steps_total}",
-                        )
+                        info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
+                        if hasattr(spooler, "driver"):
+                            if hasattr(spooler.driver, "get_internal_queue_status"):
+                                internal_current, internal_total = spooler.driver.get_internal_queue_status()
+                                if internal_current != 0:
+                                    info_s += f" ({internal_current}/{internal_total})"
                     except AttributeError:
-                        self.list_job_spool.SetItem(list_id, JC_STEPS, "-")
+                        info_s = "-"
+                    self.list_job_spool.SetItem(list_id, JC_STEPS, info_s)
                     # PASSES
                     try:
                         loop = spool_obj.loops_executed
@@ -1094,15 +1112,25 @@ class SpoolerPanel(wx.Panel):
                     self.list_job_spool.SetItem(list_id, JC_RUNTIME, "-")
                 else:
                     refresh_needed = True
+            except RuntimeError:
+                # Form no longer valid
+                return
 
             try:
-                pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
-                self.list_job_spool.SetItem(list_id, JC_STEPS, pass_str)
+                if spool_obj.steps_total == 0:
+                    spool_obj.calc_steps()
+                info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
+                if hasattr(spooler, "driver"):
+                    if hasattr(spooler.driver, "get_internal_queue_status"):
+                        internal_current, internal_total = spooler.driver.get_internal_queue_status()
+                        if internal_current != 0:
+                            info_s += f" ({internal_current}/{internal_total})"
             except AttributeError:
-                if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, JC_STEPS, "-")
-                else:
+                info_s = "-"
+                if list_id >= self.list_job_spool.GetItemCount():
                     refresh_needed = True
+
+            self.list_job_spool.SetItem(list_id, JC_STEPS, info_s)
             try:
                 loop = spool_obj.loops_executed
                 total = spool_obj.loops
@@ -1141,6 +1169,14 @@ class SpoolerPanel(wx.Panel):
     def update_queue(self):
         if self.shown:
             self.on_device_update(None)
+
+    def pane_show(self):
+        self.list_job_history.load_column_widths()
+        self.list_job_spool.load_column_widths()
+
+    def pane_hide(self):
+        self.list_job_history.save_column_widths()
+        self.list_job_spool.save_column_widths()
 
 
 class JobSpooler(MWindow):
@@ -1185,3 +1221,7 @@ class JobSpooler(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Spooler"
+
+    @staticmethod
+    def helptext():
+        return _("Opens the spooler window with all job information")

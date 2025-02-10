@@ -23,6 +23,9 @@ class Wobble:
         self.userdata = None
         self.may_close_path = True
 
+    def __repr__(self):
+        return f"Wobble: r={self.radius}, s={self.speed}, i={self.interval}, alg={repr(self._algorithm)}"
+    
     def __call__(self, x0, y0, x1, y1):
         yield from self._algorithm(self, x0, y0, x1, y1)
 
@@ -192,7 +195,7 @@ def scanline_fill(settings, outlines, matrix, limit=None):
     vm.valid_low = y_min - distance
     vm.valid_high = y_max + distance
     vm.scanline_to(y_min - distance)
-    points = list()
+    points = []
     forward = True
     while vm.current_is_valid_range():
         vm.scanline_increment(distance)
@@ -549,8 +552,8 @@ def _tabbed(wobble, x0, y0, x1, y1):
     if wobble.userdata is None:
         tablen = wobble.radius * wobble.unit_factor
         pattern_idx = 0
-        pattern = list()
-        positions = list()
+        pattern = []
+        positions = []
         if isinstance(wobble.speed, str):
             # This is a string with comma and/or whitespace separated numbers
             sub_comma = wobble.speed.split(",")
@@ -588,7 +591,7 @@ def _tabbed(wobble, x0, y0, x1, y1):
         # So now that we have the positions we calculate the start and end position
         # Do we have a chance or are all gaps overlapping
         def repr(info):
-            conc = list()
+            conc = []
             for p in info:
                 conc.append(f"({p[0]}, {p[1]:.2f})")
             s = ",".join(conc)
@@ -702,20 +705,24 @@ def _dashed(wobble, x0, y0, x1, y1):
         wobble.flag = False  # Not visible but will immediately be swapped...
     if wobble.userdata is None:
         pattern_idx = 0
+        pattern = []
         if isinstance(wobble.radius, str):
             # This is a string with comma and/or whitespace separated numbers
-            pattern = list()
             sub_comma = wobble.radius.split(",")
             for entry in sub_comma:
                 sub_spaces = entry.split()
                 for s in sub_spaces:
                     try:
                         value = float(s)
+                        if value <= 0:
+                            continue
                     except ValueError:
                         continue
                     pattern.append(value * UNITS_PER_MM * wobble.unit_factor)
+        elif isinstance(wobble.radius, (tuple, list)):
+            pattern.extend(r * UNITS_PER_MM * wobble.unit_factor for r in wobble.radius)
         else:
-            pattern = list(wobble.radius * UNITS_PER_MM * wobble.unit_factor, )
+            pattern.append(wobble.radius * UNITS_PER_MM * wobble.unit_factor)
         if len(pattern) % 2 == 1:
             # Needs to be even
             pattern.extend(pattern)

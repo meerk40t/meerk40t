@@ -50,6 +50,19 @@ denotes a clockwise circle. Note: given that this is degenerate, flipping does
 not properly give a counterclockwise circle. If the three points are all
 collinear this is effectively a line. If all three points are coincident
 this is effectively a point.
+
+Notabene: this module contains some fragments of non-geometric nature, intended
+to recreate the logic of cutcode elements, e.g. how often certain segments should
+be repeated, whether a function ie transformation should be applied to them etc.
+These were introduced by tatarize in late 2023/early 2024 and haven't been completed.
+For the time being they aren't understood and might be eliminated in the future
+until they have been examined, comprehended and ready to be reintegrated.
+This is everything around TYPE_CALL, TYPE_FUNCTION, TYPE_UNTIL
+The logic is understood as of now as:
+You enclose a couple of regular segments with a start and an end tag:
+<TYPE_FUNCTION> ...segments... <TYPE_UNTIL>
+Function
+
 """
 import math
 import re
@@ -92,6 +105,9 @@ TYPE_UNTIL = (
 TYPE_CALL = 0xB0 | 0b1111  # The two higher level bytes are call label index.
 # If until is set to 0xFFFF termination only happens on interrupt.
 
+# A summary of all points that have a special meaning, ie intended for other uses than pure geometry
+META_TYPES = (TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL)
+NON_GEOMETRY_TYPES = (TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL, TYPE_END)
 
 class Polygon:
     def __init__(self, *args):
@@ -100,6 +116,259 @@ class Polygon:
 
     def bbox(self, mx=None):
         return self.geomstr.bbox(mx)
+
+
+
+def triangle_area(p1, p2, p3):
+    """
+    calculates the area of a triangle given its vertices
+    """
+    return (
+        abs(p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1]))
+        / 2.0
+    )
+
+
+def triangle_areas_from_array(arr):
+    """
+    take an (N,2) array of points and return an (N,1)
+    array of the areas of those triangles, where the first
+    and last areas are np.inf
+
+    see triangle_area for algorithm
+    """
+
+    result = np.empty((len(arr),), arr.dtype)
+    result[0] = np.inf
+    result[-1] = np.inf
+
+    p1 = arr[:-2]
+    p2 = arr[1:-1]
+    p3 = arr[2:]
+
+    # an accumulators to avoid unnecessary intermediate arrays
+    accr = result[1:-1]  # Accumulate directly into result
+    acc1 = np.empty_like(accr)
+
+    np.subtract(p2[:, 1], p3[:, 1], out=accr)
+    np.multiply(p1[:, 0], accr, out=accr)
+    np.subtract(p3[:, 1], p1[:, 1], out=acc1)
+    np.multiply(p2[:, 0], acc1, out=acc1)
+    np.add(acc1, accr, out=accr)
+    np.subtract(p1[:, 1], p2[:, 1], out=acc1)
+    np.multiply(p3[:, 0], acc1, out=acc1)
+    np.add(acc1, accr, out=accr)
+    np.abs(accr, out=accr)
+    accr /= 2.0
+    # Notice: accr was writing into result, so the answer is in there
+    return result
+
+
+# the final value in thresholds is np.inf, which will never be
+# the min value.  So, I am safe in "deleting" an index by
+# just shifting the array over on top of it
+
+
+def remove(s, i):
+    """
+    Quick trick to remove an item from a numpy array without
+    creating a new object.  Rather than the array shape changing,
+    the final value just gets repeated to fill the space.
+
+    ~3.5x faster than numpy.delete
+    """
+    s[i:-1] = s[i + 1 :]
+
+
+class Simplifier:
+    # Copyright (c) 2014 Elliot Hallmark
+    # The MIT License (MIT)
+    # Permission is hereby granted, free of charge, to any person obtaining a copy
+    # of this software and associated documentation files (the "Software"), to deal
+    # in the Software without restriction, including without limitation the rights
+    # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    # copies of the Software, and to permit persons to whom the Software is
+    # furnished to do so, subject to the following conditions:
+
+    # The above copyright notice and this permission notice shall be included in all
+    # copies or substantial portions of the Software.
+
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    # SOFTWARE.
+
+    """
+    Implementation of the Visvalingam-Wyatt line simplification algorithm
+    Using the implementation from Elliot Hallmark
+    https://github.com/fitnr/visvalingamwyatt
+        Changes:
+        - removed irrelevant (for us) parts
+        - added the two PRs #8 and #11
+
+    From the Wiki article https://en.wikipedia.org/wiki/Visvalingam%E2%80%93Whyatt_algorithm
+    The Visvalingam–Whyatt algorithm, is an algorithm that decimates a curve composed
+    of line segments to a similar curve with fewer points, primarily for usage in
+    cartographic generalisation.
+
+    Idea
+    Given a polygonal chain (often called a polyline), the algorithm attempts
+    to find a similar chain composed of fewer points.
+
+    Points are assigned an importance based on local conditions, and points are
+    removed from the least important to most important.
+
+    In Visvalingam's algorithm, the importance is related to the triangular area added by each point.
+
+    Advantages
+    The algorithm is easy to understand and explain, but is often competitive with much more complex approaches.
+    With the use of a priority queue, the algorithm is performant on large inputs, since the importance of each point can be computed using only its neighbors, and removing a point only requires recomputing the importance of two other points.
+    It is simple to generalize to higher dimensions, since the area of the triangle between points has a consistent meaning.
+
+    Disadvantages
+
+    The algorithm does not differentiate between sharp spikes and shallow features, meaning that it will clean up sharp spikes that may be important.
+    The algorithm simplifies the entire length of the curve evenly, meaning that curves with high and low detail areas will likely have their fine details eroded.
+
+    """
+
+    def __init__(self, pts):
+        """Initialize with points. takes some time to build
+        the thresholds but then all threshold filtering later
+        is ultra fast"""
+        self.pts_in = np.array(pts)
+        self.pts = self.pts_in.astype(float)
+        self.thresholds = self.build_thresholds()
+        self.ordered_thresholds = sorted(self.thresholds, reverse=True)
+
+    def build_thresholds(self):
+        """compute the area value of each vertex, which one would
+        use to mask an array of points for any threshold value.
+
+        returns a numpy.array (length of pts)  of the areas.
+        """
+        nmax = len(self.pts)
+        real_areas = triangle_areas_from_array(self.pts)
+        real_indices = list(range(nmax))
+
+        # destructable copies
+        # ARG! areas=real_areas[:] doesn't make a copy!
+        areas = np.copy(real_areas)
+        i = real_indices[:]
+
+        # pick first point and set up for loop
+        min_vert = np.argmin(areas)
+        this_area = areas[min_vert]
+        #  areas and i are modified for each point finished
+        remove(areas, min_vert)  # faster
+        # areas = np.delete(areas,min_vert) #slower
+        _ = i.pop(min_vert)
+
+        # cntr = 3
+        while this_area < np.inf:
+            # min_vert was removed from areas and i.
+            # Now, adjust the adjacent areas and remove the new min_vert.
+            # Now that min_vert was filtered out, min_vert points
+            # to the point after the deleted point.
+
+            skip = False  # modified area may be the next minvert
+
+            try:
+                right_area = triangle_area(
+                    self.pts[i[min_vert - 1]],
+                    self.pts[i[min_vert]],
+                    self.pts[i[min_vert + 1]],
+                )
+            except IndexError:
+                # trying to update area of endpoint. Don't do it
+                pass
+            else:
+                right_idx = i[min_vert]
+                if right_area <= this_area:
+                    # even if the point now has a smaller area,
+                    # it ultimately is not more significant than
+                    # the last point, which needs to be removed
+                    # first to justify removing this point.
+                    # Though this point is the next most significant
+                    right_area = this_area
+
+                    # min_vert refers to the point to the right of
+                    # the previous min_vert, so we can leave it
+                    # unchanged if it is still the min_vert
+                    skip = min_vert
+
+                # update both collections of areas
+                real_areas[right_idx] = right_area
+                areas[min_vert] = right_area
+
+            if min_vert > 1:
+                # cant try/except because 0-1=-1 is a valid index
+                left_area = triangle_area(
+                    self.pts[i[min_vert - 2]],
+                    self.pts[i[min_vert - 1]],
+                    self.pts[i[min_vert]],
+                )
+                if left_area <= this_area:
+                    # same justification as above
+                    left_area = this_area
+                    skip = min_vert - 1
+                real_areas[i[min_vert - 1]] = left_area
+                areas[min_vert - 1] = left_area
+
+            # only argmin if we have too.
+            min_vert = skip or np.argmin(areas)
+
+            _ = i.pop(min_vert)
+
+            this_area = areas[min_vert]
+            # areas = np.delete(areas,min_vert) #slower
+            remove(areas, min_vert)  # faster
+
+        return real_areas
+
+    def simplify(self, number=None, ratio=None, threshold=None):
+        if threshold is not None:
+            return self.by_threshold(threshold)
+
+        if number is not None:
+            return self.by_number(number)
+
+        ratio = ratio or 0.90
+        return self.by_ratio(ratio)
+
+    def by_threshold(self, threshold):
+        return self.pts_in[self.thresholds >= threshold]
+
+    def by_number(self, n):
+        n = int(n)
+        try:
+            threshold = self.ordered_thresholds[n]
+        except IndexError:
+            return self.pts_in
+
+        # return the first n points since by_threshold
+        # could return more points if the threshold is the same
+        # for some points
+        # sort point indices by threshold
+        idx = list(range(len(self.pts)))
+        sorted_indices = sorted(zip(idx, self.thresholds), reverse=True, key=lambda x: x[1])
+
+        # grab first n indices
+        sorted_indices = sorted_indices[:n]
+
+        # re-sort by index
+        final_indices = sorted( [x[0] for x in sorted_indices] )
+
+        return self.pts[final_indices]
+
+    def by_ratio(self, r):
+        if r <= 0 or r > 1:
+            raise ValueError("Ratio must be 0<r<=1. Got {}".format(r))
+
+        return self.by_number(r * len(self.thresholds))
 
 
 class Clip:
@@ -372,6 +641,9 @@ class Pattern:
         # end_value_y += 1
 
         top_left_x = x0
+        # Scale once, translate often
+        m = Matrix.scale(cw, ch)
+        geom = self.geomstr.as_transformed(m)
         for col in range(start_value_x, cols + end_value_x, 1):
             x_offset = col * (cw + 2 * px)
             x = top_left_x + x_offset
@@ -383,9 +655,9 @@ class Pattern:
                     y_offset += (ch + 2 * py) / 2
                 y = top_left_y + y_offset
 
-                m = Matrix.scale(cw, ch)
-                m *= Matrix.translate(x - self.offset_x, y - self.offset_y)
-                yield self.geomstr.as_transformed(m)
+                g = Geomstr(geom)
+                g.translate(x - self.offset_x, y - self.offset_y)
+                yield g
 
 
 class BeamTable:
@@ -399,7 +671,10 @@ class BeamTable:
         return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
-        self.compute_beam_bo()
+        ok = self.compute_beam_bo()
+        if not ok:
+            # print("Failed. Fallback...")
+            self.compute_beam_brute()
 
     def compute_beam_bo(self):
         g = self.geometry
@@ -459,7 +734,7 @@ class BeamTable:
 
         # Add start and end events.
         for i in range(g.index):
-            if np.real(gs[i][2]) != TYPE_LINE:
+            if g._segtype(gs[i]) != TYPE_LINE:
                 continue
             event1 = get_or_insert_event(g.segments[i][0])
             event2 = get_or_insert_event(g.segments[i][-1])
@@ -542,8 +817,18 @@ class BeamTable:
                 next = complex(float("inf"), float("inf"))
 
             for index in removes:
-                rp = actives.index(index)
-                del actives[rp]
+                try:
+                    rp = actives.index(index)
+                    del actives[rp]
+                except ValueError:
+                    # hmm no longer available?!
+                    # Not sure what happens here, but we can recreate this error with a welded linetext element
+                    # Text= "Wit" and Font="AntPoldCond Bold" (https://www.ffonts.net/AntPoltCond-Bold.font.download)
+                    # Reduce the charactergap and you will end up with an attempt to remove a non-existing index.
+                    # We cover this, but it will lead then to a degenerate path
+                    # Issue # 2595
+                    # print(f"Would have crashed for {index}...\n\nAdds={adds}\nRemoves={removes}\nActives={actives}")
+                    return False
                 # if 0 < rp < len(actives):
                 #     check_intersection(i, actives[rp - 1], actives[rp], pt)
             for index in adds:
@@ -574,6 +859,7 @@ class BeamTable:
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
             self._nb_scan[i, 0 : len(active)] = active
+        return True
 
     def compute_beam_brute(self):
         g = self.geometry
@@ -581,7 +867,7 @@ class BeamTable:
         events = []
         # Add start and end events.
         for i in range(g.index):
-            if np.real(gs[i][2]) != TYPE_LINE:
+            if g._segtype(gs[i]) != TYPE_LINE:
                 continue
             if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
                 events.append((g.segments[i][0], i, None))
@@ -806,7 +1092,7 @@ class Scanbeam:
         self.valid_high = self._high
 
         for i in range(self._geom.index):
-            if self._geom.segments[i][2] != TYPE_LINE:
+            if self._geom._segtype(self._geom.segments[i]) != TYPE_LINE:
                 continue
             if (self._geom.segments[i][0].imag, self._geom.segments[i][0].real) < (
                 self._geom.segments[i][-1].imag,
@@ -1128,10 +1414,10 @@ class MergeGraph:
         idx = 0
         intersections = []
         for s in range(index):
-            if int(segments[s, 2].real) & 0xFF != TYPE_LINE:
+            if self.geomstr._segtype(segments[s]) != TYPE_LINE:
                 continue
             for t in range(other.index):
-                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
+                if self.geomstr._segtype(other.segments[t]) != TYPE_LINE:
                     continue
                 intersect = Geomstr.line_intersect(
                     segments[s, 0].real,
@@ -1212,6 +1498,11 @@ class Geomstr:
     def __bool__(self):
         return bool(self.index != 0)
 
+    @staticmethod
+    def _segtype(info):
+        # Index 2 of a segment does contain the segment-type in the lower nibble of the number
+        return int(info[2].real) & 0xFF
+
     def debug_me(self):
         # Provides information about the Geometry.
         def cplx_info(num):
@@ -1222,17 +1513,28 @@ class Geomstr:
             start = seg[0]
             c1 = seg[1]
             seg_type = int(seg[2].real)
+            pure_seg_type = self._segtype(seg)
             c2 = seg[3]
             end = seg[4]
             seg_info = self.segment_type(idx)
-            if seg_type not in (TYPE_END, TYPE_NOP, TYPE_VERTEX):
+            if pure_seg_type not in NON_GEOMETRY_TYPES:
                 seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
-            if seg_type == TYPE_QUAD:
+            if pure_seg_type == TYPE_QUAD:
                 seg_info += f", C: {cplx_info(c1)}"
-            elif seg_type == TYPE_CUBIC:
+            elif pure_seg_type == TYPE_CUBIC:
                 seg_info += f", C1: {cplx_info(c1)}, C2: {cplx_info(c2)}"
-            elif seg_type == TYPE_ARC:
+            elif pure_seg_type == TYPE_ARC:
                 seg_info += f", C1: {cplx_info(c1)}, C2: {cplx_info(c2)}"
+            elif pure_seg_type == TYPE_UNTIL:
+                loop_count = seg_type >> 8
+                seg_info += f", loops: {loop_count}"
+            elif pure_seg_type == TYPE_FUNCTION:
+                defining_function = seg_type >> 8
+                seg_info += f", function: {defining_function}"
+            elif pure_seg_type == TYPE_CALL:
+                executing_function = seg_type >> 8
+                seg_info += f", function: {executing_function}"
+
             print(seg_info)
         svg = self.as_path()
         print(f"Path-equivalent: {svg.d()}")
@@ -1303,7 +1605,11 @@ class Geomstr:
     def svg(cls, path_d):
         obj = cls()
         if isinstance(path_d, str):
-            path = Path(path_d)
+            try:
+                path = Path(path_d)
+            except ValueError:
+                # Invalid or empty path
+                return obj
         else:
             path = path_d
         last_point = None
@@ -1812,9 +2118,9 @@ class Geomstr:
         end = None
         settings = None
         for e in self.segments[start_pos:end_pos]:
-            seg_type = int(e[2].real)
+            seg_type = self._segtype(e)
             set_type = int(e[2].imag)
-            if seg_type in (TYPE_NOP, TYPE_VERTEX):
+            if seg_type in META_TYPES:
                 continue
             start = e[0]
             if not at_start and (set_type != settings or abs(start - end) > 1e-8):
@@ -1837,7 +2143,12 @@ class Geomstr:
 
     def as_points(self):
         at_start = True
-        for start, c1, info, c2, end in self.segments[: self.index]:
+        for seg in self.segments[: self.index]:
+            start = seg[0]
+            end = seg[4]
+            segtype = self._segtype(seg)
+            if segtype in NON_GEOMETRY_TYPES:
+                continue
             if at_start:
                 yield start
             yield end
@@ -1875,8 +2186,8 @@ class Geomstr:
         at_start = True
         end = None
         for e in self.segments[: self.index]:
-            seg_type = int(e[2].real)
-            if seg_type in (TYPE_NOP, TYPE_VERTEX):
+            seg_type = self._segtype(e)
+            if seg_type in META_TYPES:
                 continue
             start = e[0]
             if end != start and not at_start:
@@ -1976,8 +2287,8 @@ class Geomstr:
         at_start = True
         end = None
         for e in self.segments[: self.index]:
-            seg_type = int(e[2].real)
-            if seg_type in (TYPE_NOP, TYPE_VERTEX):
+            seg_type = self._segtype(e)
+            if seg_type in META_TYPES:
                 continue
             start = e[0]
             if end != start and not at_start:
@@ -2062,6 +2373,11 @@ class Geomstr:
         self.allocate_at_position(e, space)
         self.segments[e : e + space] = lines
 
+    def append_segment(self, start, control, info, control2, end):
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (start, control, info, control2, end)
+        self.index += 1
+
     def append_lines(self, lines):
         self._ensure_capacity(self.index + len(lines))
         self.segments[self.index : self.index + len(lines)] = lines
@@ -2114,15 +2430,13 @@ class Geomstr:
             a = 0
         if b is None:
             b = 0
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             a,
             complex(TYPE_LINE, settings),
             b,
             end,
         )
-        self.index += 1
 
     def quad(self, start, control, end, settings=0):
         """
@@ -2133,15 +2447,13 @@ class Geomstr:
         @param settings: optional settings level for the quadratic bezier curve
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             control,
             complex(TYPE_QUAD, settings),
             control,
             end,
         )
-        self.index += 1
 
     def cubic(self, start, control0, control1, end, settings=0):
         """
@@ -2153,15 +2465,13 @@ class Geomstr:
         @param settings: optional settings level for the cubic Bézier curve
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             control0,
             complex(TYPE_CUBIC, settings),
             control1,
             end,
         )
-        self.index += 1
 
     def arc(self, start, control, end, settings=0):
         """
@@ -2172,15 +2482,13 @@ class Geomstr:
         @param settings: optional settings level for the arc
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             start,
             control,
             complex(TYPE_ARC, settings),
             control,
             end,
         )
-        self.index += 1
 
     def point(self, position, settings=0, a=None, b=None):
         """
@@ -2196,15 +2504,13 @@ class Geomstr:
             a = 0
         if b is None:
             b = 0
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             position,
             a,
             complex(TYPE_POINT, settings),
             b,
             position,
         )
-        self.index += 1
 
     def end(self, settings=0):
         """
@@ -2212,18 +2518,16 @@ class Geomstr:
         @param settings: Unused settings value for break.
         @return:
         """
-        if self.index and self.segments[self.index - 1][2].real == TYPE_END:
+        if self.index and self._segtype(self.segments[self.index - 1]) == TYPE_END:
             # No two consecutive ends
             return
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             np.nan,
             np.nan,
             complex(TYPE_END, settings),
             np.nan,
             np.nan,
         )
-        self.index += 1
 
     def vertex(self, vertex=0):
         """
@@ -2233,15 +2537,13 @@ class Geomstr:
         @param vertex: Vertex index of vertex being added
         @return:
         """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
+        self.append_segment(
             np.nan,
             np.nan,
             complex(TYPE_VERTEX, vertex),
             np.nan,
             np.nan,
         )
-        self.index += 1
 
     def close(self, settings=0):
         """
@@ -2332,6 +2634,12 @@ class Geomstr:
     def is_closed(self):
         if self.index == 0:
             return True
+        # Even if the last and first segment stitch to each other,
+        # they could still belong to different subpaths!
+        # So a geomstr that has more than one subpath will not be considered closed!
+        for p in self.segments[: self.index]:
+            if self._segtype(p) == TYPE_END:
+                return False
         return abs(self.segments[0][0] - self.segments[self.index - 1][-1]) < 1e-5
 
     #######################
@@ -2339,7 +2647,7 @@ class Geomstr:
     #######################
 
     def arc_as_quads(
-        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=None, settings=0
     ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
@@ -2357,6 +2665,10 @@ class Geomstr:
         @return:
         """
         sweep = start_t - end_t
+        if slices is None:
+            # A full ellipse can be properly represented with 12 slices - we err on the side of caution here...
+            slices = int(1.5 * 12 * sweep / math.tau)
+            slices = max(2, slices)
         t_slice = sweep / float(slices)
         alpha_mid = (4.0 - math.cos(t_slice)) / 3.0
         current_t = start_t
@@ -2393,7 +2705,7 @@ class Geomstr:
             current_t = next_t
 
     def arc_as_cubics(
-        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=None, settings=0
     ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
@@ -2411,7 +2723,11 @@ class Geomstr:
 
         @return:
         """
-        sweep = start_t - end_t
+        sweep = end_t - start_t 
+        if slices is None:
+            # A full ellipse can be properly represented with 12 slices - we err on the side of caution here...
+            slices = int(1.5 * 12 * sweep / math.tau)
+            slices = max(2, slices)
         t_slice = sweep / float(slices)
         alpha = (
             math.sin(t_slice)
@@ -2460,7 +2776,6 @@ class Geomstr:
             p_c2 = complex(
                 p_end.real - alpha * ePrimen2x, p_end.imag - alpha * ePrimen2y
             )
-
             self.cubic(p_start, p_c1, p_c2, p_end)
             p_start = p_end
             current_t = next_t
@@ -2541,7 +2856,7 @@ class Geomstr:
         g = Geomstr()
         geoms.append(g)
         for e in polycut.segments[: self.index]:
-            if e[2].real == TYPE_END:
+            if self._segtype(e) == TYPE_END:
                 g = Geomstr()
                 geoms.append(g)
             else:
@@ -2564,7 +2879,7 @@ class Geomstr:
             current = self.segments[i]
             start0, control0, info0, control20, end0 = previous
             start1, control1, info1, control21, end1 = current
-            if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
+            if self._segtype(previous) != TYPE_LINE or self._segtype(current) != TYPE_LINE:
                 continue
             towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
@@ -2583,7 +2898,7 @@ class Geomstr:
             current = self.segments[i]
             start0, control0, info0, control20, end0 = previous
             start1, control1, info1, control21, end1 = current
-            if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
+            if self._segtype(previous) != TYPE_LINE or self._segtype(current) != TYPE_LINE:
                 continue
             towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
@@ -2614,7 +2929,7 @@ class Geomstr:
         for i in range(self.index - 1, -1, -1):
             segment = self.segments[i]
             start, control, info, control2, end = segment
-            if info.real != TYPE_LINE:
+            if self._segtype(segment) != TYPE_LINE:
                 continue
             fit = Geomstr.fit_to_points(
                 replacement, start, end, flags=int(np.real(control))
@@ -2628,7 +2943,7 @@ class Geomstr:
         if line is None:
             line = self.segments[e]
 
-        infor = line[2].real
+        infor = self._segtype(line)
         if infor == TYPE_LINE:
             return "line"
         if infor == TYPE_QUAD:
@@ -2645,6 +2960,12 @@ class Geomstr:
             return "end"
         if infor == TYPE_NOP:
             return "nop"
+        if infor == TYPE_FUNCTION:
+            return "function"
+        if infor == TYPE_UNTIL:
+            return "until"
+        if infor == TYPE_CALL:
+            return "call"
 
     @property
     def first_point(self):
@@ -2731,14 +3052,15 @@ class Geomstr:
         return self._bbox_segment(line)
 
     def _bbox_segment(self, line):
-        if line[2].real == TYPE_LINE:
+        segtype = self._segtype(line)
+        if segtype == TYPE_LINE:
             return (
                 min(line[0].real, line[-1].real),
                 min(line[0].imag, line[-1].imag),
                 max(line[0].real, line[-1].real),
                 max(line[0].imag, line[-1].imag),
             )
-        elif line[2].real == TYPE_QUAD:
+        elif segtype == TYPE_QUAD:
             local_extremizers = list(self._quad_local_extremes(0, line))
             extreme_points = self._quad_position(line, local_extremizers)
             local_extrema = extreme_points.real
@@ -2752,7 +3074,7 @@ class Geomstr:
             ymax = max(local_extrema)
 
             return xmin, ymin, xmax, ymax
-        elif line[2].real == TYPE_CUBIC:
+        elif segtype == TYPE_CUBIC:
             local_extremizers = list(self._cubic_local_extremes(0, line))
             extreme_points = self._cubic_position(line, local_extremizers)
             local_extrema = extreme_points.real
@@ -2766,7 +3088,7 @@ class Geomstr:
             ymax = max(local_extrema)
 
             return xmin, ymin, xmax, ymax
-        elif line[2].real == TYPE_ARC:
+        elif segtype == TYPE_ARC:
             local_extremizers = list(self._arc_local_extremes(0, line))
             extreme_points = self._arc_position(line, local_extremizers)
             local_extrema = extreme_points.real
@@ -2791,16 +3113,17 @@ class Geomstr:
         """
         if isinstance(e, int):
             line = self.segments[e]
-            if line[2].real == TYPE_LINE:
+            segtype = self._segtype(line)
+            if segtype == TYPE_LINE:
                 point = self._line_position(line, [t])
                 return complex(*point)
-            elif line[2].real == TYPE_QUAD:
+            if segtype == TYPE_QUAD:
                 point = self._quad_position(line, [t])
                 return complex(*point)
-            elif line[2].real == TYPE_CUBIC:
+            if segtype == TYPE_CUBIC:
                 point = self._cubic_position(line, [t])
                 return complex(*point)
-            if line[2].real == TYPE_ARC:
+            if segtype == TYPE_ARC:
                 point = self._arc_position(line, [t])
                 return complex(*point)
             return
@@ -3027,9 +3350,14 @@ class Geomstr:
 
         line = self.segments[e]
         start, control1, info, control2, end = line
-        if info.real == TYPE_LINE:
+        segtype = self._segtype(line)
+        if segtype in NON_GEOMETRY_TYPES:
+            return 0
+        if segtype == TYPE_POINT:
+            return 0
+        if segtype == TYPE_LINE:
             return abs(start - end)
-        if info.real == TYPE_QUAD:
+        if segtype == TYPE_QUAD:
             a = start - 2 * control1 + end
             b = 2 * (control1 - start)
             # For an explanation of this case, see
@@ -3059,7 +3387,7 @@ class Geomstr:
                 + A2 * B * (Sabc - C2)
                 + (4 * C * A - B * B) * math.log((2 * A2 + BA + Sabc) / (BA + C2))
             ) / (4 * A32)
-        if info.real == TYPE_CUBIC:
+        if segtype == TYPE_CUBIC:
             try:
                 return self._cubic_length_via_quad(line)
             except:
@@ -3070,9 +3398,7 @@ class Geomstr:
             pen_downs = positions[q]  # values 0-49
             pen_ups = positions[q + 1]  # values 1-50
             return np.sum(np.abs(pen_ups - pen_downs))
-        if info.real in (TYPE_NOP, TYPE_POINT, TYPE_END, TYPE_VERTEX):
-            return 0
-        if info.real == TYPE_ARC:
+        if segtype == TYPE_ARC:
             """The length of an elliptical arc segment requires numerical
             integration, and in that case it's simpler to just do a geometric
             approximation, as for cubic Bézier curves.
@@ -3147,7 +3473,8 @@ class Geomstr:
         """
         line = self.segments[e]
         start, control, info, control2, end = line
-        if info.real == TYPE_LINE:
+        segtype = self._segtype(line)
+        if segtype == TYPE_LINE:
             try:
                 if len(t):
                     # If this is an array the cuts must be in order.
@@ -3172,9 +3499,9 @@ class Geomstr:
                 if breaks:
                     yield mid[-1], 0, complex(TYPE_END, info.imag), 0, mid[-1]
                 yield mid[-1], control, info, control2, end
-        if info.real == TYPE_QUAD:
+        if segtype == TYPE_QUAD:
             yield from self._split_quad(e, t, breaks=breaks)
-        if info.real == TYPE_CUBIC:
+        if segtype == TYPE_CUBIC:
             yield from self._split_cubic(e, t, breaks=breaks)
 
     def _split_quad(self, e, t, breaks):
@@ -3263,12 +3590,12 @@ class Geomstr:
         @return:
         """
         start, control1, info, control2, end = self.segments[e]
-
-        if info.real == TYPE_LINE:
+        segtype = self._segtype(self.segments[e])
+        if segtype == TYPE_LINE:
             dseg = end - start
             return dseg / abs(dseg)
 
-        if info.real in (TYPE_QUAD, TYPE_CUBIC):
+        if segtype in (TYPE_QUAD, TYPE_CUBIC):
             dseg = self.derivative(e, t)
 
             # Note: dseg might be numpy value, use np.seterr(invalid='raise')
@@ -3297,7 +3624,7 @@ class Geomstr:
                     raise ValueError(mes)
             return unit_tangent
 
-        if info.real == TYPE_ARC:
+        if segtype == TYPE_ARC:
             dseg = self.derivative(e, t)
             return dseg / abs(dseg)
 
@@ -3334,9 +3661,10 @@ class Geomstr:
         @return:
         """
         start, control1, info, control2, end = self.segments[e]
-        if info.real == TYPE_LINE:
+        segtype = self._segtype(self.segments[e])
+        if segtype == TYPE_LINE:
             return 0
-        if info.real in (TYPE_QUAD, TYPE_CUBIC, TYPE_ARC):
+        if segtype in (TYPE_QUAD, TYPE_CUBIC, TYPE_ARC):
             dz = self.derivative(e, t)
             ddz = self.derivative(e, t, n=2)
             dx, dy = dz.real, dz.imag
@@ -3383,11 +3711,12 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        if line[2].real == TYPE_CUBIC:
+        segtype = self._segtype(line)
+        if segtype == TYPE_CUBIC:
             return np.poly1d(self._cubic_coeffs(line))
-        if line[2].real == TYPE_QUAD:
+        if segtype == TYPE_QUAD:
             return np.poly1d(self._quad_coeffs(line))
-        if line[2].real == TYPE_LINE:
+        if segtype == TYPE_LINE:
             return np.poly1d(self._line_coeffs(line))
 
     def derivative(self, e, t, n=1):
@@ -3401,20 +3730,21 @@ class Geomstr:
         """
         line = self.segments[e]
         start, control, info, control2, end = line
+        segtype = self._segtype(line)
 
-        if info.real == TYPE_LINE:
+        if segtype == TYPE_LINE:
             if n == 1:
                 return end - start
             return 0
 
-        if info.real == TYPE_QUAD:
+        if segtype == TYPE_QUAD:
             if n == 1:
                 return 2 * ((control - start) * (1 - t) + (end - control) * t)
             elif n == 2:
                 return 2 * (end - 2 * control + start)
             return 0
 
-        if info.real == TYPE_CUBIC:
+        if segtype == TYPE_CUBIC:
             if n == 1:
                 return (
                     3 * (control - start) * (1 - t) ** 2
@@ -3429,7 +3759,7 @@ class Geomstr:
             elif n == 3:
                 return 6 * (end - 3 * (control2 - control) - start)
             return 0
-        if info.real == TYPE_ARC:
+        if segtype == TYPE_ARC:
             # Delta is angular distance of the arc.
             # Theta is the angle between x-axis and start_point
             center = self.arc_center(e)
@@ -3453,9 +3783,11 @@ class Geomstr:
     def intersections(self, e, other):
         line1 = self.segments[e] if isinstance(e, int) else e
         line2 = self.segments[other] if isinstance(other, int) else other
+        segtype1 = self._segtype(line1)
+        segtype2 = self._segtype(line2)
         start, control1, info, control2, end = line1
         ostart, ocontrol1, oinfo, ocontrol2, oend = line2
-        if info.real in (TYPE_LINE, TYPE_QUAD, TYPE_CUBIC) and oinfo.real in (
+        if segtype1 in (TYPE_LINE, TYPE_QUAD, TYPE_CUBIC) and segtype2 in (
             TYPE_LINE,
             TYPE_QUAD,
             TYPE_CUBIC,
@@ -3480,12 +3812,12 @@ class Geomstr:
                 or max(ob) < min(sb)
             ):
                 return  # There can't be any intersections
-        if info.real in (TYPE_POINT, TYPE_END, TYPE_NOP, TYPE_VERTEX):
+        if segtype1 in NON_GEOMETRY_TYPES:
             return
-        if oinfo.real in (TYPE_POINT, TYPE_END, TYPE_NOP, TYPE_VERTEX):
+        if segtype2 in NON_GEOMETRY_TYPES:
             return
-        if info.real == TYPE_LINE:
-            if oinfo.real == TYPE_LINE:
+        if segtype1 == TYPE_LINE:
+            if segtype2 == TYPE_LINE:
                 yield from self._line_line_intersections(line1, line2)
                 return
         #     if oinfo.real == TYPE_QUAD:
@@ -3647,8 +3979,11 @@ class Geomstr:
             return self._arc_position
 
     def _find_intersections(self, segment1, segment2):
-        fun1 = self._get_segment_function(segment1[2].real)
-        fun2 = self._get_segment_function(segment2[2].real)
+        segtype1 = self._segtype(segment1)
+        segtype2 = self._segtype(segment2)
+
+        fun1 = self._get_segment_function(segtype1)
+        fun2 = self._get_segment_function(segtype2)
         if fun1 is None or fun2 is None:
             return  # Only shapes can intersect. We don't do point x point.
         yield from self._find_intersections_intercept(segment1, segment2, fun1, fun2)
@@ -4213,6 +4548,63 @@ class Geomstr:
         If a point refers to a non-point with differing start/end values then
         ~index refers to the endpoint and index refers to the start point.
 
+        Also accepts complex number coordinates, as well as (x,y) coordinate, instead of geom endpoint.
+
+        @param pts:
+
+        @return:
+        Uses a fast quickhull implementation found here: https://gist.github.com/marmakoide/549d925fa55b4d24dad9a0dedc33ae11
+        Quickhull algorithm: https://en.wikipedia.org/wiki/Quickhull
+        """
+
+        def process(S, P, a, b):
+            signed_dist = np.cross(S[P] - S[a], S[b] - S[a])
+            K = [i for s, i in zip(signed_dist, P) if s > 0 and i != a and i != b]
+
+            if len(K) == 0:
+                return (a, b)
+
+            c = max(zip(signed_dist, P))[1]
+            return process(S, K, a, c)[:-1] + process(S, K, c, b)
+
+        def quickhull_2d(S: np.ndarray) -> np.ndarray:
+            a, b = np.argmin(S[:,0]), np.argmax(S[:,0])
+            max_index = np.argmax(S[:,0])
+            # max_element = S[max_index]
+            return process(S, np.arange(S.shape[0]), a, max_index)[:-1] + process(S, np.arange(S.shape[0]), max_index, a)[:-1]
+
+        if len(pts) == 0:
+            return
+        points = []
+        for i in range(len(pts)):
+            p = pts[i]
+            if p is None or (isinstance(p, complex) and np.isnan(p.real)):
+                continue
+            if isinstance(p, int):
+                if p < 0:
+                    p = self.segments[~p][-1]
+                else:
+                    p = self.segments[p][0]
+            if isinstance(p, complex):
+                points.append((p.real, p.imag))
+            else:
+                points.append(p)
+
+        c_points = np.array(points)
+        hull = quickhull_2d(c_points)
+        if hull:
+            res_pts = c_points[np.array(hull)]
+            for p in res_pts:
+                yield complex(p[0], p[1])
+
+
+    def _convex_hull_original(self, pts):
+        """
+        Generate points of the convex hull around the given points.
+
+        If a point refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
         Also accepts complex number coordinates, instead of geom endpoint.
 
         @param pts:
@@ -4272,9 +4664,11 @@ class Geomstr:
                 r = self.segments[~r][-1]
             else:
                 r = self.segments[r][0]
-        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
-            r.imag - q.imag
-        )
+        # I think tats math is wrong, so here's my orientation calculation
+        # but that will let multiple unit tests fail
+        # val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
+
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
         if val == 0:
             return "linear"
         elif val > 0:
@@ -4590,23 +4984,24 @@ class Geomstr:
         path = Path()
         for p in self.segments[: self.index]:
             s, c0, i, c1, e = p
-            if np.real(i) == TYPE_END:
+            segtype = self._segtype(p)
+            if segtype == TYPE_END:
                 _open = True
                 continue
 
             if _open or len(path) == 0 or path.current_point != s:
                 path.move(s)
                 _open = False
-            if np.real(i) == TYPE_LINE:
+            if segtype == TYPE_LINE:
                 path.line(e)
-            elif np.real(i) == TYPE_QUAD:
+            elif segtype == TYPE_QUAD:
                 path.quad(c0, e)
-            elif np.real(i) == TYPE_CUBIC:
+            elif segtype == TYPE_CUBIC:
                 path.cubic(c0, c1, e)
-            elif np.real(i) == TYPE_ARC:
+            elif segtype == TYPE_ARC:
                 path.append(Arc(start=s, control=c0, end=e))
                 # path.arc(start=s, control=c0, end=e)
-            elif np.real(i) == TYPE_POINT:
+            elif segtype == TYPE_POINT:
                 path.move(s)
                 path.closed()
         return path
@@ -4640,7 +5035,7 @@ class Geomstr:
         """
         last = 0
         for idx, seg in enumerate(self.segments[: self.index]):
-            segtype = int(seg[2].real)
+            segtype = self._segtype(seg)
             if segtype == TYPE_END:
                 yield Geomstr(self.segments[last:idx])
                 last = idx + 1
@@ -4660,9 +5055,11 @@ class Geomstr:
         idx = 1
         while idx < self.index:
             seg1 = self.segments[idx]
-            segtype1 = int(seg1[2].real)
+            segtype1 = self._segtype(seg1)
             seg2 = self.segments[idx - 1]
-            segtype2 = int(seg2[2].real)
+            segtype2 = self._segtype(seg2)
+            if segtype1 in META_TYPES or segtype2 in META_TYPES:
+                continue
             if segtype1 != TYPE_END and segtype2 != TYPE_END and seg1[0] != seg2[-1]:
                 # This is a non-contiguous segment
                 end_segment = (
@@ -4675,6 +5072,11 @@ class Geomstr:
                 # print (f"inserted an end at #{idx}")
                 self.insert(idx, end_segment)
             idx += 1
+        # And at last: we don't need an TYPE_END as very last segment
+        if self.index:
+            seg1 = self.segments[self.index - 1]
+            if self._segtype(seg1) == TYPE_END:
+                self.index -= 1
 
     def as_subpaths(self):
         """
@@ -4924,11 +5326,12 @@ class Geomstr:
             self.segments[p1] = c
             pt = c[-1]
 
-    def two_opt_distance(self, max_passes=None, chunk=0):
+    def two_opt_distance(self, max_passes=None, chunk=0, auto_stop_threshold=None, feedback=None):
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
         @param chunk: Chunk check value
+        @param auto_stop_threshold percentage value of needed gain in every pass
         @return:
         """
         self._trim()
@@ -4942,6 +5345,9 @@ class Geomstr:
         indexes1 = indexes0 + 1
 
         improved = True
+        first_travel = self.travel_distance()
+        last_travel = first_travel
+        threshold_value = None if auto_stop_threshold is None else auto_stop_threshold / 100.0 * last_travel
         while improved:
             improved = False
 
@@ -4990,8 +5396,18 @@ class Geomstr:
                     segments[index + 1 :], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
+            this_travel = self.travel_distance()
+            dt = last_travel - this_travel
+            dt_total = first_travel - this_travel
+            if feedback:
+                msg = f"Pass {current_pass + 1}: saved {dt / first_travel * 100:.1f}%, total: {dt_total / first_travel * 100:.1f}%"
+                feedback(msg)
             if max_passes and current_pass >= max_passes:
                 break
+            if threshold_value:
+                if dt <= threshold_value:
+                    break
+                last_travel = this_travel
             current_pass += 1
 
     #######################
@@ -5013,7 +5429,7 @@ class Geomstr:
             segpow = segment[2]
             c1 = segment[3]
             end = segment[4]
-            segment_type = segpow.real
+            segment_type = self._segtype(segment)
             settings_index = segpow.imag
             if segment_type == TYPE_LINE:
                 for x, y in ZinglPlotter.plot_line(
@@ -5065,36 +5481,37 @@ class Geomstr:
             start, c1, info, c2, end = line
 
             segment_type = int(info.real)
+            pure_segment_type = self._segtype(line)
             if defining_function > 0:
-                if (segment_type & 0xFF) != TYPE_UNTIL:
+                if pure_segment_type != TYPE_UNTIL:
                     continue
                 loop_count = segment_type >> 8
                 function_dict[defining_function] = (function_start, index, loop_count)
                 defining_function = 0
                 continue
-            if segment_type == TYPE_LINE:
+            if pure_segment_type == TYPE_LINE:
                 segment_type = "line"
-            elif segment_type == TYPE_QUAD:
+            elif pure_segment_type == TYPE_QUAD:
                 segment_type = "quad"
-            elif segment_type == TYPE_CUBIC:
+            elif pure_segment_type == TYPE_CUBIC:
                 segment_type = "cubic"
-            elif segment_type == TYPE_ARC:
+            elif pure_segment_type == TYPE_ARC:
                 segment_type = "arc"
-            elif segment_type == TYPE_POINT:
+            elif pure_segment_type == TYPE_POINT:
                 segment_type = "point"
-            elif segment_type == TYPE_END:
+            elif pure_segment_type == TYPE_END:
                 segment_type = "end"
-            elif segment_type == TYPE_NOP:
+            elif pure_segment_type == TYPE_NOP:
                 # Nop should be skipped.
                 continue
-            elif segment_type == TYPE_VERTEX:
+            elif pure_segment_type == TYPE_VERTEX:
                 # Vertex should be skipped.
                 continue
-            elif (segment_type & 0xFF) == TYPE_FUNCTION:
+            elif pure_segment_type == TYPE_FUNCTION:
                 defining_function = segment_type >> 8
                 function_start = index
                 continue
-            elif (segment_type & 0xFF) == TYPE_CALL:
+            elif pure_segment_type == TYPE_CALL:
                 executing_function = segment_type >> 8
                 fun_start, fun_end, loops = function_dict[executing_function]
 
@@ -5109,3 +5526,58 @@ class Geomstr:
 
             sets = self._settings.get(info.imag, default_dict)
             yield segment_type, start, c1, c2, end, sets
+
+    def simplify_geometry(self, number=None, ratio=None, threshold=None):
+        geom = self
+        final = Geomstr()
+        for subgeom in geom.as_subpaths():
+            newgeom = Geomstr()
+            points = list()
+            closed = subgeom.is_closed()
+
+            def processpts():
+                if len(points) == 0:
+                    return
+                simplifier = Simplifier(points)
+                """
+                # Simplify by percentage of points to keep
+                simplifier.simplify(ratio=0.5)
+
+                # Simplify by giving number of points to keep
+                simplifier.simplify(number=1000)
+
+                # Simplify by giving an area threshold (in the units of the data)
+                simplifier.simplify(threshold=0.01)
+                """
+                if number is not None:
+                    newpoints = simplifier.simplify(number=number)
+                elif ratio is not None:
+                    newpoints = simplifier.simplify(ratio=ratio)
+                elif threshold is not None:
+                    newpoints = simplifier.simplify(threshold=threshold)
+                else:
+                    raise ValueError("You need to provide at least one parameter for simplify_geomstr")
+                newgeom.append(Geomstr.lines(newpoints))
+                points.clear()
+
+            for segment in subgeom.segments[: subgeom.index]:
+                start, control, info, control2, end = segment
+                segtype = subgeom._segtype(segment)
+                if segtype == TYPE_LINE:
+                    if len(points) == 0:
+                        points.append((start.real, start.imag))
+                    points.append((end.real, end.imag))
+                elif segtype == TYPE_END:
+                    if len(points):
+                        processpts()
+                    newgeom.append_segment(start, control, info, control2, end)
+                else:
+                    if len(points):
+                        processpts()
+                    newgeom.append_segment(start, control, info, control2, end)
+            if len(points):
+                processpts()
+            if closed and newgeom.index > 0:
+                newgeom.close()
+            final.append(newgeom)
+        return final

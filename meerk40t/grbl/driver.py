@@ -47,9 +47,11 @@ class GRBLDriver(Parameters):
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, ppi=False, shift=False, group=True
+            self.settings, single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
         )
         self.queue = []
+        self._queue_current = 0
+        self._queue_total = 0
         self.plot_data = None
 
         self.on_value = 0
@@ -79,6 +81,7 @@ class GRBLDriver(Parameters):
         self.elements = None
         self.power_scale = 1.0
         self.speed_scale = 1.0
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -88,6 +91,13 @@ class GRBLDriver(Parameters):
             self.out_real(e)
         else:
             self.out_pipe(e)
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     @signal_listener("line_end")
     def _set_line_end(self, origin=None, *args):
@@ -140,8 +150,6 @@ class GRBLDriver(Parameters):
             self.power_dirty = True
         if key == "speed":
             self.speed_dirty = True
-        if key == "zaxis":
-            self.zaxis_dirty = True
         self.settings[key] = value
 
     def status(self):
@@ -167,10 +175,11 @@ class GRBLDriver(Parameters):
         x, y = self.service.view.position(x, y)
         self._move(x, y)
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def move_rel(self, dx, dy):
         """
@@ -197,10 +206,11 @@ class GRBLDriver(Parameters):
         self._move(unit_dx, unit_dy)
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def dwell(self, time_in_ms):
         """
@@ -392,7 +402,23 @@ class GRBLDriver(Parameters):
         else:
             self(f"M4{self.line_end}")
         first = True
+        total = len(self.queue)
+        current = 0
         for q in self.queue:
+            # Are there any custom commands to be executed?
+            # Usecase (as described in issue https://github.com/meerk40t/meerk40t/issues/2764 ):
+            # Switch between M3 and M4 mode for cut / raster 
+            #   M3=used to cut as gantry acceleration doesn't matter on a cut.
+            #   M4=used for Raster/Engrave operations, as grblHAL will 
+            #   adjust power based on gantry speed including acceleration. 
+
+            cmd_string = q.settings.get("custom_commands", "")
+            if cmd_string:
+                for cmd in cmd_string.splitlines():
+                    self(f"{cmd}{self.line_end}")
+
+            current += 1
+            self._set_queue_status(current, total)
             while self.hold_work(0):
                 if self.service.kernel.is_shutdown:
                     return
@@ -409,6 +435,14 @@ class GRBLDriver(Parameters):
             if self.on_value != 1.0:
                 self.power_dirty = True
             self.on_value = 1.0
+            # Do we have a custom z-Value?
+            # NB: zaxis is not a property inside Parameters like power/or speed
+            # so we need to deal with it more directly 
+            # (e.g. self.power is the equivalent to self.settings.["power"]))
+            qzaxis = q.settings.get("zaxis", self.zaxis)
+            if qzaxis != self.zaxis:
+                self.zaxis = qzaxis
+                self.zaxis_dirty = True
             # Default-Values?!
             qpower = q.settings.get("power", self.power)
             qspeed = q.settings.get("speed", self.speed)
@@ -511,6 +545,7 @@ class GRBLDriver(Parameters):
                     self.on_value = on
                     self._move(x, y)
         self.queue.clear()
+        self._set_queue_status(0, 0)
 
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
@@ -548,10 +583,11 @@ class GRBLDriver(Parameters):
         else:
             self(f"G28{self.line_end}")
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def home(self):
         """
@@ -821,10 +857,11 @@ class GRBLDriver(Parameters):
             self.speed_dirty = False
         self(" ".join(line) + self.line_end)
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _clean_motion(self):
         if self.absolute_dirty:

@@ -36,6 +36,25 @@ class ElementsWidget(Widget):
             zoom_scale = 1
         if zoom_scale < 1:
             zoom_scale = 1
+        win_x_max, win_y_max = self.scene.gui.ClientSize
+        win_x_min = 0
+        win_y_min = 0
+        xmin = float("inf")
+        ymin = float("inf")
+        xmax = -float("inf")
+        ymax = -float("inf")
+        # look at the four edges as we could be rotated / inverted etc.
+        for x in (win_x_min, win_x_max):
+            for y in (win_y_min, win_y_max):
+                win_pos = (x, y)
+                scene_pos = self.scene.convert_window_to_scene(win_pos)
+                xmin = min(xmin, scene_pos[0])
+                xmax = max(xmax, scene_pos[0])
+                ymin = min(ymin, scene_pos[1])
+                ymax = max(ymax, scene_pos[1])
+        # Set visible area
+        box = (xmin, ymin, xmax, ymax)
+        self.renderer.set_visible_area(box)
         draw_mode = self.renderer.context.draw_mode
         if (draw_mode & DRAW_MODE_REGMARKS) == 0:
             # Very faint in the background as orientation - alpha 64
@@ -45,6 +64,7 @@ class ElementsWidget(Widget):
                 draw_mode,
                 zoomscale=zoom_scale,
                 alpha=32,
+                msg="regmarks unselected",
             )
             self.renderer.render(
                 context.elements.regmarks_nodes(selected=True),
@@ -52,6 +72,7 @@ class ElementsWidget(Widget):
                 draw_mode,
                 zoomscale=zoom_scale,
                 alpha=64,
+                msg="regmarks selected",
             )
             # Slightly more prominent - alpha 96
             self.renderer.render(
@@ -60,6 +81,7 @@ class ElementsWidget(Widget):
                 draw_mode,
                 zoomscale=zoom_scale,
                 alpha=96,
+                msg="placement node",
             )
         if self.scene.pane.tool_container.mode == "vertex":
             draw_mode |= DRAW_MODE_EDIT
@@ -68,6 +90,7 @@ class ElementsWidget(Widget):
             gc,
             draw_mode,
             zoomscale=zoom_scale,
+            msg="elements",
         )
 
     def event(
@@ -91,7 +114,7 @@ class ElementsWidget(Widget):
         if event_type == "rightdown" and empty_or_right:
             if not self.scene.pane.tool_active:
                 if self.scene.pane.active_tool != "none":
-                    self.scene.context("tool none")
+                    self.scene.context("tool none\n")
                     return RESPONSE_CONSUME
                 else:
                     self.scene.context.signal("scene_right_click")

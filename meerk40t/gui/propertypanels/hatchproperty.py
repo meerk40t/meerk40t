@@ -4,7 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
-from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox
+from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox, wxComboBox
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
@@ -16,10 +16,12 @@ class HatchPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
         self.node = node
+        self.panels = []
         self.SetHelpText("hatches")
 
         self._Buffer = None
@@ -29,7 +31,7 @@ class HatchPropertyPanel(ScrolledPanel):
         # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
-
+        self.panels.append(panel_id)
         panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
@@ -40,6 +42,7 @@ class HatchPropertyPanel(ScrolledPanel):
             node=self.node,
         )
         main_sizer.Add(panel_stroke, 1, wx.EXPAND, 0)
+        self.panels.append(panel_stroke)
 
         # panel_fill = ColorPanel(
         #     self,
@@ -114,7 +117,7 @@ class HatchPropertyPanel(ScrolledPanel):
         main_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.fills = list(self.context.match("hatch", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
+        self.combo_fill_style = wxComboBox(
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
@@ -175,6 +178,8 @@ class HatchPropertyPanel(ScrolledPanel):
         return node.type in ("effect hatch",)
 
     def set_widgets(self, node):
+        for panel in self.panels:
+            panel.set_widgets(node)
         self.node = node
         if self.node is None or not self.accepts(node):
             self.Hide()
@@ -240,11 +245,13 @@ class HatchPropertyPanel(ScrolledPanel):
         self.update_label()
         self.Refresh()
         if self.check_classify.GetValue():
-            mynode = self.node
-            wasemph = self.node.emphasized
-            data = [self.node]
-            self.context.elements.remove_elements_from_operations(data)
-            self.context.elements.classify(data)
+            # _("Color classify")
+            with self.context.elements.undoscope("Color classify"):
+                mynode = self.node
+                wasemph = self.node.emphasized
+                data = [self.node]
+                self.context.elements.remove_elements_from_operations(data)
+                self.context.elements.classify(data)
             self.context.elements.signal("tree_changed")
             self.context.elements.signal("element_property_reload", self.node)
             mynode.emphasized = wasemph

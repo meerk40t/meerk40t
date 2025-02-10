@@ -1,5 +1,16 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains console commands that interact with the elements system in the program.
+It provides functionality for rendering, vectorizing, outlining, and managing keyhole elements for images.
+
+Functions:
+- plugin: Initializes console commands related to rendering and vectorization.
+- init_commands: Sets up various console commands for rendering and manipulating elements.
+- render_elements: Creates a raster image from the given elements.
+- vectorize_elements: Converts given elements to a path.
+- element_outline: Creates an outline path at the inner and outer side of a path.
+- keyhole_elements: Sets a path-like element as a keyhole frame for selected images.
+- remove_keyhole_elements: Removes keyhole frame for selected images.
+
 """
 
 from copy import copy
@@ -60,13 +71,16 @@ def init_commands(kernel):
         new_height = height * dots_per_units
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
 
@@ -214,13 +228,16 @@ def init_commands(kernel):
         new_height = height * dots_per_units
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
         path = make_vector(
             image,
             interpolationpolicy=ipolicy,
@@ -414,10 +431,7 @@ def init_commands(kernel):
             opticurve = True
         if opttolerance is None:
             opttolerance = 0.2
-        if color is None:
-            pathcolor = Color("blue")
-        else:
-            pathcolor = color
+        pathcolor = Color("blue") if color is None else color
         if invert is None:
             invert = False
         if blacklevel is None:
@@ -475,13 +489,17 @@ def init_commands(kernel):
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
         dpi = 500
+        try:
+            data_image = make_raster(
+                mydata,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
 
-        data_image = make_raster(
-            mydata,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
         image_node_1 = ImageNode(
@@ -548,13 +566,16 @@ def init_commands(kernel):
             new_height = max(new_height, 1)
             new_width = max(new_width, 1)
             dpi = 500
-
-            image_2 = make_raster(
-                copy_data,
-                bounds=bounds,
-                width=new_width,
-                height=new_height,
-            )
+            try:
+                image_2 = make_raster(
+                    copy_data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+            except Exception:
+                channel(_("Too much memory required."))
+                return
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
             image_node_2 = ImageNode(
@@ -640,13 +661,16 @@ def init_commands(kernel):
                 new_height = max(new_height, 1)
                 new_width = max(new_width, 1)
                 dpi = 500
-
-                data_image = make_raster(
-                    copy_data,
-                    bounds=bounds,
-                    width=new_width,
-                    height=new_height,
-                )
+                try:
+                    data_image = make_raster(
+                        copy_data,
+                        bounds=bounds,
+                        width=new_width,
+                        height=new_height,
+                    )
+                except Exception:
+                    channel(_("Too much memory required."))
+                    return
                 matrix = Matrix.scale(width / new_width, height / new_height)
                 matrix.post_translate(bounds[0], bounds[1])
 
@@ -686,5 +710,76 @@ def init_commands(kernel):
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
         return "elements", outputdata
+
+    @self.console_argument("refid", type=str, help=_("The id of the keyhole element"))
+    @self.console_command(
+        "keyhole",
+        help=_("Set a path-like element as keyhole frame for selected images"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def keyhole_elements(command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        if nohide is None:
+            nohide = False
+        if refid is None:
+            # We do look for the very first occurence of a path like object and take this...
+            for node in data:
+                if node.id is not None and node.type in ("elem path", "elem ellipse", "elem rect", "elem polyline"):
+                    refid = node.id
+                    break
+
+        if refid is None:
+            channel(_("You need to provide an ID of an element to act as a keyhole"))
+            return
+        refnode = self.find_node(refid)
+        if refnode is None:
+            channel(_("A node with such an ID couldn't be found"))
+            return
+        if not hasattr(refnode, "as_geometry"):
+            channel(_("This node can not act as a keyhole: {nodetype}").format(nodetype=refnode.type))
+            return
+        images = list ( (e for e in data if e.type == "elem image") )
+        if len(images) == 0:
+            channel(_("No images selected/provided"))
+            return
+
+        for node in images:
+            rid = node.keyhole_reference
+            if rid is not None:
+                self.deregister_keyhole(rid, node)
+            try:
+                self.register_keyhole(refnode, node)
+            except ValueError as e:
+                channel(f"Could not register keyhole: {e}")
+                return
+        self.process_keyhole_updates(None)
+        self.signal("refresh_scene", "Scene")
+        return "elements", images
+
+    @self.console_command(
+        "remove_keyhole",
+        help=_("Removes keyhole frame for selected images"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def remove_keyhole_elements(command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        images = list ( (e for e in data if e.type == "elem image") )
+        if len(images) == 0:
+            channel(_("No images selected/provided"))
+            return
+        for node in images:
+            rid = node.keyhole_reference
+            if rid is not None:
+                self.deregister_keyhole(rid, node)
+        self.process_keyhole_updates(None)
+
+        self.signal("refresh_scene", "Scene")
+        return "elements", images
 
     # --------------------------- END COMMANDS ------------------------------

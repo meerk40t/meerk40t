@@ -1,11 +1,20 @@
 import datetime
+from platform import system
 
 import wx
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
-from .wxutils import dip_size, ScrolledPanel, StaticBoxSizer, wxButton
+from .wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxListCtrl,
+    wxStaticText,
+    TextCtrl,
+)
 
 _ = wx.GetTranslation
 
@@ -18,6 +27,8 @@ HEADER_TEXT = (
     + "who sincerely hoped his contributions would be but\n"
     + "the barest trickle that becomes a raging river."
 )
+HEADER_TEXT_2 = "Since early 2024 jpirnay has taken on the role of lead developer\ntrying to fill in some awfully large shoes."
+
 EULOGY_TEXT = (
     "MeerK40t is the result of an incredible piece of work by David Olsen aka Tatarize.\n"
     + "He created this program over 4 years allowing users across the world to get the best out of their K40 equipment (and additional lasertypes).\n\n"
@@ -33,21 +44,25 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         self.bitmap_button_1 = wx.BitmapButton(
-            self, wx.ID_ANY, icon_meerk40t.GetBitmap()
+            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150)
         )
+        # self.bitmap_button_1.SetBackgroundColour(wx.WHITE)
 
         self.__set_properties()
         self.__do_layout()
 
         name = self.context.kernel.name
         version = self.context.kernel.version
-        self.meerk40t_about_version_text.SetLabelText(f"{name}\nv{version}")
+
+        msg = f"v{version}"
+        self.meerk40t_about_version_text.SetLabelText(msg)
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
-        self.meerk40t_about_version_text = wx.StaticText(self, wx.ID_ANY, "MeerK40t")
+        self.meerk40t_about_version_text = wxStaticText(self, wx.ID_ANY, "MeerK40t")
         # end wxGlade
 
     def __do_layout(self):
@@ -56,9 +71,10 @@ class AboutPanel(wx.Panel):
         hsizer_pic_info = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_pic_iver = wx.BoxSizer(wx.VERTICAL)
         vsizer_pic_iver.Add(self.bitmap_button_1, 0, 0, 0)
+        fontsize = 16 if system() == "Darwin" else 10
         self.meerk40t_about_version_text.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -69,14 +85,15 @@ class AboutPanel(wx.Panel):
         vsizer_pic_iver.Add(self.meerk40t_about_version_text, 0, 0, 0)
         hsizer_pic_info.Add(vsizer_pic_iver, 0, wx.EXPAND, 0)
         hsizer_pic_info.AddSpacer(5)
-        self.meerk40t_about_text_header = wx.StaticText(
+        self.meerk40t_about_text_header = wxStaticText(
             self,
             wx.ID_ANY,
-            _(HEADER_TEXT),
+            _(HEADER_TEXT) + "\n" + _(HEADER_TEXT_2),
         )
+
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -96,7 +113,6 @@ class AboutPanel(wx.Panel):
         # jaredly ~ 15
         # frogmaster ~ 10
         hall_of_fame = [
-            "jpirnay",
             "Sophist-UK",
             "tiger12506",
             "jaredly",
@@ -104,7 +120,7 @@ class AboutPanel(wx.Panel):
             "inspectionsbybob",
             "jondale",
         ]
-        meerk40t_about_text = wx.StaticText(
+        meerk40t_about_text = wxStaticText(
             self,
             wx.ID_ANY,
             _("Thanks go out to...\n")
@@ -142,7 +158,7 @@ class AboutPanel(wx.Panel):
         )
         meerk40t_about_text.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -150,7 +166,20 @@ class AboutPanel(wx.Panel):
                 "Segoe UI",
             )
         )
+        vsizer_main.AddSpacer(5)
         vsizer_main.Add(meerk40t_about_text, 4, wx.EXPAND, 0)
+        if self.context.root.faulty_bitmap_scaling:
+            info = wxStaticText(self, wx.ID_ANY,
+                _(
+                    "Your system is using a very high userscale value: {scale}% ! " +
+                    "Unfortunately there is a bug in wxPython (the framework we are using) " +
+                    "that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n" +
+                    "As there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
+                ).format(scale=self.context.root.user_scale)
+            )
+            info.SetBackgroundColour(wx.YELLOW)
+            info.SetForegroundColour(wx.RED)
+            vsizer_main.Add(info, 1, wx.EXPAND, 0)
         self.SetSizer(vsizer_main)
         self.Layout()
         # end wxGlade
@@ -161,6 +190,7 @@ class DavidPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         from wx.lib.embeddedimage import PyEmbeddedImage
 
@@ -1450,18 +1480,46 @@ class DavidPanel(ScrolledPanel):
             self, wx.ID_ANY, david_olsen.GetBitmap()
         )
         self.david_picture.SetSize(self.david_picture.GetBestSize())
-        self.david_header = wx.StaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
-        self.david_text = wx.StaticText(
+        self.david_header = wxStaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
+        eulogy:str = _(EULOGY_TEXT)
+        if system() == "Darwin":
+            # MacOS does not wrap labels around, so we need do it ourselves
+            splitted = eulogy.split("\n")
+            lines = []
+            LINELEN = 45
+            for l in splitted:
+                words = l.split()
+                start = ""
+                for w in words:
+                    if len(w) + len(start) > LINELEN:
+                        if start:
+                            lines.append(start)
+                            start = w
+                        else:
+                            # Word is too long
+                            lines.append(w)
+                            start = ""
+                    else:
+                        if start:
+                            start += f" {w}"
+                        else:
+                            start = w
+                if start:
+                    lines.append(start)
+            eulogy = "\n".join(lines)
+        self.david_text = wxStaticText(
             self,
             wx.ID_ANY,
-            _(EULOGY_TEXT),
+            eulogy,
         )
 
         self.__do_layout()
+        self.david_text.Bind(wx.EVT_LEFT_DCLICK, self.on_eulogy)
 
 
     def __do_layout(self):
-        # begin wxGlade: About.__do_layout
+        fontsize = 16 if system() == "Darwin" else 10
+
         self.david_header.SetFont(
             wx.Font(
                 8,
@@ -1474,7 +1532,7 @@ class DavidPanel(ScrolledPanel):
         )
         self.david_text.SetFont(
             wx.Font(
-                10,
+                fontsize,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -1496,6 +1554,11 @@ class DavidPanel(ScrolledPanel):
         self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
+    
+    def on_eulogy(self, event):
+        import webbrowser
+        url = "https://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
+        webbrowser.open(url, new=0, autoraise=True)
 
 class InformationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
@@ -1503,9 +1566,10 @@ class InformationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.os_version = wx.TextCtrl(
+        self.context.themes.set_window_colors(self)
+        self.mk_version = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.config_path = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.os_version = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         self.os_version.SetMinSize(wx.Size(-1, 5 * 25))
@@ -1599,10 +1663,12 @@ class ComponentPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
-        self.list_preview = wx.ListCtrl(
+        self.context.themes.set_window_colors(self)
+        self.list_preview = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context, list_name="list_about",
         )
         self.info_btn = wxButton(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
@@ -1634,6 +1700,7 @@ class ComponentPanel(ScrolledPanel):
             self.list_preview.SetItem(list_id, 2, entry[1])
             self.list_preview.SetItem(list_id, 3, entry[2])
             self.list_preview.SetItem(list_id, 4, entry[3])
+        self.list_preview.resize_columns()
 
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -1716,6 +1783,8 @@ class ComponentPanel(ScrolledPanel):
                 else:
                     status = _("Present (slow)")
                     info = "??"
+                if not hasattr(potrace, "Bitmap"):
+                    status = _("Faulty, please report")
             except ImportError:
                 info = "??"
                 status = _("Missing")
@@ -1912,6 +1981,11 @@ class ComponentPanel(ScrolledPanel):
             # print ("couldn't access clipboard")
             wx.Bell()
 
+    def pane_show(self):
+        self.list_preview.load_column_widths()
+
+    def pane_hide(self):
+        self.list_preview.save_column_widths()
 
 class About(MWindow):
     def __init__(self, *args, **kwds):
@@ -1925,7 +1999,7 @@ class About(MWindow):
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
             | wx.TAB_TRAVERSAL
-            | (wx.RESIZE_BORDER if _sys() != "Darwin" else 0),
+            | (wx.RESIZE_BORDER if system() != "Darwin" else 0),
             **kwds,
         )
         self.notebook_main = wx.aui.AuiNotebook(
@@ -1936,6 +2010,12 @@ class About(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)

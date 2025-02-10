@@ -14,7 +14,7 @@ from ..core.exceptions import BadFileError
 from .icons import get_default_icon_size, icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
 from .navigationpanels import Drag, Jog
-from .wxutils import StaticBoxSizer, wxButton
+from .wxutils import StaticBoxSizer, TextCtrl, wxButton, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -25,6 +25,8 @@ class JogMovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         jog_panel = Jog(self, wx.ID_ANY, context=context)
         drag_panel = Drag(self, wx.ID_ANY, context=context)
         self.panels = [jog_panel, drag_panel]
@@ -56,6 +58,7 @@ class ProjectPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetSize((400, 300))
 
         sizer_buttons = wx.BoxSizer(wx.VERTICAL)
@@ -63,29 +66,29 @@ class ProjectPanel(wx.Panel):
         self.button_load = wxButton(self, wx.ID_ANY, _("Load Project"))
 
         self.button_load.SetBitmap(
-            icons8_opened_folder.GetBitmap(resize=get_default_icon_size())
+            icons8_opened_folder.GetBitmap(resize=get_default_icon_size(self.context))
         )
         info_panel = StaticBoxSizer(self, wx.ID_ANY, "Project-Information", wx.VERTICAL)
         line1 = wx.BoxSizer(wx.HORIZONTAL)
-        lbl = wx.StaticText(self, wx.ID_ANY, "File:")
+        lbl = wxStaticText(self, wx.ID_ANY, "File:")
         lbl.SetMinSize(wx.Size(70, -1))
-        self.info_file = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.info_file = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         line1.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         line1.Add(self.info_file, 1, wx.EXPAND, 0)
 
         line2 = wx.BoxSizer(wx.HORIZONTAL)
-        lbl = wx.StaticText(self, wx.ID_ANY, "Content:")
+        lbl = wxStaticText(self, wx.ID_ANY, "Content:")
         lbl.SetMinSize(wx.Size(70, -1))
-        self.info_elements = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
-        self.info_operations = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.info_elements = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.info_operations = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         line2.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         line2.Add(self.info_elements, 1, wx.EXPAND, 0)
         line2.Add(self.info_operations, 1, wx.EXPAND, 0)
 
         line3 = wx.BoxSizer(wx.HORIZONTAL)
-        lbl = wx.StaticText(self, wx.ID_ANY, "Status:")
+        lbl = wxStaticText(self, wx.ID_ANY, "Status:")
         lbl.SetMinSize(wx.Size(70, -1))
-        self.info_status = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.info_status = TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         line3.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         line3.Add(self.info_status, 1, wx.EXPAND, 0)
 
@@ -127,7 +130,7 @@ class ProjectPanel(wx.Panel):
 
     def on_load(self, event):  # wxGlade: MyFrame.<event_handler>
         # This code should load just specific project files rather than all importable formats.
-        files = self.context.elements.load_types()
+        files, descriptors = self.context.elements.load_types()
         with wx.FileDialog(
             self,
             _("Open"),
@@ -136,9 +139,14 @@ class ProjectPanel(wx.Panel):
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
+            idx = fileDialog.GetFilterIndex()
+            try:
+                preferred_loader = descriptors[idx]
+            except IndexError:
+                preferred_loader = None
             pathname = fileDialog.GetPath()
             self.clear_project()
-            self.load(pathname)
+            self.load(pathname, preferred_loader)
             self.update_info(pathname)
         event.Skip()
 
@@ -180,7 +188,7 @@ class ProjectPanel(wx.Panel):
             dlg.Destroy()
             self.update_info(validpath)
 
-    def load(self, pathname):
+    def load(self, pathname, preferred_loader=None):
         def unescaped(filename):
             import platform
 
@@ -201,6 +209,7 @@ class ProjectPanel(wx.Panel):
                 pathname,
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.elements.svg_ppi,
+                preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
             return True
@@ -240,6 +249,12 @@ class SimpleUI(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
@@ -336,3 +351,7 @@ class SimpleUI(MWindow):
     @staticmethod
     def submenu():
         return "Interface", "SimpleUI"
+
+    @staticmethod
+    def helptext():
+        return _("A very basic user interface")

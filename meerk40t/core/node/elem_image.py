@@ -1,13 +1,44 @@
+"""
+ImageNode is the bootstrapped node type for handling image elements within the application.
+
+This class manages the properties and behaviors associated with image nodes, including
+image processing, transformations, and keyhole functionalities. It supports various
+operations such as cropping, dither effects, and applying raster scripts, while also
+maintaining the necessary metadata for rendering and manipulation.
+
+Args:
+    **kwargs: Additional keyword arguments for node initialization.
+
+Attributes:
+    image: The original image loaded into the node.
+    matrix: The transformation matrix applied to the image.
+    dpi: The resolution of the image in dots per inch.
+    operations: A list of operations to be applied to the image.
+    keyhole_reference: Reference for keyhole operations.
+    active_image: The processed image ready for rendering.
+    active_matrix: The matrix that combines the main matrix with the processed matrix.
+    convex_hull: The convex hull of the non-white pixels in the image.
+
+Methods:
+    set_keyhole(keyhole_ref, geom=None): Sets the keyhole reference and geometry.
+    process_image(step_x=None, step_y=None, crop=True): Processes the image based on the specified steps and cropping options.
+    update(context): Initiates the image processing thread and updates the image.
+    as_image(): Returns the active image and its bounding box.
+    bbox(transformed=True, with_stroke=False): Returns the bounding box of the image.
+"""
+
+import numpy as np
 import threading
+import time
 from copy import copy
 from math import ceil, floor
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.mixins import LabelDisplay, Suppressable
-from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
-
+from meerk40t.tools.geomstr import Geomstr
 
 class ImageNode(Node, LabelDisplay, Suppressable):
     """
@@ -23,7 +54,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self.overscan = None
         self.direction = None
         self.dpi = 500
-        self.operations = list()
+        self.operations = []
         self.invert = None
         self.dither = True
         self.dither_type = "Floyd-Steinberg"
@@ -33,10 +64,28 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self.lightness = 1.0
         self.view_invert = False
         self.prevent_crop = False
+        self.is_depthmap = False
+        self.depth_resolution = 256
+        # Keyhole-Variables
+        self._keyhole_reference = None
+        self._keyhole_geometry = None
+        self._keyhole_image = None
+        self._processing = False
+        self._convex_hull = None
+        self._default_units = UNITS_PER_INCH
+        startup = True
+        if "comingfromcopy" in kwargs:
+            startup = False
+            del kwargs["comingfromcopy"]
 
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         # kwargs can actually reset quite a lot of the properties to none
         # so, we need to revert these changes...
@@ -100,10 +149,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._update_lock = threading.Lock()
         self._processed_image = None
         self._processed_matrix = None
+        self._actualized_matrix = None
         self._process_image_failed = False
+
         self.message = None
-        if self.operations or self.dither or self.prevent_crop:
-            step = UNITS_PER_INCH / self.dpi
+        if (self.operations or self.dither or self.prevent_crop or self.keyhole_reference) and startup:
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
@@ -112,22 +163,39 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
         nd["operations"] = copy(self.operations)
-        return ImageNode(**nd)
+        nd["comingfromcopy"] = True
+        newnode = ImageNode(**nd)
+        if self._processed_image is not None:
+            newnode._processed_image = copy(self._processed_image)
+            newnode._processed_matrix = copy(self._processed_matrix)
+            newnode._actualized_matrix = copy(self._actualized_matrix)
+        g = None if self._keyhole_geometry is None else copy(self._keyhole_geometry)
+        newnode.set_keyhole(self.keyhole_reference, g)
+        return newnode
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
 
     @property
     def active_image(self):
+        # This may be called too quick, so the image is still processing.
+        # This would cause an immediate recalculation which would make
+        # things even worse, we wait max 1 second
+        counter = 0
+        while self._processing and counter < 20:
+            time.sleep(0.05)
+            counter += 1
         if self._processed_image is None:
-            step = UNITS_PER_INCH / self.dpi
+
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
-        if self._processed_image is not None:
-            return self._processed_image
-        else:
-            return self.image
+        return self._apply_keyhole()
+        # if self._processed_image is not None:
+        #     return self._processed_image
+        # else:
+        #     return self.image
 
     @property
     def active_matrix(self):
@@ -135,12 +203,91 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             return self.matrix
         return self._processed_matrix * self.matrix
 
+    @property
+    def keyhole_reference(self):
+        return self._keyhole_reference
+
+    @keyhole_reference.setter
+    def keyhole_reference(self, value):
+        self._keyhole_reference = value
+        self._keyhole_geometry = None
+        self._bounds_dirty = True
+
+    def set_keyhole(self, keyhole_ref, geom=None):
+        # This is useful if we do want to set it after loading a file
+        # or when assigning the reference, as this does not need a context
+        # query the complete node tree
+        self._cache = None
+        self.keyhole_reference = keyhole_ref
+        self._keyhole_geometry = geom
+        self._keyhole_image = None
+
+    def convex_hull(self) -> Geomstr:
+        if self._convex_hull is not None:
+            return self._convex_hull
+        t0 = time.perf_counter()
+        image_np = np.array(self.active_image.convert("L"))
+        # print (image_np)
+        # Find non-white pixels
+        # Iterate over each row in the image
+        left_side = []
+        right_side = []
+        for y in range(image_np.shape[0]):
+            row = image_np[y]
+            non_white_indices = np.where(row < 255)[0]
+
+            if non_white_indices.size > 0:
+                leftmost = non_white_indices[0]
+                rightmost = non_white_indices[-1]
+                left_side.append((leftmost, y))
+                right_side.insert(0, (rightmost, y))
+        left_side.extend(right_side)
+        non_white_pixels = left_side
+        t1 = time.perf_counter()
+        # Compute the convex hull
+        """
+        After the introduction of the quickhull routine in geomstr
+        the ConvexHull routine from scipy provides only limited
+        advantages over our own routine
+
+        pts = None
+        try:
+            # The ConvexHull routine from scipy provides less points
+            # and is faster (plus it has fewer non-understood artifacts)
+            from scipy.spatial import ConvexHull
+            c_points = np.array(non_white_pixels)
+            hull = ConvexHull(c_points)
+            hpts = c_points[hull.vertices]
+            pts = list( ( p[0], p[1] ) for p in hpts)
+            # print (f"scipy Hull has {len(pts)} pts")
+        except ImportError:
+            pass
+        t1b = time.perf_counter()
+        if pts is None:
+        """
+        pts = list(Geomstr.convex_hull(None, non_white_pixels))
+        if pts:
+            pts.append(pts[0])
+        # print("convex hull done")
+        t2 = time.perf_counter()
+        # print (f"Hull has {len(pts)} pts")
+        self._convex_hull = Geomstr.lines(*pts)
+        # print (f"Hull dimension: {self._convex_hull.bbox()} (for reference: image is {self.active_image.width}x{self.active_image.height} pixels)")
+        self._convex_hull.transform(self.active_matrix)
+        # print (f"Final dimension: {self._convex_hull.bbox()}")
+        t3 = time.perf_counter()
+        # print (f"Time to get pixels: {t1-t0:.3f}s, geomstr: {t2-t1b:.3f}s, scipy: {t1b-t1:.3f}s, total: {t3-t0:.3f}s")
+        return self._convex_hull
+
     def preprocess(self, context, matrix, plan):
         """
         Preprocess step during the cut planning stages.
 
         We require a context to calculate the correct step values relative to the device
         """
+
+        dev_x, dev_y = context.device.view.dpi_to_steps(1)
+        self._default_units = (dev_x + dev_y) / 2
         self.step_x, self.step_y = context.device.view.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
@@ -172,16 +319,31 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         default_map["element_type"] = "Image"
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            drag_node.type in ("op image", "op raster", "file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):
@@ -235,21 +397,33 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     context.signal("refresh_scene", "Scene")
                     context.signal("image_updated", self)
 
+            def get_keyhole_geometry():
+                self._keyhole_geometry = None
+                self._keyhole_image = None
+                refnode = context.elements.find_node(self.id)
+                if refnode is not None and hasattr(refnode, "as_geometry"):
+                    self._keyhole_geometry = refnode.as_geometry()
+
             self._processed_image = None
+            self._convex_hull = None
             # self.processed_matrix = None
             if context is None:
                 # Direct execution
                 self._needs_update = False
                 # Calculate scene step_x, step_y values
-                step = UNITS_PER_INCH / self.dpi
+                step = self._default_units / self.dpi
                 step_x = step
                 step_y = step
                 self.process_image(step_x, step_y, not self.prevent_crop)
                 # Unset cache.
                 self._cache = None
             else:
+                if self._keyhole_reference is not None and self._keyhole_geometry is None:
+                    get_keyhole_geometry()
+
+                # We need to have a thread per image, so we need to provide a node specific thread_name!
                 self._update_thread = context.threaded(
-                    self._process_image_thread, result=clear, daemon=True
+                    self._process_image_thread, result=clear, daemon=True, thread_name=f"image_update_{self.id}_{str(time.perf_counter())}"
                 )
 
     def _process_image_thread(self):
@@ -261,12 +435,13 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         while self._needs_update:
             self._needs_update = False
             # Calculate scene step_x, step_y values
-            step = UNITS_PER_INCH / self.dpi
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y, not self.prevent_crop)
-            # Unset cache.
-            self._cache = None
+            with self._update_lock:
+                self.process_image(step_x, step_y, not self.prevent_crop)
+                # Unset cache.
+                self._cache = None
 
     def process_image(self, step_x=None, step_y=None, crop=True):
         """
@@ -280,54 +455,67 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         There is a small amount of slop at the edge of converted images sometimes, so it's essential
         to mark the image as inverted if black should be treated as empty pixels. The scaled down image
-        cannot lose the edge pixels since they could be important, but also dim may not be a multiple
+        not lose the edge pixels since they could be important, but also dim may not be a multiple
         of step level which requires an introduced empty edge pixel to be added.
         """
 
-        from PIL import Image
+        from PIL import Image, ImageDraw
+        while self._processing:
+            time.sleep(0.05)
 
         if step_x is None:
             step_x = self.step_x
         if step_y is None:
             step_y = self.step_y
+        # print (f"process called with step_x={step_x}, step_y={step_y} (node: {self.step_x}, {self.step_y})")
         try:
             actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
             inverted_main_matrix = Matrix(self.matrix).inverse()
+            self._actualized_matrix = actualized_matrix
             self._processed_matrix = actualized_matrix * inverted_main_matrix
             self._processed_image = image
             self._process_image_failed = False
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (
-            MemoryError,
-            Image.DecompressionBombError,
-            ValueError,
-            ZeroDivisionError,
-        ):
+        except Exception as e:
             # Memory error if creating requires too much memory.
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
             # ZeroDivide if inverting the processed matrix cannot happen because image is a line
+            # print (f"Shit, crashed with {e}")
             self._process_image_failed = True
+            self._processing = False
         self.updated()
 
     @property
     def opaque_image(self):
         from PIL import Image
-
         img = self.image
-        if img is not None:
-            if img.mode == "RGBA":
-                r, g, b, a = img.split()
-                background = Image.new("RGB", img.size, "white")
-                background.paste(img, mask=a)
-                img = background
+        if img is not None and img.mode == "RGBA":
+            r, g, b, a = img.split()
+            background = Image.new("RGB", img.size, "white")
+            background.paste(img, mask=a)
+            img = background
         return img
 
     def _convert_image_to_grayscale(self, image):
         # Convert image to L type.
-        if image.mode != "L":
+        if image.mode == "I":
+            from PIL import Image
+            # Load the 32-bit signed grayscale image
+            img = np.array(image, dtype=np.int32)
+
+            # No need to reshape the image to its original dimensions
+            # img = img.reshape((image.width, image.height))
+
+            # Normalize the image to the range 0-255
+            img_normalized = ((img - img.min()) / (img.max() - img.min()) * 255).astype(np.uint8)
+
+            # Convert the NumPy array to a Pillow Image
+            img_pil = Image.fromarray(img_normalized)
+            image = img_pil.convert("L")
+        elif image.mode != "L":
             # Precalculate RGB for L conversion.
             # if self.red is None:
             #     self.red = 1
@@ -340,6 +528,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 g = self.green * 0.587
                 b = self.blue * 0.114
                 v = self.lightness
+                if v == 0:
+                    v = 0.000001
                 c = r + g + b
                 try:
                     c /= v
@@ -424,13 +614,30 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 continue
             if name == "crop":
                 try:
+                    # The dimensions of the image could have already be changed,
+                    # so we recalculate the edges based on the original image size
                     if op["enable"] and op["bounds"] is not None:
                         crop = op["bounds"]
-                        left = int(crop[0])
-                        upper = int(crop[1])
-                        right = int(crop[2])
-                        lower = int(crop[3])
+                        left_gap = int(crop[0])
+                        top_gap = int(crop[1])
+                        right_gap = self.image.width - int(crop[2])
+                        bottom_gap = self.image.height - int(crop[3])
+
                         w, h = image.size
+                        left = left_gap
+                        upper = top_gap
+                        right = image.width - right_gap
+                        lower = image.height - bottom_gap
+
+                        if left >= w:
+                            left = w - 1
+                        if upper >= h:
+                            upper = h
+                        if right <= left:
+                            right = left + 1
+                        if lower <= upper:
+                            lower = upper + 1
+
                         overall_left += left
                         overall_top += upper
                         overall_right -= w - right
@@ -458,35 +665,33 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     pass
             elif name == "tone":
                 try:
-                    if op["enable"] and op["values"] is not None:
-                        if image.mode == "L":
-                            image = image.convert("P")
-                            tone_values = op["values"]
-                            if op["type"] == "spline":
-                                spline = ImageNode.spline(tone_values)
-                            else:
-                                tone_values = [q for q in tone_values if q is not None]
-                                spline = ImageNode.line(tone_values)
-                            if len(spline) < 256:
-                                spline.extend([255] * (256 - len(spline)))
-                            if len(spline) > 256:
-                                spline = spline[:256]
-                            image = image.point(spline)
-                            if image.mode != "L":
-                                image = image.convert("L")
+                    if op["enable"] and op["values"] is not None and image.mode == "L":
+                        image = image.convert("P")
+                        tone_values = op["values"]
+                        if op["type"] == "spline":
+                            spline = ImageNode.spline(tone_values)
+                        else:
+                            tone_values = [q for q in tone_values if q is not None]
+                            spline = ImageNode.line(tone_values)
+                        if len(spline) < 256:
+                            spline.extend([255] * (256 - len(spline)))
+                        if len(spline) > 256:
+                            spline = spline[:256]
+                        image = image.point(spline)
+                        if image.mode != "L":
+                            image = image.convert("L")
                 except KeyError:
                     pass
             elif name == "contrast":
                 try:
-                    if op["enable"]:
-                        if op["contrast"] is not None and op["brightness"] is not None:
-                            contrast = ImageEnhance.Contrast(image)
-                            c = (op["contrast"] + 128.0) / 128.0
-                            image = contrast.enhance(c)
+                    if op["enable"] and (op["contrast"] is not None and op["brightness"] is not None):
+                        contrast = ImageEnhance.Contrast(image)
+                        c = (op["contrast"] + 128.0) / 128.0
+                        image = contrast.enhance(c)
 
-                            brightness = ImageEnhance.Brightness(image)
-                            b = (op["brightness"] + 128.0) / 128.0
-                            image = brightness.enhance(b)
+                        brightness = ImageEnhance.Brightness(image)
+                        b = (op["brightness"] + 128.0) / 128.0
+                        image = brightness.enhance(b)
                 except KeyError:
                     pass
             elif name == "gamma":
@@ -549,6 +754,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     if op["enable"] and op["type"] is not None:
                         self.dither_type = op["type"]
                         self.dither = True
+                        self.is_depthmap = False
                     else:
                         # Takes precedence
                         self.dither = False
@@ -574,6 +780,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 image = dither(image, self.dither_type)
             if image.mode != "1":
                 image = image.convert("1")
+            self.is_depthmap = False
         return image
 
     def _process_image(self, step_x, step_y, crop=True):
@@ -600,12 +807,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             BICUBIC = Resampling.BICUBIC
         except ImportError:
             BICUBIC = Image.BICUBIC
-
+        self._processing = True
         image = self.image
 
         transparent_mask = self._get_transparent_mask(image)
-
-        image = self._convert_image_to_grayscale(self.opaque_image)
+        opaque = self.opaque_image
+        image = self._convert_image_to_grayscale(opaque)
 
         image = self._apply_mask(image, transparent_mask)
 
@@ -664,6 +871,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             or self.matrix.c != 0.0
             or self.matrix.d != step_y
         ):
+            # print (f"another transform called while {image.width}x{image.height} - requested: {image_width}x{image_height}")
             if image_height <= 0:
                 image_height = 1
             if image_width <= 0:
@@ -682,6 +890,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 resample=BICUBIC,
                 fillcolor="black" if self.invert else "white",
             )
+            # print (f"after transform {image.width}x{image.height}")
         actualized_matrix = Matrix()
 
         if step_y < 0:
@@ -712,11 +921,13 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         # Invert black to white if needed.
         if self.invert:
-            image = ImageOps.invert(image)
+            try:
+                image = ImageOps.invert(image)
+            except OSError as e:
+                print (f"Image inversion crashed: {e}\nMode: {image.mode}, {image.width}x{image.height} pixel")
 
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
-
         image, newbounds = self._process_script(image)
         # This may have again changed the size of the image (op crop)
         # so we need to adjust the reject mask...
@@ -727,7 +938,62 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         image = background
 
         image = self._apply_dither(image)
+
+        self._processing = False
         return actualized_matrix, image
+
+    def _apply_keyhole(self):
+        from PIL import Image, ImageDraw
+
+        image = self._processed_image
+        if image is None:
+            image = self.image
+        if self._keyhole_geometry is not None:
+            # Let's check whether the keyhole dimensions match
+            if self._keyhole_image is not None and (self._keyhole_image.width != image.width or self._keyhole_image.height != image.height):
+                self._keyhole_image = None
+            if self._keyhole_image is None:
+                actualized_matrix = self._actualized_matrix
+                # We can't render something with the usual suspects ie laserrender.render
+                # as we do not have access to wxpython on the command line, so we stick
+                # to the polygon method of ImageDraw instead
+                maskimage = Image.new("L", image.size, "black")
+                draw = ImageDraw.Draw(maskimage)
+                inverted_main_matrix = Matrix(self.matrix).inverse()
+                matrix = actualized_matrix * inverted_main_matrix * self.matrix
+
+                x0, y0 = matrix.point_in_matrix_space((0, 0))
+                x2, y2 = matrix.point_in_matrix_space((image.width, image.height))
+                # print (x0, y0, x2, y2)
+                # Let's simplify things, if we don't have any overlap then the image is white...
+                i_wd = x2 - x0
+                i_ht = y2 - y0
+                gidx = 0
+                for geom in self._keyhole_geometry.as_subpaths():
+                    # Let's simplify things, if we don't have any overlap then we don't need to do something
+                    # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
+                    #     continue
+                    geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
+                    points = list()
+                    for pt in geom_points:
+                        if pt is None:
+                            continue
+                        gx = pt.real
+                        gy = pt.imag
+                        x = int(maskimage.width * (gx - x0) / i_wd )
+                        y = int(maskimage.height * (gy - y0) / i_ht )
+                        points.append( (x, y) )
+
+                    # print (points)
+                    draw.polygon( points, fill="white", outline="white")
+                self._keyhole_image = maskimage
+                # For debug purposes...
+                # maskimage.save("C:\\temp\\maskimage.png")
+
+            background = Image.new("L", image.size, "white")
+            background.paste(image, mask=self._keyhole_image)
+            image = background
+        return image
 
     @staticmethod
     def line(p):
@@ -737,9 +1003,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         except ZeroDivisionError:
             m = [1] * N
         # b = y - mx
-        b = [p[i][1] - (m[i] * p[i][0]) for i in range(0, N)]
+        b = [p[i][1] - (m[i] * p[i][0]) for i in range(N)]
         r = list()
-        for i in range(0, p[0][0]):
+        for i in range(p[0][0]):
             r.append(0)
         for i in range(len(p) - 1):
             x0 = p[i][0]
@@ -762,21 +1028,21 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         """
         try:
             N = len(p) - 1
-            w = [(p[i + 1][0] - p[i][0]) for i in range(0, N)]
-            h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(0, N)]
+            w = [(p[i + 1][0] - p[i][0]) for i in range(N)]
+            h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(N)]
             ftt = (
                 [0]
-                + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(0, N - 1)]
+                + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(N - 1)]
                 + [0]
             )
-            A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(0, N)]
-            B = [ftt[i] / 2 for i in range(0, N)]
-            C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(0, N)]
-            D = [p[i][1] for i in range(0, N)]
+            A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(N)]
+            B = [ftt[i] / 2 for i in range(N)]
+            C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(N)]
+            D = [p[i][1] for i in range(N)]
         except ZeroDivisionError:
             return list(range(256))
         r = list()
-        for i in range(0, p[0][0]):
+        for i in range(p[0][0]):
             r.append(0)
         for i in range(len(p) - 1):
             a = p[i][0]
@@ -805,3 +1071,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         x2, y2 = matrix.point_in_matrix_space((image_width, image_height))
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
         return abs(Path(Polygon((x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0))))
+
+    def translated(self, dx, dy, interim=False):
+        self._cache = None
+        self._keyhole_image = None
+        if self._actualized_matrix is not None:
+            self._actualized_matrix.post_translate(dx, dy)
+        if self._convex_hull is not None:
+            self._convex_hull.translate(dx, dy)
+        return super().translated(dx, dy)

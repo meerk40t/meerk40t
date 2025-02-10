@@ -14,9 +14,11 @@ except ImportError:
     from ezdxf import int2rgb
     from ezdxf.colors import DXF_DEFAULT_COLORS
 
+import math
+
 from ezdxf.units import decode
 
-from ..svgelements import (
+from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Angle,
@@ -32,6 +34,7 @@ from ..svgelements import (
     Polyline,
     Viewbox,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class DxfLoader:
@@ -59,7 +62,6 @@ class DxfLoader:
                 raise BadFileError(str(e)) from e
 
         unit = dxf.header.get("$INSUNITS")
-
         if unit is not None and unit != 0:
             du = units.DrawingUnits(UNITS_PER_INCH, unit="in")
             scale = du.factor(decode(unit))
@@ -76,7 +78,7 @@ class DXFProcessor:
         self.elements = elements_modifier
         self.dxf = dxf
         self.scale = scale
-        self.elements_list = list()
+        self.elements_list = []
         self.reverse = False
         self.requires_classification = True
         self.pathname = None
@@ -141,28 +143,63 @@ class DXFProcessor:
                 node.stroke = Color(entity.rgb)
         else:
             c = entity.dxf.color
-            if c == 256:  # Bylayer.
-                if entity.dxf.layer in dxf.layers:
-                    layer = dxf.layers.get(entity.dxf.layer)
-                    c = layer.color
+            if c == 256 and entity.dxf.layer in dxf.layers:
+                layer = dxf.layers.get(entity.dxf.layer)
+                c = layer.color
             try:
-                if c == 7:
-                    color = Color(
-                        "black"
-                    )  # Color 7 is black on light backgrounds, light on black.
-                else:
-                    color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                color = (
+                    Color("black")
+                    if c == 7
+                    else Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                )
+                # Color 7 is black on light backgrounds, light on black.
             except Exception:
                 color = Color("black")
             node.stroke = color
 
+    # def debug_entity(self, entity):
+    #     print (f"Entity: {entity.dxftype()}")
+    #     for key in dir(entity):
+    #         if key.startswith("_"):
+    #             continue
+    #         var = getattr(entity, key)
+    #         if callable(var):
+    #             continue
+    #         print (f"e.{key}={var}")
+    #     for key in dir(entity.dxf):
+    #         if key.startswith("_"):
+    #             continue
+    #         var = getattr(entity.dxf, key)
+    #         if callable(var):
+    #             continue
+    #         print (f"e.dxf.{key}={var}")
+
     def parse(self, entity, context_node, e_list):
+
+        def get_angles(entity):
+            start_angle = 0
+            end_angle = math.tau
+            if hasattr(entity.dxf, "start_angle"):
+                start_angle = Angle.degrees(entity.dxf.start_angle)
+                end_angle = Angle.degrees(entity.dxf.end_angle)
+            else:
+                # Due to the flipped nature of dxf we need to mirror them
+                start_angle = entity.dxf.start_param
+                end_angle = entity.dxf.end_param
+            if start_angle >= end_angle:
+                end_angle += Angle.turns(1)
+            return start_angle, end_angle
+
         if hasattr(entity, "transform_to_wcs"):
             try:
                 entity.transform_to_wcs(entity.ocs())
             except AttributeError:
                 pass
-        if entity.dxftype() == "CIRCLE":
+        dxftype = entity.dxftype()
+        # if dxftype in ("TEXT", "MTEXT"):
+        #     self.debug_entity(entity)
+
+        if dxftype == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
             m.post_translate_y(self.elements.device.view.unit_height)
@@ -184,55 +221,78 @@ class DXFProcessor:
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "ARC":
-            # TODO: Ellipse used to make circ.arc_angle path.
-            circ = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
-            start_angle = Angle.degrees(entity.dxf.start_angle)
-            end_angle = Angle.degrees(entity.dxf.end_angle)
-            if end_angle < start_angle:
-                end_angle += Angle.turns(1)
-            element = Path(circ.arc_angle(start_angle, end_angle))
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.view.unit_height)
-            path = abs(Path(element))
-            if len(path) != 0:
-                if not isinstance(path[0], Move):
-                    path = Move(path.first_point) + path
-                path.approximate_arcs_with_cubics()
+        elif dxftype == "ARC":
+            center = (entity.dxf.center)  # Center point of the circle (3D, but we'll use x,y)
+            a = entity.dxf.radius
+            b = entity.dxf.radius
+            start_angle, end_angle = get_angles(entity)
+            angle = 0
+            geom = Geomstr()
+            geom.arc_as_cubics(
+                start_t=start_angle,
+                end_t=end_angle,
+                cx=center[0],
+                cy=center[1],
+                rx=a,
+                ry=b,
+                rotation=angle,
+            )
             node = context_node.add(
-                path=path,
                 type="elem path",
+                geometry=geom,
                 stroke_scale=False,
                 stroke_width=self.std_stroke,
             )
+            node.matrix.post_scale(self.scale, -self.scale)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "ELLIPSE":
-            # TODO: needs more math, axis is vector, ratio is to minor.
-            # major axis is vector
-            # ratio is the ratio of major to minor.
-            element = Ellipse(
-                center=entity.dxf.center,
-                start_point=entity.start_point,
-                end_point=entity.end_point,
-                start_angle=entity.dxf.start_param,
-                end_angle=entity.dxf.end_param,
+        elif dxftype == "ELLIPSE":
+            center = (entity.dxf.center)  # Center point of the ellipse (3D, but we'll use x,y)
+            major_axis = entity.dxf.major_axis  # Vector representing the major axis
+            ratio = entity.dxf.ratio  # Ratio of minor to major axis
+            start_angle, end_angle = get_angles(entity)
+
+            # Calculate the angle of the major axis in the XY plane
+            angle = math.atan2(major_axis[1], major_axis[0])
+
+            # Calculate the lengths of the major and minor axes
+            a = math.sqrt(
+                major_axis[0] ** 2 + major_axis[1] ** 2
+            )  # Length of the major axis (in XY plane)
+            b = a * ratio  # Length of the minor axis
+            # geom = Geomstr.ellipse(
+            #     start_t=start_angle,
+            #     end_t=end_angle,
+            #     cx=center[0],
+            #     cy=center[1],
+            #     rx=a,
+            #     ry=b,
+            #     rotation=angle,
+            # )
+            geom = Geomstr()
+            geom.arc_as_cubics(
+                start_t=start_angle,
+                end_t=end_angle,
+                cx=center[0],
+                cy=center[1],
+                rx=a,
+                ry=b,
+                rotation=angle,
             )
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.view.unit_height)
             node = context_node.add(
-                shape=element,
-                type="elem ellipse",
+                type="elem path",
+                geometry=geom,
                 stroke_scale=False,
                 stroke_width=self.std_stroke,
             )
+            node.matrix.post_scale(self.scale, -self.scale)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "LINE":
+        elif dxftype == "LINE":
             #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
@@ -250,34 +310,31 @@ class DXFProcessor:
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "POINT":
+        elif dxftype == "POINT":
             pos = entity.dxf.location
             if len(pos) == 2:
                 x, y = pos
             else:
                 x, y, z = pos
-            node = context_node.add(x=x, y=y, matrix=Matrix(), type="elem point")
+            m = Matrix()
+            m.post_translate_y(self.elements.device.view.unit_height)
+
+            node = context_node.add(x=x, y=y, matrix=m, type="elem point")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "POLYLINE":
+        elif dxftype == "POLYLINE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/polyline.html
-            supported = entity.is_2d_polyline
-            if not supported:
-                # for _att in dir(entity):
-                #     if hasattr(entity, _att):
-                #         print (f"{_att}: {getattr(entity, _att, '')}")
-                if self.try_unsupported:
-                    supported = True
+            supported = entity.is_2d_polyline or self.try_unsupported
             if supported:
                 if not entity.has_arc:
                     if entity.is_closed:
                         element = Polygon([(p[0], p[1]) for p in entity.points()])
                     else:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
-                    element.values[
-                        SVG_ATTR_VECTOR_EFFECT
-                    ] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[SVG_ATTR_VECTOR_EFFECT] = (
+                        SVG_VALUE_NON_SCALING_STROKE
+                    )
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
@@ -288,9 +345,6 @@ class DXFProcessor:
                         stroke_scale=False,
                         stroke_width=self.std_stroke,
                     )
-                    self.check_for_attributes(node, entity)
-                    e_list.append(node)
-                    return
                 else:
                     element = Path()
                     bulge = 0
@@ -315,9 +369,9 @@ class DXFProcessor:
                                 bulge=bulge,
                             )
                             element.closed()
-                    element.values[
-                        SVG_ATTR_VECTOR_EFFECT
-                    ] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[SVG_ATTR_VECTOR_EFFECT] = (
+                        SVG_VALUE_NON_SCALING_STROKE
+                    )
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
@@ -333,10 +387,10 @@ class DXFProcessor:
                         stroke_scale=False,
                         stroke_width=self.std_stroke,
                     )
-                    self.check_for_attributes(node, entity)
-                    e_list.append(node)
-                    return
-        elif entity.dxftype() == "LWPOLYLINE":
+                self.check_for_attributes(node, entity)
+                e_list.append(node)
+                return
+        elif dxftype == "LWPOLYLINE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
             if not entity.has_arc:
                 if entity.closed:
@@ -354,9 +408,6 @@ class DXFProcessor:
                     stroke_scale=False,
                     stroke_width=self.std_stroke,
                 )
-                self.check_for_attributes(node, entity)
-                e_list.append(node)
-                return
             else:
                 element = Path()
                 bulge = 0
@@ -394,10 +445,10 @@ class DXFProcessor:
                     stroke_scale=False,
                     stroke_width=self.std_stroke,
                 )
-                self.check_for_attributes(node, entity)
-                e_list.append(node)
-                return
-        elif entity.dxftype() == "HATCH":
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
+        elif dxftype == "HATCH":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
             element = Path()
             if entity.bgcolor is not None:
@@ -464,7 +515,7 @@ class DXFProcessor:
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "IMAGE":
+        elif dxftype == "IMAGE":
             bottom_left_position = entity.dxf.insert
             targetmatrix = Matrix()
             targetmatrix.post_scale(self.scale, -self.scale)
@@ -550,23 +601,53 @@ class DXFProcessor:
                 node.matrix.post_translate_y(dy)
             e_list.append(node)
             return
-        elif entity.dxftype() == "MTEXT":
+        elif dxftype == "MTEXT":
             insert = entity.dxf.insert
-            node = context_node.add(
-                text=entity.text,
-                x=insert[0],
-                y=insert[1],
-                stroke_scaled=False,
-                type="elem text",
-            )
-            node.matrix.post_scale(1, -1, insert[0], insert[1])
-            node.matrix.post_scale(self.scale, -self.scale)
-            node.matrix.post_translate_y(self.elements.device.view.unit_height)
+            # node = context_node.add(
+            #     text=entity.text,
+            #     x=insert[0],
+            #     y=insert[1],
+            #     stroke_scaled=False,
+            #     type="elem text",
+            # )
+            # node.matrix.post_scale(1, -1, insert[0], insert[1])
+            # if hasattr(entity.dxf, "height") and entity.dxf.height != 0:
+            #     # 72pt = 1inch
+            #     fontheight = 12 * 25.4 / 72 # in mm
+            #     factor = entity.dxf.height / fontheight
+            #     print (f"Scale according to height {entity.dxf.height} -> {factor:.3f}")
+            #     node.matrix.post_scale(factor, factor, insert[0], insert[1])
+            # elif hasattr(entity.dxf, "width") and entity.dxf.width != 0:
+            #     # 72pt = 1inch
+            #     # We are guessing....
+            #     fontwidth = len(entity.dxf.text) * 6 * 25.4 / 72 # in mm
+            #     factor = entity.dxf.width / fontwidth
+            #     print (f"Scale according to width {entity.dxf.width} ({fontwidth:.2f} -> {factor:.3f}")
+            #     node.matrix.post_scale(factor, factor, insert[0], insert[1])
+            # node.matrix.post_scale(self.scale, -self.scale)
+            # node.matrix.post_translate_y(self.elements.device.view.unit_height)
+            # self.check_for_attributes(node, entity)
+            txt = entity.dxf.text if hasattr(entity.dxf, "text") else entity.text
+            node = self.elements.kernel.root.fonts.create_linetext_node(0, 0, txt)
+            bb = node.bounds
+            if hasattr(entity.dxf, "height") and entity.dxf.height != 0:
+                fontheight = (bb[2] - bb[0]) / UNITS_PER_MM
+                factor = entity.dxf.height / fontheight
+                node.matrix.post_scale(factor, factor, bb[0], bb[1])
+            elif hasattr(entity.dxf, "width") and entity.dxf.width != 0:
+                fontwidth = (bb[3] - bb[1]) / UNITS_PER_MM
+                factor = entity.dxf.width / fontwidth
+                node.matrix.post_scale(factor, factor, bb[0], bb[1])
+            bb = node.bounds
 
+            node.matrix.post_translate(insert[0] * UNITS_PER_MM - bb[0], -1 * insert[1] * UNITS_PER_MM - bb[1])
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
+            context_node.add_node(node)
+
             e_list.append(node)
             return
-        elif entity.dxftype() == "TEXT":
+        elif dxftype == "TEXT":
             insert = entity.dxf.insert
             node = context_node.add(
                 text=entity.dxf.text,
@@ -576,12 +657,24 @@ class DXFProcessor:
                 type="elem text",
             )
             node.matrix.post_scale(1, -1, insert[0], insert[1])
+            if hasattr(entity.dxf, "height") and entity.dxf.height != 0:
+                # 72pt = 1inch
+                fontheight = 12 * 25.4 / 72 # in mm
+                factor = entity.dxf.height / fontheight
+                node.matrix.post_scale(factor, factor, insert[0], insert[1])
+            elif hasattr(entity.dxf, "width") and entity.dxf.width != 0:
+                # 72pt = 1inch
+                # We are guessing....
+                fontwidth = len(entity.dxf.text) * 6 * 25.4 / 72 # in mm
+                factor = entity.dxf.width / fontwidth
+                node.matrix.post_scale(factor, factor, insert[0], insert[1])
+
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "SOLID" or entity.dxftype() == "TRACE":
+        elif dxftype == "SOLID" or dxftype == "TRACE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
             element = Path()
             element.move((entity[0][0], entity[0][1]))
@@ -604,7 +697,7 @@ class DXFProcessor:
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "SPLINE":
+        elif dxftype == "SPLINE":
             element = Path()
             try:
                 for b in entity.construction_tool().bezier_decomposition():
@@ -648,9 +741,8 @@ class DXFProcessor:
             element.transform.post_scale(self.scale, -self.scale)
             element.transform.post_translate_y(self.elements.device.view.unit_height)
             path = abs(element)
-            if len(path) != 0:
-                if not isinstance(path[0], Move):
-                    path = Move(path.first_point) + path
+            if len(path) != 0 and not isinstance(path[0], Move):
+                path = Move(path.first_point) + path
             node = context_node.add(
                 path=path,
                 type="elem path",
@@ -660,7 +752,7 @@ class DXFProcessor:
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
-        elif entity.dxftype() == "INSERT":
+        elif dxftype == "INSERT":
             # Insert creates virtual grouping.
             context_node = context_node.add(type="group")
             for e in entity.virtual_entities():
@@ -670,4 +762,5 @@ class DXFProcessor:
             return
         else:
             # We need a channel comment here so that this is not silently ignored.
+            # print (f"Unknown type: {dxftype}")
             return  # Might be something unsupported.

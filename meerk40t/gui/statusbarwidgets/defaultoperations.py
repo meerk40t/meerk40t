@@ -6,7 +6,7 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
-
+from meerk40t.gui.wxutils import wxStaticBitmap, dip_size
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -53,20 +53,24 @@ class DefaultOperationWidget(StatusBarWidget):
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
         super().GenerateControls(parent, panelidx, identifier, context)
+        size = dip_size(self.parent, 32, 32)
+        self.iconsize = size[0]
+
         # How should we display the data?
+        isize = int(self.iconsize * self.context.root.bitmap_correction_scale)
         display_mode = self.context.elements.setting(int, "default_ops_display_mode", 0)
 
         self.buttonsize_x = self.iconsize
         self.buttonsize_y = min(self.iconsize, self.height)
         self.ClearItems()
-        self.btn_prev = wx.StaticBitmap(
+        self.btn_prev = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
             # style=wx.BORDER_RAISED,
         )
         icon = EmptyIcon(
-            size=(self.iconsize, min(self.iconsize, self.height)),
+            size=(isize, min(isize, self.height)),
             color=wx.LIGHT_GREY,
             msg="<",
             ptsize=12,
@@ -125,7 +129,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 mylist[idx] = None
 
         for op in oplist:
-            btn = wx.StaticBitmap(
+            btn = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=(self.buttonsize_x, self.buttonsize_y),
@@ -143,7 +147,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 fontsize = 6
             # use_theme=False is needed as otherwise colors will get reversed
             icon = EmptyIcon(
-                size=(self.iconsize, min(self.iconsize, self.height)),
+                size=(isize, min(isize, self.height)),
                 color=wx.Colour(swizzlecolor(op.color)),
                 msg=opid,
                 ptsize=fontsize,
@@ -158,14 +162,14 @@ class DefaultOperationWidget(StatusBarWidget):
             self.Add(btn, 0, wx.EXPAND, 0)
             self.SetActive(btn, False)
 
-        self.btn_next = wx.StaticBitmap(
+        self.btn_next = wxStaticBitmap(
             parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
             # style=wx.BORDER_RAISED,
         )
         icon = EmptyIcon(
-            size=(self.iconsize, min(self.iconsize, self.height)),
+            size=(isize, min(isize, self.height)),
             color=wx.LIGHT_GREY,
             msg=">",
             ptsize=12,
@@ -178,13 +182,13 @@ class DefaultOperationWidget(StatusBarWidget):
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
-        self.btn_matman = wx.StaticBitmap(
+        self.btn_matman = wxStaticBitmap(
             parent,
             id=wx.ID_ANY,
             size=(self.buttonsize_x, self.buttonsize_y),
             # style=wx.BORDER_RAISED,
         )
-        icon = icon_library.GetBitmap(resize=self.iconsize)
+        icon = icon_library.GetBitmap(resize=isize)
         self.btn_matman.SetBitmap(icon)
         self.btn_matman.SetToolTip(_("Open material manager"))
         size_it(self.btn_matman, self.buttonsize_x, self.buttonsize_y)
@@ -445,11 +449,14 @@ class DefaultOperationWidget(StatusBarWidget):
                 continue
             opid = node.id
             if opid:
-                for idx, op in enumerate(self.context.elements.default_operations):
+                for op in self.context.elements.default_operations:
                     if opid == op.id:
                         slabel = self.node_label(node)
                         if slabel:
-                            self.assign_buttons[idx].SetToolTip(slabel)
+                            for idx, op in enumerate(self.assign_operations):
+                                if op.id == opid:
+                                    self.assign_buttons[idx].SetToolTip(slabel)
+                                    break
                         break
 
     def Signal(self, signal, *args):

@@ -11,7 +11,7 @@ import os.path
 import sys
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.4050"
+APPLICATION_VERSION = "0.9.7000"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -139,6 +139,18 @@ parser.add_argument(
     action="store_true",
     help="lock general config from editing",
 )
+parser.add_argument(
+    "-m",
+    "--minimized",
+    action="store_true",
+    help="start window minimized",
+)
+parser.add_argument(
+    "-M",
+    "--maximized",
+    action="store_true",
+    help="start window maximized",
+)
 
 
 def run():
@@ -177,11 +189,17 @@ def run():
         _run = _exe(False, args)
         while _run:
             _run = _exe(True, args)
+            # We only do it once...
+            if "nuke_settings" in args:
+                args.nuke_settings = False
         profiler.disable()
         profiler.dump_stats(args.profiler)
         return
     _run = _exe(False, args)
     while _run:
+        # We only do it once...
+        if "nuke_settings" in args:
+            args.nuke_settings = False
         _run = _exe(True, args)
 
 

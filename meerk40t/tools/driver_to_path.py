@@ -447,14 +447,19 @@ class DriverToPath:
             elements (class): context for elements
             options (disctionary, optional): A dictionary with settings. Defaults to None.
         """
-        with elements.static("driver_to_path"):
+        # _("Driver to path")
+        with elements.undoscope("Driver to path"):
             plotter = PlotterDriver()
             for opt in self.options:
                 if hasattr(plotter, opt["attr"]):
                     setattr(plotter, opt["attr"], getattr(self, opt["attr"]))
 
             spooler_job = elements.lookup(f"spoolerjob/{blob_type}")
+            if spooler_job is None:
+                return
             job_object = spooler_job(plotter, elements.space.display.matrix)
+            if job_object is None:
+                return
             job_object.write_blob(data)
             while not job_object.execute():
                 # Still more to execute.

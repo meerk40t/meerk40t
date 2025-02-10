@@ -77,6 +77,16 @@ class GRBLDevice(Service, Status):
                 "nonzero": True,
             },
             {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
                 "attr": "scale_x",
                 "object": self,
                 "default": 1.000,
@@ -170,6 +180,18 @@ class GRBLDevice(Service, Status):
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
                 "subsection": "_60_Home position",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -288,6 +310,10 @@ class GRBLDevice(Service, Status):
         if self.permit_tcp:
             self.register_choices("tcp", choices)
 
+        try:
+            import websocket
+        except ImportError:
+            self.permit_ws = False
         choices = [
             {
                 "attr": "address",
@@ -313,20 +339,27 @@ class GRBLDevice(Service, Status):
         ]
         if self.permit_ws:
             self.register_choices("ws", choices)
-
+        list_interfaces = []
+        list_display = []
+        if self.permit_serial:
+            list_interfaces.append("serial")
+            list_display.append(_("Serial"))
+        if self.permit_tcp:
+            list_interfaces.append("tcp")
+            list_display.append(_("TCP-Network"))
+        if self.permit_ws:
+            list_interfaces.append("ws")
+            list_display.append(_("WebSocket-Network"))
+        list_interfaces.append("mock")
+        list_display.append(_("Mock"))
         choices = [
             {
                 "attr": "interface",
                 "object": self,
                 "default": "serial",
                 "style": "combosmall",
-                "choices": ["serial", "tcp", "ws", "mock"],
-                "display": [
-                    _("Serial"),
-                    _("TCP-Network"),
-                    _("WebSocket-Network"),
-                    _("mock"),
-                ],
+                "choices": list_interfaces,
+                "display": list_display,
                 "type": str,
                 "label": _("Interface Type"),
                 "tip": _("Select the interface type for the grbl device"),
@@ -565,6 +598,18 @@ class GRBLDevice(Service, Status):
                 ),
                 "section": "_40_Validation",
             },
+            {
+                "attr": "startup_commands",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "multiline",
+                "label": _("Startup commands"),
+                "tip": _(
+                    "Which commands should be sent to the device on a successful connect?"
+                ),
+                "section": "_40_Validation",
+            },
         ]
         self.register_choices("protocol", choices)
 
@@ -588,7 +633,7 @@ class GRBLDevice(Service, Status):
             self._register_console_serial()
 
         @self.console_command(
-            "gcode",
+            ("gcode", "grbl"),
             help=_("Send raw gcode to the device"),
             input_type=None,
         )
@@ -599,7 +644,7 @@ class GRBLDevice(Service, Status):
                 # self.channel("grbl/send")(remainder + self.driver.line_end)
 
         @self.console_command(
-            "gcode_realtime",
+            ("gcode_realtime", "grbl_realtime"),
             help=_("Send raw gcode to the device (via realtime channel)"),
             input_type=None,
         )
@@ -853,6 +898,51 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+        @self.console_argument(
+            "index", type=int, help=_("macro to run (1-5).")
+        )
+        @self.console_command(
+            "macro",
+            help=_("Send a predefined macro to the device."),
+        )
+        def run_macro(command, channel, _, index=None, remainder=None, **kwargs):
+            for idx in range(5):
+                macrotext = self.setting(str, f"macro_{idx}", "")
+            if index is None:
+                for idx in range(5):
+                    macrotext = self.setting(str, f"macro_{idx}", "")
+                    channel(f"Content of macro {idx + 1}:")
+                    for no, line in enumerate(macrotext.splitlines()):
+                        channel (f"{no:2d}: {line}")
+                return
+            err = True
+            try:
+                macro_index = int(index) -1
+                if 0 <= macro_index <= 4:
+                    err = False
+            except ValueError:
+                pass
+            if err:
+                channel(f"Invalid macro-number '{index}', valid: 1-5")
+            if remainder is not None:
+                remainder.strip()
+            # channel(f"Remainder: {remainder}")
+            if remainder:
+                channel(f"Redefining macro {index} to:")
+                macrotext = remainder.replace("|", "\n")
+                for line in macrotext.splitlines():
+                    channel(line)
+                setattr(self, f"macro_{macro_index}", macrotext)
+                return
+
+            macrotext = self.setting(str, f"macro_{macro_index}", "")
+            # channel(f"{macro_index}: {macrotext}")
+            for line in macrotext.splitlines():
+                channel(f"> {line}")
+                if line.startswith("#"):
+                    continue
+                self.driver(f"{line}{self.driver.line_end}")
+
     @property
     def safe_label(self):
         """
@@ -984,3 +1074,8 @@ class GRBLDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_raster_instructions(self):
+        return {
+            "gantry": True,
+        }

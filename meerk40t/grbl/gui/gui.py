@@ -132,9 +132,10 @@ def plugin(service, lifecycle):
             {
                 "label": _("Home"),
                 "icon": icons8_home_filled,
-                "tip": _("Send laser to home position"),
+                "tip": _("Send laser to home position (right click: to physical home)"),
                 "help": "devicegrbl",
-                "action": lambda v: service("physical_home\n"),
+                "action": lambda v: service("home\n"),
+                "action_right": lambda v: service("physical_home\n"),
             },
         )
         service.add_service_delegate(GRBLGui(service))

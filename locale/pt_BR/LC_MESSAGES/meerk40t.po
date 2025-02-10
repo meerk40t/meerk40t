@@ -2027,7 +2027,6 @@ msgid ""
 "then)"
 msgstr ""
 "Por favor, forneça pelo menos um valor adicional (que atuará como raio "
-
 "então)"
 
 #: meerk40t/core/elements.py:3794
@@ -2657,7 +2656,7 @@ msgid "Note Set."
 msgstr "Nota Definida."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
-msgid "Method to use (one of quick, hull, complex, segment, circle)"
+msgid "Method to use (one of quick, hull, segment, circle)"
 msgstr "Método a ser usado (um dos rápidos, casco, complexo, segmento, círculo)"
 
 #: meerk40t/core/elements.py:6291
@@ -2665,7 +2664,7 @@ msgid "trace the given elements"
 msgstr "traçar os elementos fornecidos"
 
 #: meerk40t/core/elements.py:6302 meerk40t/core/elements.py:6357
-msgid "Invalid method, please use one of quick, hull, complex, segment, circle."
+msgid "Invalid method, please use one of quick, hull, segment, circle."
 msgstr "Método inválido, por favor use um dos rápidos, casco, complexo, segmento, círculo."
 
 #: meerk40t/core/elements.py:6312
@@ -2755,7 +2754,7 @@ msgid "Convert to Dots"
 msgstr "Converter para Pontos"
 
 #: meerk40t/core/elements.py:6573 meerk40t/core/elements.py:6582
-msgid "RasterWizard"
+msgid "Raster-Wizard"
 msgstr "Assistente de Raster"
 
 #: meerk40t/core/elements.py:6574
@@ -2805,7 +2804,7 @@ msgid "Passes {passvalue}"
 msgstr "Passagens {passvalue}"
 
 #: meerk40t/core/elements.py:6683
-msgid "Burn Direction"
+msgid "Burn direction"
 msgstr "Direção de Queima"
 
 #: meerk40t/core/elements.py:6712
@@ -3003,7 +3002,7 @@ msgstr "Anexar Gravação"
 msgid "Append Cut"
 msgstr "Anexar Corte"
 #: meerk40t/core/elements.py:7202
-msgid "Append Hatch"
+msgid "Append new Hatch"
 msgstr "Anexar Hachura"
 
 #: meerk40t/core/elements.py:7207
@@ -5754,8 +5753,8 @@ msgid "Align laser with the first position"
 msgstr "Alinhar o laser com a primeira posição"
 
 #: meerk40t/gui/navigationpanels.py:414
-msgid "Perform a convex hull trace of the selection (Right different algorithm)"
-msgstr "Realizar um contorno de casco convexo da seleção (Direito: algoritmo diferente)"
+msgid "Perform a convex hull trace of the selection"
+msgstr "Realizar um contorno de casco convexo da seleção"
 
 #: meerk40t/gui/navigationpanels.py:420
 msgid "Perform a simple trace of the selection (Right=Circle around)"
@@ -8311,8 +8310,8 @@ msgid "Set: Put the image under a file-node created for it."
 msgstr "Definir: Colocar a imagem sob um nó de arquivo criado para ela."
 
 #: meerk40t/image/imagetools.py:36
-msgid "Unset: Use the image as if it were 1000 pixels per inch."
-msgstr "Não definido: Usar a imagem como se fosse 1000 pixels por polegada."
+msgid "Unset: Use the image as if it were 96 pixels per inch."
+msgstr "Não definido: Usar a imagem como se fosse 96 pixels por polegada."
 
 #: meerk40t/image/imagetools.py:37
 msgid ""
@@ -10247,7 +10246,7 @@ msgid "Successfully queried laser-data!"
 msgstr "Dados do laser consultados com sucesso!"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:48
-msgid "Global Settings"
+msgid "Global operation settings"
 msgstr "Configurações Globais"
 
 #: meerk40t/grbl/gui/grblserialcontroller.py:99
@@ -15443,10 +15442,10 @@ msgstr "Clic izquierdo para ir a la posición guardada\nClic derecho para guarda
 msgid "Select all elements of same type"
 msgstr "Seleccionar todos los elementos del mismo tipo"
 
-msgid "Speed for Raster-Operation"
+msgid "Speed for Raster-operation"
 msgstr "Velocidad para la operación de trama"
 
-msgid "Speed for Vector-Operation"
+msgid "Speed for Vector-operation"
 msgstr "Velocidad para la operación de vector"
 
 msgid "Simplify group"
@@ -16045,6 +16044,7 @@ msgstr "Con qué frecuencia debería MeerK40t buscar nuevas versiones"
 
 msgid "Button repeat-interval"
 msgstr "Intervalo de repetición del botón"
+
 msgid ""
 "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
 "the movement action will be repeated. This value establishes\n"
@@ -16900,7 +16900,7 @@ msgid "Create placement"
 msgstr "Crear colocación"
 
 #: ./meerk40t\core\elements\element_treeops.py:2556
-msgid "Toggle Magnet-Lines"
+msgid "Toggle magnet-lines"
 msgstr "Alternar líneas magnéticas"
 
 #: ./meerk40t\core\elements\element_treeops.py:2557

@@ -68,12 +68,16 @@ class TrueTypeFont:
             and b"loca" not in self._raw_tables
         ):
             raise TTFParsingError("Format CFF font file is not supported.")
-        self.parse_head()
-        self.parse_hhea()
-        self.parse_hmtx()
-        self.parse_loca()
-        self.parse_cmap()
-        self.parse_name()
+        try:
+            self.parse_head()
+            self.parse_hhea()
+            self.parse_hmtx()
+            self.parse_loca()
+            self.parse_cmap()
+            self.parse_name()
+        except Exception as e:
+            print (f"TTF init for {filename} crashed: {e}")
+            raise TTFParsingError("Error while parsing data") from e
         self.glyph_data = list(self.parse_glyf())
         self._line_information = []
 
@@ -154,7 +158,8 @@ class TrueTypeFont:
                     if font_family and font_subfamily and font_name:
                         break
                 return font_family, font_subfamily, font_name
-        except (OSError, FileNotFoundError, PermissionError):
+        except Exception as e:
+            # Anything fishy
             return None
 
     def render(
@@ -291,29 +296,35 @@ class TrueTypeFont:
 
     def parse_ttf(self, font_path, require_checksum=True):
         with open(font_path, "rb") as f:
-            header = f.read(12)
-            (
-                sfnt_version,
-                num_tables,
-                search_range,
-                entry_selector,
-                range_shift,
-            ) = struct.unpack(">LHHHH", header)
-            for i in range(num_tables):
-                tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
-                p = f.tell()
-                f.seek(offset)
-                data = f.read(length)
-                f.seek(p)
-                if require_checksum:
-                    for b, byte in enumerate(data):
-                        checksum -= byte << 24 - (8 * (b % 4))
-                    if tag == b"head":
-                        if checksum % (1 << 32) != 0:
-                            raise TTFParsingError(
-                                f"invalid checksum: {checksum % (1 << 32)} != 0"
-                            )
-                self._raw_tables[tag] = data
+            try:
+                header = f.read(12)
+                (
+                    sfnt_version,
+                    num_tables,
+                    search_range,
+                    entry_selector,
+                    range_shift,
+                ) = struct.unpack(">LHHHH", header)
+                for i in range(num_tables):
+                    tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
+                    p = f.tell()
+                    f.seek(offset)
+                    data = f.read(length)
+                    f.seek(p)
+                    if require_checksum:
+                        for b, byte in enumerate(data):
+                            checksum -= byte << 24 - (8 * (b % 4))
+                        if tag == b"head":
+                            if checksum % (1 << 32) != 0:
+                                raise TTFParsingError(
+                                    f"invalid checksum: {checksum % (1 << 32)} != 0"
+                                )
+                    self._raw_tables[tag] = data
+            except Exception as e:
+                raise TTFParsingError(
+                    f"invalid format: {e}"
+                ) from e
+
 
     def parse_head(self):
         data = self._raw_tables[b"head"]
@@ -412,6 +423,9 @@ class TrueTypeFont:
         ) = struct.unpack(">HHHHHH", data.read(12))
         seg_count = int(seg_count_x2 / 2)
         data = data.read()
+        # We need to have an even amount of bytes for unpack
+        if len(data) % 2 == 1:
+            data = data[:-1]
         data = struct.unpack(f">{int(len(data)/2)}H", data)
         ends = data[:seg_count]
         starts = data[seg_count + 1 : seg_count * 2 + 1]

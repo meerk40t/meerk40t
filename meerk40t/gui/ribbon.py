@@ -274,6 +274,8 @@ class Button:
             "client_data": self.client_data,
             "rule_enabled": self.rule_enabled,
             "rule_visible": self.rule_visible,
+            "toggle_attr": self.toggle_attr,
+            "object": self.object,
         }
         self._update_button_aspect(key, **kwargs)
 
@@ -435,6 +437,26 @@ class Button:
             self.state_unpressed = key_id
             self._restore_button_aspect(key_id)
             # self.ensure_realize()
+            # And now execute it, provided it would be enabled...
+            auto_execute = self.context.setting(bool, "button_multi_menu_execute", True)
+            if auto_execute:
+                is_visible = True
+                is_enabled = True
+                if self.rule_visible:
+                    try:
+                        is_visible = self.rule_visible(0)
+                    except (AttributeError, TypeError):
+                        is_visible = False
+                if self.rule_enabled:
+                    try:
+                        is_enabled = self.rule_enabled(0)
+                    except (AttributeError, TypeError):
+                        is_enabled = False
+                if is_visible and is_enabled:
+                    try:
+                        self.action(None)
+                    except AttributeError:
+                        pass
 
         return menu_item_click
 
@@ -454,6 +476,8 @@ class Button:
             # This is not a context, we tried.
             pass
         initial_value = getattr(self.object, self.save_id, "default")
+        if "signal" in self.button_dict and "attr" in self.button_dict:
+            self._create_generic_signal_for_multi(self.object, self.button_dict.get("attr"), self.button_dict.get("signal"))
 
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
@@ -474,7 +498,26 @@ class Button:
         @return:
         """
 
-        def multi_click(origin, set_value):
+        def multi_click(origin, *args):
+            self._restore_button_aspect(key)
+
+        self.context.listen(signal, multi_click)
+        self.parent._registered_signals.append((signal, multi_click))
+
+    def _create_generic_signal_for_multi(self, q_object, q_attr, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def multi_click(origin, *args):
+            try:
+                key = getattr(q_object, q_attr)
+            except AttributeError:
+                return
             self._restore_button_aspect(key)
 
         self.context.listen(signal, multi_click)
@@ -519,7 +562,8 @@ class Button:
         @return:
         """
 
-        def toggle_click(origin, set_value, *args):
+        def toggle_click(origin, *args):
+            set_value = getattr(self.object, self.toggle_attr) if self.toggle_attr else not self.toggle
             self.set_button_toggle(set_value)
 
         self.context.listen(signal, toggle_click)
@@ -703,7 +747,10 @@ class RibbonPanel:
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
             item.Enable(v.enabled)
-            item.SetHelp(v.tip)
+            if callable(v.tip):
+                item.SetHelp(v.tip())
+            else:
+                item.SetHelp(v.tip)
             if v.icon:
                 item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2, buffer=2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
@@ -715,7 +762,7 @@ class RibbonPage:
     Ribbon Page is a page of buttons this is the series of ribbon panels as triggered by the different tags.
     """
 
-    def __init__(self, context, parent, id, label, icon):
+    def __init__(self, context, parent, id, label, icon, reference):
         self.context = context
         self.parent = parent
         self.id = id
@@ -725,6 +772,7 @@ class RibbonPage:
         self.position = None
         self.tab_position = None
         self.visible = True
+        self.reference = reference
 
     def add_panel(self, panel, ref):
         """
@@ -799,6 +847,22 @@ class RibbonBarPanel(wx.Control):
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
 
+        # Tooltip logic - as we do have a single control,
+        # this will prevent wxPython from resetting the timer
+        # when hovering to a different button
+        self._tooltip = ""
+        jobname = f"tooltip_ribbon_bar_{self.GetId()}"
+        #  print (f"Requesting job with name: '{jobname}'")
+        tooltip_delay = self.context.setting(int, "tooltip_delay", 100)
+        interval = tooltip_delay / 1000.0
+        self._tooltip_job = Job(
+            process=self._exec_tooltip_job,
+            job_name=jobname,
+            interval=interval,
+            times=1,
+            run_main=True,
+        )
+
     # Preparation for individual page visibility
     def visible_pages(self):
         count = 0
@@ -847,6 +911,34 @@ class RibbonBarPanel(wx.Control):
         self.art.hover_button = None
         self.art.hover_dropdown = None
         self.redrawn()
+
+    def stop_tooltip_job(self):
+        self._tooltip_job.cancel()
+
+    def start_tooltip_job(self):
+        # print (f"Schedule a job with {self._tooltip_job.interval:.2f}sec")
+        self.context.schedule(self._tooltip_job)
+
+    def _exec_tooltip_job(self):
+        # print (f"Executed with {self._tooltip}")
+        try:
+            super().SetToolTip(self._tooltip)
+        except RuntimeError:
+            # Could happen on a shutdown...
+            return
+
+    def SetToolTip(self, message):
+        if callable(message):
+            self._tooltip = message()
+        else:
+            self._tooltip = message
+        if message == "":
+            self.stop_tooltip_job()
+            super().SetToolTip(message)
+        else:
+            # we restart the job and delete the tooltip in the meantime
+            super().SetToolTip("")
+            self.start_tooltip_job()
 
     def _check_hover_dropdown(self, drop, pos):
         if drop is not None and not drop.contains(pos):
@@ -908,24 +1000,28 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
-        try:
-            buf = self._set_buffer()
-            dc = wx.MemoryDC()
-        except (RuntimeError, AssertionError):
-            # Shutdown error
-            return
-        dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
-            if self._layout_dirty:
-                self.art.layout(dc, self)
-                self._layout_dirty = False
-            self.art.paint_main(dc, self)
-            self._redraw_lock.release()
-            self._paint_dirty = False
-        dc.SelectObject(wx.NullBitmap)
-        del dc
-
-        self.Refresh()  # Paint buffer on screen.
+            try:
+                buf = self._set_buffer()
+                dc = wx.MemoryDC()
+                dc.SelectObject(buf)
+                if self._layout_dirty:
+                    self.art.layout(dc, self)
+                    self._layout_dirty = False
+                self.art.paint_main(dc, self)
+                dc.SelectObject(wx.NullBitmap)
+                del dc
+                self._paint_dirty = False
+            except (RuntimeError, AssertionError):
+                pass
+                # Shutdown error
+            finally:
+                self._redraw_lock.release()
+        try:
+            self.Refresh()  # Paint buffer on screen.
+        except RuntimeError:
+            # Shutdown error
+            pass
 
     def prefer_horizontal(self):
         result = None
@@ -1161,6 +1257,7 @@ class RibbonBarPanel(wx.Control):
             id,
             label,
             icon,
+            ref,
         )
         if ref is not None:
             # print(f"Setattr in add_page: {ref} = {page}")
@@ -1234,6 +1331,7 @@ class Art:
         self.tab_text_buffer = 2
         self.edge_page_buffer = 4
         self.rounded_radius = 3
+        self.font_sizes = {}
 
         self.bitmap_text_buffer = 5
         self.dropdown_height = 20
@@ -1295,7 +1393,7 @@ class Art:
             c_mode = COLOR_MODE_DEFAULT
         if (
             c_mode == COLOR_MODE_DEFAULT
-            and wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+            and self.parent.context.themes.dark # wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         ):
             c_mode = COLOR_MODE_DARK  # dark mode
         self.color_mode = c_mode
@@ -1368,6 +1466,7 @@ class Art:
             dc.DrawRoundedRectangle(
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
             )
+            self.look_at_button_font_sizes(dc, page)
             for panel in page.panels:
                 # We suppress empty panels
                 if panel is None or panel.visible_button_count == 0:
@@ -1375,6 +1474,98 @@ class Art:
                 self._paint_panel(dc, panel)
                 for button in panel.visible_buttons():
                     self._paint_button(dc, button)
+
+    def look_at_button_font_sizes(self, dc, page):
+        self.font_sizes = {}
+        for panel in page.panels:
+            # We suppress empty panels
+            if panel is None or panel.visible_button_count == 0:
+                continue
+            for button in panel.visible_buttons():
+                x, y, x1, y1 = button.position
+                start_y = y
+                w = int(round(x1 - x, 2))
+                h = int(round(y1 - y, 2))
+                img_h = h
+                # do we have text? if yes let's reduce the available space in y
+                if self.show_labels:  # Regardless whether we have a label or not...
+                    img_h -= self.bitmap_text_buffer
+                    ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
+                    img_h -= int(ptsize * 1.35)
+
+                button.get_bitmaps(min(w, img_h))
+                if button.enabled:
+                    bitmap = button.bitmap
+                else:
+                    bitmap = button.bitmap_disabled
+
+                bitmap_width, bitmap_height = bitmap.Size
+                # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
+                #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
+                bs = min(bitmap_width, bitmap_height)
+                ptsize = self.get_font_size(bs)
+                y += bitmap_height
+
+                text_edge = self.bitmap_text_buffer
+                if button.label and self.show_labels:
+                    show_text = True
+                    label_text = list(button.label.split(" "))
+                    # We try to establish whether this would fit properly.
+                    # We allow a small oversize of 25% to the button,
+                    # before we try to reduce the fontsize
+                    wouldfit = False
+                    while not wouldfit:
+                        total_text_height = 0
+                        testfont = wx.Font(
+                            ptsize,
+                            wx.FONTFAMILY_SWISS,
+                            wx.FONTSTYLE_NORMAL,
+                            wx.FONTWEIGHT_NORMAL,
+                        )
+                        test_y = y + text_edge
+                        dc.SetFont(testfont)
+                        wouldfit = True
+                        i = 0
+                        while i < len(label_text):
+                            # We know by definition that all single words
+                            # are okay for drawing, now we check whether
+                            # we can draw multiple in one line
+                            word = label_text[i]
+                            cont = True
+                            while cont:
+                                cont = False
+                                if i < len(label_text) - 1:
+                                    nextword = label_text[i + 1]
+                                    test = word + " " + nextword
+                                    tw, th = dc.GetTextExtent(test)
+                                    if tw < w:
+                                        word = test
+                                        i += 1
+                                        cont = True
+
+                            text_width, text_height = dc.GetTextExtent(word)
+                            if text_width > w:
+                                wouldfit = False
+                                break
+                            test_y += text_height
+                            total_text_height += text_height
+                            if test_y > y1:
+                                wouldfit = False
+                                text_edge = 0
+                                break
+                            i += 1
+
+                        if wouldfit:
+                            # Let's see how much we have...
+                            if ptsize in self.font_sizes:
+                                self.font_sizes[ptsize] += 1
+                            else:
+                                self.font_sizes[ptsize] = 1
+                            break
+
+                        ptsize -= 2
+                        if ptsize < 6:  # too small
+                            break
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         """
@@ -1570,7 +1761,7 @@ class Art:
         # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
         #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
         bs = min(bitmap_width, bitmap_height)
-        ptsize = self.get_font_size(bs)
+        ptsize = self.get_best_font_size(bs)
         font = wx.Font(
             ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
@@ -1906,7 +2097,11 @@ class Art:
         # Now that we have gathered all information we can assign
         # the space...
         available_space = 0
-        for p, panel in enumerate(page.panels):
+        p = -1
+        for panel in page.panels:
+            if panel.visible_button_count == 0:
+                continue
+            p += 1
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
@@ -2223,9 +2418,9 @@ class Art:
             exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
-            gap = 5
+            gap = 15
             if bitmap_height < 30:
-                gap = 1
+                gap = 3
 
             # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
             button.dropdown.position = (
@@ -2258,4 +2453,16 @@ class Art:
             ptsize = 14
         else:
             ptsize = 16
+        return ptsize
+
+    def get_best_font_size(self, imgsize):
+        sizes = [(pt, amount) for pt, amount in self.font_sizes.items()]
+        sizes.sort(key=lambda e: e[1], reverse=True)
+        best = 32768
+        if len(sizes):
+            # Take the one where we have most...
+            best = sizes[0][0]
+        ptsize = self.get_font_size(imgsize)
+        if ptsize > best:
+            ptsize = best
         return ptsize

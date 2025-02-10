@@ -8,6 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.gui.wxutils import get_gc_scale
 
 _ = wx.GetTranslation
 
@@ -29,8 +30,8 @@ class RectTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            matrix = gc.GetTransform().Get()
-            pixel = 1.0 / matrix[0]
+            mat_fact = get_gc_scale(gc)
+            pixel = 1.0 / mat_fact
             if self.creation_mode == 1:
                 # From center (p1 center, p2 one corner)
                 p_x = self.p1.real - (self.p2.real - self.p1.real)
@@ -177,18 +178,20 @@ class RectTool(ToolWidget):
                     x1 = max(self.p1.real, self.p2.real)
                     y1 = max(self.p1.imag, self.p2.imag)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(
-                    x=x0,
-                    y=y0,
-                    width=x1 - x0,
-                    height=y1 - y0,
-                    stroke_width=elements.default_strokewidth,
-                    stroke=elements.default_stroke,
-                    fill=elements.default_fill,
-                    type="elem rect",
-                )
-                if elements.classify_new:
-                    elements.classify([node])
+                # _("Create rectangle")
+                with elements.undoscope("Create rectangle"):
+                    node = elements.elem_branch.add(
+                        x=x0,
+                        y=y0,
+                        width=x1 - x0,
+                        height=y1 - y0,
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
+                        type="elem rect",
+                    )
+                    if elements.classify_new:
+                        elements.classify([node])
                 self.notify_created(node)
             except IndexError:
                 pass

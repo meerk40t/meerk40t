@@ -2,8 +2,7 @@ import wx
 
 from .icons import icons8_comments
 from .mwindow import MWindow
-from .wxutils import dip_size
-
+from .wxutils import dip_size, wxStaticText, TextCtrl
 _ = wx.GetTranslation
 
 
@@ -12,8 +11,9 @@ class BufferViewPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_buffer_info = wx.TextCtrl(
+        self.context.themes.set_window_colors(self)
+        self.text_buffer_length = TextCtrl(self, wx.ID_ANY, "")
+        self.text_buffer_info = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_CHARWRAP | wx.TE_MULTILINE
         )
 
@@ -36,7 +36,7 @@ class BufferViewPanel(wx.Panel):
         # begin wxGlade: BufferView.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        label_8 = wx.StaticText(self, wx.ID_ANY, _("Buffer"))
+        label_8 = wxStaticText(self, wx.ID_ANY, _("Buffer"))
         sizer_5.Add(label_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_5.Add(self.text_buffer_length, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_5, 0, wx.EXPAND, 0)
@@ -71,3 +71,7 @@ class BufferView(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Buffer"
+
+    @staticmethod
+    def helptext():
+        return _("Display the command flow buffer to a device")

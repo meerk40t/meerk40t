@@ -60,7 +60,7 @@ jobs:
         python3.8 -m pip install --no-use-pep517 pyinstaller==4.3
 
         ## numpy toggle based on 32 bit fix
-        python3.8 -m pip install six numpy ezdxf
+        python3.8 -m pip install six numpy<=1.26.4 ezdxf
         ## python3.8 -m pip install wheel six ezdxf
 
         python3.8 -m pip install potracer

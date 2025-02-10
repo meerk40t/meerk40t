@@ -3,6 +3,7 @@ import re
 import struct
 import time
 
+from usb.core import NoBackendError
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
@@ -149,7 +150,7 @@ def plugin(service, lifecycle):
             return
         xmin, ymin, xmax, ymax = bounds
         channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
+        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymax - ymin)
         if count > 1:
             geometry.copies(count)
         return "geometry", geometry
@@ -374,8 +375,11 @@ def plugin(service, lifecycle):
                             )
                             if v[0] == 0x8002:
                                 break
-
-                driver.connection.connect_if_needed()
+                try:
+                    driver.connection.connect_if_needed()
+                except (ConnectionRefusedError, NoBackendError):
+                    channel("Could not connect to Galvo")
+                    return
                 driver.connection.connection.write = write
                 job.execute()
 
@@ -751,7 +755,7 @@ def plugin(service, lifecycle):
             channel(f"Using default corfile: {filename}")
         if filename is None:
             service.driver.connection.write_correction_file(None)
-            channel(f"Force set corrections to blank.")
+            channel("Force set corrections to blank.")
         else:
             from os.path import exists
 

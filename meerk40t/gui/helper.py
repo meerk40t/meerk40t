@@ -11,7 +11,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.wxutils import wxCheckBox  # , wxButton
+from meerk40t.gui.wxutils import wxCheckBox, TextCtrl  # , wxButton
 from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
@@ -32,6 +32,7 @@ def register_panel_helper(window, context):
     pane.dock_proportion = 225
     pane.control = HelperPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "~" + _("Help")
+    pane.helptext = _("Permanently displays tooltip information")
 
     window.on_pane_create(pane)
     context.register("pane/helper", pane)
@@ -47,13 +48,14 @@ class HelperPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self._lock_updates = None
-        self.text_info = wx.TextCtrl(
+        self.text_info = TextCtrl(
             self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.check_allow = wxCheckBox(self, wx.ID_ANY, _("Display control-information"))
         # self.button_webhelp = wxButton(self, wx.ID_ANY, _("Online-Help"))
-        # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
+        # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size(self.context)))
         self.active = False
         self.__set_properties()
         self.__do_layout()

@@ -9,6 +9,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
 )
+from meerk40t.gui.wxutils import get_gc_scale
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Ellipse
 
@@ -42,8 +43,8 @@ class CircleTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            matrix = gc.GetTransform().Get()
-            pixel = 1.0 / matrix[0]
+            mat_fact = get_gc_scale(gc)
+            pixel = 1.0 / mat_fact
             cx = self.p1.real
             cy = self.p1.imag
             dx = self.p1.real - self.p2.real
@@ -200,33 +201,34 @@ class CircleTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
-                if self.creation_mode == 1:
-                    elements = self.scene.context.elements
-                    node = elements.elem_branch.add(
-                        cx=cx,
-                        cy=cy,
-                        rx=radius,
-                        ry=radius,
-                        stroke_width=elements.default_strokewidth,
-                        stroke=elements.default_stroke,
-                        fill=elements.default_fill,
-                        type="elem ellipse",
-                    )
-                else:
-                    elements = self.scene.context.elements
-                    r = abs(self.p1 - self.p2) / 2
-                    node = elements.elem_branch.add(
-                        cx=(x1 + x0) / 2.0,
-                        cy=(y1 + y0) / 2.0,
-                        rx=r,
-                        ry=r,
-                        stroke_width=elements.default_strokewidth,
-                        stroke=elements.default_stroke,
-                        fill=elements.default_fill,
-                        type="elem ellipse",
-                    )
-                if elements.classify_new:
-                    elements.classify([node])
+                elements = self.scene.context.elements
+                # _("Create circle")
+                with elements.undoscope("Create circle"):
+                    if self.creation_mode == 1:
+                        node = elements.elem_branch.add(
+                            cx=cx,
+                            cy=cy,
+                            rx=radius,
+                            ry=radius,
+                            stroke_width=elements.default_strokewidth,
+                            stroke=elements.default_stroke,
+                            fill=elements.default_fill,
+                            type="elem ellipse",
+                        )
+                    else:
+                        r = abs(self.p1 - self.p2) / 2
+                        node = elements.elem_branch.add(
+                            cx=(x1 + x0) / 2.0,
+                            cy=(y1 + y0) / 2.0,
+                            rx=r,
+                            ry=r,
+                            stroke_width=elements.default_strokewidth,
+                            stroke=elements.default_stroke,
+                            fill=elements.default_fill,
+                            type="elem ellipse",
+                        )
+                    if elements.classify_new:
+                        elements.classify([node])
                 self.notify_created(node)
             except IndexError:
                 pass

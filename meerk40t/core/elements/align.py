@@ -1,4 +1,139 @@
 """
+This module provides a set of console commands for managing alignment operations within the application.
+These commands allow users to align elements based on various criteria, including their position and grouping.
+
+It uses a probably overly complicated system of alignment settings that are pushed and popped on an alignment
+stack. This feature was never really used, so its just a bit too much sophisticated?!
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up alignment commands.
+- init_commands(kernel): Initializes the alignment commands and defines the associated operations.
+- _align_xy(channel, _, mode, bounds, data, align_x=None, align_y=None, asgroup=None, **kwargs): Prepares the data for alignment based on the specified parameters.
+  Args:
+    channel: The communication channel for messages.
+    mode: The alignment mode to apply.
+    bounds: The bounds for alignment.
+    data: The elements to align.
+    align_x: The alignment parameter for the x-axis.
+    align_y: The alignment parameter for the y-axis.
+    asgroup: A flag indicating whether to treat the selection as a group.
+  Returns:
+    None
+- alignmode_push(channel, _, data, **kwargs): Pushes the current alignment mode onto the stack for later retrieval.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the current alignment data.
+- alignmode_pop(channel, _, data, **kwargs): Pops the last alignment mode from the stack and sets it as the current mode.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_group(command, channel, _, data, **kwargs): Sets the alignment mode to treat the selection as a group.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_individual(command, channel, _, data, **kwargs): Sets the alignment mode to treat the selection as individual elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_default(channel, _, data, **kwargs): Sets the alignment mode to default, aligning all selected elements equally.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_first(command, channel, _, data, **kwargs): Sets the alignment mode to the first element selected.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_last(command, channel, _, data, **kwargs): Sets the alignment mode to the last element selected.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_bed(channel, _, data, **kwargs): Sets the alignment mode to align elements within the bed dimensions.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_ref(channel, _, data, boundaries, **kwargs): Sets the alignment mode to align elements to a specified reference object.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+    boundaries: The boundaries for alignment.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- align_elements_base(command, channel, _, data=None, remainder=None, **kwargs): Base command for aligning selected elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to align.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_xy(command, channel, _, data=None, alignx=None, aligny=None, **kwargs): Aligns elements based on specified x and y alignment parameters.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to align.
+    alignx: The alignment parameter for the x-axis.
+    aligny: The alignment parameter for the y-axis.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spaceh(command, channel, _, data=None, **kwargs): Distributes selected elements across horizontal space.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spacev(command, channel, _, data=None, **kwargs): Distributes selected elements across vertical space.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spaceh2(command, channel, _, data=None, **kwargs): Distributes selected elements across horizontal space without considering distance.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align_spacev2(command, channel, _, data=None, **kwargs): Distributes selected elements across vertical space without considering distance.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to distribute.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- subtype_align(command, channel, _, data=None, preserve_aspect_ratio="none", **kwargs): Aligns elements within the viewbox according to specified aspect ratio rules.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The elements to align.
+    preserve_aspect_ratio: The aspect ratio to preserve during alignment.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+"""
+
+"""
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
@@ -420,15 +555,10 @@ def init_commands(kernel):
             elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
         else:
             elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        boundary_points = [node.bounds for node in elements]
+        if not boundary_points:
             return
-        if in_x:
-            idx = 0
-        else:
-            idx = 1
+        idx = 0 if in_x else 1
         if distance:
             left_edge = boundary_points[0][idx]
             right_edge = boundary_points[-1][idx + 2]
@@ -447,22 +577,24 @@ def init_commands(kernel):
             dim_pos = left_edge
             distributed_distance = dim_available / (len(elements) - 1)
 
-        for node in elements:
-            subbox = node.bounds
-            if distance:
-                delta = subbox[idx] - dim_pos
-                dim_pos += subbox[idx + 2] - subbox[idx] + distributed_distance
-            else:
-                delta = (subbox[idx] + subbox[idx + 2]) / 2 - dim_pos
-                dim_pos += distributed_distance
-            if in_x:
-                dx = -delta
-                dy = 0
-            else:
-                dx = 0
-                dy = -delta
-            if dx != 0 or dy != 0:
-                self.translate_node(node, dx, dy)
+        # _("Distribute")
+        with self.undoscope("Distribute"):
+            for node in elements:
+                subbox = node.bounds
+                if distance:
+                    delta = subbox[idx] - dim_pos
+                    dim_pos += subbox[idx + 2] - subbox[idx] + distributed_distance
+                else:
+                    delta = (subbox[idx] + subbox[idx + 2]) / 2 - dim_pos
+                    dim_pos += distributed_distance
+                if in_x:
+                    dx = -delta
+                    dy = 0
+                else:
+                    dx = 0
+                    dy = -delta
+                if dx != 0 or dy != 0:
+                    self.translate_node(node, dx, dy)
 
     @self.console_command(
         "spaceh",
@@ -596,10 +728,8 @@ def init_commands(kernel):
         "none"
         """
         mode, group, bound, elements = data
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        boundary_points = [node.bounds for node in elements]
+        if not boundary_points:
             return
 
         haslock = False
@@ -611,9 +741,9 @@ def init_commands(kernel):
             channel(_("Your selection contains a locked element, that cannot be moved"))
             return
         left_edge = min([e[0] for e in boundary_points])
-        top_edge = min([e[1] for e in boundary_points])
-        right_edge = max([e[2] for e in boundary_points])
-        bottom_edge = max([e[3] for e in boundary_points])
+        top_edge = min(e[1] for e in boundary_points)
+        right_edge = max(e[2] for e in boundary_points)
+        bottom_edge = max(e[3] for e in boundary_points)
 
         if preserve_aspect_ratio in (
             "xminymin",

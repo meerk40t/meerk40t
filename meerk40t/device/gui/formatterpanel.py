@@ -6,6 +6,7 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     EmptyIcon,
     icon_console,
+    icon_distort,
     icon_effect_hatch,
     icon_effect_wobble,
     icon_external,
@@ -43,6 +44,7 @@ class FormatterPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("formatter")
 
         self.data = {}
@@ -60,7 +62,7 @@ class FormatterPanel(wx.Panel):
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
-            "effect warp": icon_effect_wobble,
+            "effect warp": icon_distort,
             "file": icons8_file,
             "group": icons8_group_objects,
             "elem point": icon_points,
@@ -117,7 +119,7 @@ class FormatterPanel(wx.Panel):
             },
         ]
         testsize = dip_size(self, 20, 20)
-        imgsize = testsize[1]
+        imgsize = testsize[1] * self.context.root.bitmap_correction_scale
         for node in self.node_list:
             if node in images:
                 image = images[node].GetBitmap(

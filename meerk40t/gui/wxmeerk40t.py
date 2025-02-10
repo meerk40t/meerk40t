@@ -7,6 +7,10 @@ from datetime import datetime
 import wx
 from wx import aui
 
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
+
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
 #     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
@@ -15,11 +19,9 @@ from wx import aui
 #     from wx import richtext
 # except ImportError:
 #     pass
-from meerk40t.gui.consolepanel import Console
-from meerk40t.gui.navigationpanels import Navigation
-from meerk40t.gui.spoolerpanel import JobSpooler
+from meerk40t.gui.themes import Themes
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.gui.wxutils import wxButton
+from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
@@ -28,6 +30,7 @@ from ..tools.kerftest import KerfTool
 from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
+from .autoexec import AutoExec
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -56,6 +59,7 @@ from .propertypanels.gotoproperty import GotoPropertyPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.imageproperty import (
+    ContourPanel,
     ImageModificationPanel,
     ImagePropertyPanel,
     ImageVectorisationPanel,
@@ -77,12 +81,15 @@ from .propertypanels.rasterwizardpanels import (
     SharpenPanel,
     ToneCurvePanel,
 )
+from .propertypanels.regbranchproperties import RegBranchPanel
 from .propertypanels.textproperty import TextPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
+from .propertypanels.warpproperty import WarpPropertyPanel
 from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
+from .functionwrapper import ConsoleCommandUI
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -99,7 +106,6 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 """
 
 _ = wx.GetTranslation
-
 
 class ActionPanel(wx.Panel):
     def __init__(
@@ -118,6 +124,7 @@ class ActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.button_go = wxButton(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
@@ -156,7 +163,13 @@ class ActionPanel(wx.Panel):
             self.action_right()
 
     def resize_button(self):
-        size = self.button_go.Size
+        # The job might be called when the window is already destroyed
+        if self.context.kernel.is_shutdown:
+            return
+        try:
+            size = self.button_go.Size
+        except RuntimeError:
+            return
         minsize = min(size[0], size[1])
         # Leave some room at the edges,
         # for every 25 pixel 1 pixel at each side
@@ -211,6 +224,7 @@ class GoPanel(ActionPanel):
             *args,
             **kwds,
         )
+        self.context.themes.set_window_colors(self)
         self.click_time = 0
         self.was_mouse = False
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
@@ -241,7 +255,7 @@ class GoPanel(ActionPanel):
         self.button_go.Enable(False)
         self.context.kernel.busyinfo.start(msg=_("Processing and sending..."))
         self.context(
-            "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
+            "planz clear copy preprocess validate blob preopt optimize spool\n"
         )
         self.context.kernel.busyinfo.end()
         self.button_go.Enable(True)
@@ -263,6 +277,7 @@ def register_panel_go(window, context):
         .Hide()
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a laser start button")
     pane.dock_proportion = 98
     panel = GoPanel(window, wx.ID_ANY, context=context)
     pane.control = panel
@@ -287,6 +302,7 @@ def register_panel_stop(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a job abort button")
     pane.dock_proportion = 98
     fgcol = context.themes.get("stop_fg")
     bgcol = context.themes.get("stop_bg")
@@ -324,6 +340,7 @@ def register_panel_home(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a laser homing button")
     pane.dock_proportion = 98
 
     fgcol = None
@@ -360,6 +377,7 @@ def register_panel_pause(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a job pause button")
     pane.dock_proportion = 98
 
     bgcol = context.themes.get("pause_bg")
@@ -438,12 +456,9 @@ class wxMeerK40t(wx.App, Module):
         #     res = wx.SystemSettings().GetAppearance().IsDark()
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        icons.DARKMODE = res
-        icons.icon_r = 230
-        icons.icon_g = 230
-        icons.icon_b = 230
         Module.__init__(self, context, path)
+        theme = Themes(kernel=context._kernel)
+        icons.DARKMODE = theme.dark
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
@@ -534,7 +549,8 @@ class wxMeerK40t(wx.App, Module):
     def MacNewFile(self):
         try:
             if self.context is not None:
-                self.context.elements.clear_all()
+                with self.context.elements.undoscope("New"):
+                    self.context.elements.clear_all()
         except AttributeError:
             pass
 
@@ -702,7 +718,8 @@ class wxMeerK40t(wx.App, Module):
             if command == "open":
                 if path.lookup(window_uri) is not None:
                     if wx.IsMainThread():
-                        window_open(None)
+                        with wx.BusyCursor():
+                            window_open(None)
                     else:
                         wx.CallAfter(window_open, None)
                     # kernel.run_later(window_open, None)
@@ -711,7 +728,14 @@ class wxMeerK40t(wx.App, Module):
                     raise CommandSyntaxError
             else:  # Toggle.
                 if window_class is not None:
-                    if window_name in path.opened:
+                    to_be_closed = bool(window_name in path.opened)
+                    if to_be_closed:
+                        win = path.opened[window_name]
+                        if hasattr(win, "IsIconized") and win.IsIconized():
+                            # Minimized windows will reappear first
+                            to_be_closed = False
+
+                    if to_be_closed:
                         if wx.IsMainThread():
                             window_close(None)
                         else:
@@ -719,7 +743,8 @@ class wxMeerK40t(wx.App, Module):
                         # kernel.run_later(window_close, None)
                     else:
                         if wx.IsMainThread():
-                            window_open(None)
+                            with wx.BusyCursor():
+                                window_open(None)
                         else:
                             wx.CallAfter(window_open, None)
                         # kernel.run_later(window_open, None)
@@ -784,6 +809,28 @@ class wxMeerK40t(wx.App, Module):
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
+
+        @kernel.console_argument("func", type=str, help=_("Function to call interactively"))
+        @kernel.console_command("gui", help=_("Provides a GUI wrapper around a console command"))
+        def gui_func(command, channel, _, func=None, **kwargs):
+            if func is None:
+                channel(_("You need to provide a function name"))
+                return
+            if func in ("gui", "help", "?", "??", "quit", "shutdown", "exit"):
+                channel (_("It does not make sense, to run '{command}' in a GUI").format(command=func))
+                return
+            context = kernel.root
+            try:
+                parent = context.gui
+            except AttributeError:
+                parent = None
+            dialog: wx.Dialog = ConsoleCommandUI(parent, wx.ID_ANY, title=_("Command {command}").format(command=func), context=context, command_string=func)
+            res = dialog.ShowModal()
+            if res == wx.ID_OK:
+                dialog.accept_it()
+            else:
+                dialog.cancel_it()
+            dialog.Destroy()
 
     def module_open(self, *args, **kwargs):
         context = self.context
@@ -858,6 +905,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/HatchEffectNode/HatchProperty", HatchPropertyPanel)
         kernel.register("property/WobbleEffectNode/WobbleProperty", WobblePropertyPanel)
+        kernel.register("property/WarpEffectNode/WarpProperty", WarpPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
@@ -865,6 +913,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/GotoOperation/GotoProperty", GotoPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
+        kernel.register("property/BranchRegmarkNode/RegmarkProperty", RegBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
@@ -879,6 +928,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageNode/ImageModification", ImageModificationPanel)
         kernel.register(
             "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
+        )
+        kernel.register(
+            "property/ImageNode/ImageContour", ContourPanel
         )
 
         kernel.register("window/Console", Console)
@@ -895,18 +947,17 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
+        kernel.register("window/AutoExec", AutoExec)
         kernel.register("window/JobSpooler", JobSpooler)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Tips", Tips)
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        if (
+        if not (
             hasattr(kernel.args, "lock_device_config")
             and kernel.args.lock_device_config
         ):
-            pass
-        else:
             kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
@@ -953,6 +1004,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
 
+        from meerk40t.gui.magnetoptions import register_panel_magnetoptions
+
+        kernel.register("wxpane/magnet", register_panel_magnetoptions)
+
         from meerk40t.gui.wordlisteditor import register_panel_wordlist
 
         kernel.register("wxpane/wordlist", register_panel_wordlist)
@@ -993,6 +1048,21 @@ class wxMeerK40t(wx.App, Module):
 
             register_widget_icon(kernel.root)
 
+        wildcard = "Sound-Files|*.wav;*.mp3;*.ogg|All files|*.*"
+        OS_NAME = platform.system()
+        addon = ""
+        if OS_NAME == "Darwin":
+            wildcard = f"System-Sounds|*.aiff|{wildcard}"
+        elif OS_NAME == "Linux":
+            wildcard = f"System-Sounds|*.oga;*.wav;*.mp3|{wildcard}"
+            addon = "\n" + _("This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first.")
+        system_sound = {
+            "Windows": r"c:\Windows\Media\Alarm01.wav",
+            "Darwin": "/System/Library/Sounds/Ping.aiff",
+            "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
+        }
+        default_snd = system_sound.get(OS_NAME, "")
+
         choices = [
             {
                 "attr": "single_instance_only",
@@ -1003,6 +1073,17 @@ class wxMeerK40t(wx.App, Module):
                 "tip": _("Allow only a single instance of MeerK40t."),
                 "page": "Start",
             },
+            {
+                "attr": "beep_soundfile",
+                "object": context.root,
+                "type": str,
+                "default": default_snd,
+                "style": "file",
+                "wildcard": wildcard,
+                "label": _("Soundfile"),
+                "tip": _("Define the soundfile MeerK40t will play when the 'beep' command is issued") + addon,
+                "page": "Start",
+            }
         ]
         kernel.register_choices("preferences", choices)
 
@@ -1231,9 +1312,9 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         # contents
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        label = wx.StaticText(dlg, wx.ID_ANY, header)
+        label = wxStaticText(dlg, wx.ID_ANY, header)
         sizer.Add(label, 1, wx.EXPAND, 0)
-        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        info = TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
         info.SetValue(body)
         sizer.Add(info, 5, wx.EXPAND, 0)
         btnsizer = wx.StdDialogButtonSizer()
@@ -1287,6 +1368,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         wxversion = wx.version()
     except:
         pass
+    filename = os.path.join(get_safe_path(APPLICATION_NAME), "_crash")
+    try:
+        with open(filename, "w") as file:
+            file.write("MeerK40 crash indicator - you may ignore or delete it.")
+    except Exception as e:
+        pass
 
     error_log = (
         f"MeerK40t crash log. Version: {APPLICATION_VERSION} on {platform.system()}: "
@@ -1318,7 +1405,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                     file.write(variable_info)
                 print(error_log)
         except PermissionError:
-            filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
+            filename = os.path.join(get_safe_path(APPLICATION_NAME), filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 if variable_info:
@@ -1351,7 +1438,7 @@ The good news is that you can help us fix this bug by anonymously sending us the
         answer = wx.ID_NO
     # print (answer)
     in_error_dialog = False
-    if answer in (wx.ID_YES, wx.ID_OK):
+    if answer in (wx.ID_YES, wx.ID_OK, wx.ID_CLOSE):
         send_data_to_developers(filename, data)
     if answer == wx.ID_CANCEL:
         wx.Abort()

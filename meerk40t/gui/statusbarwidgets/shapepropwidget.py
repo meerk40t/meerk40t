@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icons8_lock,
     icons8_unlock,
 )
-from meerk40t.gui.wxutils import TextCtrl, dip_size
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxStaticBitmap, wxStaticText
 
 from .statusbarwidget import StatusBarWidget
 
@@ -31,7 +31,7 @@ class LinecapWidget(StatusBarWidget):
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
-        self.cap_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("Cap"))
+        self.cap_lbl = wxStaticText(self.parent, wx.ID_ANY, label=_("Cap"))
         self.cap_lbl.SetFont(
             wx.Font(
                 7,
@@ -40,39 +40,38 @@ class LinecapWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self.btn_cap_butt = wx.StaticBitmap(
+        self.btn_cap_butt = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
+        isize = int(max(20, self.parent.available_height - 4) * self.context.root.bitmap_correction_scale)
 
         self.btn_cap_butt.SetBitmap(
             icon_cap_butt.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
+                resize=isize, buffer=1
             )
         )
         self.btn_cap_butt.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_butt.SetToolTip(_("Set the end of the lines to a butt-shape"))
         self.btn_cap_butt.Bind(wx.EVT_LEFT_DOWN, self.on_cap_butt)
 
-        self.btn_cap_round = wx.StaticBitmap(
+        self.btn_cap_round = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
         self.btn_cap_round.SetBitmap(
             icon_cap_round.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
+                resize=isize, buffer=1
             )
         )
         self.btn_cap_round.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_round.SetToolTip(_("Set the end of the lines to a round-shape"))
         self.btn_cap_round.Bind(wx.EVT_LEFT_DOWN, self.on_cap_round)
 
-        self.btn_cap_square = wx.StaticBitmap(
+        self.btn_cap_square = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
 
         self.btn_cap_square.SetBitmap(
-            icon_cap_square.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_cap_square.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_cap_square.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_square.SetToolTip(_("Set the end of the lines to a square-shape"))
@@ -107,7 +106,7 @@ class LinejoinWidget(StatusBarWidget):
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
-        self.join_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("Join"))
+        self.join_lbl = wxStaticText(self.parent, wx.ID_ANY, label=_("Join"))
         self.join_lbl.SetFont(
             wx.Font(
                 7,
@@ -116,50 +115,47 @@ class LinejoinWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-
-        self.btn_join_bevel = wx.StaticBitmap(
+        isize = int(
+            max(20, self.parent.available_height - 4) *
+            self.context.root.bitmap_correction_scale
+        )
+        self.btn_join_bevel = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
 
         self.btn_join_bevel.SetBitmap(
-            icon_join_bevel.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_join_bevel.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_join_bevel.SetMaxSize(wx.Size(50, -1))
         self.btn_join_bevel.SetToolTip(_("Set the join of the lines to a bevel-shape"))
         self.btn_join_bevel.Bind(wx.EVT_LEFT_DOWN, self.on_join_bevel)
 
-        self.btn_join_round = wx.StaticBitmap(
+        self.btn_join_round = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
         self.btn_join_round.SetBitmap(
-            icon_join_round.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_join_round.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_join_round.SetMaxSize(wx.Size(50, -1))
         self.btn_join_round.SetToolTip(_("Set the join of lines to a round-shape"))
         self.btn_join_round.Bind(wx.EVT_LEFT_DOWN, self.on_join_round)
 
-        self.btn_join_miter = wx.StaticBitmap(
+        self.btn_join_miter = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
         self.btn_join_miter.SetBitmap(
-            icon_join_miter.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_join_miter.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_join_miter.SetMaxSize(wx.Size(50, -1))
         self.btn_join_miter.SetToolTip(_("Set the join of lines to a miter-shape"))
         self.btn_join_miter.Bind(wx.EVT_LEFT_DOWN, self.on_join_miter)
 
-        # self.btn_join_arcs = wx.StaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED)
+        # self.btn_join_arcs = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED)
         # self.btn_join_arcs.SetBitmap(icon_join_round.GetBitmap(noadjustment=True))
         # self.btn_join_arcs.SetToolTip(_("Set the join of lines to an arc-shape"))
         # self.btn_join_arcs.Bind(wx.EVT_LEFT_DOWN, self.on_join_arcs)
 
-        # self.btn_join_miterclip = wx.StaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED)
+        # self.btn_join_miterclip = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED)
         # self.btn_join_miterclip.SetBitmap(icon_join_miter.GetBitmap(noadjustment=True))
         # self.btn_join_miterclip.SetToolTip(_("Set the join of lines to a miter-clip-shape"))
         # self.btn_join_miterclip.Bind(wx.EVT_LEFT_DOWN, self.on_join_miterclip)
@@ -201,7 +197,7 @@ class FillruleWidget(StatusBarWidget):
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
-        self.fill_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("Fill"))
+        self.fill_lbl = wxStaticText(self.parent, wx.ID_ANY, label=_("Fill"))
         self.fill_lbl.SetFont(
             wx.Font(
                 7,
@@ -210,25 +206,26 @@ class FillruleWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self.btn_fill_nonzero = wx.StaticBitmap(
+        isize = int(
+            max(20, self.parent.available_height - 4) *
+            self.context.root.bitmap_correction_scale
+        )
+
+        self.btn_fill_nonzero = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
         self.btn_fill_nonzero.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_nonzero.SetBitmap(
-            icon_fill_nonzero.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_fill_nonzero.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_fill_nonzero.SetToolTip(_("Set the fillstyle to non-zero (regular)"))
         self.btn_fill_nonzero.Bind(wx.EVT_LEFT_DOWN, self.on_fill_nonzero)
 
-        self.btn_fill_evenodd = wx.StaticBitmap(
+        self.btn_fill_evenodd = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
         self.btn_fill_evenodd.SetBitmap(
-            icon_fill_evenodd.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_fill_evenodd.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_fill_evenodd.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_evenodd.SetToolTip(
@@ -259,7 +256,9 @@ class PositionWidget(StatusBarWidget):
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
-        self.xy_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("X, Y"))
+        self.context.setting(bool, "lock_active", True)
+        self._needs_generation = False
+        self.xy_lbl = wxStaticText(self.parent, wx.ID_ANY, label=_("X, Y"))
         self.node = None
         self.units = ("mm", "cm", "in", "mil", "%")
         self.unit_index = 0
@@ -278,7 +277,7 @@ class PositionWidget(StatusBarWidget):
         self.text_y = TextCtrl(
             self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float"
         )
-        self.wh_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("W, H"))
+        self.wh_lbl = wxStaticText(self.parent, wx.ID_ANY, label=_("W, H"))
         self.text_w = TextCtrl(
             self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float"
         )
@@ -286,18 +285,22 @@ class PositionWidget(StatusBarWidget):
         self.text_h = TextCtrl(
             self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float"
         )
-        self.unit_lbl = wx.StaticText(
+        self.unit_lbl = wxStaticText(
             self.parent, wx.ID_ANY, label=self.units[self.unit_index]
         )
-        icon_size = max(20, self.parent.available_height - 4)
-        self.button_lock_ratio = wx.StaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
+        icon_size = int(
+            max(20, self.parent.available_height - 4) *
+            self.context.root.bitmap_correction_scale
+        )
+
+        self.button_lock_ratio = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
         self.bitmap_locked = icons8_lock.GetBitmap(resize=icon_size, use_theme=False)
         self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=icon_size, use_theme=False)
 
         self.offset_index = 0  # 0 to 8 tl tc tr cl cc cr bl bc br
         self.offset_x = 0.0
         self.offset_y = 0.0
-        self.button_param = wx.StaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
+        self.button_param = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
         self.pos_bitmaps = self.calculate_icons(icon_size)
         self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
 
@@ -366,7 +369,8 @@ class PositionWidget(StatusBarWidget):
         )
 
         self._lock_ratio = True
-        self.lock_ratio = True
+        self.lock_ratio =  self.context.lock_active
+
 
     @property
     def units_name(self):
@@ -383,6 +387,9 @@ class PositionWidget(StatusBarWidget):
             self.button_lock_ratio.SetBitmap(self.bitmap_locked)
         else:
             self.button_lock_ratio.SetBitmap(self.bitmap_unlocked)
+        if self.context.lock_active != value:
+            self.context.lock_active = value
+            self.context.signal("lock_active")
 
     # Position icon routines
     def calculate_icons(self, bmap_size):
@@ -725,7 +732,23 @@ class PositionWidget(StatusBarWidget):
             self.execute_xy_changes()
             self.context.signal("refresh_scene", "Scene")
 
-    def Signal(self, signal, *args):
-        if signal in ("emphasized", "modified", "modified", "element_property_update"):
+    def Show(self, showit=True):
+        if self._needs_generation and showit:
             self.update_position(True)
             self.startup = False
+        super().Show(showit)
+
+    def GenerateInfos(self):
+        if self.visible:
+            self.context.elements.set_start_time("positionwidget")
+            self.update_position(True)
+            self.startup = False
+            self.context.elements.set_end_time("positionwidget")
+        else:
+            self._needs_generation = True
+
+    def Signal(self, signal, *args):
+        if signal in ("emphasized", "modified", "modified", "element_property_update"):
+            self.GenerateInfos()
+        if signal == "lock_active":
+            self.lock_ratio = self.context.lock_active

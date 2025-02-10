@@ -8,7 +8,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -19,6 +19,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("newlycontroller")
 
         font = wx.Font(
@@ -31,7 +32,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         self.service = self.context.device
         self._buffer = []
         self._buffer_lock = threading.Lock()
-        self.text_usb_log = wx.TextCtrl(
+        self.text_usb_log = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.text_usb_log.SetFont(font)
@@ -64,7 +65,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         )
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         # end wxGlade
@@ -96,7 +97,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
         self.button_device_connect.SetBitmap(
-            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size(self.context))
         )
         self.button_device_connect.Enable()
 
@@ -104,7 +105,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         self.button_device_connect.SetBackgroundColour("#dfdf00")
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=get_default_icon_size(self.context)
             )
         )
         self.button_device_connect.Enable()
@@ -186,3 +187,7 @@ class NewlyController(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Newly-Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device controller window")

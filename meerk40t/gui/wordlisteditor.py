@@ -4,6 +4,7 @@ import re
 import wx
 from wx import aui
 
+from ..extra.encode_detect import EncodingDetectFile
 from ..kernel import signal_listener
 from .icons import (
     get_default_icon_size,
@@ -16,8 +17,18 @@ from .icons import (
     icons8_paste,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox
-from ..extra.encode_detect import EncodingDetectFile
+from .wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxComboBox,
+    wxListCtrl,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -36,6 +47,7 @@ def register_panel_wordlist(window, context):
     pane.dock_proportion = 225
     pane.control = WordlistMiniPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_50_" + _("Tools")
+    pane.helptext = _("Display wordlist advancement controls")
     window.on_pane_create(pane)
     context.register("pane/wordlist", pane)
 
@@ -45,17 +57,19 @@ class WordlistMiniPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("wordlist")
+
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wxButton(self, wx.ID_ANY, _("Edit"))
         self.button_edit.SetBitmap(
-            icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
         self.button_next = wxButton(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(
-            icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_next.SetToolTip(
             _("Wordlist: go to next page (right-click to next entry)")
@@ -63,7 +77,7 @@ class WordlistMiniPanel(wx.Panel):
 
         self.button_prev = wxButton(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(
-            icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_prev.SetToolTip(
             _("Wordlist: go to previous page (right-click to previous entry)")
@@ -142,6 +156,7 @@ class WordlistPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("wordlist")
         self.parent_panel = None
         self.wlist = self.context.elements.mywordlist
@@ -164,14 +179,14 @@ class WordlistPanel(wx.Panel):
         sizer_index_left = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grid_left.Add(sizer_index_left, 0, wx.EXPAND, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
+        label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
         sizer_index_left.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.cbo_Index = wx.ComboBox(
+        self.cbo_Index = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_left.Add(self.cbo_Index, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.grid_wordlist = wx.ListCtrl(
+        self.grid_wordlist = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES
@@ -179,10 +194,12 @@ class WordlistPanel(wx.Panel):
             | wx.LC_VRULES
             | wx.LC_SINGLE_SEL
             | wx.LC_EDIT_LABELS,
+            context=self.context,
+            list_name="list_wordlist"
         )
         sizer_grid_left.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 
-        self.grid_content = wx.ListCtrl(
+        self.grid_content = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES
@@ -190,12 +207,14 @@ class WordlistPanel(wx.Panel):
             | wx.LC_VRULES
             | wx.LC_SINGLE_SEL
             | wx.LC_EDIT_LABELS,
+            context=self.context,
+            list_name="list_wordlist_content",
         )
 
         sizer_edit_wordlist_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_edit_content_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
+        dummylabel = wxStaticText(self, wx.ID_ANY, " ")
         sizer_index_left.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_index_left.Add(
             sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
@@ -203,22 +222,22 @@ class WordlistPanel(wx.Panel):
         testsize = dip_size(self, 20, 20)
         icon_size = testsize[0]
 
-        self.btn_edit_wordlist_del = wx.StaticBitmap(
+        self.btn_edit_wordlist_del = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_wordlist_edit = wx.StaticBitmap(
+        self.btn_edit_wordlist_edit = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_add = wx.StaticBitmap(
+        self.btn_edit_content_add = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_del = wx.StaticBitmap(
+        self.btn_edit_content_del = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_edit = wx.StaticBitmap(
+        self.btn_edit_content_edit = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_content_paste = wx.StaticBitmap(
+        self.btn_edit_content_paste = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         # Circumvent a WXPython bug at high resolutions under Windows
@@ -282,14 +301,14 @@ class WordlistPanel(wx.Panel):
         sizer_edit_content_buttons.Add(self.btn_edit_content_paste, 0, wx.EXPAND, 0)
 
         sizer_index_right = wx.BoxSizer(wx.HORIZONTAL)
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for field:"))
+        label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for field:"))
         sizer_index_right.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.cbo_index_single = wx.ComboBox(
+        self.cbo_index_single = wxComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_index_right.Add(self.cbo_index_single, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
+        dummylabel = wxStaticText(self, wx.ID_ANY, " ")
         sizer_index_right.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_index_right.Add(
             sizer_edit_content_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
@@ -298,7 +317,7 @@ class WordlistPanel(wx.Panel):
         sizer_grid_right.Add(sizer_index_right, 0, wx.EXPAND, 0)
         sizer_grid_right.Add(self.grid_content, 1, wx.EXPAND, 0)
 
-        self.txt_pattern = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_pattern = TextCtrl(self, wx.ID_ANY, "")
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_buttons.Add(self.txt_pattern, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -331,7 +350,7 @@ class WordlistPanel(wx.Panel):
         sizer_exit.Add(self.check_autosave, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.check_autosave.SetValue(self.context.wordlist_autosave)
 
-        self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_message = wxStaticText(self, wx.ID_ANY, "")
         sizer_exit.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_lower = wx.BoxSizer(wx.HORIZONTAL)
@@ -384,11 +403,14 @@ class WordlistPanel(wx.Panel):
         self.parent_panel = par_panel
 
     def pane_show(self):
+        self.grid_wordlist.load_column_widths()
+        self.grid_content.load_column_widths()
         self.populate_gui()
         self.grid_wordlist.SetFocus()
 
     def pane_hide(self):
-        pass
+        self.grid_wordlist.save_column_widths()
+        self.grid_content.save_column_widths()
 
     def autosave(self):
         if self.check_autosave.GetValue():
@@ -493,6 +515,7 @@ class WordlistPanel(wx.Panel):
         self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE_USEHEADER)
         self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER)
+        self.grid_wordlist.resize_columns()
 
     def get_column_text(self, grid, index, col):
         item = grid.GetItem(index, col)
@@ -523,6 +546,8 @@ class WordlistPanel(wx.Panel):
                 self.grid_content.SetItemTextColour(index, wx.RED)
         wsize = self.grid_content.GetSize()
         self.grid_content.SetColumnWidth(0, wsize[0] - 10)
+        self.grid_content.resize_columns()
+
         self.cbo_index_single.Set(choices)
         if selidx >= 0:
             self.cbo_index_single.SetSelection(selidx)
@@ -713,16 +738,17 @@ class ImportPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent_panel = None
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.wlist = self.context.elements.mywordlist
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("Import CSV"), wx.VERTICAL)
         sizer_csv = wx.BoxSizer(wx.HORIZONTAL)
         info_box.Add(sizer_csv, 1, wx.EXPAND, 0)
 
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("Import CSV-File"))
+        label_1 = wxStaticText(self, wx.ID_ANY, _("Import CSV-File"))
         sizer_csv.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_filename = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_filename = TextCtrl(self, wx.ID_ANY, "")
         sizer_csv.Add(self.txt_filename, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_fileDialog = wxButton(self, wx.ID_ANY, "...")
@@ -749,7 +775,7 @@ class ImportPanel(wx.Panel):
         sizer_header.Add(self.rbox_header, 1, wx.EXPAND, 0)
         info_box.Add(sizer_header, 0, wx.EXPAND)
 
-        self.text_preview = wx.TextCtrl(
+        self.text_preview = TextCtrl(
             self, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
 
@@ -846,11 +872,12 @@ class AboutPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None
         s = self.context.asset("wordlist_howto")
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         font = wx.Font(
@@ -893,6 +920,12 @@ class WordlistEditor(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_editor, _("Editing"))
         self.notebook_main.AddPage(self.panel_import, _("Import/Export"))
@@ -946,3 +979,7 @@ class WordlistEditor(MWindow):
     def submenu():
         # Suppress to avoid double menu-appearance
         return "Editing", "Variables + Wordlists", True
+
+    @staticmethod
+    def helptext():
+        return _("Configure the wordlist (text variable) entries")

@@ -48,8 +48,8 @@ https://feirell.github.io/offset-bezier/
 The algorithm deals with the challenge as follows:
 a) It walks through the subpaths of a given path so that we have a continuous curve
 b) It looks at the different segment typs and deals with them,
-generating a new offseted segement
-c) Finally it stitches those segments together, treating for the simplifaction
+generating a new offseted segment
+c) Finally it stitches those segments together, preparing for the simplification
 """
 
 
@@ -370,11 +370,12 @@ def offset_path(self, path, offset_value=0):
     if p is None:
         return path
     g = Geomstr.svg(p)
-    # We are already at device resolution, so we need to reduce tolerance a lot
-    # Standard is 25 tats, so about 1/3 of a mil
-    p = g.simplify(tolerance=0.1).as_path()
-    p.stroke = path.stroke
-    p.fill = path.fill
+    if g.index:
+        # We are already at device resolution, so we need to reduce tolerance a lot
+        # Standard is 25 tats, so about 1/3 of a mil
+        p = g.simplify(tolerance=0.1).as_path()
+        p.stroke = path.stroke
+        p.fill = path.fill
     return p
 
 

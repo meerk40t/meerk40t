@@ -1,6 +1,6 @@
 import ast
 import os
-from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
+import configparser
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Union
 
@@ -27,6 +27,7 @@ class Settings:
             self._config_file = filename
         self._config_dict = {}
         self.create_backup = create_backup
+        self.prevent_persisting = False
         if not ignore_settings:
             self.read_configuration()
 
@@ -44,23 +45,25 @@ class Settings:
         if targetfile is None:
             targetfile = self._config_file
         try:
-            parser = ConfigParser()
+            parser = configparser.ConfigParser()
             parser.read(targetfile, encoding="utf-8")
-            for section in parser.sections():
-                for option in parser.options(section):
-                    try:
-                        config_section = self._config_dict[section]
-                    except KeyError:
-                        config_section = dict()
-                        self._config_dict[section] = config_section
-                    config_section[option] = parser.get(section, option)
         except (
             PermissionError,
-            NoSectionError,
-            MissingSectionHeaderError,
+            configparser.NoSectionError,
+            configparser.MissingSectionHeaderError,
             FileNotFoundError,
         ):
             return
+        except (configparser.DuplicateOptionError, configparser.DuplicateSectionError) as e:
+            print (f"We had a duplication error in the config, try to recover from {e}")
+        for section in parser.sections():
+            for option in parser.options(section):
+                try:
+                    config_section = self._config_dict[section]
+                except KeyError:
+                    config_section = {}
+                    self._config_dict[section] = config_section
+                config_section[option] = parser.get(section, option)
 
     def write_configuration(self, targetfile=None):
         """
@@ -69,10 +72,12 @@ class Settings:
         This uses the python ConfigParser to save data from the _config_dict.
         @return:
         """
+        if self.prevent_persisting:
+            return
         if targetfile is None:
             targetfile = self._config_file
         try:
-            parser = ConfigParser()
+            parser = configparser.ConfigParser()
             for section_key in self._config_dict:
                 section = self._config_dict[section_key]
                 for key in section:
@@ -81,9 +86,12 @@ class Settings:
                         if "%" in value:
                             value = value.replace("%", "%%")
                         parser.set(section_key, key, value)
-                    except NoSectionError:
+                    except configparser.NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
+                    except (configparser.DuplicateOptionError, configparser.DuplicateSectionError) as e:
+                        print (f"We had a duplication error in the config, try to recover from {e}")
+
             if self.create_backup:
                 VERSIONS = 5
                 try:

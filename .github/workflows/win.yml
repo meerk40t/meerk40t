@@ -4,6 +4,8 @@
 name: Meerk40t (Windows)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
@@ -18,7 +20,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: 3.8
-        # Latest version of python support by Windows 7 is Python 3.8
+        # Latest version of python support by Windows 7 is Python 3.11
         architecture: x86
         # 32-bit architecture required for libusb to connect properly
 
@@ -35,9 +37,10 @@ jobs:
         pip install ezdxf
         pip install pyserial
         pip install bitarray
-        pip install scipy
+        pip install scipy==1.10.0
         pip install pypotrace-windows
         pip install pyclipr
+        pip install numba
         pip install .
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes

@@ -1101,17 +1101,17 @@ def plugin(kernel, lifecycle):
                             "To hit all, the density parameters should be e.g. {combinations}"
                         ).format(combinations=possible_combinations)
                     )
-
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.stroke = self.default_stroke
-            node.stroke_width = self.default_strokewidth
-            node.fill = self.default_fill
-            node.altered()
-            node.emphasized = True
+            # _("Create shape")
+            with self.undoscope("Create shape"):
+                node = self.elem_branch.add(type="elem path", geometry=geom)
+                node.stroke = self.default_stroke
+                node.stroke_width = self.default_strokewidth
+                node.fill = self.default_fill
+                node.altered()
+            self.set_emphasis([node])
             node.focus()
 
             data = [node]
-            node.emphasized = True
             # Newly created! Classification needed?
             post.append(classify_new(data))
 
@@ -1394,11 +1394,13 @@ def plugin(kernel, lifecycle):
                 startangle,
                 gap_angle,
             )
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.label = f"Growing Polygon w. {sides} sides"
-            node.stroke = self.default_stroke
-            node.stroke_width = 1000  # self.default_strokewidth
-            node.altered()
+            # _("Create shape")
+            with self.undoscope("Create shape"):
+                node = self.elem_branch.add(type="elem path", geometry=geom)
+                node.label = f"Growing Polygon w. {sides} sides"
+                node.stroke = self.default_stroke
+                node.stroke_width = 1000  # self.default_strokewidth
+                node.altered()
             pt0 = None
             pt1 = None
             for pt in geom.as_points():

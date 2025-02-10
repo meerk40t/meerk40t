@@ -19,6 +19,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("grblconfig")
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
@@ -185,6 +186,12 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         self._requested_status = False
@@ -275,6 +282,10 @@ class GRBLConfiguration(MWindow):
     def submenu():
         return "Device-Settings", "GRBL-Configuration"
 
+    @staticmethod
+    def helptext():
+        return _("Edit device configuration")
+
     @property
     def hw_config(self):
         # Not relevant
@@ -329,7 +340,8 @@ class GRBLConfiguration(MWindow):
                 changes = False
                 if 21 in self.context.device.hardware_config:
                     value = self.context.device.hardware_config[21]
-                    flag = bool(int(value) == 1)
+                    # Some grbl controllers send something like "1 (hard limits,bool)"
+                    flag = value is not None and str(value).startswith("1")
                     self.context.has_endstops = flag
                     self.context.signal("has_endstops", flag, self.context)
                 if 130 in self.context.device.hardware_config:

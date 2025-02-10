@@ -23,7 +23,7 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size, wxButton, wxCheckBox
+from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
 
 _ = wx.GetTranslation
 
@@ -38,9 +38,10 @@ class TipPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.tip_command = ""
         self.tip_image = ""
-        self.tips = list()
+        self.tips = []
 
         safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
         self.local_file = os.path.join(safe_dir, "tips.txt")
@@ -56,11 +57,12 @@ class TipPanel(wx.Panel):
         # self.context.tip_access_consent = False
         self.SetHelpText("tips")
         icon_size = dip_size(self, 25, 25)
+        icon_size *= self.context.root.bitmap_correction_scale
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
+        self.image_tip = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(dip_size(self, 250, -1))
-        self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
+        self.no_image_message = TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
                 "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
@@ -69,7 +71,7 @@ class TipPanel(wx.Panel):
         self.no_image_message.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
         # self.image_tip.SetSize(wx.Size(250, -1))
-        self.text_tip = wx.TextCtrl(
+        self.text_tip = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
@@ -83,7 +85,7 @@ class TipPanel(wx.Panel):
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
-        self.label_position = wx.StaticText(
+        self.label_position = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
         )
 
@@ -162,6 +164,10 @@ class TipPanel(wx.Panel):
         self.load_tip()
 
     def load_tip(self):
+        if len(self.tips) == 0:
+            return
+        if self._current_tip >= len(self.tips):
+            self._current_tip = 0
         my_tip = self.tips[self._current_tip]
         self.text_tip.SetValue(my_tip[0])
         if my_tip[1]:
@@ -259,7 +265,14 @@ class TipPanel(wx.Panel):
             return False
 
         bmp = wx.Bitmap()
-        res = bmp.LoadFile(local_path)
+        try:
+            res = bmp.LoadFile(local_path)
+            if res:
+                new_x, new_y = bmp.Size
+                if new_x == 0 or new_y == 0:
+                    res = False
+        except Exception:
+            res = False
         if not res:
             # Bitmap failed to load.
             self.no_image_message.Show(True)
@@ -282,7 +295,7 @@ class TipPanel(wx.Panel):
             bmp = wx.Bitmap(image)
 
         try:
-            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
+            self.image_tip.SetScaleMode(wxStaticBitmap.Scale_None)
         except AttributeError:
             # Old version of wxpython
             pass
@@ -572,3 +585,7 @@ class Tips(MWindow):
     def submenu():
         # Suppress...
         return "Tips", "Tips", True
+
+    @staticmethod
+    def helptext():
+        return _("Display some tips and tricks how to best use MeerK40t")

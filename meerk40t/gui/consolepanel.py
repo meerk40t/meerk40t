@@ -7,6 +7,7 @@ from wx import aui
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.gui.wxutils import TextCtrl
 
 try:
     from wx import richtext
@@ -86,6 +87,7 @@ def register_panel_console(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Open command interface")
 
     window.on_pane_create(pane)
     context.register("pane/console", pane)
@@ -102,6 +104,61 @@ def register_panel_console(window, context):
             w = context.opened["pane/console"]
             w.control.clear()
 
+    @context.console_option("reset", "r", type=bool, action="store_true")
+    @context.console_command(
+        ("console_font"),
+        help=_("Sets the console font"),
+    )
+    def set_console_font(channel, _, reset=False, *args, **kwargs):
+        def getfont(initial):
+            result = ""
+            data = wx.FontData()
+            data.EnableEffects(True)
+            cur_font = None
+            if initial:
+                try:
+                    cur_font = wx.Font()
+                    success = cur_font.SetNativeFontInfo(initial)
+                    if not success:
+                        cur_font = None
+                except Exception:
+                    pass
+            if cur_font is None:
+                cur_font = wx.Font(
+                10,
+                wx.FONTFAMILY_TELETYPE,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+            data.SetInitialFont(cur_font)
+
+            dlg = wx.FontDialog(window, data)
+
+            if dlg.ShowModal() == wx.ID_OK:
+                data = dlg.GetFontData()
+                font = data.GetChosenFont()
+                result = font.GetNativeFontInfoDesc()
+
+            # Don't destroy the dialog until you get everything you need from the
+            # dialog!
+            dlg.Destroy()
+            return result
+
+        current = context.setting(str, "console_font", "")
+        if reset:
+            context.console_font = ""
+        else:
+            # Show Fontdialog
+            result = getfont(current)
+            context.console_font = result
+        if "window/Console" in context.opened:
+            w = context.opened["window/Console"]
+            w.panel.reset_font()
+        if "pane/console" in context.opened:
+            w = context.opened["pane/console"]
+            w.control.reset_font()
+        channel(_("Font has been changed"))
+
 
 class ConsolePanel(wx.ScrolledWindow):
     def __init__(self, *args, context=None, **kwargs):
@@ -109,16 +166,13 @@ class ConsolePanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("notes")
-        font = wx.Font(
-            10,
-            wx.FONTFAMILY_TELETYPE,
-            wx.FONTSTYLE_NORMAL,
-            wx.FONTWEIGHT_NORMAL,
-        )
-        self.text_entry = wx.TextCtrl(
+        font = self.get_font()
+        self.text_entry = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
+        self.richtext = False
 
         try:
             self.text_main = richtext.RichTextCtrl(
@@ -160,9 +214,10 @@ class ConsolePanel(wx.ScrolledWindow):
             self.style = style
             self.text_main.Update()  # Apply style to just opened window
             self._update_text = self.update_text_rich
+            self.richtext = True
 
         except NameError:
-            self.text_main = wx.TextCtrl(
+            self.text_main = TextCtrl(
                 self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
             )
             self.text_main.SetFont(font)
@@ -218,11 +273,42 @@ class ConsolePanel(wx.ScrolledWindow):
             if context_item != "None" and context_item not in self.command_context:
                 self.command_context.append(context_item)
 
+    def get_font(self):
+        font = None
+        fontdesc = self.context.setting(str, "console_font", "")
+        if fontdesc:
+            # print (f"Try fontdesc: {fontdesc}")
+            try:
+                font = wx.Font(fontdesc)
+            except Exception as e:
+                # print (e)
+                font = None
+        if font is None:
+            font = wx.Font(
+                10,
+                wx.FONTFAMILY_TELETYPE,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        return font
+
+    def reset_font(self):
+        font = self.get_font()
+        if self.richtext:
+            self.style.SetFont(font)
+            self.text_main.SetBasicStyle(self.style)
+            self.text_main.SetDefaultStyle(self.style)
+            self.text_main.Update()
+        else:
+            self.text_main.SetFont(font)
+        self.Refresh()
+
     def style_normal(self, style):
         return self.style
 
     def background_color(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        return self.context.themes.get("win_bg")
+        # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
 
     @property
     def is_dark(self):
@@ -262,7 +348,10 @@ class ConsolePanel(wx.ScrolledWindow):
             self._buffer += f"{text}\n"
             if len(self._buffer) > 50000:
                 self._buffer = self._buffer[-50000:]
-        self.context.signal("console_update")
+        if getattr(self.context, "process_console_in_realtime", False):
+            self.update_console_main("internal")
+        else:
+            self.context.signal("console_update")
 
     @signal_listener("console_update")
     def update_console_main(self, origin, *args):
@@ -611,3 +700,7 @@ class Console(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Open command interface")

@@ -1,5 +1,5 @@
 """
-The selection widget deals with the manipulated of emphasized elements. It provides a series of related subwidgets:
+The selection widget deals with the manipulation of emphasized elements. It provides a series of related subwidgets:
 
 BorderWidget: Draws the border of the selected object.
 RotationWidget: Little arrow in the corner allowing the object to be rotated.
@@ -33,12 +33,14 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     create_menu_for_node,
-    matrix_scale,
+    get_gc_full_scale,
+    get_matrix_scale,
     wxButton,
     wxCheckBox,
+    wxStaticText,
 )
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import TYPE_END
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 # from time import perf_counter
 
@@ -126,17 +128,17 @@ def process_event(
             widget.master.check_rot_center()
             widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
             return RESPONSE_CONSUME
-    elif event_type == "middledown":
-        # Hmm, I think this is never called due to the consumption of this event by scene pane...
-        widget.was_lb_raised = False
-        widget.save_width = widget.master.width
-        widget.save_height = widget.master.height
-        widget.uniform = False
-        widget.master.total_delta_x = dx
-        widget.master.total_delta_y = dy
-        widget.master.tool_running = optimize_drawing
-        widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
-        return RESPONSE_CONSUME
+    # elif event_type == "middledown":
+    #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
+    #     widget.was_lb_raised = False
+    #     widget.save_width = widget.master.width
+    #     widget.save_height = widget.master.height
+    #     widget.uniform = False
+    #     widget.master.total_delta_x = dx
+    #     widget.master.total_delta_y = dy
+    #     widget.master.tool_running = optimize_drawing
+    #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
+    #     return RESPONSE_CONSUME
     elif event_type == "leftup":
         if widget.was_lb_raised:
             widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
@@ -175,6 +177,19 @@ def process_event(
     else:
         return RESPONSE_CHAIN
 
+def update_elements(scene):
+    elements = scene.context.elements
+    with elements.undofree():
+        images = []
+        for e in elements.flat(types=elem_group_nodes, emphasized=True):
+            e.modified()
+            if hasattr(e, "update"):
+                images.append(e)
+        for e in images:
+            elements.do_image_update(e, scene.context, delayed=True)
+    scene.pane.modif_active = False
+    scene.context.signal("modified_by_tool")
+
 
 class BorderWidget(Widget):
     """
@@ -194,6 +209,10 @@ class BorderWidget(Widget):
             self.master.bottom,
         )
         self.update()
+        coord_display_mode = self.scene.context.root.setting(int, "coord_display", 0)
+        # 0 = all, 1 = to mk 0,0 only, 2=suppress
+        self.show_lt = coord_display_mode in (0, 1)
+        self.show_rb = coord_display_mode == 0
 
     def update(self):
         self.left = self.master.left
@@ -231,23 +250,25 @@ class BorderWidget(Widget):
             # (even if they are dotted on a microscopic level)
             # To circumvent this issue, we scale the gc back
             gc.PushState()
-            gcmat = gc.GetTransform()
-            mat_param = gcmat.Get()
-            sx = mat_param[0]
-            sy = mat_param[3]
-            if sx == 0:
-                sx = 0.01
-            if sy == 0:
-                sy = 0.01
+            sx, sy = get_gc_full_scale(gc)
             gc.Scale(1 / sx, 1 / sy)
+            bed_w = self.scene.context.device.space.width
+            bed_h = self.scene.context.device.space.height
 
             # Create a copy of the pen
             mypen = wx.Pen(self.master.selection_pen)
             mypen.SetWidth(1)
             mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
             gc.SetPen(mypen)
-            gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
-            gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            # Top to upper edge, lower edge to bottom
+            # Left to left edge, right edge to right
+            if self.show_lt:
+                gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
+                gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            if self.show_rb:
+                gc.StrokeLine(sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h)
+                gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
+    
             mypen.SetStyle(wx.PENSTYLE_DOT)
             gc.SetPen(mypen)
             gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
@@ -282,22 +303,42 @@ class BorderWidget(Widget):
                     wx.FONTWEIGHT_BOLD,
                 )
             gc.SetFont(font, self.scene.colors.color_manipulation)
-            # Show Y-Value
-            s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
-            (t_width, t_height) = gc.GetTextExtent(s_txt)
-            distance = 0.25 * t_height
-            pos = self.top / 2.0 - t_height / 2
-            if pos + t_height + distance >= self.top:
-                pos = self.top - t_height - distance
-            gc.DrawText(s_txt, center_x - t_width / 2, pos)
+            if self.show_lt:
+                # Show Y-Value
+                s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                distance = 0.25 * t_height # No text in the way, so a minimal gap suffices
+                pos = self.top / 2.0 - t_height / 2
+                if pos + t_height + distance >= self.top:
+                    pos = self.top - t_height - distance
+                gc.DrawText(s_txt, center_x - t_width / 2, pos)
 
-            # Display X-Coordinate
-            s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
-            (t_width, t_height) = gc.GetTextExtent(s_txt)
-            pos = self.left / 2.0 - t_width / 2
-            if pos + t_width + distance >= self.left:
-                pos = self.left - t_width - distance
-            gc.DrawText(s_txt, pos, center_y)
+                # Display X-Coordinate from left
+                s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                pos = self.left / 2.0 - t_width / 2
+                if pos + t_width + distance >= self.left:
+                    pos = self.left - t_width - distance
+                gc.DrawText(s_txt, pos, center_y)
+            if self.show_rb:
+                rpos = bed_h - self.bottom
+                s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                distance = 1.5 * t_height # There's text in the way
+                pos = self.bottom + rpos / 2 - t_height / 2
+                if pos - t_height - distance <= self.bottom:
+                    pos = self.bottom + distance
+                gc.DrawText(s_txt, center_x - t_width / 2, pos)
+
+                # Display X-Coordinate from right
+                rpos = bed_w - self.right
+                s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
+                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                pos = self.right + rpos / 2.0 - t_width / 2
+                if pos - t_width - distance <= self.right:
+                    pos = self.right + distance
+                gc.DrawText(s_txt, pos, center_y)
+
             # Display height
             s_txt = str(
                 Length(amount=(self.bottom - self.top), digits=2, preferred_units=units)
@@ -486,24 +527,17 @@ class RotationWidget(Widget):
 
         elements = self.scene.context.elements
         if event == 1:
-            images = []
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                e.modified()
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                e.update(self.scene.context)
+            update_elements(self.scene)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element rotated")
+            elements.undo.mark("Element rotated")
             return
         elif event == 0:
             if self.rotate_cx is None:
@@ -572,7 +606,10 @@ class RotationWidget(Widget):
                     except AttributeError:
                         pass
                     e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+                    if e.type == "elem image":
+                        e._cache = None
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
+            elements.signal("updating")
 
         self.scene.request_refresh()
 
@@ -766,26 +803,15 @@ class CornerWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1:
-            images = []
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                # modified no longer relevant
-                # try:
-                #     e.modified()
-                # except AttributeError:
-                #     pass
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                e.update(self.scene.context)
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+        if event == 1: # End
+            update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element scaled")
+            elements.undo.mark("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -872,7 +898,10 @@ class CornerWidget(Widget):
                     except AttributeError:
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
+                    if node.type == "elem image":
+                        node._cache = None
+            elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -1007,25 +1036,14 @@ class SideWidget(Widget):
             # dy = position[5]
 
         if event == 1:
-            images = []
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                # No longer needed
-                # try:
-                #     e.modified()
-                # except AttributeError:
-                #     pass
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                e.update(self.scene.context)
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element scaled")
+            elements.undo.mark("Element scaled")
             return
         elif event == 0:
             # Establish scales
@@ -1116,8 +1134,10 @@ class SideWidget(Widget):
                     except AttributeError:
                         pass
                     node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
-
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
+                    if node.type == "elem image":
+                        node._cache = None
+            elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -1227,24 +1247,14 @@ class SkewWidget(Widget):
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
-            images = []
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
-                if hasattr(e, "update"):
-                    images.append(e)
-            for e in images:
-                e.update(self.scene.context)
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element skewed")
+            elements.undo.mark("Element skewed")
             return
         elif event == 0:  # move
             if self.is_x:
@@ -1279,7 +1289,9 @@ class SkewWidget(Widget):
                             (self.master.right + self.master.left) / 2,
                             (self.master.top + self.master.bottom) / 2,
                         )
-
+                    if e.type == "elem image":
+                        e._cache = None
+            elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -1381,97 +1393,100 @@ class MoveWidget(Widget):
                     if not f.emphasized:
                         f.emphasized = True
                         emph_list.append(f)
-        for e in emph_list:
-            new_parent = None
-            org_parent = e.parent
-            # First make sure we have all child elements as well
-            if e.type in ("file", "group"):
-                for f in e.children:
-                    if not f.emphasized:
-                        f.emphasized = True
+        if not emph_list:
+            return
+        with elements.undoscope("Create copy"):
+            for e in emph_list:
+                new_parent = None
+                org_parent = e.parent
+                # First make sure we have all child elements as well
+                if e.type in ("file", "group"):
+                    for f in e.children:
+                        if not f.emphasized:
+                            f.emphasized = True
 
-            if org_parent is elements.elem_branch:
-                new_parent = elements.elem_branch
-            else:
-                # Are all other elements of this group selected as well?
-                # If yes create another group...
-                # (that would actually need to travel down?!)
-                all_selected = True
-                if not org_parent.emphasized:
-                    for sibling in org_parent.children:
-                        if not sibling.emphasized:
-                            all_selected = False
-                            break
-                if not all_selected:
-                    new_parent = org_parent
-            to_be_copied.append([e, org_parent, new_parent])
-
-        for entry in to_be_copied:
-            e = entry[0]
-            oldparent = entry[1]
-            newparent = entry[2]
-            if newparent is None:
-                # Add a new group...
-                if oldparent.label is None:
-                    newlabel = "Copy"
+                if org_parent is elements.elem_branch:
+                    new_parent = elements.elem_branch
                 else:
-                    newlabel = f"Copy of {oldparent.display_label()}"
-                if oldparent.id is None:
-                    newid = "Copy"
-                else:
-                    newid = f"Copy of {oldparent.id}"
-                newparent = oldparent.parent.add(
-                    type="group",
-                    label=newlabel,
-                    id=newid,
-                )
-                # and amend all other entries
-                for others in to_be_copied:
-                    if others[1] is oldparent and others[2] is None:
-                        others[2] = newparent
+                    # Are all other elements of this group selected as well?
+                    # If yes create another group...
+                    # (that would actually need to travel down?!)
+                    all_selected = True
+                    if not org_parent.emphasized:
+                        for sibling in org_parent.children:
+                            if not sibling.emphasized:
+                                all_selected = False
+                                break
+                    if not all_selected:
+                        new_parent = org_parent
+                to_be_copied.append([e, org_parent, new_parent])
 
-            copy_node = copy(e)
-            copy_node.emphasized = False
-            copy_node.selected = False
-            had_optional = False
-            # Need to add stroke and fill, as copy will take the
-            # default values for these attributes
-            options = ["fill", "stroke", "wxfont"]
-            for optional in options:
-                if hasattr(e, optional):
-                    setattr(copy_node, optional, getattr(e, optional))
-            options = []
-            for prop in dir(e):
-                if prop.startswith("mk"):
-                    options.append(prop)
-            for optional in options:
-                if hasattr(e, optional):
-                    setattr(copy_node, optional, getattr(e, optional))
-                    had_optional = True
+            for entry in to_be_copied:
+                e = entry[0]
+                oldparent = entry[1]
+                newparent = entry[2]
+                if newparent is None:
+                    # Add a new group...
+                    if oldparent.label is None:
+                        newlabel = "Copy"
+                    else:
+                        newlabel = f"Copy of {oldparent.display_label()}"
+                    if oldparent.id is None:
+                        newid = "Copy"
+                    else:
+                        newid = f"Copy of {oldparent.id}"
+                    newparent = oldparent.parent.add(
+                        type="group",
+                        label=newlabel,
+                        id=newid,
+                    )
+                    # and amend all other entries
+                    for others in to_be_copied:
+                        if others[1] is oldparent and others[2] is None:
+                            others[2] = newparent
 
-            newparent.add_node(copy_node)
-            copy_nodes.append(copy_node)
-            # The copy remains at the same place, we are moving the originals,
-            # to provide the impression we are doing the right thing, we amend
-            # consequently the original.
-            if elements.copy_increases_wordlist_references and hasattr(e, "text"):
-                e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
-                e.altered()
-                changed_nodes.append(e)
-            elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
-                e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
-                e.altered()
-                changed_nodes.append(e)
-            delta_wordlist = 1
-            if had_optional:
-                for property_op in self.scene.context.kernel.lookup_all(
-                    "path_updater/.*"
-                ):
-                    property_op(self.scene.context, e)
+                copy_node = copy(e)
+                copy_node.emphasized = False
+                copy_node.selected = False
+                had_optional = False
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                options = []
+                for prop in dir(e):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                        had_optional = True
 
-        if len(changed_nodes) > 0:
-            self.scene.context.signal("element_property_update", changed_nodes)
-        elements.classify(copy_nodes)
+                newparent.add_node(copy_node)
+                copy_nodes.append(copy_node)
+                # The copy remains at the same place, we are moving the originals,
+                # to provide the impression we are doing the right thing, we amend
+                # consequently the original.
+                if elements.copy_increases_wordlist_references and hasattr(e, "text"):
+                    e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
+                    e.altered()
+                    changed_nodes.append(e)
+                elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                    e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
+                    e.altered()
+                    changed_nodes.append(e)
+                delta_wordlist = 1
+                if had_optional:
+                    for property_op in self.scene.context.kernel.lookup_all(
+                        "path_updater/.*"
+                    ):
+                        property_op(self.scene.context, e)
+
+            if len(changed_nodes) > 0:
+                self.scene.context.signal("element_property_update", changed_nodes)
+            elements.classify(copy_nodes)
 
     def process_draw(self, gc):
         if self.master.tool_running:  # We don't need that overhead
@@ -1513,9 +1528,9 @@ class MoveWidget(Widget):
                         e.matrix.post_translate(dx, dy)
                         # We would normally not adjust the node properties,
                         # but the pure adjustment of the bbox is hopefully not hurting
-                        e.translated(dx, dy)
+                        e.translated(dx, dy, interim=False)
                     self.translate(dx, dy)
-
+                elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
     def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
@@ -1523,7 +1538,7 @@ class MoveWidget(Widget):
         Change the position of the selected elements.
         """
 
-        def move_to(dx, dy):
+        def move_to(dx, dy, interim=True):
             if dx == 0 and dy == 0:
                 return
             self.total_dx += dx
@@ -1542,11 +1557,13 @@ class MoveWidget(Widget):
                     e.matrix.post_translate(dx, dy)
                     # We would normally not adjust the node properties,
                     # but the pure adjustment of the bbox is hopefully not hurting
-                    e.translated(dx, dy)
+                    e.translated(dx, dy, interim=interim)
             self.translate(dx, dy)
+            elements.signal("updating")
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
+        elements.set_start_time("movewidget")
         lastdx = 0
         lastdy = 0
         if nearest_snap is None:
@@ -1602,6 +1619,10 @@ class MoveWidget(Widget):
                     dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
                 # Find the minimum distance and its corresponding indices
                 min_dist = np.min(dist)
+                if np.isnan(min_dist):
+                    # print (f"Encountered the infamous bug: {p1} {p2}")
+                    # Still need an example when that happens
+                    return None, 0, 0
                 min_indices = np.argwhere(dist == min_dist)
 
                 # Return the coordinates of the two points
@@ -1617,7 +1638,7 @@ class MoveWidget(Widget):
                 and not "shift" in modifiers
                 and b is not None
             ):
-                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
                 # We gather all points of non-selected elements,
                 # but only those that lie within the boundaries
                 # of the selected area
@@ -1643,22 +1664,16 @@ class MoveWidget(Widget):
                     last = None
                     for seg in geom.segments[: geom.index]:
                         start = seg[0]
-                        seg_type = int(seg[2].real)
+                        seg_type = geom._segtype(seg)
                         end = seg[4]
-                        if seg_type != TYPE_END:
-                            if start != last:
-                                xx = start.real
-                                yy = start.imag
-                                ignore = (
-                                    xx < b[0] - gap
-                                    or xx > b[2] + gap
-                                    or yy < b[1] - gap
-                                    or yy > b[3] + gap
-                                )
-                                if not ignore:
-                                    target.append(start)
-                            xx = end.real
-                            yy = end.imag
+                        if seg_type in NON_GEOMETRY_TYPES:
+                            continue
+                        if np.isnan(start) or np.isnan(end):
+                            print (f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                            continue
+                        if start != last:
+                            xx = start.real
+                            yy = start.imag
                             ignore = (
                                 xx < b[0] - gap
                                 or xx > b[2] + gap
@@ -1666,8 +1681,18 @@ class MoveWidget(Widget):
                                 or yy > b[3] + gap
                             )
                             if not ignore:
-                                target.append(end)
-                            last = end
+                                target.append(start)
+                        xx = end.real
+                        yy = end.imag
+                        ignore = (
+                            xx < b[0] - gap
+                            or xx > b[2] + gap
+                            or yy < b[1] - gap
+                            or yy > b[3] + gap
+                        )
+                        if not ignore:
+                            target.append(end)
+                        last = end
                 # t2 = perf_counter()
                 if (
                     other_points is not None
@@ -1679,13 +1704,13 @@ class MoveWidget(Widget):
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
-                    if dist < gap:
+                    if dist is not None and dist < gap:
                         did_snap_to_point = True
                         dx = pt1.real - pt2.real
                         dy = pt1.imag - pt2.imag
                         self.total_dx = 0
                         self.total_dy = 0
-                        move_to(dx, dy)
+                        move_to(dx, dy, interim=False)
                 # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
@@ -1695,7 +1720,7 @@ class MoveWidget(Widget):
                 and not did_snap_to_point
             ):
                 # t1 = perf_counter()
-                gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
                 # Check for corner points + center:
                 selected_points = (
                     (b[0], b[1]),
@@ -1714,13 +1739,13 @@ class MoveWidget(Widget):
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                    if dist < gap:
+                    if dist is not None and dist < gap:
                         did_snap_to_point = True
                         dx = pt1[0] - pt2[0]
                         dy = pt1[1] - pt2[1]
                         self.total_dx = 0
                         self.total_dy = 0
-                        move_to(dx, dy)
+                        move_to(dx, dy, interim=False)
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
@@ -1730,10 +1755,10 @@ class MoveWidget(Widget):
 
             if not did_snap_to_point:
                 if nearest_snap is None:
-                    move_to(lastdx, lastdy)
+                    move_to(lastdx, lastdy, interim=False)
                 else:
                     move_to(
-                        lastdx - self.master.offset_x, lastdy - self.master.offset_y
+                        lastdx - self.master.offset_x, lastdy - self.master.offset_y, interim=False
                     )
                 self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
@@ -1748,9 +1773,7 @@ class MoveWidget(Widget):
             #             pass
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
-
-            self.scene.pane.modif_active = False
-            self.scene.context.signal("modified_by_tool")
+            update_elements(self.scene)
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
@@ -1758,13 +1781,14 @@ class MoveWidget(Widget):
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
-            elements.prepare_undo()
+            # Hint for translate check: _("Element shifted")
+            elements.undo.mark("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move
-            # b = elements.selected_area()  # correct, but slow...
-            move_to(dx, dy)
+            move_to(dx, dy, interim=True)
         self.scene.request_refresh()
+        elements.set_end_time("movewidget")
 
     def event(
         self,
@@ -2192,11 +2216,12 @@ class RefAlign(wx.Dialog):
         # begin wxGlade: RefAlign.__init__
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
+        self.context.themes.set_window_colors(self)
         self.SetTitle(_("Align Selection"))
 
         sizer_ref_align = wx.BoxSizer(wx.VERTICAL)
 
-        label_1 = wx.StaticText(
+        label_1 = wxStaticText(
             self,
             wx.ID_ANY,
             _("Move the selection into the reference object and scale the elements."),
@@ -2496,6 +2521,8 @@ class SelectionWidget(Widget):
                 if e.lock:
                     continue
                 e.matrix.post_rotate(angle, cx, cy)
+                if e.type == "elem image":
+                    e._cache = None
             # Update bbox
             cc[0] = cx - dy / 2
             cc[2] = cc[0] + dy
@@ -2541,7 +2568,7 @@ class SelectionWidget(Widget):
                 if e is not refob:
                     e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
                     e.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
-
+        elements.signal("updating")
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
     def show_reference_align_dialog(self, event):

@@ -15,10 +15,10 @@ jobs:
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
-    - name: Set up Python 3.10
+    - name: Set up Python 3.9
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.9'
     - name: Install dependencies
       run: |
         sudo apt install libgtk-3-dev cmake libeigen3-dev
@@ -34,17 +34,19 @@ jobs:
         pip install wheel
         pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install potracer
+        pip install pypotrace
         pip install pillow==9.5.0
         pip install ezdxf
         pip install pyserial
         pip install bitarray
-        pip install scipy
-        pip install .
+        # pip install scipy
         pip install numba
-        pip install meerk40t-camera 
         pip install --no-cache-dir opencv-python-headless==4.5.3.56
-        pip install meerk40t-barcodes
+        pip install meerk40t-camera
+        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+        pip install .
+        pip install meerk40t-barcodes
 
     - name: pip list
       run: |
