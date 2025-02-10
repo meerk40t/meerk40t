@@ -761,6 +761,8 @@ class NewlyDevice(Service, Status):
                 file_index = 0
             self.file_index = file_index
             channel(f"File index was set to #{file_index} (previous value: {old_value})")
+            # Let propertypanels know that this value was updated
+            self.signal("file_index", file_index, self)
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
