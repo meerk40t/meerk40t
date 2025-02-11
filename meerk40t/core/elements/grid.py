@@ -163,7 +163,7 @@ def init_commands(kernel):
         **kwargs,
     ):
         """
-        The grid command wil take the selection and crete copies orienting them in a rectangualr grid like fashion.
+        The grid command wil take the selection and create copies orienting them in a rectangular grid like fashion.
         You can define the amount of rows/columns and how the grid should be orientated around the original elements
         """
         if rows is None:
