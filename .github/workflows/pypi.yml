@@ -2,7 +2,9 @@ name: Publish MeerK40t to PyPI
 
 on: 
     workflow_dispatch:
-    push:
+   
+    release:
+      types: [published]
 
 jobs:
   build:
