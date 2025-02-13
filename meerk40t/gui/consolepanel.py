@@ -78,7 +78,7 @@ def register_panel_console(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Layer(2)
-        .MinSize(600, 100)
+        .MinSize(100, 100)
         .FloatingSize(600, 230)
         .Caption(_("Console"))
         .Name("console")
