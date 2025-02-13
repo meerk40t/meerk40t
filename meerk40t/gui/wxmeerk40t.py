@@ -560,15 +560,17 @@ class wxMeerK40t(wx.App, Module):
     def MacOpenFile(self, filename):
         try:
             if self.context is not None:
-                self.context.elements.load(os.path.realpath(filename))
+                channel = self.context.kernel.channel("console")
+                self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
         except AttributeError:
             pass
 
     def MacOpenFiles(self, filenames):
         try:
             if self.context is not None:
+                channel = self.context.kernel.channel("console")
                 for filename in filenames:
-                    self.context.elements.load(os.path.realpath(filename))
+                    self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
         except AttributeError:
             pass
 

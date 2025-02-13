@@ -228,7 +228,7 @@ def plugin(kernel, lifecycle):
             inkscape_path, filename = data
             channel(_("inkscape load - loading the previous conversion..."))
             try:
-                kernel.elements.load(filename)
+                kernel.elements.load(filename, svg_ppi=kernel.elements.svg_ppi)
             except BadFileError as e:
                 channel(_("File is Malformed."))
                 channel(str(e))
