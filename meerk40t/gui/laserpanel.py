@@ -18,7 +18,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon,
     icons8_save,
 )
-from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
+from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel, JogDistancePanel
 from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
@@ -47,10 +47,14 @@ def register_panel_laser(window, context):
     jog_drag.SetupScrolling()
     jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)
-    main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    distance_panel = JogDistancePanel(jog_drag, wx.ID_ANY, context=context)
+    main_sizer = wx.BoxSizer(wx.VERTICAL)
+    sub_sizer = wx.BoxSizer(wx.HORIZONTAL)
     # main_sizer.AddStretchSpacer()
-    main_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    sub_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    sub_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.Add(sub_sizer, 1, wx.EXPAND, 0)
+    main_sizer.Add(distance_panel, 0, wx.EXPAND, 0)
     # main_sizer.AddStretchSpacer()
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
@@ -97,7 +101,7 @@ def register_panel_laser(window, context):
         page = notebook.GetCurrentPage()
         if page is None:
             return
-        pages = [jog_panel, drag_panel] if page is jog_drag else [page]
+        pages = [jog_panel, drag_panel, distance_panel] if page is jog_drag else [page]
         for p in pages:
             if hasattr(p, "pane_show"):
                 p.pane_show()
@@ -127,8 +131,9 @@ def register_panel_laser(window, context):
         else:
             panel_size = (wb_size[0] / 2, wb_size[1])
 
-        jog_panel.set_icons(dimension=panel_size)
-        drag_panel.set_icons(dimension=panel_size)
+        for panel in (jog_panel, drag_panel, distance_panel):
+            if hasattr(panel, "set_icons"):
+                panel.set_icons(dimension=panel_size)
 
     jog_drag.Bind(wx.EVT_SIZE, on_resize)
 
