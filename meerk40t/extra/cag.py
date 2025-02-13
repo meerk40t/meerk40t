@@ -1,6 +1,5 @@
 from meerk40t.svgelements import Color, Path, Polygon
 
-
 def plugin(kernel, lifecycle):
     if lifecycle == "invalidate":
         try:
@@ -10,7 +9,7 @@ def plugin(kernel, lifecycle):
     elif lifecycle == "register":
         from ..core.elements.elements import linearize_path
         from ..tools import polybool as pb
-
+        from ..tools.geomstr import Geomstr, BeamTable
         _ = kernel.translation
         context = kernel.root
 
@@ -110,3 +109,80 @@ def plugin(kernel, lifecycle):
             else:
                 channel(_("No solution found (empty path)"))
                 return "elements", []
+
+
+        @context.console_option(
+            "keep", "k", type=bool, action="store_true", help="keep original elements"
+        )
+        @context.console_command(
+            ("g_intersection", "g_xor", "g_union", "g_difference"),
+            input_type="elements",
+            output_type="elements",
+            help=_("Constructive Additive Geometry: Add"),
+        )
+        def cag_geomstr(command, channel, _, keep=False, data=None, **kwargs):
+            if len(data) < 2:
+                channel(
+                    _(
+                        "Not enough items selected to apply constructive geometric function"
+                    )
+                )
+                return "elements", []
+
+            elements = context.elements
+            # reorder elements
+            data.sort(key=lambda n: n.emphasized_time)
+
+            last_fill = None
+            last_stroke = None
+            last_stroke_width = None
+            geom = Geomstr()
+            for i, node in enumerate(data):
+                if node.type in ("elem point", ) or not hasattr(node, "as_geometry"):
+                    channel("All elements need to be paths")
+                    return "elements", data
+                g = node.as_geometry()
+                g.flag_settings(flag=i)
+                geom.append(g)
+                if last_fill is None and hasattr(node, "fill"):
+                    last_fill = node.fill
+                if last_stroke is None and hasattr(node, "stroke"):
+                    last_stroke = node.stroke
+            geom_index = list(range(len(data)))
+            if geom.index == 0:
+                channel("Nothing found")
+                return "elements", data
+            bt = BeamTable(geom)
+            bt.compute_beam()
+            if command.endswith("intersection"):
+                q = bt.intersection(*geom_index)
+            elif command.endswith("xor"):
+                q = bt.combine()
+            elif command.endswith("union"):
+                q = bt.union(*geom_index)
+            else:
+                # difference
+                q = bt.difference(*geom_index)
+            if q.index:
+                with elements.undoscope("Constructive Additive Geometry: Add"):
+                    if not keep:
+                        for node in data:
+                            node.remove_node()
+                    stroke = last_stroke if last_stroke is not None else Color("blue")
+                    fill = last_fill
+                    stroke_width = last_stroke_width if last_stroke_width is not None else elements.default_strokewidth
+                    new_node = elements.elem_branch.add(
+                        geometry=q,
+                        type="elem path",
+                        stroke=stroke,
+                        fill=fill,
+                        stroke_width=stroke_width,
+                    )
+                    context.signal("refresh_scene", "Scene")
+                    if elements.classify_new:
+                        elements.classify([new_node])
+                return "elements", [node]
+            else:
+                channel(_("No solution found (empty path)"))
+                return "elements", []
+

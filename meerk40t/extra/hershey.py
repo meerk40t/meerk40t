@@ -2,7 +2,7 @@ import os
 import platform
 from functools import lru_cache
 from glob import glob
-from math import atan2
+from math import atan2, tau
 from os.path import basename, exists, join, realpath, splitext
 from meerk40t.svgelements import Matrix
 from meerk40t.core.node.elem_path import PathNode
@@ -71,12 +71,10 @@ class FontPath:
                 bend_pos = self.bend_geometry.position(e=range(self.bend_geometry.index), t=fract)
                 # We need to shift the character position
                 try:
-                    tangent = self.bend_geometry.tangent(e=range(self.bend_geometry.index), t=fract)
                     normal = self.bend_geometry.normal(e=range(self.bend_geometry.index), t=fract)
                 except ValueError:
-                    tangent = complex(1, 0) # regular
                     normal = complex(0, 1) # upwards
-                angle = atan2(tangent.real, tangent.imag)
+                angle = atan2(normal.real, normal.imag) - tau/4
                 matrix = Matrix()
                 # Rotate around center of character
                 matrix.post_rotate(angle, (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
