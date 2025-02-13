@@ -187,7 +187,7 @@ def init_commands(kernel):
             return
         try:
             channel(_("loading..."))
-            result = self.load(new_file)
+            result = self.load(new_file, svg_ppi=self.svg_ppi)
             if result:
                 channel(_("Done."))
         except AttributeError:
