@@ -3570,6 +3570,40 @@ def init_tree(kernel):
         with self.undoscope("Outline"):
             self(f"outline {offset}mm\n")
         self.signal("refresh_tree")
+    
+    @tree_conditional(
+        lambda node: not is_regmark(node)
+        and hasattr(node, "as_geometry")
+    )
+    @tree_submenu(_("Offset shapes..."))
+    @tree_iterate("offset", 1, 5)
+    @tree_operation(
+        _("...to outside with {offset}mm distance"),
+        node_type=elem_nodes,
+        help=_("Create an outer offset around the selected elements"),
+        grouping="50_ELEM_MODIFY_ZMISC"
+    )
+    def make_positive_offsets(node, offset=1, **kwargs):
+        with self.undoscope("Offset"):
+            self(f"offset {offset}mm\n")
+        self.signal("refresh_tree")
+
+    @tree_conditional(
+        lambda node: not is_regmark(node)
+        and hasattr(node, "as_geometry")
+    )
+    @tree_submenu(_("Offset shapes..."))
+    @tree_iterate("offset", 1, 5)
+    @tree_operation(
+        _("...to inside with {offset}mm distance"),
+        node_type=elem_nodes,
+        help=_("Create an inner offset around the selected elements"),
+        grouping="50_ELEM_MODIFY_ZMISC"
+    )
+    def make_negative_offsets(node, offset=1, **kwargs):
+        with self.undoscope("Offset"):
+            self(f"offset -{offset}mm\n")
+        self.signal("refresh_tree")
 
     def mergeable(node):
         elems = list(self.elems(emphasized=True))
