@@ -563,7 +563,10 @@ class Button:
         """
 
         def toggle_click(origin, *args):
-            set_value = getattr(self.object, self.toggle_attr) if self.toggle_attr else not self.toggle
+            # Whats the value to set?
+            set_value = args[0] if args else not self.toggle
+            # But if we have a toggle_attr then this has precedence
+            set_value = getattr(self.object, self.toggle_attr) if self.toggle_attr else set_value
             self.set_button_toggle(set_value)
 
         self.context.listen(signal, toggle_click)
