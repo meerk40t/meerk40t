@@ -150,7 +150,7 @@ def plugin(kernel, lifecycle):
         if org_x != 0 or org_y != 0:
             channel(f"Upper left corner at: {Length(org_x, digits=2, preferred_units=units)}, {Length(org_y, digits=2, preferred_units=units)}")
 
-        res = elements_service.load(filename)
+        res = elements_service.load(filename, ppi_svg = elements_service.ppi_svg)
         if not res:
             channel("Could not load any data")
             return
