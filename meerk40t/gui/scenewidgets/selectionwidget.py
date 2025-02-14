@@ -1610,24 +1610,27 @@ class MoveWidget(Widget):
                 """
                 Calculates the shortest distance between two arrays of 2-dimensional points.
                 """
-                # Calculate the Euclidean distance between each point in p1 and p2
-                if tuplemode:
-                    # For an array of tuples:
-                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-                else:
-                    # For an array of complex numbers
-                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
-                # Find the minimum distance and its corresponding indices
-                min_dist = np.min(dist)
-                if np.isnan(min_dist):
-                    # print (f"Encountered the infamous bug: {p1} {p2}")
-                    # Still need an example when that happens
-                    return None, 0, 0
-                min_indices = np.argwhere(dist == min_dist)
+                try:
+                    # Calculate the Euclidean distance between each point in p1 and p2
+                    if tuplemode:
+                        # For an array of tuples:
+                        dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                    else:
+                        # For an array of complex numbers
+                        dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+                    # Find the minimum distance and its corresponding indices
+                    min_dist = np.min(dist)
+                    if np.isnan(min_dist):
+                        # print (f"Encountered the infamous bug: {p1} {p2}")
+                        # Still need an example when that happens
+                        return None, 0, 0
+                    min_indices = np.argwhere(dist == min_dist)
 
-                # Return the coordinates of the two points
-                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-
+                    # Return the coordinates of the two points
+                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+                except Exception: # out of memory eg
+                    return None, None, None
+                
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
