@@ -24,10 +24,12 @@ def plugin(service, lifecycle):
         from meerk40t.lihuiyu.gui.lhydrivergui import LihuiyuDriverGui
         from meerk40t.lihuiyu.gui.lhyoperationproperties import LhyAdvancedPanel
         from meerk40t.lihuiyu.gui.tcpcontroller import TCPController
+        from meerk40t.lihuiyu.gui.lhyextendedinfo import LihuiyuBoardInformation
 
         service.register("window/Controller", LihuiyuControllerGui)
         service.register("window/Configuration", LihuiyuDriverGui)
         service.register("window/Acceleration-Chart", LihuiyuAccelerationChart)
+        service.register("window/Board-Information", LihuiyuBoardInformation)
         service.register("window/Network-Controller", TCPController)
 
         service.register("winpath/Controller", service)
