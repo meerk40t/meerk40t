@@ -31,6 +31,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
+    dip_size,
     StaticBoxSizer,
     create_menu_for_node,
     get_gc_full_scale,
@@ -2393,6 +2394,8 @@ class SelectionWidget(Widget):
         self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
         # want to have sharp edges
         self.handle_pen.SetJoin(wx.JOIN_MITER)
+        fact = dip_size(self.scene.pane, 100, 100)
+        self.font_size_factor = (fact[0] + fact[1]) / 100 * 0.5
 
         self.gc = None
         self.reset_variables()
@@ -2800,7 +2803,7 @@ class SelectionWidget(Widget):
             try:
                 factor = math.sqrt(abs(matrix.determinant))
                 self.line_width = 2.0 / factor
-                self.font_size = 14.0 / factor
+                self.font_size = 12.0 / factor * self.font_size_factor
             except ZeroDivisionError:
                 matrix.reset()
                 return

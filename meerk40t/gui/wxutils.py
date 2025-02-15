@@ -1222,7 +1222,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         if label is None:
             label = ""
         self.sbox = wx.StaticBox(parent, id, label=label)
-        self.sbox.SetMinSize(dip_size(self, 50, 50))
+        self.sbox.SetMinSize(dip_size(self.sbox, 50, 50))
         super().__init__(self.sbox, orientation)
         self.parent = parent
 

@@ -580,7 +580,7 @@ class ShadowTree:
         self.tree_images = None
         self.name = "Project"
         self._freeze = False
-        testsize = dip_size(self, 20, 20)
+        testsize = dip_size(self.wxtree, 20, 20)
         self.iconsize = testsize[1]
         self.iconstates = {}
         self.last_call = 0
