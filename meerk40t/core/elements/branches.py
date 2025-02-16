@@ -1410,6 +1410,20 @@ def init_commands(kernel):
                 self.remove_operations(data)
         self.signal("update_group_labels")
 
+    @self.console_command(
+        "clear_all", help=_("Clear all content"), input_type=("elements", "ops")
+    )
+    def e_clear(command, channel, _, data=None, data_type=None, **kwargs):
+        channel(_("Deleting…"))
+        fast = True
+        with self.undoscope("Deleting"):
+            if data_type == "elements":
+                self.clear_elements(fast=fast)
+                self.emphasized()
+            else:
+                self.clear_operations(fast=fast)
+        self.signal("rebuild_tree", "all")
+
     # ==========
     # ELEMENT BASE
     # ==========
@@ -1490,7 +1504,7 @@ def init_commands(kernel):
         else:
             target = self.reg_branch
             scope = "Elements -> Regmarks"
-        
+
         with self.undoscope(scope):
             if data is None:
                 data = list()
@@ -1826,8 +1840,8 @@ def init_commands(kernel):
                     subpath.ensure_proper_subpaths()
                     idx += 1
                     subnode = group_node.add(
-                        geometry=subpath, 
-                        type="elem path", 
+                        geometry=subpath,
+                        type="elem path",
                         label=f"{node_label}-{idx}",
                         stroke=node_attributes.get("stroke", None),
                         fill=node_attributes.get("fill", None),
