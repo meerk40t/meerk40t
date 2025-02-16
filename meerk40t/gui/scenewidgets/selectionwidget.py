@@ -269,7 +269,7 @@ class BorderWidget(Widget):
             if self.show_rb:
                 gc.StrokeLine(sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h)
                 gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
-    
+
             mypen.SetStyle(wx.PENSTYLE_DOT)
             gc.SetPen(mypen)
             gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
@@ -336,7 +336,7 @@ class BorderWidget(Widget):
                 s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 pos = self.right + rpos / 2.0 - t_width / 2
-                if pos - t_width - distance <= self.right:
+                if pos - distance <= self.right:
                     pos = self.right + distance
                 gc.DrawText(s_txt, pos, center_y)
 
@@ -1631,7 +1631,7 @@ class MoveWidget(Widget):
                     return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
                 except Exception: # out of memory eg
                     return None, None, None
-                
+
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
