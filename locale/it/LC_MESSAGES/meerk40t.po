@@ -718,7 +718,7 @@ msgstr "Provare a scollegare la connessione USB."
 
 #: meerk40t/balormk/mock_connection.py:38
 msgid "Mock Disconnection Successful.\n"
-msgstr ""
+msgstr "Modalità simulazione"
 
 #: meerk40t/balormk/usb_connection.py:28
 #: meerk40t/device/ch341/ch341libusbdriver.py:66
@@ -5513,7 +5513,7 @@ msgid ""
 "choose one point on the other side of the corner.\n"
 "MK will create a square for you for further processing."
 msgstr ""
-"Istruzioni: posizionare il laser sulk primo dei due punti su un lato del quadrato posto"
+"Istruzioni: posizionare il laser sul primo dei due punti su un lato del quadrato posto"
 "sul piano di lavoro e confermare con il pulsante corrispondente ai punti.\n"
 "Ripetere l'operazione per il punto sull'altro lato .\n"
 "MK creerà il quadrato trovato per la successiva elaborazione"
@@ -5965,7 +5965,7 @@ msgstr "Allinea il laser alla prima posizione"
 
 #: meerk40t/gui/navigationpanels.py:414
 msgid "Perform a convex hull trace of the selection"
-msgstr "Traccia esattamente il contorno della selezione"
+msgstr "Esegui un tracciamento dello poligono convesso della selezione"
 
 #: meerk40t/gui/navigationpanels.py:420
 msgid "Perform a simple trace of the selection (Right=Circle around)"
@@ -6604,7 +6604,7 @@ msgstr "Impostazioni"
 
 #: meerk40t/gui/preferences.py:409
 msgid "Opens Preferences Window"
-msgstr "Apre le impostazioni"
+msgstr "Apre le Preferenze"
 
 #: meerk40t/gui/preferences.py:422
 msgid "Pr&eferences...\tCtrl-,"
@@ -12403,7 +12403,7 @@ msgstr ""
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:869
 msgid "Scale Speed"
-msgstr "Velocità di scala"
+msgstr "Imposta la velocità in scala"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:871
 #, python-format
@@ -13633,7 +13633,7 @@ msgid "Create corresponding operations for Power and Speed pairs"
 msgstr "Crea Processi associati per le coppie potenza/velocità"
 
 msgid "Scale Speed"
-msgstr "Velocità di scalatura"
+msgstr "Impostazioni la velocità in scala"
 
 msgid ""
 "Set lower and higher level to scale the speed\n"
@@ -13657,7 +13657,7 @@ msgid "Maximum speed used will be mapped to upper level"
 msgstr "Il valore più alto trovato viene impostato sulla velocità massima"
 
 msgid "Scale Power"
-msgstr "Scala la potenza del laser"
+msgstr "Imposta la potenza in scala"
 
 msgid ""
 "Set lower and higher level to scale the power\n"
@@ -14746,13 +14746,13 @@ msgid "Unlevel groups if they just contain another group"
 msgstr "Imposta i gruppi a un livello inferiore se contengono solo un altro gruppo"
 
 msgid "Scale speed settings"
-msgstr "Velocità di scalatura"
+msgstr "Imposta i parametri di velocita in scala"
 
 msgid "Max speed = {speed}mm/s"
 msgstr "Velocità massima = {speed}mm/s"
 
 msgid "Scale power settings"
-msgstr "Impostazioni di potenza in scala"
+msgstr "Imposta i parametri di potenza in scala"
 
 msgid "Max power = {power}ppi ({power_10}%)"
 msgstr "Potenza massima = {power}ppi ({power_10}%)"
@@ -16631,7 +16631,7 @@ msgstr "Formato copia"
 
 #: ./meerk40t\gui\wxmmain.py:1307
 msgid "Click again to disable the paint mode"
-msgstr "Copiare di nuovo per uscire dalla modalità di copia del formato"
+msgstr "Click di nuovo per uscire dalla modalità di 'copia formato'"
 
 #: ./meerk40t\gui\gui_mixins.py:36
 msgid "First select your template, then every subsequent selection will apply the templates properties to the selected elements"
@@ -17481,6 +17481,14 @@ msgstr "Esporta le impostazioni attuali"
 #: meerk40t/grbl/gui/grblhardwareconfig.py:213
 msgid "GRBL Hardware Config"
 msgstr "Parametri hardware GRBL"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:43
+msgid "Explanation"
+msgstr "Spiegazione"
+
+#: meerk40t/grbl/gui/grblhardwareconfig.py:44
+msgid "Open the GRBL wiki for a detailed explanation"
+msgstr "Apri la wiki GRBL per una spiegazione dettagliata"
 
 #: meerk40t/grbl/gui/grbloperationconfig.py:23
 msgid "Advanced Features:"
@@ -20032,6 +20040,322 @@ msgstr "Test"
 msgid "Bits"
 msgstr "Bits"
 
+#: meerk40t/core/elements/grid.py:47
+msgid "Distance not absolute but as relative gap"
+msgstr "Distanza non assoluta ma come divario relativo"
+
+#: meerk40t/core/elements/grid.py:237
+msgid "Leave copies unrotated?"
+msgstr "Mantenere le copie senza rotazione?"
+
+#: ./meerk40t\gui\laserpanel.py:75
+msgid "Plan"
+msgstr "Piano"
+
+#: meerk40t/gui/wxmeerk40t.py:813
+msgid "Function to call interactively"
+msgstr "Funzione da chiamare interattivamente"
+
+#: meerk40t/gui/wxmeerk40t.py:814
+msgid "Provides a GUI wrapper around a console command"
+msgstr "Fornisce un wrapper GUI attorno a un comando della console"
+
+#: meerk40t/gui/wxmeerk40t.py:817
+msgid "You need to provide a function name"
+msgstr "È necessario fornire il nome di una funzione"
+
+#: meerk40t/gui/wxmeerk40t.py:820
+msgid "It does not make sense, to run '{command}' in a GUI"
+msgstr "Non ha senso eseguire '{command}' in una GUI"
+
+#: meerk40t/gui/wxmeerk40t.py:827
+msgid "Command {command}"
+msgstr "Comando {command}"
+
+#: meerk40t/gui/wxmmain.py:2168 meerk40t/gui/wxmmain.py:2182
+msgid "Create copies of the current selection"
+msgstr "Crea copie dell'oggetto selezionato"
+
+#: meerk40t/gui/wxmmain.py:2191 meerk40t/gui/wxmmain.py:2201
+msgid "Create copies of the current selection on a circle"
+msgstr "Crea copie della selezione corrente su un cerchio"
+
+#: meerk40t/gui/wxmmain.py:2203
+msgid "Radial"
+msgstr "Radiale"
+
+#: meerk40t/gui/wxmribbon.py:110
+msgid "Icon-bar with object modification tools"
+msgstr "Barra delle icone con strumenti di modifica degli oggetti"
+
+#: meerk40t/gui/magnetoptions.py:19
+msgid "Magnet-Options"
+msgstr "Opzioni Magneti"
+
+#: meerk40t/gui/magnetoptions.py:26
+msgid "Edit magnet snapping options"
+msgstr "Modifica le opzioni di aggancio dei magneti"
+
+#: meerk40t/gui/magnetoptions.py:46
+msgid "Will a magnet line attract the left/right edges of an object"
+msgstr "Una linea magnete attrarrà i bordi sinistro/destro di un oggetto?"
+
+#: meerk40t/gui/magnetoptions.py:48
+msgid "Will a magnet line attract the top/bottom edges of an object"
+msgstr "Una linea magnete attrarrà i bordi superiore/inferiore di un oggetto?"
+
+#: meerk40t/gui/magnetoptions.py:50
+msgid "Will a magnet line attract the center of an object"
+msgstr "Una linea magnete attrarrà il centro di un oggetto?"
+
+#: meerk40t/gui/magnetoptions.py:65
+msgid "Define the attraction strength from weak (very close) to enormous (from far away)"
+msgstr "Definisci l'intensità di attrazione da debole (molto vicino) a enorme (da lontano)"
+
+#: meerk40t/gui/magnetoptions.py:68
+msgid "Save/Load settings"
+msgstr "Salva/Carica impostazioni"
+
+#: meerk40t/gui/magnetoptions.py:71
+msgid "Name to save to / load from the current settings"
+msgstr "Nome per salvare/caricare le impostazioni correnti"
+
+#: meerk40t/gui/magnetoptions.py:73
+msgid "Load an existing setting configuration"
+msgstr "Carica una configurazione di impostazioni esistente"
+
+#: meerk40t/gui/magnetoptions.py:75
+msgid "Save the current configuration for later reuse"
+msgstr "Salva la configurazione corrente per un uso successivo"
+
+#: meerk40t/gui/magnetoptions.py:201
+msgid "Set single line"
+msgstr "Imposta linea singola"
+
+#: meerk40t/gui/magnetoptions.py:202
+msgid "Position:"
+msgstr "Posizione:"
+
+#: meerk40t/gui/magnetoptions.py:206
+msgid "Define the position of the magnet line"
+msgstr "Definisci la posizione della linea magnete"
+
+#: meerk40t/gui/magnetoptions.py:207
+msgid "Toggle a magnet line at the position on the X-axis"
+msgstr "Attiva/disattiva una linea magnete nella posizione sull'asse X"
+
+#: meerk40t/gui/magnetoptions.py:208
+msgid "Toggle a magnet line at the position on the Y-axis"
+msgstr "Attiva/disattiva una linea magnete nella posizione sull'asse Y"
+
+#: meerk40t/gui/magnetoptions.py:216
+msgid "Set around selection"
+msgstr "Imposta intorno alla selezione"
+
+#: meerk40t/gui/magnetoptions.py:227
+msgid "Toggle a magnet line at the left edge of the selection"
+msgstr "Attiva/disattiva una linea magnete sul bordo sinistro della selezione"
+
+#: meerk40t/gui/magnetoptions.py:228
+msgid "Toggle a magnet line at the horizontal center of the selection"
+msgstr "Attiva/disattiva una linea magnete al centro orizzontale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:229
+msgid "Toggle a magnet line at the right edge of the selection"
+msgstr "Attiva/disattiva una linea magnete sul bordo destro della selezione"
+
+#: meerk40t/gui/magnetoptions.py:230
+msgid "Toggle magnet lines at 1/3 and 2/3 across the horizontal extent of the selection"
+msgstr "Attiva/disattiva linee magnete a 1/3 e 2/3 dell'estensione orizzontale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:231
+msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the horizontal extent of the selection"
+msgstr "Attiva/disattiva linee magnete a 1/4, 2/4 e 3/4 dell'estensione orizzontale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:232
+msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the horizontal extent of the selection"
+msgstr "Attiva/disattiva linee magnete a 1/5, 2/5, 3/5 e 4/5 dell'estensione orizzontale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:249
+msgid "Toggle a magnet line at the top edge of the selection"
+msgstr "Attiva/disattiva una linea magnete sul bordo superiore della selezione"
+
+#: meerk40t/gui/magnetoptions.py:250
+msgid "Toggle a magnet line at the vertical center of the selection"
+msgstr "Attiva/disattiva una linea magnete al centro verticale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:251
+msgid "Toggle a magnet line at the bottom edge of the selection"
+msgstr "Attiva/disattiva una linea magnete sul bordo inferiore della selezione"
+
+#: meerk40t/gui/magnetoptions.py:252
+msgid "Toggle magnet lines at 1/3 and 2/3 across the vertical extent of the selection"
+msgstr "Attiva/disattiva linee magnete a 1/3 e 2/3 dell'estensione verticale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:253
+msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the vertical extent of the selection"
+msgstr "Attiva/disattiva linee magnete a 1/4, 2/4 e 3/4 dell'estensione verticale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:254
+msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the vertical extent of the selection"
+msgstr "Attiva/disattiva linee magnete a 1/5, 2/5, 3/5 e 4/5 dell'estensione verticale della selezione"
+
+#: meerk40t/gui/magnetoptions.py:274
+msgid "Clears all magnet lines"
+msgstr "Cancella tutte le linee magnete"
+
+#: meerk40t/gui/magnetoptions.py:275
+msgid "Clear X"
+msgstr "Cancella X"
+
+#: meerk40t/gui/magnetoptions.py:276
+msgid "Clears magnet lines on X-axis"
+msgstr "Cancella linee magnete sull'asse X"
+
+#: meerk40t/gui/magnetoptions.py:277
+msgid "Clear Y"
+msgstr "Cancella Y"
+
+#: meerk40t/gui/magnetoptions.py:278
+msgid "Clears magnet lines on Y-axis"
+msgstr "Cancella linee magnete sull'asse Y"
+
+#: meerk40t/gui/magnetoptions.py:407
+msgid "Actions"
+msgstr "Azioni"
+
+#: meerk40t/core/elements/element_treeops.py:4492 meerk40t/core/elements/element_treeops.py:4501 meerk40t/core/elements/element_treeops.py:4510 meerk40t/core/elements/element_treeops.py:4527 meerk40t/core/elements/element_treeops.py:4537 meerk40t/core/elements/element_treeops.py:4545
+msgid "Magnets"
+msgstr "Magneti"
+
+#: meerk40t/core/elements/element_treeops.py:4493
+msgid "...around horizontal edges"
+msgstr "...sui bordi orizzontali"
+
+#: meerk40t/core/elements/element_treeops.py:4493
+msgid "Create magnets around horizontal edges"
+msgstr "Crea magneti sui bordi orizzontali"
+
+#: meerk40t/core/elements/element_treeops.py:4502 meerk40t/core/elements/element_treeops.py:4538
+msgid "...including center"
+msgstr "...incluso il centro"
+
+#: meerk40t/core/elements/element_treeops.py:4502
+msgid "Create magnets around horizontal edges + center"
+msgstr "Crea magneti sui bordi orizzontali + centro"
+
+#: meerk40t/core/elements/element_treeops.py:4512 meerk40t/core/elements/element_treeops.py:4548
+msgid "...create edges plus every 1/{steps}"
+msgstr "...crea bordi più uno ogni 1/{steps}"
+
+#: meerk40t/core/elements/element_treeops.py:4512
+msgid "Create magnets equally spaced along horizontal extension"
+msgstr "Crea magneti equidistanti lungo l'estensione orizzontale"
+
+#: meerk40t/core/elements/element_treeops.py:4529
+msgid "...around vertical edges"
+msgstr "...sui bordi verticali"
+
+#: meerk40t/core/elements/element_treeops.py:4529
+msgid "Create magnets around vertical edges"
+msgstr "Crea magneti sui bordi verticali"
+
+#: meerk40t/core/elements/element_treeops.py:4538
+msgid "Create magnets around vertical edges + center"
+msgstr "Crea magneti sui bordi verticali + centro"
+
+#: meerk40t/core/elements/element_treeops.py:4548
+msgid "Create magnets equally spaced along vertical extension"
+msgstr "Crea magneti equidistanti lungo l'estensione verticale"
+
+#: meerk40t/gui/wxmmain.py:1219
+msgid "Coordinate display"
+msgstr "Visualizzazione coordinate"
+
+#: meerk40t/gui/wxmmain.py:1222
+msgid "What coordination information shall be displayed while moving: to all edges, left/upper edge or none at all"
+msgstr "Quali informazioni di coordinata devono essere visualizzate durante lo spostamento: a tutti i bordi, al bordo sinistro/superiore o nessuno?"
+
+#: meerk40t/gui/wxmmain.py:1227
+msgid "All edges"
+msgstr "Tutti i bordi"
+
+#: meerk40t/gui/wxmmain.py:1227
+msgid "Left/upper edge"
+msgstr "Bordo sinistro/superiore"
+
+#: meerk40t/core/elements/render.py:82 meerk40t/core/elements/render.py:239 meerk40t/core/elements/render.py:500 meerk40t/core/elements/render.py:577 meerk40t/core/elements/render.py:672
+msgid "Too much memory required."
+msgstr "Richiesta di memoria troppo alta"
+
+#: meerk40t/grbl/gui/grblcontroller.py:90
+msgid "Gcode"
+msgstr "Gcode"
+
+#: ./meerk40t\grbl\gui\grblcontroller.py:89
+msgid "GRBL"
+msgstr "GRBL"
+
+#: ./meerk40t\gui\dialogoptions.py:73
+msgid "OK"
+msgstr "Ok"
+
+#: meerk40t/extra/coolant.py:217
+msgid "GCode M7/M9"
+msgstr "GCode M7/M9"
+
+#: meerk40t/extra/coolant.py:218
+msgid "GCode M8/M9"
+msgstr "GCode M8/M9"
+
+
+#: meerk40t/core/elements/shapes.py:181
+msgid "X-coordinate of center"
+msgstr "Coordinata X del centro"
+
+#: meerk40t/core/elements/shapes.py:182
+msgid "Y-coordinate of center"
+msgstr "Coordinata Y del centro"
+
+#: meerk40t/core/elements/shapes.py:183
+msgid "Primary radius of ellipse"
+msgstr "Raggio principale dell'ellisse"
+
+#: meerk40t/core/elements/shapes.py:184
+msgid "Secondary radius of ellipse (default equal to primary radius=circle)"
+msgstr "Raggio secondario dell'ellisse (predefinito uguale al raggio principale = cerchio)"
+
+#: meerk40t/core/elements/shapes.py:185
+msgid "Start angle of arc (default 0°)"
+msgstr "Angolo iniziale dell'arco (predefinito 0°)"
+
+#: meerk40t/core/elements/shapes.py:186
+msgid "End angle of arc (default 360°)"
+msgstr "Angolo finale dell'arco (predefinito 360°)"
+
+#: meerk40t/core/elements/shapes.py:188
+msgid "Rotation of arc"
+msgstr "Rotazione dell'arco"
+
+#: meerk40t/core/elements/shapes.py:192
+msgid "arc <cx> <cy> <rx> <ry> <start> <end>"
+msgstr "arco <cx> <cy> <rx> <ry> <inizio> <fine>"
+
+
+#: meerk40t/newly/device.py:755
+msgid "Sets the default file index to use"
+msgstr "Imposta l'indice di file predefinito da utilizzare"
+
+#: meerk40t/gui/navigationpanels.py:414
+msgid "Perform a convex hull trace of the selection (Right different algorithm)"
+msgstr "Traccia esattamente il contorno della selezione\n(Click destro: algoritmo diverso)"
+
+#: meerk40t/ch341/libusb.py:518
+msgid "Connection to USB failed: {e}.\n"
+msgstr "Connessione USB fallita: {e}.\n"
+
+
+
 #: ./meerk40t\camera\plugin.py:94
 msgid "Known camera URIs:"
 msgstr "URI noti della videocamera:"
@@ -20313,14 +20637,6 @@ msgstr "Non utilizzato"
 msgid "displays registered coolant methods"
 msgstr "visualizza i metodi di raffreddamento registrati"
 
-#: meerk40t/extra/coolant.py:217
-msgid "GCode M7/M9"
-msgstr ""
-
-#: meerk40t/extra/coolant.py:218
-msgid "GCode M8/M9"
-msgstr ""
-
 #: ./meerk40t\extra\inkscape.py:356
 msgid "Optional: location of inkscape executable"
 msgstr "Opzionale: posizione dell'eseguibile di inkscape"
@@ -20367,9 +20683,6 @@ msgstr "un altro test per \"
 msgid "another test for \""
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:47
-msgid "Distance not absolute but as relative gap"
-msgstr "Distanza non assoluta ma come divario relativo"
 
 #: meerk40t/core/elements/shapes.py:726
 msgid "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
@@ -20683,10 +20996,6 @@ msgstr "Libreria dei materiali"
 msgid "Internal name of the library entry."
 msgstr "Nome interno della voce di libreria"
 
-#: ./meerk40t\gui\laserpanel.py:75
-msgid "Plan"
-msgstr "Piano"
-
 #: ./meerk40t\extra\inkscape.py:370
 msgid "Inkscape location: {match}"
 msgstr "Posizione di Inkscape: {match}"
@@ -20726,10 +21035,6 @@ msgstr "Visualizza e modifica le proprietà dell'oggetto"
 #: meerk40t/image/imagetools.py:604 meerk40t/image/imagetools.py:731 meerk40t/image/imagetools.py:1681
 msgid "Paths around images"
 msgstr "Percorsi attorno alle immagini"
-
-#: meerk40t/gui/wxmribbon.py:110
-msgid "Icon-bar with object modification tools"
-msgstr "Barra delle icone con strumenti di modifica degli oggetti"
 
 #: ./meerk40t\core\elements\placements.py:187
 msgid "Nothing to do."
@@ -21611,17 +21916,6 @@ msgstr "Guarda i canali del server"
 msgid "starts a grblmock server on port 23 (telnet)"
 msgstr "Avvia un server GRBLmock sulla porta 23 (telnet)"
 
-#: ./meerk40t\grbl\gui\grblcontroller.py:88
-msgid "Gcode"
-msgstr "Gcode"
-
-#: ./meerk40t\grbl\gui\grblcontroller.py:89
-msgid "GRBL"
-msgstr "GRBL"
-
-#: ./meerk40t\gui\dialogoptions.py:73
-msgid "OK"
-msgstr "Ok"
 
 #: ./meerk40t\core\elements\render.py:330
 msgid "Create an outline path at the inner and outer side of a path"
@@ -21850,4 +22144,3 @@ msgstr "Invia una macro predefinita al dispositivo"
 #: meerk40t/extra/param_functions.py:1104 meerk40t/extra/param_functions.py:1397
 msgid "Create shape"
 msgstr "Crea forma"
-
