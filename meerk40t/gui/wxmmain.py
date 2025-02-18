@@ -133,7 +133,7 @@ class GUIThread:
     This prevents threading & lock issues exhibited by passing along commands 
     via ``consoleserver`` or ``webserver``
     """
-    def __init__(self, context, *args, **kawargs):
+    def __init__(self, context, *args, **kwargs):
         self.context = context
         self._execution_lock = threading.Lock()
         self._execution_buffer = []
