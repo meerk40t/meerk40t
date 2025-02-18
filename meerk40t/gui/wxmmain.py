@@ -2,6 +2,7 @@ import datetime
 import os
 import platform
 import sys
+import threading
 from functools import partial
 from math import isinf
 
@@ -125,6 +126,42 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 MULTIPLE = "<Multiple files loaded>"
+
+class GUIThread:
+    """
+    This will take from any thread a command to be executed and inserts it into the main thread
+    This prevents threading & lock issues exhibited by passing along commands 
+    via ``consoleserver`` or ``webserver``
+    """
+    def __init__(self, context, *args, **kawargs):
+        self.context = context
+        self._execution_lock = threading.Lock()
+        self._execution_buffer = []
+        self._execution_timer = Job(
+            process=self.execute_command,
+            job_name="console-execute",
+            interval=0.1,
+            run_main=True,
+        )
+        self.context.kernel.register("gui/handover", self.process_command)
+
+    def execute_command(self):
+        cmd = ""
+        another = False
+        with self._execution_lock:
+            if self._execution_buffer:
+                cmd = self._execution_buffer[0]
+                self._execution_buffer.pop(0)
+                another = len(self._execution_buffer) > 0
+        if cmd:
+            self.context(cmd + "\n")
+            if another:
+                self.context.kernel.schedule(self._execution_timer)
+
+    def process_command(self, command):
+        with self._execution_lock:
+            self._execution_buffer.append(command)
+            self.context.kernel.schedule(self._execution_timer)        
 
 class Autosaver:
     """
@@ -394,6 +431,7 @@ class MeerK40t(MWindow):
         self.tips_at_startup()
         self.parametric_info = None
         self.autosave = Autosaver(self.context)
+        self.handover = GUIThread(self.context)
         kernel = self.context.kernel
         if hasattr(kernel.args, "maximized") and kernel.args.maximized:
             self.Maximize()
