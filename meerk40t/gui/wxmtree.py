@@ -1430,17 +1430,23 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        parent = node.parent
-        parent_item = parent._item
-        if parent_item is None:
-            # We are appending items in tree before registration.
+        try:
+            parent = node.parent
+            parent_item = parent._item
+            if parent_item is None:
+                # We are appending items in tree before registration.
+                return
+            tree = self.wxtree
+            if pos is None:
+                node._item = tree.AppendItem(parent_item, self.name)
+            else:
+                node._item = tree.InsertItem(parent_item, pos, self.name)
+            tree.SetItemData(node._item, node)
+        except Exception as e:
+            # Invalid tree?
+            self.context.signal("rebuild_tree", "all")
+            print (f"We encountered an error at node registration: {e}")
             return
-        tree = self.wxtree
-        if pos is None:
-            node._item = tree.AppendItem(parent_item, self.name)
-        else:
-            node._item = tree.InsertItem(parent_item, pos, self.name)
-        tree.SetItemData(node._item, node)
         self.update_decorations(node, False)
         wxcolor = self.wxtree.GetForegroundColour()
         attribute_to_try = "fill" if node.type == "elem text" else "stroke"
