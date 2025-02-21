@@ -889,7 +889,7 @@ def init_commands(kernel):
             long_method = "Union"
 
         if filltype is None:
-            filltype = "evenodd" if method != "union" else filltype="nonzero"
+            filltype = "evenodd" if method != "union" else "nonzero"
         filltype = filltype.lower()
 
         if filltype.startswith("no") or filltype.startswith("z"):
