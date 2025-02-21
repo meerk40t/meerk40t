@@ -876,9 +876,6 @@ def init_commands(kernel):
         if method is None:
             method = "union"
         method = method.lower()
-        if filltype is None:
-            filltype = "evenodd"
-        filltype = filltype.lower()
         if keep is None:
             keep = False
 
@@ -890,6 +887,10 @@ def init_commands(kernel):
             long_method = "Xor"
         else:
             long_method = "Union"
+
+        if filltype is None:
+            filltype = "evenodd" if method != "union" else filltype="nonzero"
+        filltype = filltype.lower()
 
         if filltype.startswith("no") or filltype.startswith("z"):
             long_filltype = "NonZero"
