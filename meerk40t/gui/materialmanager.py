@@ -389,6 +389,9 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.AppendColumn(
             _("Frequency") + " [kHz]", format=wx.LIST_FORMAT_LEFT, width=50
         )
+        self.list_preview.AppendColumn(
+            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=50
+        )
         self.list_preview.resize_columns()
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
@@ -2066,6 +2069,7 @@ class MaterialPanel(ScrolledPanel):
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
                 speed = self.op_data.read_persistent(str, subsection, "speed", "")
                 power = self.op_data.read_persistent(str, subsection, "power", "")
+                passes = self.op_data.read_persistent(str, subsection, "passes", "")
                 frequency = self.op_data.read_persistent(
                     str, subsection, "frequency", ""
                 )
@@ -2074,6 +2078,8 @@ class MaterialPanel(ScrolledPanel):
                 command = self.op_data.read_persistent(str, subsection, "command", "")
                 if power == "" and optype.startswith("op "):
                     power = "1000"
+                if passes == "" and optype.startswith("op "):
+                    passes = "1"
                 list_id = self.list_preview.InsertItem(
                     self.list_preview.GetItemCount(), f"#{idx}"
                 )
@@ -2093,6 +2099,7 @@ class MaterialPanel(ScrolledPanel):
                 self.list_preview.SetItem(list_id, 4, power)
                 self.list_preview.SetItem(list_id, 5, speed)
                 self.list_preview.SetItem(list_id, 6, frequency)
+                self.list_preview.SetItem(list_id, 7, passes)
                 key = get_key(optype, opc)
                 if key in icon_dict:
                     imgid = icon_dict[key]
@@ -2576,6 +2583,7 @@ class MaterialPanel(ScrolledPanel):
             "power": "1000",
             "label": "Raster ({percent}, {speed}mm/s)",
             "color": "#000000",
+            "passes": "1",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2675,15 +2683,16 @@ class MaterialPanel(ScrolledPanel):
         # 4 "Power"
         # 5 "Speed"
         # 6 "Frequency"
+        # 7 "Passes"
         if self.is_balor:
             p1 = 0.15
             p2 = 0.35
-            p3 = (1.0 - p1 - p2) / 4
+            p3 = (1.0 - p1 - p2) / 5
             p4 = p3
         else:
             p1 = 0.15
             p2 = 0.40
-            p3 = (1.0 - p1 - p2) / 3
+            p3 = (1.0 - p1 - p2) / 4
             p4 = 0
         self.list_preview.SetColumnWidth(0, int(p3 * remaining))
         self.list_preview.SetColumnWidth(1, int(p1 * remaining))
@@ -2692,6 +2701,7 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.SetColumnWidth(4, int(p3 * remaining))
         self.list_preview.SetColumnWidth(5, int(p3 * remaining))
         self.list_preview.SetColumnWidth(6, int(p4 * remaining))
+        self.list_preview.SetColumnWidth(7, int(p3 * remaining))
 
     def before_operation_update(self, event):
         list_id = event.GetIndex()  # Get the current row
@@ -2708,7 +2718,7 @@ class MaterialPanel(ScrolledPanel):
                 ok = False
         except (AttributeError, KeyError):
             ok = False
-        if col_id not in range(2, 7):
+        if col_id not in range(2, 7 + 1):
             ok = False
         if col_id == 6 and not self.is_balor:
             ok = False
@@ -2724,7 +2734,7 @@ class MaterialPanel(ScrolledPanel):
         index = self.list_preview.GetItemData(list_id)
         key = self.get_nth_operation(index)
 
-        if list_id >= 0 and col_id in range(2, 7):
+        if list_id >= 0 and col_id in range(2, 7 + 1):
             if col_id == 2:
                 # id
                 self.op_data.write_persistent(key, "id", new_data)
@@ -2758,6 +2768,18 @@ class MaterialPanel(ScrolledPanel):
                     new_data = float(new_data)
                     self.op_data.write_persistent(key, "frequency", new_data)
                     new_data = f"{new_data:.0f}"
+                except ValueError:
+                    event.Veto()
+                    return
+            elif col_id == 7:
+                # Passes
+                try:
+                    new_data = int(new_data)
+                    if new_data < 1:
+                        new_data = 1
+                    self.op_data.write_persistent(key, "passes_custom", bool(new_data != 1))
+                    self.op_data.write_persistent(key, "passes", new_data)
+                    new_data = f"{new_data}"
                 except ValueError:
                     event.Veto()
                     return
