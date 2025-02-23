@@ -2772,6 +2772,8 @@ class Kernel(Settings):
                     skipped = False
                     canceled = False
                     for job_name in list(self.jobs):
+                        if job_name is None:
+                            continue
                         if not job_name.startswith("timer"):
                             continue
                         timer_name = job_name[5:]
