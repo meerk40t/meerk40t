@@ -1906,6 +1906,8 @@ class Kernel(Settings):
             # Could be recurring job. Reset on reschedule.
         except AttributeError:
             pass
+        if job.job_name is None:
+            job.job_name = f"job_{id(job)}"
         self.jobs[job.job_name] = job
         return job
 
@@ -2667,6 +2669,9 @@ class Kernel(Settings):
             channel(_("----------"))
             channel(_("Scheduled Processes:"))
             for i, job_name in enumerate(self.jobs):
+                if job_name is None:
+                    channel(_("Empty job definition..."))
+                    continue
                 job = self.jobs[job_name]
                 parts = list()
                 parts.append(f"{i + 1}:")
@@ -2737,6 +2742,8 @@ class Kernel(Settings):
                 channel(_("Timers:"))
                 i = 0
                 for job_name in self.jobs:
+                    if job_name is None:
+                        continue
                     if not job_name.startswith("timer"):
                         continue
                     i += 1
