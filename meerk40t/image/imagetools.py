@@ -43,7 +43,12 @@ def img_to_polygons(
     _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Find contours in the binary image
-    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    try:
+        contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    except ValueError:
+        # Invalid data
+        return ([], [])
+
     # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
     width, height = node_image.size
     minarea = int(minimal / 100.0 * width * height)
@@ -147,9 +152,14 @@ def do_innerwhite(
         _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
 
         # Find contours
-        contours, hierarchy = cv2.findContours(
-            thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        try:
+            contours, hierarchy = cv2.findContours(
+                thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
+        except ValueError:
+            # Invalid data
+            continue
+
         linecandidates = list()
 
         minarea = int(minimal / 100.0 * width * height)
@@ -402,7 +412,12 @@ def img_to_rectangles(
     _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Find contours in the binary image
-    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    try:
+        contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    except ValueError:
+        # Invalid data
+        return ([], [])
+
     # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
     width, height = node_image.size
     minarea = int(minimal / 100.0 * width * height)
