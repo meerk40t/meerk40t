@@ -2383,6 +2383,22 @@ class MeerK40t(MWindow):
                 > 0,
             },
         )
+        secondary_commands = [
+            "element union",
+            "element difference",
+            "element xor",
+            "element intersection",
+        ]
+        try:
+            import pyclipr
+            primary_commands = [
+                "clipper union",
+                "clipper difference",
+                "clipper xor",
+                "clipper intersection",
+            ]
+        except ImportError:
+            primary_commands = list(secondary_commands)
         kernel.register(
             "button/geometry/Union",
             {
@@ -2390,7 +2406,8 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_union,
                 "tip": _("Create a union of the selected elements"),
                 "help": "cag",
-                "action": exec_in_undo_scope("Union", "element union\n"),
+                "action": exec_in_undo_scope("Union", f"{primary_commands[0]}\n"),
+                "action_right": exec_in_undo_scope("Union", f"{secondary_commands[0]}\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2405,7 +2422,8 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_subtract,
                 "tip": _("Create a difference of the selected elements"),
                 "help": "cag",
-                "action": exec_in_undo_scope("Difference", "element difference\n"),
+                "action": exec_in_undo_scope("Difference", f"{primary_commands[1]}\n"),
+                "action_right": exec_in_undo_scope("Difference", f"{secondary_commands[1]}\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2420,7 +2438,8 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_xor,
                 "tip": _("Create a xor of the selected elements"),
                 "help": "cag",
-                "action": exec_in_undo_scope("Xor", "element xor\n"),
+                "action": exec_in_undo_scope("XOR", f"{primary_commands[2]}\n"),
+                "action_right": exec_in_undo_scope("XOR", f"{secondary_commands[2]}\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2435,7 +2454,8 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_common,
                 "tip": _("Create a intersection of the selected elements"),
                 "help": "cag",
-                "action": exec_in_undo_scope("Intersection", "element intersection\n"),
+                "action": exec_in_undo_scope("Intersection", f"{primary_commands[3]}\n"),
+                "action_right": exec_in_undo_scope("Intersection", f"{secondary_commands[3]}\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
