@@ -139,6 +139,366 @@ class ChoicePropertyPanel(ScrolledPanel):
         # we need to create an independent copy of the lookup, otherwise
         # any amendments to choices like injector will affect the original
         standardhelp = ""
+        
+        def on_combo_text(param, ctrl, obj, dtype, addsig):
+            def select(event=None):
+                v = dtype(ctrl.GetValue())
+                current_value = getattr(obj, param)
+                if current_value != v:
+                    setattr(obj, param, v)
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return select
+
+        def on_button(param, obj, addsig):
+            def check(event=None):
+                # We just set it to True to kick it off
+                setattr(obj, param, True)
+                # We don't signal ourselves...
+                self.context.signal(param, True, obj)
+                for _sig in addsig:
+                    self.context.signal(_sig)
+
+            return check
+
+        def on_checkbox_check(param, ctrl, obj, addsig):
+            def check(event=None):
+                v = ctrl.GetValue()
+                current_value = getattr(obj, param)
+                if current_value != bool(v):
+                    setattr(obj, param, bool(v))
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return check
+
+        def on_checkbox_bitcheck(param, ctrl, obj, bit, addsig, enable_ctrl=None):
+            def check(event=None):
+                v = ctrl.GetValue()
+                if enable_ctrl is not None:
+                    enable_ctrl.Enable(v)
+                current = getattr(obj, param)
+                if v:
+                    current |= 1 << bit
+                else:
+                    current = ~((~current) | (1 << bit))
+                current_value = getattr(obj, param)
+                if current_value != current:
+                    setattr(obj, param, current)
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return check
+
+        def on_generic_multi(param, ctrl, obj, dtype, addsig):
+            def text():
+                v = ctrl.GetValue()
+                try:
+                    dtype_v = dtype(v)
+                    current_value = getattr(obj, param)
+                    if current_value != dtype_v:
+                        setattr(obj, param, dtype_v)
+                        self.context.signal(param, dtype_v, obj)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+            return text
+
+        def on_button_filename(param, ctrl, obj, wildcard, addsig):
+            def click(event=None):
+                with wx.FileDialog(
+                    self,
+                    label,
+                    wildcard=wildcard if wildcard else "*",
+                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
+                ) as fileDialog:
+                    if fileDialog.ShowModal() == wx.ID_CANCEL:
+                        return  # the user changed their mind
+                    pathname = str(fileDialog.GetPath())
+                    ctrl.SetValue(pathname)
+                    self.Layout()
+                    current_value = getattr(obj, param)
+                    if current_value != pathname:
+                        try:
+                            setattr(obj, param, pathname)
+                            self.context.signal(param, pathname, obj)
+                            for _sig in addsig:
+                                self.context.signal(_sig)
+                        except ValueError:
+                            # cannot cast to data_type, pass
+                            pass
+
+            return click
+
+        def on_file_text(param, ctrl, obj, dtype, addsig):
+            def filetext():
+                v = ctrl.GetValue()
+                try:
+                    dtype_v = dtype(v)
+                    current_value = getattr(obj, param)
+                    if current_value != dtype_v:
+                        setattr(obj, param, dtype_v)
+                        self.context.signal(param, dtype_v, obj)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+            return filetext
+
+        def on_slider(param, ctrl, obj, dtype, addsig):
+            def select(event=None):
+                v = dtype(ctrl.GetValue())
+                current_value = getattr(obj, param)
+                if current_value != v:
+                    setattr(obj, param, v)
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return select
+
+        def on_radio_select(param, ctrl, obj, dtype, addsig):
+            def select(event=None):
+                if dtype == int:
+                    v = dtype(ctrl.GetSelection())
+                else:
+                    v = dtype(ctrl.GetLabel())
+                current_value = getattr(obj, param)
+                if current_value != v:
+                    setattr(obj, param, v)
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return select
+
+        def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
+            def select(event=None):
+                cl = choice_list[ctrl.GetSelection()]
+                v = dtype(cl)
+                current_value = getattr(obj, param)
+                if current_value != v:
+                    setattr(obj, param, v)
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return select
+
+        def on_combosmall_text(param, ctrl, obj, dtype, addsig):
+            def select(event=None):
+                v = dtype(ctrl.GetValue())
+                current_value = getattr(obj, param)
+                if current_value != v:
+                    # print (f"Setting it to {v}")
+                    setattr(obj, param, v)
+                    self.context.signal(param, v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+
+            return select
+
+        def on_button_color(param, ctrl, obj, addsig):
+            def click(event=None):
+                color_data = wx.ColourData()
+                color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
+                dlg = wx.ColourDialog(self, color_data)
+                if dlg.ShowModal() == wx.ID_OK:
+                    color_data = dlg.GetColourData()
+                    data = Color(
+                        swizzlecolor(color_data.GetColour().GetRGB()), 1.0
+                    )
+                    set_color(ctrl, data)
+                    try:
+                        data_v = data.hexa
+                        current_value = getattr(obj, param)
+                        if current_value != data_v:
+                            setattr(obj, param, data_v)
+                            self.context.signal(param, data_v, obj)
+                            for _sig in addsig:
+                                self.context.signal(_sig)
+                    except ValueError:
+                        # cannot cast to data_type, pass
+                        pass
+
+            return click
+        
+        def on_angle_text(param, ctrl, obj, dtype, addsig):
+            def text():
+                try:
+                    v = Angle(ctrl.GetValue(), digits=5)
+                    data_v = str(v)
+                    current_value = str(getattr(obj, param))
+                    if current_value != data_v:
+                        setattr(obj, param, data_v)
+                        self.context.signal(param, data_v, obj)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+            return text
+
+        def on_chart_start(columns, param, ctrl, local_obj):
+            def chart_start(event=None):
+                for column in columns:
+                    if column.get("editable", False):
+                        event.Allow()
+                    else:
+                        event.Veto()
+
+            return chart_start
+
+        def on_chart_stop(columns, param, ctrl, local_obj):
+            def chart_stop(event=None):
+                row_id = event.GetIndex()  # Get the current row
+                col_id = event.GetColumn()  # Get the current column
+                new_data = event.GetLabel()  # Get the changed data
+                ctrl.SetItem(row_id, col_id, new_data)
+                column = columns[col_id]
+                c_attr = column.get("attr")
+                c_type = column.get("type")
+                values = getattr(local_obj, param)
+                if isinstance(values[row_id], dict):
+                    values[row_id][c_attr] = c_type(new_data)
+                    self.context.signal(param, values, row_id, param)
+                elif isinstance(values[row_id], str):
+                    values[row_id] = c_type(new_data)
+                    self.context.signal(param, values, row_id)
+                else:
+                    values[row_id][col_id] = c_type(new_data)
+                    self.context.signal(param, values, row_id)
+
+            return chart_stop
+
+        def on_chart_contextmenu(
+            columns, param, ctrl, local_obj, allow_del, allow_dup, default
+        ):
+            def chart_menu(event=None):
+                # row_id = event.GetIndex()  # Get the current row
+
+                x, y = event.GetPosition()
+                row_id, flags = ctrl.HitTest((x, y))
+                if row_id < 0:
+                    l_allow_del = False
+                    l_allow_dup = False
+                else:
+                    l_allow_del = allow_del
+                    l_allow_dup = allow_dup
+                menu = wx.Menu()
+                if l_allow_del:
+
+                    def on_delete(event):
+                        values = getattr(local_obj, param)
+                        # try:
+                        values.pop(row_id)
+                        self.context.signal(param, values, 0, param)
+                        fill_ctrl(ctrl, local_obj, param, columns)
+                        # except IndexError:
+                        #    pass
+
+                    menuitem = menu.Append(
+                        wx.ID_ANY, _("Delete this entry"), ""
+                    )
+                    self.Bind(
+                        wx.EVT_MENU,
+                        on_delete,
+                        id=menuitem.GetId(),
+                    )
+                if l_allow_dup:
+
+                    def on_duplicate(event):
+                        values = getattr(local_obj, param)
+                        if isinstance(values[row_id], dict):
+                            newentry = dict()
+                            for key, content in values[row_id].items():
+                                newentry[key] = content
+                        else:
+                            newentry = copy(values[row_id])
+                        values.append(newentry)
+                        self.context.signal(param, values, 0, param)
+                        # except IndexError:
+                        #    pass
+                        fill_ctrl(ctrl, local_obj, param, columns)
+
+                    menuitem = menu.Append(
+                        wx.ID_ANY, _("Duplicate this entry"), ""
+                    )
+                    self.Bind(
+                        wx.EVT_MENU,
+                        on_duplicate,
+                        id=menuitem.GetId(),
+                    )
+
+                def on_default(event):
+                    values = getattr(local_obj, param)
+                    values.clear()
+                    for e in default:
+                        values.append(e)
+
+                    self.context.signal(param, values, 0, param)
+                    fill_ctrl(ctrl, local_obj, param, columns)
+                    # except IndexError:
+                    #    pass
+
+                menuitem = menu.Append(wx.ID_ANY, _("Restore defaults"), "")
+                self.Bind(
+                    wx.EVT_MENU,
+                    on_default,
+                    id=menuitem.GetId(),
+                )
+
+                if menu.MenuItemCount != 0:
+                    self.PopupMenu(menu)
+                    menu.Destroy()
+
+            return chart_menu
+
+        def on_generic_text(param, ctrl, obj, dtype, addsig):
+            def text():
+                v = ctrl.GetValue()
+                try:
+                    dtype_v = dtype(v)
+                    current_value = getattr(obj, param)
+                    if current_value != dtype_v:
+                        setattr(obj, param, dtype_v)
+                        self.context.signal(param, dtype_v, obj)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+            return text
+
+        def on_length_text(param, ctrl, obj, dtype, addsig):
+            def text():
+                try:
+                    v = Length(ctrl.GetValue())
+                    data_v = v.preferred_length
+                    current_value = getattr(obj, param)
+                    if str(current_value) != str(data_v):
+                        setattr(obj, param, data_v)
+                        self.context.signal(param, data_v, obj)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+            return text
+
+
         for choice in choices:
             if isinstance(choice, dict):
                 if "help" not in choice:
@@ -425,16 +785,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 wants_listener = False
                 control = wxButton(self, label=label)
 
-                def on_button(param, obj, addsig):
-                    def check(event=None):
-                        # We just set it to True to kick it off
-                        setattr(obj, param, True)
-                        # We don't signal ourselves...
-                        self.context.signal(param, True, obj)
-                        for _sig in addsig:
-                            self.context.signal(_sig)
-
-                    return check
 
                 control.Bind(
                     wx.EVT_BUTTON,
@@ -449,17 +799,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(data)
                 control.SetMinSize(dip_size(self, -1, 23))
 
-                def on_checkbox_check(param, ctrl, obj, addsig):
-                    def check(event=None):
-                        v = ctrl.GetValue()
-                        current_value = getattr(obj, param)
-                        if current_value != bool(v):
-                            setattr(obj, param, bool(v))
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return check
 
                 control.Bind(
                     wx.EVT_CHECKBOX,
@@ -485,22 +824,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
 
-                def on_generic_multi(param, ctrl, obj, dtype, addsig):
-                    def text():
-                        v = ctrl.GetValue()
-                        try:
-                            dtype_v = dtype(v)
-                            current_value = getattr(obj, param)
-                            if current_value != dtype_v:
-                                setattr(obj, param, dtype_v)
-                                self.context.signal(param, dtype_v, obj)
-                                for _sig in addsig:
-                                    self.context.signal(_sig)
-                        except ValueError:
-                            # cannot cast to data_type, pass
-                            pass
-
-                    return text
 
                 control.SetActionRoutine(
                     on_generic_multi(attr, control, obj, data_type, additional_signal)
@@ -520,48 +843,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     #     filename = _("No File")
                     control.SetValue(filename)
 
-                def on_button_filename(param, ctrl, obj, wildcard, addsig):
-                    def click(event=None):
-                        with wx.FileDialog(
-                            self,
-                            label,
-                            wildcard=wildcard if wildcard else "*",
-                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
-                        ) as fileDialog:
-                            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                                return  # the user changed their mind
-                            pathname = str(fileDialog.GetPath())
-                            ctrl.SetValue(pathname)
-                            self.Layout()
-                            current_value = getattr(obj, param)
-                            if current_value != pathname:
-                                try:
-                                    setattr(obj, param, pathname)
-                                    self.context.signal(param, pathname, obj)
-                                    for _sig in addsig:
-                                        self.context.signal(_sig)
-                                except ValueError:
-                                    # cannot cast to data_type, pass
-                                    pass
-
-                    return click
-
-                def on_file_text(param, ctrl, obj, dtype, addsig):
-                    def filetext():
-                        v = ctrl.GetValue()
-                        try:
-                            dtype_v = dtype(v)
-                            current_value = getattr(obj, param)
-                            if current_value != dtype_v:
-                                setattr(obj, param, dtype_v)
-                                self.context.signal(param, dtype_v, obj)
-                                for _sig in addsig:
-                                    self.context.signal(_sig)
-                        except ValueError:
-                            # cannot cast to data_type, pass
-                            pass
-
-                    return filetext
 
                 control.SetActionRoutine(
                     on_file_text(attr, control, obj, data_type, additional_signal)
@@ -608,17 +889,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
                 )
 
-                def on_slider(param, ctrl, obj, dtype, addsig):
-                    def select(event=None):
-                        v = dtype(ctrl.GetValue())
-                        current_value = getattr(obj, param)
-                        if current_value != v:
-                            setattr(obj, param, v)
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return select
 
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
@@ -658,17 +928,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if least is not None:
                             control.SetValue(least)
 
-                def on_combo_text(param, ctrl, obj, dtype, addsig):
-                    def select(event=None):
-                        v = dtype(ctrl.GetValue())
-                        current_value = getattr(obj, param)
-                        if current_value != v:
-                            setattr(obj, param, v)
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return select
 
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
@@ -698,20 +957,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     else:
                         control.SetSelection(int(data))
 
-                def on_radio_select(param, ctrl, obj, dtype, addsig):
-                    def select(event=None):
-                        if dtype == int:
-                            v = dtype(ctrl.GetSelection())
-                        else:
-                            v = dtype(ctrl.GetLabel())
-                        current_value = getattr(obj, param)
-                        if current_value != v:
-                            setattr(obj, param, v)
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return select
 
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
@@ -734,11 +979,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                         data = c.get("default")
                     display_list.insert(0, str(data))
                     choice_list.insert(0, str(data))
+                cb_style = wx.CB_DROPDOWN | wx.CB_READONLY 
                 control = wxComboBox(
                     self,
                     wx.ID_ANY,
                     choices=display_list,
-                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                    style=cb_style,
                 )
                 control.SetSelection(index)
 
@@ -749,18 +995,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
 
-                def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
-                    def select(event=None):
-                        cl = choice_list[ctrl.GetSelection()]
-                        v = dtype(cl)
-                        current_value = getattr(obj, param)
-                        if current_value != v:
-                            setattr(obj, param, v)
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return select
 
                 if label != "":
                     # Try to center it vertically to the controls extent
@@ -779,9 +1013,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type in (str, int, float) and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 exclusive = c.get("exclusive", True)
-                cb_style = wx.CB_DROPDOWN
-                if exclusive:
-                    cb_style = cb_style | wx.CB_READONLY
+                cb_style = wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN 
 
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
                 control = wxComboBox(
@@ -811,18 +1043,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if least is not None:
                             control.SetValue(least)
 
-                def on_combosmall_text(param, ctrl, obj, dtype, addsig):
-                    def select(event=None):
-                        v = dtype(ctrl.GetValue())
-                        current_value = getattr(obj, param)
-                        if current_value != v:
-                            # print (f"Setting it to {v}")
-                            setattr(obj, param, v)
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return select
 
                 if label != "":
                     # Try to center it vertically to the controls extent
@@ -863,24 +1083,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-                def on_checkbox_check(param, ctrl, obj, bit, addsig, enable_ctrl=None):
-                    def check(event=None):
-                        v = ctrl.GetValue()
-                        if enable_ctrl is not None:
-                            enable_ctrl.Enable(v)
-                        current = getattr(obj, param)
-                        if v:
-                            current |= 1 << bit
-                        else:
-                            current = ~((~current) | (1 << bit))
-                        current_value = getattr(obj, param)
-                        if current_value != current:
-                            setattr(obj, param, current)
-                            self.context.signal(param, v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-
-                    return check
 
                 bit_sizer = wx.BoxSizer(wx.VERTICAL)
                 label_text = wxStaticText(
@@ -926,7 +1128,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         mask_ctrl.SetValue(bool((mask_bits >> b) & 1))
                         mask_ctrl.Bind(
                             wx.EVT_CHECKBOX,
-                            on_checkbox_check(
+                            on_checkbox_bitcheck(
                                 mask,
                                 mask_ctrl,
                                 obj,
@@ -956,31 +1158,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     else:
                         ctrl.SetForegroundColour(wx.WHITE)
                     ctrl.color = color
-
-                def on_button_color(param, ctrl, obj, addsig):
-                    def click(event=None):
-                        color_data = wx.ColourData()
-                        color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
-                        dlg = wx.ColourDialog(self, color_data)
-                        if dlg.ShowModal() == wx.ID_OK:
-                            color_data = dlg.GetColourData()
-                            data = Color(
-                                swizzlecolor(color_data.GetColour().GetRGB()), 1.0
-                            )
-                            set_color(ctrl, data)
-                            try:
-                                data_v = data.hexa
-                                current_value = getattr(obj, param)
-                                if current_value != data_v:
-                                    setattr(obj, param, data_v)
-                                    self.context.signal(param, data_v, obj)
-                                    for _sig in addsig:
-                                        self.context.signal(_sig)
-                            except ValueError:
-                                # cannot cast to data_type, pass
-                                pass
-
-                    return click
 
                 datastr = data
                 data = Color(datastr)
@@ -1050,42 +1227,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 fill_ctrl(chart, obj, attr, l_columns)
 
-                def on_chart_start(columns, param, ctrl, local_obj):
-                    def chart_start(event=None):
-                        for column in columns:
-                            if column.get("editable", False):
-                                event.Allow()
-                            else:
-                                event.Veto()
-
-                    return chart_start
 
                 chart.Bind(
                     wx.EVT_LIST_BEGIN_LABEL_EDIT,
                     on_chart_start(l_columns, attr, chart, obj),
                 )
 
-                def on_chart_stop(columns, param, ctrl, local_obj):
-                    def chart_stop(event=None):
-                        row_id = event.GetIndex()  # Get the current row
-                        col_id = event.GetColumn()  # Get the current column
-                        new_data = event.GetLabel()  # Get the changed data
-                        ctrl.SetItem(row_id, col_id, new_data)
-                        column = columns[col_id]
-                        c_attr = column.get("attr")
-                        c_type = column.get("type")
-                        values = getattr(local_obj, param)
-                        if isinstance(values[row_id], dict):
-                            values[row_id][c_attr] = c_type(new_data)
-                            self.context.signal(param, values, row_id, param)
-                        elif isinstance(values[row_id], str):
-                            values[row_id] = c_type(new_data)
-                            self.context.signal(param, values, row_id)
-                        else:
-                            values[row_id][col_id] = c_type(new_data)
-                            self.context.signal(param, values, row_id)
-
-                    return chart_stop
 
                 chart.Bind(
                     wx.EVT_LIST_END_LABEL_EDIT,
@@ -1094,89 +1241,6 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 allow_deletion = c.get("allow_deletion", False)
                 allow_duplication = c.get("allow_duplication", False)
-
-                def on_chart_contextmenu(
-                    columns, param, ctrl, local_obj, allow_del, allow_dup, default
-                ):
-                    def chart_menu(event=None):
-                        # row_id = event.GetIndex()  # Get the current row
-
-                        x, y = event.GetPosition()
-                        row_id, flags = ctrl.HitTest((x, y))
-                        if row_id < 0:
-                            l_allow_del = False
-                            l_allow_dup = False
-                        else:
-                            l_allow_del = allow_del
-                            l_allow_dup = allow_dup
-                        menu = wx.Menu()
-                        if l_allow_del:
-
-                            def on_delete(event):
-                                values = getattr(local_obj, param)
-                                # try:
-                                values.pop(row_id)
-                                self.context.signal(param, values, 0, param)
-                                fill_ctrl(ctrl, local_obj, param, columns)
-                                # except IndexError:
-                                #    pass
-
-                            menuitem = menu.Append(
-                                wx.ID_ANY, _("Delete this entry"), ""
-                            )
-                            self.Bind(
-                                wx.EVT_MENU,
-                                on_delete,
-                                id=menuitem.GetId(),
-                            )
-                        if l_allow_dup:
-
-                            def on_duplicate(event):
-                                values = getattr(local_obj, param)
-                                if isinstance(values[row_id], dict):
-                                    newentry = dict()
-                                    for key, content in values[row_id].items():
-                                        newentry[key] = content
-                                else:
-                                    newentry = copy(values[row_id])
-                                values.append(newentry)
-                                self.context.signal(param, values, 0, param)
-                                # except IndexError:
-                                #    pass
-                                fill_ctrl(ctrl, local_obj, param, columns)
-
-                            menuitem = menu.Append(
-                                wx.ID_ANY, _("Duplicate this entry"), ""
-                            )
-                            self.Bind(
-                                wx.EVT_MENU,
-                                on_duplicate,
-                                id=menuitem.GetId(),
-                            )
-
-                        def on_default(event):
-                            values = getattr(local_obj, param)
-                            values.clear()
-                            for e in default:
-                                values.append(e)
-
-                            self.context.signal(param, values, 0, param)
-                            fill_ctrl(ctrl, obj, param, columns)
-                            # except IndexError:
-                            #    pass
-
-                        menuitem = menu.Append(wx.ID_ANY, _("Restore defaults"), "")
-                        self.Bind(
-                            wx.EVT_MENU,
-                            on_default,
-                            id=menuitem.GetId(),
-                        )
-
-                        if menu.MenuItemCount != 0:
-                            self.PopupMenu(menu)
-                            menu.Destroy()
-
-                    return chart_menu
 
                 default = c.get("default", [])
                 # chart.Bind(
@@ -1265,22 +1329,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_generic_text(param, ctrl, obj, dtype, addsig):
-                    def text():
-                        v = ctrl.GetValue()
-                        try:
-                            dtype_v = dtype(v)
-                            current_value = getattr(obj, param)
-                            if current_value != dtype_v:
-                                setattr(obj, param, dtype_v)
-                                self.context.signal(param, dtype_v, obj)
-                                for _sig in addsig:
-                                    self.context.signal(_sig)
-                        except ValueError:
-                            # cannot cast to data_type, pass
-                            pass
-
-                    return text
 
                 control.SetActionRoutine(
                     on_generic_text(attr, control, obj, data_type, additional_signal)
@@ -1319,23 +1367,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_length_text(param, ctrl, obj, dtype, addsig):
-                    def text():
-                        try:
-                            v = Length(ctrl.GetValue())
-                            data_v = v.preferred_length
-                            current_value = getattr(obj, param)
-                            if str(current_value) != str(data_v):
-                                setattr(obj, param, data_v)
-                                self.context.signal(param, data_v, obj)
-                                for _sig in addsig:
-                                    self.context.signal(_sig)
-                        except ValueError:
-                            # cannot cast to data_type, pass
-                            pass
-
-                    return text
-
                 control.SetActionRoutine(
                     on_length_text(attr, control, obj, data_type, additional_signal)
                 )
@@ -1359,23 +1390,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
-
-                def on_angle_text(param, ctrl, obj, dtype, addsig):
-                    def text():
-                        try:
-                            v = Angle(ctrl.GetValue(), digits=5)
-                            data_v = str(v)
-                            current_value = str(getattr(obj, param))
-                            if current_value != data_v:
-                                setattr(obj, param, data_v)
-                                self.context.signal(param, data_v, obj)
-                                for _sig in addsig:
-                                    self.context.signal(_sig)
-                        except ValueError:
-                            # cannot cast to data_type, pass
-                            pass
-
-                    return text
 
                 control.SetActionRoutine(
                     on_angle_text(attr, control, obj, data_type, additional_signal)
@@ -1401,31 +1415,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     else:
                         ctrl.SetForegroundColour(wx.WHITE)
                     ctrl.color = color
-
-                def on_button_color(param, ctrl, obj, addsig):
-                    def click(event=None):
-                        color_data = wx.ColourData()
-                        color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
-                        dlg = wx.ColourDialog(self, color_data)
-                        if dlg.ShowModal() == wx.ID_OK:
-                            color_data = dlg.GetColourData()
-                            data = Color(
-                                swizzlecolor(color_data.GetColour().GetRGB()), 1.0
-                            )
-                            set_color(ctrl, data)
-                            try:
-                                data_v = data_type(data)
-                                current_value = getattr(obj, param)
-                                if current_value != data_v:
-                                    setattr(obj, param, data_v)
-                                    self.context.signal(param, data_v, obj)
-                                    for _sig in addsig:
-                                        self.context.signal(_sig)
-                            except ValueError:
-                                # cannot cast to data_type, pass
-                                pass
-
-                    return click
 
                 set_color(control, data)
                 if ctrl_width > 0:
