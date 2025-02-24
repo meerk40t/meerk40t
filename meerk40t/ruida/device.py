@@ -263,18 +263,22 @@ class RuidaDevice(Service):
                 choice_dict["choices"] = ["UNCONFIGURED"]
                 choice_dict["display"] = ["pyserial-not-installed"]
 
+        from platform import system
+        is_linux = system() == "Linux"
+
         choices = [
             {
                 "attr": "serial_port",
                 "object": self,
                 "default": "UNCONFIGURED",
                 "type": str,
-                "style": "option",
+                "style": "combosmall" if is_linux else "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
+                "exclusive": not is_linux, 
             },
             {
                 "attr": "baud_rate",
