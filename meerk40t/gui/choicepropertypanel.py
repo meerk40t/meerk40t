@@ -447,7 +447,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         values.append(e)
 
                     self.context.signal(param, values, 0, param)
-                    fill_ctrl(ctrl, obj, param, columns)
+                    fill_ctrl(ctrl, local_obj, param, columns)
                     # except IndexError:
                     #    pass
 
