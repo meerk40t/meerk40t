@@ -7,7 +7,6 @@ from os.path import basename, exists, join, realpath, splitext
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.kernel import get_safe_path
 from meerk40t.tools.geomstr import BeamTable, Geomstr
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
@@ -116,7 +115,7 @@ class Meerk40tFonts:
 
     @property
     def font_directory(self):
-        safe_dir = realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         self.context.setting(str, "font_directory", safe_dir)
         fontdir = self.context.font_directory
         if not exists(fontdir):
@@ -129,7 +128,7 @@ class Meerk40tFonts:
     def font_directory(self, value):
         if not exists(value):
             # We cant allow a non-valid directory
-            value = realpath(get_safe_path(self.context.kernel.name))
+            value = self.context.kernel.os_information["WORKDIR"]
         self.context.setting(str, "font_directory", value)
         self.context.font_directory = value
         self._available_fonts = None

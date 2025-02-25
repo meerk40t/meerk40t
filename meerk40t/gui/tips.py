@@ -11,7 +11,6 @@ import webbrowser
 
 import wx
 
-from ..kernel import get_safe_path
 from .icons import (
     icon_outline,
     icon_youtube,
@@ -43,7 +42,7 @@ class TipPanel(wx.Panel):
         self.tip_image = ""
         self.tips = []
 
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         self.local_file = os.path.join(safe_dir, "tips.txt")
 
         self.setup_tips()
@@ -538,7 +537,7 @@ class TipPanel(wx.Panel):
         Check for existence of a subdirectory to store images
         and create it if not found
         """
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         cache_dir = os.path.join(safe_dir, "tip_images")
         if not os.path.exists(cache_dir):
             try:

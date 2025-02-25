@@ -500,7 +500,7 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         self.name = f"MeerK40t-{wx.GetUserId()}"
-        mkdir = get_safe_path(APPLICATION_NAME)
+        mkdir = self.context.kernel.os_information["OS_TEMPDIR"]
         self.instance = wx.SingleInstanceChecker(self.name, path=mkdir)
         self.context.setting(bool, "single_instance_only", True)
         if self.context.kernel._was_restarted:

@@ -5,8 +5,6 @@ from subprocess import PIPE, TimeoutExpired, run
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel.kernel import get_safe_path
-
 
 def get_inkscape(context, manual_candidate=None):
     root_context = context
@@ -143,7 +141,7 @@ class MultiLoader:
                     break
 
         context_root = kernel.root
-        safe_dir = os.path.realpath(get_safe_path(kernel.name))
+        safe_dir = kernel.os_information["WORKDIR"]
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         inkscape = get_inkscape(context_root)
@@ -423,7 +421,7 @@ def plugin(kernel, lifecycle):
                 ],
                 "pattern": [False, ("<pattern",), METHOD_CONVERT_TO_PNG],
             }
-            safe_dir = os.path.realpath(get_safe_path(kernel.name))
+            safe_dir = kernel.os_information["WORKDIR"]
             svg_temp_file = os.path.join(safe_dir, "temp.svg")
             png_temp_file = os.path.join(safe_dir, "temp.png")
             needs_conversion = 0

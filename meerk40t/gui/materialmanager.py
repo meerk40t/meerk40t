@@ -36,7 +36,6 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
     wxTreeCtrl,
 )
-from meerk40t.kernel.kernel import get_safe_path
 from meerk40t.kernel.settings import Settings
 from meerk40t.svgelements import Color
 
@@ -922,7 +921,7 @@ class MaterialPanel(ScrolledPanel):
         if len(oplist) == 0:
             return
         opinfo["author"] = last_author
-        directory = get_safe_path(self.context.kernel.name)
+        directory = self.context.kernel.os_information["WORKDIR"]
         local_file = os.path.join(directory, "op_export.cfg")
         if os.path.exists(local_file):
             try:

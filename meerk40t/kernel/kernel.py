@@ -1,7 +1,6 @@
 import functools
 import inspect
 import os
-import platform
 import re
 import subprocess
 import threading
@@ -181,8 +180,19 @@ class Kernel(Settings):
         # Arguments Objects
         self.args = None
 
+        self.os_information = self._get_environment()
+
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
+
+    def _get_environment(self):
+        from platform import system
+        from tempfile import gettempdir
+        return {
+            "OS_NAME":  system(),
+            "OS_TEMPDIR": os.path.realpath(gettempdir()),
+            "WORKDIR": os.path.realpath(get_safe_path(self.name, create=True)),
+        }
 
     def set_language(self, language, localedir="locale"):
         from . import set_language
@@ -2839,7 +2849,7 @@ class Kernel(Settings):
 
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
-            OS_NAME = platform.system()
+            OS_NAME = self.os_information["OS_NAME"]
             system_sound = {
                 "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
                 "Darwin": "/System/Library/Sounds/Ping.aiff",

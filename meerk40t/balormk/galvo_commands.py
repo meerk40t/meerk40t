@@ -1153,7 +1153,6 @@ def plugin(service, lifecycle):
         import platform
 
         from meerk40t.balormk.clone_loader import load_sys
-        from meerk40t.kernel import get_safe_path
 
         kernel = service.kernel
 
@@ -1173,7 +1172,7 @@ def plugin(service, lifecycle):
             return
 
         # Check for file in the meerk40t directory (safe_path)
-        directory = get_safe_path(kernel.name, create=True)
+        directory = kernel.os_information["WORKDIR"]
         p = os.path.join(directory, service.clone_sys)
         if os.path.exists(p):
             load_sys(p, channel=channel)

@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
-from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -146,7 +146,7 @@ class GRBLControllerPanel(wx.Panel):
         self.load_log()
 
     def history_filename(self):
-        safe_dir = os.path.realpath(get_safe_path(self.service.kernel.name))
+        safe_dir = self.service.kernel.os_information["WORKDIR"]
         fname = os.path.join(safe_dir, "grblhistory.log")
         is_there = os.path.exists(fname)
         return fname, is_there
