@@ -1050,7 +1050,7 @@ class SimulationPanel(wx.Panel, Job):
             pass
 
     def debug(self, message):
-        print (message)
+        # print (message)
         return
 
     def _startup(self):
