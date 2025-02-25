@@ -8,6 +8,77 @@ import wx
 
 DEFAULT_SIZE = 14
 
+class SimpleBusyInfo:
+    """
+    Create a simplified BusyInfo class that uses the main window title as canvas. 
+    Just used for Linux as the wxWidgets implementation sucks big time regarding
+    the controlled update of a window. So the full-featured implementation below
+    does not only produce nothing visible but seems to have severe side effects
+    that may caus segmenation faults.
+
+    :param string `msg`:     a string to be displayed in the BusyInfo window.
+    """
+    def __init__(self, **kwds):
+        self.kernel = kwds.get("kernel", None)
+        self.shown = False
+        self._old_title = ""
+        self._msg = ""
+
+    def start(self, **kwds):
+        if self.shown:
+            self.end()
+        self.update_keywords(kwds)
+        self.shown = True
+        self._old_title = ""
+        try:
+            win:wx.Window = self.kernel.root.gui
+            win.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+            self._old_title = win.GetTitle()
+        except (TypeError, AttributeError) as e:
+            return
+
+    def end(self):
+        self.shown = False
+        self._msg = ""
+        try:
+            win = self.kernel.root.gui
+            win.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        except (TypeError, AttributeError):
+            return
+        if self._old_title:
+            win.SetTitle(self._old_title)
+
+    def change(self, **kwds):
+        self.update_keywords(kwds)
+        if self.msg:
+            try:
+                win = self.kernel.root.gui
+                win.SetTitle(self.msg)
+            except (TypeError, AttributeError):
+                return
+
+    def update_keywords(self, kwds):
+        keep = 0
+        if "keep" in kwds:
+            keep = int(kwds["keep"])
+        if "msg" in kwds:
+            old_lines = self._msg.split("\n") if self._msg else []
+            new_lines = old_lines[:keep]
+            new_lines.append(kwds["msg"])
+            self._msg = "\n".join(new_lines)            
+
+    @property
+    def msg(self):
+        return self._msg.replace("\n", " - ")
+
+    def hide(self):
+        self.shown = False
+        return
+
+    def show(self):
+        self.shown = True
+        return
+
 
 class BusyInfo:
     """
@@ -55,19 +126,10 @@ class BusyInfo:
             if keep == 0:
                 self.image = None
         if "msg" in kwds:
-            newmsg = ""
-            if self.msg:
-                old = self.msg.split("\n")
-                idx = 0
-                while (idx < keep) and (idx < len(old)):
-                    if newmsg:
-                        newmsg += "\n"
-                    newmsg += old[idx]
-                    idx += 1
-            if newmsg:
-                newmsg += "\n"
-            newmsg += kwds["msg"]
-            self.msg = newmsg
+            old_lines = self.msg.split("\n") if self.msg else []
+            new_lines = old_lines[:keep]
+            new_lines.append(kwds["msg"])
+            self.msg = "\n".join(new_lines)            
         if "bgcolor" in kwds:
             self.bgcolor = kwds["bgcolor"]
         if "fgcolor" in kwds:
