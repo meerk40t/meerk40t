@@ -20354,8 +20354,6 @@ msgstr "Traccia esattamente il contorno della selezione\n(Click destro: algoritm
 msgid "Connection to USB failed: {e}.\n"
 msgstr "Connessione USB fallita: {e}.\n"
 
-
-
 #: ./meerk40t\camera\plugin.py:94
 msgid "Known camera URIs:"
 msgstr "URI noti della videocamera:"
@@ -22144,3 +22142,31 @@ msgstr "Invia una macro predefinita al dispositivo"
 #: meerk40t/extra/param_functions.py:1104 meerk40t/extra/param_functions.py:1397
 msgid "Create shape"
 msgstr "Crea forma"
+
+#: meerk40t/core/elements/branches.py:1414
+msgid "Clear all content"
+msgstr "Cancella tutto il contenuto"
+
+#: meerk40t/core/elements/element_treeops.py:3578 meerk40t/core/elements/element_treeops.py:3595
+msgid "Offset shapes..."
+msgstr "Sposta forme..."
+
+#: meerk40t/core/elements/element_treeops.py:3581
+msgid "...to outside with {offset}mm distance"
+msgstr "...all'esterno con una distanza di {offset}mm"
+
+#: meerk40t/core/elements/element_treeops.py:3583
+msgid "Create an outer offset around the selected elements"
+msgstr "Crea uno spostamento esterno attorno agli elementi selezionati"
+
+#: meerk40t/core/elements/element_treeops.py:3598
+msgid "...to inside with {offset}mm distance"
+msgstr "...all'interno con una distanza di {offset}mm"
+
+#: meerk40t/core/elements/element_treeops.py:3600
+msgid "Create an inner offset around the selected elements"
+msgstr "Crea uno spostamento interno attorno agli elementi selezionati"
+
+#: meerk40t/kernel/kernel.py:2683
+msgid "Empty job definition..."
+msgstr "Definizione di lavoro vuota..."
