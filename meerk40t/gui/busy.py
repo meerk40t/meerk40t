@@ -62,19 +62,10 @@ class SimpleBusyInfo:
         if "keep" in kwds:
             keep = int(kwds["keep"])
         if "msg" in kwds:
-            newmsg = ""
-            if self._msg:
-                old = self._msg.split("\n")
-                idx = 0
-                while (idx < keep) and (idx < len(old)):
-                    if newmsg:
-                        newmsg += "\n"
-                    newmsg += old[idx]
-                    idx += 1
-            if newmsg:
-                newmsg += "\n"
-            newmsg += kwds["msg"]
-            self._msg = newmsg
+            old_lines = self._msg.split("\n") if self._msg else []
+            new_lines = old_lines[:keep]
+            new_lines.append(kwds["msg"])
+            self._msg = "\n".join(new_lines)            
 
     @property
     def msg(self):
@@ -135,19 +126,10 @@ class BusyInfo:
             if keep == 0:
                 self.image = None
         if "msg" in kwds:
-            newmsg = ""
-            if self.msg:
-                old = self.msg.split("\n")
-                idx = 0
-                while (idx < keep) and (idx < len(old)):
-                    if newmsg:
-                        newmsg += "\n"
-                    newmsg += old[idx]
-                    idx += 1
-            if newmsg:
-                newmsg += "\n"
-            newmsg += kwds["msg"]
-            self.msg = newmsg
+            old_lines = self.msg.split("\n") if self.msg else []
+            new_lines = old_lines[:keep]
+            new_lines.append(kwds["msg"])
+            self.msg = "\n".join(new_lines)            
         if "bgcolor" in kwds:
             self.bgcolor = kwds["bgcolor"]
         if "fgcolor" in kwds:
