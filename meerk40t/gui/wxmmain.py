@@ -174,7 +174,7 @@ class Autosaver:
     def __init__(self, context, *args, **kwargs):
         self.context = context
         self.needs_saving = False
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         self.autosave_file = os.path.join(safe_dir, "_autosave.svg")
 
         choices = [

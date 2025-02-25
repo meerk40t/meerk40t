@@ -6,7 +6,7 @@ from wx import aui
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.kernel import signal_listener
 from meerk40t.gui.wxutils import TextCtrl
 
 try:
@@ -600,7 +600,7 @@ class ConsolePanel(wx.ScrolledWindow):
         event.Skip(False)
 
     def history_filename(self):
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         fname = os.path.join(safe_dir, "cmdhistory.log")
         is_there = os.path.exists(fname)
         return fname, is_there

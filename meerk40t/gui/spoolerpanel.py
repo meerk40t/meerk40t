@@ -23,7 +23,7 @@ from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
 )
-from meerk40t.kernel import Job, get_safe_path, signal_listener
+from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
 
@@ -330,7 +330,7 @@ class SpoolerPanel(wx.Panel):
         self.current_item = event.Index
 
     def write_csv(self):
-        filename = Path(get_safe_path(self.context.kernel.name, create=True)).joinpath(
+        filename = Path(self.context.kernel.os_information["WORKDIR"]).joinpath(
             "history.csv"
         )
         if self.filter_device:
