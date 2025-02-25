@@ -1050,7 +1050,7 @@ class SimulationPanel(wx.Panel, Job):
             pass
 
     def debug(self, message):
-        print (message)
+        # print (message)
         return
 
     def _startup(self):
@@ -1573,6 +1573,8 @@ class SimulationPanel(wx.Panel, Job):
             self._stop()
             return
         # Refresh cutcode
+        self.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+
         if self.plan_name:
             self.cutplan = self.context.planner.get_or_make_plan(self.plan_name)
         else:
@@ -1621,6 +1623,8 @@ class SimulationPanel(wx.Panel, Job):
 
         self._startup()
         self.request_refresh()
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+
 
     @signal_listener("device;modified")
     @signal_listener("plan")
@@ -1685,7 +1689,11 @@ class SimulationPanel(wx.Panel, Job):
             self.options_optimize.Enable(False)
 
     def cache_updater(self):
-        self.button_spool.Enable(False)
+        try:
+            self.button_spool.Enable(False)
+        except RuntimeError:
+            # Control no longer existant
+            return 
         msg = self.button_spool.GetLabel()
         self.button_spool.SetLabel(_("Calculating"))
         for cut in self.cutcode:
@@ -1837,6 +1845,15 @@ class SimulationPanel(wx.Panel, Job):
         event.Skip()
 
     def on_redo_it(self, event):
+        # Dont occupy gui event handling too long
+        wx.CallAfter(self.redo_action)
+
+    def redo_action(self):
+        self.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+        self.btn_redo_it.SetLabel(_("Preparing simulation..."))
+        self.btn_redo_it.Enable(False)
+        self.btn_redo_it.Refresh()
+        self.btn_redo_it.Update()
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing simulation..."))
 
@@ -1853,6 +1870,9 @@ class SimulationPanel(wx.Panel, Job):
         )
         busy.end()
         self._refresh_simulated_plan()
+        self.btn_redo_it.Enable(True)
+        self.btn_redo_it.SetLabel(_("Recalculate"))
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def pane_show(self):
         self.Layout()
