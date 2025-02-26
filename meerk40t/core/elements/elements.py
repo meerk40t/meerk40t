@@ -2920,7 +2920,7 @@ class Elemental(Service):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    # even if it has, we are not going to something with it
+                    # even if it has, we are not going to do something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
