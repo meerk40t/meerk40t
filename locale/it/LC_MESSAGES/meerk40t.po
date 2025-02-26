@@ -11,7 +11,7 @@ msgstr ""
 "PO-Revision-Date: 23-04-21 06:37UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
-"Language-Team: Cicioni-Italian\n"
+"Language-Team: Cicioni Italian traslation\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -20354,6 +20354,8 @@ msgstr "Traccia esattamente il contorno della selezione\n(Click destro: algoritm
 msgid "Connection to USB failed: {e}.\n"
 msgstr "Connessione USB fallita: {e}.\n"
 
+
+
 #: ./meerk40t\camera\plugin.py:94
 msgid "Known camera URIs:"
 msgstr "URI noti della videocamera:"
@@ -22149,24 +22151,24 @@ msgstr "Cancella tutto il contenuto"
 
 #: meerk40t/core/elements/element_treeops.py:3578 meerk40t/core/elements/element_treeops.py:3595
 msgid "Offset shapes..."
-msgstr "Sposta forme..."
+msgstr "Contorni interni o esterni..."
 
 #: meerk40t/core/elements/element_treeops.py:3581
 msgid "...to outside with {offset}mm distance"
-msgstr "...all'esterno con una distanza di {offset}mm"
+msgstr "...sposta le forme verso l'esterno con una distanza di {offset}mm"
 
 #: meerk40t/core/elements/element_treeops.py:3583
 msgid "Create an outer offset around the selected elements"
-msgstr "Crea uno spostamento esterno attorno agli elementi selezionati"
+msgstr "Crea un offset esterno attorno agli elementi selezionati"
 
 #: meerk40t/core/elements/element_treeops.py:3598
 msgid "...to inside with {offset}mm distance"
-msgstr "...all'interno con una distanza di {offset}mm"
+msgstr "...crea un offset interno con una distanza di {offset} mm"
 
 #: meerk40t/core/elements/element_treeops.py:3600
 msgid "Create an inner offset around the selected elements"
-msgstr "Crea uno spostamento interno attorno agli elementi selezionati"
+msgstr "Crea un offset interno attorno agli elementi selezionati"
 
 #: meerk40t/kernel/kernel.py:2683
 msgid "Empty job definition..."
-msgstr "Definizione di lavoro vuota..."
+msgstr "Definizione del lavoro vuota...."
