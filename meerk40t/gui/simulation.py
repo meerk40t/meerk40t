@@ -823,7 +823,7 @@ class SimulationPanel(wx.Panel, Job):
             job_name="cache_updater",
             interval=0.25,
             times=1,
-            run_main=False,
+            run_main=True,
         )
 
         self.job_name = "simulate"
