@@ -229,6 +229,22 @@ class ShxFont:
                 self._parse_unifont(f)
             else:
                 raise ShxFontParseError(f"{self.type} is not a valid shx file type.")
+            self.translate_names_to_codes()
+
+    def translate_names_to_codes(self):
+        # We can't properly deal with long names, 
+        # so we translate them a virtual character 
+        gdict = list(self.glyphs.items())
+        virtual_char = len(self.glyphs)
+        for key, data in gdict:
+            if isinstance(key, str) and len(key) > 1:
+                while True:
+                    newkey = chr(virtual_char)
+                    if newkey not in self.glyphs:
+                        break
+                    virtual_char += 1
+                self.glyphs[newkey] = data
+                del self.glyphs[key]
 
     def _parse_header(self, f):
         header = read_string(f)
@@ -351,6 +367,7 @@ class ShxFont:
         try:
             return self._code.pop()
         except IndexError as e:
+            print (f"Error in {self.font_name}: no codes to pop")
             raise ShxFontParseError("No codes to pop()") from e
 
     def render(
@@ -471,7 +488,10 @@ class ShxFont:
         line_lengths = _do_render(vtext, offsets)
 
     def _parse_code(self):
-        b = self.pop()
+        try:
+            b = self.pop()
+        except ShxFontParseError:
+            return
         direction = b & 0x0F
         length = (b & 0xF0) >> 4
         if length == 0:
@@ -608,7 +628,10 @@ class ShxFont:
 
         :return:
         """
-        factor = self.pop()
+        try:
+            factor = self.pop()
+        except ShxFontParseError:
+            return
         if self._debug:
             print(
                 f"DIVIDE_VECTOR {self._scale}/{factor} {'(Skipped)' if self._skip else ''}"
@@ -679,7 +702,10 @@ class ShxFont:
         self._last_x, self._last_y = self._x, self._y
 
     def _draw_subshape_shapes(self):
-        subshape = self.pop()
+        try:
+            subshape = self.pop()
+        except ShxFontParseError:
+            return
         if self._debug:
             print(
                 f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}"
@@ -694,21 +720,28 @@ class ShxFont:
         self._code += bytearray(reversed(shape))
 
     def _draw_subshape_bigfont(self):
-        subshape = self.pop()
+        try:
+            subshape = self.pop()
+        except ShxFontParseError:
+            return
         if self._debug:
             print(
                 f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}"
             )
         if subshape == 0:
-            subshape = int_16le([self.pop(), self.pop()])
-            origin_x = self.pop() * self._scale
-            origin_y = self.pop() * self._scale
-            width = self.pop() * self._scale
-            height = self.pop() * self._scale
-            if self._debug:
-                print(
-                    f"Extended Bigfont Glyph: {subshape}, origin_x = {origin_x}, origin_y = {origin_y}. {width}x{height}"
-                )
+            try:
+                subshape = int_16le([self.pop(), self.pop()])
+            
+                origin_x = self.pop() * self._scale
+                origin_y = self.pop() * self._scale
+                width = self.pop() * self._scale
+                height = self.pop() * self._scale
+                if self._debug:
+                    print(
+                        f"Extended Bigfont Glyph: {subshape}, origin_x = {origin_x}, origin_y = {origin_y}. {width}x{height}"
+                    )
+            except ShxFontParseError:
+                return
         if self._skip:
             self._skip = False
             return
@@ -719,7 +752,11 @@ class ShxFont:
         self._code += bytearray(reversed(shape))
 
     def _draw_subshape_unifont(self):
-        subshape = int_16le([self.pop(), self.pop()])
+        try:
+            subshape = int_16le([self.pop(), self.pop()])
+        except ShxFontParseError:
+            return
+
         if self._debug:
             print(
                 f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}"
@@ -755,8 +792,12 @@ class ShxFont:
         ranges from -128 to +127.
         :return:
         """
-        dx = signed8(self.pop()) * self._scale
-        dy = signed8(self.pop()) * self._scale
+        try:
+            dx = signed8(self.pop()) * self._scale
+            dy = signed8(self.pop()) * self._scale
+        except ShxFontParseError:
+            return
+
         if self._debug:
             print(f"XY_DISPLACEMENT {dx} {dy} {'(Skipped)' if self._skip else ''}")
         if self._skip:
@@ -777,8 +818,11 @@ class ShxFont:
         :return:
         """
         while True:
-            dx = signed8(self.pop()) * self._scale
-            dy = signed8(self.pop()) * self._scale
+            try:
+                dx = signed8(self.pop()) * self._scale
+                dy = signed8(self.pop()) * self._scale
+            except ShxFontParseError:
+                return
             if self._debug:
                 print(
                     f"POLY_XY_DISPLACEMENT {dx} {dy} {'(Skipped)' if self._skip else ''}"
@@ -816,8 +860,11 @@ class ShxFont:
         and the span.
         :return:
         """
-        radius = self.pop() * self._scale
-        sc = signed8(self.pop())
+        try:
+            radius = self.pop() * self._scale
+            sc = signed8(self.pop())
+        except ShxFontParseError:
+            return
         s = (sc >> 4) & 0x7
         c = sc & 0x7
         if self._debug:
@@ -858,13 +905,15 @@ class ShxFont:
         90° + (28/256 * 45°) = 95°
         """
         octant = tau / 8.0
-        start_offset = octant * self.pop() / 256.0
-        end_offset = octant * self.pop() / 256.0
-        radius = (256 * self.pop() + self.pop()) * self._scale
-        sc = signed8(self.pop())
-        s = (sc >> 4) & 0x7
-        c = sc & 0x7
-
+        try:
+            start_offset = octant * self.pop() / 256.0
+            end_offset = octant * self.pop() / 256.0
+            radius = (256 * self.pop() + self.pop()) * self._scale
+            sc = signed8(self.pop())
+            s = (sc >> 4) & 0x7
+            c = sc & 0x7
+        except ShxFontParseError:
+            return
         if self._debug:
             print(
                 f"FRACTION_ARC {start_offset}, {end_offset}, {radius}, {s}, {c} {'(Skipped)' if self._skip else ''}"
@@ -903,10 +952,12 @@ class ShxFont:
 
         :return:
         """
-
-        dx = signed8(self.pop()) * self._scale
-        dy = signed8(self.pop()) * self._scale
-        h = signed8(self.pop())
+        try:
+            dx = signed8(self.pop()) * self._scale
+            dy = signed8(self.pop()) * self._scale
+            h = signed8(self.pop())
+        except ShxFontParseError:
+            return
 
         if self._debug:
             print(f"BULGE_ARC {dx}, {dy}, {h} {'(Skipped)' if self._skip else ''}")
@@ -939,8 +990,12 @@ class ShxFont:
         """
         h = 0
         while True:
-            dx = signed8(self.pop()) * self._scale
-            dy = signed8(self.pop()) * self._scale
+            try:
+                dx = signed8(self.pop()) * self._scale
+                dy = signed8(self.pop()) * self._scale
+            except ShxFontParseError:
+                return
+
             if self._debug:
                 print(
                     f"POLY_BULGE_ARC {dx}, {dy}, {h} {'(Skipped)' if self._skip else ''}"
@@ -949,7 +1004,10 @@ class ShxFont:
                 if self._debug:
                     print(f"POLY_BULGE_ARC (TERMINATED)")
                 break
-            h = signed8(self.pop())
+            try:
+                h = signed8(self.pop())
+            except ShxFontParseError:
+                return
             if self._skip:
                 continue
             r = abs(complex(dx, dy)) / 2
