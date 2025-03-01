@@ -1,4 +1,4 @@
-VER=0.9.7
+VER=0.9.72
 echo Converting master image to a couple of smaller images
 echo This requires imagemagick \(https://imagemagick.org\)
 echo Superimposing Version information: "$VER"
