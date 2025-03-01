@@ -9,9 +9,9 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
 "PO-Revision-Date: 23-04-21 06:37UTC\n"
-"Last-Translator: betaeta\n"
+"Last-Translator: Betaeta\n"
 "Language: it\n"
-"Language-Team: CicioniItalian\n"
+"Language-Team: Cicioni Italian traslation\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -22144,3 +22144,31 @@ msgstr "Invia una macro predefinita al dispositivo"
 #: meerk40t/extra/param_functions.py:1104 meerk40t/extra/param_functions.py:1397
 msgid "Create shape"
 msgstr "Crea forma"
+
+#: meerk40t/core/elements/branches.py:1414
+msgid "Clear all content"
+msgstr "Cancella tutto il contenuto"
+
+#: meerk40t/core/elements/element_treeops.py:3578 meerk40t/core/elements/element_treeops.py:3595
+msgid "Offset shapes..."
+msgstr "Contorni interni o esterni..."
+
+#: meerk40t/core/elements/element_treeops.py:3581
+msgid "...to outside with {offset}mm distance"
+msgstr "...sposta le forme verso l'esterno con una distanza di {offset}mm"
+
+#: meerk40t/core/elements/element_treeops.py:3583
+msgid "Create an outer offset around the selected elements"
+msgstr "Crea un offset esterno attorno agli elementi selezionati"
+
+#: meerk40t/core/elements/element_treeops.py:3598
+msgid "...to inside with {offset}mm distance"
+msgstr "...crea un offset interno con una distanza di {offset} mm"
+
+#: meerk40t/core/elements/element_treeops.py:3600
+msgid "Create an inner offset around the selected elements"
+msgstr "Crea un offset interno attorno agli elementi selezionati"
+
+#: meerk40t/kernel/kernel.py:2683
+msgid "Empty job definition..."
+msgstr "Definizione del lavoro vuota...."
