@@ -576,10 +576,18 @@ class MeerK40t(MWindow):
                     myPilImage = Image.new(
                         "RGB", (myWxImage.GetWidth(), myWxImage.GetHeight())
                     )
-                    myPilImage.frombytes(myWxImage.GetData())
+                    try:
+                        byte_data = bytes(myWxImage.GetData())
+                        myPilImage.frombytes(byte_data)
+                    except TypeError as e:
+                        console = self.context.root.channel("console")
+                        console(f"Error while pasting image: {e}")
+                        return None
                     return myPilImage
 
                 image = imageToPil(WxBitmapToWxImage(bmp))
+                if image is None:
+                    return
                 dpi = DEFAULT_PPI
                 matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
                 # _("Paste image")
