@@ -1002,7 +1002,7 @@ def plugin(kernel, lifecycle):
                 cy = 0
             if radius is None:
                 radius = 0
-            sangle = float(startangle)
+            sangle = 0 if startangle is None else float(startangle)
             if corners <= 2:
                 # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
                 geom = create_star_shape(
