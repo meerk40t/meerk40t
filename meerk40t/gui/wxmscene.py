@@ -868,6 +868,99 @@ class MeerK40tScenePanel(wx.Panel):
                 else:
                     channel(_("Target needs to be one of primary, secondary, circular"))
 
+        # Establishes magnet commands
+        @context.console_argument(
+            "action", type=str, help=_("Action: clear or set / delete with coordinate")
+        )
+        @context.console_argument(
+            "axis", type=str, help=_("Axis (X or Y)")
+        )
+        @context.console_argument("pos", type=str, help=_("Position for magnetline"))
+        @context.console_command(
+            "magnet",
+            help=_("magnet <action> <axis> <position>"),
+            input_type="scene",
+        )
+        def magnet_set(
+            command,
+            channel,
+            _,
+            action=None,
+            axis=None,
+            pos=None,
+            **kwarg,
+        ):
+            def info(opt_msg):
+                channel(
+                    _("You need to provide the intended action:") + "\n" +
+                    _("clear x - clear y : will clear all magnets on the given axis") + "\n" +
+                    _("set x <pos> - set y <pos>: will set a magnet line on the given axis") + "\n" +
+                    _("delete x <pos> - delete y <pos>: will delete the magnet line on the given axis")
+                )
+                if opt_msg:
+                    channel(opt_msg)
+
+            if action is None or axis is None or axis.upper() not in ("X", "Y"):
+                info("")
+                return
+            action = action.lower()
+            axis = axis.upper()
+            value = None
+            if pos:
+                try:
+                    rel_len = self.context.device.view.width if axis == "X" else self.context.device.view.height
+                    value = float(Length(pos, relative_length=rel_len))
+                except ValueError:
+                    info (f"Invalid length: {pos}")
+                    return
+
+            if action != "clear" and value is None:
+                info(_("You need to provide a position"))
+                return
+
+            if action == "clear":
+                if axis == "X":
+                    count = len(self.magnet_x)
+                    self.magnet_x.clear()
+                else:
+                    count = len(self.magnet_x)
+                    self.magnet_y.clear()
+                self.save_magnets()
+                self.context.signal("refresh_scene", "Scene")
+                channel (_("Deleted {count} magnet lines on axis {axis}").format(axis=axis, count=count))
+            elif action == "set":
+                done = False
+                if axis == "X":
+                    if not value in self.magnet_x:
+                        done = True
+                        self.magnet_x.append(value)
+                else:
+                    if not value in self.magnet_y:
+                        done = True
+                        self.magnet_y.append(value)
+                self.save_magnets()
+                self.context.signal("refresh_scene", "Scene")
+                if done:
+                    channel(_("Magnetline appended at {pos} on axis {axis}").format(pos=pos, axis=axis))
+                else:
+                    channel(_("Magnetline was already present"))
+            elif action.startswith("del"):
+                done = False
+                if axis == "X":
+                    if value in self.magnet_x:
+                        done = True
+                        self.magnet_x.remove(value)
+                else:
+                    if not value in self.magnet_y:
+                        done = True
+                        self.magnet_y.remove(value)
+                self.save_magnets()
+                self.context.signal("refresh_scene", "Scene")
+                if done:
+                    channel(_("Magnetline removed at {pos} on axis {axis}").format(pos=pos, axis=axis))
+                else:
+                    channel(_("Magnetline was not existing"))
+
     def toggle_ref_obj(self):
         for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
             if self.reference_object == e:
