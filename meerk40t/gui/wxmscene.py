@@ -923,7 +923,7 @@ class MeerK40tScenePanel(wx.Panel):
                     count = len(self.magnet_x)
                     self.magnet_x.clear()
                 else:
-                    count = len(self.magnet_x)
+                    count = len(self.magnet_y)
                     self.magnet_y.clear()
                 self.save_magnets()
                 self.context.signal("refresh_scene", "Scene")
@@ -951,7 +951,7 @@ class MeerK40tScenePanel(wx.Panel):
                         done = True
                         self.magnet_x.remove(value)
                 else:
-                    if not value in self.magnet_y:
+                    if value in self.magnet_y:
                         done = True
                         self.magnet_y.remove(value)
                 self.save_magnets()
