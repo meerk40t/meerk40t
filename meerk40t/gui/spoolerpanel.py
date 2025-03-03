@@ -1158,7 +1158,6 @@ class SpoolerPanel(wx.Panel):
             self.refresh_history()
 
     def update_queue(self):
-        print ("Timer event")
         if self.shown:
             self.on_device_update(None)
 
