@@ -22172,3 +22172,60 @@ msgstr "Crea un offset interno attorno agli elementi selezionati"
 #: meerk40t/kernel/kernel.py:2683
 msgid "Empty job definition..."
 msgstr "Definizione del lavoro vuota...."
+
+#: meerk40t/gui/wxmscene.py:873
+msgid "Action: clear or set / delete with coordinate"
+msgstr "Azione: cancella o imposta / elimina coordinata"
+
+#: meerk40t/gui/wxmscene.py:876
+msgid "Axis (X or Y)"
+msgstr "Asse (X o Y)"
+
+#: meerk40t/gui/wxmscene.py:878
+msgid "Position for magnetline"
+msgstr "Posizione la linea magnetica"
+
+#: meerk40t/gui/wxmscene.py:881
+msgid "magnet <action> <axis> <position>"
+msgstr "magnete <action> <axis> <position>"
+
+#: meerk40t/gui/wxmscene.py:895
+msgid "You need to provide the intended action:"
+msgstr "Devi specificare l'azione desiderata:"
+
+#: meerk40t/gui/wxmscene.py:896
+msgid "clear x - clear y : will clear all magnets on the given axis"
+msgstr "cancella x - cancella y : cancellerà tutti i magneti sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:897
+msgid "set x <pos> - set y <pos>: will set a magnet line on the given axis"
+msgstr "imposta x <pos> - imposta y <pos>: imposterà una linea magnetica sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:898
+msgid "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
+msgstr "elimina x <pos> - elimina y <pos>: eliminerà la linea magnetica sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:918
+msgid "You need to provide a position"
+msgstr "Devi specificare una posizione"
+
+#: meerk40t/gui/wxmscene.py:930
+msgid "Deleted {count} magnet lines on axis {axis}"
+msgstr "Eliminate {count} linee magnetiche sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:944
+msgid "Magnetline appended at {pos} on axis {axis}"
+msgstr "Linea magnetica aggiunta in {pos} sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:946
+msgid "Magnetline was already present"
+msgstr "La linea magnetica era già presente"
+
+#: meerk40t/gui/wxmscene.py:960
+msgid "Magnetline removed at {pos} on axis {axis}"
+msgstr "Linea magnetica rimossa in {pos} sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:962
+msgid "Magnetline was not existing"
+msgstr "La linea magnetica non esisteva"
+
