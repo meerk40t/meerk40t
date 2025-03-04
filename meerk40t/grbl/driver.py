@@ -63,6 +63,7 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
         self.units_dirty = True
         self.move_mode = 0
+        self._last_g = None
 
         self._absolute = True
         self.feed_mode = None
@@ -239,6 +240,7 @@ class GRBLDriver(Parameters):
             self.power_dirty = False
             self(f"G1 {spower}{self.line_end}")
         self(f"M5{self.line_end}")
+        self._last_g = None
 
     def laser_on(self, power=None, speed=None, *values):
         """
@@ -261,6 +263,7 @@ class GRBLDriver(Parameters):
             self.speed = speed
             self.speed_dirty = False
         self(f"M3{spower}{self.line_end}{sspeed}")
+        self._last_g = None
 
     def geometry(self, geom):
         """
@@ -278,6 +281,7 @@ class GRBLDriver(Parameters):
             self(f"M3{self.line_end}")
         else:
             self(f"M4{self.line_end}")
+        self._last_g = None
         first = True
         g = Geomstr()
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
@@ -401,6 +405,7 @@ class GRBLDriver(Parameters):
             self(f"M3{self.line_end}")
         else:
             self(f"M4{self.line_end}")
+        self._last_g = None
         first = True
         total = len(self.queue)
         current = 0
@@ -416,6 +421,7 @@ class GRBLDriver(Parameters):
             if cmd_string:
                 for cmd in cmd_string.splitlines():
                     self(f"{cmd}{self.line_end}")
+                self._last_g = None
 
             current += 1
             self._set_queue_status(current, total)
@@ -582,6 +588,7 @@ class GRBLDriver(Parameters):
             self(f"$H{self.line_end}")
         else:
             self(f"G28{self.line_end}")
+        self._last_g = None
         new_current = self.service.current
         if self._signal_updates:
             self.service.signal(
@@ -600,6 +607,7 @@ class GRBLDriver(Parameters):
         if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self(f"G28{self.line_end}")
+        self._last_g = None
 
     def rapid_mode(self, *values):
         """
@@ -618,6 +626,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"M5{self.line_end}")
+        self._last_g = None
 
     def program_mode(self, *values):
         """
@@ -626,6 +635,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"M3{self.line_end}")
+        self._last_g = None
 
     def raster_mode(self, *values):
         """
@@ -646,6 +656,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"G04 S{time_in_ms / 1000.0}{self.line_end}")
+        self._last_g = None
 
     def wait_finish(self, *values):
         """
@@ -754,6 +765,7 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
         self.units_dirty = True
         self.move_mode = 0
+        self._last_g = None
 
     def reset(self, *args):
         """
@@ -778,6 +790,7 @@ class GRBLDriver(Parameters):
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
+        self._last_g = None
 
         self.paused = False
         self.service.signal("pause")
@@ -831,9 +844,13 @@ class GRBLDriver(Parameters):
             self.native_y += y
         line = []
         if self.move_mode == 0:
-            line.append("G0")
+            if self._last_g != "G0":
+                line.append("G0")
+            self._last_g = "G0"
         else:
-            line.append("G1")
+            if self._last_g != "G0":
+                line.append("G1")
+            self._last_g = "G0"
         x /= self.unit_scale
         y /= self.unit_scale
         line.append(f"X{x:.3f}")
