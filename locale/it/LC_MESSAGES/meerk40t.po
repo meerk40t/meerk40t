@@ -22228,3 +22228,4 @@ msgstr "Linea magnetica rimossa in {pos} sull'asse {axis}"
 #: meerk40t/gui/wxmscene.py:962
 msgid "Magnetline was not existing"
 msgstr "La linea magnetica non esisteva"
+
