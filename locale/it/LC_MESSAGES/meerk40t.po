@@ -4476,16 +4476,16 @@ msgid ""
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but\n"
+"who sincerely hoped his contributions would be but\n"
 "the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t è un progetto basato sulla licenza MIT"
-"Progetto open source per il laser su dispositivi K40.\n\n"
-"L'aiuto per questo progetto è sempre ben accetto.\n"
-"Molte grazie per l'aiuto passato e futuro.\n"
+"Meerk40t è un progetto basato sulla licenza MIT, "
+"progetto open source per gestire laser su dispositivi K40 (e non solo).\n\n"
+"Qualsiasi aiuto per questo progetto è sempre ben accetto.\n"
+"Grazie molto per l'aiuto passato e futuro.\n"
 "Questo programma è principalmente opera di Tatarize,\n"
-"che spera che il suo lavoro finisca per essere una piccola "
-"parte di un'opera molto più grande.\n\n"
+"che sperava che il suo lavoro finisse per essere una piccola \n"
+"parte di un'opera molto più grande."
 
 #: meerk40t/gui/about.py:23
 msgid ""
@@ -4493,30 +4493,31 @@ msgid ""
 "trying to fill in some awfully large shoes."
 msgstr ""
 "Dall'inizio del 2024, jpirnay ha assunto il ruolo di sviluppatore principale\n"
-"e si trova a dover colmare delle orme davvero grandi"
+"e si trova a dover colmare delle orme davvero grandi \n\n"
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
-msgstr "I ringraziamenti vanno a...\n"
+msgstr "I ringraziamenti vanno a...\n\n"
 
 #: meerk40t/gui/about.py:92
 msgid "* Li Huiyu for their controller.\n"
-msgstr "* Li Huiyu per il suo controller.\n"
+msgstr "* Li Huiyu per il loro controller.\n"
 
 #: meerk40t/gui/about.py:93
 msgid "* Scorch for lighting our path.\n"
-msgstr "* Scorch per aver illuminato il nostro cammino.\n"
+msgstr "* Scorch, che ci ha mostrato la strada.\n"
 
 #: meerk40t/gui/about.py:94
 msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
-msgstr "* Alois Zingl per il suo brillante algoritmo di Bresenham per le curve\n"
+msgstr ""
+"* Alois Zingl per il suo brillante algoritmo di Bresenham per le curve.\n"
 
 #: meerk40t/gui/about.py:98
 msgid ""
-"* @joerlane for his hardware investigation wizardry into how the M2-Nano "
+  
 "works.\n"
 msgstr ""
-"* @joerlane per la sua abilità nell'indagine hardware su come funziona il M2-Nano\n"
+"* @joerlane per la sua abilità nell'analisi hardware del funzionamento dell'M2-Nano.\n"
 
 #: meerk40t/gui/about.py:103
 msgid "* All the MeerKittens, {developer}. \n"
@@ -4527,16 +4528,13 @@ msgid ""
 "* Beta testers and anyone who reported issues that helped us improve "
 "things.\n"
 msgstr ""
-"* I beta tester e chiunque abbia segnalato problemi che ci hanno aiutato a migliorare "
-"cose.\n"
+"* Ai beta tester e a tutti coloro che hanno aiutato con le descrizioni dei bug "
+"hanno contribuito a migliorare le cose.\n"
 
 #: meerk40t/gui/about.py:109
 msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr ""
-#: meerk40t/gui/about.py:109
-msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
-msgstr ""
-"* I traduttori che hanno contribuito all'internazionalizzazione della MeerK40t per l'uso in tutto il mondo.\n"
+"* Ai traduttori che hanno contribuito a rendere Meerk40t utilizzabile in tutto il mondo.\n"
 
 #: meerk40t/gui/about.py:112
 msgid ""
@@ -5553,7 +5551,7 @@ msgstr "Se si continua a spostarsi verso il centro, la testa del laser potrebbe"
 #: meerk40t/gui/lasertoolpanel.py:619
 msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
-"sbattere contro i bordi e subire danni! Volete davvero procedere?"
+"sbattere contro i bordi e subire danni! Vuoi davvero procedere?"
 
 #: meerk40t/gui/lasertoolpanel.py:622
 msgid "Dangerous coordinates"
@@ -17680,11 +17678,11 @@ msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / verrà at
 
 #: meerk40t/camera/gui/camerapanel.py:1146 meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:1042 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/spoolerpanel.py:586
 msgid "Do you really want to delete all entries?"
-msgstr "Volete davvero cancellare tutte le voci?"
+msgstr "Vuoi davvero cancellare tutte le voci?"
 
 #: meerk40t/core/elements/element_treeops.py:913
 msgid "Do you really want to delete {num} entries?"
-msgstr "Volete davvero cancellare {num} voci?"
+msgstr "Vuoi davvero cancellare {num} voci?"
 
 #: meerk40t/gui/preferences.py:522
 msgid "Object-Label"
