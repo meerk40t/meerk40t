@@ -132,7 +132,7 @@ class CutCode(CutGroup):
                 length_of_previous_travel = Point.distance(prev.end, current.start)
                 total_distance_travel += length_of_previous_travel
             rapid_speed = self._native_speed(cutcode)
-            if rapid_speed is not None:
+            if rapid_speed is not None and rapid_speed != 0:
                 total_duration_travel = total_distance_travel / rapid_speed
                 duration_of_this_travel = length_of_previous_travel / rapid_speed
 
