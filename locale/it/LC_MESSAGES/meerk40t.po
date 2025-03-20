@@ -4514,8 +4514,7 @@ msgstr ""
 
 #: meerk40t/gui/about.py:98
 msgid ""
-  
-"works.\n"
+"* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
 msgstr ""
 "* @joerlane per la sua abilità nell'analisi hardware del funzionamento dell'M2-Nano.\n"
 
