@@ -54,6 +54,8 @@ class Settings:
             FileNotFoundError,
         ):
             return
+        except UnicodeDecodeError as e:
+            print ("The config file contained unsupported characters, please share the file with the dev team")
         except (configparser.DuplicateOptionError, configparser.DuplicateSectionError) as e:
             print (f"We had a duplication error in the config, try to recover from {e}")
         for section in parser.sections():
