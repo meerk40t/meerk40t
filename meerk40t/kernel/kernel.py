@@ -254,15 +254,21 @@ class Kernel(Settings):
                 kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = f"Calling {str(obj)}.{func.__name__}({signature})"
-                debug_file.write(start + "\n")
+                try:
+                    debug_file.write(start + "\n")
+                except (ValueError, OSError):
+                    pass
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
                 finish = f"    {func.__name__} returned {value} after {t * 1000}ms"
                 print(finish)
-                debug_file.write(finish + "\n")
-                debug_file.flush()
+                try:
+                    debug_file.write(finish + "\n")
+                    debug_file.flush()
+                except (ValueError, OSError):
+                    pass
                 return value
 
             return wrapper_debug
