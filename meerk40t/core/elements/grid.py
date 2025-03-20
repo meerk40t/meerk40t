@@ -198,7 +198,14 @@ def init_commands(kernel):
                 y_distance += height
             if origin is None:
                 origin = (1, 1)
-            cx, cy = origin
+            if isinstance(origin, (tuple, list)) and isinstance(origin[0], (tuple, list)):
+                origin = origin[0]
+            try:
+                cx, cy = origin
+            except ValueError:
+                cx = 1
+                cy = 1
+            
             data_out = list(data)
             if cx is None:
                 cx = 1
