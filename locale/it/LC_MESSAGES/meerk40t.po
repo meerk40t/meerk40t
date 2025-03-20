@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
 "PO-Revision-Date: 23-04-21 06:37UTC\n"
 "Last-Translator: Betaeta\n"
@@ -3968,7 +3968,7 @@ msgstr "cmd <quantità>"
 
 #: meerk40t/core/spoolers.py:171
 msgid "executes outstanding jog buffer"
-msgstr ""
+msgstr "Esegue il buffer di movimento in sospeso"
 
 #: meerk40t/core/spoolers.py:189
 msgid "Position moved: {x} {y}"
@@ -4310,15 +4310,15 @@ msgstr "Ottimizzazione non trovata"
 
 #: ./meerk40t\extra\updater.py:360
 msgid "Update-Info"
-msgstr "Update-Information"
+msgstr "Informazioni sugli aggiornamenti"
 
 #: meerk40t/extra/updater.py:28
 msgid "Check whether a newer version is available"
-msgstr ""
+msgstr "Verifica se è disponibile una versione più recente"
 
 #: meerk40t/extra/vectrace.py:10 meerk40t/image/imagetools.py:110
 msgid "return paths around image"
-msgstr ""
+msgstr "Restituisce i percorsi attorno all'immagine"
 
 #: meerk40t/extra/winsleep.py:58
 msgid "disables sleepmode"
@@ -4392,6 +4392,14 @@ msgstr "Distanza dell'interpolazione della curva in mils"
 msgid "Use M3"
 msgstr "Usa M3"
 
+#: meerk40t/grbl/gui/grbloperationconfig.py:50
+msgid "Custom Code:"
+msgstr "Codice personalizzato:"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:53
+msgid "Any custom GRBL code that will be executed at the start of the operation"
+msgstr "Qualsiasi codice GRBL personalizzato che verrà eseguito all'inizio dei processi"
+
 #: meerk40t/grbl/device.py:290
 msgid "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
 msgstr "Usa M3 anziché M4 per l'avvio del laser (vedi documentazione GRBL per ulteriori informazioni)"
@@ -4426,7 +4434,7 @@ msgstr "Invia codice G di ripresa in tempo reale al dispositivo"
 
 #: meerk40t/grbl/device.py:394
 msgid "Update moshi codes for movement"
-msgstr ""
+msgstr "Aggiorna i codici Moshi per il movimento"
 
 #: meerk40t/grbl/device.py:400 meerk40t/lihuiyu/device.py:486
 msgid "save job export"
@@ -4468,39 +4476,48 @@ msgid ""
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but\n"
+"who sincerely hoped his contributions would be but\n"
 "the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t è un progetto basato sulla licenza MIT"
-"Progetto open source per il laser su dispositivi K40.\n\n"
-"L'aiuto per questo progetto è sempre ben accetto.\n"
-"Molte grazie per l'aiuto passato e futuro.\n"
+"Meerk40t è un progetto basato sulla licenza MIT, "
+"progetto open source per gestire laser su dispositivi K40 (e non solo).\n\n"
+"Qualsiasi aiuto per questo progetto è sempre ben accetto.\n"
+"Grazie molto per l'aiuto passato e futuro.\n"
 "Questo programma è principalmente opera di Tatarize,\n"
-"che spera che il suo lavoro finisca per essere una piccola "
-"parte di un'opera molto più grande.\n\n"
+"che sperava che il suo lavoro finisse per essere una piccola \n"
+"parte di un'opera molto più grande."
+
+#: meerk40t/gui/about.py:23
+msgid ""
+"Since early 2024 jpirnay has taken on the role of lead developer\n"
+"trying to fill in some awfully large shoes."
+msgstr ""
+"Dall'inizio del 2024, jpirnay ha assunto il ruolo di sviluppatore principale\n"
+"e si trova a dover colmare delle orme davvero grandi \n\n"
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
-msgstr "I ringraziamenti vanno a...\n"
+msgstr "I ringraziamenti vanno a...\n\n"
 
 #: meerk40t/gui/about.py:92
 msgid "* Li Huiyu for their controller.\n"
-msgstr "* Li Huiyu per il suo controller.\n"
+msgstr "* Li Huiyu per il loro controller.\n"
 
 #: meerk40t/gui/about.py:93
 msgid "* Scorch for lighting our path.\n"
-msgstr "* Scorch per aver illuminato il nostro cammino.\n"
+msgstr "* Scorch, che ci ha mostrato la strada.\n"
 
 #: meerk40t/gui/about.py:94
 msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
-msgstr "* Alois Zingl per il suo brillante algoritmo di Bresenham per le curve\n"
+msgstr ""
+"* Alois Zingl per il suo brillante algoritmo di Bresenham per le curve.\n"
 
 #: meerk40t/gui/about.py:98
 msgid ""
-"* @joerlane for his hardware investigation wizardry into how the M2-Nano "
+  
 "works.\n"
 msgstr ""
-"* @joerlane per la sua abilità nell'indagine hardware su come funziona il M2-Nano\n"
+"* @joerlane per la sua abilità nell'analisi hardware del funzionamento dell'M2-Nano.\n"
 
 #: meerk40t/gui/about.py:103
 msgid "* All the MeerKittens, {developer}. \n"
@@ -4511,16 +4528,13 @@ msgid ""
 "* Beta testers and anyone who reported issues that helped us improve "
 "things.\n"
 msgstr ""
-"* I beta tester e chiunque abbia segnalato problemi che ci hanno aiutato a migliorare "
-"cose.\n"
+"* Ai beta tester e a tutti coloro che hanno aiutato con le descrizioni dei bug "
+"hanno contribuito a migliorare le cose.\n"
 
 #: meerk40t/gui/about.py:109
 msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr ""
-#: meerk40t/gui/about.py:109
-msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
-msgstr ""
-"* I traduttori che hanno contribuito all'internazionalizzazione della MeerK40t per l'uso in tutto il mondo.\n"
+"* Ai traduttori che hanno contribuito a rendere Meerk40t utilizzabile in tutto il mondo.\n"
 
 #: meerk40t/gui/about.py:112
 msgid ""
@@ -4904,11 +4918,11 @@ msgstr "Nessun file"
 
 #: meerk40t/gui/choicepropertypanel.py:545
 msgid "mask"
-msgstr ""
+msgstr "mascheta"
 
 #: meerk40t/gui/choicepropertypanel.py:550
 msgid "value"
-msgstr ""
+msgstr "valore"
 
 #: meerk40t/gui/consolepanel.py:77 meerk40t/gui/consolepanel.py:388
 #: meerk40t/gui/consolepanel.py:397
@@ -5537,7 +5551,7 @@ msgstr "Se si continua a spostarsi verso il centro, la testa del laser potrebbe"
 #: meerk40t/gui/lasertoolpanel.py:619
 msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
-"sbattere contro i bordi e subire danni! Volete davvero procedere?"
+"sbattere contro i bordi e subire danni! Vuoi davvero procedere?"
 
 #: meerk40t/gui/lasertoolpanel.py:622
 msgid "Dangerous coordinates"
@@ -7797,11 +7811,11 @@ msgstr "pannello da nascondere"
 
 #: meerk40t/gui/wxmmain.py:1496
 msgid "pane to be float"
-msgstr "pannello fluttuante "
+msgstr "pannello mobile "
 
 #: meerk40t/gui/wxmmain.py:1500
 msgid "Float the pane"
-msgstr ""
+msgstr "Sgancia pannello"
 
 #: meerk40t/gui/wxmmain.py:1516
 msgid "pane to be dock"
@@ -7809,7 +7823,7 @@ msgstr "pannello da agganciare"
 
 #: meerk40t/gui/wxmmain.py:1520
 msgid "Dock the pane"
-msgstr ""
+msgstr "Aggancia pannelo"
 
 #: meerk40t/gui/wxmmain.py:1539
 msgid "Hides/Restores all the visible panes (except scene)"
@@ -8400,6 +8414,62 @@ msgstr "Strumenti:"
 #: meerk40t/gui/wxmscene.py:277
 msgid "-------"
 msgstr ""
+
+#: meerk40t/gui/wxmscene.py:873
+msgid "Action: clear or set / delete with coordinate"
+msgstr "Azione: cancella o imposta / elimina coordinata"
+
+#: meerk40t/gui/wxmscene.py:876
+msgid "Axis (X or Y)"
+msgstr "Asse (X o Y)"
+
+#: meerk40t/gui/wxmscene.py:878
+msgid "Position for magnetline"
+msgstr "Posizione la linea magnetica"
+
+#: meerk40t/gui/wxmscene.py:881
+msgid "magnet <action> <axis> <position>"
+msgstr "magnete <action> <axis> <position>"
+
+#: meerk40t/gui/wxmscene.py:895
+msgid "You need to provide the intended action:"
+msgstr "Devi specificare l'azione desiderata:"
+
+#: meerk40t/gui/wxmscene.py:896
+msgid "clear x - clear y : will clear all magnets on the given axis"
+msgstr "cancella x - cancella y : cancellerà tutti i magneti sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:897
+msgid "set x <pos> - set y <pos>: will set a magnet line on the given axis"
+msgstr "imposta x <pos> - imposta y <pos>: imposterà una linea magnetica sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:898
+msgid "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
+msgstr "elimina x <pos> - elimina y <pos>: eliminerà la linea magnetica sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:918
+msgid "You need to provide a position"
+msgstr "Devi specificare una posizione"
+
+#: meerk40t/gui/wxmscene.py:930
+msgid "Deleted {count} magnet lines on axis {axis}"
+msgstr "Eliminate {count} linee magnetiche sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:944
+msgid "Magnetline appended at {pos} on axis {axis}"
+msgstr "Linea magnetica aggiunta in {pos} sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:946
+msgid "Magnetline was already present"
+msgstr "La linea magnetica era già presente"
+
+#: meerk40t/gui/wxmscene.py:960
+msgid "Magnetline removed at {pos} on axis {axis}"
+msgstr "Linea magnetica rimossa in {pos} sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:962
+msgid "Magnetline was not existing"
+msgstr "La linea magnetica non esisteva"
 
 #: meerk40t/gui/wxmscene.py:341
 msgid ""
@@ -17272,7 +17342,7 @@ msgstr "Modelli"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:262
 msgid "X, Y"
-msgstr ""
+msgstr "X, Y"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:281
 msgid "W, H"
@@ -17372,7 +17442,7 @@ msgstr "Modifica pulsante"
 
 #: meerk40t/gui/wxmribbon.py:1332
 msgid "Tooltip"
-msgstr "Tooltip"
+msgstr "Suggerimento"
 
 #: meerk40t/gui/wxmribbon.py:1338
 msgid "Action left click"
@@ -17523,7 +17593,7 @@ msgid "Default Wobble Radius"
 msgstr "Raggio oscillazione standard"
 
 #: meerk40t/device/devicechoices.py:47
-msgid  "Default Wobble Interval"
+msgid "Default Wobble Interval"
 msgstr "Intervallo oscillazione standard"
 
 #: meerk40t/camera/gui/camerapanel.py:524
@@ -17594,13 +17664,25 @@ msgstr "Sopprime i Processi non utilizzate"
 msgid "Set coolant to on/off or leave unchanged (default)"
 msgstr "Imposta il refrigerante su on/off o lasciare invariato (default)"
 
+#: meerk40t/gui/basicops.py:462
+msgid "A: Active = toggle whether the elements assigned to this operation will be burned or not"
+msgstr "A: Attivo = attiva o disattiva se gli elementi assegnati a questa operazione verranno incisi o meno"
+
+#: meerk40t/gui/basicops.py:469
+msgid "S: Show = if inactive then you can suppress the drawing of the assigned elements"
+msgstr "S: Mostra = se non attivo puoi sopprimere la visualizzazione degli elementi assegnati"
+
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant= determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / verrà attivato o disattivato all'inizio di questa operazione"
+
 #: meerk40t/camera/gui/camerapanel.py:1146 meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:1042 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/spoolerpanel.py:586
 msgid "Do you really want to delete all entries?"
-msgstr "Volete davvero cancellare tutte le voci?"
+msgstr "Vuoi davvero cancellare tutte le voci?"
 
 #: meerk40t/core/elements/element_treeops.py:913
 msgid "Do you really want to delete {num} entries?"
-msgstr "Volete davvero cancellare {num} voci?"
+msgstr "Vuoi davvero cancellare {num} voci?"
 
 #: meerk40t/gui/preferences.py:522
 msgid "Object-Label"
@@ -22121,14 +22203,6 @@ msgstr "Blocca le posizioni dei riquadri / consentire lo spostamento dei riquadr
 msgid "Reset pane positions to a default value"
 msgstr "Ripristina le posizioni del riquadro a un valore predefinito"
 
-#: meerk40t/grbl/gui/grbloperationconfig.py:50
-msgid "Custom Code:"
-msgstr "Codice personalizzato:"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1689
-msgid "Any custom GRBL code that will be executed at the start of the operation"
-msgstr "Qualsiasi codice GRBL personalizzato che verrà eseguito all'inizio dei processi"
-
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1352
 msgid "Usually a raster will be created as a black and white picture. Every non-white pixel (even very light ones) will become black and will be burned at full power."
 msgstr "Di solito un raster viene creato come un'immagine in bianco e nero. Ogni pixel non bianco (anche quelli molto chiari) diventa nero e viene bruciato alla massima potenza"
@@ -22173,59 +22247,6 @@ msgstr "Crea un offset interno attorno agli elementi selezionati"
 msgid "Empty job definition..."
 msgstr "Definizione del lavoro vuota...."
 
-#: meerk40t/gui/wxmscene.py:873
-msgid "Action: clear or set / delete with coordinate"
-msgstr "Azione: cancella o imposta / elimina coordinata"
-
-#: meerk40t/gui/wxmscene.py:876
-msgid "Axis (X or Y)"
-msgstr "Asse (X o Y)"
-
-#: meerk40t/gui/wxmscene.py:878
-msgid "Position for magnetline"
-msgstr "Posizione la linea magnetica"
-
-#: meerk40t/gui/wxmscene.py:881
-msgid "magnet <action> <axis> <position>"
-msgstr "magnete <action> <axis> <position>"
-
-#: meerk40t/gui/wxmscene.py:895
-msgid "You need to provide the intended action:"
-msgstr "Devi specificare l'azione desiderata:"
-
-#: meerk40t/gui/wxmscene.py:896
-msgid "clear x - clear y : will clear all magnets on the given axis"
-msgstr "cancella x - cancella y : cancellerà tutti i magneti sull'asse indicato"
-
-#: meerk40t/gui/wxmscene.py:897
-msgid "set x <pos> - set y <pos>: will set a magnet line on the given axis"
-msgstr "imposta x <pos> - imposta y <pos>: imposterà una linea magnetica sull'asse indicato"
-
-#: meerk40t/gui/wxmscene.py:898
-msgid "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
-msgstr "elimina x <pos> - elimina y <pos>: eliminerà la linea magnetica sull'asse indicato"
-
-#: meerk40t/gui/wxmscene.py:918
-msgid "You need to provide a position"
-msgstr "Devi specificare una posizione"
-
-#: meerk40t/gui/wxmscene.py:930
-msgid "Deleted {count} magnet lines on axis {axis}"
-msgstr "Eliminate {count} linee magnetiche sull'asse {axis}"
-
-#: meerk40t/gui/wxmscene.py:944
-msgid "Magnetline appended at {pos} on axis {axis}"
-msgstr "Linea magnetica aggiunta in {pos} sull'asse {axis}"
-
-#: meerk40t/gui/wxmscene.py:946
-msgid "Magnetline was already present"
-msgstr "La linea magnetica era già presente"
-
-#: meerk40t/gui/wxmscene.py:960
-msgid "Magnetline removed at {pos} on axis {axis}"
-msgstr "Linea magnetica rimossa in {pos} sull'asse {axis}"
-
-#: meerk40t/gui/wxmscene.py:962
-msgid "Magnetline was not existing"
-msgstr "La linea magnetica non esisteva"
-
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / sarà acceso o spento all'inizio di questa operazione"
