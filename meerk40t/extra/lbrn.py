@@ -8,7 +8,7 @@ Lightburn files are xml files denoting simple types with a narrowly nested style
 import base64
 import re
 from io import BytesIO
-from xml.etree.ElementTree import ParseError, iterparse
+from xml.etree.ElementTree import ParseError, iterparse, XMLParser
 
 import PIL.Image
 
@@ -176,13 +176,14 @@ class LbrnLoader:
         verts = []
         prims = []
 
+        parser = XMLParser(encoding="UTF-8") # Should be the default...
         matrix = Matrix.scale(UNITS_PER_MM)
         stack = []
         parent = None  # Root Node
         children = list()
         cut_settings = dict()
         cut_settings_img = dict()
-        for event, elem in iterparse(source, events=("start", "end")):
+        for event, elem in iterparse(source, events=("start", "end"), parser=parser):
             if event == "start":
                 siblings = children
                 parent = (parent, children)
