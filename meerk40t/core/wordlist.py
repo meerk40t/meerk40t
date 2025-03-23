@@ -394,6 +394,7 @@ class Wordlist:
 
     def load_csv_file(self, filename, force_header=None):
         self.empty_csv()
+        ct = 0
         headers = []
         decoder = EncodingDetectFile()
         result = decoder.load(filename)
