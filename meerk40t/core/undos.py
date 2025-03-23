@@ -81,7 +81,7 @@ class Undo:
             elif self._undo_index < len(self._undo_stack) and self._undo_stack[self._undo_index].hold:
                 # Just add another one on top of it
                 self._undo_index += 1
-            elif self._undo_stack[self._undo_index].message == self.LAST_STATE:
+            elif self._undo_index < len(self._undo_stack) and self._undo_stack[self._undo_index].message == self.LAST_STATE:
                 # Will be overwritten
                 pass
             elif self._undo_index < len(self._undo_stack) - 1 and self._undo_stack[self._undo_index + 1].message != self.LAST_STATE:
