@@ -10324,7 +10324,7 @@ msgstr "Aggiungere un nuovo URL"
 
 #: meerk40t/camera/gui/camerapanel.py:973
 msgid "Duplicate"
-msgstr "Duplicato"
+msgstr "Duplica"
 
 #: meerk40t/camera/gui/camerapanel.py:1006
 msgid "Camera URI"
@@ -16523,7 +16523,7 @@ msgstr "Ulteriori informazioni possono essere memorizzate qui"
 
 #: ./meerk40t\gui\materialmanager.py:540
 msgid "Add new"
-msgstr "Nuovo"
+msgstr "Crea nuova voce"
 
 #: ./meerk40t\gui\materialmanager.py:541
 msgid "Add a new library entry"
@@ -16535,23 +16535,23 @@ msgstr "Carica dal progetto"
 
 #: ./meerk40t\gui\materialmanager.py:543
 msgid "Use the currently defined operations"
-msgstr "Utilizzare i Processi attualmente utilizzati nel progetto"
+msgstr "Utilizza i Processi attualmente utilizzati nel progetto\n per creare una voce nella biblioteca dei materiali"
 
 #: ./meerk40t\gui\materialmanager.py:544
 msgid "Load into Tree"
-msgstr "Trasferimento al progetto"
+msgstr "Trasferisce al progetto"
 
 #: ./meerk40t\gui\materialmanager.py:546
 msgid "Apply the current library entry to the operations branch"
-msgstr "Trasferire la voce attiva alle attività del progetto"
+msgstr "Trasferisce la voce attiva i Proicessi del progetto"
 
 #: ./meerk40t\gui\materialmanager.py:548
 msgid "Use for statusbar"
-msgstr "Per la barra di stato"
+msgstr "Usa per la barra di stato"
 
 #: ./meerk40t\gui\materialmanager.py:550
 msgid "Use the current library entry for the statusbar icons"
-msgstr "Accettare la voce attiva per i pulsanti della riga di stato"
+msgstr "Usa la voce corrente della biblioteca dei materiali\n per le icone della barra di stato"
 
 #: ./meerk40t\gui\materialmanager.py:553
 msgid "Delete the current library entry"
@@ -16559,11 +16559,11 @@ msgstr "Elimina la voce corrente"
 
 #: ./meerk40t\gui\materialmanager.py:555
 msgid "Duplicate the current library entry"
-msgstr "Raddoppia la voce corrente"
+msgstr "Duplica la voce corrente"
 
 #: ./meerk40t\gui\materialmanager.py:558
 msgid "Import a material library from ezcad or LightBurn"
-msgstr "Importazione della libreria di materiali da LightBurn o EzCad"
+msgstr "Importa la libreria dei materiali da LightBurn o EzCad"
 
 #: ./meerk40t\gui\materialmanager.py:560
 msgid "Share"
