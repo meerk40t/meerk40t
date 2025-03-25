@@ -11,7 +11,11 @@ mv meerk40t.py mk40t.py
 if test -f venv/bin/pyinstaller; then
     venv/bin/pyinstaller .github/workflows/linux/meerk40t.spec
 else
-    pyinstaller .github/workflows/linux/meerk40t.spec
+    if test -f ~/.local/bin/pyinstaller; then
+        ~/.local/bin/pyinstaller .github/workflows/linux/meerk40t.spec
+    else
+        pyinstaller .github/workflows/linux/meerk40t.spec
+    fi
 fi
 echo Moving files back to their original places
 mv mk40t.py meerk40t.py
