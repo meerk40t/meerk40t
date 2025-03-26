@@ -2649,20 +2649,28 @@ def init_commands(kernel):
                     # print (f"Gaps: e -> s: {dist_e_s:.3f}, e -> e: {dist_e_e:.3f}, s -> s: {dist_s_s:.3f},s -> e: {dist_s_e:.3f},")
                     if dist_e_s <= tolerance:
                         # append
+                        if dist_e_s > 0:
+                            g2.line(lp2, fp1)
                         g2.append(g1)
                         was_stitched = True
                     elif dist_e_e <= tolerance:
                         # append reverse
                         g1.reverse()
+                        if dist_e_e > 0:
+                            g2.line(lp2, lp1)
                         g2.append(g1)
                         was_stitched = True
                     elif dist_s_s <= tolerance:
                         # insert reverse
                         g1.reverse()
+                        if dist_s_s > 0:
+                            g1.line(fp1, fp2)
                         g2.insert(0, g1.segments[0 : g1.index])
                         was_stitched = True
                     elif dist_s_e <= tolerance:
                         # insert
+                        if dist_s_e > 0:
+                            g1.line(lp1, fp2)
                         g2.insert(0, g1.segments[0 : g1.index])
                         was_stitched = True
                     if was_stitched:
@@ -2683,6 +2691,12 @@ def init_commands(kernel):
                 result_list.clear()
                 start_points.clear()
                 end_points.clear()
+        for g1 in result_list:
+            fp1 = g1.first_point
+            lp1 = g1.last_point
+            dist_e_s = abs(lp1 - fp1)
+            if 0 < dist_e_s <= tolerance:
+                g1.line(lp1, fp1)
         return result_list
 
 
