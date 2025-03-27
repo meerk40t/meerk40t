@@ -66,7 +66,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, stitch_geometries
 
 
 def plugin(kernel, lifecycle=None):
@@ -2615,92 +2615,6 @@ def init_commands(kernel):
                 self.first_emphasized = None
         return "elements", data
 
-    def stitch_geometries(geometry_list:list, tolerance:float=0.0) -> list:
-        action_list = list(geometry_list)
-        result_list = []
-        start_points = []
-        end_points = []
-        anychanges = True
-        iteration_loop = 0
-        while anychanges:
-            iteration_loop += 1
-            # print (f"Loop {iteration_loop}")
-            anychanges = False
-            for g1 in action_list:
-                if g1 is None:
-                    continue
-                fp1 = g1.first_point
-                lp1 = g1.last_point
-                if fp1 is None or lp1 is None:
-                    continue
-                was_stitched = False
-                for idx, g2 in enumerate(result_list):
-                    fp2 = start_points[idx]
-                    lp2 = end_points[idx]
-                    # end - start: append
-                    # end - end : append reverse
-                    # start - start: insert reverse
-                    # start - end: insert
-                    dist_e_s = abs(lp2 - fp1)
-                    dist_e_e = abs(lp2 - lp1)
-                    dist_s_s = abs(fp2 - fp1)
-                    dist_s_e = abs(fp2 - lp1)
-                    # print (f"test #{idx} ({fp1.real:.2f},{fp1.imag:.2f})->({lp1.real:.2f},{lp1.imag:.2f}) versus ({fp2.real:.2f},{fp2.imag:.2f})->({lp2.real:.2f},{lp2.imag:.2f})")
-                    # print (f"Gaps: e -> s: {dist_e_s:.3f}, e -> e: {dist_e_e:.3f}, s -> s: {dist_s_s:.3f},s -> e: {dist_s_e:.3f},")
-                    if dist_e_s <= tolerance:
-                        # append
-                        if dist_e_s > 0:
-                            g2.line(lp2, fp1)
-                        g2.append(g1, end=False)
-                        was_stitched = True
-                    elif dist_e_e <= tolerance:
-                        # append reverse
-                        g1.reverse()
-                        if dist_e_e > 0:
-                            g2.line(lp2, lp1)
-                        g2.append(g1, end=False)
-                        was_stitched = True
-                    elif dist_s_s <= tolerance:
-                        # insert reverse
-                        g1.reverse()
-                        if dist_s_s > 0:
-                            g1.line(fp1, fp2)
-                        g2.insert(0, g1.segments[0 : g1.index])
-                        was_stitched = True
-                    elif dist_s_e <= tolerance:
-                        # insert
-                        if dist_s_e > 0:
-                            g1.line(lp1, fp2)
-                        g2.insert(0, g1.segments[0 : g1.index])
-                        was_stitched = True
-                    if was_stitched:
-                        # print ("stitched")
-                        # g2.debug_me()
-                        anychanges = True
-                        start_points[idx] = g2.first_point
-                        end_points[idx] = g2.last_point
-                        result_list[idx] = g2
-                        break
-
-                if not was_stitched:
-                    # print ("Unchanged")
-                    result_list.append(g1)
-                    start_points.append(fp1)
-                    end_points.append(lp1)
-            if anychanges:
-                action_list = list(result_list)
-                result_list.clear()
-                start_points.clear()
-                end_points.clear()
-        for g1 in result_list:
-            fp1 = g1.first_point
-            lp1 = g1.last_point
-            dist_e_s = abs(lp1 - fp1)
-            if 0 < dist_e_s <= tolerance:
-                g1.line(lp1, fp1)
-        return result_list
-
-
     @self.console_argument("tolerance", type=str, help=_("Tolerance to stitch paths together"))
     @self.console_option("keep", "k", type=bool, action="store_true", default=False, help=_("Keep original paths"))
     @self.console_command(
@@ -2713,6 +2627,7 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
+            channel("There is nothing to be stitched together")
             return    
         if keep is None:
             keep = False
@@ -2725,6 +2640,7 @@ def init_commands(kernel):
                 tolerance = 0
         geoms = []
         data_out = []
+        to_be_deleted = []
         # _("Stitch paths")
         with self.undoscope("Stitch paths"):
             default_stroke = None
@@ -2732,17 +2648,25 @@ def init_commands(kernel):
             default_fill = None
             for node in data:
                 if hasattr(node, "as_geometry"):
-                    geoms.append(node.as_geometry())
+                    geom : Geomstr = node.as_geometry()
+                    geoms.extend(iter(geom.as_contiguous()))
                     if default_stroke is None and hasattr(node, "stroke"):
                         default_stroke = node.stroke
                     if default_strokewidth is None and hasattr(node, "stroke_width"):
                         default_strokewidth = node.stroke_width
-                if not keep:
-                    node.remove_node()
+                to_be_deleted.append(node)
+            prev_len = len(geoms)
             if geoms:
                 result = stitch_geometries(geoms, tolerance)
-                for g in result:
+                if result is None:
+                    channel("Could not stitch anything")
+                    return
+                if not keep:
+                    for node in to_be_deleted:
+                        node.remove_node()
+                for idx, g in enumerate(result):
                     node = self.elem_branch.add(
+                        label=f"Stitch # {idx + 1}",
                         stroke=default_stroke,
                         stroke_width=default_strokewidth,
                         fill=default_fill,
@@ -2750,6 +2674,8 @@ def init_commands(kernel):
                         type="elem path",
                     )
                     data_out.append(node)
+            new_len = len(data_out)
+            channel(f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths")
         
         post.append(classify_new(data_out))
         self.set_emphasis(data_out)
