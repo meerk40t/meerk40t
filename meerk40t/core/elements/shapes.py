@@ -2624,20 +2624,28 @@ def init_commands(kernel):
         output_type="elements",
     )
     def stitched(command, channel, _, data=None, tolerance=None, keep=None, post=None, **kwargs):
-        if data is None:
-            data = list(self.elems(emphasized=True))
-        if len(data) == 0:
-            channel("There is nothing to be stitched together")
-            return    
-        if keep is None:
-            keep = False
-        if tolerance is None:
-            tolerance = 0
-        else:
-            try:
-                tolerance = float(Length(tolerance))
-            except ValueError:
-                tolerance = 0
+        def _prepare_stitching_params(channel, data, tolerance, keep):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel("There is nothing to be stitched together")
+                return data, tolerance, keep, False
+            if keep is None:
+                keep = False
+            if tolerance is None:
+                tolerance_val = 0
+            else:
+                try:
+                    tolerance_val = float(Length(tolerance))
+                except ValueError as e:
+                    channel(f"Invalid tolerance value: {tolerance}")
+                    return data, tolerance, keep, False
+            return data, tolerance_val, keep, True
+
+        data, tolerance, keep, valid = _prepare_stitching_params(channel, data, tolerance, keep)
+        if not valid:
+            return
+
         geoms = []
         data_out = []
         to_be_deleted = []
