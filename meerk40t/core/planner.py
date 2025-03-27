@@ -199,7 +199,7 @@ def plugin(kernel, lifecycle=None):
                 "default": "0",
                 "type": Length,
                 "label": _("Tolerance"),
-                "tip": _("Tolerance to decide whether two path segements should be joined."),
+                "tip": _("Tolerance to decide whether two path segments should be joined."),
                 "page": "Optimisations",
                 "section": "_05_Stitching",
                 "conditional": (context, "opt_stitching"),
