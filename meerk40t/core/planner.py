@@ -182,6 +182,29 @@ def plugin(kernel, lifecycle=None):
                 "conditional": (context, "opt_reduce_travel"),
             },
             {
+                "attr": "opt_stitching",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Combine path segments"),
+                "tip": 
+                    _("Stitch segments together that are very close (ideally having joint start/end points).") + "\n" +
+                    _("Only inside a single cut/engrave operation."),
+                "page": "Optimisations",
+                "section": "_05_Stitching",
+            },
+            {
+                "attr": "opt_stitch_tolerance",
+                "object": context,
+                "default": "0",
+                "type": Length,
+                "label": _("Tolerance"),
+                "tip": _("Tolerance to decide whether two path segements should be joined."),
+                "page": "Optimisations",
+                "section": "_05_Stitching",
+                "conditional": (context, "opt_stitching"),
+            },
+            {
                 "attr": "opt_inner_first",
                 "object": context,
                 "default": True,

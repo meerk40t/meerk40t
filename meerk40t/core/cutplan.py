@@ -23,7 +23,7 @@ from functools import lru_cache
 import numpy as np
 
 from ..svgelements import Group, Matrix, Path, Polygon
-from ..tools.geomstr import Geomstr
+from ..tools.geomstr import Geomstr, stitch_geometries
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
@@ -32,7 +32,6 @@ from .cutcode.rastercut import RasterCut
 from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import Length, UNITS_PER_MM
-
 """
 The time to compile does outweigh the benefit...
 try:
@@ -187,6 +186,7 @@ class CutPlan:
             placements.append(scene_to_device_matrix)
 
         original_ops = copy(self.plan)
+
         if self.context.opt_raster_optimisation and self.context.do_optimization:
             try:
                 margin = float(Length(self.context.opt_raster_opt_margin, "0"))
@@ -244,6 +244,42 @@ class CutPlan:
                 op_type = getattr(op, "type", "")
                 if op_type.startswith("place "):
                     continue
+                if op_type in ("op cut", "op engrave") and self.context.opt_stitching and self.context.do_optimization:
+                    # This isn't a lossless operation: dotted/dashed lines will be treated as solid lines
+                    try:
+                        stitch_tolerance = float(Length(self.context.opt_stitch_tolerance))
+                    except ValueError:
+                        stitch_tolerance = 0
+                    default_stroke = None
+                    default_strokewidth = None
+                    geoms = []
+                    to_be_deleted = []
+                    for node in op.flat():
+                        if node is op:
+                            continue
+                        if hasattr(node, "as_geometry"):
+                            geom : Geomstr = node.as_geometry()
+                            geoms.extend(iter(geom.as_contiguous()))
+                            if default_stroke is None and hasattr(node, "stroke"):
+                                default_stroke = node.stroke
+                            if default_strokewidth is None and hasattr(node, "stroke_width"):
+                                default_strokewidth = node.stroke_width
+                            to_be_deleted.append(node)
+                    result = stitch_geometries(geoms, stitch_tolerance)
+                    if result is not None:
+                        # print (f"Paths at start of action: {len(list(op.flat()))}")
+                        for node in to_be_deleted:
+                            node.remove_node()
+                        for idx, g in enumerate(result):
+                            node = op.add(
+                                label=f"Stitch # {idx + 1}",
+                                stroke=default_stroke,
+                                stroke_width=default_strokewidth,
+                                geometry=g,
+                                type="elem path",
+                            )
+                        # print (f"Paths at start of action: {len(list(op.flat()))}")
+
                 self.plan.append(op)
                 if (op_type.startswith("op") or op_type.startswith("util")) and hasattr(op, "preprocess"):
                     op.preprocess(self.context, placement, self)
