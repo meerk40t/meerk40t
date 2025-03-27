@@ -66,7 +66,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, stitch_geometries
 
 
 def plugin(kernel, lifecycle=None):
@@ -2614,5 +2614,79 @@ def init_commands(kernel):
             else:
                 self.first_emphasized = None
         return "elements", data
+
+    @self.console_argument("tolerance", type=str, help=_("Tolerance to stitch paths together"))
+    @self.console_option("keep", "k", type=bool, action="store_true", default=False, help=_("Keep original paths"))
+    @self.console_command(
+        "stitch",
+        help=_("stitch selected elements"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def stitched(command, channel, _, data=None, tolerance=None, keep=None, post=None, **kwargs):
+        def _prepare_stitching_params(channel, data, tolerance, keep):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel("There is nothing to be stitched together")
+                return data, tolerance, keep, False
+            if keep is None:
+                keep = False
+            if tolerance is None:
+                tolerance_val = 0
+            else:
+                try:
+                    tolerance_val = float(Length(tolerance))
+                except ValueError as e:
+                    channel(f"Invalid tolerance value: {tolerance}")
+                    return data, tolerance, keep, False
+            return data, tolerance_val, keep, True
+
+        data, tolerance, keep, valid = _prepare_stitching_params(channel, data, tolerance, keep)
+        if not valid:
+            return
+
+        geoms = []
+        data_out = []
+        to_be_deleted = []
+        # _("Stitch paths")
+        with self.undoscope("Stitch paths"):
+            default_stroke = None
+            default_strokewidth = None
+            default_fill = None
+            for node in data:
+                if hasattr(node, "as_geometry"):
+                    geom : Geomstr = node.as_geometry()
+                    geoms.extend(iter(geom.as_contiguous()))
+                    if default_stroke is None and hasattr(node, "stroke"):
+                        default_stroke = node.stroke
+                    if default_strokewidth is None and hasattr(node, "stroke_width"):
+                        default_strokewidth = node.stroke_width
+                to_be_deleted.append(node)
+            prev_len = len(geoms)
+            if geoms:
+                result = stitch_geometries(geoms, tolerance)
+                if result is None:
+                    channel("Could not stitch anything")
+                    return
+                if not keep:
+                    for node in to_be_deleted:
+                        node.remove_node()
+                for idx, g in enumerate(result):
+                    node = self.elem_branch.add(
+                        label=f"Stitch # {idx + 1}",
+                        stroke=default_stroke,
+                        stroke_width=default_strokewidth,
+                        fill=default_fill,
+                        geometry=g,
+                        type="elem path",
+                    )
+                    data_out.append(node)
+            new_len = len(data_out)
+            channel(f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths")
+        
+        post.append(classify_new(data_out))
+        self.set_emphasis(data_out)
+        return "elements", data_out
 
     # --------------------------- END COMMANDS ------------------------------
