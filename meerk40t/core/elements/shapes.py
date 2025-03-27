@@ -2651,14 +2651,14 @@ def init_commands(kernel):
                         # append
                         if dist_e_s > 0:
                             g2.line(lp2, fp1)
-                        g2.append(g1)
+                        g2.append(g1, end=False)
                         was_stitched = True
                     elif dist_e_e <= tolerance:
                         # append reverse
                         g1.reverse()
                         if dist_e_e > 0:
                             g2.line(lp2, lp1)
-                        g2.append(g1)
+                        g2.append(g1, end=False)
                         was_stitched = True
                     elif dist_s_s <= tolerance:
                         # insert reverse
@@ -2675,6 +2675,7 @@ def init_commands(kernel):
                         was_stitched = True
                     if was_stitched:
                         # print ("stitched")
+                        # g2.debug_me()
                         anychanges = True
                         start_points[idx] = g2.first_point
                         end_points[idx] = g2.last_point
