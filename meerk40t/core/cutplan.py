@@ -244,7 +244,7 @@ class CutPlan:
                 op_type = getattr(op, "type", "")
                 if op_type.startswith("place "):
                     continue
-                if op_type in ("op cut", "op engrave") and self.context.opt_stitching and self.context.do_optimization:
+                if op_type == "op cut" and self.context.opt_stitching and self.context.do_optimization:
                     # This isn't a lossless operation: dotted/dashed lines will be treated as solid lines
                     try:
                         stitch_tolerance = float(Length(self.context.opt_stitch_tolerance))
@@ -252,9 +252,41 @@ class CutPlan:
                         stitch_tolerance = 0
                     default_stroke = None
                     default_strokewidth = None
+
+                    def stitcheable_nodes(data, tolerance) -> list:
+                        out = []
+                        geoms = []
+                        # Store all geometries together with an indicator, to which node they belong
+                        for idx, node in enumerate(data):
+                            if not hasattr(node, "as_geometry"):
+                                continue
+                            for g1 in node.as_geometry().as_contiguous():
+                                geoms.append((idx, g1))
+                        for idx1, (nodeidx1, g1) in enumerate(geoms):
+                            for idx2 in range(idx1 + 1, len(geoms)):
+                                nodeidx2 = geoms[idx2][0]
+                                g2 = geoms[idx2][1]
+                                fp1 = g1.first_point
+                                fp2 = g2.first_point
+                                lp1 = g1.last_point
+                                lp2 = g2.last_point
+                                if (
+                                    abs(lp1 - lp2) <= tolerance or
+                                    abs(lp1 - fp2) <= tolerance or
+                                    abs(fp1 - fp2) <= tolerance or
+                                    abs(fp1 - lp2) <= tolerance 
+                                ):
+                                    if nodeidx1 not in out:
+                                        out.append(nodeidx1)
+                                    if nodeidx2 not in out:
+                                        out.append(nodeidx2)
+
+                        return [data[idx] for idx in out]
+                    
                     geoms = []
                     to_be_deleted = []
-                    for node in op.flat():
+                    data = stitcheable_nodes(list(op.flat()), stitch_tolerance)
+                    for node in data:
                         if node is op:
                             continue
                         if hasattr(node, "as_geometry"):

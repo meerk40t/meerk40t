@@ -2665,9 +2665,9 @@ def init_commands(kernel):
                         abs(fp1 - fp2) <= tolerance or
                         abs(fp1 - lp2) <= tolerance 
                     ):
-                        if not nodeidx1 in out:
+                        if nodeidx1 not in out:
                             out.append(nodeidx1)
-                        if not nodeidx2 in out:
+                        if nodeidx2 not in out:
                             out.append(nodeidx2)
 
             return [data[idx] for idx in out]
