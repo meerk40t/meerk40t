@@ -251,6 +251,8 @@ class DXFProcessor:
         elif dxftype == "ELLIPSE":
             center = (entity.dxf.center)  # Center point of the ellipse (3D, but we'll use x,y)
             major_axis = entity.dxf.major_axis  # Vector representing the major axis
+            minor_axis = entity.minor_axis  # Vector representing the minor axis
+            # They should have the same sign, if they are different then they are mirrored?!
             ratio = entity.dxf.ratio  # Ratio of minor to major axis
             start_angle, end_angle = get_angles(entity)
 
@@ -262,6 +264,10 @@ class DXFProcessor:
                 major_axis[0] ** 2 + major_axis[1] ** 2
             )  # Length of the major axis (in XY plane)
             b = a * ratio  # Length of the minor axis
+            # Different signs? Inverse
+            if major_axis[0] * minor_axis[1] < 0:
+                b *= -1
+
             # geom = Geomstr.ellipse(
             #     start_t=start_angle,
             #     end_t=end_angle,
