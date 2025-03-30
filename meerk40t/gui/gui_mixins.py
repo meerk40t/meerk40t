@@ -584,7 +584,10 @@ class Warnings:
                             image_node = node.node if hasattr(node, "node") else node
                             if getattr(image_node, "hidden", False):
                                 continue
-                            opdpi = op.dpi if useop else image_node.dpi
+                            if hasattr(image_node, "dpi"):
+                                opdpi = op.dpi if useop else image_node.dpi
+                            else:
+                                opdpi = op.dpi
                             step_x, step_y = self.context.device.view.dpi_to_steps(opdpi)
                             step_x *= self.context.device.view.native_scale_x
                             step_y *= self.context.device.view.native_scale_y
