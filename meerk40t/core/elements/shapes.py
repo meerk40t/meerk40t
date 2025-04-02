@@ -355,6 +355,7 @@ def init_commands(kernel):
             data = list(self.elems(emphasized=True))
 
         if len(data) == 0:
+            channel(_("No selected elements."))
             return
         for node in data:
             eparent = node.parent
@@ -751,152 +752,154 @@ def init_commands(kernel):
                     e.lock = setval
                     changed.append(e)
         else:
-            for e in data:
-                # dbg = ""
-                # if hasattr(e, "bounds"):
-                #     bb = e.bounds
-                #     dbg += (
-                #         f"x:{Length(bb[0], digits=2).length_mm}, "
-                #         + f"y:{Length(bb[1], digits=2).length_mm}, "
-                #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
-                #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
-                #     )
-                # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
-                # print (f"Before: {dbg}")
-                if prop in ("x", "y"):
-                    if not e.can_move(self.lock_allows_move):
-                        channel(
-                            _("Element can not be moved: {name}").format(name=str(e))
-                        )
-                        continue
-                    # We need to adjust the matrix
-                    if hasattr(e, "bounds") and hasattr(e, "matrix"):
-                        dx = 0
-                        dy = 0
-                        bb = e.bounds
-                        if prop == "x":
-                            dx = new_value - bb[0]
-                        else:
-                            dy = new_value - bb[1]
-                        e.matrix.post_translate(dx, dy)
-                    else:
-                        channel(
-                            _("Element has no matrix to modify: {name}").format(
-                                name=str(e)
+            # _("Update property")
+            with self.undoscope("Update property"):
+                for e in data:
+                    # dbg = ""
+                    # if hasattr(e, "bounds"):
+                    #     bb = e.bounds
+                    #     dbg += (
+                    #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                    #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                    #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                    #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                    #     )
+                    # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                    # print (f"Before: {dbg}")
+                    if prop in ("x", "y"):
+                        if not e.can_move(self.lock_allows_move):
+                            channel(
+                                _("Element can not be moved: {name}").format(name=str(e))
                             )
-                        )
-                        continue
-                elif prop in ("width", "height"):
-                    if new_value == 0:
-                        channel(_("Can't set {field} to zero").format(field=prop))
-                        continue
-                    if hasattr(e, "can_scale") and not e.can_scale:
-                        channel(
-                            _("Element can not be scaled: {name}").format(name=str(e))
-                        )
-                        continue
-                    if hasattr(e, "matrix") and hasattr(e, "bounds"):
-                        bb = e.bounds
-                        sx = 1.0
-                        sy = 1.0
-                        wd = bb[2] - bb[0]
-                        ht = bb[3] - bb[1]
-                        if prop == "width":
-                            sx = new_value / wd
-                        else:
-                            sy = new_value / ht
-                        e.matrix.post_scale(sx, sy)
-                    else:
-                        channel(
-                            _("Element has no matrix to modify: {name}").format(
-                                name=str(e)
-                            )
-                        )
-                        continue
-                elif hasattr(e, prop):
-                    if hasattr(e, "can_modify") and not e.can_modify:
-                        channel(
-                            _("Can't modify a locked element: {name}").format(
-                                name=str(e)
-                            )
-                        )
-                        continue
-                    try:
-                        oldval = getattr(e, prop)
-                        if prevalidated:
-                            setval = new_value
-                        else:
-                            if oldval is not None:
-                                proptype = type(oldval)
-                                setval = proptype(new_value)
-                                if isinstance(oldval, bool):
-                                    if new_value.lower() in ("1", "true"):
-                                        setval = True
-                                    elif new_value.lower() in ("0", "false"):
-                                        setval = False
+                            continue
+                        # We need to adjust the matrix
+                        if hasattr(e, "bounds") and hasattr(e, "matrix"):
+                            dx = 0
+                            dy = 0
+                            bb = e.bounds
+                            if prop == "x":
+                                dx = new_value - bb[0]
                             else:
+                                dy = new_value - bb[1]
+                            e.matrix.post_translate(dx, dy)
+                        else:
+                            channel(
+                                _("Element has no matrix to modify: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                    elif prop in ("width", "height"):
+                        if new_value == 0:
+                            channel(_("Can't set {field} to zero").format(field=prop))
+                            continue
+                        if hasattr(e, "can_scale") and not e.can_scale:
+                            channel(
+                                _("Element can not be scaled: {name}").format(name=str(e))
+                            )
+                            continue
+                        if hasattr(e, "matrix") and hasattr(e, "bounds"):
+                            bb = e.bounds
+                            sx = 1.0
+                            sy = 1.0
+                            wd = bb[2] - bb[0]
+                            ht = bb[3] - bb[1]
+                            if prop == "width":
+                                sx = new_value / wd
+                            else:
+                                sy = new_value / ht
+                            e.matrix.post_scale(sx, sy)
+                        else:
+                            channel(
+                                _("Element has no matrix to modify: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                    elif hasattr(e, prop):
+                        if hasattr(e, "can_modify") and not e.can_modify:
+                            channel(
+                                _("Can't modify a locked element: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        try:
+                            oldval = getattr(e, prop)
+                            if prevalidated:
                                 setval = new_value
-                        setattr(e, prop, setval)
-                    except TypeError:
-                        channel(
-                            _(
-                                "Can't set '{val}' for {field} (invalid type, old={oldval})."
-                            ).format(val=new_value, field=prop, oldval=oldval)
-                        )
-                    except ValueError:
-                        channel(
-                            _(
-                                "Can't set '{val}' for {field} (invalid value, old={oldval})."
-                            ).format(val=new_value, field=prop, oldval=oldval)
-                        )
-                    except AttributeError:
-                        channel(
-                            _(
-                                "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
-                            ).format(val=new_value, field=prop, oldval=oldval)
-                        )
+                            else:
+                                if oldval is not None:
+                                    proptype = type(oldval)
+                                    setval = proptype(new_value)
+                                    if isinstance(oldval, bool):
+                                        if new_value.lower() in ("1", "true"):
+                                            setval = True
+                                        elif new_value.lower() in ("0", "false"):
+                                            setval = False
+                                else:
+                                    setval = new_value
+                            setattr(e, prop, setval)
+                        except TypeError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+                        except ValueError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+                        except AttributeError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
 
-                    if "font" in prop:
-                        # We need to force a recalculation of the underlying wxfont property
-                        if hasattr(e, "wxfont"):
-                            delattr(e, "wxfont")
-                            text_elems.append(e)
-                    if prop in ("mktext", "mkfont"):
-                        for property_op in self.kernel.lookup_all("path_updater/.*"):
-                            property_op(self.kernel.root, e)
-                    if prop in (
-                        "dpi",
-                        "dither",
-                        "dither_type",
-                        "invert",
-                        "red",
-                        "green",
-                        "blue",
-                        "lightness",
-                    ):
-                        # Images require some recalculation too
-                        self.do_image_update(e)
+                        if "font" in prop:
+                            # We need to force a recalculation of the underlying wxfont property
+                            if hasattr(e, "wxfont"):
+                                delattr(e, "wxfont")
+                                text_elems.append(e)
+                        if prop in ("mktext", "mkfont"):
+                            for property_op in self.kernel.lookup_all("path_updater/.*"):
+                                property_op(self.kernel.root, e)
+                        if prop in (
+                            "dpi",
+                            "dither",
+                            "dither_type",
+                            "invert",
+                            "red",
+                            "green",
+                            "blue",
+                            "lightness",
+                        ):
+                            # Images require some recalculation too
+                            self.do_image_update(e)
 
-                else:
-                    channel(
-                        _("Element {name} has no property {field}").format(
-                            name=str(e), field=prop
+                    else:
+                        channel(
+                            _("Element {name} has no property {field}").format(
+                                name=str(e), field=prop
+                            )
                         )
-                    )
-                    continue
-                e.altered()
-                # dbg = ""
-                # if hasattr(e, "bounds"):
-                #     bb = e.bounds
-                #     dbg += (
-                #         f"x:{Length(bb[0], digits=2).length_mm}, "
-                #         + f"y:{Length(bb[1], digits=2).length_mm}, "
-                #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
-                #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
-                #     )
-                # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
-                # print (f"After: {dbg}")
-                changed.append(e)
+                        continue
+                    e.altered()
+                    # dbg = ""
+                    # if hasattr(e, "bounds"):
+                    #     bb = e.bounds
+                    #     dbg += (
+                    #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                    #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                    #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                    #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                    #     )
+                    # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                    # print (f"After: {dbg}")
+                    changed.append(e)
         if len(changed) > 0:
             if len(text_elems) > 0:
                 # Recalculate bounds
@@ -981,61 +984,62 @@ def init_commands(kernel):
 
 
         changed = []
+        # _("Update property")
+        with self.undoscope("Update property"):
+            for e in data:
+                if hasattr(e, prop):
+                    if hasattr(e, "can_modify") and not e.can_modify:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                    try:
+                        oldval = getattr(e, prop)
+                        if prevalidated:
+                            setval = new_value
+                        else:
+                            if oldval is not None:
+                                proptype = type(oldval)
+                                setval = proptype(new_value)
+                                if isinstance(oldval, bool):
+                                    if new_value.lower() in ("1", "true"):
+                                        setval = True
+                                    elif new_value.lower() in ("0", "false"):
+                                        setval = False
+                            else:
+                                setval = new_value
+                        setattr(e, prop, setval)
+                    except TypeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
+                    except ValueError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
+                    except AttributeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
 
-        for e in data:
-            if hasattr(e, prop):
-                if hasattr(e, "can_modify") and not e.can_modify:
+
+                else:
                     channel(
-                        _("Can't modify a locked element: {name}").format(
-                            name=str(e)
+                        _("Operation {name} has no property {field}").format(
+                            name=str(e), field=prop
                         )
                     )
                     continue
-                try:
-                    oldval = getattr(e, prop)
-                    if prevalidated:
-                        setval = new_value
-                    else:
-                        if oldval is not None:
-                            proptype = type(oldval)
-                            setval = proptype(new_value)
-                            if isinstance(oldval, bool):
-                                if new_value.lower() in ("1", "true"):
-                                    setval = True
-                                elif new_value.lower() in ("0", "false"):
-                                    setval = False
-                        else:
-                            setval = new_value
-                    setattr(e, prop, setval)
-                except TypeError:
-                    channel(
-                        _(
-                            "Can't set '{val}' for {field} (invalid type, old={oldval})."
-                        ).format(val=new_value, field=prop, oldval=oldval)
-                    )
-                except ValueError:
-                    channel(
-                        _(
-                            "Can't set '{val}' for {field} (invalid value, old={oldval})."
-                        ).format(val=new_value, field=prop, oldval=oldval)
-                    )
-                except AttributeError:
-                    channel(
-                        _(
-                            "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
-                        ).format(val=new_value, field=prop, oldval=oldval)
-                    )
-
-
-            else:
-                channel(
-                    _("Operation {name} has no property {field}").format(
-                        name=str(e), field=prop
-                    )
-                )
-                continue
-            e.altered()
-            changed.append(e)
+                e.altered()
+                changed.append(e)
         if len(changed) > 0:
             self.signal("refresh_scene", "Scene")
             self.signal("element_property_update", changed)
@@ -1093,39 +1097,41 @@ def init_commands(kernel):
             method = "visvalingam"
         if tolerance is None:
             tolerance = 25  # About 1/1000 mil
-        for node in data:
-            try:
-                sub_before = len(list(node.as_geometry().as_subpaths()))
-            except AttributeError:
-                sub_before = 0
-            if hasattr(node, "geometry"):
-                geom = node.geometry
-                seg_before = node.geometry.index
-                if method == "douglaspeucker":
-                    node.geometry = geom.simplify(tolerance)
-                else:
-                    # Let's try Visvalingam line simplification
-                    node.geometry = geom.simplify_geometry(threshold=tolerance)
-                node.altered()
-                seg_after = node.geometry.index
+        # _("Simplify")
+        with self.undoscope("Simplify"):
+            for node in data:
                 try:
-                    sub_after = len(list(node.as_geometry().as_subpaths()))
+                    sub_before = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
-                    sub_after = 0
-                channel(
-                    f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
-                )
-                if seg_before:
-                    saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                    sub_before = 0
+                if hasattr(node, "geometry"):
+                    geom = node.geometry
+                    seg_before = node.geometry.index
+                    if method == "douglaspeucker":
+                        node.geometry = geom.simplify(tolerance)
+                    else:
+                        # Let's try Visvalingam line simplification
+                        node.geometry = geom.simplify_geometry(threshold=tolerance)
+                    node.altered()
+                    seg_after = node.geometry.index
+                    try:
+                        sub_after = len(list(node.as_geometry().as_subpaths()))
+                    except AttributeError:
+                        sub_after = 0
+                    channel(
+                        f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
+                    )
+                    if seg_before:
+                        saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                    else:
+                        saving = ""
+                    channel(f"Subpaths before: {sub_before} to {sub_after}")
+                    channel(f"Segments before: {seg_before} to {seg_after} {saving}")
+                    data_changed.append(node)
                 else:
-                    saving = ""
-                channel(f"Subpaths before: {sub_before} to {sub_after}")
-                channel(f"Segments before: {seg_before} to {seg_after} {saving}")
-                data_changed.append(node)
-            else:
-                channel(
-                    f"Invalid node for simplify {node.type} ({node.display_label()})"
-                )
+                    channel(
+                        f"Invalid node for simplify {node.type} ({node.display_label()})"
+                    )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
@@ -1353,25 +1359,26 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
-                continue
-            e.stroke_width = stroke_width
-            try:
-                e.stroke_width_zero()
-            except AttributeError:
-                pass
-            # No full modified required, we are effectively only adjusting
-            # the painted_bounds
-            e.translated(0, 0)
+        # _("Set stroke-width")
+        with self.undoscope("Set stroke-width"):
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    continue
+                e.stroke_width = stroke_width
+                try:
+                    e.stroke_width_zero()
+                except AttributeError:
+                    pass
+                # No full modified required, we are effectively only adjusting
+                # the painted_bounds
+                e.translated(0, 0)
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
         ("enable_stroke_scale", "disable_stroke_scale"),
-        help=_("stroke-width <length>"),
         input_type=(
             None,
             "elements",
@@ -1385,12 +1392,14 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
-                continue
-            e.stroke_scaled = command == "enable_stroke_scale"
-            e.altered()
+        # _("Update stroke-scale")
+        with self.undoscope("Update stroke-scale"):
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    continue
+                e.stroke_scaled = command == "enable_stroke_scale"
+                e.altered()
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return "elements", data
@@ -1963,28 +1972,30 @@ def init_commands(kernel):
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
         images = []
-        try:
-            if not absolute:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    node.matrix.post_rotate(angle, cx, cy)
-                    node.modified()
-                    if hasattr(node, "update"):
-                        images.append(node)
-            else:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    start_angle = node.matrix.rotation
-                    node.matrix.post_rotate(angle - start_angle, cx, cy)
-                    node.modified()
-                    if hasattr(node, "update"):
-                        images.append(node)
-        except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            self.do_image_update(node)
+        # _("Rotate")
+        with self.undoscope("Rotate"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        node.matrix.post_rotate(angle, cx, cy)
+                        node.modified()
+                        if hasattr(node, "update"):
+                            images.append(node)
+                else:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        start_angle = node.matrix.rotation
+                        node.matrix.post_rotate(angle - start_angle, cx, cy)
+                        node.modified()
+                        if hasattr(node, "update"):
+                            images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
 
         self.signal("refresh_scene", "Scene")
         return "elements", data
