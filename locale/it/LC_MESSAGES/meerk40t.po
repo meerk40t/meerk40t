@@ -22224,23 +22224,23 @@ msgstr "Cancella tutto il contenuto"
 
 #: meerk40t/core/elements/element_treeops.py:3578 meerk40t/core/elements/element_treeops.py:3595
 msgid "Offset shapes..."
-msgstr "Contorni interni o esterni..."
+msgstr "Contorni interni o esterni"
 
 #: meerk40t/core/elements/element_treeops.py:3581
 msgid "...to outside with {offset}mm distance"
-msgstr "...sposta le forme verso l'esterno con una distanza di {offset}mm"
+msgstr "Traccia un contorno esterno a distanza di {offset} mm"
 
 #: meerk40t/core/elements/element_treeops.py:3583
 msgid "Create an outer offset around the selected elements"
-msgstr "Crea un offset esterno attorno agli elementi selezionati"
+msgstr "Traccia un contorno esterno agli elementi selezionati"
 
 #: meerk40t/core/elements/element_treeops.py:3598
 msgid "...to inside with {offset}mm distance"
-msgstr "...crea un offset interno con una distanza di {offset} mm"
+msgstr "Traccia un contorno interno a distanza di {offset} mm"
 
 #: meerk40t/core/elements/element_treeops.py:3600
 msgid "Create an inner offset around the selected elements"
-msgstr "Crea un offset interno attorno agli elementi selezionati"
+msgstr "Traccia un contorno interno agli elementi selezionati"
 
 #: meerk40t/kernel/kernel.py:2683
 msgid "Empty job definition..."
@@ -22249,3 +22249,59 @@ msgstr "Definizione del lavoro vuota...."
 #: meerk40t/gui/basicops.py:476
 msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
 msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / sarà acceso o spento all'inizio di questa operazione"
+
+#: meerk40t/core/planner.py:189
+msgid "Combine path segments"
+msgstr "Combina i segmenti del percorso"
+
+#: meerk40t/core/planner.py:191
+msgid "Stitch segments together that are very close (ideally having joint start/end points)."
+msgstr "Unisci segmenti molto vicini (idealmente congiungendo i punti di inizio/fine)."
+
+#: meerk40t/core/planner.py:192
+msgid "Only inside a single cut/engrave operation."
+msgstr "Solo all'interno di una singola operazione di taglio/incisione."
+
+#: meerk40t/core/planner.py:202
+msgid "Tolerance to decide whether two path segments should be joined."
+msgstr "Tolleranza per decidere se due segmenti di percorso devono essere uniti."
+
+#: meerk40t/core/elements/shapes.py:755 meerk40t/core/elements/shapes.py:987
+msgid "Update property"
+msgstr "Aggiorna proprietà"
+
+#: meerk40t/core/elements/shapes.py:1362
+msgid "Set stroke-width"
+msgstr "Imposta lo spessore del tratto"
+
+#: meerk40t/core/elements/shapes.py:1395
+msgid "Update stroke-scale"
+msgstr "Aggiorna la scala del tratto"
+
+#: meerk40t/core/elements/shapes.py:2629
+msgid "Tolerance to stitch paths together"
+msgstr "Tolleranza per unire i percorsi"
+
+#: meerk40t/core/elements/shapes.py:2630
+msgid "Keep original paths"
+msgstr "Mantieni i percorsi originali"
+
+#: meerk40t/core/elements/shapes.py:2633
+msgid "stitch selected elements"
+msgstr "Unisci gli elementi selezionati"
+
+#: meerk40t/core/elements/shapes.py:2697
+msgid "Stitch paths"
+msgstr "Unisci percorsi"
+
+#: meerk40t/gui/wxmeerk40t.py:839
+msgid "Unit to translate"
+msgstr "Unità da tradurre"
+
+#: meerk40t/gui/wxmeerk40t.py:840
+msgid "Translate units"
+msgstr "Traduci unità"
+
+#: meerk40t/gui/wxmeerk40t.py:843
+msgid "You need to provide a value to translate"
+msgstr "Devi fornire un valore da tradurre"
