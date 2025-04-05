@@ -6,14 +6,16 @@ the given device type.
 """
 
 from hashlib import md5
+import platform
+
 import meerk40t.constants as mkconst
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from ..core.units import UNITS_PER_MIL, Length
-from ..device.mixins import Status
+from meerk40t.core.units import UNITS_PER_MIL, Length
+from meerk40t.device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
@@ -514,7 +516,10 @@ class LihuiyuDevice(Service, Status):
         self.setting(str, "serial", None)
         self.setting(bool, "serial_enable", False)
 
-        self.setting(int, "port", 1022)
+        # Linux prevents ports below 1024 to be used in an non-root context
+        def_port = 1022 if platform.system() == "Windows" else "1025"
+
+        self.setting(int, "port", def_port)
         self.setting(str, "address", "localhost")
 
         self.driver = LihuiyuDriver(self)
@@ -978,6 +983,7 @@ class LihuiyuDevice(Service, Status):
                 server = self.open_as("module/TCPServer", server_name, port=port)
                 if quit:
                     self.close(server_name)
+                    channel(_("TCP Server for lihuiyu has been closed"))
                     return
                 channel(_("TCP Server for lihuiyu on port: {port}").format(port=port))
                 if verbose:
