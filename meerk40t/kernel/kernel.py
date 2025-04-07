@@ -1242,7 +1242,7 @@ class Kernel(Settings):
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
-                    if line in ("quit", "shutdown", "restart"):
+                    if line in ("quit", "shutdown", "exit", "restart"):
                         self._quit = True
                         if line == "restart":
                             self._restart = True
