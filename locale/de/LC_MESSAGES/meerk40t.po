@@ -20407,3 +20407,35 @@ msgstr "GCode M7/M9"
 #: meerk40t/extra/coolant.py:318
 msgid "GCode M8/M9"
 msgstr "GCode M8/M9"
+
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Coolant = entscheidet ob Airassist/Coolant bei Start des Arbeitsvorgangs unverändert belassen / eingeschaltet / abgeschaltet wird"
+
+#: meerk40t/gui/wxmeerk40t.py:839
+msgid "Unit to translate"
+msgstr "Einheit für Umrechnung"
+
+#: meerk40t/gui/wxmeerk40t.py:840
+msgid "Translate units"
+msgstr "Einheiten umrechnen"
+
+#: meerk40t/gui/wxmeerk40t.py:843
+msgid "You need to provide a value to translate"
+msgstr "Es fehlt die Angabe des zu umzurechnenden Wertes"
+
+#: meerk40t/image/imagetools.py:1479 meerk40t/image/imagetools.py:1489
+msgid "X position of image cutline"
+msgstr "X-Position der Schnittlinie"
+
+#: meerk40t/image/imagetools.py:1484 meerk40t/image/imagetools.py:1494
+msgid "Y position of image cutline"
+msgstr "Y-Position der Schnittlinie"
+
+#: meerk40t/image/imagetools.py:1498
+msgid "Cuts an image with a line"
+msgstr "Splittet Bild entlang einer Linie"
+
+#: meerk40t/image/imagetools.py:1711
+msgid "Save the processed image to disk"
+msgstr "Speichert das veränderte Bild"

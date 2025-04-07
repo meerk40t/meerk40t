@@ -20695,7 +20695,7 @@ msgid "fractal_tree sx, sy, branch, iterations"
 msgstr "albero frattale sx, sy, ramo, iterazioni"
 
 #: meerk40t/extra/param_functions.py:438
-msgid "ffractal iterations"
+msgid "fractal iterations"
 msgstr "iterazioni ffrattali"
 
 #: meerk40t/extra/param_functions.py:252
@@ -21846,7 +21846,7 @@ msgid "Save the processed image to disk"
 msgstr "Salva l'immagine elaborata su disco"
 
 #: ./meerk40t\image\imagetools.py:1020
-msgid "Cuts and image with a line"
+msgid "Cuts an image with a line"
 msgstr "Taglia l'immagine con una linea"
 
 #: ./meerk40t\image\imagetools.py:1001

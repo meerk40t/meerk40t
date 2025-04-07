@@ -435,7 +435,7 @@ def plugin(kernel, lifecycle):
         @self.console_argument("inversions", nargs="*", type=int)
         @context.console_command(
             "ffractal",
-            help=_("ffractal iterations"),
+            help=_("fractal iterations"),
             output_type="geometry",
             hidden=True,
         )
