@@ -227,8 +227,9 @@ def _exe(restarted, args):
     console = hasattr(kernel.args, "console") and kernel.args.console
     daemon = hasattr(kernel.args, "daemon") and kernel.args.daemon
     server_mode = False
-    for c in command:
-        server_mode = server_mode or any(substring in c for substring in ("lhyserver", "grblserver", "ruidacontrol", "grblcontrol", "webserver"))
+    if command:
+        for c in command:
+            server_mode = server_mode or any(substring in c for substring in ("lhyserver", "grblserver", "ruidacontrol", "grblcontrol", "webserver"))
     nogui = (
         (hasattr(kernel.args, "gui_suppress") and kernel.args.gui_suppress) or
         (hasattr(kernel.args, "no_gui") and kernel.args.no_gui) 
