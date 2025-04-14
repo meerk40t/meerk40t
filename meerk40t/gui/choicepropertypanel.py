@@ -1486,6 +1486,18 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
                 def listen_to_myself(origin, value, target=None):
+
+                    def set_combo_value(ctrl, data, dtype, choicelist):
+                        if dtype == str:
+                            ctrl.SetValue(str(data))
+                            return
+                        least = None
+                        for entry in choicelist:
+                            if least is None or abs(dtype(entry) - data) < abs(dtype(least) - data):
+                                least = entry
+                        if least is not None:
+                            ctrl.SetValue(least)
+
                     if self.context.kernel.is_shutdown:
                         return
 
@@ -1521,36 +1533,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         elif dtype in (int, float) and dstyle == "slider":
                             if ctrl.GetValue() != data:
                                 ctrl.SetValue(data)
-                        elif dtype in (str, int, float) and dstyle == "combo":
-                            if dtype == str:
-                                ctrl.SetValue(str(data))
-                            else:
-                                least = None
-                                for entry in choicelist:
-                                    if least is None:
-                                        least = entry
-                                    else:
-                                        if abs(dtype(entry) - data) < abs(
-                                            dtype(least) - data
-                                        ):
-                                            least = entry
-                                if least is not None:
-                                    ctrl.SetValue(least)
-                        elif dtype in (str, int, float) and dstyle == "combosmall":
-                            if dtype == str:
-                                ctrl.SetValue(str(data))
-                            else:
-                                least = None
-                                for entry in choicelist:
-                                    if least is None:
-                                        least = entry
-                                    else:
-                                        if abs(dtype(entry) - data) < abs(
-                                            dtype(least) - data
-                                        ):
-                                            least = entry
-                                if least is not None:
-                                    ctrl.SetValue(least)
+                        elif dtype in (str, int, float) and dstyle in ("combo", "combosmall"):
+                            set_combo_value(ctrl, data, dtype, choicelist)                        
                         elif dtype == int and dstyle == "binary":
                             pass  # not supported...
                         elif (dtype == str and dstyle == "color") or dtype == Color:
