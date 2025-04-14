@@ -3675,11 +3675,10 @@ msgstr ""
 
 #: meerk40t/core/planner.py:135
 msgid ""
-"If Merge Passes is not checked, Operations with >1 passes will only have "
-"the same passes merged. If Merge Passes is also checked, then all burns "
-"will be optimised globally."
+"If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
+"If Merge Passes is also checked, then all burns will be optimised globally."
 msgstr ""
-"Non attiva: solo i passaggi identici all'interno di Processi con più di un passaggio verranno uniti.\n" 
+"Non attiva: solo i passaggi identici all'interno di Processi con più di un passaggio verranno uniti.\n"
 "Attiva: tutte le lavorazioni verranno ottimizzate globalmente"
 
 #: meerk40t/core/planner.py:140
@@ -16611,7 +16610,7 @@ msgstr "Si vuole davvero cancellare questa voce? Non è possibile annullarla"
 
 #: ./meerk40t\gui\materialmanager.py:1064
 msgid "Do you really want to delete all visible entries? This can't be undone."
-msgstr "Vuoi davvero eliminare tutte le voci visibili? Questa operazione è irreversibile.""
+msgstr "Vuoi davvero eliminare tutte le voci visibili? Questa operazione è irreversibile."
 
 #: ./meerk40t\gui\materialmanager.py:1080
 msgid "Invalid file"
