@@ -1511,88 +1511,87 @@ class ChoicePropertyPanel(ScrolledPanel):
                     # Let's just access the ctrl to see whether it has been already
                     # destroyed (as we are in the midst of a shutdown)
                     try:
-                        dummy = hasattr(ctrl, "GetValue")
-                    except RuntimeError:
-                        return
-                    if dtype == bool:
-                        # Bool type objects get a checkbox.
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
-                    elif dtype == str and dstyle == "file":
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
-                    elif dtype in (int, float) and dstyle == "slider":
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
-                    elif dtype in (str, int, float) and dstyle == "combo":
-                        if dtype == str:
-                            ctrl.SetValue(str(data))
-                        else:
-                            least = None
-                            for entry in choicelist:
-                                if least is None:
-                                    least = entry
-                                else:
-                                    if abs(dtype(entry) - data) < abs(
-                                        dtype(least) - data
-                                    ):
-                                        least = entry
-                            if least is not None:
-                                ctrl.SetValue(least)
-                    elif dtype in (str, int, float) and dstyle == "combosmall":
-                        if dtype == str:
-                            ctrl.SetValue(str(data))
-                        else:
-                            least = None
-                            for entry in choicelist:
-                                if least is None:
-                                    least = entry
-                                else:
-                                    if abs(dtype(entry) - data) < abs(
-                                        dtype(least) - data
-                                    ):
-                                        least = entry
-                            if least is not None:
-                                ctrl.SetValue(least)
-                    elif dtype == int and dstyle == "binary":
-                        pass  # not supported...
-                    elif (dtype == str and dstyle == "color") or dtype == Color:
-                        # Color dtype objects are a button with the background set to the color
-                        def set_color(color: Color):
-                            ctrl.SetLabel(str(color.hex))
-                            ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                            if Color.distance(color, Color("black")) > Color.distance(
-                                color, Color("white")
-                            ):
-                                ctrl.SetForegroundColour(wx.BLACK)
+                        if dtype == bool:
+                            # Bool type objects get a checkbox.
+                            if ctrl.GetValue() != data:
+                                ctrl.SetValue(data)
+                        elif dtype == str and dstyle == "file":
+                            if ctrl.GetValue() != data:
+                                ctrl.SetValue(data)
+                        elif dtype in (int, float) and dstyle == "slider":
+                            if ctrl.GetValue() != data:
+                                ctrl.SetValue(data)
+                        elif dtype in (str, int, float) and dstyle == "combo":
+                            if dtype == str:
+                                ctrl.SetValue(str(data))
                             else:
-                                ctrl.SetForegroundColour(wx.WHITE)
-                            ctrl.color = color
+                                least = None
+                                for entry in choicelist:
+                                    if least is None:
+                                        least = entry
+                                    else:
+                                        if abs(dtype(entry) - data) < abs(
+                                            dtype(least) - data
+                                        ):
+                                            least = entry
+                                if least is not None:
+                                    ctrl.SetValue(least)
+                        elif dtype in (str, int, float) and dstyle == "combosmall":
+                            if dtype == str:
+                                ctrl.SetValue(str(data))
+                            else:
+                                least = None
+                                for entry in choicelist:
+                                    if least is None:
+                                        least = entry
+                                    else:
+                                        if abs(dtype(entry) - data) < abs(
+                                            dtype(least) - data
+                                        ):
+                                            least = entry
+                                if least is not None:
+                                    ctrl.SetValue(least)
+                        elif dtype == int and dstyle == "binary":
+                            pass  # not supported...
+                        elif (dtype == str and dstyle == "color") or dtype == Color:
+                            # Color dtype objects are a button with the background set to the color
+                            def set_color(color: Color):
+                                ctrl.SetLabel(str(color.hex))
+                                ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                                if Color.distance(color, Color("black")) > Color.distance(
+                                    color, Color("white")
+                                ):
+                                    ctrl.SetForegroundColour(wx.BLACK)
+                                else:
+                                    ctrl.SetForegroundColour(wx.WHITE)
+                                ctrl.color = color
 
-                        if isinstance(data, str):
-                            # print ("Needed to change type")
-                            data = Color(data)
-                        # print (f"Will set color to {data}")
-                        set_color(data)
-                    elif dtype in (str, int, float):
-                        if hasattr(ctrl, "GetValue"):
-                            try:
-                                if dtype(ctrl.GetValue()) != data:
+                            if isinstance(data, str):
+                                # print ("Needed to change type")
+                                data = Color(data)
+                            # print (f"Will set color to {data}")
+                            set_color(data)
+                        elif dtype in (str, int, float):
+                            if hasattr(ctrl, "GetValue"):
+                                try:
+                                    if dtype(ctrl.GetValue()) != data:
+                                        update_needed = True
+                                except ValueError:
                                     update_needed = True
-                            except ValueError:
+                                if update_needed:
+                                    ctrl.SetValue(str(data))
+                        elif dtype == Length:
+                            if float(data) != float(Length(ctrl.GetValue())):
                                 update_needed = True
                             if update_needed:
+                                if not isinstance(data, str):
+                                    data = Length(data).length_mm
                                 ctrl.SetValue(str(data))
-                    elif dtype == Length:
-                        if float(data) != float(Length(ctrl.GetValue())):
-                            update_needed = True
-                        if update_needed:
-                            if not isinstance(data, str):
-                                data = Length(data).length_mm
-                            ctrl.SetValue(str(data))
-                    elif dtype == Angle:
-                        if ctrl.GetValue() != str(data):
-                            ctrl.SetValue(str(data))
+                        elif dtype == Angle:
+                            if ctrl.GetValue() != str(data):
+                                ctrl.SetValue(str(data))
+                    except RuntimeError:
+                        return
 
                 return listen_to_myself
 
