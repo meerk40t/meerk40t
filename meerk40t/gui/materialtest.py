@@ -577,6 +577,7 @@ class TemplatePanel(wx.Panel):
         return result
 
     def on_combo_image(self, event):
+        self.validate_input(event)
         op = self.combo_ops.GetSelection()
         if op != 3:  # No Image?
             return
@@ -1186,10 +1187,8 @@ class TemplatePanel(wx.Panel):
                     # Add op to tree.
                     operation_branch.add_node(master_op)
                     # Now add a rectangle to the scene and assign it to the newly created op
-                    if usefill:
-                        fill_color = set_color
-                    else:
-                        fill_color = None
+                    fill_color = set_color if usefill else None
+                    elemnode = None
                     if shapetype == "image":
                         idx = self.combo_images.GetSelection() - 1
                         if 0 <= idx < len(self.images):
@@ -1217,8 +1216,9 @@ class TemplatePanel(wx.Panel):
                             fill=fill_color,
                             type="elem ellipse",
                         )
-                    elemnode.label = s_lbl
-                    this_op.add_reference(elemnode, 0)
+                    if elemnode is not None:
+                        elemnode.label = s_lbl
+                        this_op.add_reference(elemnode, 0)
                     _p_value_2 += delta_2
                     yy = yy + gap_y + size_y
                 _p_value_1 += delta_1
