@@ -98,6 +98,9 @@ class TipPanel(wx.Panel):
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         self.check_startup = wxCheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup.SetFont(
+            wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        )
         self.check_startup.SetToolTip(
             _(
                 "Show tips at program start.\n"
@@ -233,6 +236,10 @@ class TipPanel(wx.Panel):
             self.image_tip.SetBitmap(path)
             self.image_tip.Show(True)
             return True
+        img_size = self.image_tip.GetSize()
+        if img_size[0] == 0 or img_size[1] == 0:
+            # Invalid display area
+            return False
 
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
@@ -277,7 +284,6 @@ class TipPanel(wx.Panel):
             self.no_image_message.Show(True)
             return False
         new_x, new_y = bmp.Size
-        img_size = self.image_tip.GetSize()
         # print(f"bmp: {int(new_x)}x{int(new_y)}, space: {img_size[0]}x{img_size[1]}")
         if new_x > img_size[0] or new_y > img_size[1]:
             if new_x > img_size[0]:

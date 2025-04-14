@@ -1341,15 +1341,16 @@ class LaserRender:
         """
         if bounds is None:
             return None
+        # Cover invalid step values
+        if step_x == 0:
+            step_x = 1
+        if step_y == 0:
+            step_y = 1
         x_min = float("inf")
         y_min = float("inf")
         x_max = -float("inf")
         y_max = -float("inf")
-        if not isinstance(nodes, (tuple, list)):
-            _nodes = [nodes]
-        else:
-            _nodes = nodes
-
+        _nodes = nodes if isinstance(nodes, (tuple, list)) else [nodes]
         # if it's a raster we will always translate text variables...
         variable_translation = True
         nodecopy = list(_nodes)

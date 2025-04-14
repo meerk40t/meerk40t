@@ -123,7 +123,7 @@ class Settings:
                     pass
             with open(targetfile, "w", encoding="utf-8") as fp:
                 parser.write(fp)
-        except (PermissionError, FileNotFoundError):
+        except (PermissionError, FileNotFoundError, OSError):
             return
 
     def literal_dict(self):
