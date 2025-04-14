@@ -1543,13 +1543,17 @@ class MovePanel(wx.Panel):
             # wrong device...
             return
         # New position...
-        p = self.context
-        units = p.units_name
-        xpos = Length(amount=pos[2], preferred_units=units)
-        ypos = Length(amount=pos[3], preferred_units=units)
-        self.label_pos.SetLabel(
-            f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
-        )
+        try:
+            p = self.context
+            units = p.units_name
+            xpos = Length(amount=pos[2], preferred_units=units)
+            ypos = Length(amount=pos[3], preferred_units=units)
+            self.label_pos.SetLabel(
+                f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
+            )
+        except (ValueError, RuntimeError):
+            # Already destroyed or invalid
+            return            
         self.label_pos.Refresh()
         # button_info_sizer.Layout()
         # self.GetSizer().Layout()
