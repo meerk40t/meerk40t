@@ -128,6 +128,7 @@ class Button:
         self.state_unpressed = None
         self.group = None
         self.toggle_attr = None
+        self.multi_autoexec = None
         self.identifier = None
         self.action = None
         self.action_right = None
@@ -155,6 +156,7 @@ class Button:
         rule_enabled=None,
         rule_visible=None,
         object=None,
+        multi_autoexec=None,
         **kwargs,
     ):
         """
@@ -205,6 +207,7 @@ class Button:
         self.action_right = action_right
         self.rule_enabled = rule_enabled
         self.rule_visible = rule_visible
+        self.multi_autoexec = multi_autoexec 
         if object is not None:
             self.object = object
         else:
@@ -276,6 +279,7 @@ class Button:
             "rule_visible": self.rule_visible,
             "toggle_attr": self.toggle_attr,
             "object": self.object,
+            "multi_autoexec": self.multi_autoexec,
         }
         self._update_button_aspect(key, **kwargs)
 
@@ -438,7 +442,8 @@ class Button:
             self._restore_button_aspect(key_id)
             # self.ensure_realize()
             # And now execute it, provided it would be enabled...
-            auto_execute = self.context.setting(bool, "button_multi_menu_execute", True)
+            auto_execute = False if self.multi_autoexec is None else self.multi_autoexec
+            auto_execute = auto_execute and self.context.setting(bool, "button_multi_menu_execute", True)
             if auto_execute:
                 is_visible = True
                 is_enabled = True
