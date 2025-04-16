@@ -395,9 +395,6 @@ class LiveLightJob:
         """
         geometry = Geomstr()
         for n in elements:
-            if n.type in ("effect hatch", "effect wobble"):
-                print (f"Ignore {n.type}")
-                continue
             e = None
             if hasattr(n, "convex_hull"):
                 e = n.convex_hull()
