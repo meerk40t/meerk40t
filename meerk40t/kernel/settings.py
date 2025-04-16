@@ -65,7 +65,11 @@ class Settings:
                 except KeyError:
                     config_section = {}
                     self._config_dict[section] = config_section
-                config_section[option] = parser.get(section, option)
+                try:
+                    config_section[option] = parser.get(section, option)
+                except Exception as e:
+                    print (f"We had an error in the config, section {section}.{option}, try to recover from {e}")
+
 
     def write_configuration(self, targetfile=None):
         """
