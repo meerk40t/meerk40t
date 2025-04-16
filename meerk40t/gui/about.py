@@ -1770,6 +1770,8 @@ class ComponentPanel(ScrolledPanel):
 
         def get_potrace():
             entry = ["potracer", "", "", "https://pypi.org/project/potracer/"]
+            status = _("Present (slow)")
+            info = "0.05 (internal)"
             try:
                 import potrace
 
@@ -1780,14 +1782,10 @@ class ComponentPanel(ScrolledPanel):
                     entry[0] = "pypotrace"
                     entry[3] = "https://pypi.org/project/pypotrace/"
                     info = potrace.potracelib_version()
-                else:
-                    status = _("Present (slow)")
-                    info = "??"
                 if not hasattr(potrace, "Bitmap"):
                     status = _("Faulty, please report")
             except ImportError:
-                info = "??"
-                status = _("Missing")
+                pass
             entry[1] = info
             entry[2] = status
             self.content.append(entry)

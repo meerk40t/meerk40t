@@ -499,9 +499,12 @@ class Node:
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
             if node.type == "reference":
-                original_referenced, copied_referenced = links[id(node.node)]
-                node_copy.node = copied_referenced
-                copied_referenced._references.append(node_copy)
+                try:
+                    original_referenced, copied_referenced = links[id(node.node)]
+                    node_copy.node = copied_referenced
+                    copied_referenced._references.append(node_copy)
+                except KeyError:
+                    pass
 
     def _validate_tree(self):
         for c in self._children:

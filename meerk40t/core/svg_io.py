@@ -663,7 +663,8 @@ class SVGWriter:
         for c in node.children:
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-                contains.append(c.id)
+                if c.id is not None: # Something strange happened here...
+                    contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
 

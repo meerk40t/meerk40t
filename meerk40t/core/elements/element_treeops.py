@@ -2866,13 +2866,15 @@ def init_tree(kernel):
         dots_per_units = node.dpi / UNITS_PER_INCH
         new_width = width * dots_per_units
         new_height = height * dots_per_units
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            return None, None
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
         return image, matrix

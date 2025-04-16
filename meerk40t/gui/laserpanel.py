@@ -366,6 +366,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
         # self.btn_config_laser.Bind(wx.EVT_LEFT_DOWN, self.on_config_button)
         self.btn_config_laser.Bind(wx.EVT_BUTTON, self.on_config_button)
+        self.combo_devices.Bind(wx.EVT_RIGHT_DOWN, self.on_control_right)
+        self.btn_config_laser.Bind(wx.EVT_RIGHT_DOWN, self.on_control_right)
         # end wxGlade
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
@@ -697,6 +699,9 @@ class LaserPanel(wx.Panel):
                 self.context("planz clear copy preprocess validate blob\n")
         self.context(f"window open Simulation z 0 {param}\n")
         self.context.kernel.busyinfo.end()
+
+    def on_control_right(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("window open DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()

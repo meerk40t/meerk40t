@@ -8424,6 +8424,62 @@ msgstr ""
 msgid "-------"
 msgstr ""
 
+#: meerk40t/gui/wxmscene.py:873
+msgid "Action: clear or set / delete with coordinate"
+msgstr "Aktion: clear bzw set / delete mit Koordinate"
+
+#: meerk40t/gui/wxmscene.py:876
+msgid "Axis (X or Y)"
+msgstr "Achse (X oder Y)"
+
+#: meerk40t/gui/wxmscene.py:878
+msgid "Position for magnetline"
+msgstr "Position für Magnetlinie"
+
+#: meerk40t/gui/wxmscene.py:881
+msgid "magnet <action> <axis> <position>"
+msgstr ""
+
+#: meerk40t/gui/wxmscene.py:895
+msgid "You need to provide the intended action:"
+msgstr "Es muss die gewünschte Aktion angegeben werden:"
+
+#: meerk40t/gui/wxmscene.py:896
+msgid "clear x - clear y : will clear all magnets on the given axis"
+msgstr "clear x - clear y: löscht alle Magnetlinien auf der angegebenen Achse"
+
+#: meerk40t/gui/wxmscene.py:897
+msgid "set x <pos> - set y <pos>: will set a magnet line on the given axis"
+msgstr "set x <pos> - set y <pos>: fügt eine Magnetlinie an der angegebenen Position + Achse hinzu"
+
+#: meerk40t/gui/wxmscene.py:898
+msgid "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
+msgstr "delete x <pos> - delete y <pos>: löscht eine Magnetlinie an der angegebenen Position + Achse"
+
+#: meerk40t/gui/wxmscene.py:918
+msgid "You need to provide a position"
+msgstr "Es muss eine Position angegeben werden"
+
+#: meerk40t/gui/wxmscene.py:930
+msgid "Deleted {count} magnet lines on axis {axis}"
+msgstr "Es wurden {count} Magnetlinien auf der {axis}-Achse gelöscht"
+
+#: meerk40t/gui/wxmscene.py:944
+msgid "Magnetline appended at {pos} on axis {axis}"
+msgstr "Magnetlinie hinzugefügt bei {pos} auf der {axis}-Achse"
+
+#: meerk40t/gui/wxmscene.py:946
+msgid "Magnetline was already present"
+msgstr "Magnetlinie war bereits vorhanden"
+
+#: meerk40t/gui/wxmscene.py:960
+msgid "Magnetline removed at {pos} on axis {axis}"
+msgstr "Magnetlinie entfernt bei {pos} auf der {axis}-Achse"
+
+#: meerk40t/gui/wxmscene.py:962
+msgid "Magnetline was not existing"
+msgstr "Magnetlinie existierte nicht"
+
 #: meerk40t/gui/wxmscene.py:341
 msgid ""
 "No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. "
@@ -17624,6 +17680,18 @@ msgstr "Unterdrücke nicht verwendete Operationen"
 msgid "Set coolant to on/off or leave unchanged (default)"
 msgstr "Schaltet Kühlung ein/aus"
 
+#: meerk40t/gui/basicops.py:462
+msgid "A: Active = toggle whether the elements assigned to this operation will be burned or not"
+msgstr "A: Aktiv = legt fest, ob Elemente, diesem Arbeitsablauf zugeordnet sind, gebrannt werden oder nicht"
+
+#: meerk40t/gui/basicops.py:469
+msgid "S: Show = if inactive then you can suppress the drawing of the assigned elements"
+msgstr "S: Show = falls der Arbeitsablauf inaktiv ist, kann die Anzeige der zugeordneten Elemente unterdrückt werden"
+
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant= determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Kühlung = soll Kühlung zu Beginn dieses Arbeitsablaufs unverändert bleiben / eingeschaltet / ausgeschaltet werden"
+
 #: meerk40t/camera/gui/camerapanel.py:1146 meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:1042 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/spoolerpanel.py:586
 msgid "Do you really want to delete all entries?"
 msgstr "Sollen wirklich alle Einträge gelöscht werden?"
@@ -20339,3 +20407,35 @@ msgstr "GCode M7/M9"
 #: meerk40t/extra/coolant.py:318
 msgid "GCode M8/M9"
 msgstr "GCode M8/M9"
+
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Coolant = entscheidet ob Airassist/Coolant bei Start des Arbeitsvorgangs unverändert belassen / eingeschaltet / abgeschaltet wird"
+
+#: meerk40t/gui/wxmeerk40t.py:839
+msgid "Unit to translate"
+msgstr "Einheit für Umrechnung"
+
+#: meerk40t/gui/wxmeerk40t.py:840
+msgid "Translate units"
+msgstr "Einheiten umrechnen"
+
+#: meerk40t/gui/wxmeerk40t.py:843
+msgid "You need to provide a value to translate"
+msgstr "Es fehlt die Angabe des zu umzurechnenden Wertes"
+
+#: meerk40t/image/imagetools.py:1479 meerk40t/image/imagetools.py:1489
+msgid "X position of image cutline"
+msgstr "X-Position der Schnittlinie"
+
+#: meerk40t/image/imagetools.py:1484 meerk40t/image/imagetools.py:1494
+msgid "Y position of image cutline"
+msgstr "Y-Position der Schnittlinie"
+
+#: meerk40t/image/imagetools.py:1498
+msgid "Cuts an image with a line"
+msgstr "Splittet Bild entlang einer Linie"
+
+#: meerk40t/image/imagetools.py:1711
+msgid "Save the processed image to disk"
+msgstr "Speichert das veränderte Bild"

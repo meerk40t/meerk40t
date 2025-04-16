@@ -1319,6 +1319,9 @@ class MaterialPanel(ScrolledPanel):
                                 self.op_data.write_persistent(
                                     section_name, "passes", numeric_value
                                 )
+                                self.op_data.write_persistent(
+                                    section_name, "passes_custom", True
+                                )
                         elif param == "speed":
                             if numeric_value != 0:
                                 speedval = numeric_value
@@ -1593,6 +1596,9 @@ class MaterialPanel(ScrolledPanel):
                             if numeric_value != 0:
                                 self.op_data.write_persistent(
                                     section_name, "passes", numeric_value
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "passes_custom", True
                                 )
                         elif param == "markspeed":
                             if numeric_value != 0:

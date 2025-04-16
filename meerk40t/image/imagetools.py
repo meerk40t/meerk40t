@@ -1495,7 +1495,7 @@ def plugin(kernel, lifecycle=None):
     )
     @context.console_command(
         "linecut",
-        help=_("Cuts and image with a line"),
+        help=_("Cuts an image with a line"),
         input_type="image",
         output_type="image",
         hidden=True,

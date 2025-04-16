@@ -48,21 +48,25 @@ potracer:   https://github.com/tatarize/potrace
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
-        try:
-            import numpy
-            import potrace
-            if not hasattr(potrace, "Bitmap"):
-                # This is a strange variant, that we do not support!
-                print ("The version of potrace that is installed on your machine is incompatible. Please report this to the developers.")
-                return True
-        except ImportError:
-            # print("Potrace plugin could not load because potracer/pypotrace is not installed.")
-            return True
+        invalid = False
+        return invalid
 
     if lifecycle == "register":
         _ = kernel.translation
         import numpy
-        import potrace
+        valid = False
+        try:
+            import potrace
+            if hasattr(potrace, "Bitmap"):
+                valid = True
+            else:
+                # This is a strange variant, that we do not support!
+                print ("The version of potrace that is installed on your machine is incompatible. Please report this to the developers.")
+        except ImportError:
+            valid = False
+        
+        if not valid:
+            from . import mk_potrace as potrace
 
         def make_vector(
             image,

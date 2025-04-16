@@ -6,12 +6,12 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
 "PO-Revision-Date: 23-04-21 06:37UTC\n"
-"Last-Translator: betaeta\n"
+"Last-Translator: Betaeta\n"
 "Language: it\n"
-"Language-Team: CicioniItalian\n"
+"Language-Team: Cicioni Italian traslation\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -129,11 +129,11 @@ msgstr "Che tipo di laser è questo?"
 
 #: ./meerk40t\balormk\device.py:345
 msgid "Percent of First Pulse Killer for co2 source"
-msgstr "Percentuale 'primo impulso killer' (FPK) per i laser a CO2"
+msgstr "Percentuale di riduzione del primo impulso per sorgenti CO2 (FPK)"
 
 #: meerk40t/balormk/device.py:627
 msgid "Use correction file?"
-msgstr "Utilizza il file di correzione (.cor)"
+msgstr "Si desidera utilizzare un file di correzione (.cor)?"
 
 #: meerk40t/balormk/device.py:639 meerk40t/gui/wxmmain.py:2033
 msgid "File"
@@ -694,11 +694,11 @@ msgstr "contorno convesso degli elementi correntemente selezionati"
 #: meerk40t/balormk/device.py:2036 meerk40t/core/elements.py:6316
 #: meerk40t/core/elements.py:6367
 msgid "No elements bounds to trace."
-msgstr "Non sono disponibili i contorni degli elementi"
+msgstr "Nessun contorno degli elementi da tracciare"
 
 #: meerk40t/balormk/device.py:2069
 msgid "Marching ants of the given element path."
-msgstr ""
+msgstr "Indicatore di selezione del percorso"
 
 #: meerk40t/balormk/device.py:2095
 msgid "Update balor flips for movement"
@@ -1043,11 +1043,11 @@ msgstr "Non caricare automaticamente dei Processi quando l'elenco è vuoto"
 
 #: meerk40t/core/elements.py:114
 msgid "Leave empty operations, don't load a default set"
-msgstr "Non caricare un set standard se l'elenco dei Processi è vuoto"
+msgstr "Non caricare un set predefinito se l'elenco dei Processi è vuoto"
 
 #: meerk40t/core/elements.py:123
 msgid "Classify Reversed"
-msgstr "Assegna gli elementi in ordine inverso"
+msgstr "Classifica in ordine inverso"
 
 #: meerk40t/core/elements.py:124
 msgid ""
@@ -1076,7 +1076,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:164
 msgid "Fuzzy color-logic"
-msgstr "Logica colore sfumata"
+msgstr "Logica colore con tolleranza"
 
 #: meerk40t/core/elements.py:165
 msgid "Unticked: Classify elements into operations with an *exact* color match"
@@ -1096,7 +1096,7 @@ msgid ""
 "The color distance of an element to an operations that will still allow "
 "classifiation"
 msgstr ""
-"La tolleranza di colore a cui un elemento ancora assegnato a un'operazione "
+"La tolleranza di colore a cui un elemento ancora assegnato a un processo "
 "viene classificato."
 
 #: meerk40t/core/elements.py:191
@@ -1131,7 +1131,7 @@ msgstr "dal confronto dei colori (accurati o sfocati, vedi sopra),"
 
 #: meerk40t/core/elements.py:222
 msgid "then it will try to assign it to matching 'default' operation"
-msgstr "viene invece utilizzata un'operazione contrassegnata come standard"
+msgstr "allora tenterà di assegnarlo a un processo 'predefinito' corrispondente"
 
 #: meerk40t/core/elements.py:231
 msgid "Autogenerate Operations"
@@ -1139,11 +1139,11 @@ msgstr "Processi autogenerati"
 
 #: meerk40t/core/elements.py:236
 msgid "or by assigning to a default operation (see above),"
-msgstr "o assegnate a un'operazione predefinita (vedi sopra)"
+msgstr "o assegnate a un Processo predefinito (vedi sopra)"
 
 #: meerk40t/core/elements.py:238
 msgid "then MeerK40t can create a matching operation for you."
-msgstr "MeerK40t può creare un'operazione corrispondente"
+msgstr "MeerK40t può creare un processo corrispondente"
 
 #: meerk40t/core/elements.py:247
 msgid "Autoinherit for empty operation"
@@ -1151,14 +1151,14 @@ msgstr "Adotta il colore"
 
 #: meerk40t/core/elements.py:248
 msgid "If you drag and drop an element into an operation to assign it there,"
-msgstr "Se si trascina un elemento in un'operazione per assegnarlo,"
+msgstr "Se si trascina un elemento in un processo per assegnarlo,"
 
 #: meerk40t/core/elements.py:252
 msgid ""
 "then the op can (if this option is ticked) inherit the color from the "
 "element"
 msgstr ""
-"allora l'operazione può (se questa opzione è spuntata) ereditare il colore dall'"
+"allora il processo può (se questa opzione è spuntata) ereditare il colore dall'"
 "elemento"
 
 #: meerk40t/core/elements.py:256
@@ -1713,11 +1713,11 @@ msgstr "Disabilita i Processi specificati"
 
 #: meerk40t/core/elements.py:2316
 msgid "Operation '{name}' disabled."
-msgstr "Operazione '{name}' disabilitata"
+msgstr "Processo '{name}' disabilitato"
 
 #: meerk40t/core/elements.py:2323
 msgid "Operation '{name}' can't be disabled."
-msgstr "L'operazione '{name}' non può essere disabilitata"
+msgstr "Il Processo '{name}' non può essere disabilitato"
 
 #: meerk40t/core/elements.py:2329
 msgid "Enable the given operations"
@@ -1725,11 +1725,11 @@ msgstr "Abilita i Processi specificati"
 
 #: meerk40t/core/elements.py:2339
 msgid "Operation '{name}' enabled."
-msgstr "Operazione '{name}' abilitata"
+msgstr "Processo '{name}' abilitato"
 
 #: meerk40t/core/elements.py:2346
 msgid "Operation '{name}' can't be enabled."
-msgstr "L'operazione '{name}' non può essere abilitata"
+msgstr "Il Processo '{name}' non può essere abilitata"
 
 #: meerk40t/core/elements.py:2355
 msgid "Lock element (protect from manipulation)"
@@ -1882,7 +1882,7 @@ msgstr "Imposta l'allineamento richiesto all'interno dell'area di lavoro"
 
 #: meerk40t/core/elements.py:2965
 msgid "Set the requested alignment to the reference object"
-msgstr "Imposta l'allineamento richiesto all'oggetto di riferimento"
+msgstr "Imposta l'allineamento desiderato rispetto all'oggetto di riferimento"
 
 #: meerk40t/core/elements.py:2973
 msgid "You need to provide the boundaries for align-mode {mode}"
@@ -2717,7 +2717,7 @@ msgstr "Nota impostata."
 
 #: meerk40t/core/elements.py:6286 meerk40t/core/elements.py:6338
 msgid "Method to use (one of quick, hull, segment, circle)"
-msgstr "Metodo da utilizza (uno tra quick, hull, segment, circle)"
+msgstr "Metodo da utilizzare (uno tra: quick=veloce, hull=bordo, segment=segmento, circle=cerchio)"
 
 #: meerk40t/core/elements.py:6291
 msgid "trace the given elements"
@@ -2875,7 +2875,7 @@ msgstr "Raster Direzionale"
 
 #: meerk40t/core/elements.py:6730
 msgid "Execute operation(s)"
-msgstr "Esegui operazione(i)"
+msgstr "Esegui Processo(i)"
 
 #: meerk40t/core/elements.py:6732
 msgid "Execute Job for the selected operation(s)."
@@ -2904,7 +2904,7 @@ msgstr "Elimina l'elemento '{name}' completamente"
 
 #: meerk40t/core/elements.py:6882
 msgid "Delete operation '{name}' fully"
-msgstr "Cancella completamente l'operazione '{name}"
+msgstr "Cancella completamente il processo '{name}"
 
 #: meerk40t/core/elements.py:6908
 msgid "Delete group '{name}' and all its child-elements fully"
@@ -2927,7 +2927,7 @@ msgstr "Elimina {ecount} elemento/i selezionato/i nell'area di lavoro"
 
 #: meerk40t/core/elements.py:6990 meerk40t/core/elements.py:7013
 msgid "Convert to Cutcode"
-msgstr "Converti in codice di taglio"
+msgstr "Converti in Cutcod"
 
 #: meerk40t/core/elements.py:7001
 msgid "Convert to Elements"
@@ -3177,7 +3177,7 @@ msgstr "Aggiungi 'console'"
 
 #: meerk40t/core/elements.py:7326
 msgid "Reclassify operations"
-msgstr "Ridefinire i Processio"
+msgstr "Ridefinire i Processi"
 
 #: meerk40t/core/elements.py:7335
 msgid "Duplicate operation(s)"
@@ -3185,7 +3185,7 @@ msgstr "Duplica Processi"
 
 #: meerk40t/core/elements.py:7337
 msgid "duplicate operation nodes"
-msgstr "Operazione di duplicazione Sottoelementi"
+msgstr "Processo di duplicazione Sottoelementi"
 
 #: meerk40t/core/elements.py:7356 meerk40t/core/elements.py:7366
 #: meerk40t/gui/materialtest.py:411 meerk40t/gui/materialtest.py:420
@@ -3350,7 +3350,7 @@ msgstr "Apre questo file nell'applicazione di sistema associata a questo tipo di
 #: meerk40t/core/elements.py:7580 meerk40t/core/elements.py:7611
 #: meerk40t/core/elements.py:7627 meerk40t/core/elements.py:7643
 msgid "Assign Operation"
-msgstr "Assegna Operazione"
+msgstr "Assegna Processso"
 
 #: meerk40t/core/elements.py:7614
 msgid "Exclusive assignment"
@@ -3368,7 +3368,7 @@ msgstr "Ereditare il contorno e classificare simili"
 
 #: meerk40t/core/elements.py:7632
 msgid "Operation will inherit element stroke color"
-msgstr "L'operazione erediterà il colore del contorno dell'elemento"
+msgstr "Il Processo erediterà il colore del contorno dell'elemento"
 
 #: meerk40t/core/elements.py:7646
 msgid "Inherit fill and classify similar"
@@ -3376,7 +3376,7 @@ msgstr "Ereditare il riempimento e classificare simili"
 
 #: meerk40t/core/elements.py:7648
 msgid "Operation will inherit element fill color"
-msgstr "L'operazione erediterà il colore di riempimento dell'elemento"
+msgstr "Il Processo erediterà il colore di riempimento dell'elemento"
 
 #: meerk40t/core/elements.py:7683
 msgid "Convert to path"
@@ -3545,11 +3545,11 @@ msgstr "Tutti i tipi validi"
 
 #: meerk40t/core/planner.py:35 meerk40t/gui/plugin.py:118
 msgid "Launch Spooler on Job Start"
-msgstr "Apre lo spooler all'avvio del lavoro"
+msgstr "Apre la coda di stampa all'avvio del lavoro"
 
 #: meerk40t/core/planner.py:36 meerk40t/gui/plugin.py:119
 msgid "Open the Spooler window automatically when you Execute a Job"
-msgstr "Apre automaticamente la finestra dello spooler non appena viene eseguito un lavoro"
+msgstr "Apre automaticamente la finestra della coda di stampa non appena viene eseguito un lavoro"
 
 #: meerk40t/core/planner.py:49
 msgid "Reduce Travel Time"
@@ -3675,12 +3675,11 @@ msgstr ""
 
 #: meerk40t/core/planner.py:135
 msgid ""
-"If Merge Passes is not checked, Operations with >1 passes will only have "
-"the same passes merged. If Merge Passes is also checked, then all burns "
-"will be optimised globally."
+"If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
+"If Merge Passes is also checked, then all burns will be optimised globally."
 msgstr ""
-"Attiva: tutte le lavorazioni verranno ottimizzate globalmente\n"
-"Non attiva: i Processi con più di un passaggio avranno i passaggi uniti"
+"Non attiva: solo i passaggi identici all'interno di Processi con più di un passaggio verranno uniti.\n"
+"Attiva: tutte le lavorazioni verranno ottimizzate globalmente"
 
 #: meerk40t/core/planner.py:140
 msgid ""
@@ -3747,8 +3746,8 @@ msgid ""
 "This optimization works best with Merge Operations also checked though "
 "this is not a requirement. "
 msgstr ""
-"Questa ottimizzazione funziona al meglio insieme a Unisci Processi, "
-"anche se ciò non è obbligatorio."
+"Questa ottimizzazione è più efficace se è selezionata anche l'opzione 'Unisci Processi' "
+"sebbene non sia obbligatorio"
 
 #: meerk40t/core/planner.py:188
 msgid ""
@@ -3968,7 +3967,7 @@ msgstr "cmd <quantità>"
 
 #: meerk40t/core/spoolers.py:171
 msgid "executes outstanding jog buffer"
-msgstr ""
+msgstr "Esegue il buffer di movimento in sospeso"
 
 #: meerk40t/core/spoolers.py:189
 msgid "Position moved: {x} {y}"
@@ -4017,7 +4016,7 @@ msgstr "blocca la guida"
 
 #: meerk40t/core/svg_io.py:85
 msgid "SVG Viewport is Bed"
-msgstr "Utilizza la finestra SVG come dimensione"
+msgstr "Il viewport SVG è il piano di lavoro"
 
 #: meerk40t/core/svg_io.py:86
 msgid ""
@@ -4099,12 +4098,12 @@ msgstr "DXF: tenta di leggere le polilinee 3D"
 #: ./meerk40t\dxf\plugin.py:42
 msgid "Tries to use dxf 3D-polylines, disable it if the file contains meshes or other 3D data"
 msgstr ""
-"I tentativi di utilizzare polilinee DXF 3D devono essere disattivati,"
+"Tenta di utilizzare le polilinee 3D DXF; disabilitare "
 "se il file contiene mesh o altri dati 3D"
 
 #: meerk40t/extra/cag.py:20
 msgid "Constructive Additive Geometry: Add"
-msgstr "Geometria additiva costruttiva: Aggiungi"
+msgstr "Geometria Costruttiva Additiva: Aggiung"
 
 #: meerk40t/extra/cag.py:27
 msgid "Not enough items selected to apply constructive geometric function"
@@ -4310,15 +4309,15 @@ msgstr "Ottimizzazione non trovata"
 
 #: ./meerk40t\extra\updater.py:360
 msgid "Update-Info"
-msgstr "Update-Information"
+msgstr "Informazioni sugli aggiornamenti"
 
 #: meerk40t/extra/updater.py:28
 msgid "Check whether a newer version is available"
-msgstr ""
+msgstr "Verifica se è disponibile una versione più recente"
 
 #: meerk40t/extra/vectrace.py:10 meerk40t/image/imagetools.py:110
 msgid "return paths around image"
-msgstr ""
+msgstr "Restituisce i percorsi attorno all'immagine"
 
 #: meerk40t/extra/winsleep.py:58
 msgid "disables sleepmode"
@@ -4392,6 +4391,14 @@ msgstr "Distanza dell'interpolazione della curva in mils"
 msgid "Use M3"
 msgstr "Usa M3"
 
+#: meerk40t/grbl/gui/grbloperationconfig.py:50
+msgid "Custom Code:"
+msgstr "Codice personalizzato:"
+
+#: meerk40t/grbl/gui/grbloperationconfig.py:53
+msgid "Any custom GRBL code that will be executed at the start of the operation"
+msgstr "Qualsiasi codice GRBL personalizzato che verrà eseguito all'inizio dei processi"
+
 #: meerk40t/grbl/device.py:290
 msgid "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
 msgstr "Usa M3 anziché M4 per l'avvio del laser (vedi documentazione GRBL per ulteriori informazioni)"
@@ -4426,7 +4433,7 @@ msgstr "Invia codice G di ripresa in tempo reale al dispositivo"
 
 #: meerk40t/grbl/device.py:394
 msgid "Update moshi codes for movement"
-msgstr ""
+msgstr "Aggiorna i codici Moshi per il movimento"
 
 #: meerk40t/grbl/device.py:400 meerk40t/lihuiyu/device.py:486
 msgid "save job export"
@@ -4468,39 +4475,47 @@ msgid ""
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but\n"
+"who sincerely hoped his contributions would be but\n"
 "the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t è un progetto basato sulla licenza MIT"
-"Progetto open source per il laser su dispositivi K40.\n\n"
-"L'aiuto per questo progetto è sempre ben accetto.\n"
-"Molte grazie per l'aiuto passato e futuro.\n"
+"Meerk40t è un progetto basato sulla licenza MIT, "
+"progetto open source per gestire laser su dispositivi K40 (e non solo).\n\n"
+"Qualsiasi aiuto per questo progetto è sempre ben accetto.\n"
+"Grazie molto per l'aiuto passato e futuro.\n"
 "Questo programma è principalmente opera di Tatarize,\n"
-"che spera che il suo lavoro finisca per essere una piccola "
-"parte di un'opera molto più grande.\n\n"
+"che sperava che il suo lavoro finisse per essere una piccola \n"
+"parte di un'opera molto più grande."
+
+#: meerk40t/gui/about.py:23
+msgid ""
+"Since early 2024 jpirnay has taken on the role of lead developer\n"
+"trying to fill in some awfully large shoes."
+msgstr ""
+"Dall'inizio del 2024, jpirnay ha assunto il ruolo di sviluppatore principale\n"
+"e si trova a dover colmare delle orme davvero grandi \n\n"
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
-msgstr "I ringraziamenti vanno a...\n"
+msgstr "I ringraziamenti vanno a...\n\n"
 
 #: meerk40t/gui/about.py:92
 msgid "* Li Huiyu for their controller.\n"
-msgstr "* Li Huiyu per il suo controller.\n"
+msgstr "* Li Huiyu per il loro controller.\n"
 
 #: meerk40t/gui/about.py:93
 msgid "* Scorch for lighting our path.\n"
-msgstr "* Scorch per aver illuminato il nostro cammino.\n"
+msgstr "* Scorch, che ci ha mostrato la strada.\n"
 
 #: meerk40t/gui/about.py:94
 msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
-msgstr "* Alois Zingl per il suo brillante algoritmo di Bresenham per le curve\n"
+msgstr ""
+"* Alois Zingl per il suo brillante algoritmo di Bresenham per le curve.\n"
 
 #: meerk40t/gui/about.py:98
 msgid ""
-"* @joerlane for his hardware investigation wizardry into how the M2-Nano "
-"works.\n"
+"* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
 msgstr ""
-"* @joerlane per la sua abilità nell'indagine hardware su come funziona il M2-Nano\n"
+"* @joerlane per la sua abilità nell'analisi hardware del funzionamento dell'M2-Nano.\n"
 
 #: meerk40t/gui/about.py:103
 msgid "* All the MeerKittens, {developer}. \n"
@@ -4511,16 +4526,13 @@ msgid ""
 "* Beta testers and anyone who reported issues that helped us improve "
 "things.\n"
 msgstr ""
-"* I beta tester e chiunque abbia segnalato problemi che ci hanno aiutato a migliorare "
-"cose.\n"
+"* Ai beta tester e a tutti coloro che hanno aiutato con le descrizioni dei bug "
+"hanno contribuito a migliorare le cose.\n"
 
 #: meerk40t/gui/about.py:109
 msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr ""
-#: meerk40t/gui/about.py:109
-msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
-msgstr ""
-"* I traduttori che hanno contribuito all'internazionalizzazione della MeerK40t per l'uso in tutto il mondo.\n"
+"* Ai traduttori che hanno contribuito a rendere Meerk40t utilizzabile in tutto il mondo.\n"
 
 #: meerk40t/gui/about.py:112
 msgid ""
@@ -4904,11 +4916,11 @@ msgstr "Nessun file"
 
 #: meerk40t/gui/choicepropertypanel.py:545
 msgid "mask"
-msgstr ""
+msgstr "mascheta"
 
 #: meerk40t/gui/choicepropertypanel.py:550
 msgid "value"
-msgstr ""
+msgstr "valore"
 
 #: meerk40t/gui/consolepanel.py:77 meerk40t/gui/consolepanel.py:388
 #: meerk40t/gui/consolepanel.py:397
@@ -5063,11 +5075,11 @@ msgstr "Esegui i comandi per rendere valide i Processi"
 
 #: meerk40t/gui/executejob.py:225
 msgid "Blob"
-msgstr "Crea il codice di taglio"
+msgstr "Crea il Cutcode"
 
 #: meerk40t/gui/executejob.py:227
 msgid "Turn this set of operations into Cutcode"
-msgstr "Converti i Processi in codice di taglio"
+msgstr "Converti i Processi in Cutcode"
 
 #: meerk40t/gui/executejob.py:229
 msgid "Preprocess Optimizations"
@@ -5084,15 +5096,15 @@ msgstr "Ottimizza"
 
 #: meerk40t/gui/executejob.py:237
 msgid "Run the commands to optimize this cutcode"
-msgstr "Esegui i comandi per ottimizzare questo codice di taglio"
+msgstr "Esegui i comandi per ottimizzare questo Cutcode"
 
 #: meerk40t/gui/executejob.py:239
 msgid "Spool"
-msgstr "Spool"
+msgstr "Coda di stampa"
 
 #: meerk40t/gui/executejob.py:241
 msgid "Send this data to the spooler"
-msgstr "Inviare i dati allo spooler"
+msgstr "Inviare i dati alla coda di stampa"
 
 #: meerk40t/gui/executejob.py:260 meerk40t/gui/executejob.py:267
 msgid "Execute Job"
@@ -5343,7 +5355,7 @@ msgid "Preparing simulation..."
 msgstr "Preparare la simulazione..."
 
 msgid "Please select a cutcode entry"
-msgstr "Inserire prima un codice di taglio"
+msgstr "Inserire prima un Cutcode"
 
 msgid "from the operations panel"
 msgstr "Seleziona dall'elenco dei Processi"
@@ -5475,7 +5487,7 @@ msgid ""
 msgstr ""
 "Istruzioni: posizionare il laser su un angolo del rettangolo posto "
 "sul piano di lavoro e confermarlo con il pulsante.\n"
-"Ripetere l'operazione per l'angolo opposto.\n"
+"Ripetere il processo per l'angolo opposto.\n"
 "MK creerà il rettangolo per la successiva elaborazione"
 
 #: meerk40t/gui/lasertoolpanel.py:189
@@ -5537,7 +5549,7 @@ msgstr "Se si continua a spostarsi verso il centro, la testa del laser potrebbe"
 #: meerk40t/gui/lasertoolpanel.py:619
 msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
-"sbattere contro i bordi e subire danni! Volete davvero procedere?"
+"sbattere contro i bordi e subire danni! Vuoi davvero procedere?"
 
 #: meerk40t/gui/lasertoolpanel.py:622
 msgid "Dangerous coordinates"
@@ -5599,7 +5611,7 @@ msgstr "Crea un modello"
 
 #: meerk40t/gui/materialtest.py:98
 msgid "Operation to test"
-msgstr "Operazione da testare"
+msgstr "Processo da testare"
 
 #: meerk40t/gui/materialtest.py:100
 msgid "Operation:"
@@ -5698,13 +5710,13 @@ msgstr "Crea una griglia con i valori"
 
 #: meerk40t/gui/materialtest.py:264
 msgid "Operation type for which the testpattern will be generated"
-msgstr "Operazione per la quale sarà generato il campione di prova"
+msgstr "Processo per la quale sarà generato il campione di prova"
 
 #: meerk40t/gui/materialtest.py:265
 msgid ""
 "You can define the common parameters for this operation in the other tabs"
 " on top of this window"
-msgstr "È possibile definire i parametri comuni per questa operazione mediante le 'tab' di questa finestra"
+msgstr "È possibile definire i parametri comuni per questo processo mediante le 'tab' di questa finestra"
 
 #: meerk40t/gui/materialtest.py:270
 msgid "Choose the first parameter that you want to be tested"
@@ -6476,7 +6488,7 @@ msgstr "Messaggio da visualizzare (opzionale)"
 
 #: meerk40t/gui/plugin.py:233 meerk40t/kernel/kernel.py:2623
 msgid "Spooling Interrupted."
-msgstr "Processo di spool interrotto"
+msgstr "Processo della coda di stampa interrotto"
 
 #: meerk40t/gui/plugin.py:245
 msgid "Press OK to Continue."
@@ -6844,7 +6856,7 @@ msgstr "Distanza"
 
 #: meerk40t/gui/spoolerpanel.py:29 meerk40t/gui/spoolerpanel.py:553
 msgid "Spooler"
-msgstr "Spooler"
+msgstr "Coda di stampa"
 
 #: meerk40t/gui/spoolerpanel.py:66 meerk40t/kernel/kernel.py:1683
 msgid "Abort"
@@ -6859,7 +6871,7 @@ msgid "Clear History"
 msgstr "Cancella la cronologia"
 
 msgid "Clear spooler history (right click for more options)"
-msgstr "Cancella la cronologia dello spooler (Click destro per ulteriori opzioni)"
+msgstr "Cancella la cronologia della coda di stampa (Click destro per ulteriori opzioni)"
 
 msgid "-- All available devices --"
 msgstr "-- Tutti i dispositivi disponibili --"
@@ -6918,11 +6930,11 @@ msgstr "Cancella tutto"
 
 #: meerk40t/gui/spoolerpanel.py:544
 msgid "Job Spooler"
-msgstr "Spooler di lavoro"
+msgstr "Coda di stampa dei lavoro"
 
 #: meerk40t/gui/spoolerpanel.py:555
 msgid "Opens Spooler Window"
-msgstr "Apre la finestra dello spooler"
+msgstr "Apre la finestra della coda di stampa"
 
 #: meerk40t/gui/usbconnect.py:81
 msgid "UsbConnect"
@@ -7797,11 +7809,11 @@ msgstr "pannello da nascondere"
 
 #: meerk40t/gui/wxmmain.py:1496
 msgid "pane to be float"
-msgstr "pannello fluttuante "
+msgstr "pannello mobile "
 
 #: meerk40t/gui/wxmmain.py:1500
 msgid "Float the pane"
-msgstr ""
+msgstr "Sgancia pannello"
 
 #: meerk40t/gui/wxmmain.py:1516
 msgid "pane to be dock"
@@ -7809,7 +7821,7 @@ msgstr "pannello da agganciare"
 
 #: meerk40t/gui/wxmmain.py:1520
 msgid "Dock the pane"
-msgstr ""
+msgstr "Aggancia pannelo"
 
 #: meerk40t/gui/wxmmain.py:1539
 msgid "Hides/Restores all the visible panes (except scene)"
@@ -8297,7 +8309,7 @@ msgstr "Controller: {state}"
 
 #: meerk40t/gui/wxmmain.py:2785
 msgid "Spooler: {state}"
-msgstr "Spooler: {state}"
+msgstr "Coda di stampa: {state}"
 
 #: meerk40t/gui/wxmmain.py:2920
 msgid "Load {file}..."
@@ -8400,6 +8412,62 @@ msgstr "Strumenti:"
 #: meerk40t/gui/wxmscene.py:277
 msgid "-------"
 msgstr ""
+
+#: meerk40t/gui/wxmscene.py:873
+msgid "Action: clear or set / delete with coordinate"
+msgstr "Azione: cancella o imposta / elimina coordinata"
+
+#: meerk40t/gui/wxmscene.py:876
+msgid "Axis (X or Y)"
+msgstr "Asse (X o Y)"
+
+#: meerk40t/gui/wxmscene.py:878
+msgid "Position for magnetline"
+msgstr "Posizione la linea magnetica"
+
+#: meerk40t/gui/wxmscene.py:881
+msgid "magnet <action> <axis> <position>"
+msgstr "magnete <action> <axis> <position>"
+
+#: meerk40t/gui/wxmscene.py:895
+msgid "You need to provide the intended action:"
+msgstr "Devi specificare l'azione desiderata:"
+
+#: meerk40t/gui/wxmscene.py:896
+msgid "clear x - clear y : will clear all magnets on the given axis"
+msgstr "cancella x - cancella y : cancellerà tutti i magneti sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:897
+msgid "set x <pos> - set y <pos>: will set a magnet line on the given axis"
+msgstr "imposta x <pos> - imposta y <pos>: imposterà una linea magnetica sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:898
+msgid "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
+msgstr "elimina x <pos> - elimina y <pos>: eliminerà la linea magnetica sull'asse indicato"
+
+#: meerk40t/gui/wxmscene.py:918
+msgid "You need to provide a position"
+msgstr "Devi specificare una posizione"
+
+#: meerk40t/gui/wxmscene.py:930
+msgid "Deleted {count} magnet lines on axis {axis}"
+msgstr "Eliminate {count} linee magnetiche sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:944
+msgid "Magnetline appended at {pos} on axis {axis}"
+msgstr "Linea magnetica aggiunta in {pos} sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:946
+msgid "Magnetline was already present"
+msgstr "La linea magnetica era già presente"
+
+#: meerk40t/gui/wxmscene.py:960
+msgid "Magnetline removed at {pos} on axis {axis}"
+msgstr "Linea magnetica rimossa in {pos} sull'asse {axis}"
+
+#: meerk40t/gui/wxmscene.py:962
+msgid "Magnetline was not existing"
+msgstr "La linea magnetica non esisteva"
 
 #: meerk40t/gui/wxmscene.py:341
 msgid ""
@@ -10255,7 +10323,7 @@ msgstr "Aggiungere un nuovo URL"
 
 #: meerk40t/camera/gui/camerapanel.py:973
 msgid "Duplicate"
-msgstr "Duplicato"
+msgstr "Duplica"
 
 #: meerk40t/camera/gui/camerapanel.py:1006
 msgid "Camera URI"
@@ -11068,11 +11136,11 @@ msgstr "Riempimento"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:156
 msgid "If active, then this op will prevent further classification"
-msgstr "Se attiva, questa operazione impedirà ulteriori classificazioni"
+msgstr "Se attiva, questo processo impedirà ulteriori classificazioni"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:158
 msgid "from other ops if it could classify an element by itself."
-msgstr " (se esiste una risposta positiva per questa operazione)"
+msgstr " (se esiste una risposta positiva per questo processo)"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:194
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:782
@@ -11136,7 +11204,7 @@ msgstr ""
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:692
 msgid "Atttention: This will delete all existing assignments!"
-msgstr "Attenzione: questa operazione rimuoverà le assegnazioni esistenti!"
+msgstr "Attenzione: questo coando rimuoverà le assegnazioni esistenti!"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:759
 msgid "Start Preference:"
@@ -12280,7 +12348,7 @@ msgid ""
 " this permanently checked."
 msgstr ""
 "Mentre l'opzione Raggruppamento impulsi in Processi è impostata per tale Processo "
-"prima che il lavoro venga inviato in spool e non può essere modificato al volo, questo globale"
+"prima che il lavoro venga inviato alla coda di stampa e non può essere modificato al volo, questo globale"
 "L'opzione Raggruppamento impulsi viene selezionata mentre le istruzioni vengono inviate al laser"
 "e può essere acceso e spento durante il processo di lavorazione. Perché i cambiamenti "
 "si ritiene che siano abbastanza piccoli da non essere rilevabili, potresti voler andartene"
@@ -13350,7 +13418,7 @@ msgid "Information"
 msgstr "Informazioni"
 
 msgid "Outline element(s)..."
-msgstr "Contorno elemento(i)"
+msgstr "Elementi di contorno"
 
 msgid "...with {offset}mm distance"
 msgstr "spaziatura di {offset}mm"
@@ -13458,10 +13526,10 @@ msgid "Redo"
 msgstr "Ripristina"
 
 msgid "Undo last operation"
-msgstr "Annulla l'ultima operazione"
+msgstr "Annulla l'ultimo processo"
 
 msgid "Redo last operation"
-msgstr "Applica nuovamente l'ultima operazione"
+msgstr "Applica nuovamente l'ultimo processo"
 
 msgid "Cut selected elements"
 msgstr "Taglia l'elemento e copia negli appunti"
@@ -13499,7 +13567,7 @@ msgstr ""
 "(meno dettagliato, ma molto meno dispendioso in termini di risorse)"
 
 msgid "Copy will increase {variable} references"
-msgstr "L'operazione di copia aumenta l'indice {variable}"
+msgstr "Il processo di copia aumenta l'indice {variable}"
 
 msgid ""
 "Active: if you copy a text-element containing a wordlist-reference, "
@@ -14257,7 +14325,7 @@ msgid "Bottom-Right"
 msgstr "In basso a destra"
 
 msgid "This is a placeholder for the 'place current' operation"
-msgstr "Si tratta di un segnaposto per l'operazione 'luogo corrente'"
+msgstr "Questo è un segnaposto per l'operazione 'posiziona attuale'"
 
 msgid ""
 "This will define an origin from where all the elements in this scene\n"
@@ -14842,7 +14910,7 @@ msgid "Appends this special operation at the end of the cutplan"
 msgstr "Aggiunge questo processo alla fine del piano di taglio"
 
 msgid "Remove cutcode"
-msgstr "Rimuove il codice di taglio"
+msgstr "Rimuove il Cutcod"
 
 msgid "Removes the selected cutcode-entries from the active cutplan"
 msgstr "Rimuove i codici di taglio selezionati dal piano di taglio attivo"
@@ -15122,7 +15190,7 @@ msgstr "Inserisci {op}"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:589
 msgid "Will insert this operation before the current entry"
-msgstr "Inserisce questa operazione prima della voce corrente"
+msgstr "Inserisce questo processo prima della voce corrente"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:597
 msgid "Append {op}"
@@ -15130,7 +15198,7 @@ msgstr "Allega {op}"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:598
 msgid "Will append this operation to the end of the list"
-msgstr "Aggiunge l'operazione alla fine dell'elenco"
+msgstr "Aggiunge il processo alla fine dell'elenco"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:402
 msgid "Apply image modification script\nRight click: append to existing script"
@@ -16454,7 +16522,7 @@ msgstr "Ulteriori informazioni possono essere memorizzate qui"
 
 #: ./meerk40t\gui\materialmanager.py:540
 msgid "Add new"
-msgstr "Nuovo"
+msgstr "Crea nuova voce"
 
 #: ./meerk40t\gui\materialmanager.py:541
 msgid "Add a new library entry"
@@ -16466,23 +16534,23 @@ msgstr "Carica dal progetto"
 
 #: ./meerk40t\gui\materialmanager.py:543
 msgid "Use the currently defined operations"
-msgstr "Utilizzare i Processi attualmente utilizzati nel progetto"
+msgstr "Utilizza i Processi attualmente utilizzati nel progetto\n per creare una voce nella biblioteca dei materiali"
 
 #: ./meerk40t\gui\materialmanager.py:544
 msgid "Load into Tree"
-msgstr "Trasferimento al progetto"
+msgstr "Trasferisce al progetto"
 
 #: ./meerk40t\gui\materialmanager.py:546
 msgid "Apply the current library entry to the operations branch"
-msgstr "Trasferire la voce attiva alle attività del progetto"
+msgstr "Trasferisce la voce attiva i Proicessi del progetto"
 
 #: ./meerk40t\gui\materialmanager.py:548
 msgid "Use for statusbar"
-msgstr "Per la barra di stato"
+msgstr "Usa per la barra di stato"
 
 #: ./meerk40t\gui\materialmanager.py:550
 msgid "Use the current library entry for the statusbar icons"
-msgstr "Accettare la voce attiva per i pulsanti della riga di stato"
+msgstr "Usa la voce corrente della biblioteca dei materiali\n per le icone della barra di stato"
 
 #: ./meerk40t\gui\materialmanager.py:553
 msgid "Delete the current library entry"
@@ -16490,11 +16558,11 @@ msgstr "Elimina la voce corrente"
 
 #: ./meerk40t\gui\materialmanager.py:555
 msgid "Duplicate the current library entry"
-msgstr "Raddoppia la voce corrente"
+msgstr "Duplica la voce corrente"
 
 #: ./meerk40t\gui\materialmanager.py:558
 msgid "Import a material library from ezcad or LightBurn"
-msgstr "Importazione della libreria di materiali da LightBurn o EzCad"
+msgstr "Importa la libreria dei materiali da LightBurn o EzCad"
 
 #: ./meerk40t\gui\materialmanager.py:560
 msgid "Share"
@@ -16542,7 +16610,7 @@ msgstr "Si vuole davvero cancellare questa voce? Non è possibile annullarla"
 
 #: ./meerk40t\gui\materialmanager.py:1064
 msgid "Do you really want to delete all visible entries? This can't be undone."
-msgstr "si vuole davvero cancellare tutte le voci visualizzate? Questa operazione non può essere annullata"
+msgstr "Vuoi davvero eliminare tutte le voci visibili? Questa operazione è irreversibile."
 
 #: ./meerk40t\gui\materialmanager.py:1080
 msgid "Invalid file"
@@ -17104,7 +17172,7 @@ msgstr "Spegne"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:670
 msgid "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
-msgstr "Definisce se il supporto del refrigerante deve essere esplicitamente attivato o disattivato all'inizio dell'operazione o se deve essere lasciato allo stato attuale"
+msgstr "Definisce se il supporto del refrigerante deve essere esplicitamente attivato o disattivato all'inizio del processo o se deve essere lasciato allo stato attuale"
 
 #: meerk40t/gui/propertypanels/placementproperty.py:184
 msgid "Start-Index:"
@@ -17272,7 +17340,7 @@ msgstr "Modelli"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:262
 msgid "X, Y"
-msgstr ""
+msgstr "X, Y"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:281
 msgid "W, H"
@@ -17372,7 +17440,7 @@ msgstr "Modifica pulsante"
 
 #: meerk40t/gui/wxmribbon.py:1332
 msgid "Tooltip"
-msgstr "Tooltip"
+msgstr "Suggerimento"
 
 #: meerk40t/gui/wxmribbon.py:1338
 msgid "Action left click"
@@ -17523,7 +17591,7 @@ msgid "Default Wobble Radius"
 msgstr "Raggio oscillazione standard"
 
 #: meerk40t/device/devicechoices.py:47
-msgid  "Default Wobble Interval"
+msgid "Default Wobble Interval"
 msgstr "Intervallo oscillazione standard"
 
 #: meerk40t/camera/gui/camerapanel.py:524
@@ -17594,13 +17662,25 @@ msgstr "Sopprime i Processi non utilizzate"
 msgid "Set coolant to on/off or leave unchanged (default)"
 msgstr "Imposta il refrigerante su on/off o lasciare invariato (default)"
 
+#: meerk40t/gui/basicops.py:462
+msgid "A: Active = toggle whether the elements assigned to this operation will be burned or not"
+msgstr "A: Attivo = attiva o disattiva se gli elementi assegnati a questo processo verranno incisi o meno"
+
+#: meerk40t/gui/basicops.py:469
+msgid "S: Show = if inactive then you can suppress the drawing of the assigned elements"
+msgstr "S: Mostra = se non attivo puoi sopprimere la visualizzazione degli elementi assegnati"
+
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant= determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / verrà attivato o disattivato all'inizio di questo processo"
+
 #: meerk40t/camera/gui/camerapanel.py:1146 meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:1042 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/spoolerpanel.py:586
 msgid "Do you really want to delete all entries?"
-msgstr "Volete davvero cancellare tutte le voci?"
+msgstr "Vuoi davvero cancellare tutte le voci?"
 
 #: meerk40t/core/elements/element_treeops.py:913
 msgid "Do you really want to delete {num} entries?"
-msgstr "Volete davvero cancellare {num} voci?"
+msgstr "Vuoi davvero cancellare {num} voci?"
 
 #: meerk40t/gui/preferences.py:522
 msgid "Object-Label"
@@ -18218,11 +18298,11 @@ msgstr "Non è stato selezionato alcun elemento dell'immagine"
 
 #: meerk40t/core/elements/branches.py:1632
 msgid "By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"
-msgstr "Per impostazione predefinita, gli elementi vengono uniti insieme se hanno punti di arrivo/inizio comuni; questa opzione consente di impostare una tolleranza"
+msgstr "Per impostazione predefinita, gli elementi vengono uniti se hanno punti di inizio/fine coincidenti; questa opzione permette di definire una tolleranza per questa unione"
 
 #: meerk40t/core/elements/branches.py:1633
 msgid "By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"
-msgstr "Per impostazione predefinita, gli elementi vengono uniti insieme se hanno un punto finale/iniziale comune. Questa opzione lo impedisce così verranno creati dei veri e propri sottopercorsi"
+msgstr "Per impostazione predefinita, gli elementi vengono uniti se hanno un punto di inizio/fine in comune. Questa opzione impedisce tale unione e verranno creati dei sottopercorsi distinti"
 
 #: meerk40t/core/elements/branches.py:1730
 msgid "Invalid tolerance distance provided"
@@ -18266,11 +18346,11 @@ msgstr "Disabilitato: Mantiene la risoluzione interna e cambia le dimensioni"
 
 #: meerk40t/gui/simulation.py:764
 msgid "Only show highlighted cutcode items"
-msgstr "Mostra solo gli elementi del codice di taglio evidenziati"
+msgstr "Mostra solo gli elementi del Cutcod evidenziati"
 
 #: meerk40t/gui/simulation.py:861
 msgid "Cutcode"
-msgstr "Codice di taglio"
+msgstr "Cutcod"
 
 #: meerk40t/gui/gui_mixins.py:289
 msgid "Low"
@@ -18414,7 +18494,7 @@ msgstr "Rimuovere tutti gli elementi dai processi"
 
 #: meerk40t/core/elements/element_treeops.py:541
 msgid "When disabled the operation will be ignored during a burn"
-msgstr "Quando è disattivata, l'operazione viene ignorata durante la lavorazione"
+msgstr "Quando è disattivata, il processo viene ignorata durante la lavorazione"
 
 #: meerk40t/core/elements/element_treeops.py:569
 msgid "Temporarily suppress all assigned elements of this operation"
@@ -18434,7 +18514,7 @@ msgstr "Stabilizza la sequenza dei processi durante la lavorazione"
 
 #: meerk40t/core/elements/element_treeops.py:702 meerk40t/core/elements/element_treeops.py:720 meerk40t/core/elements/element_treeops.py:738 meerk40t/core/elements/element_treeops.py:756 meerk40t/core/elements/element_treeops.py:774
 msgid "Convert an operation to a different type maintaining properties and assigned elements"
-msgstr "Converte un'operazione in un tipo diverso mantenendo le proprietà e gli elementi assegnati"
+msgstr "Converte il processo in un tipo diverso mantenendo le proprietà e gli elementi assegnati"
 
 #: meerk40t/core/elements/element_treeops.py:790
 msgid "Remove stored image operations"
@@ -18574,11 +18654,11 @@ msgstr "Modificare il poligono selezionato in modo che tutti i lati abbiano la s
 
 #: meerk40t/core/elements/element_treeops.py:1776
 msgid "Recreate cutcode from the binary object"
-msgstr "Ricreare il codice di taglio dall'oggetto binario"
+msgstr "Ricreare il Cutcod dall'oggetto binario"
 
 #: meerk40t/core/elements/element_treeops.py:1785
 msgid "Recreate a path element from the selected cutcode"
-msgstr "Ricreare un elemento di percorso dal codice di taglio selezionato"
+msgstr "Ricreare un elemento di percorso dal Cutcod selezionato"
 
 #: meerk40t/core/elements/element_treeops.py:1803
 msgid "Add an additional reference of the master element"
@@ -18870,7 +18950,7 @@ msgstr "Accelerazione"
 
 #: meerk40t/newly/gui/operationproperties.py:30
 msgid "Set acceleration value for this operation"
-msgstr "Impostare il valore di accelerazione per questa operazione"
+msgstr "Impostare il valore di accelerazione per questo processo"
 
 #: meerk40t/newly/gui/newlyconfig.py:41
 msgid "Newly"
@@ -19910,7 +19990,7 @@ msgstr "Modifica le opzioni di aggancio del movimento dell'elemento"
 
 #: meerk40t/gui/spoolerpanel.py:70 meerk40t/gui/spoolerpanel.py:1227
 msgid "Opens the spooler window with all job information"
-msgstr "Apre la finestra dello spooler con tutte le informazioni sul lavoro"
+msgstr "Apre la finestra della coda di stampa con tutte le informazioni sul lavoro"
 
 #: meerk40t/gui/tips.py:587
 msgid "Display some tips and tricks how to best use MeerK40t"
@@ -20534,7 +20614,7 @@ msgstr "Errore: nodo vuoto per gli appunti"
 
 #: ./meerk40t\core\elements\elements.py:378
 msgid "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
-msgstr "Attiva: Un'operazione di trascinamento dei Riferimenti su un'operazione sposterà questi nodi nel ramo dell'elemento"
+msgstr "Attiva: Un'operazione di trascinamento dei Riferimenti su un processo sposterà questi nodi nel ramo dell'elemento"
 
 #: ./meerk40t\core\elements\element_treeops.py:163
 msgid "Unlock Modifications"
@@ -20614,7 +20694,7 @@ msgid "fractal_tree sx, sy, branch, iterations"
 msgstr "albero frattale sx, sy, ramo, iterazioni"
 
 #: meerk40t/extra/param_functions.py:438
-msgid "ffractal iterations"
+msgid "fractal iterations"
 msgstr "iterazioni ffrattali"
 
 #: meerk40t/extra/param_functions.py:252
@@ -21760,18 +21840,6 @@ msgstr "Ignora le aree esterne"
 msgid "minimal area"
 msgstr "area minima"
 
-#: ./meerk40t\image\imagetools.py:1227
-msgid "Save the processed image to disk"
-msgstr "Salva l'immagine elaborata su disco"
-
-#: ./meerk40t\image\imagetools.py:1020
-msgid "Cuts and image with a line"
-msgstr "Taglia l'immagine con una linea"
-
-#: ./meerk40t\image\imagetools.py:1001
-msgid "X position of image cutline"
-msgstr "Posizione X della linea di taglio dell'immagine"
-
 #: ./meerk40t\image\imagetools.py:1006
 msgid "Y position of image cutline"
 msgstr "Posizione Y della linea di taglio dell'immagine"
@@ -22121,14 +22189,6 @@ msgstr "Blocca le posizioni dei riquadri / consentire lo spostamento dei riquadr
 msgid "Reset pane positions to a default value"
 msgstr "Ripristina le posizioni del riquadro a un valore predefinito"
 
-#: meerk40t/grbl/gui/grbloperationconfig.py:50
-msgid "Custom Code:"
-msgstr "Codice personalizzato:"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1689
-msgid "Any custom GRBL code that will be executed at the start of the operation"
-msgstr "Qualsiasi codice GRBL personalizzato che verrà eseguito all'inizio dei processi"
-
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1352
 msgid "Usually a raster will be created as a black and white picture. Every non-white pixel (even very light ones) will become black and will be burned at full power."
 msgstr "Di solito un raster viene creato come un'immagine in bianco e nero. Ogni pixel non bianco (anche quelli molto chiari) diventa nero e viene bruciato alla massima potenza"
@@ -22144,3 +22204,107 @@ msgstr "Invia una macro predefinita al dispositivo"
 #: meerk40t/extra/param_functions.py:1104 meerk40t/extra/param_functions.py:1397
 msgid "Create shape"
 msgstr "Crea forma"
+
+#: meerk40t/core/elements/branches.py:1414
+msgid "Clear all content"
+msgstr "Cancella tutto il contenuto"
+
+#: meerk40t/core/elements/element_treeops.py:3578 meerk40t/core/elements/element_treeops.py:3595
+msgid "Offset shapes..."
+msgstr "Contorni interni o esterni"
+
+#: meerk40t/core/elements/element_treeops.py:3581
+msgid "...to outside with {offset}mm distance"
+msgstr "Traccia un contorno esterno a distanza di {offset} mm"
+
+#: meerk40t/core/elements/element_treeops.py:3583
+msgid "Create an outer offset around the selected elements"
+msgstr "Traccia un contorno esterno agli elementi selezionati"
+
+#: meerk40t/core/elements/element_treeops.py:3598
+msgid "...to inside with {offset}mm distance"
+msgstr "Traccia un contorno interno a distanza di {offset} mm"
+
+#: meerk40t/core/elements/element_treeops.py:3600
+msgid "Create an inner offset around the selected elements"
+msgstr "Traccia un contorno interno agli elementi selezionati"
+
+#: meerk40t/kernel/kernel.py:2683
+msgid "Empty job definition..."
+msgstr "Definizione del lavoro vuota...."
+
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / sarà acceso o spento all'inizio di questo processo"
+
+#: meerk40t/core/planner.py:189
+msgid "Combine path segments"
+msgstr "Combina i segmenti del percorso"
+
+#: meerk40t/core/planner.py:191
+msgid "Stitch segments together that are very close (ideally having joint start/end points)."
+msgstr "Unisci segmenti molto vicini (idealmente congiungendo i punti di inizio/fine)."
+
+#: meerk40t/core/planner.py:192
+msgid "Only inside a single cut/engrave operation."
+msgstr "Solo all'interno di una singolo processo di taglio/incisione."
+
+#: meerk40t/core/planner.py:202
+msgid "Tolerance to decide whether two path segments should be joined."
+msgstr "Tolleranza per decidere se due segmenti di percorso devono essere uniti."
+
+#: meerk40t/core/elements/shapes.py:755 meerk40t/core/elements/shapes.py:987
+msgid "Update property"
+msgstr "Aggiorna proprietà"
+
+#: meerk40t/core/elements/shapes.py:1362
+msgid "Set stroke-width"
+msgstr "Imposta lo spessore del tratto"
+
+#: meerk40t/core/elements/shapes.py:1395
+msgid "Update stroke-scale"
+msgstr "Aggiorna la scala del tratto"
+
+#: meerk40t/core/elements/shapes.py:2629
+msgid "Tolerance to stitch paths together"
+msgstr "Tolleranza per unire i percorsi"
+
+#: meerk40t/core/elements/shapes.py:2630
+msgid "Keep original paths"
+msgstr "Mantieni i percorsi originali"
+
+#: meerk40t/core/elements/shapes.py:2633
+msgid "stitch selected elements"
+msgstr "Unisci gli elementi selezionati"
+
+#: meerk40t/core/elements/shapes.py:2697
+msgid "Stitch paths"
+msgstr "Unisci percorsi"
+
+#: meerk40t/gui/wxmeerk40t.py:839
+msgid "Unit to translate"
+msgstr "Unità da tradurre"
+
+#: meerk40t/gui/wxmeerk40t.py:840
+msgid "Translate units"
+msgstr "Traduci unità"
+
+#: meerk40t/gui/wxmeerk40t.py:843
+msgid "You need to provide a value to translate"
+msgstr "Devi fornire un valore da tradurre"
+
+#: meerk40t/image/imagetools.py:1479 meerk40t/image/imagetools.py:1489
+msgid "X position of image cutline"
+msgstr "Posizione X della linea di taglio dell'immagine"
+
+#: meerk40t/image/imagetools.py:1484 meerk40t/image/imagetools.py:1494
+msgid "TCP Server for lihuiyu has been closed"
+msgstr "Il server TCP per lihuiyu è stato chiuso"
+
+#: meerk40t/image/imagetools.py:1498
+msgid "Cuts an image with a line"
+msgstr "Taglia l'immagine con una linea"
+
+#: meerk40t/image/imagetools.py:1711
+msgid "Save the processed image to disk"
+msgstr "Salva l'immagine elaborata su disco"

@@ -1117,10 +1117,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control.SetValue(bool((data >> b) & 1))
                     if mask:
                         control.Enable(bool((mask_bits >> b) & 1))
-                    control.Bind(
-                        wx.EVT_CHECKBOX,
-                        on_checkbox_check(attr, control, obj, b, additional_signal),
-                    )
+                    control.Bind(wx.EVT_CHECKBOX, on_checkbox_bitcheck(attr, control, obj, b, additional_signal), )
 
                     # mask bit
                     if mask:

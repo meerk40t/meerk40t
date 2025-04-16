@@ -673,15 +673,6 @@ class SpoolerPanel(wx.Panel):
 
         return routine
 
-    def pane_show(self, *args):
-        self.shown = True
-        self.context.schedule(self.timerjob)
-        self.refresh_spooler_list()
-
-    def pane_hide(self, *args):
-        self.context.unschedule(self.timerjob)
-        self.shown = False
-
     @staticmethod
     def _name_str(named_obj):
         try:
@@ -1171,10 +1162,16 @@ class SpoolerPanel(wx.Panel):
             self.on_device_update(None)
 
     def pane_show(self):
+        self.shown = True
         self.list_job_history.load_column_widths()
         self.list_job_spool.load_column_widths()
+        self.context.schedule(self.timerjob)
+        self.refresh_spooler_list()
 
     def pane_hide(self):
+        self.context.unschedule(self.timerjob)
+        self.shown = False
+
         self.list_job_history.save_column_widths()
         self.list_job_spool.save_column_widths()
 

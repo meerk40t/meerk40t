@@ -1379,11 +1379,13 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        self.do_not_select = True
 
         item = node._item
         if item is None:
-            raise ValueError(f"Item was None for node {repr(node)}")
+            print(f"Item was None for node {repr(node)}")
+            return
+
+        self.do_not_select = True
         self.check_validity(item)
         # We might need to update the decorations for all parent objects
         informed = []

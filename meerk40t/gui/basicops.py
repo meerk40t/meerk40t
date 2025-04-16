@@ -459,21 +459,21 @@ class BasicOpPanel(wx.Panel):
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("Active"))
+        header.SetToolTip(_("A: Active = toggle whether the elements assigned to this operation will be burned or not"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wxStaticText(self.op_panel, wx.ID_ANY, label="S")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("Show"))
+        header.SetToolTip(_("S: Show = if inactive then you can suppress the drawing of the assigned elements"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wxStaticText(self.op_panel, wx.ID_ANY, label="C")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("Coolant"))
+        header.SetToolTip(_("C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         unit = " [%]" if self.use_percent else ""

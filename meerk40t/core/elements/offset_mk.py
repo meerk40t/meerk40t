@@ -360,10 +360,11 @@ def offset_path(self, path, offset_value=0):
     # As this oveloading a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
+    # Radial connectors seem to have issues, so we don't use them for now...
     p = path_offset(
         path,
         offset_value=-offset_value,
-        radial_connector=True,
+        radial_connector=False,
         linearize=True,
         interpolation=500,
     )
