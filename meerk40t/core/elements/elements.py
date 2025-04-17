@@ -2712,6 +2712,31 @@ class Elemental(Service):
         def emptydebug(value):
             return
 
+        def _get_next_auto_raster_count(operations):
+            auto_raster_count = 0
+            for op in operations:
+                if op.type == "op raster" and op.id is not None and op.id.startswith("AR#"):
+                    try:
+                        used_id = int(op.id[3:])
+                        auto_raster_count = max(auto_raster_count, used_id)
+                    except (IndexError, ValueError):
+                        pass
+            return auto_raster_count + 1
+
+        def _select_raster_candidate(operations, node, fuzzydistance):
+            candidate = None
+            candidate_dist = float("inf")
+            for cand_op in operations:
+                if cand_op.type != "op raster":
+                    continue
+                col_d = Color.distance(cand_op.color, abs(node.fill))
+                if col_d > fuzzydistance:
+                    continue
+                if candidate is None or col_d < candidate_dist:
+                    candidate = cand_op
+                    candidate_dist = col_d
+            return candidate
+
         # I am tired of changing the code all the time, so let's do it properly
         debug = self.kernel.channel("classify", timestamp=True)
 
@@ -2838,28 +2863,10 @@ class Elemental(Service):
                         # are assigned to a single raster operation.
                         # If the classify_fill flag is set, then we will use the fill attribute
                         # to look for / create a matching raster operation
-                        raster_candidate = None
-                        raster_candidate_dist = float("inf")
-                        for cand_op in operations:
-                            if cand_op.type != "op raster":
-                                continue
-                            col_d = Color.distance(cand_op.color, abs(node.fill))
-                            if col_d > fuzzydistance:
-                                continue
-                            if raster_candidate is None or col_d < raster_candidate_dist:
-                                raster_candidate = cand_op
-                                raster_candidate_dist = col_d
+                        raster_candidate = _select_raster_candidate(operations, node, fuzzydistance)
                         if raster_candidate is None and self.classify_autogenerate:
                             # We need to create one...
-                            auto_raster_count = 0
-                            for cand_op in operations:
-                                if cand_op.type == "op raster" and cand_op.id is not None and cand_op.id.startswith("AR#"):
-                                    try:
-                                        used_id = int(cand_op.id[3:])
-                                        auto_raster_count = max(auto_raster_count, used_id)
-                                    except (IndexError, ValueError):
-                                        pass
-                            auto_raster_count += 1
+                            auto_raster_count = _get_next_auto_raster_count(operations)
                             raster_candidate = RasterOpNode(
                                 id = f"AR#{auto_raster_count}",
                                 label = f"Auto-Raster #{auto_raster_count}",
