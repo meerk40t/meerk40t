@@ -38,6 +38,7 @@ class LiveLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+        self.gap_required = float(Length("0.1mm"))
 
         self.quantization = quantization
         self.mode = mode
@@ -103,6 +104,7 @@ class LiveLightJob:
         connection.light_mode()
         while self.process(connection):
             # Calls process while execute() is running.
+            time.sleep(100)
             if self.stopped:
                 break
         connection.abort()
@@ -181,21 +183,29 @@ class LiveLightJob:
                 )
             if bounds is None or isinf(bounds[0]):
                 bounds = Node.union_bounds(list(self.service.elements.elems()))
-            if self._last_bounds is not None and bounds != self._last_bounds:
-                # Emphasis did not change but the bounds did. We dragged something.
+            update_required = False
+            # Emphasis did not change but the bounds did. We dragged something.
+            if self._last_bounds is not None:
+                for idx in range(4):
+                    if abs(bounds[idx] - self._last_bounds[idx]) >= self.gap_required:
+                        update_required = True
+                        break 
+            if update_required:
                 self.changed = True
                 self.points = None
-            self._last_bounds = bounds
+                self._last_bounds = bounds
 
-        if self.changed:
-            # The emphasis selection has changed.
-            self.changed = False
-            con.abort()
-            first_x, first_y = con.get_last_xy()
-            con.light_off()
-            con.write_port()
-            con.goto_xy(first_x, first_y, distance=0xFFFF)
-            con.light_mode()
+        if not self.changed:
+            # No need to draw... The controller keeps showing the last data set
+            return True
+        # The emphasis selection has changed.
+        self.changed = False
+        con.abort()
+        first_x, first_y = con.get_last_xy()
+        con.light_off()
+        con.write_port()
+        con.goto_xy(first_x, first_y, distance=0xFFFF)
+        con.light_mode()
 
         if self._travel_speed is not None:
             con._light_speed = self._travel_speed
@@ -207,7 +217,8 @@ class LiveLightJob:
             con._goto_speed = self.service.redlight_speed
         con.light_mode()
         # Calls light based on the set mode.
-        return self._mode_light(con)
+        self._mode_light(con)
+        return True
 
     # def _regmarks(self, con):
     #     """
