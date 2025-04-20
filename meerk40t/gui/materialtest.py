@@ -1125,9 +1125,8 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        if param_type_1 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        if param_type_1 == "hatch_distance" and not str(value).endswith("mm"):
+                            value = f"{value}mm"
                         setattr(master_op, param_type_1, value)
                     # else:  # Try setting
                     #     master_op.settings[param_type_1] = value
@@ -1135,9 +1134,10 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        if param_type_1 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        elif param_type_1 == "hatch_distance" and not str(value).endswith("mm"):
+                            value = f"{value}mm"
+                        elif param_type_1 == "hatch_angle" and not str(value).endswith("deg"):
+                            value = f"{value}deg"
                         setattr(this_op, param_type_1, value)
                     elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_1] = value
@@ -1158,16 +1158,16 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_2 == "passes":
                             value = int(value)
-                        if param_type_2 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        if param_type_2 == "hatch_distance" and not str(value).endswith("mm"):
+                            value = f"{value}mm"
                         setattr(master_op, param_type_2, value)
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
-                        if param_type_2 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        elif param_type_2 == "hatch_distance" and not str(value).endswith("mm"):
+                            value = f"{value}mm"
+                        elif param_type_2 == "hatch_angle" and not str(value).endswith("deg"):
+                            value = f"{value}deg"
                         setattr(this_op, param_type_2, value)
                     elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_2] = value
@@ -1186,10 +1186,7 @@ class TemplatePanel(wx.Panel):
                     # Add op to tree.
                     operation_branch.add_node(master_op)
                     # Now add a rectangle to the scene and assign it to the newly created op
-                    if usefill:
-                        fill_color = set_color
-                    else:
-                        fill_color = None
+                    fill_color = set_color if usefill else None
                     if shapetype == "image":
                         idx = self.combo_images.GetSelection() - 1
                         if 0 <= idx < len(self.images):
@@ -1284,8 +1281,8 @@ class TemplatePanel(wx.Panel):
             return
 
         if param_unit_1 == "deg":
-            min_value_1 = Angle(self.text_min_1.GetValue()).degrees
-            max_value_1 = Angle(self.text_max_1.GetValue()).degrees
+            min_value_1 = float(self.text_min_1.GetValue())
+            max_value_1 = float(self.text_max_1.GetValue())
         elif param_unit_1 == "ppi":
             min_value_1 = max(min_value_1, 0)
             max_value_1 = min(max_value_1, 1000)
@@ -1299,8 +1296,8 @@ class TemplatePanel(wx.Panel):
                 max_value_1 = max(max_value_1, 0)
 
         if param_unit_2 == "deg":
-            min_value_2 = Angle(self.text_min_2.GetValue()).degrees
-            max_value_2 = Angle(self.text_max_2.GetValue()).degrees
+            min_value_2 = float(self.text_min_2.GetValue())
+            max_value_2 = float(self.text_max_2.GetValue())
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
