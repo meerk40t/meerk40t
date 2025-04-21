@@ -327,5 +327,3 @@ class PlacePointNode(Node):
 
         return default_map
 
-    def drop(self, drag_node, modify=True):
-        return False

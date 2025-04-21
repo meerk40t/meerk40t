@@ -88,6 +88,7 @@ class GuideWidget(Widget):
 
     def attract_event(self, value):
         self.scene.pane.magnet_attraction = value
+        self.scene.context.signal("magnet_options")
 
     def affect_event(self, value):
         if value == 0:
@@ -96,6 +97,7 @@ class GuideWidget(Widget):
             self.scene.pane.magnet_attract_y = not self.scene.pane.magnet_attract_y
         elif value == 2:
             self.scene.pane.magnet_attract_c = not self.scene.pane.magnet_attract_c
+        self.scene.context.signal("magnet_options")
 
     def toggle_circles(self):
         # toggle circular grid

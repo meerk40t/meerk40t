@@ -35,7 +35,7 @@ def read_source():
     linecount = 0
     filecount = 0
     # debugit = False
-    ignoredirs = [".git", ".github", "venv"]
+    ignoredirs = [".git", ".github", "venv", ".venv"]
     for root, dirs, files in os.walk(sourcedir):
         mayignore = False
         for s in ignoredirs:

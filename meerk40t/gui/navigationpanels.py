@@ -46,7 +46,14 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxStaticBitmap,
+    wxBitmapButton,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -54,7 +61,7 @@ _ = wx.GetTranslation
 
 def register_panel_navigation(window, context):
     dragpanel = Drag(window, wx.ID_ANY, context=context)
-    iconsize = get_default_icon_size()
+    iconsize = get_default_icon_size(context)
     if platform.system() == "Windows":
         dx = 24
         dy = 30
@@ -82,6 +89,7 @@ def register_panel_navigation(window, context):
 
     dragpanel.Bind(wx.EVT_SIZE, on_drag_resize)
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Align and drag laserhead around to be burned elements")
 
     window.on_pane_create(pane)
     context.register("pane/drag", pane)
@@ -107,6 +115,7 @@ def register_panel_navigation(window, context):
 
     jogpanel.Bind(wx.EVT_SIZE, on_jog_resize)
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Display laser jogging controls")
 
     window.on_pane_create(pane)
     context.register("pane/jog", pane)
@@ -127,6 +136,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = iconsize + 100
     pane.control = panel
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Display laser/element movement/dragging controls")
 
     window.on_pane_create(pane)
     context.register("pane/move", pane)
@@ -145,6 +155,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = iconsize + 60
     pane.control = panel
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Display laser pulse panel")
 
     window.on_pane_create(pane)
     context.register("pane/pulse", pane)
@@ -188,6 +199,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = max(3 * iconsize, 3 * 57)
     pane.control = panel
     pane.submenu = "_40_" + _("Editing")
+    pane.helptext = _("Display element transformation panel")
 
     window.on_pane_create(pane)
     context.register("pane/transform", pane)
@@ -206,6 +218,7 @@ def register_panel_navigation(window, context):
     pane.dock_proportion = 110
     pane.control = panel
     pane.submenu = "_20_" + _("Navigation")
+    pane.helptext = _("Edit default jog distance")
 
     window.on_pane_create(pane)
     context.register("pane/jogdist", pane)
@@ -360,6 +373,7 @@ class TimerButtons:
 
     def on_button_lost(self, event=None):
         self.stop_timer(action=False)
+        event.Skip()
 
     def on_button_down(self, event=None):
         self.stop_timer(action=False)
@@ -388,23 +402,24 @@ class Drag(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(bool, "confined", True)
         self.SetHelpText("drag")
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
-        self.button_align_corner_top_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_corner_top_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_center = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_corner_bottom_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_drag_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_corner_bottom_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_first_position = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_trace_hull = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_align_trace_quick = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_top_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_top_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_center = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_bottom_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_bottom_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_first_position = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_trace_hull = wxBitmapButton(self, wx.ID_ANY)
+        self.button_align_trace_quick = wxBitmapButton(self, wx.ID_ANY)
         self.bg_color = self.button_align_corner_top_left.BackgroundColour
         self.__set_properties()
         self.__do_layout()
@@ -440,9 +455,6 @@ class Drag(wx.Panel):
         )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull
-        )
-        self.button_align_trace_hull.Bind(
-            wx.EVT_RIGHT_DOWN, self.on_button_align_trace_complex
         )
         self.Bind(
             wx.EVT_BUTTON,
@@ -534,7 +546,7 @@ class Drag(wx.Panel):
         )
         self.button_align_trace_hull.SetToolTip(
             _(
-                "Perform a convex hull trace of the selection (Right different algorithm)"
+                "Perform a convex hull trace of the selection"
             )
         )
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())
@@ -840,9 +852,6 @@ class Drag(wx.Panel):
     def on_button_align_trace_hull(self, event=None):
         self.context("element* trace hull\n")
 
-    def on_button_align_trace_complex(self, event=None):
-        self.context("element* trace complex\n")
-
     def on_button_align_trace_circle(self, event=None):
         self.context("element* trace circle\n")
 
@@ -917,6 +926,7 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("jog")
         context.setting(float, "button_repeat", 0.5)
         context.setting(bool, "button_accelerate", True)
@@ -925,21 +935,20 @@ class Jog(wx.Panel):
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
-        self.button_navigate_up_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_up_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_home = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_down_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_down_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_unlock = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_navigate_lock = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_confine = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_home = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_unlock = wxBitmapButton(self, wx.ID_ANY)
+        self.button_navigate_lock = wxBitmapButton(self, wx.ID_ANY)
+        self.button_confine = wxBitmapButton(self, wx.ID_ANY)
         self.__set_properties()
         self.__do_layout()
-
         self.timer = TimerButtons(self)
         self.timer.add_button(self.button_navigate_down, self.jog_down)
         self.timer.add_button(self.button_navigate_left, self.jog_left)
@@ -956,6 +965,8 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
+        self.button_navigate_home.Bind(wx.EVT_MIDDLE_DOWN, self.on_button_navigate_jobstart)
+
         self.button_navigate_home.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
         )
@@ -1204,6 +1215,13 @@ class Jog(wx.Panel):
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context, dx, dy)
         self.context(f".move_relative {nx} {ny}\n")
+    
+    def on_button_navigate_jobstart(self, event):
+        ops = self.context.elements.op_branch
+        for op in ops.children:
+            if op.type == "place point" and op.output:
+                self.context(f"move_absolute {op.x}, {op.y}\n")
+                break
 
     def on_button_navigate_home(
         self, event=None
@@ -1235,6 +1253,11 @@ class Jog(wx.Panel):
         if hasattr(self.context.device, "has_endstops"):
             if self.context.device.has_endstops:
                 tip = _("Send laser to home position (right click: to physical home)")
+        ops = self.context.elements.op_branch
+        for op in ops.children:
+            if op.type == "place point" and op.output:
+                tip += "\n" + _("(Middle Button: jump to first jobstart)")
+                break
         self.button_navigate_home.SetToolTip(tip)
 
     def on_update(self, origin, *args):
@@ -1271,9 +1294,11 @@ class MovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.SetHelpText("move")
-        iconsize = 0.5 * get_default_icon_size()
-        self.button_navigate_move_to = wx.BitmapButton(
+        iconsize = 0.5 * get_default_icon_size(self.context)
+        self.button_navigate_move_to = wxBitmapButton(
             self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=iconsize)
         )
         units = self.context.units_name
@@ -1301,7 +1326,7 @@ class MovePanel(wx.Panel):
         def_pt = self.text_position_x.GetFont().GetPointSize()
         def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
-            btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
+            btn = wxStaticBitmap(self, wx.ID_ANY, size=def_size)
             icon = EmptyIcon(
                 size=def_dim, msg=str(idx + 1), ptsize=def_pt, color=wx.LIGHT_GREY
             )
@@ -1339,7 +1364,7 @@ class MovePanel(wx.Panel):
             label += "\n" + _("Current: ") + f"{x.length_mm}, {y.length_mm}"
             btn.SetToolTip(label)
 
-        self.label_pos = wx.StaticText(self, wx.ID_ANY, "---")
+        self.label_pos = wxStaticText(self, wx.ID_ANY, "---")
         self.__set_properties()
         self.__do_layout()
 
@@ -1385,13 +1410,13 @@ class MovePanel(wx.Panel):
         )
         button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
+        label_9 = wxStaticText(self, wx.ID_ANY, "X:")
         self.text_position_x.SetMinSize(dip_size(self, 45, -1))
         self.text_position_y.SetMinSize(dip_size(self, 45, -1))
         h_x_sizer.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
-        label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
+        label_10 = wxStaticText(self, wx.ID_ANY, "Y:")
         h_y_sizer.Add(label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
@@ -1548,9 +1573,11 @@ class PulsePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.SetHelpText("pulse")
-        iconsize = 0.5 * get_default_icon_size()
-        self.button_navigate_pulse = wx.BitmapButton(
+        iconsize = 0.5 * get_default_icon_size(self.context)
+        self.button_navigate_pulse = wxBitmapButton(
             self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=iconsize)
         )
         self.spin_pulse_duration = wx.SpinCtrl(
@@ -1583,7 +1610,7 @@ class PulsePanel(wx.Panel):
         sizer_5 = StaticBoxSizer(self, wx.ID_ANY, _("Short Pulse:"), wx.HORIZONTAL)
         sizer_5.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_5.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
+        label_4 = wxStaticText(self, wx.ID_ANY, _(" ms"))
         sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(sizer_5)
         sizer_5.Fit(self)
@@ -1616,11 +1643,11 @@ class PulsePanel(wx.Panel):
 #         self.mainsizer = StaticBoxSizer(
 #             self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
 #         )
-#         self.button_navigate_resize = wx.BitmapButton(
+#         self.button_navigate_resize = wxBitmapButton(
 #             self, wx.ID_ANY, icons8_compress.GetBitmap(resize=32)
 #         )
-#         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-#         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+#         self.label_9 = wxStaticText(self, wx.ID_ANY, _("Width:"))
+#         self.label_10 = wxStaticText(self, wx.ID_ANY, _("Height:"))
 
 #         self.text_width = TextCtrl(
 #             self,
@@ -1852,19 +1879,21 @@ class Transform(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.SetHelpText("transform")
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
-        self.button_scale_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_scale_up = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_left = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_reset = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_right = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_rotate_ccw = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_translate_down = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_rotate_cw = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_scale_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_scale_up = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_left = wxBitmapButton(self, wx.ID_ANY)
+        self.button_reset = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_right = wxBitmapButton(self, wx.ID_ANY)
+        self.button_rotate_ccw = wxBitmapButton(self, wx.ID_ANY)
+        self.button_translate_down = wxBitmapButton(self, wx.ID_ANY)
+        self.button_rotate_cw = wxBitmapButton(self, wx.ID_ANY)
         self.text_a = TextCtrl(
             self,
             wx.ID_ANY,
@@ -2046,23 +2075,23 @@ class Transform(wx.Panel):
 
         matrix_sizer = wx.BoxSizer(wx.HORIZONTAL)
         col_sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
-        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
-        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
+        col_sizer_1.Add(wxStaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
+        col_sizer_1.Add(wxStaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
+        col_sizer_1.Add(wxStaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
 
         # Add some labels to make textboxes clearer to understand
         col_sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
+        col_sizer_2.Add(wxStaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
         col_sizer_2.Add(self.text_a, 0, wx.EXPAND, 0)  # Scale X
         col_sizer_2.Add(self.text_d, 0, wx.EXPAND, 0)  # Scale Y
 
         col_sizer_3 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
+        col_sizer_3.Add(wxStaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
         col_sizer_3.Add(self.text_c, 0, wx.EXPAND, 0)  # Skew X
         col_sizer_3.Add(self.text_b, 0, wx.EXPAND, 0)  # Skew Y
 
         col_sizer_4 = wx.BoxSizer(wx.VERTICAL)
-        col_sizer_4.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
+        col_sizer_4.Add(wxStaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
         col_sizer_4.Add(self.text_e, 0, wx.EXPAND, 0)  # Translate X
         col_sizer_4.Add(self.text_f, 0, wx.EXPAND, 0)  # Translate Y
 
@@ -2178,8 +2207,10 @@ class Transform(wx.Panel):
         self.update_matrix_text()
 
     def on_emphasized_elements_changed(self, origin, *args):
+        self.context.elements.set_start_time("Emphasis Transform")
         self.select_ready(self.context.elements.has_emphasis())
         self.update_matrix_text()
+        self.context.elements.set_end_time("Emphasis Transform")
 
     def update_matrix_text(self):
         f = self.context.elements.first_element(emphasized=True)
@@ -2405,6 +2436,8 @@ class JogDistancePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+
         self.SetHelpText("jog")
         self.text_jog_amount = TextCtrl(
             self,
@@ -2452,6 +2485,7 @@ class NavigationPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -2530,7 +2564,7 @@ class Navigation(MWindow):
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
-        iconsize = int(0.75 * get_default_icon_size())
+        iconsize = int(0.75 * get_default_icon_size(self.context))
         minw = (3 + 3 + 3) * iconsize + 150
         minh = (4 + 1) * iconsize + 170
         super().SetSizeHints(minW=minw, minH=minh)
@@ -2565,3 +2599,7 @@ class Navigation(MWindow):
     @staticmethod
     def submenu():
         return "Editing", "Jog, Move and Transform"
+
+    @staticmethod
+    def helptext():
+        return _("Open a control window to move the laser around")

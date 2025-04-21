@@ -267,6 +267,7 @@ DEFAULT_ALIAS = {
     "+left": (".timerleft 0 0.1 left 1mm",),
     "+up": (".timerup 0 0.1 up 1mm",),
     "+down": (".timerdown 0 0.1 down 1mm",),
+    "burn": ("planz clear copy preprocess validate blob preopt optimize spool", ),
     "-scale_up": (".timerscale_up off",),
     "-scale_down": (".timerscale_down off",),
     "-rotate_cw": (".timerrotate_cw off",),

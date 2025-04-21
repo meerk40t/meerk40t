@@ -11,7 +11,14 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
-from .wxutils import StaticBoxSizer, TextCtrl, wxButton, wxRadioBox
+from .wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxComboBox,
+    wxRadioBox,
+)
 
 _ = wx.GetTranslation
 
@@ -22,6 +29,7 @@ class PreferencesUnitsPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -97,6 +105,7 @@ class PreferencesLanguagePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Language"), wx.HORIZONTAL)
         from .wxmeerk40t import supported_languages
@@ -105,7 +114,7 @@ class PreferencesLanguagePanel(wx.Panel):
             language_name
             for language_code, language_name, language_index in supported_languages
         ]
-        self.combo_language = wx.ComboBox(
+        self.combo_language = wxComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
         self.combo_language.SetToolTip(
@@ -139,6 +148,7 @@ class PreferencesSavingPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Management"), wx.HORIZONTAL)
         self.button_save = wxButton(self, wx.ID_ANY, _("Save"))
@@ -160,6 +170,136 @@ class PreferencesSavingPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save)
         self.Bind(wx.EVT_BUTTON, self.on_button_import, self.button_import)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
+
+        self.Bind(wx.EVT_RIGHT_DOWN, self.pane_right_click, self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.pane_right_click, self.button_save)
+
+    def save_config_and_prevent_further_writing(self):
+        self.context.kernel.prevent_persisting = False
+        self.context.kernel.write_configuration()
+        self.context.kernel.prevent_persisting = True
+        self.context.signal("restart")
+        wx.MessageBox(
+            message=_(
+                "The modified configuration has been saved.\n"
+                + "Please note further changes to your configuration will not be saved until the end of the program.\n"
+                + "So please exit MeerK40t as soon as possible."
+            ),
+            caption=_("Warning"),
+            style=wx.OK | wx.ICON_EXCLAMATION,
+        )
+
+    def delete_persistent_starting_with(self, section: str, startpattern: str):
+        to_be_deleted = list()
+        for key in self.context.kernel.keylist(section):
+            if key.startswith(startpattern):
+                to_be_deleted.append(key)
+        for key in to_be_deleted:
+            # print (f"Will delete {section}.{key}")
+            self.context.kernel.delete_persistent(section, key)
+        if len(to_be_deleted):
+            # d = list(self.context.kernel.keylist(section))
+            # d.sort()
+            # print (d)
+            self.save_config_and_prevent_further_writing()
+
+    def clear_persistent_starting_with(self, startpattern):
+        to_be_deleted = list()
+        for key in self.context.kernel.section_set():
+            if key.startswith(startpattern):
+                to_be_deleted.append(key)
+        for key in to_be_deleted:
+            # print (f"Will delete section {key}")
+            self.context.kernel.clear_persistent(key)
+        if len(to_be_deleted):
+            self.save_config_and_prevent_further_writing()
+
+    def on_clear_all(self, event):
+        self.context.kernel.clear_persistent("/")
+        self.save_config_and_prevent_further_writing()
+
+    def on_clear_camera_settings(self, event):
+        self.clear_persistent_starting_with("camera/")
+
+    def on_clear_planner(self, event):
+        self.context.kernel.clear_persistent("planner")
+        self.save_config_and_prevent_further_writing()
+
+    def on_clear_positions(self, event):
+        self.context.kernel.delete_persistent("/", "aui")
+        self.context.kernel.delete_persistent("/", "perspective")
+        self.clear_persistent_starting_with("window/")
+        # print ([l for l in self.context.kernel._config_dict])
+
+    def on_clear_colors(self, event):
+        self.context.kernel.clear_persistent("colors")
+        self.delete_persistent_starting_with("/", "color_")
+
+    def on_clear_files(self, event):
+        self.delete_persistent_starting_with("/", "file")
+
+    def on_clear_hinges(self, event):
+        self.delete_persistent_starting_with("/", "hinge_")
+
+    def pane_right_click(self, event):
+        menu = wx.Menu()
+        item = menu.Append(
+            wx.ID_ANY,
+            _("Clear..."),
+            "",
+            wx.ITEM_NORMAL,
+        )
+        item.Enable(False)
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...Pane + Windows-Positions"),
+            "",
+            wx.ITEM_NORMAL,
+        )
+        self.Bind(wx.EVT_MENU, self.on_clear_positions, item)
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...color settings"),
+            "",
+            wx.ITEM_NORMAL,
+        )
+        self.Bind(wx.EVT_MENU, self.on_clear_colors, item)
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...recent file names"),
+            "",
+            wx.ITEM_NORMAL,
+        )
+        self.Bind(wx.EVT_MENU, self.on_clear_files, item)
+        menu.AppendSeparator()
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...living hinge settings"),
+            "",
+            wx.ITEM_NORMAL,
+        )
+        self.Bind(wx.EVT_MENU, self.on_clear_hinges, item)
+        # item = menu.Append(wx.ID_ANY, _("...material test settings"), "", wx.ITEM_NORMAL, )
+        # self.Bind(wx.EVT_MENU, self.on_clear_templates, item)
+        menu.AppendSeparator()
+        item = menu.Append(
+            wx.ID_ANY,
+            _("...camera settings"),
+            "",
+            wx.ITEM_NORMAL,
+        )
+        self.Bind(wx.EVT_MENU, self.on_clear_camera_settings, item)
+        if self.context.root.setting(bool, "developer_mode", False):
+            menu.AppendSeparator()
+            item = menu.Append(
+                wx.ID_ANY,
+                _("...all user settings"),
+                "",
+                wx.ITEM_NORMAL,
+            )
+            self.Bind(wx.EVT_MENU, self.on_clear_all, item)
+        self.PopupMenu(menu)
+        menu.Destroy()
 
     def on_button_save(self, event=None):
         self.context("flush\n")
@@ -221,12 +361,13 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         sizer_3 = StaticBoxSizer(
             self, wx.ID_ANY, _("SVG Pixel Per Inch"), wx.HORIZONTAL
         )
 
-        self.combo_svg_ppi = wx.ComboBox(
+        self.combo_svg_ppi = wxComboBox(
             self,
             wx.ID_ANY,
             choices=[
@@ -297,7 +438,6 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
                 self.combo_svg_ppi.SetSelection(3)
         elements.svg_ppi = svg_ppi
 
-
 # end of class PreferencesPixelsPerInchPanel
 
 
@@ -306,7 +446,8 @@ class PreferencesMain(wx.Panel):
         # begin wxGlade: PreferencesMain.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = None
+        self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("preferences")
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -316,15 +457,12 @@ class PreferencesMain(wx.Panel):
         self.panel_language = PreferencesLanguagePanel(self, wx.ID_ANY, context=context)
         sizer_main.Add(self.panel_language, 0, wx.EXPAND, 0)
 
-        self.panel_ppi = PreferencesPixelsPerInchPanel(self, wx.ID_ANY, context=context)
-        sizer_main.Add(self.panel_ppi, 0, wx.EXPAND, 0)
-
         self.panel_pref1 = ChoicePropertyPanel(
             self,
             id=wx.ID_ANY,
             context=context,
             choices="preferences",
-            constraint=("-Classification", "-Gui", "-Scene"),
+            constraint=("-Input/Output", "-Classification", "-Gui", "-Scene", "-Operations"),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -337,12 +475,43 @@ class PreferencesMain(wx.Panel):
         # end wxGlade
 
     def delegates(self):
-        yield self.panel_ppi
         yield self.panel_language
         yield self.panel_units
         yield self.panel_pref1
         yield self.panel_management
 
+
+class PreferencesInputOutput(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PreferencesMain.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.SetHelpText("preferences")
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        self.panel_ppi = PreferencesPixelsPerInchPanel(self, wx.ID_ANY, context=context)
+        sizer_main.Add(self.panel_ppi, 0, wx.EXPAND, 0)
+
+        self.panel_input_output = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint="Input/Output",
+        )
+        self.panel_input_output.SetupScrolling()
+        sizer_main.Add(self.panel_input_output, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+
+        self.Layout()
+        # end wxGlade
+
+    def delegates(self):
+        yield self.panel_ppi
+        yield self.panel_input_output
 
 # end of class PreferencesMain
 
@@ -389,10 +558,21 @@ class Preferences(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
+
+        self.panel_input_output = PreferencesInputOutput(self, wx.ID_ANY, context=self.context)
+
         inject_choices = [
             {
                 "attr": "preset_classify_automatic",
@@ -459,6 +639,15 @@ class Preferences(MWindow):
             injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
+
+        self.panel_ops = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint="Operations",
+        )
+        self.panel_ops.SetupScrolling()
 
         self.panel_gui = ChoicePropertyPanel(
             self,
@@ -534,6 +723,17 @@ class Preferences(MWindow):
                 "section": "_ZZ_",
             }
         )
+        if self.window_context.themes.dark:
+            color_choices.append(
+                {
+                    "attr": "color_reset_brighter",
+                    "object": self,
+                    "type": bool,
+                    "style": "button",
+                    "label": _("Reset Colors to brighter defaults"),
+                    "section": "_ZZ_",
+                }
+            )
 
         self.panel_color = ChoicePropertyPanel(
             self,
@@ -547,7 +747,9 @@ class Preferences(MWindow):
         self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
 
         self.notebook_main.AddPage(self.panel_main, _("General"))
+        self.notebook_main.AddPage(self.panel_input_output, _("Input/Output"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
+        self.notebook_main.AddPage(self.panel_ops, _("Operations"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
@@ -555,13 +757,15 @@ class Preferences(MWindow):
 
         self.panels = [
             self.panel_main,
+            self.panel_input_output,
             self.panel_classification,
+            self.panel_ops,
             self.panel_gui,
             self.panel_scene,
             self.panel_color,
             self.panel_ribbon,
         ]
-        self.panel_ids = ["main", "classification", "gui", "scene", "color", "ribbon"]
+        self.panel_ids = ["main", "classification", "ops", "gui", "scene", "color", "ribbon"]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(
@@ -610,7 +814,20 @@ class Preferences(MWindow):
             self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
             self.panel_color.reload()
-            self.context.signal("restart")
+
+    @property
+    def color_reset_brighter(self):
+        # Not relevant
+        return False
+
+    @color_reset.setter
+    def color_reset_brighter(self, value):
+        if value:
+            # We are resetting all GUI.colors
+            self.context("scene color unsetbright\n")
+            self.context.root.label_display_color = "#ff0000ff"
+            self.context.signal("theme", True)
+            self.panel_color.reload()
 
     @property
     def preset_classify_manual(self):
@@ -678,3 +895,7 @@ class Preferences(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Preferences", True
+
+    @staticmethod
+    def helptext():
+        return _("Configure MeerK40ts behaviour")

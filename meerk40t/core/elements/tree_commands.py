@@ -102,7 +102,8 @@ def init_commands(kernel):
             data = [self._tree]
         if drop is None:
             raise CommandSyntaxError
-        with self.static("tree_dnd"):
+        # _("Drag and Drop")
+        with self.undoscope("Drag and Drop"):
             try:
                 drag_node = self._tree
                 for n in drag.split("."):
@@ -156,6 +157,9 @@ def init_commands(kernel):
                 submenu = submenus[submenu_name]
             elif submenu_name is not None:
                 submenu = list()
+                if func.separate_before:
+                    menu_context.append(("------", None))
+                    func.separate_before = False
                 menu.append((submenu_name, submenu))
                 submenus[submenu_name] = submenu
 
@@ -366,7 +370,7 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
-        with self.static("delete"):
+        with self.undoscope("Delete"):
             self.remove_nodes(todelete[entry])
             self.validate_selected_area()
         self.signal("update_group_labels")

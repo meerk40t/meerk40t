@@ -123,7 +123,7 @@ class Length:
             s = str(value)
             match = REGEX_LENGTH.match(s)
             if not match:
-                raise ValueError("Length was not parsable.")
+                raise ValueError(f"Length was not parsable: '{s}'.")
             amount = float(match.group(1))
             units = match.group(2)
             if units == "inch" or units == "inches":

@@ -29,7 +29,18 @@ class ReferenceNode(Node):
         default_map["ref_id"] = str(self.id)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Dragging element into element.
+        return bool(
+            hasattr(drag_node, "as_geometry") or 
+            hasattr(drag_node, "as_image") or 
+            drag_node.type == "reference"
+        )
+    
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             op = self.parent
             drop_index = op.children.index(self)
@@ -43,5 +54,6 @@ class ReferenceNode(Node):
         return False
 
     def notify_destroyed(self, node=None, **kwargs):
-        self.node._references.remove(self)
+        if self.node is not None and self in self.node._references:
+            self.node._references.remove(self)
         super().notify_destroyed()

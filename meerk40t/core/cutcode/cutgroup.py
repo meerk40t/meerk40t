@@ -19,6 +19,8 @@ class CutGroup(list, CutObject, ABC):
         constrained=False,
         closed=False,
         color=None,
+        origin=None,
+        skip=False
     ):
         list.__init__(self, children)
         CutObject.__init__(
@@ -27,6 +29,8 @@ class CutGroup(list, CutObject, ABC):
         self.closed = closed
         self.constrained = constrained
         self.burn_started = False
+        self.origin = origin
+        self.skip = skip 
 
     def __copy__(self):
         return CutGroup(self.parent, self)
@@ -109,7 +113,7 @@ class CutGroup(list, CutObject, ABC):
                             break
                     else:
                         candidates.remove(grp)
-            if len(candidates) == 0:
+            if not candidates:
                 candidates = list(self)
 
         for grp in candidates:

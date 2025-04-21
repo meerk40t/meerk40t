@@ -29,73 +29,73 @@ def hardware_settings(code):
     @return: parameter, units
     """
     if code == 0:
-        return 10, "step pulse time", "microseconds", float
+        return 10, "step pulse time", "microseconds", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#0--step-pulse-microseconds"
     if code == 1:
-        return 25, "step idle delay", "milliseconds", float
+        return 25, "step idle delay", "milliseconds", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#1---step-idle-delay-milliseconds"
     if code == 2:
-        return 0, "step pulse invert", "bitmask", int
+        return 0, "step pulse invert", "bitmask", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#2--step-port-invert-mask"
     if code == 3:
-        return 0, "step direction invert", "bitmask", int
+        return 0, "step direction invert", "bitmask", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#3--direction-port-invert-mask"
     if code == 4:
-        return 0, "invert step enable pin", "boolean", int
+        return 0, "invert step enable pin", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#4---step-enable-invert-boolean"
     if code == 5:
-        return 0, "invert limit pins", "boolean", int
+        return 0, "invert limit pins", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#5----limit-pins-invert-boolean"
     if code == 6:
-        return 0, "invert probe pin", "boolean", int
+        return 0, "invert probe pin", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#6----probe-pin-invert-boolean"
     if code == 10:
-        return 255, "status report options", "bitmask", int
+        return 255, "status report options", "bitmask", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#10---status-report-mask"
     if code == 11:
-        return 0.010, "Junction deviation", "mm", float
+        return 0.010, "Junction deviation", "mm", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#11---junction-deviation-mm"
     if code == 12:
-        return 0.002, "arc tolerance", "mm", float
+        return 0.002, "arc tolerance", "mm", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#12--arc-tolerance-mm"
     if code == 13:
-        return 0, "Report in inches", "boolean", int
+        return 0, "Report in inches", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#13---report-inches-boolean"
     if code == 20:
-        return 0, "Soft limits enabled", "boolean", int
+        return 0, "Soft limits enabled", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#20---soft-limits-boolean"
     if code == 21:
-        return 0, "hard limits enabled", "boolean", int
+        return 0, "hard limits enabled", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#21---hard-limits-boolean"
     if code == 22:
-        return 0, "Homing cycle enable", "boolean", int
+        return 0, "Homing cycle enable", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#22---homing-cycle-boolean"
     if code == 23:
-        return 0, "Homing direction invert", "bitmask", int
+        return 0, "Homing direction invert", "bitmask", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#23---homing-dir-invert-mask"
     if code == 24:
-        return 25.000, "Homing locate feed rate", "mm/min", float
+        return 25.000, "Homing locate feed rate", "mm/min", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#24---homing-feed-mmmin"
     if code == 25:
-        return 500.000, "Homing search seek rate", "mm/min", float
+        return 500.000, "Homing search seek rate", "mm/min", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#25---homing-seek-mmmin"
     if code == 26:
-        return 250, "Homing switch debounce delay", "ms", float
+        return 250, "Homing switch debounce delay", "ms", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#26---homing-debounce-milliseconds"
     if code == 27:
-        return 1.000, "Homing switch pull-off distance", "mm", float
+        return 1.000, "Homing switch pull-off distance", "mm", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#27---homing-pull-off-mm"
     if code == 30:
-        return 1000, "Maximum spindle speed", "RPM", float
+        return 1000, "Maximum spindle speed", "RPM", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#30---max-spindle-speed-rpm"
     if code == 31:
-        return 0, "Minimum spindle speed", "RPM", float
+        return 0, "Minimum spindle speed", "RPM", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#31---min-spindle-speed-rpm"
     if code == 32:
-        return 1, "Laser mode enable", "boolean", int
+        return 1, "Laser mode enable", "boolean", int, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#32---laser-mode-boolean"
     if code == 100:
-        return 250.000, "X-axis steps per millimeter", "steps", float
+        return 250.000, "X-axis steps per millimeter", "steps", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm"
     if code == 101:
-        return 250.000, "Y-axis steps per millimeter", "steps", float
+        return 250.000, "Y-axis steps per millimeter", "steps", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm"
     if code == 102:
-        return 250.000, "Z-axis steps per millimeter", "steps", float
+        return 250.000, "Z-axis steps per millimeter", "steps", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm"
     if code == 110:
-        return 500.000, "X-axis max rate", "mm/min", float
+        return 500.000, "X-axis max rate", "mm/min", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin"
     if code == 111:
-        return 500.000, "Y-axis max rate", "mm/min", float
+        return 500.000, "Y-axis max rate", "mm/min", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin"
     if code == 112:
-        return 500.000, "Z-axis max rate", "mm/min", float
+        return 500.000, "Z-axis max rate", "mm/min", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin"
     if code == 120:
-        return 10.000, "X-axis acceleration", "mm/s^2", float
+        return 10.000, "X-axis acceleration", "mm/s^2", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2"
     if code == 121:
-        return 10.000, "Y-axis acceleration", "mm/s^2", float
+        return 10.000, "Y-axis acceleration", "mm/s^2", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2"
     if code == 122:
-        return 10.000, "Z-axis acceleration", "mm/s^2", float
+        return 10.000, "Z-axis acceleration", "mm/s^2", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2"
     if code == 130:
-        return 200.000, "X-axis max travel", "mm", float
+        return 200.000, "X-axis max travel", "mm", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm"
     if code == 131:
-        return 200.000, "Y-axis max travel", "mm", float
+        return 200.000, "Y-axis max travel", "mm", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm"
     if code == 132:
-        return 200.000, "Z-axis max travel", "mm", float
+        return 200.000, "Z-axis max travel", "mm", float, "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm"
 
 
 def grbl_error_code(code):
@@ -318,8 +318,10 @@ class GrblController:
             self.connection = TCPOutput(self.service, self)
         elif self.service.permit_ws and self.service.interface == "ws":
             from meerk40t.grbl.ws_connection import WSOutput
-
-            self.connection = WSOutput(self.service, self)
+            try:
+                self.connection = WSOutput(self.service, self)
+            except ModuleNotFoundError:
+                response = self.service.kernel.prompt(str, "Could not open websocket-connection (websocket installed?)")
         else:
             # Mock
             from .mock_connection import MockConnection
@@ -374,6 +376,15 @@ class GrblController:
                 self.validate_start("$")
             else:
                 self._validation_stage = 5
+        if self.service.startup_commands:
+            self.log("Queue startup commands", type="event")
+            lines = self.service.startup_commands.split("\n")
+            line_end = self.service.driver.line_end
+            for line in lines:
+                if line.startswith("#"):
+                    self.log(f"Startup: {line}", type="event")
+                else:
+                    self.service.driver(f"{line}{line_end}")
 
     def close(self):
         """
@@ -974,6 +985,6 @@ class GrblController:
                     pass
 
                 self.service.hardware_config[key] = value
-                self.service.signal(f"grbl:hwsettings", key, value)
+                self.service.signal("grbl:hwsettings", key, value)
             except ValueError:
                 pass

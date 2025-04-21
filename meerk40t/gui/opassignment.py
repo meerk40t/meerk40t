@@ -10,7 +10,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox, wxComboBox
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
@@ -32,6 +32,8 @@ def register_panel_operation_assign(window, context):
     pane.dock_proportion = 80
     pane.control = OperationAssignPanel(window, wx.ID_ANY, context=context)
     pane.submenu = "_50_" + _("Tools")
+    pane.helptext = _("Assign elements to operations")
+
     window.on_pane_create(pane)
     context.register("pane/opassign", pane)
 
@@ -44,6 +46,7 @@ class OperationAssignPanel(wx.Panel):
         self.iconsize = 20
         self.buttonsize = self.iconsize + 10
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.MAXBUTTONS = 24
         self.hover = 0
         self.buttons = []
@@ -62,7 +65,7 @@ class OperationAssignPanel(wx.Panel):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.cbo_apply_color = wx.ComboBox(
+        self.cbo_apply_color = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,
@@ -284,8 +287,10 @@ class OperationAssignPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
+        self.context.elements.set_start_time("Emphasis OpAssignPanel")
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
+        self.context.elements.set_end_time("Emphasis OpAssignPanel")
 
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")

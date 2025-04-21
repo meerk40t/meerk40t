@@ -15,21 +15,32 @@ _ = wx.GetTranslation
 class BalorConfiguration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)
+        window_context = self.context
         self.context = self.context.device
         self.SetHelpText("balorconfig")
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_(_("Balor-Configuration")))
+        self.SetTitle(_("Balor-Configuration"))
         self._test_pin = False
+        self._define_cor = False
         self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
             | wx.aui.AUI_NB_SCROLL_BUTTONS
             | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            | wx.aui.AUI_NB_TAB_MOVE
+            | wx.aui.AUI_NB_TOP,
         )
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         options = (
             ("balor", "Balor"),
@@ -37,6 +48,7 @@ class BalorConfiguration(MWindow):
             ("balor-global", "Global"),
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
+#            ("balor-corfile", "Correction"),
         )
         self.test_bits = ""
         injector = (
@@ -62,6 +74,18 @@ class BalorConfiguration(MWindow):
                 "subsection": "_30_Pin-Index",
             },
         )
+        injector_cor = (
+            {
+                "attr": "define_cor",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Define"),
+                "tip": _("Open a definition screen"),
+                "section": _("Correction-Values"),
+            },
+        )
         self.panels = []
         for item in options:
             section = item[0]
@@ -70,6 +94,8 @@ class BalorConfiguration(MWindow):
             if addpanel:
                 if item[0] == "balor":
                     injection = injector
+                elif item[0] == "balor-corfile":
+                    injection = injector_cor
                 else:
                     injection = None
                 newpanel = ChoicePropertyPanel(
@@ -120,6 +146,16 @@ class BalorConfiguration(MWindow):
             self.context("red on\n")
         else:
             self.context("red off\n")
+
+    @property
+    def define_cor(self):
+        return self._define_cor
+
+    @define_cor.setter
+    def define_cor(self, value):
+        self._define_cor = value
+        if self._define_cor:
+            self.context("widget_corfile\n")
 
     def update_bit_info(self, *args):
         if not self.context.driver.connected:
@@ -195,3 +231,7 @@ class BalorConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Configuration"
+
+    @staticmethod
+    def helptext():
+        return _("Display and edit device configuration")

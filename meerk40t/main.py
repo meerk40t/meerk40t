@@ -11,7 +11,7 @@ import os.path
 import sys
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.4050"
+APPLICATION_VERSION = "0.9.7030"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -139,6 +139,21 @@ parser.add_argument(
     action="store_true",
     help="lock general config from editing",
 )
+parser.add_argument(
+    "-m",
+    "--minimized",
+    action="store_true",
+    help="start window minimized",
+)
+parser.add_argument(
+    "-M",
+    "--maximized",
+    action="store_true",
+    help="start window maximized",
+)
+parser.add_argument(
+    "-d", "--daemon", action="store_true", help="keep MeerK40t in background"
+)
 
 
 def run():
@@ -177,11 +192,17 @@ def run():
         _run = _exe(False, args)
         while _run:
             _run = _exe(True, args)
+            # We only do it once...
+            if "nuke_settings" in args:
+                args.nuke_settings = False
         profiler.disable()
         profiler.dump_stats(args.profiler)
         return
     _run = _exe(False, args)
     while _run:
+        # We only do it once...
+        if "nuke_settings" in args:
+            args.nuke_settings = False
         _run = _exe(True, args)
 
 
@@ -202,12 +223,26 @@ def _exe(restarted, args):
     kernel.add_plugin(internal_plugins)
     kernel.add_plugin(external_plugins)
     auto = hasattr(kernel.args, "auto") and kernel.args.auto
+    command = hasattr(kernel.args, "execute") and kernel.args.execute
     console = hasattr(kernel.args, "console") and kernel.args.console
+    daemon = hasattr(kernel.args, "daemon") and kernel.args.daemon
+    server_mode = False
+    if command:
+        for c in command:
+            server_mode = server_mode or any(substring in c for substring in ("lhyserver", "grblserver", "ruidacontrol", "grblcontrol", "webserver"))
+    nogui = (
+        (hasattr(kernel.args, "gui_suppress") and kernel.args.gui_suppress) or
+        (hasattr(kernel.args, "no_gui") and kernel.args.no_gui) 
+    )
     for idx, attrib in enumerate(("mktablength", "mktabpositions")):
         kernel.register(f"registered_mk_svg_parameters/tabs{idx}", attrib)
 
-    if auto and not console:
-        kernel(partial=True)
-    else:
-        kernel()
+    require_partial_mode = False
+    if (
+        (not console or nogui) and
+        (auto or daemon or server_mode)
+    ):
+        require_partial_mode = True
+    # print (f"Auto: {auto}, Command: {command}, Console: {console}, daemon: {daemon}, nogui:{nogui}, Server: {server_mode} -> {require_partial_mode}")
+    kernel(partial=require_partial_mode)
     return hasattr(kernel, "restart") and kernel.restart

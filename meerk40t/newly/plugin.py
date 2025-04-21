@@ -62,8 +62,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("RayLaser/U-SET"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -90,8 +89,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Beijing SZTaiming"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -118,8 +116,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Gama"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -146,8 +143,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Cybertech ltd - u-set"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -174,8 +170,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Artsign JSM-40U/3040U/3060U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -212,8 +207,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Artsign JSM-40N/3040N/3060N"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -250,8 +244,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Light Technology LH40U/3040U/3060U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -288,8 +281,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Greatsign LE40U/3040U/3060U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -326,8 +318,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Helo Lasergraviermaschine-HLG 40N"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -364,8 +355,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Workline laser"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -402,8 +392,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("HPC LASER-LS 3020"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -440,8 +429,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Sicano - SIC-L40B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -478,8 +466,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Rabbit - Rabbit40B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -516,8 +503,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("ZL Tech - ZL40B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -554,8 +540,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Jinan Suke"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -592,8 +577,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Jinan Jinweik - Laser B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -637,8 +621,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Lion laser"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -671,8 +654,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Villa L. & Figlio S.R.L. - Laser B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -713,8 +695,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("AMC CO damascus - Laser B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -759,8 +740,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Jinan Ruijie - Laser U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -793,8 +773,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Mini Laser - USB"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -827,8 +806,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Jinan Xinyi - USB"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -861,8 +839,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Weifang Tiangong - Laser B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -895,8 +872,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Duowei Laser - Laser U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -929,8 +905,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Weifang Tiangong - Laser B"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -963,8 +938,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Jinan DaGong - TLU series"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -993,8 +967,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Jinan Senfeng - Laser U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -1027,8 +1000,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("ZhengZhou LeCai - LC Laser"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -1061,8 +1033,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("ZhengZhou LeCai - LC Plasma"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -1103,8 +1074,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Wuhan Jinli - JL Cylinder"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -1137,8 +1107,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("DongGuan EverTech - ETL3525 Laser"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -1171,8 +1140,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Wuhan Anwei - AW-U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -1213,8 +1181,7 @@ def plugin(kernel, lifecycle):
                 "friendly_name": _("Liaocheng Xinxing - U"),
                 "extended_info": _("Older CO2 Laser running the NewlyDraw software"),
                 "priority": 5,
-                "family": _("Older CO2-Laser"),
-                "family_priority": 15,
+                "family": _("Newly CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",

@@ -35,8 +35,11 @@ class NewlyDriver:
         self._shutdown = False
 
         self.queue = list()
+        self._queue_current = 0
+        self._queue_total = 0
+
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True
+            dict(), single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
         )
         self._aborting = False
         self._list_bits = None
@@ -72,6 +75,13 @@ class NewlyDriver:
 
     def abort_retry(self):
         self.connection.abort_connect()
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     #############
     # DRIVER COMMANDS
@@ -241,7 +251,12 @@ class NewlyDriver:
         con = self.connection
         queue = self.queue
         self.queue = list()
+        total = len(queue)
+        current = 0
         for q in queue:
+            current += 1
+            self._set_queue_status(current, total)
+
             con.program_mode()
             # LOOP CHECKS
             if self._aborting:
@@ -329,6 +344,7 @@ class NewlyDriver:
                 con.raster(q)
                 con.update()
         con.rapid_mode()
+        self._set_queue_status(0, 0)
 
     def move_abs(self, x, y):
         """

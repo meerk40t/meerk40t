@@ -231,6 +231,11 @@ class USBConnection:
             return index
         except usb.core.NoBackendError as e:
             self.channel(str(e))
+            from platform import system
+            osname = system()
+            if osname == "Windows":
+                self.channel(_("Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"))
+                self.channel(_("Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"))
             self.channel(_("PyUsb detected no backend LibUSB driver."))
             return -2
         except ConnectionRefusedError:

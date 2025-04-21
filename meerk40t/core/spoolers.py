@@ -334,7 +334,7 @@ def plugin(kernel, lifecycle):
                 yield "wait_finish"
 
             spooler.laserjob(
-                list(home_dot_test()), label=f"Dot and Home Test", helper=True
+                list(home_dot_test()), label="Dot and Home Test", helper=True
             )
             return "spooler", spooler
 

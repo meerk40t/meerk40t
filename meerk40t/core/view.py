@@ -272,6 +272,17 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
+    def _get_offset(self):
+        try:
+            off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
+        except ValueError:
+            off_x = 0
+        try:
+            off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        except ValueError:
+            off_y = 0
+        return off_x, off_y
+
     def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
@@ -281,8 +292,7 @@ class View:
         @return:
         """
         if margins:
-            off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
-            off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+            off_x, off_y = self._get_offset()
         else:
             off_x = 0
             off_y = 0
@@ -318,8 +328,7 @@ class View:
         @param vector:
         @return:
         """
-        off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
-        off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        off_x, off_y = self._get_offset()
         unit_x = x - off_x
         unit_y = y - off_y
         matrix = ~self.matrix
@@ -332,6 +341,26 @@ class View:
         if self._matrix is None:
             self._matrix = Matrix.map(*self._source, *self._destination)
         return self._matrix
+
+    def get_sensible_dpi_values(self) -> list:
+        # Look for dpis beyond 100 where we have an integer step value.
+        # We assume for this exercise that the x-axis is good enough
+        candidates = []
+        unit_x = UNITS_PER_INCH
+        matrix = self.matrix
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        lastdpi = None
+        for steps in range(1, 100):
+            dpi = int(round(oneinch_x / steps, 0))
+            if dpi < 75:
+                break
+            if dpi>1000:
+                continue
+            if lastdpi is None or dpi % 25 < 5 or dpi % 33 < 3:
+                lastdpi = dpi
+                candidates.append(dpi)
+        # print (candidates)
+        return candidates
 
     def dpi_to_steps(self, dpi):
         """

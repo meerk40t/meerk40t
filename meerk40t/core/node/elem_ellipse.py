@@ -66,6 +66,11 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
 
         super().__init__(type="elem ellipse", **kwargs)
         if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
         self.__formatter = "{element_type} {id} {stroke}"
         if self.cx is None:
@@ -172,11 +177,10 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         irrelevant = 50
         if dashlen:
             path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
-        path = path.simplify()
 
         return path
 
-    def scaled(self, sx, sy, ox, oy):
+    def scaled(self, sx, sy, ox, oy, interim=False):
         """
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering its properties
@@ -210,7 +214,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
             self._bounds[3] + delta,
         )
         self.set_dirty()
-        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)
 
     def bbox(self, transformed=True, with_stroke=False):
         geometry = self.as_geometry()
@@ -256,18 +260,35 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry") or
+            hasattr(drag_node, "as_image") or
+            (drag_node.type.startswith("op ") and drag_node.type != "op dots") or
+            drag_node.type in ("file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game, but we will take the operations color
-            if hasattr(drag_node, "color") and drag_node.color is not None:
-                self.stroke = drag_node.color
-            return drag_node.drop(self, modify=modify)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):

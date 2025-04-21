@@ -5,7 +5,12 @@ from meerk40t.kernel import signal_listener
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
-from .wxutils import disable_window, wxButton
+from .wxutils import (
+    disable_window,
+    wxButton,
+    wxComboBox,
+    wxListBox,
+)
 
 _ = wx.GetTranslation
 
@@ -16,6 +21,7 @@ class PlannerPanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.busy = False
 
         self.plan_name = plan_name
@@ -28,12 +34,12 @@ class PlannerPanel(wx.Panel):
                 break
         spools = [s.label for s in self.available_devices]
 
-        self.combo_device = wx.ComboBox(
+        self.combo_device = wxComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
-        self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
+        self.list_operations = wxListBox(self, wx.ID_ANY, choices=[])
+        self.list_command = wxListBox(self, wx.ID_ANY, choices=[])
 
         choices = self.context.lookup("choices/optimize")  # [:7]
         self.panel_optimize = ChoicePropertyPanel(
@@ -84,7 +90,7 @@ class PlannerPanel(wx.Panel):
         )
         self.button_start.SetForegroundColour(wx.BLACK)
         self.button_start.SetBitmap(
-            icons8_laser_beam.GetBitmap(resize=get_default_icon_size())
+            icons8_laser_beam.GetBitmap(resize=get_default_icon_size(self.context))
         )
         # end wxGlade
 
@@ -304,3 +310,7 @@ class ExecuteJob(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Execute Job"
+
+    @staticmethod
+    def helptext():
+        return _("Execute a laser job")

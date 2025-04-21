@@ -33,9 +33,6 @@ class BlobNode(Node):
         default_map["length"] = d
         return default_map
 
-    def drop(self, drag_node, modify=True):
-        return False
-
     def allow_save(self):
         """
         Returns false to prevent saving of blob types into operations.

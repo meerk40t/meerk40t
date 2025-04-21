@@ -117,3 +117,4 @@ class BedWidget(Widget):
                 self.scene.has_background = False
             else:
                 self.scene.has_background = True
+                self.scene.active_background = self.background

@@ -8,6 +8,77 @@ import wx
 
 DEFAULT_SIZE = 14
 
+class SimpleBusyInfo:
+    """
+    Create a simplified BusyInfo class that uses the main window title as canvas. 
+    Just used for Linux as the wxWidgets implementation sucks big time regarding
+    the controlled update of a window. So the full-featured implementation below
+    does not only produce nothing visible but seems to have severe side effects
+    that may caus segmenation faults.
+
+    :param string `msg`:     a string to be displayed in the BusyInfo window.
+    """
+    def __init__(self, **kwds):
+        self.kernel = kwds.get("kernel", None)
+        self.shown = False
+        self._old_title = ""
+        self._msg = ""
+
+    def start(self, **kwds):
+        if self.shown:
+            self.end()
+        self.update_keywords(kwds)
+        self.shown = True
+        self._old_title = ""
+        try:
+            win:wx.Window = self.kernel.root.gui
+            win.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+            self._old_title = win.GetTitle()
+        except (TypeError, AttributeError) as e:
+            return
+
+    def end(self):
+        self.shown = False
+        self._msg = ""
+        try:
+            win = self.kernel.root.gui
+            win.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        except (TypeError, AttributeError):
+            return
+        if self._old_title:
+            win.SetTitle(self._old_title)
+
+    def change(self, **kwds):
+        self.update_keywords(kwds)
+        if self.msg:
+            try:
+                win = self.kernel.root.gui
+                win.SetTitle(self.msg)
+            except (TypeError, AttributeError):
+                return
+
+    def update_keywords(self, kwds):
+        keep = 0
+        if "keep" in kwds:
+            keep = int(kwds["keep"])
+        if "msg" in kwds:
+            old_lines = self._msg.split("\n") if self._msg else []
+            new_lines = old_lines[:keep]
+            new_lines.append(kwds["msg"])
+            self._msg = "\n".join(new_lines)            
+
+    @property
+    def msg(self):
+        return self._msg.replace("\n", " - ")
+
+    def hide(self):
+        self.shown = False
+        return
+
+    def show(self):
+        self.shown = True
+        return
+
 
 class BusyInfo:
     """
@@ -37,26 +108,28 @@ class BusyInfo:
         self.frame = None
         self.panel = None
         self.text = None
+        self.image = None
+        if "startup" in kwds:
+            try:
+                kwds["startup"](self)
+            except AttributeError:
+                pass
         self.update_keywords(kwds)
 
     def update_keywords(self, kwds):
         keep = 0
         if "keep" in kwds:
             keep = int(kwds["keep"])
+        if "image" in kwds:
+            self.image = kwds["image"]
+        else:
+            if keep == 0:
+                self.image = None
         if "msg" in kwds:
-            newmsg = ""
-            if self.msg:
-                old = self.msg.split("\n")
-                idx = 0
-                while (idx < keep) and (idx < len(old)):
-                    if newmsg:
-                        newmsg += "\n"
-                    newmsg += old[idx]
-                    idx += 1
-            if newmsg:
-                newmsg += "\n"
-            newmsg += kwds["msg"]
-            self.msg = newmsg
+            old_lines = self.msg.split("\n") if self.msg else []
+            new_lines = old_lines[:keep]
+            new_lines.append(kwds["msg"])
+            self.msg = "\n".join(new_lines)            
         if "bgcolor" in kwds:
             self.bgcolor = kwds["bgcolor"]
         if "fgcolor" in kwds:
@@ -73,10 +146,16 @@ class BusyInfo:
                 style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP,
             )
             self.panel = wx.Panel(self.frame, id=wx.ID_ANY)
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.display = wx.StaticBitmap(self.panel, wx.ID_ANY)
             self.text = wx.StaticText(
                 self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL
             )
+            sizer.Add(self.display, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            sizer.Add(self.text, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             self.update_keywords(kwds)
+            self.panel.SetSizer(sizer)
+            self.panel.Layout()
             self.show()
             if self.parent is not None:
                 self.parent.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
@@ -124,12 +203,28 @@ class BusyInfo:
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
             )
+            bm_w = 0
+            bm_h = 0
+            if self.image is None:
+                self.display.SetBitmap(wx.NullBitmap)
+                self.display.Hide()
+            else:
+                self.display.SetBitmap(self.image)
+                bm_w, bm_h = self.display.GetBitmap().Size
+                self.display.SetSize(bm_w + 2, bm_h + 2)
+
             self.text.SetFont(font)
-            self.text.SetLabel(self.msg)
-            size = self.text.GetBestSize()
-            self.frame.SetClientSize((size.width + 60, size.height + 40))
+            self.text.SetLabel(self.msg.replace("|", "\n"))
+
+            sizetext = self.text.GetBestSize()
+
+            wd = sizetext.width + 5 + bm_w
+            ht = max(sizetext.height, bm_h)
+
+            self.frame.SetClientSize((wd + 60, ht + 40))
             self.panel.SetSize(self.frame.GetClientSize())
-            self.text.Center()
+            self.panel.Layout()
+            # self.text.Center()
             self.frame.Center()
             # That may be a bit over the top, but we really want an update :-)
             self.frame.Show()

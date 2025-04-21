@@ -3,6 +3,7 @@ import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icon_barrel_distortion
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -30,3 +31,11 @@ class CylinderSettings(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Cylinder-Correction"
+
+    @staticmethod
+    def helptext():
+        return _("Edit and activate planar cylinder correction")
+
+    @signal_listener("cylinder_update")
+    def signal_cylinder(self, origin=None, *args, **kwargs):
+        self.panel.reload()

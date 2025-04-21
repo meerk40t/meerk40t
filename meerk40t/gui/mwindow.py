@@ -33,7 +33,7 @@ class MWindow(wx.Frame, Module):
 
         wx.Frame.__init__(self, parent, style=style)
         Module.__init__(self, context, path)
-
+        self.window_context.themes.set_window_colors(self)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
@@ -41,6 +41,7 @@ class MWindow(wx.Frame, Module):
         self.Bind(wx.EVT_SIZE, self.on_change_window, self)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
+        self.context.themes.set_window_colors(self)
 
     def restore_aspect(self, honor_initial_values=False):
         width = self._start_width
@@ -120,7 +121,11 @@ class MWindow(wx.Frame, Module):
             event.Skip()  # Call 'destroy' as regular.
 
     def window_open(self):
-        pass
+        self.window_context.themes.set_window_colors(self)
+
+    def restore(self, *args, **kwargs):
+        if self.IsIconized():
+            self.Iconize(False)
 
     def window_close(self):
         pass

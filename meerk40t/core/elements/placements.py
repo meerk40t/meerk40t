@@ -1,6 +1,34 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing placements within the application.
+Users can create fixed job start positions, add relative placements,
+and manipulate the arrangement of placements in a grid pattern.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up placement commands.
+- init_commands(kernel): Initializes the placement commands and defines the associated operations.
+- place_points(command, channel, _, x=None, y=None, nx=None, ny=None, dx=None, dy=None, rotation=None, corner=None, loops=None, **kwargs): Adds a placement at a specified position with optional repetitions and gaps.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    x: The x-coordinate for the placement.
+    y: The y-coordinate for the placement.
+    nx: The number of placements on the x-axis.
+    ny: The number of placements on the y-axis.
+    dx: The gap in the x-direction.
+    dy: The gap in the y-direction.
+    rotation: The rotation angle for the placement.
+    corner: The corner position for the placement.
+    loops: The number of placement repetitions.
+  Returns:
+    A tuple containing the type of operations and the added placements.
+- place_current(command, channel, _, **kwargs): Adds a relative job start position at the current laser position.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    A tuple containing the type of operations and the added placement.
 """
+
 
 from meerk40t.core.units import Angle as UAngle
 from meerk40t.core.units import Length

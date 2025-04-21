@@ -37,10 +37,20 @@ class RuidaDevice(Service):
                 if attr is not None and default is not None:
                     setattr(self, attr, default)
 
-        self.setting(str, "label", path)
+        # self.setting(str, "label", path)
 
         _ = self._
         choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": path,
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+                "section": "_00_General",
+                "priority": "10",
+            },
             {
                 "attr": "bedwidth",
                 "object": self,
@@ -50,7 +60,7 @@ class RuidaDevice(Service):
                 "tip": _("Width of the laser bed."),
                 "nonzero": True,
                 "section": "_10_" + _("Configuration"),
-                "subsection": "_10_Bed Dimensions",
+                "subsection": "_10_Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -61,7 +71,18 @@ class RuidaDevice(Service):
                 "tip": _("Height of the laser bed."),
                 "nonzero": True,
                 "section": "_10_" + _("Configuration"),
-                "subsection": "_10_Bed Dimensions",
+                "subsection": "_10_Dimensions",
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",
@@ -173,6 +194,18 @@ class RuidaDevice(Service):
                 "section": "_10_Parameters",
                 "tip": _("Native units interpolation points."),
             },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
+            },
         ]
         self.register_choices("bed_dim", choices)
         choices = [
@@ -230,18 +263,22 @@ class RuidaDevice(Service):
                 choice_dict["choices"] = ["UNCONFIGURED"]
                 choice_dict["display"] = ["pyserial-not-installed"]
 
+        from platform import system
+        is_linux = system() == "Linux"
+
         choices = [
             {
                 "attr": "serial_port",
                 "object": self,
                 "default": "UNCONFIGURED",
                 "type": str,
-                "style": "option",
+                "style": "combosmall" if is_linux else "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
+                "exclusive": not is_linux, 
             },
             {
                 "attr": "baud_rate",
@@ -324,7 +361,7 @@ class RuidaDevice(Service):
             hidden=True,
             help=_("Updates interface state for the device."),
         )
-        def interface_update(**kwargs):
+        def interface_update(command, channel, _, data=None, **kwargs):
             if self.interface == "mock":
                 self.active_interface = self.interface_mock
                 self.driver.controller.write = self.interface_mock.write
@@ -340,7 +377,7 @@ class RuidaDevice(Service):
                 self.driver.controller.write = self.interface_usb.write
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
-        def pipe_abort(channel, _, **kwargs):
+        def pipe_abort(command, channel, _, data=None, **kwargs):
             self.driver.reset()
             channel(_("Emergency Stop."))
             self.signal("pipe;running", False)
@@ -349,7 +386,7 @@ class RuidaDevice(Service):
             "pause",
             help=_("realtime pause/resume of the machine"),
         )
-        def realtime_pause(**kwargs):
+        def realtime_pause(command, channel, _, data=None, **kwargs):
             if self.driver.paused:
                 self.driver.resume()
             else:
@@ -361,32 +398,36 @@ class RuidaDevice(Service):
             hidden=True,
             help=_("Connects to the device."),
         )
-        def interface_update(**kwargs):
+        def ruida_connect(command, channel, _, data=None, **kwargs):
             if not self.connected:
-                self.active_interface.open()
+                try:
+                    self.active_interface.open()
+                except Exception as e:
+                    channel(f"Could not establish the connection: {e}")
 
         @self.console_command(
             "ruida_disconnect",
             hidden=True,
             help=_("Disconnects from the device."),
         )
-        def interface_update(**kwargs):
+        def ruida_disconnect(command, channel, _, data=None, **kwargs):
             if self.connected:
                 self.active_interface.close()
+                channel("Connection closed")
 
         @self.console_command(
             "focusz",
             hidden=True,
             help=_("Initiates a FocusZ Operation"),
         )
-        def interface_update(**kwargs):
+        def focusz(command, channel, _, data=None, **kwargs):
             self.driver.focusz()
 
         @kernel.console_command(
             "+xforward",
             hidden=True,
         )
-        def plus_x_forward(data, **kwgs):
+        def plus_x_forward(command, channel, _, data=None, **kwgs):
             pipe = self.driver.controller.write
             job = self.driver.controller.job
             job.keydown_x_right(pipe)
@@ -395,7 +436,7 @@ class RuidaDevice(Service):
             "-xforward",
             hidden=True,
         )
-        def minus_x_forward(data, **kwgs):
+        def minus_x_forward(command, channel, _, data=None, **kwgs):
             pipe = self.driver.controller.write
             job = self.driver.controller.job
             job.keyup_x_right(pipe)

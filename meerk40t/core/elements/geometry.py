@@ -1,5 +1,140 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing geometric operations within the application.
+These commands allow users to convert shapes to path nodes, create geometric figures, and perform various geometric manipulations.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up geometry commands.
+- init_commands(kernel): Initializes the geometry commands and defines the associated operations.
+- element_shape_convert(data, **kwargs): Converts any shapes to path nodes and adds them to the element branch.
+  Args:
+    data: The geometry data to convert.
+  Returns:
+    A tuple containing the type of elements and the newly created node.
+- geometry_copies(data: Geomstr, copies, **kwargs): Creates multiple copies of the specified geometry.
+  Args:
+    data: The geometry data to copy.
+    copies: The number of copies to create.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- geometry_base(data=None, **kwargs): Converts any element nodes to paths and returns the resulting geometry.
+  Args:
+    data: The elements to convert.
+  Returns:
+    A tuple containing the type of geometry and the resulting path.
+- geometry_validate(channel, _, data=None, **kwargs): Validates the given geometry and reports its status.
+  Args:
+    channel: The communication channel for messages.
+    data: The geometry data to validate.
+  Returns:
+    A tuple containing the type of geometry and the validated data.
+- element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs): Adds a circle to the geometry at the specified position with a given radius.
+  Args:
+    channel: The communication channel for messages.
+    x_pos: The x-coordinate for the center of the circle.
+    y_pos: The y-coordinate for the center of the circle.
+    r_pos: The radius of the circle.
+    data: The geometry data to modify.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- element_rect(channel, _, x_pos, y_pos, width, height, rx=None, ry=None, data=None, post=None, **kwargs): Adds a rectangle to the geometry with optional rounded corners.
+  Args:
+    channel: The communication channel for messages.
+    x_pos: The x-coordinate for the top left corner of the rectangle.
+    y_pos: The y-coordinate for the top left corner of the rectangle.
+    width: The width of the rectangle.
+    height: The height of the rectangle.
+    rx: The rounded corner radius in the x-direction.
+    ry: The rounded corner radius in the y-direction.
+    data: The geometry data to modify.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- geometry_hull(channel, _, data: Geomstr, **kwargs): Computes the convex hull of the given geometry.
+  Args:
+    channel: The communication channel for messages.
+    data: The geometry data to process.
+  Returns:
+    A tuple containing the type of geometry and the resulting hull.
+- geometry_two_opt(channel, _, data: Geomstr, max_passes=10, chunk=0, **kwargs): Performs a two-opt optimization on the current geometry.
+  Args:
+    channel: The communication channel for messages.
+    data: The geometry data to optimize.
+    max_passes: The maximum number of optimization passes.
+    chunk: The maximum forward-search for potential swaps.
+  Returns:
+    A tuple containing the type of geometry and the optimized data.
+- geometry_greedy(channel, _, data: Geomstr, no_flips=False, **kwargs): Performs a greedy optimization on the current geometry.
+  Args:
+    channel: The communication channel for messages.
+    data: The geometry data to optimize.
+    no_flips: Whether to allow segment flips during optimization.
+  Returns:
+    A tuple containing the type of geometry and the optimized data.
+- element_translate(tx, ty, data: Geomstr, **kwargs): Translates the geometry by the specified x and y values.
+  Args:
+    tx: The translation value in the x-direction.
+    ty: The translation value in the y-direction.
+    data: The geometry data to translate.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- element_uscale(scale, data: Geomstr, **kwargs): Uniformly scales the geometry by the specified scale factor.
+  Args:
+    scale: The scale factor to apply.
+    data: The geometry data to scale.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- element_scale(data: Geomstr, sx: float, sy: float, **kwargs): Scales the geometry by specified x and y factors.
+  Args:
+    data: The geometry data to scale.
+    sx: The scale factor in the x-direction.
+    sy: The scale factor in the y-direction.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- element_rotate(angle: Angle, data: Geomstr, **kwargs): Rotates the geometry by the specified angle.
+  Args:
+    angle: The angle to rotate the geometry.
+    data: The geometry data to rotate.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- geometry_hatch(data: Geomstr, distance: Length, angle: Angle, **kwargs): Adds hatch geometry to the specified data.
+  Args:
+    data: The geometry data to modify.
+    distance: The distance between hatch lines.
+    angle: The angle of the hatch lines.
+  Returns:
+    A tuple containing the type of geometry and the modified data.
+- element_cag_combine(data: Geomstr, **kwargs): Combines the current geometry into a single shape.
+  Args:
+    data: The geometry data to combine.
+  Returns:
+    A tuple containing the type of geometry and the combined data.
+- element_cag_union(subject: int, clip: int, data: Geomstr, **kwargs): Computes the union of two shapes in the geometry.
+  Args:
+    subject: The index of the subject shape.
+    clip: The index of the clipping shape.
+    data: The geometry data to process.
+  Returns:
+    A tuple containing the type of geometry and the resulting union.
+- element_cag_intersection(subject: int, clip: int, data: Geomstr, **kwargs): Computes the intersection of two shapes in the geometry.
+  Args:
+    subject: The index of the subject shape.
+    clip: The index of the clipping shape.
+    data: The geometry data to process.
+  Returns:
+    A tuple containing the type of geometry and the resulting intersection.
+- element_cag_xor(subject: int, clip: int, data: Geomstr, **kwargs): Computes the exclusive or (XOR) of two shapes in the geometry.
+  Args:
+    subject: The index of the subject shape.
+    clip: The index of the clipping shape.
+    data: The geometry data to process.
+  Returns:
+    A tuple containing the type of geometry and the resulting XOR.
+- element_cag_difference(subject: int, clip: int, data: Geomstr, **kwargs): Computes the difference between two shapes in the geometry.
+  Args:
+    subject: The index of the subject shape.
+    clip: The index of the clipping shape.
+    data: The geometry data to process.
+  Returns:
+    A tuple containing the type of geometry and the resulting difference.
 """
 
 from meerk40t.core.units import Angle, Length
