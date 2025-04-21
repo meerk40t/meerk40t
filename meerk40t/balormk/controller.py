@@ -364,6 +364,12 @@ class GalvoController:
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
                 self.connection = USBConnection(self.usb_log)
+                print(f"Setting: {self.service.setting(bool, 'usb_debug', False)}")
+                if self.service.setting(bool, "usb_debug", False):
+                    name = self.service.safe_label
+                    self.connection.recv = self.service.channel(f"{name}/usb_data")
+                    self.connection.send = self.service.channel(f"{name}/usb_data")
+
         self._is_opening = True
         self._abort_open = False
         count = 0
@@ -391,10 +397,15 @@ class GalvoController:
                     self.usb_log("Could not connect to the LMC controller.")
                     self.usb_log("Automatic connections disabled.")
                     from platform import system
+
                     osname = system()
                     if osname == "Windows":
-                        self.usb_log("Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?")
-                        self.usb_log("Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows")
+                        self.usb_log(
+                            "Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"
+                        )
+                        self.usb_log(
+                            "Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+                        )
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
@@ -815,8 +826,14 @@ class GalvoController:
         for nibble in serial_number:
             content += f"{nibble:04x}"
         self.usb_log(f"Serial Number: {serial_number} ({content})")
-        if self.service.serial_enable and self.service.serial and not self.serial_confirmed:
-            self.usb_log(f"Requires serial number confirmation against {self.service.serial}.")
+        if (
+            self.service.serial_enable
+            and self.service.serial
+            and not self.serial_confirmed
+        ):
+            self.usb_log(
+                f"Requires serial number confirmation against {self.service.serial}."
+            )
             if content == self.service.serial:
                 self.serial_confirmed = True
 
@@ -943,7 +960,9 @@ class GalvoController:
         @return:
         """
         # return int(speed / 2)
-        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True, margins=False)
+        galvos_per_mm, _ = self.service.view.position(
+            "1mm", "1mm", vector=True, margins=False
+        )
         return abs(int(speed * galvos_per_mm / 1000.0))
 
     def _convert_frequency(self, frequency_khz, base=20000.0):
@@ -1066,7 +1085,7 @@ class GalvoController:
         y = int(y)
         self._list_write(listJumpTo, x, y, angle, distance)
         if self._signal_updates:
-            view  = self.service.view
+            view = self.service.view
             l_x, l_y = view.iposition(self._last_x, self._last_y)
             n_x, n_y = view.iposition(x, y)
             self.service.signal(
@@ -1101,7 +1120,7 @@ class GalvoController:
         self._list_write(listMarkTo, x, y, angle, distance)
 
         if self._signal_updates:
-            view  = self.service.view
+            view = self.service.view
             l_x, l_y = view.iposition(self._last_x, self._last_y)
             n_x, n_y = view.iposition(x, y)
             self.service.signal(

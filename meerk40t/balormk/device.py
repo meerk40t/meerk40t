@@ -247,6 +247,17 @@ class BalorDevice(Service, Status):
                 "priority": "30",
             },
             {
+                "attr": "usb_debug",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Debug USB channel"),
+                "tip": _("Debugs usb data exchange to channel."),
+                "section": "_00_General",
+                "priority": "30",
+                "hidden": True,
+            },
+            {
                 "attr": "machine_index",
                 "object": self,
                 "default": 0,
@@ -258,14 +269,13 @@ class BalorDevice(Service, Status):
                 "section": "_00_General",
                 "subsection": "_10_Device Selection",
             },
-            {   "attr": "serial_enable",
+            {
+                "attr": "serial_enable",
                 "object": self,
                 "default": False,
                 "type": bool,
                 "label": _("Check serial no"),
-                "tip": _(
-                    "Does the machine need to have a specific serial number?"
-                ),
+                "tip": _("Does the machine need to have a specific serial number?"),
                 "section": "_00_General",
                 "subsection": "_10_Device Selection",
             },
@@ -274,13 +284,11 @@ class BalorDevice(Service, Status):
                 "object": self,
                 "default": "",
                 "type": str,
-                "tip": _(
-                    "Does the machine need to have a specific serial number?"
-                ),
+                "tip": _("Does the machine need to have a specific serial number?"),
                 "label": "",
                 "section": "_00_General",
                 "subsection": "_10_Device Selection",
-                "conditional": (self, "serial_enable")
+                "conditional": (self, "serial_enable"),
             },
             {
                 "attr": "footpedal_pin",

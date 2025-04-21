@@ -30,6 +30,8 @@ class USBConnection:
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 100
+        self.recv = None
+        self.send = None
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -232,10 +234,19 @@ class USBConnection:
         except usb.core.NoBackendError as e:
             self.channel(str(e))
             from platform import system
+
             osname = system()
             if osname == "Windows":
-                self.channel(_("Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"))
-                self.channel(_("Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"))
+                self.channel(
+                    _(
+                        "Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"
+                    )
+                )
+                self.channel(
+                    _(
+                        "Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+                    )
+                )
             self.channel(_("PyUsb detected no backend LibUSB driver."))
             return -2
         except ConnectionRefusedError:
@@ -260,10 +271,23 @@ class USBConnection:
             except ConnectionError:
                 pass
 
+    def debug(self, channel, packet, direction):
+        if channel is None or packet is None:
+            return
+        packet_length = len(packet)
+        if packet_length == 0:
+            return
+        msg = ""
+        now = time.localtime()
+        for idx in range(packet_length):
+            msg = f"{msg} {packet[idx]:02x}"
+        channel(f"{direction} {now.tm_hour}:{now.tm_min:2d}:{now.tm_sec:2d} - {msg}")
+
     def write(self, index=0, packet=None, attempt=0):
         packet_length = len(packet)
         assert packet_length == 0xC or packet_length == 0xC00
         if packet is not None:
+            self.debug(self.send, packet, "OUT")
             try:
                 # endpoint, data, timeout
                 self.devices[index].write(
@@ -287,9 +311,11 @@ class USBConnection:
 
     def read(self, index=0, attempt=0):
         try:
-            return self.devices[index].read(
+            data = self.devices[index].read(
                 endpoint=READ_ENDPOINT, size_or_buffer=8, timeout=self.timeout
             )
+            self.debug(self.recv, data, "IN ")
+            return data
         except usb.core.USBError as e:
             if attempt <= 3:
                 try:
