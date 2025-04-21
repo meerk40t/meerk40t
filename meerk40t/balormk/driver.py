@@ -4,6 +4,7 @@ Galvo Driver
 The Driver has a set of different commands which are standardly sent and utilizes those which can be performed by this
 driver.
 """
+
 import time
 from usb.core import NoBackendError
 
@@ -44,7 +45,12 @@ class BalorDriver:
         self._queue_current = 0
         self._queue_total = 0
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
+            dict(),
+            single=True,
+            ppi=False,
+            shift=False,
+            group=True,
+            require_uniform_movement=False,
         )
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
