@@ -615,28 +615,36 @@ class TemplatePanel(wx.Panel):
         def preset_balor_wobble(node=None):
             # Will be called ahead of the modification of a wobble variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device.path:
+            if node is None or not any(
+                dev in self.context.device.path for dev in ("balor", "galvo")
+            ):
                 return
             node.settings["wobble_enabled"] = True
 
         def preset_balor_rapid(node=None):
             # Will be called ahead of the modification of a rapid variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device.path:
+            if node is None or not any(
+                dev in self.context.device.path for dev in ("balor", "galvo")
+            ):
                 return
             node.settings["rapid_enabled"] = True
 
         def preset_balor_pulse(node=None):
             # Will be called ahead of the modification of a pulse variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device.path:
+            if node is None or not any(
+                dev in self.context.device.path for dev in ("balor", "galvo")
+            ):
                 return
             node.settings["pulse_width_enabled"] = True
 
         def preset_balor_timings(node=None):
             # Will be called ahead of the modification of a timing variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device.path:
+            if node is None or not any(
+                dev in self.context.device.path for dev in ("balor", "galvo")
+            ):
                 return
             if not node.settings["timing_enabled"]:
                 node.settings["timing_enabled"] = True
@@ -729,16 +737,72 @@ class TemplatePanel(wx.Panel):
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True, None),
             ]
 
-        if "balor" in self.context.device.path:
+        if any(dev in self.context.device.path for dev in ("balor", "galvo")):
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True, None),
-                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True, None,),
-                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False, None,),
-                ("delay_laser_off", preset_balor_timings, _("Laser Off Delay"), "µs", False, False, None,),
-                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False, None,),
-                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True, None,),
-                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True, None,),
-                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True, None,),
+                (
+                    "rapid_speed",
+                    preset_balor_rapid,
+                    _("Rapid Speed"),
+                    "mm/s",
+                    False,
+                    True,
+                    None,
+                ),
+                (
+                    "delay_laser_on",
+                    preset_balor_timings,
+                    _("Laser On Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "delay_laser_off",
+                    preset_balor_timings,
+                    _("Laser Off Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "delay_polygon",
+                    preset_balor_timings,
+                    _("Polygon Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "wobble_radius",
+                    preset_balor_wobble,
+                    _("Wobble Radius"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_interval",
+                    preset_balor_wobble,
+                    _("Wobble Interval"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_speed",
+                    preset_balor_wobble,
+                    _("Wobble Speed Multiplier"),
+                    "x",
+                    False,
+                    True,
+                    None,
+                ),
             ]
             if self.context.device.pulse_width_enabled:
                 balor_choices.append(
@@ -1125,7 +1189,9 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        if param_type_1 == "hatch_distance" and not str(value).endswith("mm"):
+                        if param_type_1 == "hatch_distance" and not str(value).endswith(
+                            "mm"
+                        ):
                             value = f"{value}mm"
                         setattr(master_op, param_type_1, value)
                     # else:  # Try setting
@@ -1134,9 +1200,13 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        elif param_type_1 == "hatch_distance" and not str(value).endswith("mm"):
+                        elif param_type_1 == "hatch_distance" and not str(
+                            value
+                        ).endswith("mm"):
                             value = f"{value}mm"
-                        elif param_type_1 == "hatch_angle" and not str(value).endswith("deg"):
+                        elif param_type_1 == "hatch_angle" and not str(value).endswith(
+                            "deg"
+                        ):
                             value = f"{value}deg"
                         setattr(this_op, param_type_1, value)
                     elif hasattr(this_op, "settings"):  # Try setting
@@ -1158,15 +1228,21 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_2 == "passes":
                             value = int(value)
-                        if param_type_2 == "hatch_distance" and not str(value).endswith("mm"):
+                        if param_type_2 == "hatch_distance" and not str(value).endswith(
+                            "mm"
+                        ):
                             value = f"{value}mm"
                         setattr(master_op, param_type_2, value)
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
-                        elif param_type_2 == "hatch_distance" and not str(value).endswith("mm"):
+                        elif param_type_2 == "hatch_distance" and not str(
+                            value
+                        ).endswith("mm"):
                             value = f"{value}mm"
-                        elif param_type_2 == "hatch_angle" and not str(value).endswith("deg"):
+                        elif param_type_2 == "hatch_angle" and not str(value).endswith(
+                            "deg"
+                        ):
                             value = f"{value}deg"
                         setattr(this_op, param_type_2, value)
                     elif hasattr(this_op, "settings"):  # Try setting

@@ -128,6 +128,10 @@ def plugin(kernel, lifecycle):
 
         kernel.add_plugin(balorplugin)
 
+        from .galvodlc.plugin import plugin as galvoplugin
+
+        kernel.add_plugin(galvoplugin)
+
         from .newly.plugin import plugin as newlyplugin
 
         kernel.add_plugin(newlyplugin)

@@ -356,9 +356,11 @@ class MaterialPanel(ScrolledPanel):
         self.tree_library = wxTreeCtrl(
             self,
             wx.ID_ANY,
-            style=wx.BORDER_SUNKEN | wx.TR_HAS_BUTTONS
+            style=wx.BORDER_SUNKEN
+            | wx.TR_HAS_BUTTONS
             # | wx.TR_HIDE_ROOT
-            | wx.TR_ROW_LINES | wx.TR_SINGLE,
+            | wx.TR_ROW_LINES
+            | wx.TR_SINGLE,
         )
         self.tree_library.SetToolTip(_("Click to select / Right click for actions"))
 
@@ -366,7 +368,8 @@ class MaterialPanel(ScrolledPanel):
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
-            context=self.context, list_name="list_materialmanager"
+            context=self.context,
+            list_name="list_materialmanager",
         )
 
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
@@ -675,11 +678,24 @@ class MaterialPanel(ScrolledPanel):
         # Will be updated in fill_preview
         return self._balor
 
-    def _add_deletion_method(self, level=0, keyprimary=None, primaryvalue=None, keysecondary=None, secondaryvalue=None)->int:
+    def _add_deletion_method(
+        self,
+        level=0,
+        keyprimary=None,
+        primaryvalue=None,
+        keysecondary=None,
+        secondaryvalue=None,
+    ) -> int:
         index = -1
         while index in self.deletion_methods:
             index -= 1
-        self.deletion_methods[index] = (level, keyprimary, primaryvalue, keysecondary, secondaryvalue)
+        self.deletion_methods[index] = (
+            level,
+            keyprimary,
+            primaryvalue,
+            keysecondary,
+            secondaryvalue,
+        )
         return index
 
     def retrieve_material_list(
@@ -827,14 +843,22 @@ class MaterialPanel(ScrolledPanel):
                 idx_primary += 1
                 idx_secondary = 0
                 tree_primary = tree.AppendItem(tree_root, this_category_primary)
-                data_idx = self._add_deletion_method(1, sort_key_primary, this_category_primary, sort_key_secondary, "")
+                data_idx = self._add_deletion_method(
+                    1, sort_key_primary, this_category_primary, sort_key_secondary, ""
+                )
                 tree.SetItemData(tree_primary, data_idx)
 
                 tree_secondary = tree_primary
             if last_category_secondary != this_category_secondary:
                 # new subitem
                 tree_secondary = tree.AppendItem(tree_primary, this_category_secondary)
-                data_idx = self._add_deletion_method(2, sort_key_primary, this_category_primary, sort_key_secondary, this_category_secondary)
+                data_idx = self._add_deletion_method(
+                    2,
+                    sort_key_primary,
+                    this_category_primary,
+                    sort_key_secondary,
+                    this_category_secondary,
+                )
                 tree.SetItemData(tree_secondary, data_idx)
                 visible_count[1] += 1
             idx_secondary += 1
@@ -1097,12 +1121,15 @@ class MaterialPanel(ScrolledPanel):
     def on_delete_all(self, event):
         self._delete_according_to_key(keytype=0, primary="", secondary="")
 
-    def on_delete_category(self, keytype:int, primary:any, secondary:any):
+    def on_delete_category(self, keytype: int, primary: any, secondary: any):
         def handler(event):
-            self._delete_according_to_key(keytype=keytype, primary=primary, secondary=secondary)
+            self._delete_according_to_key(
+                keytype=keytype, primary=primary, secondary=secondary
+            )
+
         return handler
 
-    def _delete_according_to_key(self, keytype: int, primary:str, secondary:str):
+    def _delete_according_to_key(self, keytype: int, primary: str, secondary: str):
         if self.categorisation == 1:
             # lasertype
             sort_key_primary = "laser"  # 3
@@ -1121,27 +1148,28 @@ class MaterialPanel(ScrolledPanel):
             to_delete = False
             if keytype == 0:
                 to_delete = True
-            elif (
-                keytype == 1 and
-                entry[sort_key_primary].replace("_", " ") == primary
-            ):
+            elif keytype == 1 and entry[sort_key_primary].replace("_", " ") == primary:
                 to_delete = True
             elif (
-                keytype == 2 and
-                entry[sort_key_primary].replace("_", " ") == primary and
-                entry[sort_key_secondary].replace("_", " ") == secondary
+                keytype == 2
+                and entry[sort_key_primary].replace("_", " ") == primary
+                and entry[sort_key_secondary].replace("_", " ") == secondary
             ):
                 to_delete = True
             if to_delete:
                 amount += 1
 
         if keytype == 0:
-            question = _("Do you really want to delete all {num} visible entries? This can't be undone.").format(num=str(amount))
+            question = _(
+                "Do you really want to delete all {num} visible entries? This can't be undone."
+            ).format(num=str(amount))
         else:
             criteria = f"{sort_key_primary}={'<empty>' if primary is None else primary}"
             if secondary is not None:
                 criteria = criteria + f" & {sort_key_secondary}='{secondary}'"
-            question = _("Do you really want to delete all {num} entries with {data}? This can't be undone.").format(data=criteria, num=str(amount))
+            question = _(
+                "Do you really want to delete all {num} entries with {data}? This can't be undone."
+            ).format(data=criteria, num=str(amount))
         if self.context.kernel.yesno(question):
             busy = self.context.kernel.busyinfo
             busy.start(msg=_("Deleting data"))
@@ -1149,19 +1177,16 @@ class MaterialPanel(ScrolledPanel):
                 busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
 
                 to_delete = False
-                prim_key = entry[sort_key_primary].replace("_", " ") if entry[sort_key_primary] else _("No " + sort_key_primary)
+                prim_key = (
+                    entry[sort_key_primary].replace("_", " ")
+                    if entry[sort_key_primary]
+                    else _("No " + sort_key_primary)
+                )
                 if keytype == 0:
                     to_delete = True
-                elif (
-                    keytype == 1 and
-                    prim_key == primary
-                ):
+                elif keytype == 1 and prim_key == primary:
                     to_delete = True
-                elif (
-                    keytype == 2 and
-                    prim_key == primary and
-                    prim_key == secondary
-                ):
+                elif keytype == 2 and prim_key == primary and prim_key == secondary:
                     to_delete = True
 
                 # print (f"Keytype={keytype}, primary: {prim_key} vs {primary}, secondary: {entry[sort_key_secondary].replace('_', ' ')} vs {secondary} -> {to_delete}")
@@ -1174,7 +1199,6 @@ class MaterialPanel(ScrolledPanel):
             self.op_data.write_configuration()
             busy.end()
             self.on_reset(None)
-
 
     def invalid_file(self, filename):
         dlg = wx.MessageDialog(
@@ -1973,7 +1997,6 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
-
         def get_key(op_type, op_color):
             return f"{op_type}-{str(op_color)}"
 
@@ -2004,11 +2027,23 @@ class MaterialPanel(ScrolledPanel):
                     if COLORFUL_BACKGROUND:
                         if opc is None:
                             opc = Color("black")
-                        fgcol = wx.BLACK if Color.distance(opc, "black") > Color.distance(opc, "white") else wx.WHITE
+                        fgcol = (
+                            wx.BLACK
+                            if Color.distance(opc, "black")
+                            > Color.distance(opc, "white")
+                            else wx.WHITE
+                        )
                         forced_bg = (opc.red, opc.green, opc.blue, opc.alpha)
-                        bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=fgcol, forced_background=forced_bg)
+                        bmap = info[1].GetBitmap(
+                            resize=(iconsize, iconsize),
+                            noadjustment=True,
+                            color=fgcol,
+                            forced_background=forced_bg,
+                        )
                     else:
-                        bmap = info[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True, color=opc)
+                        bmap = info[1].GetBitmap(
+                            resize=(iconsize, iconsize), noadjustment=True, color=opc
+                        )
                     image_id = self.state_images.Add(bitmap=bmap)
                     image_dict[key] = image_id
 
@@ -2017,7 +2052,9 @@ class MaterialPanel(ScrolledPanel):
 
         self._balor = False
         for obj, name, sname in self.context.find("dev_info"):
-            if obj is not None and "balor" in sname.lower():
+            if obj is not None and any(
+                dev in sname.lower() for dev in ("balor", "galvo")
+            ):
                 self._balor = True
                 break
 
@@ -2213,7 +2250,11 @@ class MaterialPanel(ScrolledPanel):
                         criteria += f" + {key2}='{value2}'"
                     info = _("Delete all with {data}").format(data=criteria)
                     item = menu.Append(wx.ID_ANY, info, "", wx.ITEM_NORMAL)
-                    self.Bind(wx.EVT_MENU, self.on_delete_category(deletion_level, value1, value2), item)
+                    self.Bind(
+                        wx.EVT_MENU,
+                        self.on_delete_category(deletion_level, value1, value2),
+                        item,
+                    )
 
         item = menu.Append(wx.ID_ANY, _("Delete all"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_delete_all, item)
@@ -2357,14 +2398,23 @@ class MaterialPanel(ScrolledPanel):
                     idx += 1
                     opcolor = Color(red=colors[0], green=colors[2], blue=colors[1])
                     settings.write_persistent(subsection, "color", str(opcolor))
-                    if coloropt=="black":
+                    if coloropt == "black":
                         colors[primary] += 32
                         if colors[primary] > 255:
                             colors[primary] = 0
                         colors[secondary] = colors[primary]
                         colors[tertiary] = colors[primary]
                     else:
-                        colors[primary], colors[secondary], colors[tertiary] = next_color(colors[primary], colors[secondary], colors[tertiary], delta=64)
+                        (
+                            colors[primary],
+                            colors[secondary],
+                            colors[tertiary],
+                        ) = next_color(
+                            colors[primary],
+                            colors[secondary],
+                            colors[tertiary],
+                            delta=64,
+                        )
 
                 settings.write_configuration()
                 self.fill_preview()
@@ -2654,10 +2704,13 @@ class MaterialPanel(ScrolledPanel):
                     info = self.opinfo["generic"]
                 submenu = wx.Menu()
                 for coloroption in ("Red", "Blue", "Green", "Black"):
-                    sitem = submenu.Append(wx.ID_ANY, _(coloroption), "", wx.ITEM_NORMAL)
-                    self.Bind(wx.EVT_MENU, on_menu_popup_recolor(coloroption, key), sitem)
+                    sitem = submenu.Append(
+                        wx.ID_ANY, _(coloroption), "", wx.ITEM_NORMAL
+                    )
+                    self.Bind(
+                        wx.EVT_MENU, on_menu_popup_recolor(coloroption, key), sitem
+                    )
                 menu.AppendSubMenu(submenu, _("Color all {type}").format(type=info[0]))
-
 
         if self.list_preview.GetItemCount() > 0:
             menu.AppendSeparator()
@@ -2782,7 +2835,9 @@ class MaterialPanel(ScrolledPanel):
                     new_data = int(new_data)
                     if new_data < 1:
                         new_data = 1
-                    self.op_data.write_persistent(key, "passes_custom", bool(new_data != 1))
+                    self.op_data.write_persistent(
+                        key, "passes_custom", bool(new_data != 1)
+                    )
                     self.op_data.write_persistent(key, "passes", new_data)
                     new_data = f"{new_data}"
                 except ValueError:

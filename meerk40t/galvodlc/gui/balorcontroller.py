@@ -14,12 +14,13 @@ from meerk40t.kernel import signal_listener
 _ = wx.GetTranslation
 
 
-class RuidaControllerPanel(wx.ScrolledWindow):
+class BalorControllerPanel(wx.ScrolledWindow):
     def __init__(self, *args, context=None, **kwargs):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
         self.context.themes.set_window_colors(self)
+        self.SetHelpText("galvocontroller")
 
         font = wx.Font(
             10,
@@ -84,9 +85,9 @@ class RuidaControllerPanel(wx.ScrolledWindow):
     def update_text(self, text):
         with self._buffer_lock:
             self._buffer += f"{text}\n"
-        self.context.signal("ruida_controller_update")
+        self.context.signal("galvo_controller_update")
 
-    @signal_listener("ruida_controller_update")
+    @signal_listener("galvo_controller_update")
     def update_text_gui(self, origin):
         with self._buffer_lock:
             buffer = self._buffer
@@ -113,61 +114,64 @@ class RuidaControllerPanel(wx.ScrolledWindow):
 
     @signal_listener("pipe;usb_status")
     def on_usb_update(self, origin=None, status=None):
-        if origin != self.service.path:
-            return
         if status is None:
             status = "Unknown"
-        connected = self.service.connected
-        if status == "connected":
-            self.button_device_connect.SetLabel(_("Connected"))
-        if status == "disconnected":
-            self.button_device_connect.SetLabel(_("Disconnected"))
-        if connected:
-            self.set_button_connected()
-        else:
-            self.set_button_disconnected()
+        try:
+            connected = self.service.driver.connected
+        except AttributeError:
+            return
+        try:
+            self.button_device_connect.SetLabel(status)
+            if connected:
+                self.set_button_connected()
+            else:
+                self.set_button_disconnected()
+        except RuntimeError:
+            pass
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
-        connected = self.service.connected
-        if self.service.is_connecting:
-            self.service.abort_connect()
-            self.service.set_disable_connect(False)
+        try:
+            connected = self.service.driver.connected
+        except AttributeError:
             return
+        try:
+            if self.service.driver.connection.is_connecting:
+                self.service.driver.connection.abort_connect()
+                self.service.driver.connection.set_disable_connect(False)
+                return
+        except AttributeError:
+            pass
 
         if connected:
-            self.context("ruida_disconnect\n")
-            self.service.set_disable_connect(False)
+            self.context("usb_disconnect\n")
+            self.service.driver.connection.set_disable_connect(False)
         else:
-            self.service.set_disable_connect(False)
-            self.context("ruida_connect\n")
+            self.service.driver.connection.set_disable_connect(False)
+            self.context("usb_connect\n")
 
     def pane_show(self):
-        self._name = self.service.safe_label
-        self.context.channel(f"{self._name}/recv", pure=True).watch(self.update_text)
-        self.context.channel(f"{self._name}/send", pure=True).watch(self.update_text)
-        self.context.channel(f"{self._name}/real", pure=True).watch(self.update_text)
-        self.context.channel(f"{self._name}/events").watch(self.update_text)
-
-        connected = self.service.connected
-        if connected:
-            self.set_button_connected()
-        else:
-            self.set_button_disconnected()
+        self._channel_watching = f"{self.context.safe_label}/usb"
+        self.context.channel(self._channel_watching).watch(self.update_text)
+        try:
+            connected = self.service.driver.connected
+            if connected:
+                self.set_button_connected()
+            else:
+                self.set_button_disconnected()
+        except RuntimeError:
+            pass
 
     def pane_hide(self):
-        self.context.channel(f"{self._name}/recv").unwatch(self.update_text)
-        self.context.channel(f"{self._name}/send").unwatch(self.update_text)
-        self.context.channel(f"{self._name}/real").unwatch(self.update_text)
-        self.context.channel(f"{self._name}/events").unwatch(self.update_text)
+        self.context.channel(self._channel_watching).unwatch(self.update_text)
 
 
-class RuidaController(MWindow):
+class BalorController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
-        self.panel = RuidaControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = BalorControllerPanel(self, wx.ID_ANY, context=self.context)
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
-        self.SetTitle(_("Ruida-Controller"))
+        self.SetTitle(_("Galvo-Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
@@ -182,7 +186,7 @@ class RuidaController(MWindow):
 
     @staticmethod
     def submenu():
-        return "Device-Control", "Ruida-Controller"
+        return "Device-Control", "Galvo-Controller"
 
     @staticmethod
     def helptext():
