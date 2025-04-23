@@ -11,3 +11,9 @@ repos:
       - id: ruff
         args: ["check", "--select", "I", "--fix"]
       - id: ruff-format
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+      - id: codespell
+        files: ^.*\.(py|c|h|md|rst|yml)$
+        args: ["--ignore-words", ".codespellignore" ]
