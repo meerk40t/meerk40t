@@ -28,7 +28,7 @@ class LiveLightJob:
         geometry=None,
         travel_speed=None,
         jump_delay=None,
-        quantization=50,
+        quantization=100,
         listen=True,
         raw=False,
     ):
@@ -45,9 +45,9 @@ class LiveLightJob:
         self.redlight_lock = threading.RLock()
         self.redlight_job = Job(
             self.jobevent,
-            interval=0.05,
+            interval=0.1,
             job_name=f"redlight_{self.mode}_{time.perf_counter():3f}",
-            run_main=True,
+            run_main=False,
         )
 
         # Spooler-Job mirroring
@@ -159,20 +159,22 @@ class LiveLightJob:
             return
         con = self._connection
         if self.changed:
+            # print ("Something changed")
             with self.redlight_lock:
                 if self.update_method is not None:
                     self.update_method()
+                # print (f"We are having now {len(self.points)} points")
                 self.changed = False
-            # Now draw the stuff
             init_red(con)
 
+        # Now draw the stuff
         self.trace_redlight(con)
 
     def trace_redlight(self, con):
         # Calls light based on the set mode.
+        con.light_mode()
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
-
         move = True
         for i, e in enumerate(self.points):
             if self.stopped or self.changed:
@@ -200,8 +202,8 @@ class LiveLightJob:
                 move = False
                 continue
             con.light(x, y, long=delay_between, short=delay_between)
-        if con.light_off():
-            con.list_write_port()
+        con.light_off()
+        con.write_port()
 
     def setup_listen(self, start):
         if not self.listen:
@@ -261,14 +263,14 @@ class LiveLightJob:
             (0x8000, 0x8000 + margin),
             (0x8000, 0x8000),
         )
-        self.prepare_redlight_point(geometry, False)
+        self.prepare_redlight_point(geometry, False, "crosshair")
 
     def update_geometry(self):
         if self._geometry is None:
             self.update_crosshair()
             return
         geometry = Geomstr(self._geometry)
-        self.prepare_redlight_point(geometry, self.raw)
+        self.prepare_redlight_point(geometry, not self.raw, "geometry")
 
     def update_bounds(self):
         elems = self._gather_source()
@@ -287,7 +289,7 @@ class LiveLightJob:
             (xmin, ymax),
             (xmin, ymin),
         )
-        self.prepare_redlight_point(geometry, True)
+        self.prepare_redlight_point(geometry, True, "bounds")
 
     def update_hull(self):
         def create_hull(elemlist):
@@ -310,7 +312,7 @@ class LiveLightJob:
             self.update_crosshair()
             return
         geometry = create_hull(elems)
-        self.prepare_redlight_point(geometry, True)
+        self.prepare_redlight_point(geometry, True, "hull")
 
     def update_full(self):
         def create_full(elemlist):
@@ -335,7 +337,7 @@ class LiveLightJob:
             self.update_crosshair()
             return
         geometry = create_full(elems)
-        self.prepare_redlight_point(geometry, True)
+        self.prepare_redlight_point(geometry, True, "full")
 
     def _redlight_adjust_matrix(self):
         """
@@ -366,16 +368,22 @@ class LiveLightJob:
         redlight_adjust_matrix.post_translate(x_offset, y_offset)
         return redlight_adjust_matrix
 
-    def prepare_redlight_point(self, draw_geometry, adjust):
+    def prepare_redlight_point(self, draw_geometry, adjust, source):
         # Create independent copy
+        # draw_geometry.debug_me()
         geometry = Geomstr(draw_geometry)
+        # print (f"Entered with {geometry.bbox()} ({geometry.index} segments [{source}])")
         if adjust:
             geometry.transform(self.service.view.matrix)
+            # print (f"Adjusted to {geometry.bbox()}")
         rotate = self._redlight_adjust_matrix()
         geometry.transform(rotate)
         self.points = list(
-            geometry.as_equal_interpolated_points(distance=self.quantization)
+            geometry.as_equal_interpolated_points(
+                distance=self.quantization, expand_lines=True
+            )
         )
+        # print (f"Interpolation delivered: {len(self.points)} segments")
 
     # def process(self, con):
     #     """
@@ -405,7 +413,7 @@ class LiveLightJob:
         if not elements:
             elements = list(self.service.elements.regmarks(emphasized=True))
             self.source = "regmarks"
-        if not elements:
-            elements = list(self.service.elements.elems())
-            self.source = "elements"
+        # if not elements:
+        #     elements = list(self.service.elements.elems())
+        #     self.source = "elements"
         return elements
