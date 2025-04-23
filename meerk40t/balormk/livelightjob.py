@@ -6,6 +6,8 @@ when the elements change. It will show the updated job.
 
 This job works as a spoolerjob. Implementing all the regular calls for being a spooled job.
 """
+
+import threading
 import time
 from math import isinf
 
@@ -13,6 +15,7 @@ import numpy as np
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
+from meerk40t.kernel.jobs import Job
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
@@ -30,45 +33,55 @@ class LiveLightJob:
         raw=False,
     ):
         self.service = service
-        self.stopped = False
-        self.started = False
-        self.changed = False
-        self._last_bounds = None
-        self.priority = -1
-        self.time_submitted = time.time()
-        self.time_started = time.time()
-        self.runtime = 0
-
         self.quantization = quantization
         self.mode = mode
-        self.points = None
-        self.source = "elements"
-        if self.mode == "full":
-            self.label = "Live Full Light Job"
-            self._mode_light = self._full
-        elif self.mode == "bounds":
-            self.label = "Live Selection Light Job"
-            self._mode_light = self._bounds
-        elif self.mode == "crosshair":
-            self.label = "Simple Crosshairs"
-            self._mode_light = self._crosshairs
-        # elif self.mode == "regmarks":
-        #     self.label = "Live Regmark Light Job"
-        #     self._mode_light = self._regmarks
-        elif self.mode == "hull":
-            self.label = "Live Hull Light Job"
-            self._mode_light = self._hull
-        elif self.mode == "geometry":
-            self.label = "Element Light Job"
-            self._mode_light = self._static
-        else:
-            raise ValueError("Invalid mode.")
-
         self.listen = listen
         self.raw = raw
         self._geometry = geometry
         self._travel_speed = travel_speed
         self._jump_delay = jump_delay
+
+        # Kernel Job definition
+        self.redlight_lock = threading.RLock()
+        self.redlight_job = Job(
+            self.jobevent,
+            interval=0.05,
+            job_name=f"redlight_{self.mode}_{time.perf_counter():3f}",
+            run_main=True,
+        )
+
+        # Spooler-Job mirroring
+        self.stopped = False
+        self.started = False
+        self.priority = -1
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
+
+        # Update logic
+        self._connection = None
+        self.update_method = None
+        self.changed = False
+        self.points = None
+        self.bounded = False
+
+        methods = {
+            "full": ("Full Light Job", self.update_full),
+            "hull": ("Hull Light Job", self.update_hull),
+            "bounds": ("Selection Light job", self.update_bounds),
+            "crosshair": ("Simple Crosshairs", self.update_crosshair),
+            "geometry": ("Element Light Job", self.update_geometry),
+        }
+        if self.mode not in methods:
+            raise ValueError("Invalid mode.")
+        self.label, self.update_method = methods[self.mode]
+        if self.listen:
+            self.label = f"Live {self.label}"
+
+        # Caching of geometry to be drawn
+        self.changed = True
+        self._last_bounds = None
+        self.source = "elements"
 
     @property
     def status(self):
@@ -81,49 +94,6 @@ class LiveLightJob:
 
     def is_running(self):
         return not self.stopped
-
-    def execute(self, driver):
-        """
-        Spooler job execute.
-
-        @param driver: driver-like object
-        @return:
-        """
-        if self.stopped:
-            return True
-        if self.listen:
-            self.service.listen("emphasized", self.on_emphasis_changed)
-            self.service.listen("modified_by_tool", self.on_emphasis_changed)
-            self.service.listen("updating", self.on_emphasis_changed)
-            self.service.listen("view;realized", self.on_emphasis_changed)
-        self.time_started = time.time()
-        self.started = True
-        connection = driver.connection
-        connection.rapid_mode()
-        connection.light_mode()
-        while self.process(connection):
-            # Calls process while execute() is running.
-            if self.stopped:
-                break
-        connection.abort()
-        self.stopped = True
-        self.runtime += time.time() - self.time_started
-        if self.listen:
-            self.service.unlisten("emphasized", self.on_emphasis_changed)
-            self.service.unlisten("modified_by_tool", self.on_emphasis_changed)
-            self.service.unlisten("updating", self.on_emphasis_changed)
-            self.service.unlisten("view;realized", self.on_emphasis_changed)
-        self.service.signal("light_simulate", False)
-        if self.service.redlight_preferred:
-            connection.light_on()
-            connection.write_port()
-        else:
-            connection.light_off()
-            connection.write_port()
-        return True
-
-    def set_travel_speed(self, update_speed):
-        self._travel_speed = update_speed
 
     def stop(self):
         """
@@ -139,9 +109,8 @@ class LiveLightJob:
         result = 0
         if self.runtime != 0:
             result = self.runtime
-        else:
-            if self.is_running():
-                result = time.time() - self.time_started
+        elif self.is_running():
+            result = time.time() - self.time_started
         return result
 
     def estimate_time(self):
@@ -151,6 +120,124 @@ class LiveLightJob:
         """
         return 0
 
+    def set_travel_speed(self, update_speed):
+        self._travel_speed = update_speed
+
+    def execute(self, driver):
+        """
+        Spooler job execute.
+
+        @param driver: driver-like object
+        @return:
+        """
+        if self.stopped:
+            return True
+        self.pre_job(driver)
+        while not self.stopped:
+            time.sleep(0.05)
+        self.post_job(driver)
+        return True
+
+    def jobevent(self):
+        def init_red(con):
+            con.abort()
+            first_x, first_y = con.get_last_xy()
+            con.light_off()
+            con.write_port()
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
+            if self._travel_speed is not None:
+                con._light_speed = self._travel_speed
+                con._dark_speed = self._travel_speed
+                con._goto_speed = self._travel_speed
+            else:
+                con._light_speed = self.service.redlight_speed
+                con._dark_speed = self.service.redlight_speed
+                con._goto_speed = self.service.redlight_speed
+            con.light_mode()
+
+        if self.stopped or self._connection is None:
+            return
+        con = self._connection
+        if self.changed:
+            with self.redlight_lock:
+                if self.update_method is not None:
+                    self.update_method()
+                self.changed = False
+            # Now draw the stuff
+            init_red(con)
+
+        self.trace_redlight(con)
+
+    def trace_redlight(self, con):
+        # Calls light based on the set mode.
+        delay_dark = self.service.delay_jump_long
+        delay_between = self.service.delay_jump_short
+
+        move = True
+        for i, e in enumerate(self.points):
+            if self.stopped or self.changed:
+                # Abort due to stoppage or change, no sense to continue
+                return
+            if e is None:
+                move = True
+                continue
+            x, y = e.real, e.imag
+            if np.isnan(x) or np.isnan(y):
+                move = True
+                continue
+            x = int(x)
+            y = int(y)
+            if x < 0 or x > 0xFFFF or y < 0 or y > 0xFFFF:
+                # Our bounds are not in frame.
+                if self.bounded:
+                    # We required them in frame.
+                    continue
+                # Fix them.
+                x &= 0xFFFF
+                y &= 0xFFFF
+            if move:
+                con.dark(x, y, long=delay_dark, short=delay_dark)
+                move = False
+                continue
+            con.light(x, y, long=delay_between, short=delay_between)
+        if con.light_off():
+            con.list_write_port()
+
+    def setup_listen(self, start):
+        if not self.listen:
+            return
+        for method in ("emphasized", "modified_by_tool", "updating", "view;realized"):
+            if start:
+                self.service.listen(method, self.on_emphasis_changed)
+            else:
+                self.service.unlisten(method, self.on_emphasis_changed)
+
+    def pre_job(self, driver):
+        self.setup_listen(True)
+        self.time_started = time.time()
+        self.started = True
+        self._connection = driver.connection
+        self._connection.rapid_mode()
+        self._connection.light_mode()
+        self.update()
+        self.service.kernel.schedule(self.redlight_job)
+
+    def post_job(self, driver):
+        self.stopped = True
+        self.runtime += time.time() - self.time_started
+        self.redlight_job.cancel()
+        self.service.kernel.unschedule(self.redlight_job)
+        self.setup_listen(False)
+        if self._connection is not None:
+            self._connection.abort()
+            if self.service.redlight_preferred:
+                self._connection.light_on()
+            else:
+                self._connection.light_off()
+            self._connection.write_port()
+            self._connection = None
+            self.service.signal("light_simulate", False)
+
     def update(self):
         self.changed = True
         self.points = None
@@ -158,106 +245,11 @@ class LiveLightJob:
     def on_emphasis_changed(self, *args):
         """
         During execute the emphasis signal will call this function.
-
-        @param args:
-        @return:
         """
         self.update()
 
-    def process(self, con):
-        """
-        Called repeatedly by `execute()`
-        @param con:
-        @return:
-        """
-        if self.stopped:
-            return False
-        if self.listen:
-            # Watch for changes.
-            bounds = self.service.elements.selected_area()
-            if bounds is None or isinf(bounds[0]):
-                bounds = Node.union_bounds(
-                    list(self.service.elements.regmarks(emphasized=True))
-                )
-            if bounds is None or isinf(bounds[0]):
-                bounds = Node.union_bounds(list(self.service.elements.elems()))
-            if self._last_bounds is not None and bounds != self._last_bounds:
-                # Emphasis did not change but the bounds did. We dragged something.
-                self.changed = True
-                self.points = None
-            self._last_bounds = bounds
-
-        if self.changed:
-            # The emphasis selection has changed.
-            self.changed = False
-            con.abort()
-            first_x, first_y = con.get_last_xy()
-            con.light_off()
-            con.write_port()
-            con.goto_xy(first_x, first_y, distance=0xFFFF)
-            con.light_mode()
-
-        if self._travel_speed is not None:
-            con._light_speed = self._travel_speed
-            con._dark_speed = self._travel_speed
-            con._goto_speed = self._travel_speed
-        else:
-            con._light_speed = self.service.redlight_speed
-            con._dark_speed = self.service.redlight_speed
-            con._goto_speed = self.service.redlight_speed
-        con.light_mode()
-        # Calls light based on the set mode.
-        return self._mode_light(con)
-
-    # def _regmarks(self, con):
-    #     """
-    #     Mode light regmarks gets the elements for regmarks. Sends to light elements.
-
-    #     @param con: connection
-    #     @return:
-    #     """
-    #     elements = list(self.service.elements.regmarks(emphasized=True))
-    #     if len(elements) == 0:
-    #         elements = list(self.service.elements.regmarks())
-    #     return self._light_elements(con, elements)
-
-    def _gather_source(self):
-        self.source = "elements"
-        elements = list(self.service.elements.elems(emphasized=True))
-        if len(elements) == 0:
-            elements = list(self.service.elements.regmarks(emphasized=True))
-            self.source = "regmarks"
-        if len(elements) == 0:
-            elements = list(self.service.elements.elems())
-        return elements
-
-    def _full(self, con):
-        """
-        Mode light full gets the elements from the emphasized primary elements. Sends to light elements.
-        @param con: connection
-        @return:
-        """
-        # Full was requested.
-        elements = self._gather_source()
-        return self._light_elements(con, elements)
-
-    def _hull(self, con):
-        """
-        Mode light hull gets the convex hull. Sends to light hull.
-
-        @param con: connection
-        @return:
-        """
-        elements = self._gather_source()
-        return self._light_hull(con, elements)
-
-    def _crosshairs(self, con, margin=5000):
-        """
-        Mode light crosshairs draws crosshairs. Sends to light geometry.
-
-        @param con: connection
-        @return:
-        """
+    def update_crosshair(self):
+        margin = 5000
         geometry = Geomstr.lines(
             (0x8000, 0x8000),
             (0x8000 - margin, 0x8000),
@@ -269,30 +261,24 @@ class LiveLightJob:
             (0x8000, 0x8000 + margin),
             (0x8000, 0x8000),
         )
-        rotate = self._redlight_adjust_matrix()
-        geometry.transform(rotate)
+        self.prepare_redlight_point(geometry, False)
 
-        return self._light_geometry(con, geometry)
-
-    def _static(self, con):
+    def update_geometry(self):
+        if self._geometry is None:
+            self.update_crosshair()
+            return
         geometry = Geomstr(self._geometry)
-        rotate = self._redlight_adjust_matrix()
-        if not self.raw:
-            geometry.transform(self.service.view.matrix)
-        geometry.transform(rotate)
-        return self._light_geometry(con, geometry)
+        self.prepare_redlight_point(geometry, self.raw)
 
-    def _bounds(self, con):
-        """
-        Light the bound's geometry. Sends to light geometry.
-
-        @param con:
-        @return:
-        """
-        bounds = self._last_bounds
-        if not bounds:
-            # If no bounds give crosshairs.
-            return self._crosshairs(con)
+    def update_bounds(self):
+        elems = self._gather_source()
+        if len(elems) == 0:
+            self.update_crosshair()
+            return
+        bounds = Node.union_bounds(elems)
+        if bounds is None or isinf(bounds[0]):
+            self.update_crosshair()
+            return
         xmin, ymin, xmax, ymax = bounds
         geometry = Geomstr.lines(
             (xmin, ymin),
@@ -301,11 +287,55 @@ class LiveLightJob:
             (xmin, ymax),
             (xmin, ymin),
         )
-        rotate = self._redlight_adjust_matrix()
-        if not self.raw:
-            geometry.transform(self.service.view.matrix)
-        geometry.transform(rotate)
-        return self._light_geometry(con, geometry, bounded=True)
+        self.prepare_redlight_point(geometry, True)
+
+    def update_hull(self):
+        def create_hull(elemlist):
+            geometry = Geomstr()
+            for node in elemlist:
+                try:
+                    e = None
+                    if hasattr(node, "convex_hull"):
+                        e = node.convex_hull()
+                    if e is None:
+                        e = node.as_geometry()
+                except AttributeError:
+                    continue
+                geometry.append(e)
+            # Convert to hull.
+            return Geomstr.hull(geometry, distance=500)
+
+        elems = self._gather_source()
+        if len(elems) == 0:
+            self.update_crosshair()
+            return
+        geometry = create_hull(elems)
+        self.prepare_redlight_point(geometry, True)
+
+    def update_full(self):
+        def create_full(elemlist):
+            geometry = Geomstr()
+            for node in elemlist:
+                try:
+                    e = None
+                    if e is None and hasattr(node, "convex_hull"):
+                        e = node.convex_hull()
+                    if e is None and hasattr(node, "as_geometry"):
+                        e = node.as_geometry()
+                    if e is None and hasattr(node, "bounds"):
+                        nx, ny, mx, my = node.bounds
+                        e = Geomstr.rect(nx, ny, mx - nx, my - ny)
+                except AttributeError:
+                    continue
+                geometry.append(e)
+            return geometry
+
+        elems = self._gather_source()
+        if len(elems) == 0:
+            self.update_crosshair()
+            return
+        geometry = create_full(elems)
+        self.prepare_redlight_point(geometry, True)
 
     def _redlight_adjust_matrix(self):
         """
@@ -336,131 +366,46 @@ class LiveLightJob:
         redlight_adjust_matrix.post_translate(x_offset, y_offset)
         return redlight_adjust_matrix
 
-    def _light_geometry(self, con, geometry, bounded=False):
-        """
-        Light the current geometry.
-
-        We abort quickly if self.stopped or self.changed is set.
-
-        @param con: connection
-        @param geometry: geometry to light
-        @param bounded: Require the geometry to be properly bounded.
-        @return: True if we should continue, False if we should not.
-        """
-        delay_dark = self.service.delay_jump_long
-        delay_between = self.service.delay_jump_short
-
-        points = list(geometry.as_equal_interpolated_points(distance=self.quantization))
-        move = True
-        for i, e in enumerate(points):
-            if self.stopped:
-                # Abort due to stoppage.
-                return False
-            if self.changed:
-                # Abort due to change.
-                return True
-            if e is None:
-                move = True
-                continue
-            x, y = e.real, e.imag
-            if np.isnan(x) or np.isnan(y):
-                move = True
-                continue
-            x = int(x)
-            y = int(y)
-            if (0 > x or x > 0xFFFF) or (0 > y or y > 0xFFFF):
-                # Our bounds are not in frame.
-                if bounded:
-                    # We required them in frame.
-                    return self._crosshairs(con)
-                else:
-                    # Fix them.
-                    x = x & 0xFFFF
-                    y = y & 0xFFFF
-            if move:
-                con.dark(x, y, long=delay_dark, short=delay_dark)
-                move = False
-                continue
-            con.light(x, y, long=delay_between, short=delay_between)
-        if con.light_off():
-            con.list_write_port()
-        return True
-
-    def _light_elements(self, con, elements):
-        """
-        Light the given elements. The elements should be a node list with `as_geometry()` objects
-        @param con:
-        @param elements:
-        @return:
-        """
-        geometry = Geomstr()
-        for n in elements:
-            e = None
-            if hasattr(n, "convex_hull"):
-                e = n.convex_hull()
-            if e is None and hasattr(n, "as_geometry"):
-                e = n.as_geometry()
-
-            if e is not None:
-                geometry.append(e)
-            else:
-                if hasattr(n, "as_image"):
-                    nx, ny, mx, my = n.bounds
-                    geometry.append(Geomstr.rect(nx, ny, mx - nx, my - ny))
-        if not geometry:
-            # There are no elements, return a default crosshair.
-            return self._crosshairs(con)
-
-        redlight_matrix = self._redlight_adjust_matrix()
-        if self.stopped:
-            return False
-
-        if self.changed:
-            return True
-
-        # Move to device space.
-        if not self.raw:
+    def prepare_redlight_point(self, draw_geometry, adjust):
+        # Create independent copy
+        geometry = Geomstr(draw_geometry)
+        if adjust:
             geometry.transform(self.service.view.matrix)
+        rotate = self._redlight_adjust_matrix()
+        geometry.transform(rotate)
+        self.points = list(
+            geometry.as_equal_interpolated_points(distance=self.quantization)
+        )
 
-        # Add redlight adjustments within device space.
-        geometry.transform(redlight_matrix)
+    # def process(self, con):
+    #     """
+    #     Called repeatedly by `execute()`
+    #     @param con:
+    #     @return:
+    #     """
+    #     if self.stopped:
+    #         return False
+    #     if self.changed:
+    #         self.changed = False
+    #         if self.update_method is not None:
+    #             self.update_method()
+    #         con.abort()
+    #         first_x, first_y = con.get_last_xy()
+    #         con.light_off()
+    #         con.write_port()
+    #         con.goto_xy(first_x, first_y, distance=0xFFFF)
+    #         con.light_mode()
 
-        self._light_geometry(con, geometry)
-        if con.light_off():
-            con.list_write_port()
-        return True
+    #     self.trace_redlight(con)
+    #     return True
 
-    def _light_hull(self, con, elements):
-        """
-        Light the given elements convex hull.
-
-        @param con:
-        @param elements:
-        @return:
-        """
+    def _gather_source(self):
+        self.source = "elements"
+        elements = list(self.service.elements.elems(emphasized=True))
         if not elements:
-            # There are no elements, return a default crosshair.
-            return self._crosshairs(con)
-        if self.points is None:
-            # Convert elements to geomstr
-            geometry = Geomstr()
-            for node in elements:
-                try:
-                    e = None
-                    if hasattr(node, "convex_hull"):
-                        e = node.convex_hull()
-                    if e is None:
-                        e = node.as_geometry()
-                except AttributeError:
-                    continue
-                geometry.append(e)
-
-            # Convert to hull.
-            hull = Geomstr.hull(geometry, distance=500)
-            if not self.raw:
-                hull.transform(self.service.view.matrix)
-            hull.transform(self._redlight_adjust_matrix())
-            self.points = hull
-
-        # Light geometry.
-        return self._light_geometry(con, self.points)
+            elements = list(self.service.elements.regmarks(emphasized=True))
+            self.source = "regmarks"
+        if not elements:
+            elements = list(self.service.elements.elems())
+            self.source = "elements"
+        return elements
