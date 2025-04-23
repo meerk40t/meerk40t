@@ -239,8 +239,8 @@ class LiveLightJob:
             self.service.signal("light_simulate", False)
 
     def update(self):
-        self.changed = True
-        self.points = None
+        with self.redlight_lock:
+            self.changed = True
 
     def on_emphasis_changed(self, *args):
         """
