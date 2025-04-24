@@ -96,15 +96,21 @@ class LiveLightJob:
         return not self.stopped
 
     def stop(self):
-        """
-        Called in order to kill the spooler-job.
-        @return:
+        """Stop the spooler job.
+
+        This function sets the 'stopped' flag to True, effectively
+        terminating the job's execution.
         """
         self.stopped = True
 
     def elapsed_time(self):
-        """
-        How long is this job already running...
+        """Calculate the elapsed time of the job.
+
+        Returns the runtime if available, otherwise calculates the
+        elapsed time since the job started.
+
+        Returns:
+            float: The elapsed time in seconds.
         """
         result = 0
         if self.runtime != 0:
@@ -114,9 +120,13 @@ class LiveLightJob:
         return result
 
     def estimate_time(self):
-        """
-        Estimate how long this spooler job will require to complete.
-        @return:
+        """Estimate the remaining time for the job to complete.
+
+        For this specific job, the estimation is always 0 as it's
+        a continuous live process.
+
+        Returns:
+            int: 0, representing no estimated time.
         """
         return 0
 
@@ -124,11 +134,16 @@ class LiveLightJob:
         self._travel_speed = update_speed
 
     def execute(self, driver):
-        """
-        Spooler job execute.
+        """Execute the spooler job.
 
-        @param driver: driver-like object
-        @return:
+        This function runs the main loop of the job, continuously
+        updating and tracing the redlight until stopped.
+
+        Args:
+            driver: The driver-like object providing the connection.
+
+        Returns:
+            bool: True when the job completes (after being stopped).
         """
         if self.stopped:
             return True
@@ -139,6 +154,13 @@ class LiveLightJob:
         return True
 
     def jobevent(self):
+        """Handle redlight job events.
+
+        This function is called periodically by the redlight job.
+        It updates the redlight path if necessary and then traces
+        the path with the laser.
+        """
+
         def init_red(con):
             con.abort()
             first_x, first_y = con.get_last_xy()
@@ -171,7 +193,15 @@ class LiveLightJob:
         self.trace_redlight(con)
 
     def trace_redlight(self, con):
-        # Calls light based on the set mode.
+        """Trace the redlight path.
+
+        This function iterates through the calculated redlight points
+        and sends commands to the controller to move the laser
+        accordingly, turning the laser on and off to trace the path.
+
+        Args:
+            con: The connection to the laser controller.
+        """
         con.light_mode()
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
@@ -206,6 +236,11 @@ class LiveLightJob:
         con.write_port()
 
     def setup_listen(self, start):
+        """Set up or tear down listeners for element changes.
+
+        Args:
+            start (bool): True to start listening, False to stop.
+        """
         if not self.listen:
             return
         for method in ("emphasized", "modified_by_tool", "updating", "view;realized"):
@@ -215,6 +250,15 @@ class LiveLightJob:
                 self.service.unlisten(method, self.on_emphasis_changed)
 
     def pre_job(self, driver):
+        """Perform pre-job setup.
+
+        This function is called before the job starts executing.
+        It sets up listeners, initializes the connection, and
+        schedules the redlight job.
+
+        Args:
+            driver: The driver-like object.
+        """
         self.setup_listen(True)
         self.time_started = time.time()
         self.started = True
@@ -225,6 +269,15 @@ class LiveLightJob:
         self.service.kernel.schedule(self.redlight_job)
 
     def post_job(self, driver):
+        """Perform post-job cleanup.
+
+        This function is called after the job finishes executing.
+        It stops listening, cancels the redlight job, and resets
+        the connection.
+
+        Args:
+            driver: The driver-like object.
+        """
         self.stopped = True
         self.runtime += time.time() - self.time_started
         self.redlight_job.cancel()
@@ -241,16 +294,24 @@ class LiveLightJob:
             self.service.signal("light_simulate", False)
 
     def update(self):
+        """Mark the redlight path as changed.
+
+        This function sets the 'changed' flag to True, indicating
+        that the redlight path needs to be recalculated.
+        """
         with self.redlight_lock:
             self.changed = True
 
     def on_emphasis_changed(self, *args):
-        """
-        During execute the emphasis signal will call this function.
+        """Handle emphasis changes.
+
+        This function is called when the emphasis of elements changes.
+        It triggers an update of the redlight path.
         """
         self.update()
 
     def update_crosshair(self):
+        """Update the redlight path to display crosshairs. Fallback case when nohing can be displayed"""
         margin = 5000
         geometry = Geomstr.lines(
             (0x8000, 0x8000),
@@ -266,33 +327,47 @@ class LiveLightJob:
         self.prepare_redlight_point(geometry, False, "crosshair")
 
     def update_geometry(self):
+        """Update the redlight path based on the provided geometry. Static, won't be changed."""
         if self._geometry is None:
             self.update_crosshair()
             return
         geometry = Geomstr(self._geometry)
         self.prepare_redlight_point(geometry, not self.raw, "geometry")
 
-    def update_bounds(self):
+    def _update_common(self, method, source):
         elems = self._gather_source()
         if len(elems) == 0:
             self.update_crosshair()
             return
-        bounds = Node.union_bounds(elems)
-        if bounds is None or isinf(bounds[0]):
+        geometry = method(elems)
+        if geometry is None:
             self.update_crosshair()
             return
-        xmin, ymin, xmax, ymax = bounds
-        geometry = Geomstr.lines(
-            (xmin, ymin),
-            (xmax, ymin),
-            (xmax, ymax),
-            (xmin, ymax),
-            (xmin, ymin),
-        )
-        self.prepare_redlight_point(geometry, True, "bounds")
+
+        self.prepare_redlight_point(geometry, True, source)
+
+    def update_bounds(self):
+        """Update the redlight path to outline the bounds of selected elements."""
+
+        def create_bounds_geometry(elemlist):
+            bounds = Node.union_bounds(elemlist)
+            if bounds is None or isinf(bounds[0]):
+                return None
+            xmin, ymin, xmax, ymax = bounds
+            return Geomstr.lines(
+                (xmin, ymin),
+                (xmax, ymin),
+                (xmax, ymax),
+                (xmin, ymax),
+                (xmin, ymin),
+            )
+
+        self._update_common(create_bounds_geometry, "bounds")
 
     def update_hull(self):
-        def create_hull(elemlist):
+        """Update the redlight path to trace the convex hull of selected elements."""
+
+        def create_hull_geometry(elemlist):
             geometry = Geomstr()
             for node in elemlist:
                 try:
@@ -304,18 +379,15 @@ class LiveLightJob:
                 except AttributeError:
                     continue
                 geometry.append(e)
-            # Convert to hull.
-            return Geomstr.hull(geometry, distance=500)
+            # If not empty return hull
+            return None if geometry.index == 0 else Geomstr.hull(geometry, distance=500)
 
-        elems = self._gather_source()
-        if len(elems) == 0:
-            self.update_crosshair()
-            return
-        geometry = create_hull(elems)
-        self.prepare_redlight_point(geometry, True, "hull")
+        self._update_common(create_hull_geometry, "hull")
 
     def update_full(self):
-        def create_full(elemlist):
+        """Update the redlight path to trace the full geometry of selected elements."""
+
+        def create_full_geometry(elemlist):
             geometry = Geomstr()
             for node in elemlist:
                 try:
@@ -330,23 +402,19 @@ class LiveLightJob:
                 except AttributeError:
                     continue
                 geometry.append(e)
-            return geometry
+            return None if geometry.index == 0 else geometry
 
-        elems = self._gather_source()
-        if len(elems) == 0:
-            self.update_crosshair()
-            return
-        geometry = create_full(elems)
-        self.prepare_redlight_point(geometry, True, "full")
+        self._update_common(create_full_geometry, "full")
 
     def _redlight_adjust_matrix(self):
-        """
-        Calculate the redlight adjustment matrix which is the product of the redlight offset values and the
-        redlight rotation value.
+        """Calculate the redlight adjustment matrix.
 
-        @return:
-        """
+        The matrix is calculated based on the redlight offset and
+        rotation values.
 
+        Returns:
+            Matrix: The redlight adjustment matrix.
+        """
         x_offset = float(
             Length(
                 self.service.redlight_offset_x,
@@ -369,7 +437,17 @@ class LiveLightJob:
         return redlight_adjust_matrix
 
     def prepare_redlight_point(self, draw_geometry, adjust, source):
-        # Create independent copy
+        """Prepare the redlight points for tracing.
+
+        This function takes the draw geometry, applies transformations
+        if necessary, and interpolates the geometry to generate a
+        list of points for the redlight to trace.
+
+        Args:
+            draw_geometry (Geomstr): The geometry to trace.
+            adjust (bool): Whether to apply view transformations.
+            source (str): The source of the geometry.
+        """
         # draw_geometry.debug_me()
         geometry = Geomstr(draw_geometry)
         # print (f"Entered with {geometry.bbox()} ({geometry.index} segments [{source}])")
@@ -385,29 +463,15 @@ class LiveLightJob:
         )
         # print (f"Interpolation delivered: {len(self.points)} segments")
 
-    # def process(self, con):
-    #     """
-    #     Called repeatedly by `execute()`
-    #     @param con:
-    #     @return:
-    #     """
-    #     if self.stopped:
-    #         return False
-    #     if self.changed:
-    #         self.changed = False
-    #         if self.update_method is not None:
-    #             self.update_method()
-    #         con.abort()
-    #         first_x, first_y = con.get_last_xy()
-    #         con.light_off()
-    #         con.write_port()
-    #         con.goto_xy(first_x, first_y, distance=0xFFFF)
-    #         con.light_mode()
-
-    #     self.trace_redlight(con)
-    #     return True
-
     def _gather_source(self):
+        """Gather the source elements for redlight tracing.
+
+        This function determines the source elements based on emphasis
+        and returns them as a list.
+
+        Returns:
+            list: A list of source elements.
+        """
         self.source = "elements"
         elements = list(self.service.elements.elems(emphasized=True))
         if not elements:
