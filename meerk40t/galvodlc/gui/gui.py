@@ -1,6 +1,6 @@
 def plugin(service, lifecycle):
     if lifecycle == "service":
-        return "provider/device/balor"
+        return "provider/device/galvo"
     if lifecycle == "invalidate":
         return not service.has_feature("wx")
     if lifecycle == "added":
@@ -11,7 +11,6 @@ def plugin(service, lifecycle):
             icon_balor_bounds,
             icon_balor_full,
             icon_balor_hull,
-            icon_balor_regmarks,
             icons8_center_of_gravity,
             icons8_computer_support,
             icons8_connected,
@@ -21,12 +20,12 @@ def plugin(service, lifecycle):
             icons8_light_on,
         )
 
-        from .balorconfig import BalorConfiguration
-        from .balorcontroller import BalorController
-        from .baloroperationproperties import BalorOperationPanel
+        from .balorconfig import GalvoConfiguration
+        from .balorcontroller import GalvoController
+        from .baloroperationproperties import GalvoOperationPanel
 
-        service.register("window/Controller", BalorController)
-        service.register("window/Configuration", BalorConfiguration)
+        service.register("window/Controller", GalvoController)
+        service.register("window/Configuration", GalvoConfiguration)
 
         service.register("winpath/Controller", service)
         service.register("winpath/Configuration", service)
@@ -59,11 +58,11 @@ def plugin(service, lifecycle):
                 },
             )
 
-        service.register("property/RasterOpNode/Balor", BalorOperationPanel)
-        service.register("property/CutOpNode/Balor", BalorOperationPanel)
-        service.register("property/EngraveOpNode/Balor", BalorOperationPanel)
-        service.register("property/ImageOpNode/Balor", BalorOperationPanel)
-        service.register("property/DotsOpNode/Balor", BalorOperationPanel)
+        service.register("property/RasterOpNode/Galvo", GalvoOperationPanel)
+        service.register("property/CutOpNode/Galvo", GalvoOperationPanel)
+        service.register("property/EngraveOpNode/Galvo", GalvoOperationPanel)
+        service.register("property/ImageOpNode/Galvo", GalvoOperationPanel)
+        service.register("property/DotsOpNode/Galvo", GalvoOperationPanel)
         service.register(
             "button/control/Light_On",
             {

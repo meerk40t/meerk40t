@@ -8,7 +8,7 @@ from ..balor_params import Parameters
 _ = wx.GetTranslation
 
 
-class BalorOperationPanel(ScrolledPanel):
+class GalvoOperationPanel(ScrolledPanel):
     name = "Galvo"
 
     def __init__(self, *args, context=None, node=None, **kwds):
