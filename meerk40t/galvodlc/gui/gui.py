@@ -20,9 +20,9 @@ def plugin(service, lifecycle):
             icons8_light_on,
         )
 
-        from .balorconfig import GalvoConfiguration
-        from .balorcontroller import GalvoController
-        from .baloroperationproperties import GalvoOperationPanel
+        from .galvoconfig import GalvoConfiguration
+        from .galvocontroller import GalvoController
+        from .galvooperationproperties import GalvoOperationPanel
 
         service.register("window/Controller", GalvoController)
         service.register("window/Configuration", GalvoConfiguration)

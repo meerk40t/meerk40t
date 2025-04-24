@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import ScrolledPanel
 
-from ..balor_params import Parameters
+from ..galvo_params import Parameters
 
 _ = wx.GetTranslation
 
