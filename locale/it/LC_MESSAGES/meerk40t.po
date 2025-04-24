@@ -22308,3 +22308,15 @@ msgstr "Taglia l'immagine con una linea"
 #: meerk40t/image/imagetools.py:1711
 msgid "Save the processed image to disk"
 msgstr "Salva l'immagine elaborata su disco"
+
+#: meerk40t/core/elements/elements.py:319
+msgid "Classify elements on fill"
+msgstr "Classifica gli elementi in base al riempimento"
+
+#: meerk40t/core/elements/elements.py:322
+msgid "Usually MK will use the fill attribute as an indicator for a raster and will not distinguish between individual colors."
+msgstr "Di solito MK utilizzerà l'attributo di riempimento come indicatore per una rasterizzazione e non distinguerà tra colori individuali."
+
+#: meerk40t/core/elements/elements.py:326
+msgid "If you want to distinguish between different raster types then activate this option."
+msgstr "Se desideri distinguere tra diversi tipi di raster, attiva questa opzione."

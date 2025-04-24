@@ -181,12 +181,18 @@ def init_commands(kernel):
     @self.console_argument("x_pos", type=Length, help=_("X-coordinate of center"))
     @self.console_argument("y_pos", type=Length, help=_("Y-coordinate of center"))
     @self.console_argument("rx", type=Length, help=_("Primary radius of ellipse"))
-    @self.console_argument("ry", type=Length, help=_("Secondary radius of ellipse (default equal to primary radius=circle)"))
-    @self.console_argument("start_angle", type=Angle, help=_("Start angle of arc (default 0°)"))
-    @self.console_argument("end_angle", type=Angle, help=_("End angle of arc (default 360°)"))
-    @self.console_option(
-        "rotation", "r", type=Angle, help=_("Rotation of arc")
+    @self.console_argument(
+        "ry",
+        type=Length,
+        help=_("Secondary radius of ellipse (default equal to primary radius=circle)"),
     )
+    @self.console_argument(
+        "start_angle", type=Angle, help=_("Start angle of arc (default 0°)")
+    )
+    @self.console_argument(
+        "end_angle", type=Angle, help=_("End angle of arc (default 360°)")
+    )
+    @self.console_option("rotation", "r", type=Angle, help=_("Rotation of arc"))
     @self.console_command(
         "arc",
         help=_("arc <cx> <cy> <rx> <ry> <start> <end>"),
@@ -195,7 +201,18 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_arc(
-        channel, _, x_pos, y_pos, rx, ry=None, start_angle=None, end_angle=None, rotation=None, data=None, post=None, **kwargs
+        channel,
+        _,
+        x_pos,
+        y_pos,
+        rx,
+        ry=None,
+        start_angle=None,
+        end_angle=None,
+        rotation=None,
+        data=None,
+        post=None,
+        **kwargs,
     ):
         if start_angle is None:
             start_angle = Angle("0deg")
@@ -211,7 +228,7 @@ def init_commands(kernel):
         cy = float(y_pos)
         geom = Geomstr()
         geom.arc_as_cubics(
-            start_t=start_angle.radians, 
+            start_t=start_angle.radians,
             end_t=end_angle.radians,
             rx=rx_val,
             ry=ry_val,
@@ -656,7 +673,7 @@ def init_commands(kernel):
                 height=500,
             )
         except Exception:
-            pass # Not relevant...
+            pass  # Not relevant...
 
     @self.console_argument("prop", type=str, help=_("property to set"))
     @self.console_argument("new_value", type=str, help=_("new property value"))
@@ -681,7 +698,7 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        if prop is None or (prop == "?" and new_value=="?"):
+        if prop is None or (prop == "?" and new_value == "?"):
             channel(_("You need to provide the property to set."))
             if prop == "?":
                 identified = []
@@ -695,7 +712,9 @@ def init_commands(kernel):
                             continue
                         prop_str = f"{prop_str}, {d}"
                     channel(prop_str)
-                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
+                channel(
+                    "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
+                )
             return
         classify_required = False
         prop = prop.lower()
@@ -769,7 +788,9 @@ def init_commands(kernel):
                     if prop in ("x", "y"):
                         if not e.can_move(self.lock_allows_move):
                             channel(
-                                _("Element can not be moved: {name}").format(name=str(e))
+                                _("Element can not be moved: {name}").format(
+                                    name=str(e)
+                                )
                             )
                             continue
                         # We need to adjust the matrix
@@ -795,7 +816,9 @@ def init_commands(kernel):
                             continue
                         if hasattr(e, "can_scale") and not e.can_scale:
                             channel(
-                                _("Element can not be scaled: {name}").format(name=str(e))
+                                _("Element can not be scaled: {name}").format(
+                                    name=str(e)
+                                )
                             )
                             continue
                         if hasattr(e, "matrix") and hasattr(e, "bounds"):
@@ -865,7 +888,9 @@ def init_commands(kernel):
                                 delattr(e, "wxfont")
                                 text_elems.append(e)
                         if prop in ("mktext", "mkfont"):
-                            for property_op in self.kernel.lookup_all("path_updater/.*"):
+                            for property_op in self.kernel.lookup_all(
+                                "path_updater/.*"
+                            ):
                                 property_op(self.kernel.root, e)
                         if prop in (
                             "dpi",
@@ -935,7 +960,7 @@ def init_commands(kernel):
         if not data:
             channel(_("No selected operations."))
             return
-        if prop is None or (prop == "?" and new_value=="?"):
+        if prop is None or (prop == "?" and new_value == "?"):
             channel(_("You need to provide the property to set."))
             if prop == "?":
                 identified = []
@@ -949,7 +974,9 @@ def init_commands(kernel):
                             continue
                         prop_str = f"{prop_str}, {d}"
                     channel(prop_str)
-                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
+                channel(
+                    "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
+                )
             return
         prop = prop.lower()
         if len(new_value) == 0:
@@ -981,7 +1008,6 @@ def init_commands(kernel):
                 return
             new_value = testval
             prevalidated = True
-
 
         changed = []
         # _("Update property")
@@ -1029,7 +1055,6 @@ def init_commands(kernel):
                                 "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
                             ).format(val=new_value, field=prop, oldval=oldval)
                         )
-
 
                 else:
                     channel(
@@ -1363,7 +1388,9 @@ def init_commands(kernel):
         with self.undoscope("Set stroke-width"):
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_width = stroke_width
                 try:
@@ -1396,7 +1423,9 @@ def init_commands(kernel):
         with self.undoscope("Update stroke-scale"):
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
@@ -1700,7 +1729,9 @@ def init_commands(kernel):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = None
@@ -1712,7 +1743,9 @@ def init_commands(kernel):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = Color(color)
@@ -1803,13 +1836,14 @@ def init_commands(kernel):
             return "elements", data
         # _("Set fill")
         with self.undoscope("Set fill"):
-
             if color == "none":
                 self.set_start_time("fill")
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = None
@@ -1821,7 +1855,9 @@ def init_commands(kernel):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = Color(color)
@@ -2626,15 +2662,26 @@ def init_commands(kernel):
                 self.first_emphasized = None
         return "elements", data
 
-    @self.console_argument("tolerance", type=str, help=_("Tolerance to stitch paths together"))
-    @self.console_option("keep", "k", type=bool, action="store_true", default=False, help=_("Keep original paths"))
+    @self.console_argument(
+        "tolerance", type=str, help=_("Tolerance to stitch paths together")
+    )
+    @self.console_option(
+        "keep",
+        "k",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Keep original paths"),
+    )
     @self.console_command(
         "stitch",
         help=_("stitch selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def stitched(command, channel, _, data=None, tolerance=None, keep=None, post=None, **kwargs):
+    def stitched(
+        command, channel, _, data=None, tolerance=None, keep=None, post=None, **kwargs
+    ):
         def _prepare_stitching_params(channel, data, tolerance, keep):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -2652,7 +2699,7 @@ def init_commands(kernel):
                     channel(f"Invalid tolerance value: {tolerance}")
                     return data, tolerance, keep, False
             return data, tolerance_val, keep, True
-        
+
         def stitcheable_nodes(data, tolerance) -> list:
             out = []
             geoms = []
@@ -2662,6 +2709,8 @@ def init_commands(kernel):
                     continue
                 for g1 in node.as_geometry().as_contiguous():
                     geoms.append((idx, g1))
+            if tolerance == 0:
+                tolerance = 1e-6
             for idx1, (nodeidx1, g1) in enumerate(geoms):
                 for idx2 in range(idx1 + 1, len(geoms)):
                     nodeidx2 = geoms[idx2][0]
@@ -2671,10 +2720,10 @@ def init_commands(kernel):
                     lp1 = g1.last_point
                     lp2 = g2.last_point
                     if (
-                        abs(lp1 - lp2) <= tolerance or
-                        abs(lp1 - fp2) <= tolerance or
-                        abs(fp1 - fp2) <= tolerance or
-                        abs(fp1 - lp2) <= tolerance 
+                        abs(lp1 - lp2) <= tolerance
+                        or abs(lp1 - fp2) <= tolerance
+                        or abs(fp1 - fp2) <= tolerance
+                        or abs(fp1 - lp2) <= tolerance
                     ):
                         if nodeidx1 not in out:
                             out.append(nodeidx1)
@@ -2683,7 +2732,9 @@ def init_commands(kernel):
 
             return [data[idx] for idx in out]
 
-        data, tolerance, keep, valid = _prepare_stitching_params(channel, data, tolerance, keep)
+        data, tolerance, keep, valid = _prepare_stitching_params(
+            channel, data, tolerance, keep
+        )
         if not valid:
             return
         s_data = stitcheable_nodes(data, tolerance)
@@ -2701,7 +2752,7 @@ def init_commands(kernel):
             default_fill = None
             for node in s_data:
                 if hasattr(node, "as_geometry"):
-                    geom : Geomstr = node.as_geometry()
+                    geom: Geomstr = node.as_geometry()
                     geoms.extend(iter(geom.as_contiguous()))
                     if default_stroke is None and hasattr(node, "stroke"):
                         default_stroke = node.stroke
@@ -2728,8 +2779,10 @@ def init_commands(kernel):
                     )
                     data_out.append(node)
             new_len = len(data_out)
-            channel(f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths")
-        
+            channel(
+                f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths"
+            )
+
         post.append(classify_new(data_out))
         self.set_emphasis(data_out)
         return "elements", data_out

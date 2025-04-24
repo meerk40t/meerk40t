@@ -188,93 +188,75 @@ def remove(s, i):
 
 
 def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
-    action_list = list(geometry_list)
-    result_list = []
-    start_points = []
-    end_points = []
-    anychanges = True
-    were_stitches = False
-    iteration_loop = 0
-    while anychanges:
-        iteration_loop += 1
-        # print (f"Loop {iteration_loop}")
-        anychanges = False
-        for g1 in action_list:
-            if g1 is None:
-                continue
-            fp1 = g1.first_point
-            lp1 = g1.last_point
-            if fp1 is None or lp1 is None:
-                continue
-            was_stitched = False
-            for idx, g2 in enumerate(result_list):
-                fp2 = start_points[idx]
-                lp2 = end_points[idx]
-                # end - start: append
-                # end - end : append reverse
-                # start - start: insert reverse
-                # start - end: insert
-                dist_e_s = abs(lp2 - fp1)
-                dist_e_e = abs(lp2 - lp1)
-                dist_s_s = abs(fp2 - fp1)
-                dist_s_e = abs(fp2 - lp1)
-                # print (f"test #{idx} ({fp1.real:.2f},{fp1.imag:.2f})->({lp1.real:.2f},{lp1.imag:.2f}) versus ({fp2.real:.2f},{fp2.imag:.2f})->({lp2.real:.2f},{lp2.imag:.2f})")
-                # print (f"Gaps: e -> s: {dist_e_s:.3f}, e -> e: {dist_e_e:.3f}, s -> s: {dist_s_s:.3f},s -> e: {dist_s_e:.3f},")
-                if dist_e_s <= tolerance:
-                    # append
-                    if dist_e_s > 0:
-                        g2.line(lp2, fp1)
-                    g2.append(g1, end=False)
-                    was_stitched = True
-                elif dist_e_e <= tolerance:
-                    # append reverse
-                    g1.reverse()
-                    if dist_e_e > 0:
-                        g2.line(lp2, lp1)
-                    g2.append(g1, end=False)
-                    was_stitched = True
-                elif dist_s_s <= tolerance:
-                    # insert reverse
-                    g1.reverse()
-                    if dist_s_s > 0:
-                        g1.line(fp1, fp2)
-                    g2.insert(0, g1.segments[: g1.index])
-                    was_stitched = True
-                elif dist_s_e <= tolerance:
-                    # insert
-                    if dist_s_e > 0:
-                        g1.line(lp1, fp2)
-                    g2.insert(0, g1.segments[: g1.index])
-                    was_stitched = True
-                if was_stitched:
-                    # print ("stitched")
-                    # g2.debug_me()
-                    anychanges = True
-                    start_points[idx] = g2.first_point
-                    end_points[idx] = g2.last_point
-                    result_list[idx] = g2
-                    were_stitches = True
-                    break
+    """
+    Stitches geometries within the given tolerance.
 
-            if not was_stitched:
-                # print ("Unchanged")
-                result_list.append(g1)
-                start_points.append(fp1)
-                end_points.append(lp1)
-        if anychanges:
-            action_list = list(result_list)
-            result_list.clear()
-            start_points.clear()
-            end_points.clear()
-    if were_stitches:
-        for g1 in result_list:
-            fp1 = g1.first_point
-            lp1 = g1.last_point
-            dist_e_s = abs(lp1 - fp1)
-            if 0 < dist_e_s <= tolerance:
-                g1.line(lp1, fp1)
-        return result_list
-    return None
+    Args:
+        geometry_list: List of Geomstr objects to stitch.
+        tolerance: Maximum distance between endpoints to consider a stitch.
+
+    Returns:
+        List of stitched Geomstr objects, or None if no stitches were made.
+    """
+
+    geometries = [g for g in geometry_list if g is not None]
+    if not geometries:
+        return None
+    if tolerance == 0:
+        tolerance = 1e-6
+
+    stitched_geometries = []
+    while geometries:
+        g1 = geometries.pop(0)
+        stitched = False
+        for i, g2 in enumerate(stitched_geometries):
+            for reverse1 in (False, True):
+                for reverse2 in (False, True):
+                    g1_start = g1.last_point if reverse1 else g1.first_point
+                    g1_end = g1.first_point if reverse1 else g1.last_point
+                    g2_start = g2.last_point if reverse2 else g2.first_point
+                    g2_end = g2.first_point if reverse2 else g2.last_point
+
+                    if (
+                        g1_start is None
+                        or g1_end is None
+                        or g2_start is None
+                        or g2_end is None
+                    ):
+                        continue
+                    if abs(g2_end - g1_start) <= tolerance:
+                        if abs(g2_end - g1_start) > 0:
+                            g2.line(g2_end, g1_start)
+                        if reverse1:
+                            g1.reverse()
+                        g2.append(g1, end=False)
+                        stitched_geometries[i] = g2
+                        stitched = True
+                        break
+                    elif abs(g2_start - g1_end) <= tolerance:
+                        if abs(g2_start - g1_end) > 0:
+                            g1.line(g1_end, g2_start)
+                        if reverse1:
+                            g1.reverse()
+                        g2.insert(0, g1.segments[: g1.index])
+                        stitched_geometries[i] = g2
+                        stitched = True
+                        break
+                if stitched:
+                    break
+            if stitched:
+                break
+
+        if not stitched:
+            stitched_geometries.append(g1)
+
+    # Close any remaining small gaps between start and end points.
+    for g in stitched_geometries:
+        if 0 < abs(g.last_point - g.first_point) <= tolerance:
+            g.line(g.last_point, g.first_point)
+
+    return stitched_geometries
+
 
 
 class Simplifier:
@@ -1290,6 +1272,8 @@ class Scanbeam:
         @param tolerance: wiggle room, in favor of inside
         @return:
         """
+        if tolerance == 0:
+            tolerance == 1e-6
         self.scanline_to(y)
         for i in range(1, len(self._active_edge_list), 2):
             prior = self._active_edge_list[i - 1]
