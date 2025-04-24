@@ -14,6 +14,7 @@ def plugin(service, lifecycle=None):
             "provider/device/lhystudios",
             "provider/device/grbl",
             "provider/device/balor",
+            "provider/device/galvo",
             "provider/device/newly",
             "provider/device/moshi",
         )

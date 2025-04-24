@@ -13,6 +13,7 @@ def plugin(service, lifecycle):
             "provider/device/lhystudios",
             "provider/device/grbl",
             "provider/device/balor",
+            "provider/device/galvo",
             "provider/device/newly",
             "provider/device/moshi",
         )
