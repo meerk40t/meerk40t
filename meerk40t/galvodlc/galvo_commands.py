@@ -4,16 +4,17 @@ import struct
 import time
 
 from usb.core import NoBackendError
+
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.galvodlc.driver import GalvoDriver
 from meerk40t.galvodlc.livelightjob import LiveLightJob
-from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(service, lifecycle):
     if lifecycle == "service":
-        return "provider/device/balor"
+        return "provider/device/galvo"
     if lifecycle != "added":
         return
 
