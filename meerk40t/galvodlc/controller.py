@@ -9,6 +9,7 @@ import struct
 import threading
 import time
 from copy import copy
+
 from usb.core import NoBackendError
 
 from meerk40t.galvodlc.mock_connection import MockConnection
@@ -364,7 +365,9 @@ class GalvoController:
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
                 self.connection = USBConnection(self.usb_log)
-                print(f"Setting: {self.service.setting(bool, 'usb_debug', False)}")
+                print(
+                    f"Galvo-Debug-Setting: {self.service.setting(bool, 'usb_debug', False)}"
+                )
                 if self.service.setting(bool, "usb_debug", False):
                     name = self.service.safe_label
                     self.connection.recv = self.service.channel(f"{name}/usb_data")
