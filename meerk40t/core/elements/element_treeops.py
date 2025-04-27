@@ -748,6 +748,8 @@ def init_tree(kernel):
             return
         with self.undoscope("Convert to Image"):
             for n in data:
+                if n.type not in op_parent_nodes:
+                    continue
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op image"
                 n.replace_node(keep_children=True, **new_settings)
@@ -766,6 +768,8 @@ def init_tree(kernel):
             return
         with self.undoscope("Convert to Raster"):
             for n in data:
+                if n.type not in op_parent_nodes:
+                    continue
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op raster"
                 n.replace_node(keep_children=True, **new_settings)
@@ -784,6 +788,8 @@ def init_tree(kernel):
             return
         with self.undoscope("Convert to Engrave"):
             for n in data:
+                if n.type not in op_parent_nodes:
+                    continue
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op engrave"
                 n.replace_node(keep_children=True, **new_settings)
@@ -802,6 +808,8 @@ def init_tree(kernel):
             return
         with self.undoscope("Convert to Cut"):
             for n in data:
+                if n.type not in op_parent_nodes:
+                    continue
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op cut"
                 n.replace_node(keep_children=True, **new_settings)
@@ -820,6 +828,8 @@ def init_tree(kernel):
             return
         with self.undoscope("Convert to Dots"):
             for n in data:
+                if n.type not in op_parent_nodes:
+                    continue
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op dots"
                 n.replace_node(keep_children=True, **new_settings)
