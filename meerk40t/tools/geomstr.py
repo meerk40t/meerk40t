@@ -258,6 +258,7 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
     return stitched_geometries
 
 
+
 class Simplifier:
     # Copyright (c) 2014 Elliot Hallmark
     # The MIT License (MIT)
@@ -383,7 +384,7 @@ class Simplifier:
                 areas[min_vert] = right_area
 
             if min_vert > 1:
-                # cant try/except because 0-1=-1 is a valid index
+                # can't try/except because 0-1=-1 is a valid index
                 left_area = triangle_area(
                     self.pts[i[min_vert - 2]],
                     self.pts[i[min_vert - 1]],
@@ -2292,7 +2293,7 @@ class Geomstr:
         if segments:
             yield segments
 
-    def as_equal_interpolated_points(self, distance=100):
+    def as_equal_interpolated_points(self, distance=100, expand_lines=False):
         """
         Regardless of specified distance this will always give the start and end points of each node within the
         geometry. It will not duplicate the nodes if the start of one is the end of another. If the start and end
@@ -2325,7 +2326,21 @@ class Geomstr:
                 at_start = True
                 continue
             elif seg_type == TYPE_LINE:
-                pass
+                if expand_lines:
+                    ts = np.linspace(0, 1, 1000)
+                    pts = self._line_position(e, ts)
+                    distances = np.abs(pts[:-1] - pts[1:])
+                    distances = np.cumsum(distances)
+                    max_distance = distances[-1]
+                    dist_values = np.linspace(
+                        0,
+                        max_distance,
+                        int(np.ceil(max_distance / distance)),
+                        endpoint=False,
+                    )[1:]
+                    near_t = np.searchsorted(distances, dist_values, side="right")
+                    pts = pts[near_t]
+                    yield from pts
             elif seg_type == TYPE_QUAD:
                 ts = np.linspace(0, 1, 1000)
                 pts = self._quad_position(e, ts)
@@ -3564,7 +3579,7 @@ class Geomstr:
 
     def _cubic_length_via_quad(self, line):
         """
-        If we have scipy.integrate availible, use quad from that to solve this.
+        If we have scipy.integrate available, use quad from that to solve this.
 
         @param line:
         @return:
@@ -4407,7 +4422,7 @@ class Geomstr:
         return wh, x_vals + y_vals * 1j, ta_hit, tb_hit
 
     #######################
-    # Geom Tranformations
+    # Geom Transformations
     #######################
 
     def transform(self, mx, e=None):

@@ -1,6 +1,7 @@
 import math
 from functools import lru_cache
 
+
 class CylinderModifier:
     def __init__(self, wrapped_instance, service):
         self._wrapped_instance = wrapped_instance
