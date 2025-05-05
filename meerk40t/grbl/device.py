@@ -7,6 +7,7 @@ Registers relevant commands and options.
 
 from time import sleep
 
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -16,7 +17,6 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -258,6 +258,7 @@ class GRBLDevice(Service, Status):
                 choice_dict["display"] = ["pyserial-not-installed"]
 
         from platform import system
+
         is_linux = system() == "Linux"
         choices = [
             {
@@ -271,7 +272,7 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
-                "exclusive": not is_linux, 
+                "exclusive": not is_linux,
             },
             {
                 "attr": "baud_rate",
@@ -506,7 +507,29 @@ class GRBLDevice(Service, Status):
                 "dynamic": self.cool_helper,
                 "signals": "coolant_changed",
             },
+            {
+                "attr": "supports_rotary_roller",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Supports roller type rotaries"),
+                "tip": _(
+                    "Supports roller type rotaries with simple axis motor replacement"
+                ),
+                "section": "_999_" + _("Rotary-Support"),
+            },
+            {
+                "attr": "supports_rotary_chuck",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Supports chuck type rotaries"),
+                "tip": _("Supports chuck type rotaries with own microstepper driver"),
+                "section": "_999_" + _("Rotary-Support"),
+            },
         ]
+        self.register_choices("lhy_device_features", choices)
+
         self.register_choices("grbl-advanced", choices)
 
         choices = [
@@ -901,9 +924,7 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
-        @self.console_argument(
-            "index", type=int, help=_("macro to run (1-5).")
-        )
+        @self.console_argument("index", type=int, help=_("macro to run (1-5)."))
         @self.console_command(
             "macro",
             help=_("Send a predefined macro to the device."),
@@ -916,11 +937,11 @@ class GRBLDevice(Service, Status):
                     macrotext = self.setting(str, f"macro_{idx}", "")
                     channel(f"Content of macro {idx + 1}:")
                     for no, line in enumerate(macrotext.splitlines()):
-                        channel (f"{no:2d}: {line}")
+                        channel(f"{no:2d}: {line}")
                 return
             err = True
             try:
-                macro_index = int(index) -1
+                macro_index = int(index) - 1
                 if 0 <= macro_index <= 4:
                     err = False
             except ValueError:

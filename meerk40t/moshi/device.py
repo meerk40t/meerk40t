@@ -7,6 +7,7 @@ Registers relevant commands and options.
 """
 import meerk40t.constants as mkconst
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -15,7 +16,6 @@ from ..core.units import Length
 from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class MoshiDevice(Service, Status):
@@ -210,8 +210,13 @@ class MoshiDevice(Service, Status):
                 "type": bool,
                 "label": _("Use legacy raster method"),
                 "tip": (
-                    _("Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)") + "\n" +
-                    _("Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)")
+                    _(
+                        "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
+                    )
+                    + "\n"
+                    + _(
+                        "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
+                    )
                 ),
                 "section": "_20_Behaviour",
             },
@@ -255,6 +260,26 @@ class MoshiDevice(Service, Status):
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
                 "signals": "coolant_changed",
+            },
+            {
+                "attr": "supports_rotary_roller",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Supports roller type rotaries"),
+                "tip": _(
+                    "Supports roller type rotaries with simple axis motor replacement"
+                ),
+                "section": "_999_" + _("Rotary-Support"),
+            },
+            {
+                "attr": "supports_rotary_chuck",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Supports chuck type rotaries"),
+                "tip": _("Supports chuck type rotaries with own microstepper driver"),
+                "section": "_999_" + _("Rotary-Support"),
             },
         ]
         self.register_choices("coolant", choices)
@@ -485,10 +510,12 @@ class MoshiDevice(Service, Status):
         return {
             "split_crossover": True,
             "unsupported_opt": (
-                mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V, mkconst.RASTER_SPIRAL,
+                mkconst.RASTER_GREEDY_H,
+                mkconst.RASTER_GREEDY_V,
+                mkconst.RASTER_SPIRAL,
             ),  # Greedy loses registration way too often to be reliable
-            "gantry" : True,
-            "legacy" : self.legacy_raster,
+            "gantry": True,
+            "legacy": self.legacy_raster,
         }
 
     def cool_helper(self, choice_dict):

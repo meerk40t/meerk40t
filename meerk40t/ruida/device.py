@@ -5,6 +5,7 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -16,7 +17,6 @@ from .mock_connection import MockConnection
 from .serial_connection import SerialConnection
 from .tcp_connection import TCPConnection
 from .udp_connection import UDPConnection
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class RuidaDevice(Service):
@@ -264,6 +264,7 @@ class RuidaDevice(Service):
                 choice_dict["display"] = ["pyserial-not-installed"]
 
         from platform import system
+
         is_linux = system() == "Linux"
 
         choices = [
@@ -278,7 +279,7 @@ class RuidaDevice(Service):
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
-                "exclusive": not is_linux, 
+                "exclusive": not is_linux,
             },
             {
                 "attr": "baud_rate",
@@ -307,6 +308,26 @@ class RuidaDevice(Service):
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
                 "signals": "coolant_changed",
+            },
+            {
+                "attr": "supports_rotary_roller",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Supports roller type rotaries"),
+                "tip": _(
+                    "Supports roller type rotaries with simple axis motor replacement"
+                ),
+                "section": "_999_" + _("Rotary-Support"),
+            },
+            {
+                "attr": "supports_rotary_chuck",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Supports chuck type rotaries"),
+                "tip": _("Supports chuck type rotaries with own microstepper driver"),
+                "section": "_999_" + _("Rotary-Support"),
             },
         ]
         self.register_choices("coolant", choices)
