@@ -5,6 +5,7 @@ The balor controller takes low level lmc galvo commands and converts them into l
 to the hardware controller.
 """
 
+import math
 import struct
 import threading
 import time
@@ -257,6 +258,12 @@ class GalvoController:
 
         self._last_x = x
         self._last_y = y
+        self._last_z = 0
+        self._rotary_active = False
+        self._last_rotary = 0
+        self._rotary_axis = "y"
+        self._rotary_zero_offset = 0
+
         self._mark_speed = mark_speed
         self._goto_speed = goto_speed
         self._light_speed = light_speed
@@ -654,7 +661,102 @@ class GalvoController:
     # PLOTLIKE SHORTCUTS
     #######################
 
+    def consider_rotation(self, x, y):
+        # ROTATION_RESOLUTION = int(self.service.rotary_microsteps_per_revolution / 360.0) # 1 degree resolution
+        diam = (
+            0
+            if self.service.rotary.object_diameter is None
+            else self.service.rotary.object_diameter
+        )
+        if self.service.rotary.rotary_active_chuck and diam > 0:
+            relative_x, relative_y = self.service.view.iposition(x, y)
+            axis_value = (
+                relative_x
+                if self._rotary_axis == "x"
+                else relative_y - self._rotary_zero_offset
+            )
+            # We do have to consider the object diameter, as given in the rotary settings.
+            # Both diameter and view.width are meerk40t units, x, y and are in device units
+            obj_circumference = diam * math.pi
+            factor = axis_value / obj_circumference
+            rotation = int(self.service.rotary_microsteps_per_revolution * factor)
+            # todo: consider rotation resolution and establish the remaining gap
+            if rotation != self._last_rotary:
+                self.rotate_absolute(rotation)
+            if self._rotary_axis == "x":
+                x = self._rotary_zero_offset
+            else:
+                y = self._rotary_zero_offset
+
+        return x, y
+
+    def current_rotary(self, axis_index=0):
+        """
+        Get the current rotary position in steps.
+        """
+        pos_args = self.get_axis_pos(axis_index)
+        if pos_args is None:
+            return 0
+        current = pos_args[1] | pos_args[2] << 16
+        if current > 0x80000000:
+            current = -current + 0x80000000
+        return current
+
+    def rotate_absolute(
+        self, position, minspeed: int = 100, maxspeed: int = 5000, acc_time: int = 100
+    ):
+        """
+        Rotate the rotary axis to a given absolute position. The rotary axis is defined by the _rotary_axis attribute.
+        """
+        self.set_axis_motion_param(minspeed & 0xFFFF, maxspeed & 0xFFFF)
+        self.set_axis_origin_param(acc_time)  # Unsure why 100.
+        self._last_rotary = position
+        pos = position if position >= 0 else -position + 0x80000000
+        p1 = (pos >> 16) & 0xFFFF
+        p0 = pos & 0xFFFF
+        self.move_axis_to(p0, p1)
+        self.wait_axis()
+
+    def rotate_relative(
+        self,
+        delta_rotary,
+        minspeed: int = 100,
+        maxspeed: int = 5000,
+        acc_time: int = 100,
+    ):
+        """
+        Rotate the rotary axis by a given amount. The rotary axis is defined by the _rotary_axis attribute.
+        """
+        position = self.current_rotary() + delta_rotary
+        self._last_rotary = position
+        self.set_axis_motion_param(minspeed & 0xFFFF, maxspeed & 0xFFFF)
+        self.set_axis_origin_param(acc_time)  # Unsure why 100.
+        pos = position if position >= 0 else -position + 0x80000000
+        p1 = (pos >> 16) & 0xFFFF
+        p0 = pos & 0xFFFF
+        self.move_axis_to(p0, p1)
+        self.wait_axis()
+
+    def rotate_absolute_angle(
+        self, angle, minspeed: int = 100, maxspeed: int = 5000, acc_time: int = 100
+    ):
+        # angle is given in radians
+        position = angle / math.tau * self.service.rotary_microsteps_per_revolution
+        self.rotate_absolute(
+            position, minspeed=minspeed, maxspeed=maxspeed, acc_time=acc_time
+        )
+
+    def rotate_relative_angle(
+        self, angle, minspeed: int = 100, maxspeed: int = 5000, acc_time: int = 100
+    ):
+        # angle is given in radians
+        position = angle / math.tau * self.service.rotary_microsteps_per_revolution
+        self.rotate_relative(
+            position, minspeed=minspeed, maxspeed=maxspeed, acc_time=acc_time
+        )
+
     def mark(self, x, y):
+        x, y = self.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -665,6 +767,8 @@ class GalvoController:
         self.list_mark(x, y)
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
+        # Do we need to consider rotary motion?
+        x, y = self.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -675,6 +779,7 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def light(self, x, y, long=None, short=None, distance_limit=None):
+        x, y = self.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -687,6 +792,7 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def dark(self, x, y, long=None, short=None, distance_limit=None):
+        x, y = self.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -706,6 +812,9 @@ class GalvoController:
 
     def get_last_xy(self):
         return self._last_x, self._last_y
+
+    def get_last_rotary(self):
+        return self._last_rotary
 
     #######################
     # Command Shortcuts
