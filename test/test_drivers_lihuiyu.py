@@ -18,7 +18,7 @@ IBzzzvRzzzvS1P
 ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
 """
 
-egv_image="""Document type : LHYMICRO-GL file
+egv_image = """Document type : LHYMICRO-GL file
 File version: 1.0.01
 Copyright: Unknown
 Creator-Software: MeerK40t v0.0.0-testing
@@ -188,7 +188,7 @@ class TestDriverLihuiyu(unittest.TestCase):
             kernel()
         with open(file1) as f:
             data = f.read()
-            print (f'egv_image="""{data}"""')
+            print(f'egv_image="""{data}"""')
         self.assertEqual(data, egv_image)
 
 
@@ -207,9 +207,9 @@ class TestDriverLihuiyuRotary(unittest.TestCase):
             kernel.console("operation* delete\n")
             device = kernel.device
             rotary_path = device.path
-            device(f"set -p {rotary_path} rotary_active True")
+            device(f"set -p {rotary_path} rotary_active_roller True")
             device(f"set -p {rotary_path} rotary_scale_y 2.0")
-            device.signal("rotary_active", True)
+            device.signal("rotary_active_roller", True)
             kernel.device.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
             kernel.console(
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
