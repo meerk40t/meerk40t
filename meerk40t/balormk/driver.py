@@ -164,6 +164,24 @@ class BalorDriver:
 
         @return:
         """
+
+        def mark_geom(con, g, interp):
+            for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                # LOOP CHECKS
+                if self._abort_mission():
+                    return
+                while self.paused:
+                    time.sleep(0.05)
+                con.mark(p.real, p.imag)
+
+        def setup_geom(con):
+            last_x, last_y = con.get_last_xy()
+            x, y = start.real, start.imag
+            if last_x != x or last_y != y:
+                con.goto(x, y)
+            g = Geomstr()
+            return g
+
         self.service.laser_status = "active"
         con = self.connection
         con._light_speed = None
@@ -171,68 +189,34 @@ class BalorDriver:
         con._goto_speed = None
         con.program_mode()
         self._list_bits = con._port_bits
-        g = Geomstr()
+        interp = self.service.interp
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             con.set_settings(sets)
             # LOOP CHECKS
             if self._abort_mission():
                 return
             if segment_type == "line":
-                last_x, last_y = con.get_last_xy()
-                x, y = start.real, start.imag
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                con.mark(end.real, end.imag)
+                g = setup_geom(con)
+                # We need to interpolate the line to get the points if the rotary is active.
+                if self.service.rotary.rotary_active_chuck:
+                    g.line(start, end)
+                    mark_geom(con, g, interp)
+                else:
+                    con.mark(end.real, end.imag)
             elif segment_type == "end":
                 pass
             elif segment_type == "quad":
-                last_x, last_y = con.get_last_xy()
-                x, y = start.real, start.imag
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                interp = self.service.interp
-
-                g.clear()
+                g = setup_geom(con)
                 g.quad(start, c1, end)
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._abort_mission():
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
+                mark_geom(con, g, interp)
             elif segment_type == "cubic":
-                last_x, last_y = con.get_last_xy()
-                x, y = start.real, start.imag
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                interp = self.service.interp
-
-                g.clear()
+                g = setup_geom(con)
                 g.cubic(start, c1, c2, end)
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._abort_mission():
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
+                mark_geom(con, g, interp)
             elif segment_type == "arc":
-                last_x, last_y = con.get_last_xy()
-                x, y = start.real, start.imag
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                interp = self.service.interp
-
-                g.clear()
+                g = setup_geom(con)
                 g.arc(start, c1, end)
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._abort_mission():
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
+                mark_geom(con, g, interp)
             elif segment_type == "point":
                 function = sets.get("function")
                 if function == "dwell":
@@ -323,6 +307,22 @@ class BalorDriver:
         @return:
         """
 
+        def mark_geom(con, g, interp):
+            for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                # LOOP CHECKS
+                if self._abort_mission():
+                    return
+                while self.paused:
+                    time.sleep(0.05)
+                con.mark(p.real, p.imag)
+
+        def setup_geom(con):
+            last_x, last_y = con.get_last_xy()
+            x, y = q.start
+            if last_x != x or last_y != y:
+                con.goto(x, y)
+            return Geomstr()
+
         # preprocess queue to establish steps
         self.service.laser_status = "active"
         con = self.connection
@@ -336,6 +336,7 @@ class BalorDriver:
         self.queue = list()
         total = len(queue)
         current = 0
+        interp = self.service.interp
         for q in queue:
             current += 1
             self._set_queue_status(current, total)
@@ -351,53 +352,29 @@ class BalorDriver:
             if self._abort_mission():
                 return
             if isinstance(q, LineCut):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                con.mark(*q.end)
+                # We need to interpolate the line to get the points if the rotary is active.
+                g = setup_geom(con)
+                if self.service.rotary.rotary_active_chuck:
+                    g.line(*q.start, *q.end)
+                    mark_geom(con, g, interp)
+                else:
+                    con.mark(*q.end)
             elif isinstance(q, QuadCut):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                interp = self.service.interp
-
-                g = Geomstr()
+                g = setup_geom(con)
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._abort_mission():
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
+                mark_geom(con, g, interp)
             elif isinstance(q, CubicCut):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                interp = self.service.interp
-
-                g = Geomstr()
+                g = setup_geom(con)
                 g.cubic(
                     complex(*q.start),
                     complex(*q.c1()),
                     complex(*q.c2()),
                     complex(*q.end),
                 )
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._abort_mission():
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
+                mark_geom(con, g, interp)
+
             elif isinstance(q, PlotCut):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
+                g = setup_geom(con)
                 for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
                     if self._abort_mission():

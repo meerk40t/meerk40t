@@ -657,15 +657,9 @@ def plugin(service, lifecycle):
     def galvo_rotary(
         command, channel, _, position, minspeed, maxspeed, acc_time, **kwgs
     ):
-        service.driver.connection.set_axis_motion_param(
-            minspeed & 0xFFFF, maxspeed & 0xFFFF
+        service.driver.connection.rotate_absolute(
+            position, minspeed, maxspeed, acc_time
         )
-        service.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
-        pos = position if position >= 0 else -position + 0x80000000
-        p1 = (pos >> 16) & 0xFFFF
-        p0 = pos & 0xFFFF
-        service.driver.connection.move_axis_to(p0, p1)
-        service.driver.connection.wait_axis()
 
     @service.console_option("minspeed", "n", type=int, default=100)
     @service.console_option("maxspeed", "x", type=int, default=5000)
@@ -681,21 +675,9 @@ def plugin(service, lifecycle):
     def galvo_rotary_advance(
         command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs
     ):
-        pos_args = service.driver.connection.get_axis_pos()
-        current = pos_args[1] | pos_args[2] << 16
-        if current > 0x80000000:
-            current = -current + 0x80000000
-        position = current + delta_rotary
-
-        service.driver.connection.set_axis_motion_param(
-            minspeed & 0xFFFF, maxspeed & 0xFFFF
+        service.driver.connection.rotate_absolute(
+            delta_rotary, minspeed, maxspeed, acc_time
         )
-        service.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
-        pos = position if position >= 0 else -position + 0x80000000
-        p1 = (pos >> 16) & 0xFFFF
-        p0 = pos & 0xFFFF
-        service.driver.connection.move_axis_to(p0, p1)
-        service.driver.connection.wait_axis()
 
     @service.console_option("axis_index", "i", type=int, default=0)
     @service.console_command(
