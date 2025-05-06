@@ -41,30 +41,28 @@ class DefaultOperationWidget(StatusBarWidget):
                 speed = f"{node.speed * 60:.0f}mm/min"
             else:
                 speed = f"{node.speed:.0f}mm/s"
-        if isinstance(node, CutOpNode):
-            slabel = _("Cut ({percent}, {speed})").format(percent=percent, speed=speed)
-        elif isinstance(node, EngraveOpNode):
-            slabel = _("Engrave ({percent}, {speed})").format(
-                percent=percent, speed=speed
-            )
-        elif isinstance(node, RasterOpNode):
-            slabel = _("Raster ({percent}, {speed})").format(
-                percent=percent, speed=speed
-            )
-        elif isinstance(node, ImageOpNode):
-            slabel = _("Image ({percent}, {speed})").format(
-                percent=percent, speed=speed
-            )
+
+        op_map = {
+            CutOpNode: _("Cut ({percent}, {speed})"),
+            EngraveOpNode: _("Engrave ({percent}, {speed})"),
+            RasterOpNode: _("Raster ({percent}, {speed})"),
+            ImageOpNode: _("Image ({percent}, {speed})"),
+        }
+
+        for op_type, template in op_map.items():
+            if isinstance(node, op_type):
+                slabel = template.format(percent=percent, speed=speed)
+                break
         else:
             slabel = ""
-        slabel = (
+
+        return (
             _("Assign the selection to:")
             + "\n"
             + slabel
             + "\n"
             + _("Right click for options")
         )
-        return slabel
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         def size_it(ctrl, dimen_x, dimen_y):
@@ -356,6 +354,43 @@ class DefaultOperationWidget(StatusBarWidget):
 
         menu.Destroy()
 
+    def _update_button_states(self, x, residual, gap):
+        """
+        Loops through all buttons (assign_buttons) and decides whether to activate or deactivate each one.
+        Conditions for each button:
+
+        - If the corresponding operation (self.assign_operations[idx]) is None, deactivate the button.
+        - Otherwise:
+            - Check if the button fits within the available width (self.width).
+            - If it doesn't fit, mark it as "residual" (indicating more buttons exist off-screen) and deactivate it.
+            - If it fits, activate it and update the horizontal position
+        """
+        for idx, btn in enumerate(self.assign_buttons):
+            w = self.buttonsize_x
+            btnflag = False
+            if not residual:
+                if self.assign_operations[idx] is None:
+                    self.SetActive(btn, False)
+                    continue
+                if idx < self.first_to_show:
+                    btnflag = False
+                elif idx == len(self.assign_buttons) - 1:
+                    # The last
+                    if x + w > self.width:
+                        residual = True
+                        btnflag = False
+                    else:
+                        btnflag = True
+                        x += gap + w
+                elif x + w + gap + self.buttonsize_x > self.width:
+                    residual = True
+                    btnflag = False
+                else:
+                    btnflag = True
+                    x += gap + w
+            self.SetActive(btn, btnflag)
+        return residual
+
     def Show(self, showit=True):
         """
         Controls the visibility and layout of the operation assignment buttons in the status bar.
@@ -369,55 +404,17 @@ class DefaultOperationWidget(StatusBarWidget):
             self.page_size = int(
                 (self.width - 2 * self.buttonsize_x) / self.buttonsize_x
             )
-            # print(f"Page-Size: {self.page_size}, width={self.width}")
             x = 0
             gap = 0
-            # Handle the "Previous" button
             if self.first_to_show > 0:
                 self.SetActive(self.btn_prev, True)
                 x = self.buttonsize_x + gap
             else:
                 self.SetActive(self.btn_prev, False)
-
             residual = False
-            for idx, btn in enumerate(self.assign_buttons):
-                """
-                Loops through all buttons (assign_buttons) and decides whether to activate or deactivate each one.
-                Conditions for each button:
-
-                - If the corresponding operation (self.assign_operations[idx]) is None, deactivate the button.
-                - Otherwise:
-                    - Check if the button fits within the available width (self.width).
-                    - If it doesn't fit, mark it as "residual" (indicating more buttons exist off-screen) and deactivate it.
-                    - If it fits, activate it and update the horizontal position
-                """
-                btnflag = False
-                if not residual:
-                    if self.assign_operations[idx] is None:
-                        self.SetActive(btn, False)
-                    else:
-                        w = self.buttonsize_x
-                        if idx < self.first_to_show:
-                            btnflag = False
-                        elif idx == len(self.assign_buttons) - 1:
-                            # The last
-                            if x + w > self.width:
-                                residual = True
-                                btnflag = False
-                            else:
-                                btnflag = True
-                                x += gap + w
-                        else:
-                            if x + w + gap + self.buttonsize_x > self.width:
-                                residual = True
-                                btnflag = False
-                            else:
-                                btnflag = True
-                                x += gap + w
-                self.SetActive(btn, btnflag)
+            residual = self._update_button_states(x, residual, gap)
             self.SetActive(self.btn_next, residual)
             self.SetActive(self.btn_matman, not residual)
-
         else:
             self.SetActive(self.btn_prev, False)
             for btn in self.assign_buttons:
@@ -433,7 +430,12 @@ class DefaultOperationWidget(StatusBarWidget):
         self.Show(True)
 
     def on_next(self, event):
-        self.first_to_show += self.page_size
+        if (
+            self.first_to_show == 0
+        ):  # We did not have a previous button, so we displayed one more than normal
+            self.first_to_show += self.page_size + 1
+        else:
+            self.first_to_show += self.page_size
         if self.first_to_show + self.page_size >= len(self.assign_buttons):
             self.first_to_show = len(self.assign_buttons) - self.page_size
         self.first_to_show = max(self.first_to_show, 0)
