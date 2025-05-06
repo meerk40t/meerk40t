@@ -28,14 +28,26 @@ class DefaultOperationWidget(StatusBarWidget):
         self.first_to_show = 0
 
     def node_label(self, node):
+        percent = ""
+        if hasattr(node, "power"):
+            if getattr(self.context.device, "use_percent_for_power_display", False):
+                percent = f"{node.power/10.0:.1f}%"
+            else:
+                percent = f"{node.power:.0f}ppi"
+        speed = ""
+        if hasattr(node, "speed"):
+            if getattr(self.context.device, "use_mm_min_for_speed_display", False):
+                speed = f"{node.speed*60:.0f}mm/min"
+            else:
+                speed = f"{node.speed:.0f}mm/s"
         if isinstance(node, CutOpNode):
-            slabel = "Cut ({percent}, {speed}mm/s)"
+            slabel = _("Cut ({percent}, {speed})").format(percent=percent, speed=speed)
         elif isinstance(node, EngraveOpNode):
-            slabel = "Engrave ({percent}, {speed}mm/s)"
+            slabel = _("Engrave ({percent}, {speed})").format(percent=percent, speed=speed)
         elif isinstance(node, RasterOpNode):
-            slabel = "Raster ({percent}, {speed}mm/s)"
+            slabel = _("Raster ({percent}, {speed})").format(percent=percent, speed=speed)
         elif isinstance(node, ImageOpNode):
-            slabel = "Image ({percent}, {speed}mm/s)"
+            slabel = _("Image ({percent}, {speed})").format(percent=percent, speed=speed)
         else:
             slabel = ""
         slabel = (
