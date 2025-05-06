@@ -354,6 +354,23 @@ class DefaultOperationWidget(StatusBarWidget):
 
         menu.Destroy()
 
+    def _should_activate(self, idx, x, gap, residual):
+        # If no assigned operation, always inactive.
+        if self.assign_operations[idx] is None:
+            return False, x, residual
+
+        btn_width = self.buttonsize_x
+        # When this is the last button:
+        if idx == len(self.assign_buttons) - 1:
+            if x + btn_width > self.width:
+                return False, x, True
+            else:
+                return True, x + gap + btn_width, residual
+        # For non-last buttons:
+        if x + btn_width + gap + self.buttonsize_x > self.width:
+            return False, x, True
+        return True, x + gap + btn_width, residual
+
     def _update_button_states(self, x, residual, gap):
         """
         Loops through all buttons (assign_buttons) and decides whether to activate or deactivate each one.
@@ -366,29 +383,8 @@ class DefaultOperationWidget(StatusBarWidget):
             - If it fits, activate it and update the horizontal position
         """
         for idx, btn in enumerate(self.assign_buttons):
-            w = self.buttonsize_x
-            btnflag = False
-            if not residual:
-                if self.assign_operations[idx] is None:
-                    self.SetActive(btn, False)
-                    continue
-                if idx < self.first_to_show:
-                    btnflag = False
-                elif idx == len(self.assign_buttons) - 1:
-                    # The last
-                    if x + w > self.width:
-                        residual = True
-                        btnflag = False
-                    else:
-                        btnflag = True
-                        x += gap + w
-                elif x + w + gap + self.buttonsize_x > self.width:
-                    residual = True
-                    btnflag = False
-                else:
-                    btnflag = True
-                    x += gap + w
-            self.SetActive(btn, btnflag)
+            active, x, residual = self._should_activate(idx, x, gap, residual)
+            self.SetActive(btn, active)
         return residual
 
     def Show(self, showit=True):
