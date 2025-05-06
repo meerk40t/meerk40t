@@ -1,3 +1,5 @@
+import math
+
 from meerk40t.core.units import Length
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Matrix
@@ -130,8 +132,29 @@ class Rotary:
                 "conditional": (self, "rotary_active_roller"),
                 "subsection": _("Scale"),
             },
+            {
+                "attr": "rotary_flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active_roller"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_flip_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active_roller"),
+                "subsection": _("Mirror Output"),
+            },
         ]
         service.register_choices("rotary_roller", choices)
+
         choices = [
             {
                 "attr": "rotary_active_chuck",
@@ -177,40 +200,24 @@ class Rotary:
                 "object": self,
                 "default": Length("1cm"),
                 "type": Length,
-                "label": _("Micro-Steps"),
-                "tip": _("How many microsteps are required for a single revolution"),
-                "style": "combosmall",
-                "exclusive": False,
-                "choices": (
-                    200,
-                    400,
-                    800,
-                    1600,
-                    3200,
-                    6400,
-                    12800,
-                    25600,
-                    1000,
-                    2000,
-                    4000,
-                    8000,
-                    10000,
-                    20000,
-                    25000,
-                ),
+                "label": _("Object-Diameter"),
+                "tip": _("Diameter of the unit in the rotary chuck"),
                 "signals": "device;modified",
                 "conditional": (self, "rotary_active_chuck"),
             },
-            # {
-            #     "attr": "axis",
-            #     "object": rotary,
-            #     "default": 1,
-            #     "type": int,
-            #     "label": _("Rotary Axis:"),
-            #     "tip": _("Which axis does the rotary use?"),
-            # },
+            {
+                "attr": "rotary_reverse",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Reverse"),
+                "tip": _("Reverse the rotation direction"),
+                "conditional": (self, "rotary_active_chuck"),
+                "subsection": _("Mirror Output"),
+            },
         ]
         service.register_choices("rotary_chuck", choices)
+
         choices = [
             {
                 "attr": "rotary_suppress_home",
@@ -221,26 +228,6 @@ class Rotary:
                 "tip": _("Ignore Home-Command"),
                 "conditional": (self, "active"),
             },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "active"),
-                "subsection": _("Mirror Output"),
-            },
         ]
         service.register_choices("rotary_common", choices)
 
@@ -249,28 +236,21 @@ class Rotary:
             Show the rotary settings in the console.
             """
             channel(_("Rotary Settings:"))
+            # fmt: off
             if service.rotary.rotary_active_roller:
                 channel(_("Roller-Mode"))
                 channel(f"  Scale X: {service.rotary.rotary_scale_x:.3f}")
                 channel(f"  Scale Y: {service.rotary.rotary_scale_y:.3f}")
                 channel(f"  Flip X: {'Yes' if service.rotary.rotary_flip_x else 'No'}")
                 channel(f"  Flip Y: {'Yes' if service.rotary.rotary_flip_y else 'No'}")
-                channel(
-                    f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}"
-                )
+                channel(f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}")
             if service.rotary.rotary_active_roller:
                 channel(_("Chuck-Mode"))
-                channel(
-                    f"  Microsteps per revolution: {service.rotary.rotary_microsteps_per_revolution}"
-                )
-                channel(
-                    f"  Object Diameter: {Length(service.object_diameter).length_mm}"
-                )
-                channel(f"  Flip X: {'Yes' if service.rotary.rotary_flip_x else 'No'}")
-                channel(f"  Flip Y: {'Yes' if service.rotary.rotary_flip_y else 'No'}")
-                channel(
-                    f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}"
-                )
+                channel(f"  Microsteps per revolution: {service.rotary.rotary_microsteps_per_revolution}")
+                channel(f"  Object Diameter: {Length(service.object_diameter).length_mm}")
+                channel(f"  Reverse: {'Yes' if service.rotary.rotary_reverse else 'No'}")
+                channel(f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}")
+            # fmt: on
 
         @service.console_command(
             "rotary",
@@ -409,3 +389,266 @@ class Rotary:
 
     def shutdown(self, *args, **kwargs):
         pass
+
+
+def map_coordinates_to_rotary(
+    x_coord: float,
+    y_coord_input: float,
+    cylinder_diameter: float,
+    y_rotary_origin: float,
+    hardware_microsteps_per_rev: int,
+    virtual_microsteps_per_rev: int = None,
+) -> tuple[float, int, float]:
+    """
+    Maps a Y-coordinate to a rotary axis position for a laser cutter.
+
+    The X-coordinate remains unchanged. The Y-coordinate is mapped to an angular
+    position on the cylinder's surface.
+
+    Args:
+        x_coord: The original X-coordinate from the flatbed.
+        y_coord_input: The Y-coordinate from the flatbed.
+        cylinder_diameter: The diameter of the cylinder on the rotary attachment.
+                           Units must be consistent with y_coord_input and y_rotary_origin.
+        y_rotary_origin: The Y-coordinate on the flatbed that corresponds to
+                         angle 0 (the starting angle) on the rotary attachment.
+        hardware_microsteps_per_rev: The total number of microsteps the rotary motor
+                                     requires for one full 360-degree revolution
+                                     (e.g., 6400).
+        virtual_microsteps_per_rev: Optional. If provided, this defines a coarser
+                                    segmentation for the rotary movement. The output
+                                    rotation will be the closest step achievable within
+                                    this virtual resolution (e.g., 1000). If None or
+                                    not coarser than hardware resolution, hardware
+                                    resolution is used.
+
+    Returns:
+        A tuple containing:
+        - output_x_coord: The original X-coordinate (unchanged).
+        - closest_rotation_hardware_steps: The calculated target microsteps for the
+                                           rotary motor (integer). This value represents
+                                           the absolute hardware step count from the
+                                           zero-angle position. It can be positive
+                                           (for y_coord_input > y_rotary_origin) or
+                                           negative, and can exceed
+                                           hardware_microsteps_per_rev if the mapped
+                                           distance is greater than one circumference.
+        - y_gap: The difference in length units (same as y_coord_input) between the
+                 desired Y-position mapped onto the cylinder surface and the actual
+                 Y-position achievable with the closest (virtual or hardware)
+                 rotation step.
+                 A positive gap means the achieved position is short of the target.
+                 A negative gap means the achieved position is beyond the target.
+    """
+
+    if cylinder_diameter <= 0:
+        raise ValueError("Cylinder diameter must be positive.")
+    if hardware_microsteps_per_rev <= 0:
+        raise ValueError("Hardware microsteps per revolution must be positive.")
+    if virtual_microsteps_per_rev is not None and virtual_microsteps_per_rev <= 0:
+        raise ValueError(
+            "Virtual microsteps per revolution must be positive if provided."
+        )
+
+    output_x_coord = x_coord
+
+    # 1. Calculate the effective Y-distance to be mapped onto the cylinder surface.
+    # This is the arc length on the cylinder.
+    y_on_surface_desired = y_coord_input - y_rotary_origin
+
+    # 2. Calculate the circumference of the cylinder.
+    circumference = math.pi * cylinder_diameter
+
+    # Handle edge case of zero circumference (though diameter > 0 should prevent this).
+    if circumference == 0:
+        if y_on_surface_desired == 0:
+            return output_x_coord, 0, 0.0
+        else:
+            # Cannot achieve a non-zero surface distance on a zero-circumference cylinder.
+            # The gap is effectively the entire desired distance.
+            return output_x_coord, 0, y_on_surface_desired
+
+    # 3. Calculate the ideal target position in terms of hardware microsteps.
+    # This can be a fractional value.
+    # (desired_arc_length / total_arc_length_per_rev) * total_steps_per_rev
+    target_exact_hardware_steps = (
+        y_on_surface_desired / circumference
+    ) * hardware_microsteps_per_rev
+
+    # 4. Determine the closest achievable hardware steps, considering virtual resolution if specified.
+    closest_rotation_hardware_steps: int
+
+    use_virtual_resolution = (
+        virtual_microsteps_per_rev is not None
+        and 0 < virtual_microsteps_per_rev < hardware_microsteps_per_rev
+    )
+
+    if use_virtual_resolution:
+        # a. Calculate the size of one "virtual step" in terms of hardware microsteps.
+        hw_steps_per_virtual_step = (
+            hardware_microsteps_per_rev / virtual_microsteps_per_rev
+        )
+
+        # b. Determine the target position in terms of virtual step units (can be fractional).
+        # target_virtual_step_float = target_exact_hardware_steps / hw_steps_per_virtual_step
+        # or equivalently:
+        target_virtual_step_float = (
+            y_on_surface_desired / circumference
+        ) * virtual_microsteps_per_rev
+
+        # c. Find the index of the closest integer virtual step.
+        closest_virtual_step_index = round(target_virtual_step_float)
+
+        # d. Convert this closest virtual step index back to the corresponding hardware step value.
+        # This value represents the center of the chosen virtual step, rounded to the nearest
+        # whole hardware microstep.
+        closest_rotation_hardware_steps = int(
+            round(closest_virtual_step_index * hw_steps_per_virtual_step)
+        )
+    else:
+        # No virtual resolution is used, or it's not coarser than hardware resolution.
+        # Round to the nearest physical hardware microstep.
+        closest_rotation_hardware_steps = int(round(target_exact_hardware_steps))
+
+    # 5. Calculate the actual Y-distance (arc length) achieved on the cylinder surface
+    # by the `closest_rotation_hardware_steps`.
+    achieved_y_on_surface = (
+        closest_rotation_hardware_steps / hardware_microsteps_per_rev
+    ) * circumference
+
+    # 6. Calculate the gap.
+    # This is the difference between the desired arc length and the achieved arc length.
+    y_gap = y_on_surface_desired - achieved_y_on_surface
+
+    return output_x_coord, closest_rotation_hardware_steps, y_gap
+
+
+# Example Usage:
+if __name__ == "__main__":
+    # Setup parameters
+    x_flat = 10.0  # mm
+    cylinder_dia = 50.0  # mm
+    y_origin_on_bed = 100.0  # mm (this Y value on bed is angle 0 for rotary)
+    hw_steps = 6400  # microsteps per revolution for the rotary motor
+    virtual_steps_coarse = 1000  # Coarser virtual resolution
+    virtual_steps_fine = (
+        8000  # Finer virtual resolution (will be ignored for coarsening)
+    )
+
+    # --- Test Case 1: Move a positive Y distance, no virtual resolution ---
+    y_flat_1 = 120.0  # mm
+    x_out_1, steps_out_1, gap_out_1 = map_coordinates_to_rotary(
+        x_flat, y_flat_1, cylinder_dia, y_origin_on_bed, hw_steps
+    )
+    print(
+        f"Rotary Mapping Test Cases for hw_steps={hw_steps}, center={y_origin_on_bed}"
+    )
+    print(f"Test Case 1 (No Virtual Resolution):")
+    print(
+        f"  Input Y: {y_flat_1}, Mapped Y (desired on surface): {y_flat_1 - y_origin_on_bed}"
+    )
+    print(
+        f"  Output X: {x_out_1}, Rotary Steps: {steps_out_1}, Y Gap: {gap_out_1:.6f} mm"
+    )
+    print("-" * 30)
+
+    # --- Test Case 2: Move a positive Y distance, with coarse virtual resolution ---
+    y_flat_2 = 120.0  # mm
+    x_out_2, steps_out_2, gap_out_2 = map_coordinates_to_rotary(
+        x_flat, y_flat_2, cylinder_dia, y_origin_on_bed, hw_steps, virtual_steps_coarse
+    )
+    print(f"Test Case 2 (Coarse Virtual Resolution: {virtual_steps_coarse}):")
+    print(
+        f"  Input Y: {y_flat_2}, Mapped Y (desired on surface): {y_flat_2 - y_origin_on_bed}"
+    )
+    print(
+        f"  Output X: {x_out_2}, Rotary Steps: {steps_out_2}, Y Gap: {gap_out_2:.6f} mm"
+    )
+    print("-" * 30)
+
+    # --- Test Case 3: Move a negative Y distance, no virtual resolution ---
+    y_flat_3 = 80.0  # mm
+    x_out_3, steps_out_3, gap_out_3 = map_coordinates_to_rotary(
+        x_flat, y_flat_3, cylinder_dia, y_origin_on_bed, hw_steps
+    )
+    print(f"Test Case 3 (Negative Y, No Virtual):")
+    print(
+        f"  Input Y: {y_flat_3}, Mapped Y (desired on surface): {y_flat_3 - y_origin_on_bed}"
+    )
+    print(
+        f"  Output X: {x_out_3}, Rotary Steps: {steps_out_3}, Y Gap: {gap_out_3:.6f} mm"
+    )
+    print("-" * 30)
+
+    # --- Test Case 4: Move a negative Y distance, with coarse virtual resolution ---
+    y_flat_4 = 80.0  # mm
+    x_out_4, steps_out_4, gap_out_4 = map_coordinates_to_rotary(
+        x_flat, y_flat_4, cylinder_dia, y_origin_on_bed, hw_steps, virtual_steps_coarse
+    )
+    print(f"Test Case 4 (Negative Y, Coarse Virtual: {virtual_steps_coarse}):")
+    print(
+        f"  Input Y: {y_flat_4}, Mapped Y (desired on surface): {y_flat_4 - y_origin_on_bed}"
+    )
+    print(
+        f"  Output X: {x_out_4}, Rotary Steps: {steps_out_4}, Y Gap: {gap_out_4:.6f} mm"
+    )
+    print("-" * 30)
+
+    # --- Test Case 5: Zero Y displacement ---
+    y_flat_5 = 100.0  # mm (same as y_origin_on_bed)
+    x_out_5, steps_out_5, gap_out_5 = map_coordinates_to_rotary(
+        x_flat, y_flat_5, cylinder_dia, y_origin_on_bed, hw_steps, virtual_steps_coarse
+    )
+    print(f"Test Case 5 (Zero Displacement, Coarse Virtual: {virtual_steps_coarse}):")
+    print(
+        f"  Input Y: {y_flat_5}, Mapped Y (desired on surface): {y_flat_5 - y_origin_on_bed}"
+    )
+    print(
+        f"  Output X: {x_out_5}, Rotary Steps: {steps_out_5}, Y Gap: {gap_out_5:.6f} mm"
+    )
+    print("-" * 30)
+
+    # --- Test Case 6: Virtual resolution finer than hardware (should use hardware) ---
+    y_flat_6 = 120.0  # mm
+    x_out_6, steps_out_6, gap_out_6 = map_coordinates_to_rotary(
+        x_flat, y_flat_6, cylinder_dia, y_origin_on_bed, hw_steps, virtual_steps_fine
+    )
+    print(
+        f"Test Case 6 (Virtual Resolution Finer ({virtual_steps_fine}), should behave as No Virtual):"
+    )
+    print(
+        f"  Input Y: {y_flat_6}, Mapped Y (desired on surface): {y_flat_6 - y_origin_on_bed}"
+    )
+    print(
+        f"  Output X: {x_out_6}, Rotary Steps: {steps_out_6}, Y Gap: {gap_out_6:.6f} mm"
+    )
+    # Compare with Test Case 1
+    if steps_out_1 == steps_out_6 and abs(gap_out_1 - gap_out_6) < 1e-9:
+        print("  (Matches Test Case 1 as expected)")
+    else:
+        print("  (Does NOT match Test Case 1, check logic)")
+    print("-" * 30)
+
+    # --- Test Case 7: Large Y displacement (more than one revolution) ---
+    circumference = math.pi * cylinder_dia
+    y_flat_7 = y_origin_on_bed + circumference * 1.5  # 1.5 revolutions
+    x_out_7, steps_out_7, gap_out_7 = map_coordinates_to_rotary(
+        x_flat, y_flat_7, cylinder_dia, y_origin_on_bed, hw_steps, virtual_steps_coarse
+    )
+    print(f"Test Case 7 (1.5 Revolutions, Coarse Virtual: {virtual_steps_coarse}):")
+    print(f"  Desired surface travel: {circumference * 1.5:.2f} mm")
+    print(
+        f"  Input Y: {y_flat_7}, Mapped Y (desired on surface): {y_flat_7 - y_origin_on_bed:.2f}"
+    )
+    print(
+        f"  Output X: {x_out_7}, Rotary Steps: {steps_out_7} (expected around {1.5 * virtual_steps_coarse * (hw_steps/virtual_steps_coarse):.0f}), Y Gap: {gap_out_7:.6f} mm"
+    )
+    expected_steps_approx = 1.5 * hw_steps  # rough check for no virtual
+    expected_steps_virtual_approx = round((1.5 * virtual_steps_coarse)) * (
+        hw_steps / virtual_steps_coarse
+    )
+
+    print(
+        f"  (For comparison: 1.5 * {hw_steps} = {expected_steps_approx}, 1.5 * {virtual_steps_coarse} virtual steps ~ {round(expected_steps_virtual_approx)} hw steps )"
+    )
+    print("-" * 30)
