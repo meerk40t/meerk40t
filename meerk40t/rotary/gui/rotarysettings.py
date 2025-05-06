@@ -231,8 +231,8 @@ class RotarySettings(MWindow):
         self.common_panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context.device, choices="rotary_common"
         )
-        self.sizer.Add(self.roller_panel, 1, wx.EXPAND, 0)
-        self.sizer.Add(self.chuck_panel, 1, wx.EXPAND, 0)
+        self.sizer.Add(self.roller_panel, 2, wx.EXPAND, 0)
+        self.sizer.Add(self.chuck_panel, 2, wx.EXPAND, 0)
         self.sizer.Add(self.common_panel, 1, wx.EXPAND, 0)
         self.panels.append(self.roller_panel)
         self.panels.append(self.chuck_panel)
