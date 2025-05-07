@@ -1,6 +1,6 @@
 import math
 
-from meerk40t.core.units import Length
+from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Matrix
 
@@ -367,6 +367,85 @@ class Rotary:
                     except ValueError:
                         channel(f"Invalid setting format: {setting}.")
             show_rotary_settings(channel)
+            return "rotary", None
+
+        @service.console_option("minspeed", "n", type=int, default=100)
+        @service.console_option("maxspeed", "x", type=int, default=5000)
+        @service.console_option("acc_time", "a", type=int, default=100)
+        @service.console_option(
+            "relative",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Relative, ie additional rotation"),
+        )
+        @service.console_argument(
+            "angle", type=Angle, help=_("Rotate rotary by this angle")
+        )
+        @service.console_command(
+            "rotate",
+            help=_("rotate to the given angle (-r relative movement)"),
+            input_type="rotary",
+            output_type="rotary",
+        )
+        def command_rotate(
+            command,
+            channel,
+            _,
+            data=None,
+            angle=None,
+            relative=None,
+            minspeed=100,
+            maxspeed=5000,
+            acc_time=100,
+            **kwargs,
+        ):
+            if not self._rotary_active_chuck:
+                channel(_("Rotary mode not active."))
+                return "rotary", None
+            if angle is None:
+                channel(_("No angle given."))
+                return "rotary", None
+            try:
+                rotval = Angle(angle)
+            except ValueError:
+                channel(_("Invalid angle value."))
+                return "rotary", None
+            if relative is None:
+                relative = False
+            position = int(
+                self.rotary_microsteps_per_revolution * rotval.radians / math.tau
+            )
+            try:
+                if relative:
+                    (
+                        self.service.driver.connection.rotate_relative(position),
+                        minspeed,
+                        maxspeed,
+                        acc_time,
+                    )
+                else:
+                    (
+                        self.service.driver.connection.rotate_absolute(position),
+                        minspeed,
+                        maxspeed,
+                        acc_time,
+                    )
+            except AttributeError as e:
+                channel(_("Rotary not supported for this device."))
+                channel(_("Error: ") + str(e))
+            try:
+                pos_args = service.driver.connection.get_axis_pos(0)
+                if pos_args is not None:
+                    current = pos_args[1] | pos_args[2] << 16
+                    if current > 0x80000000:
+                        current = -current + 0x80000000
+                    angle = Angle(
+                        current * math.tau / self.rotary_microsteps_per_revolution
+                    )
+                    channel(f"Rotary Position: {current} - {angle.degrees:.2f}°")
+            except AttributeError:
+                pass
             return "rotary", None
 
         @service.console_command(
