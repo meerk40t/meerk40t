@@ -268,21 +268,25 @@ class Rotary:
             """
             Show the rotary settings in the console.
             """
-            channel(_("Rotary Settings:"))
             # fmt: off
             if service.rotary.rotary_active_roller:
-                channel(_("Roller-Mode"))
+                channel(_("Rotary active: Roller-Mode"))
                 channel(f"  Scale X: {service.rotary.rotary_scale_x:.3f}")
                 channel(f"  Scale Y: {service.rotary.rotary_scale_y:.3f}")
                 channel(f"  Flip X: {'Yes' if service.rotary.rotary_flip_x else 'No'}")
                 channel(f"  Flip Y: {'Yes' if service.rotary.rotary_flip_y else 'No'}")
                 channel(f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}")
-            if service.rotary.rotary_active_roller:
-                channel(_("Chuck-Mode"))
+            elif service.rotary.rotary_active_chuck:
+                channel(_("Rotary active: Chuck-Mode"))
                 channel(f"  Microsteps per revolution: {service.rotary.rotary_microsteps_per_revolution}")
-                channel(f"  Object Diameter: {Length(service.object_diameter).length_mm}")
+                channel(f"  Object Diameter: {Length(service.rotary.object_diameter).length_mm}")
                 channel(f"  Reverse: {'Yes' if service.rotary.rotary_reverse else 'No'}")
                 channel(f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}")
+                channel(f"  Aligned to axis: {'X-Axis' if service.rotary.rotary_chuck_alignment_axis == 0 else 'Y-Axis'}")
+                zero_pos = Length(f"{service.rotary.rotary_chuck_offset*100}%", relative_length=service.view.width if service.rotary.rotary_chuck_alignment_axis == 0 else service.view.height)
+                channel(f"  Rotary position: {service.rotary.rotary_chuck_offset*100:.1f}% ({zero_pos.length_mm})")
+            else:
+                channel(_("No rotary mode active."))
             # fmt: on
 
         @service.console_command(
@@ -290,29 +294,79 @@ class Rotary:
             help=_("Rotary base command"),
             output_type="rotary",
         )
-        def rotary(command, channel, _, data=None, **kwargs):
-            if command.lower() == "off":
-                service.rotary.rotary_active_roller = False
-                service.rotary.rotary_active_chuck = False
-                channel(_("Rotary mode deactivated."))
-                service.device.realize()
-                return "rotary", None
-            if command.lower() == "roller":
+        def rotary(command, channel, _, data=None, remainder=None, **kwargs):
+            if remainder is None:
+                channel("Valid commands: roller, chuck, off, settings")
+            return "rotary", None
+
+        @service.console_command(
+            "off",
+            help=_("Turn rotary off"),
+            input_type="rotary",
+            output_type="rotary",
+        )
+        def command_off(command, channel, _, data=None, **kwargs):
+            service.rotary.rotary_active_roller = False
+            service.rotary.rotary_active_chuck = False
+            channel(_("Rotary mode deactivated."))
+            service.device.realize()
+            return "rotary", None
+
+        @service.console_command(
+            "roller",
+            help=_("Turn rotary roller mode on"),
+            input_type="rotary",
+            output_type="rotary",
+        )
+        def command_roller(command, channel, _, data=None, **kwargs):
+            if getattr(service, "supports_rotary_roller", False):
                 service.rotary.rotary_active_roller = True
                 service.rotary.rotary_active_chuck = False
-                channel(_("Roller mode activated."))
                 service.device.realize()
-                return "rotary", None
-            if command.lower() == "chuck":
+                show_rotary_settings(channel)
+            else:
+                channel(_("This device does not support a rotary roller mode."))
+            return "rotary", None
+
+        @service.console_command(
+            "chuck",
+            help=_("Turn rotary chuck mode on"),
+            input_type="rotary",
+            output_type="rotary",
+        )
+        def command_chuck(command, channel, _, data=None, **kwargs):
+            if getattr(service, "supports_rotary_chuck", False):
                 service.rotary.rotary_active_roller = False
                 service.rotary.rotary_active_chuck = True
-                channel(_("Chuck mode activated."))
                 service.device.realize()
-                return "rotary", None
-            if command.lower() == "settings":
                 show_rotary_settings(channel)
-                return "rotary", None
-            channel(_("Invalid command. Use 'off', 'roller', 'chuck', or 'settings'."))
+            else:
+                channel(_("This device does not support a rotary chuck mode."))
+            return "rotary", None
+
+        @service.console_command(
+            "settings",
+            help=_("Set/show individual rotary settings"),
+            input_type="rotary",
+            output_type="rotary",
+        )
+        def command_settings(command, channel, _, data=None, remainder=None, **kwargs):
+            if remainder is not None:
+                # Split the remainder into key-value pairs
+                settings = remainder.split(",")
+                for setting in settings:
+                    try:
+                        key, value = setting.split("=")
+                        key = key.strip()
+                        value = value.strip()
+                        if hasattr(service.rotary, key):
+                            setattr(service.rotary, key, value)
+                            channel(f"Set {key} to {value}.")
+                        else:
+                            channel(f"Invalid setting: {key}.")
+                    except ValueError:
+                        channel(f"Invalid setting format: {setting}.")
+            show_rotary_settings(channel)
             return "rotary", None
 
         @service.console_command(
