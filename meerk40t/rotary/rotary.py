@@ -99,6 +99,9 @@ class Rotary:
         self.rotary_flip_x = False
         self.rotary_flip_y = False
         self.rotary_suppress_home = False
+        self.rotary_reverse = False
+        self.rotary_chuck_alignment_axis = 0
+        self.rotary_chuck_offset = 0.5
 
         _ = service._
         choices = [
@@ -214,6 +217,36 @@ class Rotary:
                 "tip": _("Reverse the rotation direction"),
                 "conditional": (self, "rotary_active_chuck"),
                 "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_chuck_alignment_axis",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Aligned to axis"),
+                "style": "option",
+                "choices": (0, 1),
+                "display": (
+                    _("X-Axis"),
+                    _("Y-Axis"),
+                ),
+                "tip": _(
+                    "How is your rotary aligned: perpendicular to the X- or the Y-Axis?"
+                ),
+                "conditional": (self, "rotary_active_chuck"),
+                "subsection": _("Orientation"),
+            },
+            {
+                "attr": "rotary_chuck_offset",
+                "object": self,
+                "default": 0.5,
+                "type": float,
+                "label": _("Rotary position"),
+                "tip": _(
+                    "Where is the position of the rotary along the alignment axis?"
+                ),
+                "conditional": (self, "rotary_active_chuck"),
+                "subsection": _("Orientation"),
             },
         ]
         service.register_choices("rotary_chuck", choices)
