@@ -38,33 +38,99 @@ class HelperPanelChuck(ScrolledPanel):
                 _("Rotate to {angle}°").format(angle=angle)
             )
             self.Bind(wx.EVT_BUTTON, self.on_rotate(angle), self.test_buttons[-1])
+        self.txt_position = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.txt_position.Enable(False)
+        self.btn_plus = wxButton(self, wx.ID_ANY, "+")
+        self.btn_plus.SetToolTip(_("Shift to right by 1mm / by 10mm on right click"))
+        self.btn_minus = wxButton(self, wx.ID_ANY, "-")
+        self.btn_minus.SetToolTip(_("Shift to left by 1mm / by 10mm on right click"))
+        self.check_show = wxCheckBox(self, wx.ID_ANY, _("Show"))
+        self.check_show.SetToolTip(
+            _("Show the current position of the rotary axis in the preview.")
+        )
+
         self.__do_layout()
         self.__do_logic()
 
     def __do_layout(self):
         self.sizer = StaticBoxSizer(self, wx.ID_ANY, _("Setup Helper"), wx.VERTICAL)
-        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_buttons = StaticBoxSizer(
+            self, wx.ID_ANY, _("Test rotation..."), wx.HORIZONTAL
+        )
         for button in self.test_buttons:
             sizer_buttons.Add(button, 0, wx.EXPAND, 0)
         self.sizer.Add(sizer_buttons, 0, wx.EXPAND, 0)
+        sizer_offset = StaticBoxSizer(
+            self, wx.ID_ANY, _("Rotary position"), wx.HORIZONTAL
+        )
+        sizer_offset.Add(self.txt_position, 0, 0, 0)
+        sizer_offset.Add(self.btn_minus, 0, 0, 0)
+        sizer_offset.Add(self.btn_plus, 0, 0, 0)
+        sizer_offset.AddSpacer(10)
+        sizer_offset.Add(self.check_show, 0, 0, 0)
+        self.sizer.Add(sizer_offset, 0, wx.EXPAND, 0)
         self.SetSizer(self.sizer)
 
     def __do_logic(self):
-        return
+        self.Bind(wx.EVT_BUTTON, self.on_position(+1), self.btn_plus)
+        self.btn_plus.Bind(wx.EVT_RIGHT_DOWN, self.on_position(+10))
+        self.Bind(wx.EVT_BUTTON, self.on_position(-1), self.btn_minus)
+        self.btn_minus.Bind(wx.EVT_RIGHT_DOWN, self.on_position(-10))
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_show, self.check_show)
 
     def pane_show(self):
         # Nothing to be done here, as the values are set in the rotary settings panel
-        return
+        service = self.context.device
+        zero_pos = Length(
+            f"{service.rotary.rotary_chuck_offset*100}%",
+            relative_length=service.view.width
+            if service.rotary.rotary_chuck_alignment_axis == 0
+            else service.view.height,
+        )
+        self.txt_position.SetValue(zero_pos.length_mm)
 
     def pane_hide(self):
         # Nothing to be done here, as the values are set in the rotary settings panel
         return
+
+    def on_position(self, offset):
+        def handler(event):
+            if self.context.device.rotary.rotary_chuck_offset is None:
+                return
+            current_offset = self.context.device.rotary.rotary_chuck_offset
+            min_val = 0
+            max_val = float(
+                self.context.device.view.width
+                if self.context.device.rotary.rotary_chuck_alignment_axis == 0
+                else self.context.device.view.height
+            )
+            l_offset = Length(f"{current_offset*100}%", relative_length=max_val)
+            l_offset += Length(f"{offset}mm")
+            newval = max(float(l_offset), min_val)
+            newval = min(newval, max_val)
+            self.context.device.rotary.rotary_chuck_offset = newval / max_val
+            self.context.signal("rotary_chuck_offset", newval)
+            self.txt_position.SetValue(Length(newval).length_mm)
+
+        return handler
+
+    def on_check_show(self, event=None):
+        self.stop_display()
+        if self.check_show.IsChecked():
+            self.start_display()
 
     def on_rotate(self, angle):
         def handler(event):
             self.context(f"rotary rotate_absolute {angle}\n")
 
         return handler
+
+    def start_display(self):
+        self.job_active = True
+
+    def stop_display(self):
+        if self.job_active:
+            self.job_active = False
 
 
 class HelperPanelRoller(ScrolledPanel):
@@ -263,8 +329,10 @@ class RotarySettings(MWindow):
     @signal_listener("rotary_flip_y")
     @signal_listener("rotary_active_chuck")
     @signal_listener("rotary_active_roller")
+    @signal_listener("rotary_chuck_offset")
     def signal_rotary(self, *args, **kwargs):
         if self.has_roller:
             self.roller_panel.reload()
         if self.has_chuck:
             self.chuck_panel.reload()
+            self.helper_panel_chuck.pane_show()
