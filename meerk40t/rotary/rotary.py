@@ -641,7 +641,7 @@ if __name__ == "__main__":
         f"  Input Y: {y_flat_7}, Mapped Y (desired on surface): {y_flat_7 - y_origin_on_bed:.2f}"
     )
     print(
-        f"  Output X: {x_out_7}, Rotary Steps: {steps_out_7} (expected around {1.5 * virtual_steps_coarse * (hw_steps/virtual_steps_coarse):.0f}), Y Gap: {gap_out_7:.6f} mm"
+        f"  Output X: {x_out_7}, Rotary Steps: {steps_out_7} (expected around {1.5 * virtual_steps_coarse * (hw_steps / virtual_steps_coarse):.0f}), Y Gap: {gap_out_7:.6f} mm"
     )
     expected_steps_approx = 1.5 * hw_steps  # rough check for no virtual
     expected_steps_virtual_approx = round((1.5 * virtual_steps_coarse)) * (
