@@ -20,6 +20,7 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
 )
 from meerk40t.kernel import signal_listener
+from meerk40t.tools.geomstr import Geomstr
 
 _ = wx.GetTranslation
 
@@ -28,7 +29,12 @@ class HelperPanelChuck(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.job_active = False
         self.context = context
+        self.startstop = {
+            "balor": (self.stop_balor_display, self.start_balor_display),
+            "galvo": (self.stop_balor_display, self.start_balor_display),
+        }
         self.test_buttons = []
         for angle in (-360, -180, -90, 90, 180, 360):
             self.test_buttons.append(
@@ -111,6 +117,9 @@ class HelperPanelChuck(ScrolledPanel):
             self.context.device.rotary.rotary_chuck_offset = newval / max_val
             self.context.signal("rotary_chuck_offset", newval)
             self.txt_position.SetValue(Length(newval).length_mm)
+            if self.job_active:
+                self.start_display()
+                # Update Live Lightjob / Laserhead position
 
         return handler
 
@@ -121,16 +130,83 @@ class HelperPanelChuck(ScrolledPanel):
 
     def on_rotate(self, angle):
         def handler(event):
-            self.context(f"rotary rotate_absolute {angle}\n")
+            self.context(f"rotary rotate {angle}deg\n")
 
         return handler
 
-    def start_display(self):
+    def stop_generic(self):
+        # Nothing to be done here
+        return
+
+    def start_generic(self):
+        # We move the laserhead to the new position
+        if self.context.device.rotary.rotary_chuck_alignment_axis == 0:
+            newval = (
+                self.context.device.rotary.rotary_chuck_offset
+                * self.context.device.view.width
+            )
+            self.context.device.move_abs(newval, 0)
+        else:
+            newval = (
+                self.context.device.rotary.rotary_chuck_offset
+                * self.context.device.view.height
+            )
+            self.context.device.move_abs(0, newval)
+
+    def stop_balor_display(self):
+        if self.job:
+            self.job.stop()
+            self.job = None
+
+    def start_balor_display(self):
+        from meerk40t.balormk.livelightjob import LiveLightJob
+
+        geom = Geomstr()
+        if self.context.device.rotary.rotary_chuck_alignment_axis == 0:
+            newval = (
+                self.context.device.rotary.rotary_chuck_offset
+                * self.context.device.view.width
+            )
+            geom.line(newval, 0, newval, self.context.device.view.height)
+        else:
+            newval = (
+                self.context.device.rotary.rotary_chuck_offset
+                * self.context.device.view.height
+            )
+            geom.line(0, newval, self.context.device.view.width, newval)
+
         self.job_active = True
+        self.job = LiveLightJob(
+            self.context.device,
+            "geometry",
+            geometry=geom,
+            travel_speed=8000,
+            jump_delay=10,
+        )
+        self.context.device.spooler.send(self.job)
 
     def stop_display(self):
         if self.job_active:
             self.job_active = False
+            devname = self.context.device.name.lower()
+            if devname in self.startstop:
+                routine = self.startstop[devname][0]
+            else:
+                routine = self.stop_generic
+            routine()
+
+    def start_display(self):
+        if self.job_active:
+            self.stop_display()
+
+        self.job_active = True
+        devname = self.context.device.name.lower()
+        if devname in self.startstop:
+            if devname in self.startstop:
+                routine = self.startstop[devname][1]
+            else:
+                routine = self.start_generic
+            routine()
 
 
 class HelperPanelRoller(ScrolledPanel):
