@@ -675,7 +675,7 @@ def plugin(service, lifecycle):
     def galvo_rotary_advance(
         command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs
     ):
-        service.driver.connection.rotate_absolute(
+        service.driver.connection.rotate_relative(
             delta_rotary, minspeed, maxspeed, acc_time
         )
 
