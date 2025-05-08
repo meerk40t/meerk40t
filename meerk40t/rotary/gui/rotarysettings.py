@@ -36,14 +36,18 @@ class HelperPanelChuck(ScrolledPanel):
             "galvo": (self.stop_balor_display, self.start_balor_display),
         }
         self.test_buttons = []
-        for angle in (-360, -180, -90, 90, 180, 360):
+        for angle in (-360, -180, -90, 0, 90, 180, 360):
             self.test_buttons.append(
                 wxButton(self, wx.ID_ANY, f"{angle}°", size=(50, -1))
             )
             self.test_buttons[-1].SetToolTip(
                 _("Rotate to {angle}°").format(angle=angle)
             )
-            self.Bind(wx.EVT_BUTTON, self.on_rotate(angle), self.test_buttons[-1])
+            self.Bind(wx.EVT_BUTTON, self.on_rotate(angle, True), self.test_buttons[-1])
+            self.test_buttons[-1].Bind(
+                wx.EVT_RIGHT_DOWN,
+                self.on_rotate(angle, False),
+            )
         self.txt_position = TextCtrl(self, wx.ID_ANY, "", limited=True)
         self.txt_position.Enable(False)
         self.btn_plus = wxButton(self, wx.ID_ANY, "+")
@@ -128,9 +132,10 @@ class HelperPanelChuck(ScrolledPanel):
         if self.check_show.IsChecked():
             self.start_display()
 
-    def on_rotate(self, angle):
+    def on_rotate(self, angle, absolute):
         def handler(event):
-            self.context(f"rotary rotate {angle}deg\n")
+            relstr = "" if absolute else "-r "
+            self.context(f"rotary rotate -f {relstr}{angle}deg\n")
 
         return handler
 
