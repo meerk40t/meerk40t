@@ -31,12 +31,14 @@ class LiveLightJob:
         quantization=100,
         listen=True,
         raw=False,
+        plain=False,
     ):
         self.service = service
         self.quantization = quantization
         self.mode = mode
         self.listen = listen
         self.raw = raw
+        self.plain = plain
         self._geometry = geometry
         self._travel_speed = travel_speed
         self._jump_delay = jump_delay
@@ -217,7 +219,8 @@ class LiveLightJob:
             if np.isnan(x) or np.isnan(y):
                 move = True
                 continue
-            x, y = con.service.rotary.consider_rotation(x, y)
+            if not self.plain:
+                x, y = con.service.rotary.consider_rotation(x, y)
             x = int(x)
             y = int(y)
             if x < 0 or x > 0xFFFF or y < 0 or y > 0xFFFF:
