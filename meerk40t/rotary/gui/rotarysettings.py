@@ -63,6 +63,9 @@ class HelperPanelChuck(ScrolledPanel):
         self.__do_logic()
 
     def __do_layout(self):
+        self.txt_position.SetMinSize(dip_size(self, 80, -1))
+        self.btn_minus.SetMinSize(dip_size(self, 30, -1))
+        self.btn_plus.SetMinSize(dip_size(self, 30, -1))
         self.sizer = StaticBoxSizer(self, wx.ID_ANY, _("Setup Helper"), wx.VERTICAL)
         sizer_buttons = StaticBoxSizer(
             self, wx.ID_ANY, _("Test rotation..."), wx.HORIZONTAL
@@ -98,10 +101,12 @@ class HelperPanelChuck(ScrolledPanel):
             else service.view.height,
         )
         self.txt_position.SetValue(zero_pos.length_mm)
+        if self.job_active:
+            self.start_display()
 
     def pane_hide(self):
         # Nothing to be done here, as the values are set in the rotary settings panel
-        return
+        self.stop_display()
 
     def on_position(self, offset):
         def handler(event):
@@ -168,17 +173,23 @@ class HelperPanelChuck(ScrolledPanel):
 
         geom = Geomstr()
         if self.context.device.rotary.rotary_chuck_alignment_axis == 0:
+            # show perpendicular line
             newval = (
                 self.context.device.rotary.rotary_chuck_offset
-                * self.context.device.view.width
+                * self.context.device.view.unit_width
             )
-            geom.line(newval, 0, newval, self.context.device.view.height)
+            geom.line(
+                complex(newval, 0),
+                complex(newval, self.context.device.view.unit_height),
+            )
         else:
             newval = (
                 self.context.device.rotary.rotary_chuck_offset
-                * self.context.device.view.height
+                * self.context.device.view.unit_height
             )
-            geom.line(0, newval, self.context.device.view.width, newval)
+            geom.line(
+                complex(0, newval), complex(self.context.device.view.unit_width, newval)
+            )
 
         self.job_active = True
         self.job = LiveLightJob(
@@ -187,6 +198,7 @@ class HelperPanelChuck(ScrolledPanel):
             geometry=geom,
             travel_speed=8000,
             jump_delay=10,
+            plain=True,
         )
         self.context.device.spooler.send(self.job)
 
@@ -411,6 +423,7 @@ class RotarySettings(MWindow):
     @signal_listener("rotary_active_chuck")
     @signal_listener("rotary_active_roller")
     @signal_listener("rotary_chuck_offset")
+    @signal_listener("rotary_chuck_alignment_axis")
     def signal_rotary(self, *args, **kwargs):
         if self.has_roller:
             self.roller_panel.reload()
