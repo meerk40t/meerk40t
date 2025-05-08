@@ -217,7 +217,7 @@ class LiveLightJob:
             if np.isnan(x) or np.isnan(y):
                 move = True
                 continue
-            x, y = con.consider_rotation(x, y)
+            x, y = con.service.rotary.consider_rotation(x, y)
             x = int(x)
             y = int(y)
             if x < 0 or x > 0xFFFF or y < 0 or y > 0xFFFF:

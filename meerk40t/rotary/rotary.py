@@ -281,10 +281,10 @@ class Rotary:
                 channel(f"  Microsteps per revolution: {service.rotary.rotary_microsteps_per_revolution}")
                 channel(f"  Object Diameter: {Length(service.rotary.object_diameter).length_mm}")
                 channel(f"  Reverse: {'Yes' if service.rotary.rotary_reverse else 'No'}")
-                channel(f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}")
-                channel(f"  Aligned to axis: {'X-Axis' if service.rotary.rotary_chuck_alignment_axis == 0 else 'Y-Axis'}")
-                zero_pos = Length(f"{service.rotary.rotary_chuck_offset*100}%", relative_length=service.view.width if service.rotary.rotary_chuck_alignment_axis == 0 else service.view.height)
-                channel(f"  Rotary position: {service.rotary.rotary_chuck_offset*100:.1f}% ({zero_pos.length_mm})")
+                channel(f"  Suppress Home: {'Yes' if self.suppress_home else 'No'}")
+                channel(f"  Aligned to axis: {'X-Axis' if self.rotary_chuck_alignment_axis == 0 else 'Y-Axis'}")
+                zero_pos = Length(f"{self.rotary_chuck_offset*100}%", relative_length=service.view.unit_width if self.rotary_chuck_alignment_axis == 0 else service.view.unit_height)
+                channel(f"  Rotary position: {self.rotary_chuck_offset*100:.1f}% ({zero_pos.length_mm})")
             else:
                 channel(_("No rotary mode active."))
             # fmt: on
@@ -306,8 +306,8 @@ class Rotary:
             output_type="rotary",
         )
         def command_off(command, channel, _, data=None, **kwargs):
-            service.rotary.rotary_active_roller = False
-            service.rotary.rotary_active_chuck = False
+            self.rotary_active_roller = False
+            self.rotary_active_chuck = False
             channel(_("Rotary mode deactivated."))
             service.device.realize()
             return "rotary", None
@@ -320,8 +320,8 @@ class Rotary:
         )
         def command_roller(command, channel, _, data=None, **kwargs):
             if getattr(service, "supports_rotary_roller", False):
-                service.rotary.rotary_active_roller = True
-                service.rotary.rotary_active_chuck = False
+                self.rotary_active_roller = True
+                self.rotary_active_chuck = False
                 service.device.realize()
                 show_rotary_settings(channel)
             else:
@@ -336,8 +336,8 @@ class Rotary:
         )
         def command_chuck(command, channel, _, data=None, **kwargs):
             if getattr(service, "supports_rotary_chuck", False):
-                service.rotary.rotary_active_roller = False
-                service.rotary.rotary_active_chuck = True
+                self.rotary_active_roller = False
+                self.rotary_active_chuck = True
                 service.device.realize()
                 show_rotary_settings(channel)
             else:
@@ -359,8 +359,8 @@ class Rotary:
                         key, value = setting.split("=")
                         key = key.strip()
                         value = value.strip()
-                        if hasattr(service.rotary, key):
-                            setattr(service.rotary, key, value)
+                        if hasattr(self, key):
+                            setattr(self, key, value)
                             channel(f"Set {key} to {value}.")
                         else:
                             channel(f"Invalid setting: {key}.")
@@ -369,6 +369,13 @@ class Rotary:
             show_rotary_settings(channel)
             return "rotary", None
 
+        @service.console_option(
+            "force",
+            "f",
+            type=bool,
+            action="store_true",
+            help=_("Rotate even if rotary is disabled"),
+        )
         @service.console_option("minspeed", "n", type=int, default=100)
         @service.console_option("maxspeed", "x", type=int, default=5000)
         @service.console_option("acc_time", "a", type=int, default=100)
@@ -398,9 +405,10 @@ class Rotary:
             minspeed=100,
             maxspeed=5000,
             acc_time=100,
+            force=False,
             **kwargs,
         ):
-            if not self._rotary_active_chuck:
+            if not self._rotary_active_chuck and not force:
                 channel(_("Rotary mode not active."))
                 return "rotary", None
             if angle is None:
@@ -549,6 +557,37 @@ class Rotary:
             device.view.flip_x()
         if self.rotary_flip_y:
             device.view.flip_y()
+
+    def consider_rotation(self, x, y):
+        # ROTATION_RESOLUTION = int(self.service.rotary_microsteps_per_revolution / 360.0) # 1 degree resolution
+        diam = 0.0 if self.object_diameter is None else float(self.object_diameter)
+        if not self.rotary_active_chuck or diam <= 0:
+            return x, y
+        offset_pos = (
+            self.rotary_chuck_offset * self.service.view.unit_width
+            if self.rotary_chuck_alignment_axis == 0
+            else self.rotary_chuck_offset * self.service.view.unit_height
+        )
+        relative_x, relative_y = self.service.view.iposition(x, y)
+        axis_value = (
+            relative_x - offset_pos
+            if self.rotary_chuck_alignment_axis == 0
+            else relative_y - offset_pos
+        )
+        # We do have to consider the object diameter, as given in the rotary settings.
+        # Both diameter and view.width are meerk40t units, x, y and are in device units
+        obj_circumference = diam * math.pi
+        factor = axis_value / obj_circumference
+        rotation = int(self.rotary_microsteps_per_revolution * factor)
+        # todo: consider rotation resolution and establish the remaining gap
+        if rotation != self.service.driver.connection._last_rotary:
+            self.service.driver.connection.rotate_absolute(rotation)
+        if self.rotary_chuck_alignment_axis == 0:
+            x = offset_pos
+        else:
+            y = offset_pos
+
+        return x, y
 
     def service_detach(self, *args, **kwargs):
         pass

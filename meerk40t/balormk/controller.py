@@ -661,35 +661,6 @@ class GalvoController:
     # PLOTLIKE SHORTCUTS
     #######################
 
-    def consider_rotation(self, x, y):
-        # ROTATION_RESOLUTION = int(self.service.rotary_microsteps_per_revolution / 360.0) # 1 degree resolution
-        diam = (
-            0
-            if self.service.rotary.object_diameter is None
-            else self.service.rotary.object_diameter
-        )
-        if self.service.rotary.rotary_active_chuck and diam > 0:
-            relative_x, relative_y = self.service.view.iposition(x, y)
-            axis_value = (
-                relative_x
-                if self._rotary_axis == "x"
-                else relative_y - self._rotary_zero_offset
-            )
-            # We do have to consider the object diameter, as given in the rotary settings.
-            # Both diameter and view.width are meerk40t units, x, y and are in device units
-            obj_circumference = diam * math.pi
-            factor = axis_value / obj_circumference
-            rotation = int(self.service.rotary_microsteps_per_revolution * factor)
-            # todo: consider rotation resolution and establish the remaining gap
-            if rotation != self._last_rotary:
-                self.rotate_absolute(rotation)
-            if self._rotary_axis == "x":
-                x = self._rotary_zero_offset
-            else:
-                y = self._rotary_zero_offset
-
-        return x, y
-
     def current_rotary(self, axis_index=0):
         """
         Get the current rotary position in steps.
@@ -756,7 +727,7 @@ class GalvoController:
         )
 
     def mark(self, x, y):
-        x, y = self.consider_rotation(x, y)
+        x, y = self.service.rotary.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -768,7 +739,7 @@ class GalvoController:
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
         # Do we need to consider rotary motion?
-        x, y = self.consider_rotation(x, y)
+        x, y = self.service.rotary.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -779,7 +750,7 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def light(self, x, y, long=None, short=None, distance_limit=None):
-        x, y = self.consider_rotation(x, y)
+        x, y = self.service.rotary.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
@@ -792,7 +763,7 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def dark(self, x, y, long=None, short=None, distance_limit=None):
-        x, y = self.consider_rotation(x, y)
+        x, y = self.service.rotary.consider_rotation(x, y)
         if x == self._last_x and y == self._last_y:
             return
         if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
