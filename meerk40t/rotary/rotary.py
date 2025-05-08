@@ -196,7 +196,7 @@ class Rotary:
                     25000,
                 ),
                 "signals": "device;modified",
-                "conditional": (self, "rotary_active_chuck"),
+                # "conditional": (self, "rotary_active_chuck"),
             },
             {
                 "attr": "object_diameter",
@@ -206,7 +206,7 @@ class Rotary:
                 "label": _("Object-Diameter"),
                 "tip": _("Diameter of the unit in the rotary chuck"),
                 "signals": "device;modified",
-                "conditional": (self, "rotary_active_chuck"),
+                # "conditional": (self, "rotary_active_chuck"),
             },
             {
                 "attr": "rotary_reverse",
@@ -215,7 +215,7 @@ class Rotary:
                 "type": bool,
                 "label": _("Reverse"),
                 "tip": _("Reverse the rotation direction"),
-                "conditional": (self, "rotary_active_chuck"),
+                # "conditional": (self, "rotary_active_chuck"),
                 "subsection": _("Mirror Output"),
             },
             {
@@ -233,7 +233,7 @@ class Rotary:
                 "tip": _(
                     "How is your rotary aligned: perpendicular to the X- or the Y-Axis?"
                 ),
-                "conditional": (self, "rotary_active_chuck"),
+                # "conditional": (self, "rotary_active_chuck"),
                 "subsection": _("Orientation"),
             },
             {
@@ -245,7 +245,7 @@ class Rotary:
                 "tip": _(
                     "Where is the position of the rotary along the alignment axis?"
                 ),
-                "conditional": (self, "rotary_active_chuck"),
+                # "conditional": (self, "rotary_active_chuck"),
                 "subsection": _("Orientation"),
             },
         ]
@@ -259,7 +259,7 @@ class Rotary:
                 "type": bool,
                 "label": _("Ignore Home"),
                 "tip": _("Ignore Home-Command"),
-                "conditional": (self, "active"),
+                # "conditional": (self, "active"),
             },
         ]
         service.register_choices("rotary_common", choices)
