@@ -22320,3 +22320,19 @@ msgstr "Di solito MK utilizzerà l'attributo di riempimento come indicatore per 
 #: meerk40t/core/elements/elements.py:326
 msgid "If you want to distinguish between different raster types then activate this option."
 msgstr "Se desideri distinguere tra diversi tipi di raster, attiva questa opzione."
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:46
+msgid "Cut ({percent}, {speed})"
+msgstr "Taglio ({percent}, {speed})"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:47
+msgid "Engrave ({percent}, {speed})"
+msgstr "Incisione ({percent}, {speed})"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:48
+msgid "Raster ({percent}, {speed})"
+msgstr "Raster ({percent}, {speed})"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:49
+msgid "Image ({percent}, {speed})"
+msgstr "Immagine ({percent}, {speed})"
