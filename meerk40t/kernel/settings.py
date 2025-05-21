@@ -1,6 +1,6 @@
 import ast
-import os
 import configparser
+import os
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Union
 
@@ -22,7 +22,9 @@ class Settings:
 
     def __init__(self, directory, filename, ignore_settings=False, create_backup=False):
         if directory:
-            self._config_file = Path(get_safe_path(directory, create=True)).joinpath(filename)
+            self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
+                filename
+            )
         else:
             self._config_file = filename
         self._config_dict = {}
@@ -55,9 +57,14 @@ class Settings:
         ):
             return
         except UnicodeDecodeError as e:
-            print ("The config file contained unsupported characters, please share the file with the dev team")
-        except (configparser.DuplicateOptionError, configparser.DuplicateSectionError) as e:
-            print (f"We had a duplication error in the config, try to recover from {e}")
+            print(
+                "The config file contained unsupported characters, please share the file with the dev team"
+            )
+        except (
+            configparser.DuplicateOptionError,
+            configparser.DuplicateSectionError,
+        ) as e:
+            print(f"We had a duplication error in the config, try to recover from {e}")
         for section in parser.sections():
             for option in parser.options(section):
                 try:
@@ -68,8 +75,9 @@ class Settings:
                 try:
                     config_section[option] = parser.get(section, option)
                 except Exception as e:
-                    print (f"We had an error in the config, section {section}.{option}, try to recover from {e}")
-
+                    print(
+                        f"We had an error in the config, section {section}.{option}, try to recover from {e}"
+                    )
 
     def write_configuration(self, targetfile=None):
         """
@@ -95,8 +103,13 @@ class Settings:
                     except configparser.NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
-                    except (configparser.DuplicateOptionError, configparser.DuplicateSectionError) as e:
-                        print (f"We had a duplication error in the config, try to recover from {e}")
+                    except (
+                        configparser.DuplicateOptionError,
+                        configparser.DuplicateSectionError,
+                    ) as e:
+                        print(
+                            f"We had a duplication error in the config, try to recover from {e}"
+                        )
 
             if self.create_backup:
                 VERSIONS = 5
@@ -129,7 +142,7 @@ class Settings:
                     pass
             with open(targetfile, "w", encoding="utf-8") as fp:
                 parser.write(fp)
-        except (PermissionError, FileNotFoundError):
+        except (PermissionError, FileNotFoundError, OSError, RuntimeError):
             return
 
     def literal_dict(self):
