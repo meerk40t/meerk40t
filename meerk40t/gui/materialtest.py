@@ -577,6 +577,7 @@ class TemplatePanel(wx.Panel):
         return result
 
     def on_combo_image(self, event):
+        self.validate_input(event)
         op = self.combo_ops.GetSelection()
         if op != 3:  # No Image?
             return
@@ -732,13 +733,69 @@ class TemplatePanel(wx.Panel):
         if "balor" in self.context.device.path:
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True, None),
-                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True, None,),
-                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False, None,),
-                ("delay_laser_off", preset_balor_timings, _("Laser Off Delay"), "µs", False, False, None,),
-                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False, None,),
-                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True, None,),
-                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True, None,),
-                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True, None,),
+                (
+                    "rapid_speed",
+                    preset_balor_rapid,
+                    _("Rapid Speed"),
+                    "mm/s",
+                    False,
+                    True,
+                    None,
+                ),
+                (
+                    "delay_laser_on",
+                    preset_balor_timings,
+                    _("Laser On Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "delay_laser_off",
+                    preset_balor_timings,
+                    _("Laser Off Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "delay_polygon",
+                    preset_balor_timings,
+                    _("Polygon Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "wobble_radius",
+                    preset_balor_wobble,
+                    _("Wobble Radius"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_interval",
+                    preset_balor_wobble,
+                    _("Wobble Interval"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_speed",
+                    preset_balor_wobble,
+                    _("Wobble Speed Multiplier"),
+                    "x",
+                    False,
+                    True,
+                    None,
+                ),
             ]
             if self.context.device.pulse_width_enabled:
                 balor_choices.append(
@@ -1125,7 +1182,9 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        if param_type_1 == "hatch_distance" and not str(value).endswith("mm"):
+                        if param_type_1 == "hatch_distance" and not str(value).endswith(
+                            "mm"
+                        ):
                             value = f"{value}mm"
                         setattr(master_op, param_type_1, value)
                     # else:  # Try setting
@@ -1134,9 +1193,13 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        elif param_type_1 == "hatch_distance" and not str(value).endswith("mm"):
+                        elif param_type_1 == "hatch_distance" and not str(
+                            value
+                        ).endswith("mm"):
                             value = f"{value}mm"
-                        elif param_type_1 == "hatch_angle" and not str(value).endswith("deg"):
+                        elif param_type_1 == "hatch_angle" and not str(value).endswith(
+                            "deg"
+                        ):
                             value = f"{value}deg"
                         setattr(this_op, param_type_1, value)
                     elif hasattr(this_op, "settings"):  # Try setting
@@ -1158,15 +1221,21 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_2 == "passes":
                             value = int(value)
-                        if param_type_2 == "hatch_distance" and not str(value).endswith("mm"):
+                        if param_type_2 == "hatch_distance" and not str(value).endswith(
+                            "mm"
+                        ):
                             value = f"{value}mm"
                         setattr(master_op, param_type_2, value)
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
-                        elif param_type_2 == "hatch_distance" and not str(value).endswith("mm"):
+                        elif param_type_2 == "hatch_distance" and not str(
+                            value
+                        ).endswith("mm"):
                             value = f"{value}mm"
-                        elif param_type_2 == "hatch_angle" and not str(value).endswith("deg"):
+                        elif param_type_2 == "hatch_angle" and not str(value).endswith(
+                            "deg"
+                        ):
                             value = f"{value}deg"
                         setattr(this_op, param_type_2, value)
                     elif hasattr(this_op, "settings"):  # Try setting
@@ -1187,6 +1256,7 @@ class TemplatePanel(wx.Panel):
                     operation_branch.add_node(master_op)
                     # Now add a rectangle to the scene and assign it to the newly created op
                     fill_color = set_color if usefill else None
+                    elemnode = None
                     if shapetype == "image":
                         idx = self.combo_images.GetSelection() - 1
                         if 0 <= idx < len(self.images):
@@ -1214,8 +1284,9 @@ class TemplatePanel(wx.Panel):
                             fill=fill_color,
                             type="elem ellipse",
                         )
-                    elemnode.label = s_lbl
-                    this_op.add_reference(elemnode, 0)
+                    if elemnode is not None:
+                        elemnode.label = s_lbl
+                        this_op.add_reference(elemnode, 0)
                     _p_value_2 += delta_2
                     yy = yy + gap_y + size_y
                 _p_value_1 += delta_1
