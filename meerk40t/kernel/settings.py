@@ -53,6 +53,8 @@ class Settings:
             PermissionError,
             configparser.NoSectionError,
             configparser.MissingSectionHeaderError,
+            configparser.ParsingError,
+            configparser.NoOptionError,
             FileNotFoundError,
         ):
             return
