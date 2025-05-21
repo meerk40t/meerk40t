@@ -22,7 +22,14 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
+from .wxutils import (
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -98,6 +105,9 @@ class TipPanel(wx.Panel):
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         self.check_startup = wxCheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup.SetFont(
+            wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        )
         self.check_startup.SetToolTip(
             _(
                 "Show tips at program start.\n"
@@ -234,6 +244,10 @@ class TipPanel(wx.Panel):
             self.image_tip.Show(True)
             return True
 
+        img_size = self.image_tip.GetSize()
+        if img_size[0] == 0 or img_size[1] == 0:
+            # Invalid display area
+            return False
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
         self.tip_image = path

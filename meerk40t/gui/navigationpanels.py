@@ -50,8 +50,8 @@ from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     TextCtrl,
     dip_size,
-    wxStaticBitmap,
     wxBitmapButton,
+    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import signal_listener
@@ -545,9 +545,7 @@ class Drag(wx.Panel):
             self.button_align_first_position.GetBestSize()
         )
         self.button_align_trace_hull.SetToolTip(
-            _(
-                "Perform a convex hull trace of the selection"
-            )
+            _("Perform a convex hull trace of the selection")
         )
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())
         self.button_align_trace_quick.SetToolTip(
@@ -965,7 +963,9 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
-        self.button_navigate_home.Bind(wx.EVT_MIDDLE_DOWN, self.on_button_navigate_jobstart)
+        self.button_navigate_home.Bind(
+            wx.EVT_MIDDLE_DOWN, self.on_button_navigate_jobstart
+        )
 
         self.button_navigate_home.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
@@ -1215,7 +1215,7 @@ class Jog(wx.Panel):
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context, dx, dy)
         self.context(f".move_relative {nx} {ny}\n")
-    
+
     def on_button_navigate_jobstart(self, event):
         ops = self.context.elements.op_branch
         for op in ops.children:
@@ -1543,13 +1543,17 @@ class MovePanel(wx.Panel):
             # wrong device...
             return
         # New position...
-        p = self.context
-        units = p.units_name
-        xpos = Length(amount=pos[2], preferred_units=units)
-        ypos = Length(amount=pos[3], preferred_units=units)
-        self.label_pos.SetLabel(
-            f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
-        )
+        try:
+            p = self.context
+            units = p.units_name
+            xpos = Length(amount=pos[2], preferred_units=units)
+            ypos = Length(amount=pos[3], preferred_units=units)
+            self.label_pos.SetLabel(
+                f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
+            )
+        except (ValueError, RuntimeError):
+            # Already destroyed or invalid
+            return
         self.label_pos.Refresh()
         # button_info_sizer.Layout()
         # self.GetSizer().Layout()

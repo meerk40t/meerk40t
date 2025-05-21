@@ -18,19 +18,21 @@ The rasters can either be BIDIRECTIONAL or UNIDIRECTIONAL meaning they raster on
 or only on forward swing.
 """
 
-import numpy as np
-from math import sqrt
+from math import isinf, sqrt
 from time import perf_counter, sleep
+
+import numpy as np
+
 from meerk40t.constants import (
-    RASTER_T2B,
     RASTER_B2T,
-    RASTER_R2L,
-    RASTER_L2R,
-    RASTER_HATCH,
+    RASTER_CROSSOVER,
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
-    RASTER_CROSSOVER,
+    RASTER_HATCH,
+    RASTER_L2R,
+    RASTER_R2L,
     RASTER_SPIRAL,
+    RASTER_T2B,
 )
 
 
@@ -90,7 +92,7 @@ class RasterPlotter:
 
         if special is None:
             special = {}
-        self.debug_level = 0 # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
+        self.debug_level = 0  # 0 Nothing, 1 file creation, 2 file + summary, 3 file + summary + details
         self.data = data
         self.width = width
         self.height = height
@@ -98,16 +100,18 @@ class RasterPlotter:
         self._cache = None
         parameters = {
             # Provide an override for the minimumx / minimumy / horizontal / bidirectional
-            RASTER_T2B: (None, True, True, None), # top to bottom
-            RASTER_B2T: (None, False, True, None), # bottom to top
-            RASTER_R2L: (False, None, False, None), # right to left
-            RASTER_L2R: (True, None, False, None), # left to right
-            RASTER_HATCH: (None, None, None, None), # crossraster (one of the two)
-            RASTER_GREEDY_H: (None, None, None, True), # greedy neighbour horizontal
-            RASTER_GREEDY_V: (None, None, None, True), # greedy neighbour
-            RASTER_CROSSOVER: (None, None, None, True), # true crossover
+            RASTER_T2B: (None, True, True, None),  # top to bottom
+            RASTER_B2T: (None, False, True, None),  # bottom to top
+            RASTER_R2L: (False, None, False, None),  # right to left
+            RASTER_L2R: (True, None, False, None),  # left to right
+            RASTER_HATCH: (None, None, None, None),  # crossraster (one of the two)
+            RASTER_GREEDY_H: (None, None, None, True),  # greedy neighbour horizontal
+            RASTER_GREEDY_V: (None, None, None, True),  # greedy neighbour
+            RASTER_CROSSOVER: (None, None, None, True),  # true crossover
         }
-        def_x, def_y, def_hor, def_bidir = parameters.get(direction, (None, None, None, None))
+        def_x, def_y, def_hor, def_bidir = parameters.get(
+            direction, (None, None, None, None)
+        )
         self.start_minimum_x = start_minimum_x if def_x is None else def_x
         self.start_minimum_y = start_minimum_y if def_y is None else def_y
         self.horizontal = horizontal if def_hor is None else def_hor
@@ -120,7 +124,7 @@ class RasterPlotter:
         # and calculate the overlap in pixels to the left / to the right
         self.overlap = int(laserspot / sqrt(2) / 2)
         # self.overlap = 1
-        self.special = dict(special) # Copy it so it wont be changed
+        self.special = dict(special)  # Copy it so it wont be changed
         if horizontal:
             self.overscan = round(overscan / float(step_x))
         else:
@@ -150,11 +154,13 @@ class RasterPlotter:
         if 0 <= self.direction < len(methods):
             s_meth = f"Rasterplotter ({self.width}x{self.height}): {methods[self.direction]} ({self.direction})"
         else:
-            s_meth = f"Rasterplotter ({self.width}x{self.height}): Unknown {self.direction}"
-        s_direc = 'Bidirectional' if self.bidirectional else 'Unidirectional'
-        s_axis = 'horizontal' if self.horizontal else 'vertical'
-        s_ystart = 'top' if self.start_minimum_y else 'bottom'
-        s_xstart = 'left' if self.start_minimum_x else 'right'
+            s_meth = (
+                f"Rasterplotter ({self.width}x{self.height}): Unknown {self.direction}"
+            )
+        s_direc = "Bidirectional" if self.bidirectional else "Unidirectional"
+        s_axis = "horizontal" if self.horizontal else "vertical"
+        s_ystart = "top" if self.start_minimum_y else "bottom"
+        s_xstart = "left" if self.start_minimum_x else "right"
         return f"{s_meth}, {s_direc} {s_axis} plot starting at {s_ystart}-{s_xstart}"
 
     def reset(self):
@@ -434,7 +440,7 @@ class RasterPlotter:
         Returns the initial position for this within the scene. Taking into account start corner, and step size.
         @return: initial position within scene. The first plot location.
         """
-        if self.initial_x is None:  # image is blank.
+        if self.initial_x is None or isinf(self.initial_x):  # image is blank.
             if self.use_integers:
                 return int(round(self.offset_x)), int(round(self.offset_y))
             else:
@@ -518,15 +524,20 @@ class RasterPlotter:
                     s_meth = f"Method: {m} ({self.direction})"
                 except IndexError:
                     s_meth = f"Method: Unknown {self.direction}"
-                print (s_meth)
+                print(s_meth)
                 data = list(self._plot_pixels())
                 from platform import system
+
                 defaultdir = "c:\\temp\\" if system() == "Windows" else ""
                 has_duplicates = 0
                 tstamp = int(perf_counter() * 100)
                 with open(f"{defaultdir}plot_{tstamp}.txt", mode="w") as f:
-                    f.write(f"0.9.7\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n")
-                    f.write(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n")
+                    f.write(
+                        f"0.9.7\n{s_meth}\n{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}\n"
+                    )
+                    f.write(
+                        f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}\n"
+                    )
                     f.write(f"Image dimensions: {self.width}x{self.height}\n")
                     f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
                     f.write(f"Overlapping pixels to any side: {self.overlap}\n")
@@ -534,7 +545,9 @@ class RasterPlotter:
                         f.write(f"Special instructions:\n")
                         for key, value in self.special.items():
                             f.write(f"  {key} = {value}\n")
-                    f.write("----------------------------------------------------------------------\n")
+                    f.write(
+                        "----------------------------------------------------------------------\n"
+                    )
                     test_dict = {}
                     lastx = self.initial_x
                     lasty = self.initial_y
@@ -543,32 +556,48 @@ class RasterPlotter:
                         if lastx is not None:
                             dx = x - lastx
                             dy = y - lasty
-                            if dx != 0 and dy != 0: # and abs(dx) != abs(dy):
-                                f.write (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n")
-                                print (f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}")
+                            if dx != 0 and dy != 0:  # and abs(dx) != abs(dy):
+                                f.write(
+                                    f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}\n"
+                                )
+                                print(
+                                    f"You f**ed up! No zigzag movement from line {lineno - 1} to {lineno}: {lastx}, {lasty} -> {x}, {y}"
+                                )
                                 failed = True
                         lastx = x
                         lasty = y
                     if not failed:
                         f.write("Good news, no zig-zag movements identified!\n")
-                    f.write("----------------------------------------------------------------------\n")
+                    f.write(
+                        "----------------------------------------------------------------------\n"
+                    )
                     for lineno, (x, y, on) in enumerate(data, start=1):
                         if x is None or y is None:
                             continue
                         key = f"{x} - {y}"
                         if key in test_dict:
-                            f.write (f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n")
+                            f.write(
+                                f"Duplicate coordinates in list at ({x}, {y})! 1st: #{test_dict[key][0]}, on={test_dict[key][1]}, 2nd: #{lineno}, on={on}\n"
+                            )
                             has_duplicates += 1
                         else:
                             test_dict[key] = (lineno, on)
                     if has_duplicates:
-                        f.write("----------------------------------------------------------------------\n")
+                        f.write(
+                            "----------------------------------------------------------------------\n"
+                        )
                     for lineno, (x, y, on) in enumerate(data, start=1):
                         f.write(f"{lineno}: {x}, {y}, {on}\n")
                     if has_duplicates:
-                        print(f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!")
-                        print(f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}")
-                        print(f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}")
+                        print(
+                            f"Attention: the generated plot has {has_duplicates} duplicate coordinate values!"
+                        )
+                        print(
+                            f"{'Bidirectional' if self.bidirectional else 'Unidirectional'} {'horizontal' if self.horizontal else 'vertical'} plot starting at {'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}"
+                        )
+                        print(
+                            f"Overscan: {self.overscan:.2f}, Stepx={step_x:.2f}, Stepy={step_y:.2f}"
+                        )
                         print(f"Image dimensions: {self.width}x{self.height}")
             else:
                 data = list(self._plot_pixels())
@@ -585,8 +614,22 @@ class RasterPlotter:
                 else:
                     nx = int(round(offset_x + step_x * x))
                     ny = int(round(offset_y + y * step_y))
-                    self._distance_burn += 0 if on == 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
-                    self._distance_travel += 0 if on != 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
+                    self._distance_burn += (
+                        0
+                        if on == 0
+                        else sqrt(
+                            (nx - last_x) * (nx - last_x)
+                            + (ny - last_y) * (ny - last_y)
+                        )
+                    )
+                    self._distance_travel += (
+                        0
+                        if on != 0
+                        else sqrt(
+                            (nx - last_x) * (nx - last_x)
+                            + (ny - last_y) * (ny - last_y)
+                        )
+                    )
                     yield nx, ny, on
                     last_x = nx
                     last_y = ny
@@ -598,8 +641,22 @@ class RasterPlotter:
                 else:
                     nx = round(offset_x + step_x * x)
                     ny = round(offset_y + y * step_y)
-                    self._distance_burn += 0 if on == 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
-                    self._distance_travel += 0 if on != 0 else sqrt( (nx - last_x) * (nx-last_x) + (ny - last_y) * (ny - last_y) )
+                    self._distance_burn += (
+                        0
+                        if on == 0
+                        else sqrt(
+                            (nx - last_x) * (nx - last_x)
+                            + (ny - last_y) * (ny - last_y)
+                        )
+                    )
+                    self._distance_travel += (
+                        0
+                        if on != 0
+                        else sqrt(
+                            (nx - last_x) * (nx - last_x)
+                            + (ny - last_y) * (ny - last_y)
+                        )
+                    )
                     yield offset_x + step_x * x, offset_y + y * step_y, on
                     last_x = nx
                     last_y = ny
@@ -632,12 +689,12 @@ class RasterPlotter:
             return
         BLANK = 255
         for y in range(self.height):
-            msg:str = f"{y:3d}: "
+            msg: str = f"{y:3d}: "
             for x in range(self.width):
                 msg += "." if self.data[x, y] == BLANK else "X"
-            print (msg)
+            print(msg)
 
-    def _get_pixel_chains(self, xy:int, is_x : bool) -> list:
+    def _get_pixel_chains(self, xy: int, is_x: bool) -> list:
         last_pixel = None
         segments = []
         upper = self.width if is_x else self.height
@@ -648,11 +705,11 @@ class RasterPlotter:
                 if on == last_pixel:
                     segments[-1][1] = idx
                 else:
-                    segments.append ([idx, idx, on])
+                    segments.append([idx, idx, on])
             last_pixel = on
         return segments
 
-    def _consume_pixel_chains(self, segments:list, xy:int, is_x : bool):
+    def _consume_pixel_chains(self, segments: list, xy: int, is_x: bool):
         BLANK = 255
         # for x in range(5):
         #     msg1 = f"{x}: "
@@ -727,7 +784,11 @@ class RasterPlotter:
                 # We consider as well the overscan value
                 overscan_top = 0 if dy >= 0 else self.overscan
                 overscan_bottom = 0 if dy <= 0 else self.overscan
-                if not first and (segments[0][0] - overscan_top <= last_y <= segments[-1][1] + overscan_bottom):
+                if not first and (
+                    segments[0][0] - overscan_top
+                    <= last_y
+                    <= segments[-1][1] + overscan_bottom
+                ):
                     # inside the chain!
                     # So lets move a bit to the side
                     if dy > 0:
@@ -814,7 +875,11 @@ class RasterPlotter:
                 # We consider as well the overscan value
                 overscan_left = 0 if dx >= 0 else self.overscan
                 overscan_right = 0 if dx <= 0 else self.overscan
-                if not first and (segments[0][0] - overscan_left <= last_x <= segments[-1][1] + overscan_right):
+                if not first and (
+                    segments[0][0] - overscan_left
+                    <= last_x
+                    <= segments[-1][1] + overscan_right
+                ):
                     # inside the chain!
                     # So lets move a bit to the side
                     if dx > 0:
@@ -1021,12 +1086,14 @@ class RasterPlotter:
         """
 
         def walk_segments(segments, horizontal=True, xy_penalty=1, width=1, height=1):
-            n:int = len(segments)
+            n: int = len(segments)
             visited = np.zeros(n, dtype=bool)
             path = []
             window_size = 10
             current_point = np.array(segments[0][0], dtype=float)
-            segment_points = np.array([point for segment in segments for point in segment], dtype=float)
+            segment_points = np.array(
+                [point for segment in segments for point in segment], dtype=float
+            )
             mask = ~visited.repeat(2)
             while len(path) < n:
                 # Find the range of segments within the x- and y-window
@@ -1035,17 +1102,19 @@ class RasterPlotter:
                 y_min = current_point[1] - window_size
                 y_max = current_point[1] + window_size
                 unvisited_indices = np.where(
-                    (segment_points[:, 0] >= x_min) &
-                    (segment_points[:, 0] <= x_max) &
-                    (segment_points[:, 1] >= y_min) &
-                    (segment_points[:, 1] <= y_max) &
-                    mask
+                    (segment_points[:, 0] >= x_min)
+                    & (segment_points[:, 0] <= x_max)
+                    & (segment_points[:, 1] >= y_min)
+                    & (segment_points[:, 1] <= y_max)
+                    & mask
                 )[0]
                 if len(unvisited_indices) == 0:
                     # If no segments are within the window, expand the window
                     window_size *= 2
                     # print (f"Did not find points: now window: {window_size}")
-                    if window_size <= 2* height or window_size <= 2 * width: # Safety belt
+                    if (
+                        window_size <= 2 * height or window_size <= 2 * width
+                    ):  # Safety belt
                         continue
 
                 unvisited_points = segment_points[unvisited_indices]
@@ -1053,11 +1122,11 @@ class RasterPlotter:
                 # distances = distance_matrix(unvisited_points, current_point, y_penalty)
                 diff = unvisited_points - current_point
                 if horizontal:
-                    diff[:, 1] *= xy_penalty # Apply penalty to y-distances
+                    diff[:, 1] *= xy_penalty  # Apply penalty to y-distances
                 else:
-                    diff[:, 0] *= xy_penalty # Apply penalty to x-distances
+                    diff[:, 0] *= xy_penalty  # Apply penalty to x-distances
 
-                distances = np.sum(diff ** 2, axis=1) # Return squared distances
+                distances = np.sum(diff**2, axis=1)  # Return squared distances
 
                 min_distance_idx = np.argmin(distances)
                 next_segment = unvisited_indices[min_distance_idx] // 2
@@ -1068,12 +1137,16 @@ class RasterPlotter:
                     mask[2 * next_segment] = False
                     mask[2 * next_segment + 1] = False
                     if min_distance_idx % 2 == 0:
-                        path.append((next_segment, 'end'))
-                        current_point = segment_points[next_segment * 2 + 1]  # Move to the other endpoint
+                        path.append((next_segment, "end"))
+                        current_point = segment_points[
+                            next_segment * 2 + 1
+                        ]  # Move to the other endpoint
                     else:
-                        path.append((next_segment, 'start'))
-                        current_point = segment_points[next_segment * 2]  # Move to the other endpoint
-                    window_size = 10 # Reset window size
+                        path.append((next_segment, "start"))
+                        current_point = segment_points[
+                            next_segment * 2
+                        ]  # Move to the other endpoint
+                    window_size = 10  # Reset window size
 
             return path
 
@@ -1093,14 +1166,16 @@ class RasterPlotter:
         line_parts = []
         on_parts = []
         if self.debug_level > 2:
-            print (f"{'horizontal' if horizontal else 'Vertical'} for {self.width}x{self.height} image. {'y' if horizontal else 'x'} from {lower} to {upper}")
+            print(
+                f"{'horizontal' if horizontal else 'Vertical'} for {self.width}x{self.height} image. {'y' if horizontal else 'x'} from {lower} to {upper}"
+            )
         if horizontal:
             while lower <= y <= upper:
                 segments = self._get_pixel_chains(y, True)
                 self._consume_pixel_chains(segments, y, True)
                 for seg in segments:
                     # Append (xstart, y), (xend, y), on
-                    line_parts.append( ( (seg[0], y), (seg[1], y) ) )
+                    line_parts.append(((seg[0], y), (seg[1], y)))
                     on_parts.append(seg[2])
                 y += dy
         else:
@@ -1109,14 +1184,20 @@ class RasterPlotter:
                 self._consume_pixel_chains(segments, x, False)
                 for seg in segments:
                     # Append (xstart, y), (xend, y), on
-                    line_parts.append( ( (x, seg[0]), (x, seg[1]) ) )
+                    line_parts.append(((x, seg[0]), (x, seg[1])))
                     on_parts.append(seg[2])
                 x += dx
         if self.debug_level > 2:
-            print (f"Created {len(line_parts)} segments")
+            print(f"Created {len(line_parts)} segments")
         t1 = perf_counter()
         penalty = 3 if self.special.get("gantry", False) else 1
-        path = walk_segments(line_parts, horizontal=horizontal, xy_penalty=penalty, width=self.width, height=self.height)
+        path = walk_segments(
+            line_parts,
+            horizontal=horizontal,
+            xy_penalty=penalty,
+            width=self.width,
+            height=self.height,
+        )
         # print("Order of segments:", path)
         t2 = perf_counter()
         if horizontal:
@@ -1171,14 +1252,16 @@ class RasterPlotter:
             last_y = ey
         t3 = perf_counter()
         if self.debug_level > 1:
-            print (f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments")
-            print (f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s")
+            print(
+                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments"
+            )
+            print(
+                f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
+            )
         self.final_x = last_x
         self.final_y = last_y
 
     def _plot_spiral(self):
-
-
         rows = self.height
         cols = self.width
         center_row, center_col = rows // 2, cols // 2
@@ -1223,7 +1306,7 @@ class RasterPlotter:
                             if on == last_pixel and len(segments):
                                 segments[-1][1] = (col, row)
                             else:
-                                segments.append ([(col, row), (col, row), on])
+                                segments.append([(col, row), (col, row), on])
 
                         last_pixel = on
                         count += 1
@@ -1255,7 +1338,7 @@ class RasterPlotter:
                         sy = min(start_y, end_y)
                         ey = max(start_y, end_y)
 
-                        if direction_index in (0, 2): # horizontal
+                        if direction_index in (0, 2):  # horizontal
                             for y_idx in range(-self.overlap, self.overlap + 1):
                                 ny = sy + y_idx
                                 for nx in range(sx, ex + 1):
@@ -1268,10 +1351,8 @@ class RasterPlotter:
                                     if 0 <= nx < self.width and 0 <= ny < self.height:
                                         self.data[nx, ny] = BLANK
 
-
                 direction_index = (direction_index + 1) % 4
             steps += 1
-
 
     def _plot_crossover(self):
         """
@@ -1289,8 +1370,8 @@ class RasterPlotter:
         Yields:
             list of tuples with (x, y, on)
         """
-        ROW=0
-        COL=1
+        ROW = 0
+        COL = 1
 
         def process_image(image):
             # We will modify the image to keep track of deleted rows and columns
@@ -1373,28 +1454,30 @@ class RasterPlotter:
                         # msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             if not covered_col[idx]:
-                                covered_col[idx] = None # needs recalc
+                                covered_col[idx] = None  # needs recalc
                             if on == last_pixel:
                                 segments[-1][1] = idx
                             else:
-                                segments.append ([idx, idx, on])
+                                segments.append([idx, idx, on])
                         last_pixel = on
-                    results.append((COL, rowidx, segments)) # Intentionally so, as the numpy array has x and y exchanged
+                    results.append(
+                        (COL, rowidx, segments)
+                    )  # Intentionally so, as the numpy array has x and y exchanged
                     # print (f"Col #{rowidx}: {msg} -> {segments}")
 
                     # Clear the column
-                    image[rowidx,:] = 0
+                    image[rowidx, :] = 0
                     covered_row[rowidx] = True
                     stored_row[rowidx] = 0
                     for rc in range(self.overlap):
                         r = rowidx - rc
                         if 0 <= r < rows:
-                            image[r,:] = 0
+                            image[r, :] = 0
                             covered_row[r] = True
                             stored_row[r] = 0
                         r = rowidx + rc
                         if 0 <= r < rows:
-                            image[r,:] = 0
+                            image[r, :] = 0
                             covered_row[r] = True
                             stored_row[r] = 0
                     recalc_col = True
@@ -1407,11 +1490,11 @@ class RasterPlotter:
                         # msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             if not covered_row[idx]:
-                                covered_row[idx] = None # needs recalc
+                                covered_row[idx] = None  # needs recalc
                             if on == last_pixel:
                                 segments[-1][1] = idx
                             else:
-                                segments.append ([idx, idx, on])
+                                segments.append([idx, idx, on])
                         last_pixel = on
                     results.append((ROW, colidx, segments))
                     # print (f"Row #{colidx}: {msg} -> {segments}")
@@ -1437,7 +1520,7 @@ class RasterPlotter:
                         for ridx in range(rows):
                             on = image[ridx, cidx]
                             msg = f"{msg}{'X' if on else '.'}"
-                        print (f"{cidx:3d}: {msg}")
+                        print(f"{cidx:3d}: {msg}")
 
             return results
 
@@ -1448,7 +1531,7 @@ class RasterPlotter:
         for x in range(self.width):
             for y in range(self.height):
                 px = self.px(x, y)
-                if px==self.skip_pixel:
+                if px == self.skip_pixel:
                     px = 0
                 image[x, y] = px
         t1 = perf_counter()
@@ -1528,7 +1611,7 @@ class RasterPlotter:
             if self.bidirectional:
                 if mode == ROW:
                     dx = -dx
-                else: # column
+                else:  # column
                     dy = -dy
 
         # We need to set the final values so that the rastercut is able to carry on
@@ -1536,8 +1619,11 @@ class RasterPlotter:
         self.final_y = last_y
         t3 = perf_counter()
         if self.debug_level > 1:
-            print (f"Overall time for crossover consumption: {t3-t0:.2f}s")
-            print (f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s")
+            print(f"Overall time for crossover consumption: {t3-t0:.2f}s")
+            print(
+                f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s"
+            )
+
     """
     # Testpattern generation
     def testpattern_generator(self):
