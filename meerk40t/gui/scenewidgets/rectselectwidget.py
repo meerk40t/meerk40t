@@ -16,7 +16,7 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import get_matrix_scale, get_gc_full_scale
+from meerk40t.gui.wxutils import dip_size, get_gc_full_scale, get_matrix_scale
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 
@@ -80,6 +80,7 @@ class RectSelectWidget(Widget):
         self.scene.context.setting(bool, "delayed_move", True)
         self.mode = "select"
         self.can_drag_move = False
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
 
     def hit(self):
         return HITCHAIN_HIT
@@ -93,15 +94,9 @@ class RectSelectWidget(Widget):
         ex = self.end_location[0]
         ey = self.end_location[1]
         if sx <= ex:
-            if sy <= ey:
-                return 0
-            else:
-                return 1
+            return 0 if sy <= ey else 1
         else:
-            if sy <= ey:
-                return 3
-            else:
-                return 2
+            return 3 if sy <= ey else 2
 
     def rect_select(self, elements, sx, sy, ex, ey):
         sector = self.sector
@@ -190,6 +185,30 @@ class RectSelectWidget(Widget):
                 x = x[0]
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
+        def shortest_distance(p1, p2, tuplemode):
+            """
+            Calculates the shortest distance between two arrays of 2-dimensional points.
+            """
+            try:
+                # Calculate the Euclidean distance between each point in p1 and p2
+                if tuplemode:
+                    # For an array of tuples:
+                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                else:
+                    # For an array of complex numbers
+                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+
+                # Find the minimum distance and its corresponding indices
+                min_dist = np.min(dist)
+                if np.isnan(min_dist):
+                    return None, 0, 0
+                min_indices = np.argwhere(dist == min_dist)
+
+                # Return the coordinates of the two points
+                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+            except Exception:  # out of memory eg
+                return None, None, None
+
         def move_to(dx, dy):
             if dx == 0 and dy == 0:
                 return
@@ -217,192 +236,21 @@ class RectSelectWidget(Widget):
             )
             self.scene.request_refresh()
 
-        if modifiers is not None:
-            self.modifiers = modifiers
-
-        elements = self.scene.context.elements
-        if event_type == "leftdown":
+        def check_leftdown(space_pos):
             self.mouse_down_time = perf_counter()
             self.mode = "unclear"
             self.start_location = space_pos
             self.end_location = space_pos
             if contains(self.scene.context.elements._emphasized_bounds, space_pos):
                 self.can_drag_move = True
-            # print ("RectSelect consumed leftdown")
-            return RESPONSE_CONSUME
-        elif event_type == "leftclick":
+
+        def check_click(space_pos):
             # That's too fast
             # still chaining though
             self.scene.request_refresh()
             self.reset()
-            return RESPONSE_CHAIN
-        elif event_type == "leftup":
-            if self.mode == "select":
-                if self.start_location is None:
-                    return RESPONSE_CHAIN
-                _ = self.scene.context._
-                self.update_statusmsg(_("Status"))
-                elements.validate_selected_area()
-                sx = min(self.start_location[0], self.end_location[0])
-                sy = min(self.start_location[1], self.end_location[1])
-                ex = max(self.start_location[0], self.end_location[0])
-                ey = max(self.start_location[1], self.end_location[1])
-                self.rect_select(elements, sx, sy, ex, ey)
 
-                self.scene.request_refresh()
-                self.scene.context.signal("select_emphasized_tree", 0)
-            else:
-
-                def shortest_distance(p1, p2, tuplemode):
-                    """
-                    Calculates the shortest distance between two arrays of 2-dimensional points.
-                    """
-                    try:
-                        # Calculate the Euclidean distance between each point in p1 and p2
-                        if tuplemode:
-                            # For an array of tuples:
-                            dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-                        else:
-                            # For an array of complex numbers
-                            dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
-
-                        # Find the minimum distance and its corresponding indices
-                        min_dist = np.min(dist)
-                        if np.isnan(min_dist):
-                            return None, 0, 0
-                        min_indices = np.argwhere(dist == min_dist)
-
-                        # Return the coordinates of the two points
-                        return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-                    except Exception: # out of memory eg
-                        return None, None, None
-
-                b = self.scene.context.elements._emphasized_bounds
-                if b is None:
-                    b = self.scene.context.elements.selected_area()
-                matrix = self.scene.widget_root.scene_widget.matrix
-                did_snap_to_point = False
-                if (
-                    self.scene.context.snap_points
-                    and "shift" not in modifiers
-                    and b is not None
-                ):
-                    gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
-                    # We gather all points of non-selected elements,
-                    # but only those that lie within the boundaries
-                    # of the selected area
-                    # We compare every point of the selected elements
-                    # with the points of the non-selected elements (provided they
-                    # lie within the selection area plus boundary) and look for
-                    # the closest distance.
-
-                    # t1 = perf_counter()
-                    other_points = []
-                    selected_points = []
-                    for e in self.scene.context.elements.elems():
-                        if e.emphasized:
-                            target = selected_points
-                        else:
-                            target = other_points
-                        if not hasattr(e, "as_geometry"):
-                            continue
-                        geom = e.as_geometry()
-                        last = None
-                        for seg in geom.segments[: geom.index]:
-                            start = seg[0]
-                            seg_type = geom._segtype(seg)
-                            end = seg[4]
-                            if seg_type in NON_GEOMETRY_TYPES:
-                                continue
-                            if np.isnan(start) or np.isnan(end):
-                                print (f"Strange, encountered within rectselect a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
-                                continue
-                            if start != last:
-                                xx = start.real
-                                yy = start.imag
-                                ignore = (
-                                    xx < b[0] - gap
-                                    or xx > b[2] + gap
-                                    or yy < b[1] - gap
-                                    or yy > b[3] + gap
-                                )
-                                if not ignore:
-                                    target.append(start)
-                            xx = end.real
-                            yy = end.imag
-                            ignore = (
-                                xx < b[0] - gap
-                                or xx > b[2] + gap
-                                or yy < b[1] - gap
-                                or yy > b[3] + gap
-                            )
-                            if not ignore:
-                                target.append(end)
-                            last = end
-                    # t2 = perf_counter()
-                    if (
-                        other_points is not None
-                        and selected_points is not None
-                        and len(other_points) > 0
-                        and len(selected_points) > 0
-                    ):
-                        np_other = np.asarray(other_points)
-                        np_selected = np.asarray(selected_points)
-                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
-
-                        if dist is not None and dist < gap:
-                            did_snap_to_point = True
-                            dx = pt1.real - pt2.real
-                            dy = pt1.imag - pt2.imag
-                            move_to(dx, dy)
-                            # Get new value
-                            b = self.scene.context.elements._emphasized_bounds
-                    # t3 = perf_counter()
-                    # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
-                if (
-                    self.scene.context.snap_grid
-                    and "shift" not in modifiers
-                    and b is not None
-                    and not did_snap_to_point
-                ):
-                    # t1 = perf_counter()
-                    gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
-                    # Check for corner points + center:
-                    selected_points = (
-                        (b[0], b[1]),
-                        (b[2], b[1]),
-                        (b[0], b[3]),
-                        (b[2], b[3]),
-                        ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
-                    )
-                    other_points = self.scene.pane.grid.grid_points
-                    if (
-                        other_points is not None
-                        and selected_points is not None
-                        and len(other_points) > 0
-                        and len(selected_points) > 0
-                    ):
-                        np_other = np.asarray(other_points)
-                        np_selected = np.asarray(selected_points)
-                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                        if dist is not None and dist < gap:
-                            # did_snap_to_point = True
-                            dx = pt1[0] - pt2[0]
-                            dy = pt1[1] - pt2[1]
-                            move_to(dx, dy)
-                            # Get new value
-                            b = self.scene.context.elements._emphasized_bounds
-
-                    # t2 = perf_counter()
-                    # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
-                    # Even then magnets win!
-                    dx, dy = self.scene.pane.revised_magnet_bound(b)
-                    move_to(dx, dy)
-
-            self.reset()
-
-            return RESPONSE_CONSUME
-        elif event_type == "move":
+        def check_move(space_pos):
             if self.mode == "unclear":
                 current_time = perf_counter()
                 # print (f"{current_time - self.mouse_down_time:.2f}sec.")
@@ -421,6 +269,155 @@ class RectSelectWidget(Widget):
                 dy = space_pos[5]
                 move_to(dx, dy)
 
+        def check_leftup_select(space_pos):
+            _ = self.scene.context._
+            self.update_statusmsg(_("Status"))
+            elements.validate_selected_area()
+            sx = min(self.start_location[0], self.end_location[0])
+            sy = min(self.start_location[1], self.end_location[1])
+            ex = max(self.start_location[0], self.end_location[0])
+            ey = max(self.start_location[1], self.end_location[1])
+            self.rect_select(elements, sx, sy, ex, ey)
+
+            self.scene.request_refresh()
+            self.scene.context.signal("select_emphasized_tree", 0)
+
+        def check_leftup_move(space_pos):
+            b = self.scene.context.elements._emphasized_bounds
+            if b is None:
+                b = self.scene.context.elements.selected_area()
+            matrix = self.scene.widget_root.scene_widget.matrix
+            did_snap_to_point = False
+            if (
+                self.scene.context.snap_points
+                and "shift" not in modifiers
+                and b is not None
+            ):
+                gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
+                # We gather all points of non-selected elements,
+                # but only those that lie within the boundaries
+                # of the selected area
+                # We compare every point of the selected elements
+                # with the points of the non-selected elements (provided they
+                # lie within the selection area plus boundary) and look for
+                # the closest distance.
+
+                # t1 = perf_counter()
+                other_points = []
+                selected_points = []
+                for e in self.scene.context.elements.elems():
+                    target = selected_points if e.emphasized else other_points
+                    if not hasattr(e, "as_geometry"):
+                        continue
+                    geom = e.as_geometry()
+                    last = None
+                    for seg in geom.segments[: geom.index]:
+                        start = seg[0]
+                        seg_type = geom._segtype(seg)
+                        end = seg[4]
+                        if seg_type in NON_GEOMETRY_TYPES:
+                            continue
+                        if np.isnan(start) or np.isnan(end):
+                            print(
+                                f"Strange, encountered within rectselect a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers"
+                            )
+                            continue
+                        if start != last:
+                            xx = start.real
+                            yy = start.imag
+                            ignore = (
+                                xx < b[0] - gap
+                                or xx > b[2] + gap
+                                or yy < b[1] - gap
+                                or yy > b[3] + gap
+                            )
+                            if not ignore:
+                                target.append(start)
+                        xx = end.real
+                        yy = end.imag
+                        ignore = (
+                            xx < b[0] - gap
+                            or xx > b[2] + gap
+                            or yy < b[1] - gap
+                            or yy > b[3] + gap
+                        )
+                        if not ignore:
+                            target.append(end)
+                        last = end
+                # t2 = perf_counter()
+                if other_points and selected_points:
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+
+                    if dist is not None and dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1.real - pt2.real
+                        dy = pt1.imag - pt2.imag
+                        move_to(dx, dy)
+                        # Get new value
+                        b = self.scene.context.elements._emphasized_bounds
+                        # t3 = perf_counter()
+                        # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+            if (
+                self.scene.context.snap_grid
+                and "shift" not in modifiers
+                and b is not None
+                and not did_snap_to_point
+            ):
+                # t1 = perf_counter()
+                gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
+                # Check for corner points + center:
+                selected_points = (
+                    (b[0], b[1]),
+                    (b[2], b[1]),
+                    (b[0], b[3]),
+                    (b[2], b[3]),
+                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                )
+                other_points = self.scene.pane.grid.grid_points
+                if other_points and selected_points:
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                    if dist is not None and dist < gap:
+                        # did_snap_to_point = True
+                        dx = pt1[0] - pt2[0]
+                        dy = pt1[1] - pt2[1]
+                        move_to(dx, dy)
+                        # Get new value
+                        b = self.scene.context.elements._emphasized_bounds
+
+                # t2 = perf_counter()
+                # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
+                # Even then magnets win!
+                dx, dy = self.scene.pane.revised_magnet_bound(b)
+                move_to(dx, dy)
+
+        if modifiers is not None:
+            self.modifiers = modifiers
+
+        elements = self.scene.context.elements
+        if event_type == "leftdown":
+            check_leftdown(space_pos)
+            # print ("RectSelect consumed leftdown")
+            return RESPONSE_CONSUME
+        elif event_type == "leftclick":
+            check_click(space_pos)
+            return RESPONSE_CHAIN
+        elif event_type == "leftup":
+            if self.mode == "select":
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                check_leftup_select(space_pos)
+            else:
+                check_leftup_move(space_pos)
+
+            self.reset()
+
+            return RESPONSE_CONSUME
+        elif event_type == "move":
+            check_move(space_pos)
             return RESPONSE_CONSUME
         elif event_type == "lost":
             self.reset()
@@ -476,25 +473,26 @@ class RectSelectWidget(Widget):
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        delta_X = 15.0
-        delta_Y = 15.0
+        delta_X = 15.0 * self.magnification
+        delta_Y = 15.0 * self.magnification
         x0 *= sx
         x1 *= sx
         y0 *= sx
         y1 *= sx
-        if abs(x1 - x0) > delta_X and abs(y1 - y0)  > delta_Y:  # Don't draw if too tiny
+        if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
             # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
-            y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+            y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_Y
             ax1 = x1 - x_signum
             ay1 = y1 - y_signum
 
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
-            font_size = 10.0
-            if font_size < 1.0:
-                font_size = 1.0
+            font_size = 10.0 * self.magnification
+            font_size = max(
+                font_size, 1.0
+            )  # Darwin issues a TypeError if font size is smaller than 1
             try:
                 font = wx.Font(
                     font_size,
@@ -515,7 +513,7 @@ class RectSelectWidget(Widget):
                 symbol, (ax1 + x1) / 2 - t_width / 2, (ay1 + y1) / 2 - t_height / 2
             )
             if (
-                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0)  > 2 * delta_Y
+                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0) > 2 * delta_Y
             ):  # Don't draw if too tiny
                 # Draw second symbol at origin
                 ax1 = x0 + x_signum

@@ -356,18 +356,18 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def _should_activate(self, idx, x, gap, residual):
         # If no assigned operation, always inactive.
-        if self.assign_operations[idx] is None:
+        if self.assign_operations[idx] is None or idx < self.first_to_show:
             return False, x, residual
 
         btn_width = self.buttonsize_x
         # When this is the last button:
-        if idx == len(self.assign_buttons) - 1:
+        if idx == len(self.assign_buttons) - 1 and not residual:
             if x + btn_width > self.width:
-                return False, x, True
+                return False, x, residual
             else:
-                return True, x + gap + btn_width, residual
+                return True, x + gap + btn_width, False
         # For non-last buttons:
-        if x + btn_width + gap + self.buttonsize_x > self.width:
+        if x + 2 * btn_width + gap > self.width:
             return False, x, True
         return True, x + gap + btn_width, residual
 
