@@ -94,15 +94,9 @@ class RectSelectWidget(Widget):
         ex = self.end_location[0]
         ey = self.end_location[1]
         if sx <= ex:
-            if sy <= ey:
-                return 0
-            else:
-                return 1
+            return 0 if sy <= ey else 1
         else:
-            if sy <= ey:
-                return 3
-            else:
-                return 2
+            return 3 if sy <= ey else 2
 
     def rect_select(self, elements, sx, sy, ex, ey):
         sector = self.sector
@@ -312,10 +306,7 @@ class RectSelectWidget(Widget):
                 other_points = []
                 selected_points = []
                 for e in self.scene.context.elements.elems():
-                    if e.emphasized:
-                        target = selected_points
-                    else:
-                        target = other_points
+                    target = selected_points if e.emphasized else other_points
                     if not hasattr(e, "as_geometry"):
                         continue
                     geom = e.as_geometry()
@@ -366,8 +357,8 @@ class RectSelectWidget(Widget):
                         move_to(dx, dy)
                         # Get new value
                         b = self.scene.context.elements._emphasized_bounds
-                # t3 = perf_counter()
-                # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+                        # t3 = perf_counter()
+                        # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
                 self.scene.context.snap_grid
                 and "shift" not in modifiers
@@ -491,7 +482,7 @@ class RectSelectWidget(Widget):
         if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
             # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
-            y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+            y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_Y
             ax1 = x1 - x_signum
             ay1 = y1 - y_signum
 
@@ -499,8 +490,9 @@ class RectSelectWidget(Widget):
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
             font_size = 10.0 * self.magnification
-            if font_size < 1.0:
-                font_size = 1.0
+            font_size = max(
+                font_size, 1.0
+            )  # Darwin issues a TypeError if font size is smaller than 1
             try:
                 font = wx.Font(
                     font_size,
