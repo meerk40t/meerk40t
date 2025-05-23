@@ -689,14 +689,8 @@ class GRBLDevice(Service, Status):
             if step is None:
                 channel(_("No z-movement defined"))
                 return
-            try:
-                z_len = Length(step)
-            except ValueError:
-                channel(_("Invalid z-movement."))
-                return
-            mm = z_len.mm
             # relative movement in mm
-            command = f"G91 G21 Z{mm:.3f}"
+            command = f"G91 G21 Z{step.mm:.3f}"
             self.driver(command + self.driver.line_end)
 
         @self.console_command(
