@@ -17,6 +17,13 @@ from meerk40t.gui.icons import (
     icon_corner4,
     icon_fence_closed,
     icon_fence_open,
+    icon_z_down,
+    icon_z_down_double,
+    icon_z_down_triple,
+    icon_z_home,
+    icon_z_up,
+    icon_z_up_double,
+    icon_z_up_triple,
     icons8_caret_down,
     icons8_caret_left,
     icons8_caret_right,
@@ -394,6 +401,179 @@ class TimerButtons:
         button = event.GetEventObject()
         self.active_button = button
         self.stop_timer(action=True)
+
+
+class ZMovePanel(wx.Panel):
+    Z_SMALL = 1
+    Z_MEDIUM = 10
+    Z_LARGE = 100
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: ZMovePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.SetHelpText("zmove")
+        self.icon_size = 15
+        self.resize_factor = 1
+        self.resolution = 1
+        self.button_z_up_100 = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
+        self.button_z_up_10 = wxStaticBitmap(self, wx.ID_ANY)
+        self.button_z_up_1 = wxStaticBitmap(self, wx.ID_ANY)
+        self.button_z_home = wxStaticBitmap(self, wx.ID_ANY)
+        self.button_z_down_1 = wxStaticBitmap(self, wx.ID_ANY)
+        self.button_z_down_10 = wxStaticBitmap(self, wx.ID_ANY)
+        self.button_z_down_100 = wxStaticBitmap(self, wx.ID_ANY)
+        self.__set_properties()
+        self.__do_layout()
+        self.__do_logic()
+
+    def __do_logic(self):
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_z_up_100, self.z_move_up(self.Z_LARGE))
+        self.timer.add_button(self.button_z_up_10, self.z_move_up(self.Z_MEDIUM))
+        self.timer.add_button(self.button_z_up_1, self.z_move_up(self.Z_SMALL))
+        self.timer.add_button(self.button_z_down_1, self.z_move_down(self.Z_SMALL))
+        self.timer.add_button(self.button_z_down_10, self.z_move_down(self.Z_MEDIUM))
+        self.timer.add_button(self.button_z_down_100, self.z_move_down(self.Z_LARGE))
+        self.set_timer_options()
+        self.button_z_home.Bind(wx.EVT_LEFT_DOWN, self.z_home)
+
+    def __set_properties(self):
+        self.button_z_up_1.SetToolTip(
+            _("Move the laser up (Z-axis) by {distance}mm").format(
+                distance=0.1 * self.Z_SMALL
+            )
+        )
+        self.button_z_up_10.SetToolTip(
+            _("Move the laser up (Z-axis) by {distance}mm").format(
+                distance=0.1 * self.Z_MEDIUM
+            )
+        )
+        self.button_z_up_100.SetToolTip(
+            _("Move the laser up (Z-axis) by {distance}mm").format(
+                distance=0.1 * self.Z_LARGE
+            )
+        )
+        self.button_z_down_1.SetToolTip(
+            _("Move the laser down (Z-axis) by {distance}mm").format(
+                distance=0.1 * self.Z_SMALL
+            )
+        )
+        self.button_z_down_10.SetToolTip(
+            _("Move the laser down (Z-axis) by {distance}mm").format(
+                distance=0.1 * self.Z_MEDIUM
+            )
+        )
+        self.button_z_down_100.SetToolTip(
+            _("Move the laser down (Z-axis) by {distance}mm").format(
+                distance=0.1 * self.Z_LARGE
+            )
+        )
+        self.button_z_home.SetToolTip(
+            _("Move the laser to the defined Z-Home-Position")
+        )
+
+    def __do_layout(self):
+        # begin wxGlade: ZMovePanel.__do_layout
+        self.navigation_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.navigation_sizer.Add(self.button_z_up_100, 0, 0, 0)
+        self.navigation_sizer.Add(self.button_z_up_10, 0, 0, 0)
+        self.navigation_sizer.Add(self.button_z_up_1, 0, 0, 0)
+        self.navigation_sizer.Add(self.button_z_home, 0, 0, 0)
+        self.navigation_sizer.Add(self.button_z_down_1, 0, 0, 0)
+        self.navigation_sizer.Add(self.button_z_down_10, 0, 0, 0)
+        self.navigation_sizer.Add(self.button_z_down_100, 0, 0, 0)
+        self.SetSizer(self.navigation_sizer)
+        self.navigation_sizer.Fit(self)
+        self.set_icons(iconsize=10)
+        self.Layout()
+
+    def z_home(self, event=None):
+        self.context("home_z\n")
+
+    def z_move_down(self, distance):
+        def handler():
+            self.context(f"move_z -{distance*0.1:.2f}mm")
+
+        return handler
+
+    def z_move_up(self, distance):
+        def handler():
+            self.context(f"move_z {distance*0.1:.2f}mm")
+
+        return handler
+
+    def set_icons(self, iconsize=None, dimension=None):
+        if iconsize is None and dimension is not None:
+            dim_x = int(dimension[0] / 3) - 8
+            dim_y = int(dimension[1] / 4) - 8
+            iconsize = max(10, min(dim_x, dim_y))
+        # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+        bmp = icon_z_home.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        s = bmp.Size
+        self.button_z_home.SetBitmap(bmp)
+        t = self.button_z_home.GetBitmap().Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
+
+        self.icon_size = iconsize
+        # print (f"Setting icons to {self.icon_size}, request was {iconsize}")
+        self.button_z_up_1.SetBitmap(
+            icon_z_up.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_z_up_10.SetBitmap(
+            icon_z_up_double.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_z_up_100.SetBitmap(
+            icon_z_up_triple.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_z_down_1.SetBitmap(
+            icon_z_down.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_z_down_10.SetBitmap(
+            icon_z_down_double.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_z_down_100.SetBitmap(
+            icon_z_down_triple.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_z_home.SetBitmap(
+            icon_z_home.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.navigation_sizer.Layout()
+        self.Layout()
+
+    def pane_show(self, *args):
+        self.context.listen("button-repeat", self.on_button_repeat)
+
+    def pane_hide(self, *args):
+        self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
 
 class Drag(wx.Panel):
@@ -945,6 +1125,8 @@ class Jog(wx.Panel):
         self.button_navigate_unlock = wxBitmapButton(self, wx.ID_ANY)
         self.button_navigate_lock = wxBitmapButton(self, wx.ID_ANY)
         self.button_confine = wxBitmapButton(self, wx.ID_ANY)
+        self.z_axis = ZMovePanel(self, wx.ID_ANY, context=context)
+        self.z_axis.Hide()
         self.__set_properties()
         self.__do_layout()
         self.timer = TimerButtons(self)
@@ -1026,6 +1208,7 @@ class Jog(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: Jog.__do_layout
+        self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.navigation_sizer = wx.BoxSizer(wx.VERTICAL)
         button_sizer = wx.FlexGridSizer(4, 3, 0, 0)
         button_sizer.Add(self.button_navigate_up_left, 0, 0, 0)
@@ -1041,8 +1224,10 @@ class Jog(wx.Panel):
         button_sizer.Add(self.button_confine, 0, 0, 0)
         button_sizer.Add(self.button_navigate_lock, 0, 0, 0)
         self.navigation_sizer.Add(button_sizer, 1, wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.SetSizer(self.navigation_sizer)
-        self.navigation_sizer.Fit(self)
+        self.main_sizer.Add(self.navigation_sizer, 5, wx.EXPAND)
+        self.main_sizer.Add(self.z_axis, 1, wx.EXPAND)
+        self.SetSizer(self.main_sizer)
+        self.main_sizer.Fit(self)
         self.Layout()
 
     def set_icons(self, iconsize=None, dimension=None):
@@ -1116,6 +1301,11 @@ class Jog(wx.Panel):
         self.button_confine.SetBitmap(
             btn_icon.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
         )
+        if self.z_axis.Shown:
+            # Has 7 Buttons for our 4
+            self.z_axis.set_icons(
+                iconsize=int(round(4 / 7 * self.icon_size, 0)), dimension=dimension
+            )
         self.navigation_sizer.Layout()
         self.Layout()
 
@@ -1262,11 +1452,20 @@ class Jog(wx.Panel):
 
     def on_update(self, origin, *args):
         self.set_home_logic()
+        self.set_z_support()
+
+    def set_z_support(self):
+        show_z = getattr(self.context.device, "supports_z_axis", False)
+        if show_z:
+            self.z_axis.Show()
+        else:
+            self.z_axis.Hide()
 
     def pane_show(self):
         self.context.listen("activate;device", self.on_update)
         self.context.listen("button-repeat", self.on_button_repeat)
         self.set_home_logic()
+        self.set_z_support()
 
     def pane_hide(self):
         self.context.unlisten("activate;device", self.on_update)
