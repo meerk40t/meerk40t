@@ -7,6 +7,7 @@ Registers relevant commands and options.
 
 from time import sleep
 
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -16,7 +17,6 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -182,6 +182,30 @@ class GRBLDevice(Service, Status):
                 "subsection": "_60_Home position",
             },
             {
+                "attr": "supports_z_axis",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Supports Z-axis"),
+                "tip": _("Does this device have a Z-axis?"),
+                "subsection": "_70_Z-Axis support",
+            },
+            {
+                "attr": "z_home_command",
+                "object": self,
+                "default": "$HZ",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "$HZ",
+                    "G28 Z",
+                ],
+                "exclusive": False,
+                "label": _("Z-Homing"),
+                "tip": _("Which command triggers the z-homing sequence"),
+                "subsection": "_70_Z-Axis support",
+            },
+            {
                 "attr": "signal_updates",
                 "object": self,
                 "default": True,
@@ -258,6 +282,7 @@ class GRBLDevice(Service, Status):
                 choice_dict["display"] = ["pyserial-not-installed"]
 
         from platform import system
+
         is_linux = system() == "Linux"
         choices = [
             {
@@ -271,7 +296,7 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
-                "exclusive": not is_linux, 
+                "exclusive": not is_linux,
             },
             {
                 "attr": "baud_rate",
@@ -636,6 +661,39 @@ class GRBLDevice(Service, Status):
             self._register_console_serial()
 
         @self.console_command(
+            "home_z",
+            help=_("Homes the z-Axis"),
+            input_type=None,
+        )
+        def command_zhome(command, channel, _, data=None, remainder=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            zhome = self.z_home_command
+            if not zhome:
+                channel(_("There is no homing sequence defined."))
+                return
+            channel(_("Z-Homing..."))
+            self.driver(zhome + self.driver.line_end)
+
+        @self.console_argument("step", type=Length, help=_("Amount to move the z-axis"))
+        @self.console_command(
+            "move_z",
+            help=_("Moves the z-Axis by the given amount"),
+            input_type=None,
+        )
+        def command_zmove(command, channel, _, data=None, step=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            if step is None:
+                channel(_("No z-movement defined"))
+                return
+            # relative movement in mm
+            gcode = f"G91 G21 Z{step.mm:.3f}"
+            self.driver(gcode + self.driver.line_end)
+
+        @self.console_command(
             ("gcode", "grbl"),
             help=_("Send raw gcode to the device"),
             input_type=None,
@@ -901,9 +959,7 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
-        @self.console_argument(
-            "index", type=int, help=_("macro to run (1-5).")
-        )
+        @self.console_argument("index", type=int, help=_("macro to run (1-5)."))
         @self.console_command(
             "macro",
             help=_("Send a predefined macro to the device."),
@@ -916,11 +972,11 @@ class GRBLDevice(Service, Status):
                     macrotext = self.setting(str, f"macro_{idx}", "")
                     channel(f"Content of macro {idx + 1}:")
                     for no, line in enumerate(macrotext.splitlines()):
-                        channel (f"{no:2d}: {line}")
+                        channel(f"{no:2d}: {line}")
                 return
             err = True
             try:
-                macro_index = int(index) -1
+                macro_index = int(index) - 1
                 if 0 <= macro_index <= 4:
                     err = False
             except ValueError:
