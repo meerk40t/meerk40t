@@ -449,10 +449,11 @@ class ZMovePanel(wx.Panel):
             if direction == "home":
                 btn.Bind(wx.EVT_LEFT_DOWN, self.z_home)
             else:
-                if direction == "up":
-                    handler = self.z_move_up(step)
-                else:
-                    handler = self.z_move_down(step)
+                handler = (
+                    self.z_move_up(step)
+                    if direction == "up"
+                    else self.z_move_down(step)
+                )
                 self.timer.add_button(btn, handler)
         self.set_timer_options()
 
@@ -462,7 +463,12 @@ class ZMovePanel(wx.Panel):
                 tip = _("Move the laser to the defined Z-Home-Position")
             else:
                 mm = step * 0.1
-                tip = _(f"Move the laser {direction} by {mm}mm").format(mm=mm)
+                # _("Move the laserhead down by {mm} mm")
+                # _("Move the laserhead up by {mm} mm")
+                if direction == "up":
+                    tip = _("Move the laser up by {mm}mm").format(mm=mm)
+                else:
+                    tip = _("Move the laser down by {mm}mm").format(mm=mm)
             btn.SetToolTip(tip)
 
     def __do_layout(self):
@@ -524,8 +530,7 @@ class ZMovePanel(wx.Panel):
         interval = self.context.button_repeat
         if interval is None:
             interval = 0.5
-        if interval < 0:
-            interval = 0
+        interval = max(0, interval)
         accelerate = self.context.button_accelerate
         if accelerate is None:
             accelerate = True
