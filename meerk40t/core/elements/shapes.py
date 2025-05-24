@@ -686,6 +686,40 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_property_get(command, channel, _, data, post=None, prop=None, **kwargs):
+        def possible_representation(node, prop) -> str:
+            def simple_rep(prop, value):
+                if isinstance(value, (float, int)) and prop in (
+                    "x",
+                    "y",
+                    "cx",
+                    "cy",
+                    "r",
+                    "rx",
+                    "ry",
+                ):
+                    try:
+                        s = Length(value).length_mm
+                        return s
+                    except ValueError:
+                        pass
+                elif isinstance(value, Length):
+                    return value.length_mm
+                elif isinstance(value, Angle):
+                    return value.angle_degrees
+                elif isinstance(value, str):
+                    return f"'{value}'"
+                return repr(value)
+
+            value = getattr(node, prop, None)
+            if isinstance(value, (str, float, int)):
+                return simple_rep(prop, value)
+            elif isinstance(value, (tuple, list)):
+                stuff = []
+                for v in value:
+                    stuff.append(simple_rep("x", v))
+                return ",".join(stuff)
+            return simple_rep(prop, value)
+
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -714,7 +748,7 @@ def init_commands(kernel):
                 )
             else:
                 channel(
-                    f"Node: {d.display_label()} (Type: {d.type}): {prop}={getattr(d, prop, '')}"
+                    f"Node: {d.display_label()} (Type: {d.type}): {prop}={getattr(d, prop, '')} ({possible_representation(d, prop)})"
                 )
 
     @self.console_argument("prop", type=str, help=_("property to set"))
