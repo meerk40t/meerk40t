@@ -661,7 +661,7 @@ class GRBLDevice(Service, Status):
             self._register_console_serial()
 
         @self.console_command(
-            "home_z",
+            "z_home",
             help=_("Homes the z-Axis"),
             input_type=None,
         )
@@ -678,11 +678,11 @@ class GRBLDevice(Service, Status):
 
         @self.console_argument("step", type=Length, help=_("Amount to move the z-axis"))
         @self.console_command(
-            "move_z",
+            "z_move",
             help=_("Moves the z-Axis by the given amount"),
             input_type=None,
         )
-        def command_zmove(command, channel, _, data=None, step=None, **kwgs):
+        def command_zmove_rel(command, channel, _, data=None, step=None, **kwgs):
             if not self.supports_z_axis:
                 channel(_("This device does not support a z-axis."))
                 return
@@ -691,6 +691,23 @@ class GRBLDevice(Service, Status):
                 return
             # relative movement in mm
             gcode = f"G91 G21 Z{step.mm:.3f}"
+            self.driver(gcode + self.driver.line_end)
+
+        @self.console_argument("step", type=Length, help=_("New z-axis position"))
+        @self.console_command(
+            "z_move_to",
+            help=_("Moves the z-Axis to the given position"),
+            input_type=None,
+        )
+        def command_zmove_abs(command, channel, _, data=None, step=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            if step is None:
+                channel(_("No z-movement defined"))
+                return
+            # absolute movement in mm
+            gcode = f"G91 G20 Z{step.mm:.3f}"
             self.driver(gcode + self.driver.line_end)
 
         @self.console_command(
