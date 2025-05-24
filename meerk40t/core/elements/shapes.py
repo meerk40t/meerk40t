@@ -675,6 +675,48 @@ def init_commands(kernel):
         except Exception:
             pass  # Not relevant...
 
+    @self.console_argument("prop", type=str, help=_("property to get"))
+    @self.console_command(
+        "property-get",
+        help=_("get property value"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+    )
+    def element_property_get(command, channel, _, data, post=None, prop=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        if prop is None or (prop == "?"):
+            channel(_("You need to provide the property to get."))
+            identified = []
+            for op in data:
+                if op.type in identified:
+                    continue
+                identified.append(op.type)
+                prop_str = f"{op.type} has the following properties:"
+                first = True
+                for d in op.__dict__:
+                    if d.startswith("_"):
+                        continue
+                    prop_str = f"{prop_str}{'' if first else ','} {d}"
+                    first = False
+                channel(prop_str)
+            return
+        for d in data:
+            if not hasattr(d, prop):
+                channel(
+                    f"Node: {d.display_label()} (Type: {d.type}) has no property called '{prop}'"
+                )
+            else:
+                channel(
+                    f"Node: {d.display_label()} (Type: {d.type}): {prop}={getattr(d, prop, '')}"
+                )
+
     @self.console_argument("prop", type=str, help=_("property to set"))
     @self.console_argument("new_value", type=str, help=_("new property value"))
     @self.console_command(
@@ -706,11 +748,13 @@ def init_commands(kernel):
                     if op.type in identified:
                         continue
                     identified.append(op.type)
-                    prop_str = f"{op.type} has the following properties: "
+                    prop_str = f"{op.type} has the following properties:"
+                    first = True
                     for d in op.__dict__:
                         if d.startswith("_"):
                             continue
-                        prop_str = f"{prop_str}, {d}"
+                        prop_str = f"{prop_str}{'' if first else ','} {d}"
+                        first = False
                     channel(prop_str)
                 channel(
                     "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
@@ -1147,7 +1191,7 @@ def init_commands(kernel):
                         f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
                     )
                     if seg_before:
-                        saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                        saving = f"({(seg_before - seg_after) / seg_before * 100:.1f}%)"
                     else:
                         saving = ""
                     channel(f"Subpaths before: {sub_before} to {sub_after}")
