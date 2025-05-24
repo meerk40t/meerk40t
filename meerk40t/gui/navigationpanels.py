@@ -449,6 +449,7 @@ class ZMovePanel(wx.Panel):
         for btn, direction, step, icon in self.buttons.values():
             if direction == "home":
                 btn.Bind(wx.EVT_LEFT_DOWN, self.z_home)
+                btn.Bind(wx.EVT_RIGHT_DOWN, self.z_focus)
             else:
                 handler = (
                     self.z_move_up(step)
@@ -484,6 +485,10 @@ class ZMovePanel(wx.Panel):
 
     def z_home(self, event=None):
         self.context("z_home\n")
+
+    def z_focus(self, event=None):
+        if self.context.kernel.has_command("z_focus"):
+            self.context("z_focus\n")
 
     def z_move_down(self, distance):
         def handler():
@@ -525,6 +530,12 @@ class ZMovePanel(wx.Panel):
         has_home = self.context.kernel.has_command("z_home")
         # print (f"Has_home for {self.context.device.name}: {has_home}")
         self.button_z_home.Show(has_home)
+        tip = _("Move the laser to the defined Z-Home-Position")
+        if self.context.kernel.has_command("z_focus"):
+            tip += "\n" + _("Right click: autofocus the Z-Axis")
+
+        self.button_z_home.SetToolTip(tip)
+
         self.navigation_sizer.Show(self.button_z_home, has_home)
         self.navigation_sizer.Layout()
 
@@ -1077,7 +1088,7 @@ class Drag(wx.Panel):
 
 
 class Jog(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, suppress_z_controls=False, **kwds):
         # begin wxGlade: Jog.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
 
@@ -1092,6 +1103,7 @@ class Jog(wx.Panel):
         self.icon_size = None
         self.resize_factor = None
         self.resolution = 5
+        self.suppress_z_controls = suppress_z_controls
         self.button_navigate_up_left = wxBitmapButton(self, wx.ID_ANY)
         self.button_navigate_up = wxBitmapButton(self, wx.ID_ANY)
         self.button_navigate_up_right = wxBitmapButton(self, wx.ID_ANY)
@@ -1105,7 +1117,10 @@ class Jog(wx.Panel):
         self.button_navigate_lock = wxBitmapButton(self, wx.ID_ANY)
         self.button_confine = wxBitmapButton(self, wx.ID_ANY)
         self.z_axis = ZMovePanel(self, wx.ID_ANY, context=context)
-        zshow = getattr(self.context.device, "supports_z_axis", False)
+        zshow = (
+            getattr(self.context.device, "supports_z_axis", False)
+            and not self.suppress_z_controls
+        )
         self.z_axis.Show(zshow)
         self.__set_properties()
         self.__do_layout()
@@ -1204,8 +1219,8 @@ class Jog(wx.Panel):
         button_sizer.Add(self.button_confine, 0, 0, 0)
         button_sizer.Add(self.button_navigate_lock, 0, 0, 0)
         self.navigation_sizer.Add(button_sizer, 1, wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.main_sizer.Add(self.navigation_sizer, 5, wx.EXPAND)
-        self.main_sizer.Add(self.z_axis, 1, wx.EXPAND)
+        self.main_sizer.Add(self.navigation_sizer, 0, wx.EXPAND)
+        self.main_sizer.Add(self.z_axis, 0, wx.EXPAND)
         self.SetSizer(self.main_sizer)
         self.main_sizer.Fit(self)
         self.Layout()
@@ -1216,6 +1231,7 @@ class Jog(wx.Panel):
             dim_x = int(dimension[0] / cols) - 8
             dim_y = int(dimension[1] / 4) - 8
             iconsize = max(15, min(dim_x, dim_y))
+            dimension = None
         self.icon_size = iconsize
         # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
         bmp = icons8_up_left.GetBitmap(
@@ -1421,9 +1437,8 @@ class Jog(wx.Panel):
 
     def set_home_logic(self):
         tip = _("Send laser to home position")
-        if hasattr(self.context.device, "has_endstops"):
-            if self.context.device.has_endstops:
-                tip = _("Send laser to home position (right click: to physical home)")
+        if getattr(self.context.device, "has_endstops", False):
+            tip = _("Send laser to home position (right click: to physical home)")
         ops = self.context.elements.op_branch
         for op in ops.children:
             if op.type == "place point" and op.output:
@@ -1436,12 +1451,16 @@ class Jog(wx.Panel):
         self.set_z_support()
 
     def set_z_support(self):
-        show_z = getattr(self.context.device, "supports_z_axis", False)
+        show_z = (
+            getattr(self.context.device, "supports_z_axis", False)
+            and not self.suppress_z_controls
+        )
         self.z_axis.Show(show_z)
         if show_z:
             self.z_axis.pane_show()
         else:
             self.z_axis.pane_hide()
+        self.set_icons(iconsize=None, dimension=self.GetClientSize())
         self.main_sizer.Show(self.z_axis, show_z)
         self.main_sizer.Layout()
 
