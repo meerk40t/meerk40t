@@ -181,6 +181,7 @@ class Kernel(Settings):
         self.args = None
 
         self.os_information = self._get_environment()
+        self.show_aio_prompt = True
 
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
@@ -1239,7 +1240,8 @@ class Kernel(Settings):
 
             async def aio_readline(loop):
                 while not self._shutdown:
-                    print(">>", end="", flush=True)
+                    if self.show_aio_prompt:
+                        print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
