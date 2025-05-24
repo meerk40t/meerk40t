@@ -483,17 +483,17 @@ class ZMovePanel(wx.Panel):
         self.Layout()
 
     def z_home(self, event=None):
-        self.context("home_z\n")
+        self.context("z_home\n")
 
     def z_move_down(self, distance):
         def handler():
-            self.context(f"move_z -{distance*0.1:.2f}mm")
+            self.context(f"z_move -{distance*0.1:.2f}mm")
 
         return handler
 
     def z_move_up(self, distance):
         def handler():
-            self.context(f"move_z {distance*0.1:.2f}mm")
+            self.context(f"z_move {distance*0.1:.2f}mm")
 
         return handler
 
@@ -522,7 +522,7 @@ class ZMovePanel(wx.Panel):
         self.Layout()
 
     def on_update(self, origin, *args):
-        has_home = self.context.kernel.has_command("home_z")
+        has_home = self.context.kernel.has_command("z_home")
         # print (f"Has_home for {self.context.device.name}: {has_home}")
         self.button_z_home.Show(has_home)
         self.navigation_sizer.Show(self.button_z_home, has_home)
