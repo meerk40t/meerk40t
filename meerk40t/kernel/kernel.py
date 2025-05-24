@@ -188,8 +188,9 @@ class Kernel(Settings):
     def _get_environment(self):
         from platform import system
         from tempfile import gettempdir
+
         return {
-            "OS_NAME":  system(),
+            "OS_NAME": system(),
             "OS_TEMPDIR": os.path.realpath(gettempdir()),
             "WORKDIR": os.path.realpath(get_safe_path(self.name, create=True)),
         }
@@ -2296,7 +2297,7 @@ class Kernel(Settings):
         it will execute that in the console_parser. This works like a
         terminal, where each letter of data can be sent to the console and
         execution will occur at the carriage return.
-        Additionally you can provide a '|' character that will separate commands on a single line 
+        Additionally you can provide a '|' character that will separate commands on a single line
         @param data:
         @return:
         """
@@ -2315,7 +2316,7 @@ class Kernel(Settings):
             # No: we can split the command
             quotations = data.count('"', 0, idx)
             if quotations % 2 == 0:
-                data = data[:idx].rstrip() + "\n" + data[idx+1:].lstrip()
+                data = data[:idx].rstrip() + "\n" + data[idx + 1 :].lstrip()
             start = idx + 1
         self._console_buffer += data
         data_out = None
@@ -2328,6 +2329,17 @@ class Kernel(Settings):
 
     def _console_interface(self, command: str):
         pass
+
+    def has_command(self, command: str) -> bool:
+        command = command.lower()
+        input_type = None  # Initial command context is None
+        # Process command matches.
+        for funct, name, regex in self.find("command", str(input_type), ".*"):
+            # Find all commands with matching input_type.
+            if not funct.regex and regex == command:
+                # Exact match only.
+                return True
+        return False
 
     def _console_parse(self, text: str, channel: "Channel"):
         """
@@ -2521,9 +2533,7 @@ class Kernel(Settings):
                     if not helpstr:
                         helpstr = func.help
                     if helpstr:
-                        channel(
-                            "\t" + inspect.cleandoc(helpstr).replace("\n", " ")
-                        )
+                        channel("\t" + inspect.cleandoc(helpstr).replace("\n", " "))
                         channel("\n")
 
                     channel(f"\t{command_item} {' '.join(help_args)}")
@@ -2862,39 +2872,42 @@ class Kernel(Settings):
                 "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
             }
 
-            sys_snd = self.root.setting(str, "beep_soundfile", system_sound.get(OS_NAME, ""))
+            sys_snd = self.root.setting(
+                str, "beep_soundfile", system_sound.get(OS_NAME, "")
+            )
             use_default = not sys_snd or not os.path.exists(sys_snd)
 
             def _play_windows():
                 try:
                     import winsound
+
                     if use_default:
                         for x in range(5):
                             winsound.Beep(2000, 100)
                     else:
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
                 except Exception as e:
-                    channel ("Encountered exception {e} during play")
+                    channel("Encountered exception {e} during play")
                     pass
 
             def _play_darwin():
-                arg = system_sound['Darwin'] if use_default else sys_snd
-                cmd = ['afplay', arg]
+                arg = system_sound["Darwin"] if use_default else sys_snd
+                cmd = ["afplay", arg]
                 try:
                     subprocess.run(cmd, shell=False)
                 except OSError as e:
-                    channel (f"Could not run {cmd[0]}: {e}")
+                    channel(f"Could not run {cmd[0]}: {e}")
 
             def _play_linux():
                 try:
                     if not use_default:
-                        cmd = ['play', sys_snd]
+                        cmd = ["play", sys_snd]
                     else:
                         print("\a")
-                        cmd = ['say', 'Ding']
+                        cmd = ["say", "Ding"]
                     subprocess.run(cmd, shell=False)
                 except OSError as e:
-                    channel (f"Could not run {cmd[0]}: {e}")
+                    channel(f"Could not run {cmd[0]}: {e}")
 
             players = {
                 "Windows": _play_windows,
@@ -3186,7 +3199,9 @@ class Kernel(Settings):
         # ==========
         @self.console_command(
             "execute",
-            help=_("Loads a given file and executes all lines as commmands (as long as they don't start with a #)"),
+            help=_(
+                "Loads a given file and executes all lines as commmands (as long as they don't start with a #)"
+            ),
         )
         def load_and_execute(channel, _, remainder=None, **kwargs):
             if not remainder:
@@ -3352,13 +3367,17 @@ class Kernel(Settings):
                 channel(_("Infinite Loop Error."))
             else:
                 if not force and channel_name not in self.channels:
-                    channel(f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch.")
+                    channel(
+                        f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch."
+                    )
                     channel(_("----------"))
                     channel(_("Channels Active:"))
                     for i, name in enumerate(self.channels):
                         channel_name = self.channels[name]
                         is_watched = (
-                            "* " if self._console_channel in channel_name.watchers else "  "
+                            "* "
+                            if self._console_channel in channel_name.watchers
+                            else "  "
                         )
                         channel(f"{is_watched}{i + 1}: {name}")
                     return "channel", None
