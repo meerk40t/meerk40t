@@ -22341,6 +22341,9 @@ msgstr "Immagine ({percent}, {speed})"
 msgid "Supports Z-axis"
 msgstr "Supporta l'asse Z"
 
+msgid "Z-Axis support"
+msgstr "Asse Z"
+
 #: meerk40t/grbl/device.py:190
 msgid "Does this device have a Z-axis?"
 msgstr "Questo dispositivo ha un asse Z?"
