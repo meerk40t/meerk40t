@@ -429,6 +429,7 @@ class ZMovePanel(wx.Panel):
         self.resize_factor = 1
         self.resolution = 1
         self.buttons = {}
+        self.listening = False
 
         for direction, step, icon in self._BUTTON_SPECS:
             if direction == "home":
@@ -520,11 +521,24 @@ class ZMovePanel(wx.Panel):
         self.navigation_sizer.Layout()
         self.Layout()
 
+    def on_update(self, origin, *args):
+        has_home = self.context.kernel.has_command("home_z")
+        # print (f"Has_home for {self.context.device.name}: {has_home}")
+        self.button_z_home.Show(has_home)
+        self.navigation_sizer.Show(self.button_z_home, has_home)
+        self.navigation_sizer.Layout()
+
     def pane_show(self, *args):
+        self.listening = True
         self.context.listen("button-repeat", self.on_button_repeat)
+        self.context.listen("activate;device", self.on_update)
+        self.on_update(None)
 
     def pane_hide(self, *args):
-        self.context.unlisten("button-repeat", self.on_button_repeat)
+        if self.listening:
+            self.context.unlisten("button-repeat", self.on_button_repeat)
+            self.context.unlisten("activate;device", self.on_update)
+            self.listening = False
 
     def set_timer_options(self):
         interval = self.context.button_repeat
@@ -1424,6 +1438,10 @@ class Jog(wx.Panel):
     def set_z_support(self):
         show_z = getattr(self.context.device, "supports_z_axis", False)
         self.z_axis.Show(show_z)
+        if show_z:
+            self.z_axis.pane_show()
+        else:
+            self.z_axis.pane_hide()
         self.main_sizer.Show(self.z_axis, show_z)
         self.main_sizer.Layout()
 
@@ -1436,6 +1454,7 @@ class Jog(wx.Panel):
     def pane_hide(self):
         self.context.unlisten("activate;device", self.on_update)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+        self.z_axis.pane_hide()
 
     def set_timer_options(self):
         interval = self.context.button_repeat
