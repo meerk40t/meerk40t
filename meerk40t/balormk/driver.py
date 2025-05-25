@@ -4,7 +4,9 @@ Galvo Driver
 The Driver has a set of different commands which are standardly sent and utilizes those which can be performed by this
 driver.
 """
+
 import time
+
 from usb.core import NoBackendError
 
 from meerk40t.balormk.controller import GalvoController
@@ -18,8 +20,8 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
-from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -44,7 +46,12 @@ class BalorDriver:
         self._queue_current = 0
         self._queue_total = 0
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True
+            dict(),
+            single=True,
+            ppi=False,
+            shift=False,
+            group=True,
+            require_uniform_movement=False,
         )
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True

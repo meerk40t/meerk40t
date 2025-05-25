@@ -1,4 +1,4 @@
-name: Unittest
+name: Unittest Python 3.6
 
 on:
   workflow_dispatch:

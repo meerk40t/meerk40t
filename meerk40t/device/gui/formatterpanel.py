@@ -119,7 +119,7 @@ class FormatterPanel(wx.Panel):
             },
         ]
         testsize = dip_size(self, 20, 20)
-        imgsize = testsize[1]
+        imgsize = testsize[1] * self.context.root.bitmap_correction_scale
         for node in self.node_list:
             if node in images:
                 image = images[node].GetBitmap(

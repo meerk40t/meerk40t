@@ -26,10 +26,13 @@ def command_viewer(data, data_type):
 
     job = RDJob()
     job.write_blob(data)
-    commands = list()
+    commands = []
     job.channel = commands.append
-    while not job.execute(None):
-        pass
+    try:
+        while not job.execute(None):
+            pass
+    except Exception as e:
+        commands.append(f"!! Error !!: {e}")
     return "\n".join(commands)
 
 

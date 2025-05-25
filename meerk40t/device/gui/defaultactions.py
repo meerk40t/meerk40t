@@ -71,7 +71,7 @@ class DefaultActionPanel(wx.Panel):
         sizer_middle = wx.BoxSizer(wx.VERTICAL)
 
         iconsize = dip_size(self, 30, 20)
-        bmpsize = min(iconsize[0], iconsize[1])
+        bmpsize = min(iconsize[0], iconsize[1]) * self.context.root.bitmap_correction_scale
         self.option_list = wxListCtrl(
             self,
             wx.ID_ANY,

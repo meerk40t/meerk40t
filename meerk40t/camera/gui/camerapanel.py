@@ -46,6 +46,7 @@ def register_panel_camera(window, context):
         pane.dock_proportion = 200
         pane.control = panel
         pane.submenu = "_60_" + _("Camera")
+        pane.helptext = _("Show camera capture panel")
         window.on_pane_create(pane)
         context.register(f"pane/camera{index}", pane)
 
@@ -82,17 +83,17 @@ class CameraPanel(wx.Panel, Job):
 
         if not pane:
             self.button_update = wxBitmapButton(
-                self, wx.ID_ANY, icons8_camera.GetBitmap(resize=get_default_icon_size())
+                self, wx.ID_ANY, icons8_camera.GetBitmap(resize=get_default_icon_size(self.context))
             )
             self.button_export = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_image_in_frame.GetBitmap(resize=get_default_icon_size()),
+                icons8_image_in_frame.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             self.button_reconnect = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_connected.GetBitmap(resize=get_default_icon_size()),
+                icons8_connected.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             self.check_fisheye = wxCheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
             self.check_perspective = wxCheckBox(
@@ -109,7 +110,7 @@ class CameraPanel(wx.Panel, Job):
             self.button_detect = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_detective.GetBitmap(resize=get_default_icon_size()),
+                icons8_detective.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             scene_name = f"Camera{self.index}"
         else:
@@ -946,35 +947,41 @@ class CameraInterface(MWindow):
                         "label": _("Camera {index}").format(index=0),
                         "action": camera_click(0),
                         "signal": "camset0",
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": "cam1",
                         "label": _("Camera {index}").format(index=1),
                         "action": camera_click(1),
                         "signal": "camset1",
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": "cam2",
                         "label": _("Camera {index}").format(index=2),
                         "action": camera_click(2),
                         "signal": "camset2",
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": "cam3",
                         "label": _("Camera {index}").format(index=3),
                         "action": camera_click(3),
                         "signal": "camset3",
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": "cam4",
                         "label": _("Camera {index}").format(index=4),
                         "action": camera_click(4),
                         "signal": "camset4",
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": "id_cam",
                         "label": _("Identify cameras"),
                         "action": detect_usb_cameras,
+                        "multi_autoexec": True,
                     },
                 ],
             },
@@ -1047,6 +1054,9 @@ class CameraInterface(MWindow):
     def submenu():
         return "Camera", "Camera"
 
+    @staticmethod
+    def helptext():
+        return _("Display the camera window")
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
@@ -1231,3 +1241,7 @@ class CameraURI(MWindow):
     @staticmethod
     def submenu():
         return "Camera", "Sources"
+
+    @staticmethod
+    def helptext():
+        return _("Edit camera sources")

@@ -18,7 +18,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon,
     icons8_save,
 )
-from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
+from meerk40t.gui.navigationpanels import Drag, Jog, JogDistancePanel, MovePanel
 from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
@@ -45,12 +45,16 @@ def register_panel_laser(window, context):
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
     jog_drag.SetupScrolling()
-    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
+    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, suppress_z_controls=True)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)
-    main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    distance_panel = JogDistancePanel(jog_drag, wx.ID_ANY, context=context)
+    main_sizer = wx.BoxSizer(wx.VERTICAL)
+    sub_sizer = wx.BoxSizer(wx.HORIZONTAL)
     # main_sizer.AddStretchSpacer()
-    main_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    sub_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    sub_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.Add(sub_sizer, 1, wx.EXPAND, 0)
+    main_sizer.Add(distance_panel, 0, wx.EXPAND, 0)
     # main_sizer.AddStretchSpacer()
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
@@ -83,6 +87,7 @@ def register_panel_laser(window, context):
         .Name("laser")
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Laser job control panel")
     pane.control = notebook
     pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))
@@ -91,6 +96,17 @@ def register_panel_laser(window, context):
     notebook.AddPage(optimize_panel, _("Optimize"))
     notebook.AddPage(move_panel, _("Move"))
 
+    def on_page_change(event):
+        event.Skip()
+        page = notebook.GetCurrentPage()
+        if page is None:
+            return
+        pages = [jog_panel, drag_panel, distance_panel] if page is jog_drag else [page]
+        for p in pages:
+            if hasattr(p, "pane_show"):
+                p.pane_show()
+
+    notebook.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_page_change)
     window.on_pane_create(pane)
     window.context.register("pane/laser", pane)
     choices = [
@@ -115,8 +131,9 @@ def register_panel_laser(window, context):
         else:
             panel_size = (wb_size[0] / 2, wb_size[1])
 
-        jog_panel.set_icons(dimension=panel_size)
-        drag_panel.set_icons(dimension=panel_size)
+        for panel in (jog_panel, drag_panel, distance_panel):
+            if hasattr(panel, "set_icons"):
+                panel.set_icons(dimension=panel_size)
 
     jog_drag.Bind(wx.EVT_SIZE, on_resize)
 
@@ -136,7 +153,7 @@ class LaserPanel(wx.Panel):
         self.context.root.setting(bool, "laserpane_arm", True)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.icon_size = 0.5 * get_default_icon_size()
+        self.icon_size = 0.5 * get_default_icon_size(self.context)
 
         self.sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(self.sizer_devices, 0, wx.EXPAND, 0)
@@ -151,8 +168,9 @@ class LaserPanel(wx.Panel):
             _("Select device from list of configured devices")
         )
         ss = dip_size(self, 23, 23)
+        bsize = ss[0] * self.context.root.bitmap_correction_scale
         self.btn_config_laser = wxButton(self, wx.ID_ANY, size=ss)
-        self.btn_config_laser.SetBitmap(icons8_computer_support.GetBitmap(resize=ss[0]))
+        self.btn_config_laser.SetBitmap(icons8_computer_support.GetBitmap(resize=bsize))
         self.btn_config_laser.SetToolTip(
             _("Opens device-specific configuration window")
         )
@@ -348,6 +366,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
         # self.btn_config_laser.Bind(wx.EVT_LEFT_DOWN, self.on_config_button)
         self.btn_config_laser.Bind(wx.EVT_BUTTON, self.on_config_button)
+        self.combo_devices.Bind(wx.EVT_RIGHT_DOWN, self.on_control_right)
+        self.btn_config_laser.Bind(wx.EVT_RIGHT_DOWN, self.on_control_right)
         # end wxGlade
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
@@ -662,7 +682,7 @@ class LaserPanel(wx.Panel):
             self.context("element* trace hull\n")
 
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("element* trace complex\n")
+        self.context("element* trace quick\n")
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
@@ -679,6 +699,9 @@ class LaserPanel(wx.Panel):
                 self.context("planz clear copy preprocess validate blob\n")
         self.context(f"window open Simulation z 0 {param}\n")
         self.context.kernel.busyinfo.end()
+
+    def on_control_right(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("window open DeviceManager\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
@@ -712,7 +735,7 @@ class JobPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
-        self.icon_size = 0.5 * get_default_icon_size()
+        self.icon_size = 0.5 * get_default_icon_size(self.context)
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 

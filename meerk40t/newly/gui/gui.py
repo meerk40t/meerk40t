@@ -69,13 +69,24 @@ def plugin(service, lifecycle):
                 "identifier": "file_index",
                 "object": service,
                 "priority": 1,
+                "signal": "newly_file_index",
+                "attr": "file_index",
                 "multi": [
+                    {
+                        "identifier": 0,
+                        "label": _("File {index}").format(index=0),
+                        "tip": _("File {index}").format(index=0),
+                        "help": "devicenewly",
+                        "action": lambda v: service("select_file 0\n"),
+                        "multi_autoexec": True,
+                    },
                     {
                         "identifier": 1,
                         "label": _("File {index}").format(index=1),
                         "tip": _("File {index}").format(index=1),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 1\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 2,
@@ -83,6 +94,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=2),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 2\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 3,
@@ -90,6 +102,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=3),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 3\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 4,
@@ -97,6 +110,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=4),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 4\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 5,
@@ -104,6 +118,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=5),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 5\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 6,
@@ -111,6 +126,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=6),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 6\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 7,
@@ -118,6 +134,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=7),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 7\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 8,
@@ -125,6 +142,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=8),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 8\n"),
+                        "multi_autoexec": True,
                     },
                     {
                         "identifier": 9,
@@ -132,6 +150,7 @@ def plugin(service, lifecycle):
                         "tip": _("File {index}").format(index=9),
                         "help": "devicenewly",
                         "action": lambda v: service("select_file 9\n"),
+                        "multi_autoexec": True,
                     },
                 ],
             },
@@ -146,12 +165,15 @@ def plugin(service, lifecycle):
                 "toggle_attr": "autoplay",
                 "object": service,
                 "priority": 1,
+                "signal": "newly_autoplay",
                 "toggle": {
                     "label": _("Send & Start"),
                     "tip": _("Automatically start the device after send"),
                     "help": "devicenewly",
                     "icon": icons8_circled_play,
-                    "signal": "autoplay",
+                    "toggle_attr": "autoplay",
+                    "object": service,
+                    "signal": "newly_autoplay",
                 },
             },
         )

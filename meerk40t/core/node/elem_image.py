@@ -72,6 +72,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._keyhole_image = None
         self._processing = False
         self._convex_hull = None
+        self._default_units = UNITS_PER_INCH
         startup = True
         if "comingfromcopy" in kwargs:
             startup = False
@@ -153,7 +154,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         self.message = None
         if (self.operations or self.dither or self.prevent_crop or self.keyhole_reference) and startup:
-            step = UNITS_PER_INCH / self.dpi
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
@@ -185,7 +186,8 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             time.sleep(0.05)
             counter += 1
         if self._processed_image is None:
-            step = UNITS_PER_INCH / self.dpi
+
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
@@ -283,6 +285,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         We require a context to calculate the correct step values relative to the device
         """
+
+        dev_x, dev_y = context.device.view.dpi_to_steps(1)
+        self._default_units = (dev_x + dev_y) / 2
         self.step_x, self.step_y = context.device.view.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
@@ -319,8 +324,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         return bool(
             hasattr(drag_node, "as_geometry") or
             hasattr(drag_node, "as_image") or
-            drag_node.type.startswith("op") or
-            drag_node.type in ("file", "group")
+            drag_node.type in ("op image", "op raster", "file", "group")
         )
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -334,7 +338,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify, flag=flag)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):
@@ -402,7 +411,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 # Direct execution
                 self._needs_update = False
                 # Calculate scene step_x, step_y values
-                step = UNITS_PER_INCH / self.dpi
+                step = self._default_units / self.dpi
                 step_x = step
                 step_y = step
                 self.process_image(step_x, step_y, not self.prevent_crop)
@@ -426,7 +435,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         while self._needs_update:
             self._needs_update = False
             # Calculate scene step_x, step_y values
-            step = UNITS_PER_INCH / self.dpi
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             with self._update_lock:
@@ -458,6 +467,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             step_x = self.step_x
         if step_y is None:
             step_y = self.step_y
+        # print (f"process called with step_x={step_x}, step_y={step_y} (node: {self.step_x}, {self.step_y})")
         try:
             actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
             inverted_main_matrix = Matrix(self.matrix).inverse()
@@ -481,7 +491,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
     @property
     def opaque_image(self):
         from PIL import Image
-
         img = self.image
         if img is not None and img.mode == "RGBA":
             r, g, b, a = img.split()
@@ -862,6 +871,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             or self.matrix.c != 0.0
             or self.matrix.d != step_y
         ):
+            # print (f"another transform called while {image.width}x{image.height} - requested: {image_width}x{image_height}")
             if image_height <= 0:
                 image_height = 1
             if image_width <= 0:
@@ -880,6 +890,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 resample=BICUBIC,
                 fillcolor="black" if self.invert else "white",
             )
+            # print (f"after transform {image.width}x{image.height}")
         actualized_matrix = Matrix()
 
         if step_y < 0:
@@ -910,7 +921,10 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         # Invert black to white if needed.
         if self.invert:
-            image = ImageOps.invert(image)
+            try:
+                image = ImageOps.invert(image)
+            except OSError as e:
+                print (f"Image inversion crashed: {e}\nMode: {image.mode}, {image.width}x{image.height} pixel")
 
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)

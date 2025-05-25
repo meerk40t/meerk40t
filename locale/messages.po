@@ -4049,7 +4049,7 @@ msgid "Align laser with the first position"
 msgstr ""
 
 #: meerk40t/gui/navigationpanels.py:416
-msgid "Perform a convex hull trace of the selection (Right different algorithm)"
+msgid "Perform a convex hull trace of the selection"
 msgstr ""
 
 #: meerk40t/gui/navigationpanels.py:422
@@ -8557,7 +8557,7 @@ msgid "Lihuiyu interpreter attached to {device}"
 msgstr ""
 
 #: meerk40t/lihuiyu/device.py:954
-msgid "Intepreter cannot be attached to any device."
+msgid "Interpreter cannot be attached to any device."
 msgstr ""
 
 #: meerk40t/lihuiyu/plugin.py:29

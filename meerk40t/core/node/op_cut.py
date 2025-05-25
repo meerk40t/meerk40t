@@ -29,7 +29,6 @@ class CutOpNode(Node, Parameters):
         # int("2180.534") throws a value error.
         self.kerf = 0.0
         self._device_factor = 1.0
-        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
 
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = (
@@ -134,7 +133,7 @@ class CutOpNode(Node, Parameters):
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -147,7 +146,7 @@ class CutOpNode(Node, Parameters):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.add_reference(drag_node, pos=0)
+                self.add_reference(drag_node, pos=None if flag else 0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
@@ -247,7 +246,15 @@ class CutOpNode(Node, Parameters):
             return False, False, None
         feedback = []
         if node.type in self._allowed_elements:
-            if not self.default:
+            if self.default and usedefault:
+                # Have classified but more classification might be needed
+                if self.valid_node_for_reference(node):
+                    self.add_reference(node)
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+            else:
+                # Even if the default attribute set that would be a valid thing
                 if self.has_attributes():
                     result = False
                     for attribute in self.allowed_attributes:
@@ -272,13 +279,6 @@ class CutOpNode(Node, Parameters):
                         feedback.append("stroke")
                         feedback.append("fill")
                         return True, self.stopop, feedback
-            elif self.default and usedefault:
-                # Have classified but more classification might be needed
-                if self.valid_node_for_reference(node):
-                    self.add_reference(node)
-                    feedback.append("stroke")
-                    feedback.append("fill")
-                    return True, self.stopop, feedback
         return False, False, None
 
     def add_reference(self, node=None, pos=None, **kwargs):

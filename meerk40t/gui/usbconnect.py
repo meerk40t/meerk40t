@@ -92,3 +92,7 @@ class UsbConnect(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "USB-Connection"
+
+    @staticmethod
+    def helptext():
+        return _("Display the USB communication control window")

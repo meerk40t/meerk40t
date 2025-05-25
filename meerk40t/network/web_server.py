@@ -34,6 +34,13 @@ class WebServer(Module):
         )
         self.server_headers = dict()
         self.client_headers = dict()
+        self.handover = None
+        root = self.context.root
+        for result in root.find("gui/handover"):
+            # Do we have a thread handover routine?
+            if result is not None:
+                self.handover, _path, suffix_path  = result
+                break
 
     def stop(self):
         self.state = "terminate"
@@ -45,6 +52,13 @@ class WebServer(Module):
         if self.socket is not None:
             self.socket.close()
             self.socket = None
+    
+    def send(self, command):
+        if self.handover is None:
+            self.context(f"{command}\n")
+        else:
+            self.handover(command)
+
 
     def receive(self, data):
         def parse_received_data():
@@ -92,7 +106,7 @@ class WebServer(Module):
                     content = f"Received command: '{command}'"
             elif self.client_headers["TYPE"] == "POST" and "post_cmd" in self.client_headers:
                 command = self.client_headers["post_cmd"]
-                self.context(command + "\n")
+                self.send(command)
                 content = f"Received command: '{command}'"
             return content_type, content
 
@@ -274,7 +288,7 @@ class WebServer(Module):
                 )
             )
             return html
-        
+
         def build_json(content):
             return content
 
@@ -339,6 +353,8 @@ class WebServer(Module):
                 name=self.name, port=self.port
             )
         )
+        connection = None
+        address = None
         while self.state != "terminate":
             try:
                 connection, address = self.socket.accept()
@@ -367,19 +383,22 @@ class WebServer(Module):
                         elif send_type == "json":
                             self.respond_with_json(connection, to_send)
                 connection.close()
+                connection = None
+                self.events_channel(
+                    _("Connection to {address} was closed.").format(address=address)
+                )
             except socket.timeout:
                 self.events_channel(
                     _("Connection to {address} timed out.").format(address=address)
                 )
-            except OSError:
+            except OSError as e:
+                self.events_channel(f"OS-Error: {e}")
+            finally:
                 if connection is not None:
                     connection.close()
             # except AttributeError :
             #     self.events_channel(_("Socket did not exist to accept connection."))
             #     break
-            self.events_channel(
-                _("Connection to {address} was closed.").format(address=address)
-            )
 
         if self.socket is not None:
             self.socket.close()

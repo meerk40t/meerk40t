@@ -152,6 +152,13 @@ class NewlyController:
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
                 self.connection = USBConnection(self.usb_log)
+        if self.connection is None:
+            self._is_opening = False
+            self.set_disable_connect(True)
+            self.usb_log("Could not connect to the controller.")
+            self.usb_log("Automatic connections disabled.")
+            raise ConnectionRefusedError("Could not connect to the controller.")
+
         self._is_opening = True
         self._abort_open = False
         count = 0

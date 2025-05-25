@@ -79,14 +79,17 @@ class InfoPanel(wx.Panel):
                 ):
                     c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                image = self.make_raster(
-                    node,
-                    node.paint_bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image = self.make_raster(
+                        node,
+                        node.paint_bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except Exception:
+                    return None, None
 
             if c is None:
                 c = defaultcolor
@@ -105,6 +108,8 @@ class InfoPanel(wx.Panel):
             if count > 0:
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
@@ -115,6 +120,8 @@ class InfoPanel(wx.Panel):
                 data.sort(key=lambda n: n.emphasized_time)
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
@@ -124,6 +131,8 @@ class InfoPanel(wx.Panel):
 
                 node = data[-1]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
                     _("Last selected: {type} {lbl}").format(
@@ -176,10 +185,16 @@ class SplitterPanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
         self.lbl_info = wxStaticText(self, wx.ID_ANY, "")
         self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
-            icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
+            icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
@@ -318,11 +333,17 @@ class KeyholePanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
         self.btn_align = wxButton(self, wx.ID_ANY, _("Create keyhole image"))
         self.btn_align.SetBitmap(
-            icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size())
+            icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
@@ -528,3 +549,7 @@ class RenderSplit(MWindow):
     @staticmethod
     def submenu():
         return "Editing", "Image Splitting"
+
+    @staticmethod
+    def helptext():
+        return _("Split images for large jobs")

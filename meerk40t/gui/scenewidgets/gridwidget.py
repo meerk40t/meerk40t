@@ -19,10 +19,7 @@ class GridWidget(Widget):
 
     def __init__(self, scene, name=None, suppress_labels=False):
         Widget.__init__(self, scene, all=True)
-        if name is None:
-            self.name = "Standard"
-        else:
-            self.name = name
+        self.name = "Standard" if name is None else name
         self.primary_grid_lines = None
         self.secondary_grid_lines = None
         self.background = None
@@ -157,28 +154,30 @@ class GridWidget(Widget):
         # Primary grid
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.primary_tick_length_x > self.min_x:
-            start_x -= self.primary_tick_length_x
+        dx = abs(self.primary_tick_length_x)
+        dy = abs(self.primary_tick_length_y)
+        while start_x - dx > self.min_x:
+            start_x -= dx
         start_y = self.zero_y
-        while start_y - self.primary_tick_length_y > self.min_y:
-            start_y -= self.primary_tick_length_y
+        while start_y - dy > self.min_y:
+            start_y -= dy
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.primary_tick_length_x
+            start_x += dx
         while start_y < self.min_y:
-            start_y += self.primary_tick_length_y
+            start_y += dy
 
         x = start_x
         while x <= self.max_x:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
-            x += self.primary_tick_length_x
+            x += dx
 
         y = start_y
         while y <= self.max_y:
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
-            y += self.primary_tick_length_y
+            y += dy
         self.primary_grid_lines = starts, ends
 
     def _calc_secondary_grid_lines(self):
@@ -188,28 +187,30 @@ class GridWidget(Widget):
         # Secondary grid
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.secondary_tick_length_x > self.min_x:
-            start_x -= self.secondary_tick_length_x
+        dx = abs(self.secondary_tick_length_x)
+        dy = abs(self.secondary_tick_length_y)
+        while start_x - dx > self.min_x:
+            start_x -= dx
         start_y = self.zero_y
-        while start_y - self.secondary_tick_length_y > self.min_y:
-            start_y -= self.secondary_tick_length_y
+        while start_y - dy > self.min_y:
+            start_y -= dy
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.secondary_tick_length_x
+            start_x += dx
         while start_y < self.min_y:
-            start_y += self.secondary_tick_length_y
+            start_y += dy
 
         x = start_x
         while x <= self.max_x:
             starts2.append((x, self.min_y))
             ends2.append((x, self.max_y))
-            x += self.secondary_tick_length_x
+            x += dx
 
         y = start_y
         while y <= self.max_y:
             starts2.append((self.min_x, y))
             ends2.append((self.max_x, y))
-            y += self.secondary_tick_length_y
+            y += dy
         self.secondary_grid_lines = starts2, ends2
 
     def calculate_grid_lines(self):
@@ -346,7 +347,7 @@ class GridWidget(Widget):
             (self.min_x, self.circular_grid_center_y),
             (self.max_x, self.circular_grid_center_y),
         )
-        for i, pt in enumerate(test_points):
+        for pt in test_points:
             dx = pt[0] - self.circular_grid_center_x
             dy = pt[1] - self.circular_grid_center_y
             r = sqrt(dx * dx + dy * dy)
@@ -525,10 +526,7 @@ class GridWidget(Widget):
             c_angle = r_angle
             while c_angle > tau:
                 c_angle -= tau
-            if i % 2 == 0:
-                r = 0
-            else:
-                r = r_fourth
+            r = 0 if i % 2 == 0 else r_fourth
             while r < self.min_radius:
                 r += tick_length
 
@@ -634,8 +632,8 @@ class GridWidget(Widget):
     def _draw_grid_primary(self, gc):
         starts, ends = self.primary_grid_lines
         gc.SetPen(self.primary_grid_line_pen)
-        grid_path = gc.CreatePath()
         if starts and ends:
+            grid_path = gc.CreatePath()
             for i in range(len(starts)):
                 sx = starts[i][0]
                 sy = starts[i][1]
@@ -648,8 +646,8 @@ class GridWidget(Widget):
     def _draw_grid_secondary(self, gc):
         starts2, ends2 = self.secondary_grid_lines
         gc.SetPen(self.secondary_grid_line_pen)
-        grid_path = gc.CreatePath()
         if starts2 and ends2:
+            grid_path = gc.CreatePath()
             for i in range(len(starts2)):
                 sx = starts2[i][0]
                 sy = starts2[i][1]
@@ -667,8 +665,8 @@ class GridWidget(Widget):
         u_height = float(self.scene.context.device.view.unit_height)
         gc.Clip(0, 0, u_width, u_height)
         # siz = sqrt(u_width * u_width + u_height * u_height)
-        sox = self.circular_grid_center_x / u_width
-        soy = self.circular_grid_center_y / u_height
+        # sox = self.circular_grid_center_x / u_width
+        # soy = self.circular_grid_center_y / u_height
         step = self.primary_tick_length_x
         # factor = max(2 * (1 - sox), 2 * (1 - soy))
         # Initially I drew a complete circle, which is a waste in most situations,
@@ -699,8 +697,7 @@ class GridWidget(Widget):
         radials_start = []
         radials_end = []
         fsize = 10 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
-        if fsize < 1.0:
-            fsize = 1.0  # Mac does not allow values lower than 1.
+        fsize = max(fsize, 1.0)  # Mac does not allow values lower than 1.
         try:
             font = wx.Font(
                 fsize,
@@ -771,7 +768,7 @@ class GridWidget(Widget):
             )
             r_angle += tau / segments
             i += 1
-        if len(radials_start) > 0:
+        if radials_start:
             gc.StrokeLineSegments(radials_start, radials_end)
         gc.ResetClip()
 

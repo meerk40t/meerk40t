@@ -23,7 +23,6 @@ class DotsOpNode(Node, Parameters):
         self._allowed_elements = ("elem point",)
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
         self.label = "Dots"
 
@@ -84,7 +83,7 @@ class DotsOpNode(Node, Parameters):
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -97,7 +96,7 @@ class DotsOpNode(Node, Parameters):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.add_reference(drag_node, pos=0)
+                self.add_reference(drag_node, pos=None if flag else 0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
@@ -175,7 +174,14 @@ class DotsOpNode(Node, Parameters):
             return False, False, None
         feedback = []
         if node.type in self._allowed_elements:
-            if not self.default:
+            if self.default and usedefault:
+                # Have classified but more classification might be needed
+                if self.valid_node_for_reference(node):
+                    self.add_reference(node)
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+            else:
                 if self.has_attributes():
                     result = False
                     for attribute in self.allowed_attributes:
@@ -200,13 +206,6 @@ class DotsOpNode(Node, Parameters):
                         feedback.append("stroke")
                         feedback.append("fill")
                         return True, self.stopop, feedback
-            elif self.default and usedefault:
-                # Have classified but more classification might be needed
-                if self.valid_node_for_reference(node):
-                    self.add_reference(node)
-                    feedback.append("stroke")
-                    feedback.append("fill")
-                    return True, self.stopop, feedback
         return False, False, None
 
     def load(self, settings, section):

@@ -6,7 +6,7 @@ from wx import aui
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.kernel import signal_listener
 from meerk40t.gui.wxutils import TextCtrl
 
 try:
@@ -78,7 +78,7 @@ def register_panel_console(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Layer(2)
-        .MinSize(600, 100)
+        .MinSize(100, 100)
         .FloatingSize(600, 230)
         .Caption(_("Console"))
         .Name("console")
@@ -87,6 +87,7 @@ def register_panel_console(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Open command interface")
 
     window.on_pane_create(pane)
     context.register("pane/console", pane)
@@ -347,7 +348,10 @@ class ConsolePanel(wx.ScrolledWindow):
             self._buffer += f"{text}\n"
             if len(self._buffer) > 50000:
                 self._buffer = self._buffer[-50000:]
-        self.context.signal("console_update")
+        if getattr(self.context, "process_console_in_realtime", False):
+            self.update_console_main("internal")
+        else:
+            self.context.signal("console_update")
 
     @signal_listener("console_update")
     def update_console_main(self, origin, *args):
@@ -596,7 +600,7 @@ class ConsolePanel(wx.ScrolledWindow):
         event.Skip(False)
 
     def history_filename(self):
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         fname = os.path.join(safe_dir, "cmdhistory.log")
         is_there = os.path.exists(fname)
         return fname, is_there
@@ -696,3 +700,7 @@ class Console(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Open command interface")

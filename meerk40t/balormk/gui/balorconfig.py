@@ -231,3 +231,7 @@ class BalorConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Configuration"
+
+    @staticmethod
+    def helptext():
+        return _("Display and edit device configuration")

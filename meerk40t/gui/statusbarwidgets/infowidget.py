@@ -45,10 +45,11 @@ class SimpleInfoWidget(StatusBarWidget):
                     wx.FONTWEIGHT_NORMAL,
                 )
             )
+        isize = 20 * self.context.root.bitmap_correction_scale
         self.btn_next = wxStaticBitmap(
             self.parent,
             id=wx.ID_ANY,
-            bitmap=icons8_up.GetBitmap(resize=20),
+            bitmap=icons8_up.GetBitmap(resize=isize),
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )
@@ -60,7 +61,7 @@ class SimpleInfoWidget(StatusBarWidget):
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
         self.btn_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
 
-        self.Add(self.info_text, 5, wx.EXPAND, 0)
+        self.Add(self.info_text, 5, 0, 0)
         self.Add(self.progress_bar, 1, wx.EXPAND, 0)
         self.Add(self.btn_next, 0, wx.EXPAND, 0)
         self.SetActive(self.btn_next, False)
@@ -197,26 +198,33 @@ class InformationWidget(SimpleInfoWidget):
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
+            while new_height > 1024 or new_width > 1024:
+                new_height //= 2
+                new_width //= 2
 
             all_pixel = new_height * new_width
             if all_pixel > 0:
-                image = make_raster(
-                    data,
-                    bounds=bounds,
-                    width=new_width,
-                    height=new_height,
-                    keep_ratio=keep_ratio,
-                )
-                white_pixel = sum(
-                    image.point(lambda x: 255 if x else 0)
-                    .convert("L")
-                    .point(bool)
-                    .getdata()
-                )
-                black_pixel = all_pixel - white_pixel
-                # print(
-                #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
-                # )
+                try:
+                    image = make_raster(
+                        data,
+                        bounds=bounds,
+                        width=new_width,
+                        height=new_height,
+                        keep_ratio=keep_ratio,
+                    )
+                    white_pixel = sum(
+                        image.point(lambda x: 255 if x else 0)
+                        .convert("L")
+                        .point(bool)
+                        .getdata()
+                    )
+                    black_pixel = all_pixel - white_pixel
+                    # print(
+                    #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
+                    # )
+                except Exception:
+                    black_pixel = 1
+                    all_pixel = 1
                 ratio = black_pixel / all_pixel
                 area = (
                     ratio

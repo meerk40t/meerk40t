@@ -23,7 +23,7 @@ from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
 )
-from meerk40t.kernel import Job, get_safe_path, signal_listener
+from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
 
@@ -67,6 +67,7 @@ def register_panel_spooler(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Opens the spooler window with all job information")
 
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
@@ -118,19 +119,19 @@ class SpoolerPanel(wx.Panel):
         self.button_pause = wxButton(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
-            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button.GetBitmap(
-                resize=0.5 * get_default_icon_size(),
+                resize=0.5 * get_default_icon_size(self.context),
                 color=self.context.themes.get("stop_fg"),
                 keepalpha=True,
             )
         )
         self.button_stop.SetBitmapFocus(
-            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
         self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
@@ -329,7 +330,7 @@ class SpoolerPanel(wx.Panel):
         self.current_item = event.Index
 
     def write_csv(self):
-        filename = Path(get_safe_path(self.context.kernel.name, create=True)).joinpath(
+        filename = Path(self.context.kernel.os_information["WORKDIR"]).joinpath(
             "history.csv"
         )
         if self.filter_device:
@@ -671,15 +672,6 @@ class SpoolerPanel(wx.Panel):
             self.refresh_spooler_list()
 
         return routine
-
-    def pane_show(self, *args):
-        self.shown = True
-        self.context.schedule(self.timerjob)
-        self.refresh_spooler_list()
-
-    def pane_hide(self, *args):
-        self.context.unschedule(self.timerjob)
-        self.shown = False
 
     @staticmethod
     def _name_str(named_obj):
@@ -1170,10 +1162,16 @@ class SpoolerPanel(wx.Panel):
             self.on_device_update(None)
 
     def pane_show(self):
+        self.shown = True
         self.list_job_history.load_column_widths()
         self.list_job_spool.load_column_widths()
+        self.context.schedule(self.timerjob)
+        self.refresh_spooler_list()
 
     def pane_hide(self):
+        self.context.unschedule(self.timerjob)
+        self.shown = False
+
         self.list_job_history.save_column_widths()
         self.list_job_spool.save_column_widths()
 
@@ -1220,3 +1218,7 @@ class JobSpooler(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Spooler"
+
+    @staticmethod
+    def helptext():
+        return _("Opens the spooler window with all job information")

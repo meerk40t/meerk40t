@@ -297,7 +297,7 @@ class WarpEffectNode(Node, FunctionalParameter):
             self.altered()
 
     def can_drop(self, drag_node):
-        if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or drag_node.type.startswith("op "):
+        if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or (drag_node.type.startswith("op ") and drag_node.type != "op dots"):
             return True
         return False
 
@@ -316,7 +316,7 @@ class WarpEffectNode(Node, FunctionalParameter):
             return True
         if hasattr(drag_node, "as_geometry"):
             # Dragging element onto operation adds that element to the op.
-            if not modify:
+            if modify:
                 if self.has_ancestor("branch ops"):
                     self.add_reference(drag_node)
                 else:
@@ -333,9 +333,14 @@ class WarpEffectNode(Node, FunctionalParameter):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            if hasattr(drag_node, "color") and drag_node.color is not None:
-                self.stroke = drag_node.color
-            return drag_node.drop(self, modify=modify, flag=flag)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,
             # then we will do it only if this an element effect

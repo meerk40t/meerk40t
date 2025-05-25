@@ -56,18 +56,25 @@ jobs:
       run: |
         python3.8 -m pip install --upgrade pip
         python3.8 -m pip install wheel setuptools
-        python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
         python3.8 -m pip install --no-use-pep517 pyinstaller==4.3
-
-        ## numpy toggle based on 32 bit fix
-        python3.8 -m pip install six numpy<=1.26.4 ezdxf
-        ## python3.8 -m pip install wheel six ezdxf
-
+        python3.8 -m pip install numpy==1.23.5
+        python3.8 -m pip install pyusb
         python3.8 -m pip install potracer
+        python3.8 -m pip install pillow==9.5.0
+        python3.8 -m pip install wxPython
+        python3.8 -m pip install ezdxf
+        python3.8 -m pip install pyserial
+        python3.8 -m pip install bitarray
+        python3.8 -m pip install scipy==1.10.0
+        python3.8 -m pip install pyclipr
+        python3.8 -m pip install numba
+        python3.8 -m pip install .
+        python3.8 -m pip install meerk40t-camera opencv-python-headless==4.5.3.56
+        python3.8 -m pip install meerk40t-barcodes
 
-        python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython==4.1.1
-        if [ -f requirements-nogui.txt ]; then python3.8 -m pip install -r requirements-nogui.txt; fi
-        python3.8 -m pip uninstall -y meerk40t[gui]
+    - name: pip list
+      run: |
+          python3.8 -m pip list
 
     - name: Build meerk40t
       id: build
@@ -81,7 +88,6 @@ jobs:
         git pull
         python3.8 -m pip install .
         cd ..
-        python3.8 -m pip list
             ##Set bundle version
             ##Download the extra files here meerk40t.icns entitlements.plist setup_mac.py
             ##May need to compare extras_required vs. current version of setup.py

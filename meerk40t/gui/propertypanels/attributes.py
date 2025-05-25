@@ -270,7 +270,7 @@ class IdPanel(wx.Panel):
         self.icon_hidden = wxStaticBitmap(self, wx.ID_ANY)
         self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
         self.icon_hidden.SetBitmap(
-            mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE)
+            mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale)
         )
         self.icon_hidden.SetToolTip(
             _("Element is hidden, so it will neither be displayed nor burnt")
@@ -436,7 +436,7 @@ class IdPanel(wx.Panel):
                 n_type = "_3d_image"
             if n_type in type_patterns:
                 icon = type_patterns[n_type]
-                bmp = icon.GetBitmap(resize=mkicons.STD_ICON_SIZE, buffer=2)
+                bmp = icon.GetBitmap(resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale, buffer=2)
         if bmp is None:
             self.icon_display.Show(False)
         else:
@@ -944,10 +944,10 @@ class PositionSizePanel(wx.Panel):
         self.context.setting(bool, "lock_active", True)
         self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2, use_theme=False
         )
         self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale/ 2, use_theme=False
         )
         self.btn_lock_ratio.bitmap_toggled = self.bitmap_locked
         self.btn_lock_ratio.bitmap_untoggled = self.bitmap_unlocked
@@ -1282,10 +1282,10 @@ class RoundedRectPanel(wx.Panel):
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
         # Set Bitmap
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale/ 2, use_theme=False
         )
         self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale/ 2, use_theme=False
         )
 
         sizer_x.Add(self.slider_x, 1, wx.EXPAND, 0)

@@ -187,7 +187,7 @@ def init_commands(kernel):
             return
         try:
             channel(_("loading..."))
-            result = self.load(new_file)
+            result = self.load(new_file, svg_ppi=self.svg_ppi)
             if result:
                 channel(_("Done."))
         except AttributeError:
@@ -588,8 +588,8 @@ def init_commands(kernel):
             data = list()
             for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
                 data.append(item)
-
-        with self.static("clear_all_op"):
+        # _("Clear operations")
+        with self.undoscope("Clear operations"):
             index_ops = list(self.ops())
             for item in data:
                 i = index_ops.index(item)
@@ -597,7 +597,7 @@ def init_commands(kernel):
                 name = f"{select_piece} {i}: {str(item)}"
                 channel(f"{name}: {len(item.children)}")
                 item.remove_all_children()
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "operations")
 
     @self.console_command(
         "list",
@@ -1403,12 +1403,26 @@ def init_commands(kernel):
     )
     def e_delete(command, channel, _, data=None, data_type=None, **kwargs):
         channel(_("Deleting…"))
-        with self.static("e_delete"):
+        with self.undoscope("Deleting"):
             if data_type == "elements":
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
         self.signal("update_group_labels")
+
+    @self.console_command(
+        "clear_all", help=_("Clear all content"), input_type=("elements", "ops")
+    )
+    def e_clear(command, channel, _, data=None, data_type=None, **kwargs):
+        channel(_("Deleting…"))
+        fast = True
+        with self.undoscope("Deleting"):
+            if data_type == "elements":
+                self.clear_elements(fast=fast)
+                self.emphasized()
+            else:
+                self.clear_operations(fast=fast)
+        self.signal("rebuild_tree", "all")
 
     # ==========
     # ELEMENT BASE
@@ -1483,12 +1497,15 @@ def init_commands(kernel):
     )
     def regmark(command, channel, _, data, cmd=None, **kwargs):
         # Move regmarks into the regular element tree and vice versa
-        with self.static("regmark"):
-            if cmd == "free":
-                target = self.elem_branch
-            else:
-                target = self.reg_branch
+        # _("Regmarks -> Elements") + _("Elements -> Regmarks")
+        if cmd == "free":
+            target = self.elem_branch
+            scope = "Regmarks -> Elements"
+        else:
+            target = self.reg_branch
+            scope = "Elements -> Regmarks"
 
+        with self.undoscope(scope):
             if data is None:
                 data = list()
                 if cmd == "free":
@@ -1794,42 +1811,46 @@ def init_commands(kernel):
         """
         if not isinstance(data, list):
             data = list(data)
+        if not data:
+            return
         elements_nodes = []
         elems = []
         groups= []
-        for node in data:
-            node_label = node.label
-            node_attributes = {}
-            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
-                if hasattr(node, attrib):
-                    oldval = getattr(node, attrib, None)
-                    node_attributes[attrib] = oldval
-            group_node = node.replace_node(type="group", label=node_label)
-            groups.append(group_node)
-            try:
-                if hasattr(node, "final_geometry"):
-                    geometry = node.final_geometry()
-                else:
-                    geometry = node.as_geometry()
-                geometry.ensure_proper_subpaths()
-            except AttributeError:
-                continue
-            idx = 0
-            for subpath in geometry.as_subpaths():
-                subpath.ensure_proper_subpaths()
-                idx += 1
-                subnode = group_node.add(
-                    geometry=subpath, 
-                    type="elem path", 
-                    label=f"{node_label}-{idx}",
-                    stroke=node_attributes.get("stroke", None),
-                    fill=node_attributes.get("fill", None),
-                )
-                for key, value in node_attributes.items():
-                    setattr(subnode, key, value)
+        # _("Break elements")
+        with self.undoscope("Break elements"):
+            for node in data:
+                node_label = node.label
+                node_attributes = {}
+                for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                    if hasattr(node, attrib):
+                        oldval = getattr(node, attrib, None)
+                        node_attributes[attrib] = oldval
+                group_node = node.replace_node(type="group", label=node_label, expanded=True)
+                groups.append(group_node)
+                try:
+                    if hasattr(node, "final_geometry"):
+                        geometry = node.final_geometry()
+                    else:
+                        geometry = node.as_geometry()
+                    geometry.ensure_proper_subpaths()
+                except AttributeError:
+                    continue
+                idx = 0
+                for subpath in geometry.as_subpaths():
+                    subpath.ensure_proper_subpaths()
+                    idx += 1
+                    subnode = group_node.add(
+                        geometry=subpath,
+                        type="elem path",
+                        label=f"{node_label}-{idx}",
+                        stroke=node_attributes.get("stroke", None),
+                        fill=node_attributes.get("fill", None),
+                    )
+                    for key, value in node_attributes.items():
+                        setattr(subnode, key, value)
 
-                elems.append(subnode)
-            elements_nodes.append(group_node)
+                    elems.append(subnode)
+                elements_nodes.append(group_node)
         post.append(classify_new(elems))
         self.signal("element_property_reload", groups)
         return "elements", elements_nodes

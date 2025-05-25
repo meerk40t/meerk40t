@@ -97,7 +97,8 @@ class Coolants:
                     routine = cool["function"]
                     routine(device, True)
                     self.kernel.signal("coolant_set", device.label, True)
-                break
+                return True
+        return False
 
     def coolant_off(self, device):
         for cool in self._coolants:
@@ -108,7 +109,8 @@ class Coolants:
                     routine = cool["function"]
                     routine(device, False)
                     self.kernel.signal("coolant_set", device.label, False)
-                break
+                return True
+        return False
 
     def coolant_toggle(self, device):
         for cool in self._coolants:
@@ -119,7 +121,8 @@ class Coolants:
                 routine = cool["function"]
                 routine(device, new_state)
                 self.kernel.signal("coolant_set", device.label, new_state)
-                break
+                return True
+        return False
 
     def coolant_state(self, device):
         for cool in self._coolants:
@@ -136,7 +139,8 @@ class Coolants:
             if cool_id == cool["id"]:
                 routine = cool["function"]
                 routine(None, True)
-                break
+                return True
+        return False
 
     def coolant_off_by_id(self, identifier):
         # Caveat, this will be executed independently of devices registered!
@@ -145,7 +149,8 @@ class Coolants:
             if cool_id == cool["id"]:
                 routine = cool["function"]
                 routine(None, False)
-                break
+                return True
+        return False
 
     def registered_coolants(self):
         """
@@ -348,7 +353,10 @@ def plugin(kernel, lifecycle):
                 return
 
             coolant = kernel.root.coolant
-            coolant.coolant_on(device)
+            if coolant.coolant_on(device):
+                channel("Coolant turned on")
+            else:
+                channel("Active device does not support coolant")
 
         @context.console_command(
             ("coolant_off", "vent_off"), help=_("Turns off the coolant for the active device")
@@ -361,7 +369,10 @@ def plugin(kernel, lifecycle):
                 return
 
             coolant = kernel.root.coolant
-            coolant.coolant_off(device)
+            if coolant.coolant_off(device):
+                channel("Coolant turned off")
+            else:
+                channel("Active device does not support coolant")
 
         @context.console_argument("id", type=str)
         @context.console_command(
@@ -372,7 +383,10 @@ def plugin(kernel, lifecycle):
                 channel("You need to provide an identifier")
                 return
             coolant = kernel.root.coolant
-            coolant.coolant_on_by_id(id)
+            if coolant.coolant_on_by_id(id):
+                channel(f"Coolant {id} turned on")
+            else:
+                channel(f"Method {id} could not be found")
         
         @context.console_argument("id", type=str)
         @context.console_command(
@@ -383,4 +397,7 @@ def plugin(kernel, lifecycle):
                 channel("You need to provide an identifier")
                 return
             coolant = kernel.root.coolant
-            coolant.coolant_off_by_id(id)
+            if coolant.coolant_off_by_id(id):
+                channel(f"Coolant {id} turned off")
+            else:
+                channel(f"Method {id} could not be found")

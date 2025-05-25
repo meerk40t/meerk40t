@@ -9,6 +9,7 @@ import struct
 import threading
 import time
 from copy import copy
+
 from usb.core import NoBackendError
 
 from meerk40t.balormk.mock_connection import MockConnection
@@ -260,6 +261,8 @@ class GalvoController:
         self._goto_speed = goto_speed
         self._light_speed = light_speed
         self._dark_speed = dark_speed
+        self.serial_confirmed = False
+        self.serial_number_found = None
 
         self._ready = None
         self._speed = None
@@ -342,6 +345,7 @@ class GalvoController:
         except (ConnectionError, ConnectionRefusedError, AttributeError):
             pass
         self.connection = None
+        self.serial_number_found = None
         # Reset error to allow another attempt
         self.set_disable_connect(False)
 
@@ -388,10 +392,15 @@ class GalvoController:
                     self.usb_log("Could not connect to the LMC controller.")
                     self.usb_log("Automatic connections disabled.")
                     from platform import system
+
                     osname = system()
                     if osname == "Windows":
-                        self.usb_log("Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?")
-                        self.usb_log("Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows")
+                        self.usb_log(
+                            "Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"
+                        )
+                        self.usb_log(
+                            "Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
+                        )
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
@@ -401,22 +410,25 @@ class GalvoController:
         self._abort_open = False
 
     def send(self, data, read=True):
+        ERR = (-1, -1, -1, -1)  # Error return value
         if self.is_shutdown:
-            return -1, -1, -1, -1
+            return ERR
         try:
             self.connect_if_needed()
         except (ConnectionRefusedError, NoBackendError):
-            return -1, -1, -1, -1
+            return ERR
+        if not self.connection:
+            return ERR
         try:
             self.connection.write(self._machine_index, data)
         except ConnectionError:
-            return -1, -1, -1, -1
+            return ERR
         if read:
             try:
                 r = self.connection.read(self._machine_index)
                 return struct.unpack("<4H", r)
             except ConnectionError:
-                return -1, -1, -1, -1
+                return ERR
 
     def status(self):
         b0, b1, b2, b3 = self.get_version()
@@ -808,7 +820,27 @@ class GalvoController:
 
         self.usb_log("Initializing Laser")
         serial_number = self.get_serial_number()
-        self.usb_log(f"Serial Number: {serial_number}")
+        content = "0x"
+        for nibble in serial_number:
+            content += f"{nibble:04x}"
+        self.usb_log(f"Serial Number: {serial_number} ({content})")
+        if (
+            self.service.serial_enable
+            and self.service.serial
+            and not self.serial_confirmed
+        ):
+            self.usb_log(
+                f"Requires serial number confirmation against {self.service.serial}."
+            )
+            if content == self.service.serial:
+                self.serial_confirmed = True
+
+            if not self.serial_confirmed:
+                self.disconnect()
+                raise ConnectionRefusedError("Serial number confirmation failed.")
+            else:
+                self.usb_log("Serial number confirmed.")
+
         version = self.get_version()
         self.usb_log(f"Version: {version}")
 
@@ -926,7 +958,9 @@ class GalvoController:
         @return:
         """
         # return int(speed / 2)
-        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True, margins=False)
+        galvos_per_mm, _ = self.service.view.position(
+            "1mm", "1mm", vector=True, margins=False
+        )
         return abs(int(speed * galvos_per_mm / 1000.0))
 
     def _convert_frequency(self, frequency_khz, base=20000.0):
@@ -1049,7 +1083,7 @@ class GalvoController:
         y = int(y)
         self._list_write(listJumpTo, x, y, angle, distance)
         if self._signal_updates:
-            view  = self.service.view
+            view = self.service.view
             l_x, l_y = view.iposition(self._last_x, self._last_y)
             n_x, n_y = view.iposition(x, y)
             self.service.signal(
@@ -1084,7 +1118,7 @@ class GalvoController:
         self._list_write(listMarkTo, x, y, angle, distance)
 
         if self._signal_updates:
-            view  = self.service.view
+            view = self.service.view
             l_x, l_y = view.iposition(self._last_x, self._last_y)
             n_x, n_y = view.iposition(x, y)
             self.service.signal(
@@ -1373,7 +1407,9 @@ class GalvoController:
         return self._command(GetVersion)
 
     def get_serial_number(self):
-        return self._command(GetSerialNo)
+        if self.serial_number_found is None:
+            self.serial_number_found = self._command(GetSerialNo)
+        return self.serial_number_found
 
     def get_list_status(self):
         return self._command(GetListStatus)

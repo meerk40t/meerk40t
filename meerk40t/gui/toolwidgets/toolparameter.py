@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import dip_size, matrix_scale
+from meerk40t.gui.wxutils import dip_size, get_matrix_scale, get_gc_scale
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 _ = wx.GetTranslation
@@ -173,13 +173,7 @@ class SimpleSlider:
         offset = self.magnification * self.pt_offset / s
 
         mypen = wx.Pen(wx.LIGHT_GREY)
-        gcmat = gc.GetTransform()
-        mat_param = gcmat.Get()
-        sx = mat_param[0]
-        sy = mat_param[3]
-        sx = max(sx, sy)
-        if sx == 0:
-            sx = 1
+        sx = get_gc_scale(gc)
         linewidth = 1 / sx
         try:
             mypen.SetWidth(linewidth)
@@ -655,7 +649,7 @@ class ParameterTool(ToolWidget):
             )
             if doit:
                 matrix = self.scene.widget_root.scene_widget.matrix
-                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
                 this_point = (
                     self.params[self.point_index][0]
                     + 1j * self.params[self.point_index][1]

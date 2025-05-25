@@ -340,6 +340,8 @@ class LaserToolPanel(wx.Panel):
         if factor > 1:
             bmp_width *= factor
             bmp_height *= factor
+        bmp_width *= self.context.root.bitmap_correction_scale
+        bmp_height *= self.context.root.bitmap_correction_scale
         return picture.GetBitmap(resize=(bmp_width, bmp_height))
 
     # scenario = 8
@@ -797,3 +799,7 @@ class LaserTool(MWindow):
     @staticmethod
     def submenu():
         return "Laser-Tools", "Place Template"
+
+    @staticmethod
+    def helptext():
+        return _("Define and use some templates for repetitive laser jobs")

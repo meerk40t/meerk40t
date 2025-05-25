@@ -43,10 +43,11 @@ class LinecapWidget(StatusBarWidget):
         self.btn_cap_butt = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
+        isize = int(max(20, self.parent.available_height - 4) * self.context.root.bitmap_correction_scale)
 
         self.btn_cap_butt.SetBitmap(
             icon_cap_butt.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
+                resize=isize, buffer=1
             )
         )
         self.btn_cap_butt.SetMaxSize(wx.Size(50, -1))
@@ -58,7 +59,7 @@ class LinecapWidget(StatusBarWidget):
         )
         self.btn_cap_round.SetBitmap(
             icon_cap_round.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
+                resize=isize, buffer=1
             )
         )
         self.btn_cap_round.SetMaxSize(wx.Size(50, -1))
@@ -70,9 +71,7 @@ class LinecapWidget(StatusBarWidget):
         )
 
         self.btn_cap_square.SetBitmap(
-            icon_cap_square.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_cap_square.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_cap_square.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_square.SetToolTip(_("Set the end of the lines to a square-shape"))
@@ -116,15 +115,16 @@ class LinejoinWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-
+        isize = int(
+            max(20, self.parent.available_height - 4) *
+            self.context.root.bitmap_correction_scale
+        )
         self.btn_join_bevel = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
 
         self.btn_join_bevel.SetBitmap(
-            icon_join_bevel.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_join_bevel.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_join_bevel.SetMaxSize(wx.Size(50, -1))
         self.btn_join_bevel.SetToolTip(_("Set the join of the lines to a bevel-shape"))
@@ -134,9 +134,7 @@ class LinejoinWidget(StatusBarWidget):
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
         self.btn_join_round.SetBitmap(
-            icon_join_round.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_join_round.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_join_round.SetMaxSize(wx.Size(50, -1))
         self.btn_join_round.SetToolTip(_("Set the join of lines to a round-shape"))
@@ -146,9 +144,7 @@ class LinejoinWidget(StatusBarWidget):
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
         self.btn_join_miter.SetBitmap(
-            icon_join_miter.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_join_miter.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_join_miter.SetMaxSize(wx.Size(50, -1))
         self.btn_join_miter.SetToolTip(_("Set the join of lines to a miter-shape"))
@@ -210,14 +206,17 @@ class FillruleWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
+        isize = int(
+            max(20, self.parent.available_height - 4) *
+            self.context.root.bitmap_correction_scale
+        )
+
         self.btn_fill_nonzero = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
         self.btn_fill_nonzero.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_nonzero.SetBitmap(
-            icon_fill_nonzero.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_fill_nonzero.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_fill_nonzero.SetToolTip(_("Set the fillstyle to non-zero (regular)"))
         self.btn_fill_nonzero.Bind(wx.EVT_LEFT_DOWN, self.on_fill_nonzero)
@@ -226,9 +225,7 @@ class FillruleWidget(StatusBarWidget):
             self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
         )
         self.btn_fill_evenodd.SetBitmap(
-            icon_fill_evenodd.GetBitmap(
-                resize=max(20, self.parent.available_height - 4), buffer=1
-            )
+            icon_fill_evenodd.GetBitmap(resize=isize, buffer=1)
         )
         self.btn_fill_evenodd.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_evenodd.SetToolTip(
@@ -291,7 +288,11 @@ class PositionWidget(StatusBarWidget):
         self.unit_lbl = wxStaticText(
             self.parent, wx.ID_ANY, label=self.units[self.unit_index]
         )
-        icon_size = max(20, self.parent.available_height - 4)
+        icon_size = int(
+            max(20, self.parent.available_height - 4) *
+            self.context.root.bitmap_correction_scale
+        )
+
         self.button_lock_ratio = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
         self.bitmap_locked = icons8_lock.GetBitmap(resize=icon_size, use_theme=False)
         self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=icon_size, use_theme=False)

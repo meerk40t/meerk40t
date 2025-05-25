@@ -283,9 +283,19 @@ class FontGlyphPicker(wx.Dialog):
             return
         as_stroke = getattr(cfont, "STROKE_BASED", False)
         for c in cfont.glyphs:
-            if ord(c) == 65535:
+            if isinstance(c, str):
+                if len(c) > 1:
+                    # print (f"Strange: {c}, use {idx} instead")
+                    continue
+                if ord(c) == 65535:
+                    continue
+                cstr = str(c)
+            elif isinstance(c, int):
+                if c == 65535:
+                    continue
+                cstr = chr(c)
+            else:
                 continue
-            cstr = str(c)
             hexa = cstr.encode("utf-8")
             item = self.list_glyphs.InsertItem(self.list_glyphs.ItemCount, hexa)
             self.list_glyphs.SetItem(item, 1, str(ord(cstr)))
@@ -294,7 +304,7 @@ class FontGlyphPicker(wx.Dialog):
             try:
                 cfont.render(
                     path,
-                    c,
+                    cstr,
                     True,
                     12.0,
                     1.0,
@@ -779,33 +789,34 @@ class PanelFontSelect(wx.Panel):
 
         picsize = dip_size(self, 32, 32)
         icon_size = picsize[0]
+        bsize = icon_size * self.context.root.bitmap_correction_scale
 
         self.btn_bigger = wxButton(self, wx.ID_ANY)
-        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=icon_size))
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=bsize))
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
         sizer_buttons.Add(self.btn_bigger, 0, wx.EXPAND, 0)
 
         self.btn_smaller = wxButton(self, wx.ID_ANY)
-        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=icon_size))
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=bsize))
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_buttons.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
         sizer_buttons.AddSpacer(25)
 
         self.btn_align_left = wxButton(self, wx.ID_ANY)
-        self.btn_align_left.SetBitmap(icon_textalign_left.GetBitmap(resize=icon_size))
+        self.btn_align_left.SetBitmap(icon_textalign_left.GetBitmap(resize=bsize))
         self.btn_align_left.SetToolTip(_("Align text on the left side"))
         sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
 
         self.btn_align_center = wxButton(self, wx.ID_ANY)
         self.btn_align_center.SetBitmap(
-            icon_textalign_center.GetBitmap(resize=icon_size)
+            icon_textalign_center.GetBitmap(resize=bsize)
         )
         self.btn_align_center.SetToolTip(_("Align text around the center"))
         sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
 
         self.btn_align_right = wxButton(self, wx.ID_ANY)
-        self.btn_align_right.SetBitmap(icon_textalign_right.GetBitmap(resize=icon_size))
+        self.btn_align_right.SetBitmap(icon_textalign_right.GetBitmap(resize=bsize))
         self.btn_align_right.SetToolTip(_("Align text on the right side"))
         sizer_buttons.Add(self.btn_align_right, 0, wx.EXPAND, 0)
 
@@ -911,7 +922,7 @@ class HersheyFontSelector(MWindow):
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(
-            icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
@@ -932,6 +943,10 @@ class HersheyFontSelector(MWindow):
     def submenu():
         # Suppress = True
         return "", "Font-Selector", True
+
+    @staticmethod
+    def helptext():
+        return _("Pick a font to use for vector text")
 
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
@@ -1403,6 +1418,10 @@ class HersheyFontManager(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Font-Manager", True
+
+    @staticmethod
+    def helptext():
+        return _("Manage the fonts available to MeerK40t")
 
 
 def register_hershey_stuff(kernel):

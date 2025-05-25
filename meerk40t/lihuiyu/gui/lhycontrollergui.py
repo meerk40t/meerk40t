@@ -177,12 +177,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.checkbox_show_usb_log.SetValue(1)
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=0.75 * get_default_icon_size()
+                use_theme=False, resize=0.75 * get_default_icon_size(self.context)
             )
         )
         # self.button_controller_control.SetBitmap(
         #     icons8_circled_play.GetBitmap(
-        #         use_theme=False, resize=0.75 * get_default_icon_size()
+        #         use_theme=False, resize=0.75 * get_default_icon_size(self.context)
         #     )
         # )
         # end wxGlade
@@ -434,7 +434,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -442,7 +442,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -450,7 +450,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -458,7 +458,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -466,7 +466,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -474,7 +474,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Disable()
@@ -482,7 +482,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Enable()
@@ -490,7 +490,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=0.75 * get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size(self.context)
                 )
             )
             self.button_device_connect.Disable()
@@ -523,6 +523,15 @@ class LihuiyuControllerPanel(ScrolledPanel):
                 )
                 result = dlg.ShowModal()
                 dlg.Destroy()
+            except NotImplementedError:
+                dlg = wx.MessageDialog(
+                    None,
+                    _("Connection Refused. See USB Log for detailed information.") + "\n" + _("You may run an incompatible version of libusb, have you tried the 32-bit version?"),
+                    _("Manual Connection"),
+                    wx.OK | wx.ICON_WARNING,
+                )
+                result = dlg.ShowModal()
+                dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
             self.context("usb_disconnect\n")
 
@@ -550,7 +559,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     #         button.SetLabel(_("Hold Controller"))
     #         button.SetBitmap(
     #             icons8_circled_play.GetBitmap(
-    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #                 use_theme=False, resize=0.75 * get_default_icon_size(self.context)
     #             )
     #         )
     #         button.Enable(True)
@@ -559,7 +568,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     #         button.SetLabel(_("LOCKED"))
     #         button.SetBitmap(
     #             icons8_circled_play.GetBitmap(
-    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #                 use_theme=False, resize=0.75 * get_default_icon_size(self.context)
     #             )
     #         )
     #         button.Enable(False)
@@ -573,7 +582,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     #         button.SetLabel(_("Force Continue"))
     #         button.SetBitmap(
     #             icons8_laser_beam_hazard.GetBitmap(
-    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #                 use_theme=False, resize=0.75 * get_default_icon_size(self.context)
     #             )
     #         )
     #         button.Enable(True)
@@ -587,7 +596,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     #         button.SetLabel(_("Resume Controller"))
     #         button.SetBitmap(
     #             icons8_circled_play.GetBitmap(
-    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #                 use_theme=False, resize=0.75 * get_default_icon_size(self.context)
     #             )
     #         )
     #         button.Enable(True)
@@ -600,7 +609,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     #         button.SetBackgroundColour("#00ff00")
     #         button.SetLabel(_("Pause Controller"))
     #         button.SetBitmap(
-    #             icons8_pause.GetBitmap(use_theme=False, resize=0.75 * get_default_icon_size())
+    #             icons8_pause.GetBitmap(use_theme=False, resize=0.75 * get_default_icon_size(self.context))
     #         )
     #         button.Enable(True)
     #     elif state == "terminate":
@@ -613,7 +622,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     #         button.SetLabel(_("Manual Reset"))
     #         button.SetBitmap(
     #             icons8_emergency_stop_button.GetBitmap(
-    #                 use_theme=False, resize=0.75 * get_default_icon_size()
+    #                 use_theme=False, resize=0.75 * get_default_icon_size(self.context)
     #             )
     #         )
     #         button.Enable(True)
@@ -726,3 +735,7 @@ class LihuiyuControllerGui(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device controller window")

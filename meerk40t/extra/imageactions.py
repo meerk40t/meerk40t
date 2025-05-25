@@ -57,14 +57,16 @@ def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
     new_height = height * dots_per_units
     new_height = max(new_height, 1)
     new_width = max(new_width, 1)
-
-    image = make_raster(
-        data,
-        bounds=data_bounds,
-        width=new_width,
-        height=new_height,
-        keep_ratio=keep_ratio,
-    )
+    try:
+        image = make_raster(
+            data,
+            bounds=data_bounds,
+            width=new_width,
+            height=new_height,
+            keep_ratio=keep_ratio,
+        )
+    except Exception:
+        return None, None
     matrix = Matrix.scale(width / new_width, height / new_height)
     return image, matrix
 
@@ -292,9 +294,13 @@ def plugin(kernel, lifecycle):
         elemimage, elemmatrix = create_image(
             make_raster, data, total_bounds, dpi, keep_ratio=True
         )
+        if elemimage is None:
+            return "elements", data
         maskimage, maskmatrix = create_image(
             make_raster, maskdata, total_bounds, dpi, keep_ratio=True
         )
+        if maskimage is None:
+            return "elements", data
         if not invert:
             from PIL import ImageOps
 

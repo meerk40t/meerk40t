@@ -360,21 +360,23 @@ def offset_path(self, path, offset_value=0):
     # As this oveloading a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
+    # Radial connectors seem to have issues, so we don't use them for now...
     p = path_offset(
         path,
         offset_value=-offset_value,
-        radial_connector=True,
+        radial_connector=False,
         linearize=True,
         interpolation=500,
     )
     if p is None:
         return path
     g = Geomstr.svg(p)
-    # We are already at device resolution, so we need to reduce tolerance a lot
-    # Standard is 25 tats, so about 1/3 of a mil
-    p = g.simplify(tolerance=0.1).as_path()
-    p.stroke = path.stroke
-    p.fill = path.fill
+    if g.index:
+        # We are already at device resolution, so we need to reduce tolerance a lot
+        # Standard is 25 tats, so about 1/3 of a mil
+        p = g.simplify(tolerance=0.1).as_path()
+        p.stroke = path.stroke
+        p.fill = path.fill
     return p
 
 

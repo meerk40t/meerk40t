@@ -52,10 +52,11 @@ class BasicOpPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         # icons for coolant-indicator
+        isize = 20 * self.context.root.bitmap_correction_scale
         self.cool_icons = {
-            0: icon_ignore.GetBitmap(resize=20),
-            1: icon_air_on.GetBitmap(resize=20, color="green"),
-            2: icon_air_off.GetBitmap(resize=20, color="red"),
+            0: icon_ignore.GetBitmap(resize=isize),
+            1: icon_air_on.GetBitmap(resize=isize, color="green"),
+            2: icon_air_off.GetBitmap(resize=isize, color="red"),
         }
 
         # Refresh logic
@@ -389,7 +390,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_direction.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -397,7 +398,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_image.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -405,7 +406,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -413,7 +414,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icons8_laser_beam.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -421,7 +422,7 @@ class BasicOpPanel(wx.Panel):
                 c, d = get_color()
                 result = icon_points.GetBitmap(
                     color=c,
-                    resize=(iconsize, iconsize),
+                    resize=iconsize * self.context.root.bitmap_correction_scale,
                     noadjustment=True,
                     keepalpha=True,
                 )
@@ -458,21 +459,21 @@ class BasicOpPanel(wx.Panel):
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("Active"))
+        header.SetToolTip(_("A: Active = toggle whether the elements assigned to this operation will be burned or not"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wxStaticText(self.op_panel, wx.ID_ANY, label="S")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("Show"))
+        header.SetToolTip(_("S: Show = if inactive then you can suppress the drawing of the assigned elements"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wxStaticText(self.op_panel, wx.ID_ANY, label="C")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("Coolant"))
+        header.SetToolTip(_("C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         unit = " [%]" if self.use_percent else ""

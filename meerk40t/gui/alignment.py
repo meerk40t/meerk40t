@@ -89,34 +89,40 @@ class InfoPanel(wx.Panel):
             image_from_node = None
             c = None
             # Do we have a standard representation?
-            if node.type.startswith("elem "):
-                if (
-                    hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
-                ):
-                    c = node.stroke
+            if (
+                node.type.startswith("elem ") 
+                and hasattr(node, "stroke")
+                and node.stroke is not None
+                and node.stroke.argb is not None
+            ):
+                c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                image_from_node = self.make_raster(
-                    node,
-                    node.paint_bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image_from_node = self.make_raster(
+                        node,
+                        node.paint_bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except Exception:
+                    return None, None
             elif node.type in ("group", "file"):
                 data = list(node.flat(types=elem_nodes))
                 bounds = Node.union_bounds(data, attr="paint_bounds")
 
-                image_from_node = self.make_raster(
-                    data,
-                    bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image_from_node = self.make_raster(
+                        data,
+                        bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except Exception:
+                    return None, None
             if c is None:
                 c = Color("black")
             if image_from_node is None:
@@ -142,6 +148,8 @@ class InfoPanel(wx.Panel):
             if count > 0:
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
@@ -154,6 +162,8 @@ class InfoPanel(wx.Panel):
                 node = data[0]
                 first_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
@@ -165,6 +175,8 @@ class InfoPanel(wx.Panel):
                 node = data[-1]
                 last_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
 
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
@@ -260,7 +272,7 @@ class AlignmentPanel(wx.Panel):
         self.rbox_treatment.SetSelection(0)
         self.btn_align = wxButton(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
@@ -506,7 +518,7 @@ class DistributionPanel(wx.Panel):
 
         self.btn_dist = wxButton(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_check = StaticBoxSizer(
@@ -1182,7 +1194,7 @@ class ArrangementPanel(wx.Panel):
 
         self.btn_arrange = wxButton(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
@@ -1626,3 +1638,7 @@ class Alignment(MWindow):
     @staticmethod
     def submenu():
         return "Editing", "Element Alignment"
+
+    @staticmethod
+    def helptext():
+        return _("Align elements to each other")

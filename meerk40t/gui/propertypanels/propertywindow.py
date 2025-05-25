@@ -1,3 +1,4 @@
+from functools import lru_cache
 from time import perf_counter
 
 import wx
@@ -19,8 +20,9 @@ class PropertyWindow(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Properties"))
-        self.panel_instances = list()
-        self.nodes_displayed = list()
+        self.panel_instances = []
+        self.nodes_displayed = []
+        self._validate_running = False
 
         self.notebook_main = aui.AuiNotebook(
             self,
@@ -113,12 +115,14 @@ class PropertyWindow(MWindow):
                     prio = p
             return prio
 
+        if self._validate_running:
+            if self.channel:
+                self.channel("Reentrant call of validate_display, exiting")
+                return
+        self._validate_running = True
         # Are the new nodes identical to the displayed ones?
         different = False
-        if nodes is None:
-            nodes = list()
-        else:
-            nodes = list(nodes)
+        nodes = [] if nodes is None else list(nodes)
         to_be_deleted = []
         for idx, e in enumerate(nodes):
             # We remove reference nodes and insert the 'real' thing instead.
@@ -204,6 +208,7 @@ class PropertyWindow(MWindow):
             t2 = perf_counter()
             if self.channel:
                 self.channel(f"Took {t2-t1:.2f} seconds to load")
+        self._validate_running = False
 
     def propagate_signal(self, signal, *args):
         myargs = list(args)
@@ -241,6 +246,27 @@ class PropertyWindow(MWindow):
     def on_emphasized(self, origin, *args):
         nodes = list(self.context.elements.flat(emphasized=True, cascade=False))
         self.validate_display(nodes, "emphasized")
+
+    @signal_listener("element_property_force")
+    def on_reload_signal(self, origin, nodes=None, *args):
+        # Forced reload, necessary if subpanels would change, e.g. image-nodes
+        # We try to jump back to the tab that was active
+        if nodes is None:
+            return
+        if not isinstance(nodes, (list, tuple)):
+            nodes = [nodes]
+        
+        pageno = self.notebook_main.GetSelection()
+        pageheader = "" if pageno < 0 else self.notebook_main.GetPageText(pageno)
+        self.nodes_displayed.clear()
+        self.validate_display(nodes, "reload")
+        if pageheader:
+            # resync to current tab if possible
+            for page in range(self.notebook_main.GetPageCount()):
+                header = self.notebook_main.GetPageText(page)
+                if header == pageheader:
+                    self.notebook_main.SetSelection(page)
+                    break
 
     @staticmethod
     def sub_register(kernel):
@@ -281,3 +307,7 @@ class PropertyWindow(MWindow):
     @staticmethod
     def submenu():
         return "Editing", "Operation/Element Properties"
+
+    @staticmethod
+    def helptext():
+        return _("Display and edit the object properties")

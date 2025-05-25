@@ -245,11 +245,13 @@ class HatchPropertyPanel(ScrolledPanel):
         self.update_label()
         self.Refresh()
         if self.check_classify.GetValue():
-            mynode = self.node
-            wasemph = self.node.emphasized
-            data = [self.node]
-            self.context.elements.remove_elements_from_operations(data)
-            self.context.elements.classify(data)
+            # _("Color classify")
+            with self.context.elements.undoscope("Color classify"):
+                mynode = self.node
+                wasemph = self.node.emphasized
+                data = [self.node]
+                self.context.elements.remove_elements_from_operations(data)
+                self.context.elements.classify(data)
             self.context.elements.signal("tree_changed")
             self.context.elements.signal("element_property_reload", self.node)
             mynode.emphasized = wasemph

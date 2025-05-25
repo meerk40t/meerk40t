@@ -275,7 +275,8 @@ class LinkedList:
         data.next = None
 
         def remove_func():
-            data.previous.next = data.next
+            if data.previous is not None:
+                data.previous.next = data.next
             if data.next is not None:
                 data.next.previous = data.previous
             data.previous = None

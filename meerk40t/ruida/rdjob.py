@@ -1376,13 +1376,13 @@ class RDJob:
         part = current_settings.get("part", 0)
         speed = current_settings.get("speed", 0)
         power = current_settings.get("power", 0) / 10.0
-        air = current_settings.get("air_assist", True)
+        air = current_settings.get("coolant", 0)
         self.layer_end()
         self.layer_number_part(part)
         self.laser_device_0()
-        if air:
+        if air == 1:
             self.air_assist_on()
-        else:
+        elif air==2:
             self.air_assist_off()
         self.speed_laser_1(speed)
         self.laser_on_delay(0)

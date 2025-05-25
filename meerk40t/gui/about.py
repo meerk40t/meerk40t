@@ -47,9 +47,9 @@ class AboutPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
 
         self.bitmap_button_1 = wx.BitmapButton(
-            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150, force_lightmode=True)
+            self, wx.ID_ANY, icon_meerk40t.GetBitmap(resize=150)
         )
-        self.bitmap_button_1.SetBackgroundColour(wx.WHITE)
+        # self.bitmap_button_1.SetBackgroundColour(wx.WHITE)
 
         self.__set_properties()
         self.__do_layout()
@@ -168,6 +168,18 @@ class AboutPanel(wx.Panel):
         )
         vsizer_main.AddSpacer(5)
         vsizer_main.Add(meerk40t_about_text, 4, wx.EXPAND, 0)
+        if self.context.root.faulty_bitmap_scaling:
+            info = wxStaticText(self, wx.ID_ANY,
+                _(
+                    "Your system is using a very high userscale value: {scale}% ! " +
+                    "Unfortunately there is a bug in wxPython (the framework we are using) " +
+                    "that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n" +
+                    "As there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
+                ).format(scale=self.context.root.user_scale)
+            )
+            info.SetBackgroundColour(wx.YELLOW)
+            info.SetForegroundColour(wx.RED)
+            vsizer_main.Add(info, 1, wx.EXPAND, 0)
         self.SetSizer(vsizer_main)
         self.Layout()
         # end wxGlade
@@ -1502,6 +1514,7 @@ class DavidPanel(ScrolledPanel):
         )
 
         self.__do_layout()
+        self.david_text.Bind(wx.EVT_LEFT_DCLICK, self.on_eulogy)
 
 
     def __do_layout(self):
@@ -1541,6 +1554,11 @@ class DavidPanel(ScrolledPanel):
         self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
+    
+    def on_eulogy(self, event):
+        import webbrowser
+        url = "https://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
+        webbrowser.open(url, new=0, autoraise=True)
 
 class InformationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
@@ -1752,6 +1770,8 @@ class ComponentPanel(ScrolledPanel):
 
         def get_potrace():
             entry = ["potracer", "", "", "https://pypi.org/project/potracer/"]
+            status = _("Present (slow)")
+            info = "0.05 (internal)"
             try:
                 import potrace
 
@@ -1762,14 +1782,10 @@ class ComponentPanel(ScrolledPanel):
                     entry[0] = "pypotrace"
                     entry[3] = "https://pypi.org/project/pypotrace/"
                     info = potrace.potracelib_version()
-                else:
-                    status = _("Present (slow)")
-                    info = "??"
                 if not hasattr(potrace, "Bitmap"):
                     status = _("Faulty, please report")
             except ImportError:
-                info = "??"
-                status = _("Missing")
+                pass
             entry[1] = info
             entry[2] = status
             self.content.append(entry)

@@ -5,7 +5,9 @@ Moshiboard Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+import meerk40t.constants as mkconst
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -14,7 +16,6 @@ from ..core.units import Length
 from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class MoshiDevice(Service, Status):
@@ -68,8 +69,8 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "section": "_10_Dimensions",
-                "subsection": "Bed",
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -79,8 +80,19 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "section": "_10_Dimensions",
-                "subsection": "Bed",
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_00_General",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -189,6 +201,23 @@ class MoshiDevice(Service, Status):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+                "section": "_20_Behaviour",
+            },
+            {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _(
+                        "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
+                    )
+                    + "\n"
+                    + _(
+                        "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
+                    )
+                ),
                 "section": "_20_Behaviour",
             },
             {
@@ -457,5 +486,24 @@ class MoshiDevice(Service, Status):
         self.view.realize()
         self.signal("view;realized")
 
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (
+                mkconst.RASTER_GREEDY_H,
+                mkconst.RASTER_GREEDY_V,
+                mkconst.RASTER_SPIRAL,
+            ),  # Greedy loses registration way too often to be reliable
+            "gantry": True,
+            "legacy": self.legacy_raster,
+        }
+
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        return (
+            "mock"
+            if self.mock
+            else f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
+        )

@@ -107,7 +107,15 @@ TYPE_CALL = 0xB0 | 0b1111  # The two higher level bytes are call label index.
 
 # A summary of all points that have a special meaning, ie intended for other uses than pure geometry
 META_TYPES = (TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL)
-NON_GEOMETRY_TYPES = (TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL, TYPE_END)
+NON_GEOMETRY_TYPES = (
+    TYPE_NOP,
+    TYPE_FUNCTION,
+    TYPE_VERTEX,
+    TYPE_UNTIL,
+    TYPE_CALL,
+    TYPE_END,
+)
+
 
 class Polygon:
     def __init__(self, *args):
@@ -116,7 +124,6 @@ class Polygon:
 
     def bbox(self, mx=None):
         return self.geomstr.bbox(mx)
-
 
 
 def triangle_area(p1, p2, p3):
@@ -178,6 +185,78 @@ def remove(s, i):
     ~3.5x faster than numpy.delete
     """
     s[i:-1] = s[i + 1 :]
+
+
+def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
+    """
+    Stitches geometries within the given tolerance.
+
+    Args:
+        geometry_list: List of Geomstr objects to stitch.
+        tolerance: Maximum distance between endpoints to consider a stitch.
+
+    Returns:
+        List of stitched Geomstr objects, or None if no stitches were made.
+    """
+
+    geometries = [g for g in geometry_list if g is not None]
+    if not geometries:
+        return None
+    if tolerance == 0:
+        tolerance = 1e-6
+
+    stitched_geometries = []
+    while geometries:
+        g1 = geometries.pop(0)
+        stitched = False
+        for i, g2 in enumerate(stitched_geometries):
+            for reverse1 in (False, True):
+                for reverse2 in (False, True):
+                    g1_start = g1.last_point if reverse1 else g1.first_point
+                    g1_end = g1.first_point if reverse1 else g1.last_point
+                    g2_start = g2.last_point if reverse2 else g2.first_point
+                    g2_end = g2.first_point if reverse2 else g2.last_point
+
+                    if (
+                        g1_start is None
+                        or g1_end is None
+                        or g2_start is None
+                        or g2_end is None
+                    ):
+                        continue
+                    if abs(g2_end - g1_start) <= tolerance:
+                        if abs(g2_end - g1_start) > 0:
+                            g2.line(g2_end, g1_start)
+                        if reverse1:
+                            g1.reverse()
+                        g2.append(g1, end=False)
+                        stitched_geometries[i] = g2
+                        stitched = True
+                        break
+                    elif abs(g2_start - g1_end) <= tolerance:
+                        if abs(g2_start - g1_end) > 0:
+                            g1.line(g1_end, g2_start)
+                        if reverse1:
+                            g1.reverse()
+                        g2.insert(0, g1.segments[: g1.index])
+                        stitched_geometries[i] = g2
+                        stitched = True
+                        break
+                if stitched:
+                    break
+            if stitched:
+                break
+
+        if not stitched:
+            stitched_geometries.append(g1)
+
+    # Close any remaining small gaps between start and end points.
+    for g in stitched_geometries:
+        if 0 < abs(g.last_point - g.first_point) <= tolerance:
+            g.line(g.last_point, g.first_point)
+
+    return stitched_geometries
+
 
 
 class Simplifier:
@@ -305,7 +384,7 @@ class Simplifier:
                 areas[min_vert] = right_area
 
             if min_vert > 1:
-                # cant try/except because 0-1=-1 is a valid index
+                # can't try/except because 0-1=-1 is a valid index
                 left_area = triangle_area(
                     self.pts[i[min_vert - 2]],
                     self.pts[i[min_vert - 1]],
@@ -354,13 +433,15 @@ class Simplifier:
         # for some points
         # sort point indices by threshold
         idx = list(range(len(self.pts)))
-        sorted_indices = sorted(zip(idx, self.thresholds), reverse=True, key=lambda x: x[1])
+        sorted_indices = sorted(
+            zip(idx, self.thresholds), reverse=True, key=lambda x: x[1]
+        )
 
         # grab first n indices
         sorted_indices = sorted_indices[:n]
 
         # re-sort by index
-        final_indices = sorted( [x[0] for x in sorted_indices] )
+        final_indices = sorted([x[0] for x in sorted_indices])
 
         return self.pts[final_indices]
 
@@ -1191,6 +1272,8 @@ class Scanbeam:
         @param tolerance: wiggle room, in favor of inside
         @return:
         """
+        if tolerance == 0:
+            tolerance == 1e-6
         self.scanline_to(y)
         for i in range(1, len(self._active_edge_list), 2):
             prior = self._active_edge_list[i - 1]
@@ -1605,7 +1688,11 @@ class Geomstr:
     def svg(cls, path_d):
         obj = cls()
         if isinstance(path_d, str):
-            path = Path(path_d)
+            try:
+                path = Path(path_d)
+            except ValueError:
+                # Invalid or empty path
+                return obj
         else:
             path = path_d
         last_point = None
@@ -1620,18 +1707,33 @@ class Geomstr:
                 ):
                     # This is a deliberate subpath break
                     obj.end()
-            elif isinstance(seg, (Line, Close)):
+            elif (
+                isinstance(seg, (Line, Close))
+                and seg.start is not None
+                and seg.end is not None
+            ):
                 obj.line(complex(seg.start), complex(seg.end))
-            elif isinstance(seg, QuadraticBezier):
+            elif (
+                isinstance(seg, QuadraticBezier)
+                and seg.start is not None
+                and seg.end is not None
+                and seg.control is not None
+            ):
                 obj.quad(complex(seg.start), complex(seg.control), complex(seg.end))
-            elif isinstance(seg, CubicBezier):
+            elif (
+                isinstance(seg, CubicBezier)
+                and seg.start is not None
+                and seg.end is not None
+                and seg.control1 is not None
+                and seg.control2 is not None
+            ):
                 obj.cubic(
                     complex(seg.start),
                     complex(seg.control1),
                     complex(seg.control2),
                     complex(seg.end),
                 )
-            elif isinstance(seg, Arc):
+            elif isinstance(seg, Arc) and seg.start is not None and seg.end is not None:
                 if seg.is_circular():
                     obj.arc(
                         complex(seg.start), complex(seg.point(0.5)), complex(seg.end)
@@ -1775,16 +1877,22 @@ class Geomstr:
             rx = abs(rx)
             ry = abs(ry)
         if rx == ry == 0:
-            path.line(complex(x, y), complex(x + width, y), settings=settings),
-            path.line(
-                complex(x + width, y), complex(x + width, y + height), settings=settings
-            ),
-            path.line(
-                complex(x + width, y + height),
-                complex(x, y + height),
-                settings=settings,
-            ),
-            path.line(complex(x, y + height), complex(x, y), settings=settings),
+            (path.line(complex(x, y), complex(x + width, y), settings=settings),)
+            (
+                path.line(
+                    complex(x + width, y),
+                    complex(x + width, y + height),
+                    settings=settings,
+                ),
+            )
+            (
+                path.line(
+                    complex(x + width, y + height),
+                    complex(x, y + height),
+                    settings=settings,
+                ),
+            )
+            (path.line(complex(x, y + height), complex(x, y), settings=settings),)
         else:
             offset = 1 - (1.0 / math.sqrt(2))
             path.line(complex(x + rx, y), complex(x + width - rx, y), settings=settings)
@@ -1936,7 +2044,7 @@ class Geomstr:
         return geometry
 
     @classmethod
-    def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor = 1):
+    def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
         from meerk40t.fill.fills import Wobble
 
         w = Wobble(algorithm, radius=radius, speed=speed, interval=interval)
@@ -2038,12 +2146,28 @@ class Geomstr:
     @classmethod
     def wobble_dash(cls, outer, dashlength, interval, irrelevant, unit_factor=1):
         from meerk40t.fill.fills import dashed_line as algorithm
-        return cls.wobble(algorithm, outer, dashlength, interval * unit_factor, irrelevant, unit_factor=unit_factor)
+
+        return cls.wobble(
+            algorithm,
+            outer,
+            dashlength,
+            interval * unit_factor,
+            irrelevant,
+            unit_factor=unit_factor,
+        )
 
     @classmethod
     def wobble_tab(cls, outer, tablength, interval, tabpositions, unit_factor=1):
         from meerk40t.fill.fills import tabbed_path as algorithm
-        return cls.wobble(algorithm, outer, tablength, interval * unit_factor, tabpositions, unit_factor=unit_factor)
+
+        return cls.wobble(
+            algorithm,
+            outer,
+            tablength,
+            interval * unit_factor,
+            tabpositions,
+            unit_factor=unit_factor,
+        )
 
     @classmethod
     def from_float_segments(cls, float_segments):
@@ -2169,7 +2293,7 @@ class Geomstr:
         if segments:
             yield segments
 
-    def as_equal_interpolated_points(self, distance=100):
+    def as_equal_interpolated_points(self, distance=100, expand_lines=False):
         """
         Regardless of specified distance this will always give the start and end points of each node within the
         geometry. It will not duplicate the nodes if the start of one is the end of another. If the start and end
@@ -2202,7 +2326,21 @@ class Geomstr:
                 at_start = True
                 continue
             elif seg_type == TYPE_LINE:
-                pass
+                if expand_lines:
+                    ts = np.linspace(0, 1, 1000)
+                    pts = self._line_position(e, ts)
+                    distances = np.abs(pts[:-1] - pts[1:])
+                    distances = np.cumsum(distances)
+                    max_distance = distances[-1]
+                    dist_values = np.linspace(
+                        0,
+                        max_distance,
+                        int(np.ceil(max_distance / distance)),
+                        endpoint=False,
+                    )[1:]
+                    near_t = np.searchsorted(distances, dist_values, side="right")
+                    pts = pts[near_t]
+                    yield from pts
             elif seg_type == TYPE_QUAD:
                 ts = np.linspace(0, 1, 1000)
                 pts = self._quad_position(e, ts)
@@ -2643,7 +2781,7 @@ class Geomstr:
     #######################
 
     def arc_as_quads(
-        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=None, settings=0
     ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
@@ -2661,6 +2799,10 @@ class Geomstr:
         @return:
         """
         sweep = start_t - end_t
+        if slices is None:
+            # A full ellipse can be properly represented with 12 slices - we err on the side of caution here...
+            slices = int(1.5 * 12 * sweep / math.tau)
+            slices = max(2, slices)
         t_slice = sweep / float(slices)
         alpha_mid = (4.0 - math.cos(t_slice)) / 3.0
         current_t = start_t
@@ -2697,7 +2839,7 @@ class Geomstr:
             current_t = next_t
 
     def arc_as_cubics(
-        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=None, settings=0
     ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
@@ -2715,7 +2857,11 @@ class Geomstr:
 
         @return:
         """
-        sweep = start_t - end_t
+        sweep = end_t - start_t
+        if slices is None:
+            # A full ellipse can be properly represented with 12 slices - we err on the side of caution here...
+            slices = int(1.5 * 12 * sweep / math.tau)
+            slices = max(2, slices)
         t_slice = sweep / float(slices)
         alpha = (
             math.sin(t_slice)
@@ -2764,7 +2910,6 @@ class Geomstr:
             p_c2 = complex(
                 p_end.real - alpha * ePrimen2x, p_end.imag - alpha * ePrimen2y
             )
-
             self.cubic(p_start, p_c1, p_c2, p_end)
             p_start = p_end
             current_t = next_t
@@ -2868,7 +3013,10 @@ class Geomstr:
             current = self.segments[i]
             start0, control0, info0, control20, end0 = previous
             start1, control1, info1, control21, end1 = current
-            if self._segtype(previous) != TYPE_LINE or self._segtype(current) != TYPE_LINE:
+            if (
+                self._segtype(previous) != TYPE_LINE
+                or self._segtype(current) != TYPE_LINE
+            ):
                 continue
             towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
@@ -2887,7 +3035,10 @@ class Geomstr:
             current = self.segments[i]
             start0, control0, info0, control20, end0 = previous
             start1, control1, info1, control21, end1 = current
-            if self._segtype(previous) != TYPE_LINE or self._segtype(current) != TYPE_LINE:
+            if (
+                self._segtype(previous) != TYPE_LINE
+                or self._segtype(current) != TYPE_LINE
+            ):
                 continue
             towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
@@ -3428,7 +3579,7 @@ class Geomstr:
 
     def _cubic_length_via_quad(self, line):
         """
-        If we have scipy.integrate availible, use quad from that to solve this.
+        If we have scipy.integrate available, use quad from that to solve this.
 
         @param line:
         @return:
@@ -3481,9 +3632,13 @@ class Geomstr:
                 yield start, control, info, control2, mid[0]
                 for i in range(1, len(mid)):
                     if breaks:
-                        yield mid[i - 1], mid[i - 1], complex(TYPE_END, info.imag), mid[
-                            i - 1
-                        ], mid[i - 1]
+                        yield (
+                            mid[i - 1],
+                            mid[i - 1],
+                            complex(TYPE_END, info.imag),
+                            mid[i - 1],
+                            mid[i - 1],
+                        )
                     yield mid[i - 1], control, info, control2, mid[i]
                 if breaks:
                     yield mid[-1], 0, complex(TYPE_END, info.imag), 0, mid[-1]
@@ -4267,7 +4422,7 @@ class Geomstr:
         return wh, x_vals + y_vals * 1j, ta_hit, tb_hit
 
     #######################
-    # Geom Tranformations
+    # Geom Transformations
     #######################
 
     def transform(self, mx, e=None):
@@ -4557,10 +4712,13 @@ class Geomstr:
             return process(S, K, a, c)[:-1] + process(S, K, c, b)
 
         def quickhull_2d(S: np.ndarray) -> np.ndarray:
-            a, b = np.argmin(S[:,0]), np.argmax(S[:,0])
-            max_index = np.argmax(S[:,0])
+            a, b = np.argmin(S[:, 0]), np.argmax(S[:, 0])
+            max_index = np.argmax(S[:, 0])
             # max_element = S[max_index]
-            return process(S, np.arange(S.shape[0]), a, max_index)[:-1] + process(S, np.arange(S.shape[0]), max_index, a)[:-1]
+            return (
+                process(S, np.arange(S.shape[0]), a, max_index)[:-1]
+                + process(S, np.arange(S.shape[0]), max_index, a)[:-1]
+            )
 
         if len(pts) == 0:
             return
@@ -4585,7 +4743,6 @@ class Geomstr:
             res_pts = c_points[np.array(hull)]
             for p in res_pts:
                 yield complex(p[0], p[1])
-
 
     def _convex_hull_original(self, pts):
         """
@@ -4657,7 +4814,9 @@ class Geomstr:
         # but that will let multiple unit tests fail
         # val = (q.real - p.real) * (r.imag - p.imag) - (q.imag - p.imag) * (r.real - p.real)
 
-        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (r.imag - q.imag)
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
+            r.imag - q.imag
+        )
         if val == 0:
             return "linear"
         elif val > 0:
@@ -5315,11 +5474,14 @@ class Geomstr:
             self.segments[p1] = c
             pt = c[-1]
 
-    def two_opt_distance(self, max_passes=None, chunk=0):
+    def two_opt_distance(
+        self, max_passes=None, chunk=0, auto_stop_threshold=None, feedback=None
+    ):
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
         @param chunk: Chunk check value
+        @param auto_stop_threshold percentage value of needed gain in every pass
         @return:
         """
         self._trim()
@@ -5333,6 +5495,13 @@ class Geomstr:
         indexes1 = indexes0 + 1
 
         improved = True
+        first_travel = self.travel_distance()
+        last_travel = first_travel
+        threshold_value = (
+            None
+            if auto_stop_threshold is None
+            else auto_stop_threshold / 100.0 * last_travel
+        )
         while improved:
             improved = False
 
@@ -5381,8 +5550,18 @@ class Geomstr:
                     segments[index + 1 :], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
+            this_travel = self.travel_distance()
+            dt = last_travel - this_travel
+            dt_total = first_travel - this_travel
+            if feedback:
+                msg = f"Pass {current_pass + 1}: saved {dt / first_travel * 100:.1f}%, total: {dt_total / first_travel * 100:.1f}%"
+                feedback(msg)
             if max_passes and current_pass >= max_passes:
                 break
+            if threshold_value:
+                if dt <= threshold_value:
+                    break
+                last_travel = this_travel
             current_pass += 1
 
     #######################
@@ -5531,7 +5710,9 @@ class Geomstr:
                 elif threshold is not None:
                     newpoints = simplifier.simplify(threshold=threshold)
                 else:
-                    raise ValueError("You need to provide at least one parameter for simplify_geomstr")
+                    raise ValueError(
+                        "You need to provide at least one parameter for simplify_geomstr"
+                    )
                 newgeom.append(Geomstr.lines(newpoints))
                 points.clear()
 

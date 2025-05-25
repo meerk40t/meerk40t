@@ -54,5 +54,6 @@ class ReferenceNode(Node):
         return False
 
     def notify_destroyed(self, node=None, **kwargs):
-        self.node._references.remove(self)
+        if self.node is not None and self in self.node._references:
+            self.node._references.remove(self)
         super().notify_destroyed()

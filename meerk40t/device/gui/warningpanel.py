@@ -91,8 +91,9 @@ class WarningPanel(wx.Panel):
                 else:
                     unit1 = "mm/s"
             idx += 1
+            bsize = 20 * self.context.root.bitmap_correction_scale
             image = wxStaticBitmap(self, id=wx.ID_ANY)
-            image.SetBitmap(entry["image"].GetBitmap(resize=20))
+            image.SetBitmap(entry["image"].GetBitmap(resize=bsize))
 
             label1 = wxStaticText(
                 self, id=wx.ID_ANY, label=_(entry["op"].capitalize())

@@ -31,6 +31,9 @@ def color_distance(c1:wx.Colour, c2:wx.Colour) -> bool:
     # print (f"Distance from {c1.GetAsString()} to {c2.GetAsString()} = {sqrt(sq_dist)}")
     return sqrt(sq_dist)
 
+def inverted_color(c1:wx.Colour) -> wx.Colour:
+    return wx.Colour(255-c1.red, 255-c1.green, 255-c1.blue, c1.alpha)
+
 def is_a_bright_color(c1):
     return color_distance(c1, wx.BLACK) > color_distance(c1, wx.WHITE)
 
@@ -41,15 +44,22 @@ class Themes(Service):
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(self, kernel, "themes" if index is None else f"themes{index}")
         _ = wx.GetTranslation
-        if system() == "Darwin":
+        os_ver = system()
+        if os_ver == "Darwin":
             kernel.root.setting(str, "forced_theme", "default")
             kernel.root.forced_theme = "default"
         else:
+            if os_ver == "Windows":
+                default_value = "light"
+            elif os_ver == "Linux":
+                default_value = "default"
+            else:
+                default_value = "default"
             choices = [
                 {
                     "attr": "forced_theme",
                     "object": kernel.root,
-                    "default": "default",
+                    "default": default_value,
                     "type": str,
                     "label": _("UI-Colours"),
                     "style": "option",
@@ -99,7 +109,11 @@ class Themes(Service):
         elif self.forced_theme == "light":
             self._dark = False
         else:
-            res1 = wx.SystemSettings().GetAppearance().IsDark()
+            try:
+                res1 = wx.SystemSettings().GetAppearance().IsDark()
+            except AttributeError:
+                # Old wxpython version
+                res1 = False
             res2 = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
             self._dark = res1 or res2
 
@@ -121,6 +135,10 @@ class Themes(Service):
         tp["inactive_fg"] = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTIONTEXT)
         # for key, col in tp.items():
         #     print (f'tp["{key}"] = wx.Colour({col.red}, {col.green}, {col.blue}, {col.alpha})')
+        for p1, p2 in (("label_bg", "label_fg"), ("button_bg", "button_fg"), ("text_bg", "text_fg"), ("list_bg", "list_fg")):
+            inv_col = inverted_color(tp[p2])
+            if color_distance(tp[p2], tp[p1]) < color_distance(inv_col, tp[p1]):
+                tp[p2] = inv_col
         if system() != "Darwin":
             # Alas, Darwin does not properly support overloading of colors...
             if not self.dark and is_a_dark_color(tp["win_bg"]):
@@ -155,7 +173,6 @@ class Themes(Service):
                 tp["highlight"] = wx.Colour(0, 0, 255)
                 tp["inactive_bg"] = wx.Colour(46, 46, 46)
                 tp["inactive_fg"] = base_fg
-
         tp["pause_bg"] = (
             wx.Colour(87, 87, 0) if self._dark else wx.Colour(200, 200, 0)
         )
