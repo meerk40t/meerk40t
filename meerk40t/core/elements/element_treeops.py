@@ -116,6 +116,8 @@ from .element_types import (
     effect_nodes,
     elem_group_nodes,
     elem_nodes,
+    elem_ref_nodes,
+    non_structural_nodes,
     op_burnable_nodes,
     op_image_nodes,
     op_nodes,
