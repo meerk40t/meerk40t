@@ -5,21 +5,21 @@ Registers the Device service for M2 Nano (and family), registering the relevant 
 the given device type.
 """
 
-from hashlib import md5
 import platform
+from hashlib import md5
 
 import meerk40t.constants as mkconst
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.units import UNITS_PER_MIL, Length
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from meerk40t.core.units import UNITS_PER_MIL, Length
-from meerk40t.device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class LihuiyuDevice(Service, Status):
@@ -149,9 +149,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Board"),
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
-                "tip": _(
-                    "Select the board to use. This affects the speedcodes used."
-                ),
+                "tip": _("Select the board to use. This affects the speedcodes used."),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
             },
@@ -374,8 +372,13 @@ class LihuiyuDevice(Service, Status):
                 "type": bool,
                 "label": _("Use legacy raster method"),
                 "tip": (
-                    _("Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)") + "\n" +
-                    _("Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)")
+                    _(
+                        "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
+                    )
+                    + "\n"
+                    + _(
+                        "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
+                    )
                 ),
                 "section": "_00_" + _("General Options"),
                 "subsection": "_20_",
@@ -1022,10 +1025,12 @@ class LihuiyuDevice(Service, Status):
         return {
             "split_crossover": True,
             "unsupported_opt": (
-                mkconst.RASTER_GREEDY_H, mkconst.RASTER_GREEDY_V, mkconst.RASTER_SPIRAL,
+                mkconst.RASTER_GREEDY_H,
+                mkconst.RASTER_GREEDY_V,
+                mkconst.RASTER_SPIRAL,
             ),  # Greedy loses registration way too often to be reliable
-            "gantry" : True,
-            "legacy" : self.legacy_raster,
+            "gantry": True,
+            "legacy": self.legacy_raster,
         }
 
     @property
@@ -1185,3 +1190,10 @@ class LihuiyuDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        if self.mock:
+            return "mock"
+        if self.networked:
+            return f"tcp {self.address}:{self.port}"
+        return f"usb {'auto' if self.usb_index < 0 else self.usb_index}"

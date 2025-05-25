@@ -961,3 +961,10 @@ class BalorDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        """
+        Returns the current connection type for the device.
+        If the device is in mock mode, returns 'mock', otherwise returns 'usb'.
+        """
+        return "mock" if self.mock else "usb"

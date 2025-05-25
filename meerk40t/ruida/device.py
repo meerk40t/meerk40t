@@ -5,6 +5,7 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -16,7 +17,6 @@ from .mock_connection import MockConnection
 from .serial_connection import SerialConnection
 from .tcp_connection import TCPConnection
 from .udp_connection import UDPConnection
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class RuidaDevice(Service):
@@ -264,6 +264,7 @@ class RuidaDevice(Service):
                 choice_dict["display"] = ["pyserial-not-installed"]
 
         from platform import system
+
         is_linux = system() == "Linux"
 
         choices = [
@@ -278,7 +279,7 @@ class RuidaDevice(Service):
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
-                "exclusive": not is_linux, 
+                "exclusive": not is_linux,
             },
             {
                 "attr": "baud_rate",
@@ -580,6 +581,25 @@ class RuidaDevice(Service):
             return self.name
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
+
+    @property
+    def tcp_address(self):
+        return self.address
+
+    @property
+    def tcp_port(self):
+        return 5005
+
+    def location(self):
+        if self.interface == "mock":
+            return "mock"
+        elif self.interface == "udp":
+            return "udp, port 40200"
+        elif self.interface == "tcp":
+            return f"tcp {self.tcp_address}:{self.tcp_port}"
+        elif self.interface == "usb":
+            return f"usb: {self.serial_port}"
+        return f"undefined {self.interface}"
 
     @property
     def has_endstops(self):
