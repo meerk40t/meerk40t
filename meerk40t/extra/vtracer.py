@@ -200,7 +200,6 @@ def plugin(kernel, lifecycle=None):
                     #     elem.add_node(e)
                     # elements.suppress_updates = False
                     t_load += perf_counter() - _start
-                    # print (f"Loading took {t2-t1:.1f}sec")
                     try:
                         os.remove(input_file)
                         os.remove(output_file)
