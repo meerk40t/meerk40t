@@ -143,11 +143,11 @@ def plugin(kernel, lifecycle=None):
             if data is None:
                 data = list(elements.elems(emphasized=True))
             if not data:
-                channel("Nothing selected")
+                channel(_("Nothing selected"))
                 return
             images = [node for node in data if hasattr(node, "image")]
             if not images:
-                channel("No images selected")
+                channel(_("No images selected"))
                 return
 
             safe_dir = os.path.realpath(get_safe_path(kernel.name))
@@ -211,7 +211,13 @@ def plugin(kernel, lifecycle=None):
                     # kernel.root.signal("freeze_tree", False)
             t_end = perf_counter()
             channel(
-                f"Time needed for vectorisation: {t_end - t_start:.1f}sec (analysis: {t_convert:.1f}sec, loading: {t_load:.1f}sec)"
+                _(
+                    "Time needed for vectorisation: {time_total}sec (analysis: {time_convert}sec, loading: {time_load}sec)"
+                ).format(
+                    time_total=round(t_end - t_start, 1),
+                    time_convert=round(t_convert, 1),
+                    time_load=round(t_load, 1),
+                )
             )
             kernel.root.signal("refresh_scene", "Scene")
             return "elements", None
