@@ -1,10 +1,15 @@
 import os
-from PIL import Image, ImageOps
-from meerk40t.svgelements import Color, Matrix, Path
+
+from PIL import ImageOps
+
 from meerk40t.kernel.kernel import get_safe_path
-from meerk40t.tools.geomstr import Geomstr
+
+# Unused imports
+# from meerk40t.svgelements import Color, Matrix, Path
+# from meerk40t.tools.geomstr import Geomstr
+
 """
-vracer routines, 
+vracer routines,
 https://github.com/visioncortex/vtracer
 """
 
@@ -23,17 +28,17 @@ def plugin(kernel, lifecycle=None):
 
         def make_vector(
             image,
-            colormode = 'binary',        # ["color"] or "binary"
-            hierarchical = 'stacked',   # ["stacked"] or "cutout"
-            mode = 'spline',            # ["spline"] "polygon", or "none"
-            filter_speckle = 4,         # default: 4
-            color_precision = 6,        # default: 6
-            layer_difference = 16,      # default: 16
-            corner_threshold = 60,      # default: 60
-            length_threshold = 4.0,     # in [3.5, 10] default: 4.0
-            max_iterations = 10,        # default: 10
-            splice_threshold = 45,      # default: 45
-            path_precision = 8,          # default: 8        
+            colormode="binary",  # ["color"] or "binary"
+            hierarchical="stacked",  # ["stacked"] or "cutout"
+            mode="spline",  # ["spline"] "polygon", or "none"
+            filter_speckle=4,  # default: 4
+            color_precision=6,  # default: 6
+            layer_difference=16,  # default: 16
+            corner_threshold=60,  # default: 60
+            length_threshold=4.0,  # in [3.5, 10] default: 4.0
+            max_iterations=10,  # default: 10
+            splice_threshold=45,  # default: 45
+            path_precision=8,  # default: 8
             **kwargs,
         ):
             if colormode is None or colormode not in ("color", "binary"):
@@ -50,7 +55,11 @@ def plugin(kernel, lifecycle=None):
                 layer_difference = 16
             if corner_threshold is None:
                 corner_threshold = 60
-            if length_threshold is None or length_threshold < 3.5 or length_threshold>10:
+            if (
+                length_threshold is None
+                or length_threshold < 3.5
+                or length_threshold > 10
+            ):
                 length_threshold = 4
             if max_iterations is None:
                 max_iterations = 10
@@ -61,25 +70,26 @@ def plugin(kernel, lifecycle=None):
             image = image.convert("RGBA")
             pixels: list[tuple[int, int, int, int]] = list(image.getdata())
             svg = vtracer.convert_pixels_to_svg(
-                size = (image.width, image.height),
-                rgba_pixels = pixels,
-                colormode = colormode,
-                hierarchical = hierarchical,
-                mode = mode,
-                filter_speckle = filter_speckle,         # default: 4
-                color_precision = color_precision,        # default: 6
-                layer_difference = layer_difference,      # default: 16
-                corner_threshold = corner_threshold,      # default: 60
-                length_threshold = length_threshold,     # in [3.5, 10] default: 4.0
-                max_iterations = max_iterations,        # default: 10
-                splice_threshold = splice_threshold,      # default: 45
-                path_precision = path_precision          # default: 8
+                size=(image.width, image.height),
+                rgba_pixels=pixels,
+                colormode=colormode,
+                hierarchical=hierarchical,
+                mode=mode,
+                filter_speckle=filter_speckle,  # default: 4
+                color_precision=color_precision,  # default: 6
+                layer_difference=layer_difference,  # default: 16
+                corner_threshold=corner_threshold,  # default: 60
+                length_threshold=length_threshold,  # in [3.5, 10] default: 4.0
+                max_iterations=max_iterations,  # default: 10
+                splice_threshold=splice_threshold,  # default: 45
+                path_precision=path_precision,  # default: 8
             )
             return svg
 
-        kernel.register("render-op/make_vector2", make_vector)
+        # Not yet good enough to serve as default vectorization engine
+        kernel.register("render-op/notreadyyet_make_vector", make_vector)
 
-        @kernel.console_option("color", "c", type=bool, action="store_true")        
+        @kernel.console_option("color", "c", type=bool, action="store_true")
         @kernel.console_option("original", "o", type=bool, action="store_true")
         @kernel.console_option("invert", "i", type=bool, action="store_true")
         @kernel.console_command(
@@ -89,9 +99,9 @@ def plugin(kernel, lifecycle=None):
             output_type=None,
         )
         def do_vtrace(
-            command, 
-            channel, 
-            _,             
+            command,
+            channel,
+            _,
             data=None,
             color=False,
             original=False,
@@ -100,7 +110,11 @@ def plugin(kernel, lifecycle=None):
         ):
             elements = kernel.root.elements
             if data is None:
-                data = [node for node in elements.flat(emphasized=True) if hasattr(node, "active_image")]
+                data = [
+                    node
+                    for node in elements.flat(emphasized=True)
+                    if hasattr(node, "active_image")
+                ]
             if len(data) == 0:
                 channel("No image selected")
             cmode = "color" if color else "binary"
@@ -111,14 +125,15 @@ def plugin(kernel, lifecycle=None):
                     image = node.image
                 if invert:
                     image = ImageOps.invert(image.convert("L"))
-                channel(f"Processing {'original' if original else 'modified'} image with {image.width}x{image.height} pixels")
-                svgdata = make_vector(
-                    image=image, colormode=cmode
+                channel(
+                    f"Processing {'original' if original else 'modified'} image with {image.width}x{image.height} pixels"
                 )
+                svgdata = make_vector(image=image, colormode=cmode)
                 directory = get_safe_path(kernel.name, create=True)
                 filename = os.path.join(directory, "vtrace_temp.svg")
                 with open(filename, "w") as f:
                     f.write(svgdata)
                 # Now load the data
-                kernel.elements(f'xload "{filename}" {bb[0]} {bb[1]} {bb[2] - bb[0]} {bb[3] - bb[1]}\n')
-
+                kernel.elements(
+                    f'xload "{filename}" {bb[0]} {bb[1]} {bb[2] - bb[0]} {bb[3] - bb[1]}\n'
+                )
