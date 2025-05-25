@@ -5,12 +5,12 @@ from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxListCtrl,
     wxStaticText,
     wxTreeCtrl,
-    TextCtrl,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -71,15 +71,15 @@ class SelectDevice(wx.Dialog):
         )
         # Used for proper sorting in the device add menu.
         self.sort_family_name = {
-        _("K-Series CO2-Laser"): 99,
-        _("Ortur Diode-Laser"): 98,
-        _("Longer Diode-Laser"): 97,
-        _("Newly CO2-Laser"): 96,
-        _("Generic UV-Laser"): 95,
-        _("Generic CO2-Laser"): 94,
-        _("Generic Fibre-Laser"): 93,
-        _("Generic Diode-Laser"): 92,
-        _("Generic"): 91,
+            _("K-Series CO2-Laser"): 99,
+            _("Ortur Diode-Laser"): 98,
+            _("Longer Diode-Laser"): 97,
+            _("Newly CO2-Laser"): 96,
+            _("Generic UV-Laser"): 95,
+            _("Generic CO2-Laser"): 94,
+            _("Generic Fibre-Laser"): 93,
+            _("Generic Diode-Laser"): 92,
+            _("Generic"): 91,
         }
         sizer_main.Add(self.tree_devices, 3, wx.EXPAND, 0)
         self.no_msg = (
@@ -124,7 +124,6 @@ class SelectDevice(wx.Dialog):
         self.SetSize(dip_size(self, 350, 450))
         self.Layout()
         self.populate_tree()
-
 
     def populate_tree(self):
         tree = self.tree_devices
@@ -223,18 +222,20 @@ class DevicePanel(wx.Panel):
             | wx.LC_SINGLE_SEL
             | wx.LC_SORT_ASCENDING,
             context=self.context,
-            list_name="list_devices"
+            list_name="list_devices",
         )
         self.list_columns = {
             "device": 0,
             "driver": 1,
             "family": 2,
             "status": 3,
+            "location": 4,
         }
         self.devices_list.InsertColumn(self.list_columns["device"], _("Device"))
         self.devices_list.InsertColumn(self.list_columns["driver"], _("Driver"))
         self.devices_list.InsertColumn(self.list_columns["family"], _("Type"))
         self.devices_list.InsertColumn(self.list_columns["status"], _("Status"))
+        self.devices_list.InsertColumn(self.list_columns["location"], _("Interface"))
         self.devices_list.resize_columns()
         sizer_1.Add(self.devices_list, 7, wx.EXPAND, 0)
 
@@ -287,9 +288,7 @@ class DevicePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device
         )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_copy_device, self.button_copy_device
-        )
+        self.Bind(wx.EVT_BUTTON, self.on_button_copy_device, self.button_copy_device)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_remove_device, self.button_remove_device
         )
@@ -316,7 +315,6 @@ class DevicePanel(wx.Panel):
 
     def pane_hide(self, *args):
         pass
-
 
     def on_start_edit(self, event):
         event.Allow()
@@ -410,11 +408,17 @@ class DevicePanel(wx.Panel):
             except AttributeError:
                 pass
 
+            try:
+                loc_info = device.location()
+            except AttributeError:
+                loc_info = "undefined"
+
             self.devices_list.SetItem(index, self.list_columns["driver"], type_info)
             self.devices_list.SetItem(index, self.list_columns["family"], family_info)
             self.devices_list.SetItem(
                 index, self.list_columns["status"], _(active_status)
             )
+            self.devices_list.SetItem(index, self.list_columns["location"], loc_info)
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)
