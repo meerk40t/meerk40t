@@ -166,4 +166,4 @@ class DummyDevice(Service, Status):
         """
         Provide information about the device interface
         """
-        return "example"
+        return "mock"
