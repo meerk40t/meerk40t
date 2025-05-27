@@ -1607,6 +1607,10 @@ msgstr ""
 msgid "Listening {name} on port {port}..."
 msgstr ""
 
+#: meerk40t/network/console_server.py:20
+msgid "suppress input prompt '>>'"
+msgstr ""
+
 #: meerk40t/kernelserver.py:195
 msgid "Socket Connected: {address}"
 msgstr "Socket verbunden: {address}"
@@ -22144,3 +22148,31 @@ msgstr "... nach innen mit {offset}mm Abstand"
 #: meerk40t/core/elements/element_treeops.py:3833
 msgid "Create an inner offset around the selected elements"
 msgstr "Erzeuge inneren Offset um die selektierten Elemente"
+
+#: meerk40t/core/elements/element_treeops.py:3970
+msgid "Trace bitmap via vtracer"
+msgstr "Bitmap mittels vtracer vektorisieren"
+
+#: meerk40t/core/elements/shapes.py:678
+msgid "property to get"
+msgstr "Auszulesende Eigenschaft"
+
+#: meerk40t/core/elements/shapes.py:681
+msgid "get property value"
+msgstr "Lese Eigenschaftswert aus"
+
+#: meerk40t/core/elements/shapes.py:729
+msgid "You need to provide the property to get."
+msgstr "Der auszulesende Eigenschaftswert muss angegeben werden"
+
+#: meerk40t/extra/vtracer.py:146
+msgid "Nothing selected"
+msgstr "Kein Element ausgewählt"
+
+#: meerk40t/extra/vtracer.py:158
+msgid "Vectorizing image"
+msgstr "Vektorisiere Bitmap-Grafik"
+
+#: meerk40t/extra/vtracer.py:215
+msgid "Time needed for vectorisation: {time_total}sec (analysis: {time_convert}sec, loading: {time_load}sec)"
+msgstr "Benötigte Zeit für Vektorisierung: {time_total}sec (Analyse: {time_convert}sec, Laden: {time_load}sec)"
