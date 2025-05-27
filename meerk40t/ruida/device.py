@@ -603,6 +603,25 @@ class RuidaDevice(Service):
         return name.replace("/", "-")
 
     @property
+    def tcp_address(self):
+        return self.address
+
+    @property
+    def tcp_port(self):
+        return 5005
+
+    def location(self):
+        if self.interface == "mock":
+            return "mock"
+        elif self.interface == "udp":
+            return "udp, port 40200"
+        elif self.interface == "tcp":
+            return f"tcp {self.tcp_address}:{self.tcp_port}"
+        elif self.interface == "usb":
+            return f"usb: {self.serial_port}"
+        return f"undefined {self.interface}"
+
+    @property
     def has_endstops(self):
         return True
 

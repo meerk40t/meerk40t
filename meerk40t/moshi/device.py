@@ -520,3 +520,10 @@ class MoshiDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        return (
+            "mock"
+            if self.mock
+            else f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
+        )

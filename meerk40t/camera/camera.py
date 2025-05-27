@@ -189,32 +189,33 @@ class Camera(Service):
                 pass
         return actual_width, actual_height
 
-    def _get_capture(self, set_resolution = True):
+    def _get_capture(self, set_resolution=True):
         import platform
+
         # print (self.uri, type(self.uri).__name__)
         if platform.system() == "Windows":
             self.logger("Set DSHOW for Windows")
             cv2.CAP_DSHOW
-            #sets the Windows cv2 backend to DSHOW (Direct Video Input Show)
+            # sets the Windows cv2 backend to DSHOW (Direct Video Input Show)
             cap = cv2.VideoCapture(self.uri)
         elif platform.system() == "Linux":
             self.logger("Set GSTREAMER for Linux")
-            cv2.CAP_GSTREAMER # set the Linux cv2 backend to GTREAMER
-            #cv2.CAP_V4L
+            cv2.CAP_GSTREAMER  # set the Linux cv2 backend to GTREAMER
+            # cv2.CAP_V4L
             cap = cv2.VideoCapture(self.uri)
         else:
             self.logger("Try something for Darwin")
             cap = cv2.VideoCapture(self.uri)
             # For MAC please refer to link below for I/O
-            cap.set(cv2.CAP_FFMPEG, cv2.CAP_AVFOUNDATION) # not sure!
-            #please refer to reference link at bottom of page for more I/O
+            cap.set(cv2.CAP_FFMPEG, cv2.CAP_AVFOUNDATION)  # not sure!
+            # please refer to reference link at bottom of page for more I/O
         if set_resolution:
-            self.logger (f"Try to start camera with {self.width}x{self.height}")
+            self.logger(f"Try to start camera with {self.width}x{self.height}")
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            self.logger (
-                f"Capture: {str(self.capture)}\n" +
-                f"Frame resolution set to: ({cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{cap.get(cv2.CAP_PROP_FRAME_HEIGHT)})"
+            self.logger(
+                f"Capture: {str(self.capture)}\n"
+                + f"Frame resolution set to: ({cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{cap.get(cv2.CAP_PROP_FRAME_HEIGHT)})"
             )
 
         return cap
@@ -297,13 +298,17 @@ class Camera(Service):
                 actual_height = 0
                 actual_width = 0
                 msg = f"(Fail: {e})"
-            self.logger(f"Tried {width}x{height} ({description}) - received {actual_width}x{actual_height} {msg}")
+            self.logger(
+                f"Tried {width}x{height} ({description}) - received {actual_width}x{actual_height} {msg}"
+            )
             if int(actual_width) == width and int(actual_height) == height:
                 supported_resolutions.append((width, height, description))
-
-        cap.release()
+        try:
+            # Might crash if the camera is not opened
+            cap.release()
+        except cv2.error:
+            pass
         return supported_resolutions
-
 
     def process_frame(self):
         frame = self._current_raw

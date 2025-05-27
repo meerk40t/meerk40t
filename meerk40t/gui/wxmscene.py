@@ -99,7 +99,12 @@ class ContourDetectionDialog(wx.Dialog):
     def _init_ui(self, node):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         panel = ContourPanel(
-            self, wx.ID_ANY, context=self.context, node=node, simplified=True, direct_mode=True,
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            node=node,
+            simplified=True,
+            direct_mode=True,
         )
         main_sizer.Add(panel, 1, wx.EXPAND, 0)
         buttons = self.CreateStdDialogButtonSizer(wx.OK)
@@ -158,7 +163,9 @@ class MeerK40tScenePanel(wx.Panel):
         # Save / Load the content of magnets
         from os.path import join
 
-        self._magnet_file = join(self.context.kernel.os_information["WORKDIR"], "magnets.cfg")
+        self._magnet_file = join(
+            self.context.kernel.os_information["WORKDIR"], "magnets.cfg"
+        )
         self.load_magnets()
         # Add a plugin routine to be called at the time of a full new start
         context.kernel.register(
@@ -872,9 +879,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_argument(
             "action", type=str, help=_("Action: clear or set / delete with coordinate")
         )
-        @context.console_argument(
-            "axis", type=str, help=_("Axis (X or Y)")
-        )
+        @context.console_argument("axis", type=str, help=_("Axis (X or Y)"))
         @context.console_argument("pos", type=str, help=_("Position for magnetline"))
         @context.console_command(
             "magnet",
@@ -892,10 +897,17 @@ class MeerK40tScenePanel(wx.Panel):
         ):
             def info(opt_msg):
                 channel(
-                    _("You need to provide the intended action:") + "\n" +
-                    _("clear x - clear y : will clear all magnets on the given axis") + "\n" +
-                    _("set x <pos> - set y <pos>: will set a magnet line on the given axis") + "\n" +
-                    _("delete x <pos> - delete y <pos>: will delete the magnet line on the given axis")
+                    _("You need to provide the intended action:")
+                    + "\n"
+                    + _("clear x - clear y : will clear all magnets on the given axis")
+                    + "\n"
+                    + _(
+                        "set x <pos> - set y <pos>: will set a magnet line on the given axis"
+                    )
+                    + "\n"
+                    + _(
+                        "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
+                    )
                 )
                 if opt_msg:
                     channel(opt_msg)
@@ -908,10 +920,14 @@ class MeerK40tScenePanel(wx.Panel):
             value = None
             if pos:
                 try:
-                    rel_len = self.context.device.view.width if axis == "X" else self.context.device.view.height
+                    rel_len = (
+                        self.context.device.view.width
+                        if axis == "X"
+                        else self.context.device.view.height
+                    )
                     value = float(Length(pos, relative_length=rel_len))
                 except ValueError:
-                    info (f"Invalid length: {pos}")
+                    info(f"Invalid length: {pos}")
                     return
 
             if action != "clear" and value is None:
@@ -927,7 +943,11 @@ class MeerK40tScenePanel(wx.Panel):
                     self.magnet_y.clear()
                 self.save_magnets()
                 self.context.signal("refresh_scene", "Scene")
-                channel (_("Deleted {count} magnet lines on axis {axis}").format(axis=axis, count=count))
+                channel(
+                    _("Deleted {count} magnet lines on axis {axis}").format(
+                        axis=axis, count=count
+                    )
+                )
             elif action == "set":
                 done = False
                 if axis == "X":
@@ -941,7 +961,11 @@ class MeerK40tScenePanel(wx.Panel):
                 self.save_magnets()
                 self.context.signal("refresh_scene", "Scene")
                 if done:
-                    channel(_("Magnetline appended at {pos} on axis {axis}").format(pos=pos, axis=axis))
+                    channel(
+                        _("Magnetline appended at {pos} on axis {axis}").format(
+                            pos=pos, axis=axis
+                        )
+                    )
                 else:
                     channel(_("Magnetline was already present"))
             elif action.startswith("del"):
@@ -957,7 +981,11 @@ class MeerK40tScenePanel(wx.Panel):
                 self.save_magnets()
                 self.context.signal("refresh_scene", "Scene")
                 if done:
-                    channel(_("Magnetline removed at {pos} on axis {axis}").format(pos=pos, axis=axis))
+                    channel(
+                        _("Magnetline removed at {pos} on axis {axis}").format(
+                            pos=pos, axis=axis
+                        )
+                    )
                 else:
                     channel(_("Magnetline was not existing"))
 
@@ -1193,7 +1221,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("create_magnets")
     def listen_magnet_creation(self, origin, creation_list, *args):
-        for (info, value) in creation_list:
+        for info, value in creation_list:
             if info == "x":
                 self.toggle_x_magnet(value)
             else:
@@ -1292,11 +1320,17 @@ class MeerK40tScenePanel(wx.Panel):
 
         def recognize_background_contours(event=None):
             def image_from_bitmap(myBitmap):
+                img = myBitmap.ConvertToImage()
+                buf = img.GetData()
+                return Image.frombuffer(
+                    "RGB", tuple(myBitmap.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+                )
                 wx_image = myBitmap.ConvertToImage()
                 myPilImage = Image.new(
                     "RGB", (wx_image.GetWidth(), wx_image.GetHeight())
                 )
-                myPilImage.frombytes(wx_image.GetData())
+                byte_data = bytes(wx_image.GetData())
+                myPilImage.frombytes(byte_data)
                 return myPilImage
 
             if not self.widget_scene.has_background:
@@ -1328,6 +1362,8 @@ class MeerK40tScenePanel(wx.Panel):
                 dpi=500,
             )
             # print (f"Node-Dimensions: {node.bbox()}")
+            # self.context.elements.elem_branch.add_node(node)
+
             dlg = ContourDetectionDialog(self, self.context, node)
             dlg.ShowModal()
             dlg.end_dialog()

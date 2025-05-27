@@ -8,8 +8,8 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.svgelements import Matrix
 from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Length
+from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
 
@@ -35,6 +35,7 @@ def get_matrix_scale(matrix):
         res = 1
     return res
 
+
 def get_matrix_full_scale(matrix):
     # We usually use the value_scale_x to establish a pixel size
     # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
@@ -54,6 +55,7 @@ def get_matrix_full_scale(matrix):
         resy = 1
     return resx, resy
 
+
 def get_gc_scale(gc):
     gcmat = gc.GetTransform()
     mat_param = gcmat.Get()
@@ -67,6 +69,7 @@ def get_gc_scale(gc):
     )
     return get_matrix_scale(testmatrix)
 
+
 def get_gc_full_scale(gc):
     gcmat = gc.GetTransform()
     mat_param = gcmat.Get()
@@ -79,6 +82,7 @@ def get_gc_full_scale(gc):
         mat_param[5],
     )
     return get_matrix_full_scale(testmatrix)
+
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """
@@ -851,6 +855,7 @@ class TextCtrl(wx.TextCtrl):
                         self._action_routine()
                     finally:
                         self._event_generated = None
+
             return handler
 
         if not self._default_values:
@@ -858,14 +863,19 @@ class TextCtrl(wx.TextCtrl):
             return
         menu = wx.Menu()
         has_info = isinstance(self._default_values[0], (list, tuple))
-        item : wx.MenuItem = menu.Append(wx.ID_ANY, _("Default values..."), "")
+        item: wx.MenuItem = menu.Append(wx.ID_ANY, _("Default values..."), "")
         item.Enable(False)
         for info in self._default_values:
-            item = menu.Append(wx.ID_ANY, info[0] if has_info else info, info[1] if has_info else "")
-            self.Bind(wx.EVT_MENU, set_menu_value(info[0] if has_info else info), id=item.GetId())
+            item = menu.Append(
+                wx.ID_ANY, info[0] if has_info else info, info[1] if has_info else ""
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                set_menu_value(info[0] if has_info else info),
+                id=item.GetId(),
+            )
         self.PopupMenu(menu)
         menu.Destroy()
-
 
     @property
     def warn_status(self):
@@ -1011,6 +1021,7 @@ class wxCheckBox(wx.CheckBox):
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
+
 
 class wxComboBox(wx.ComboBox):
     """
@@ -1242,11 +1253,12 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
 
-    def Enable(self, enable:bool=True):
+    def Enable(self, enable: bool = True):
         """Enable or disable the StaticBoxSizer and its children.
 
         Enables or disables all children of the sizer recursively.
         """
+
         def enem(wind, flag):
             for c in wind.GetChildren():
                 enem(c, flag)
@@ -1254,6 +1266,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
                 wind.Enable(flag)
 
         enem(self.sbox, enable)
+
 
 class ScrolledPanel(SP):
     """
@@ -1268,12 +1281,21 @@ class ScrolledPanel(SP):
         except RuntimeError:
             pass
 
+
 class wxListCtrl(wx.ListCtrl):
     """
     wxListCtrl will extend a regular ListCtrl by saving / restoring column widths
     """
+
     def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, context=None, list_name=None
+        self,
+        parent,
+        ID=wx.ID_ANY,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        context=None,
+        list_name=None,
     ):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         self.context = context
@@ -1341,7 +1363,7 @@ class wxListCtrl(wx.ListCtrl):
         # print(f"{self.list_name}, cols={self.GetColumnCount()}, available={list_width}, used={total}")
         if total < list_width:
             col = self.GetColumnCount() - 1
-            if col < 0 :
+            if col < 0:
                 return False
             # print(f"Will adjust last column from {last} to {last + (list_width - total)}")
             try:
@@ -1365,10 +1387,26 @@ class EditableListCtrl(wxListCtrl, listmix.TextEditMixin):
 
     # ----------------------------------------------------------------------
     def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, context=None, list_name=None,
+        self,
+        parent,
+        ID=wx.ID_ANY,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        context=None,
+        list_name=None,
     ):
         """Constructor"""
-        wxListCtrl.__init__(self, parent=parent, ID=ID, pos=pos, size=size, style=style, context=context, list_name=list_name)
+        wxListCtrl.__init__(
+            self,
+            parent=parent,
+            ID=ID,
+            pos=pos,
+            size=size,
+            style=style,
+            context=context,
+            list_name=list_name,
+        )
         listmix.TextEditMixin.__init__(self)
         set_color_according_to_theme(self, "list_bg", "list_fg")
 
@@ -1451,7 +1489,7 @@ class wxRadioBox(StaticBoxSizer):
         id=None,
         label=None,
         choices=None,
-        majorDimension = 0,
+        majorDimension=0,
         style=0,
         *args,
         **kwargs,
@@ -1462,8 +1500,10 @@ class wxRadioBox(StaticBoxSizer):
         self._labels = []
         self._tool_tip = None
         self._help = None
-        super().__init__(parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL)
-        if majorDimension == 0 or style==wx.RA_SPECIFY_ROWS:
+        super().__init__(
+            parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL
+        )
+        if majorDimension == 0 or style == wx.RA_SPECIFY_ROWS:
             majorDimension = 1000
         container = None
         for idx, c in enumerate(self.choices):
@@ -1486,6 +1526,7 @@ class wxRadioBox(StaticBoxSizer):
                     event.Skip()
 
                 return mouse
+
             for ctrl in self._children:
                 ctrl.Bind(wx.EVT_MOTION, on_mouse_over_check(ctrl))
 
@@ -1567,15 +1608,19 @@ class wxRadioBox(StaticBoxSizer):
 
     def GetHelpText(self):
         return self._help
+
+
 class wxStaticText(wx.StaticText):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         set_color_according_to_theme(self, "label_bg", "label_fg")
 
+
 class wxListBox(wx.ListBox):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         set_color_according_to_theme(self, "list_bg", "list_fg")
+
 
 ##############
 # GUI KEYSTROKE FUNCTIONS
@@ -1752,8 +1797,8 @@ def set_ctrl_value(ctrl, value):
     try:
         cursor = ctrl.GetInsertionPoint()
         if ctrl.GetValue() != value:
-            ctrl.SetValue(value)
-            ctrl.SetInsertionPoint(min(len(value), cursor))
+            ctrl.SetValue(str(value))
+            ctrl.SetInsertionPoint(min(len(str(value)), cursor))
     except RuntimeError:
         # Control might already have been destroyed
         pass

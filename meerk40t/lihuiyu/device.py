@@ -1216,3 +1216,10 @@ class LihuiyuDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        if self.mock:
+            return "mock"
+        if self.networked:
+            return f"tcp {self.address}:{self.port}"
+        return f"usb {'auto' if self.usb_index < 0 else self.usb_index}"

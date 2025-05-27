@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
-"PO-Revision-Date: 23-04-21 06:37UTC\n"
+"PO-Revision-Date: 24-05-25 10:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation\n"
@@ -22320,3 +22320,118 @@ msgstr "Di solito MK utilizzerà l'attributo di riempimento come indicatore per 
 #: meerk40t/core/elements/elements.py:326
 msgid "If you want to distinguish between different raster types then activate this option."
 msgstr "Se desideri distinguere tra diversi tipi di raster, attiva questa opzione."
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:46
+msgid "Cut ({percent}, {speed})"
+msgstr "Taglio ({percent}, {speed})"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:47
+msgid "Engrave ({percent}, {speed})"
+msgstr "Incisione ({percent}, {speed})"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:48
+msgid "Raster ({percent}, {speed})"
+msgstr "Raster ({percent}, {speed})"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:49
+msgid "Image ({percent}, {speed})"
+msgstr "Immagine ({percent}, {speed})"
+
+#: meerk40t/grbl/device.py:189
+msgid "Supports Z-axis"
+msgstr "Supporta l'asse Z"
+
+msgid "Z-Axis support"
+msgstr "Asse Z"
+
+#: meerk40t/grbl/device.py:190
+msgid "Does this device have a Z-axis?"
+msgstr "Questo dispositivo ha un asse Z?"
+
+#: meerk40t/grbl/device.py:204
+msgid "Z-Homing"
+msgstr "Riferimento asse Z"
+
+#: meerk40t/grbl/device.py:205
+msgid "Which command triggers the z-homing sequence"
+msgstr "Quale comando attiva la sequenza di riferimento dell'asse Z"
+
+#: meerk40t/grbl/device.py:665
+msgid "Homes the z-Axis"
+msgstr "Riferimenti dell'asse Z"
+
+#: meerk40t/grbl/device.py:670 meerk40t/grbl/device.py:687
+msgid "This device does not support a z-axis."
+msgstr "Questo dispositivo non supporta un asse Z."
+
+#: meerk40t/grbl/device.py:674
+msgid "There is no homing sequence defined."
+msgstr "Non è stata definita alcuna sequenza di riferimento."
+
+#: meerk40t/grbl/device.py:676
+msgid "Z-Homing..."
+msgstr "Riferimento asse Z in corso..."
+
+#: meerk40t/grbl/device.py:679
+msgid "Amount to move the z-axis"
+msgstr "Quantità di movimento dell'asse Z"
+
+#: meerk40t/grbl/device.py:682
+msgid "Moves the z-Axis by the given amount"
+msgstr "Muove l'asse Z della quantità specificata"
+
+#: meerk40t/grbl/device.py:690
+msgid "No z-movement defined"
+msgstr "Nessun movimento dell'asse Z definito"
+
+#: meerk40t/gui/navigationpanels.py:463
+msgid "Move the laser to the defined Z-Home-Position"
+msgstr "Muovi il laser nella posizione di riferimento Z definita"
+
+#: meerk40t/gui/navigationpanels.py:466
+msgid "Move the laserhead down by {mm} mm"
+msgstr "Abbassa la testa del laser di {mm} mm"
+
+#: meerk40t/gui/navigationpanels.py:467
+msgid "Move the laserhead up by {mm} mm"
+msgstr "Alza la testa del laser di {mm} mm"
+
+#: meerk40t/gui/navigationpanels.py:469
+msgid "Move the laser up by {mm}mm"
+msgstr "Sposta il laser verso l'alto di {mm} mm"
+
+#: meerk40t/gui/navigationpanels.py:471
+msgid "Move the laser down by {mm}mm"
+msgstr "Sposta il laser verso il basso di {mm} mm"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:273
+msgid "Invert the image before processing"
+msgstr "Inverti l'immagine prima della lavorazione"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:275
+msgid "Use the original image instead of the dithered one"
+msgstr "Usa l'immagine originale invece di quella retinata"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:277
+msgid "Automatically update the preview"
+msgstr "Aggiorna automaticamente l'anteprima"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:278
+msgid "Update the preview"
+msgstr "Aggiorna l'anteprima"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:279
+msgid "Creates the recognized contour elements"
+msgstr "Crea gli elementi di contorno riconosciuti"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:281
+msgid "Creates the corresponding placements"
+msgstr "Crea le corrispondenti posizioni"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:283
+msgid "Select the placement position"
+msgstr "Seleziona la posizione di posizionamento"
+
+#: meerk40t/gui/propertypanels/imageproperty.py:610
+msgid "No contours found."
+msgstr "Nessun contorno trovato."

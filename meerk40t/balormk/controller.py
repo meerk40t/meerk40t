@@ -417,22 +417,25 @@ class GalvoController:
         self._abort_open = False
 
     def send(self, data, read=True):
+        ERR = (-1, -1, -1, -1)  # Error return value
         if self.is_shutdown:
-            return -1, -1, -1, -1
+            return ERR
         try:
             self.connect_if_needed()
         except (ConnectionRefusedError, NoBackendError):
-            return -1, -1, -1, -1
+            return ERR
+        if not self.connection:
+            return ERR
         try:
             self.connection.write(self._machine_index, data)
         except ConnectionError:
-            return -1, -1, -1, -1
+            return ERR
         if read:
             try:
                 r = self.connection.read(self._machine_index)
                 return struct.unpack("<4H", r)
             except ConnectionError:
-                return -1, -1, -1, -1
+                return ERR
 
     def status(self):
         b0, b1, b2, b3 = self.get_version()

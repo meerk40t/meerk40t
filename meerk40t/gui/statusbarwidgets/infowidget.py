@@ -61,7 +61,7 @@ class SimpleInfoWidget(StatusBarWidget):
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
         self.btn_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
 
-        self.Add(self.info_text, 5, wx.EXPAND, 0)
+        self.Add(self.info_text, 5, 0, 0)
         self.Add(self.progress_bar, 1, wx.EXPAND, 0)
         self.Add(self.btn_next, 0, wx.EXPAND, 0)
         self.SetActive(self.btn_next, False)
@@ -201,7 +201,7 @@ class InformationWidget(SimpleInfoWidget):
             while new_height > 1024 or new_width > 1024:
                 new_height //= 2
                 new_width //= 2
-                
+
             all_pixel = new_height * new_width
             if all_pixel > 0:
                 try:

@@ -2,6 +2,7 @@ import os
 import re
 import sys
 
+
 def are_curly_brackets_matched(input_str):
     stack = []
     escaped = False
@@ -20,14 +21,14 @@ def are_curly_brackets_matched(input_str):
             stack.pop()
     return not stack
 
+
 def contain_smart_quotes(line):
     # Check for ”
     l = line.strip()
     return bool(
-        l.startswith("msgid ”")
-        or l.startswith("msgstr ”")
-        or l.startswith("”")
+        l.startswith("msgid ”") or l.startswith("msgstr ”") or l.startswith("”")
     )
+
 
 def find_erroneous_translations(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
@@ -57,8 +58,8 @@ def find_erroneous_translations(file_path):
                 msgids.append("")
                 lineids.append(index)
                 # Find msgid and all multi-lined message ids
-                if re.match('msgid \s*"(.*)"', file_lines[index]):
-                    m = re.match('msgid \s*"(.*)"', file_lines[index])
+                if re.match(r'msgid \s*"(.*)"', file_lines[index]):
+                    m = re.match(r'msgid \s*"(.*)"', file_lines[index])
                     msgids[-1] = m.group(1)
                     m_id = m.group(1)
                     index += 1
@@ -116,17 +117,21 @@ def find_erroneous_translations(file_path):
             erct += 1
             er_s.append(str(line))
     if erct > 0:
-        print (f"{erct} empty pair{'s' if erct==0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}")
+        print(
+            f"{erct} empty pair{'s' if erct==0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}"
+        )
         found_error = True
     return found_error
 
 
 # Simple tool to recursively translate all .po-files into their .mo-equivalents under ./locale/LC_MESSAGES
-def create_mo_files(force:bool, locales:list):
+def create_mo_files(force: bool, locales: list):
     try:
         import polib
     except ImportError:
-        print ("polib missing - you need to install that library, eg. 'pip install polib'")
+        print(
+            "polib missing - you need to install that library, eg. 'pip install polib'"
+        )
         return
 
     data_files = []
@@ -139,14 +144,14 @@ def create_mo_files(force:bool, locales:list):
     counts = [0, 0, 0]
     for d_local, d in zip(po_locales, po_dirs):
         if len(locales) > 0 and d_local not in locales:
-            print (f"Skip locale {d_local}")
+            print(f"Skip locale {d_local}")
             continue
         mo_files = []
         po_files = [f for f in next(os.walk(d))[2] if os.path.splitext(f)[1] == ".po"]
         for po_file in po_files:
             filename, extension = os.path.splitext(po_file)
             if find_erroneous_translations(d + po_file):
-                print (f"Skipping {d + po_file} as invalid...")
+                print(f"Skipping {d + po_file} as invalid...")
                 counts[2] += 1
                 continue
             mo_file = filename + ".mo"
@@ -157,7 +162,9 @@ def create_mo_files(force:bool, locales:list):
                 po_date = os.path.getmtime(d + po_file)
                 mo_date = os.path.getmtime(d + mo_file)
                 if mo_date > po_date:
-                    print(f"mo-File for {d}{po_file} is newer (input encoded={res}, output encoded={res2})...")
+                    print(
+                        f"mo-File for {d}{po_file} is newer (input encoded={res}, output encoded={res2})..."
+                    )
                     doit = False
             if doit or force:
                 if doit:
@@ -175,7 +182,9 @@ def create_mo_files(force:bool, locales:list):
 
                 res2 = polib.detect_encoding(d + mo_file)
 
-                print(f"{action} {d}{po_file} (input encoded={res}, output encoded={res2})")
+                print(
+                    f"{action} {d}{po_file} (input encoded={res}, output encoded={res2})"
+                )
                 mo_files.append(d + mo_file)
                 counts[0] += 1
             else:
@@ -185,6 +194,7 @@ def create_mo_files(force:bool, locales:list):
         f"Total: {counts[0] + counts[1]}, Translated: {counts[0]}, Ignored: {counts[1]}, Errors: {counts[2]}"
     )
     return data_files
+
 
 def main():
     force = False
@@ -201,5 +211,6 @@ def main():
     else:
         print("Will compile all po-files")
     create_mo_files(force, locales)
+
 
 main()

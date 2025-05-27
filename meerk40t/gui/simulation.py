@@ -1687,9 +1687,15 @@ class SimulationPanel(wx.Panel, Job):
                 if hasattr(cut, "_plotcache") and cut._plotcache is not None:
                     continue
                 if isinstance(cut, RasterCut):
-                    cut._plotcache = list(cut.plot.plot())
+                    try:
+                        cut._plotcache = list(cut.plot.plot())
+                    except MemoryError:
+                        cut._plotcache = None
                 elif isinstance(cut, PlotCut):
-                    cut._plotcache = list(cut.plot)
+                    try:
+                        cut._plotcache = list(cut.plot)
+                    except MemoryError:
+                        cut._plotcache = None
                 self.context.signal("refresh_scene", self.widget_scene.name)
         self.reload_statistics()
         try:

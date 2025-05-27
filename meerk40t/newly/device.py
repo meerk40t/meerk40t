@@ -880,6 +880,9 @@ class NewlyDevice(Service, Status):
         )
         self.signal("view;realized")
 
+    def location(self):
+        return "mock" if self.mock else "usb"
+
     @property
     def current(self):
         """

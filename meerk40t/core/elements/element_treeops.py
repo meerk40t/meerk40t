@@ -112,7 +112,18 @@ from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
 
-from .element_types import *
+from .element_types import (
+    effect_nodes,
+    elem_group_nodes,
+    elem_nodes,
+    elem_ref_nodes,
+    non_structural_nodes,
+    op_burnable_nodes,
+    op_image_nodes,
+    op_nodes,
+    op_parent_nodes,
+    op_vector_nodes,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -3934,6 +3945,9 @@ def init_tree(kernel):
             result = True
         return result
 
+    def has_vtrace_vectorize(node):
+        return self.kernel.has_command("vtracer")
+
     @tree_submenu(_("Vectorization..."))
     @tree_separator_after()
     @tree_conditional(lambda node: has_vectorize(node))
@@ -3949,6 +3963,17 @@ def init_tree(kernel):
     def trace_bitmap(node, **kwargs):
         with self.undoscope("Trace bitmap"):
             self("vectorize\n")
+
+    @tree_submenu(_("Vectorization..."))
+    @tree_conditional(lambda node: has_vtrace_vectorize(node))
+    @tree_operation(
+        _("Trace bitmap via vtracer"),
+        node_type=("elem image",),
+        help=_("Vectorize the given element"),
+        grouping="70_ELEM_IMAGES_Z",  # test
+    )
+    def trace_bitmap_vtrace(node, **kwargs):
+        self("vtracer\n")
 
     @tree_submenu(_("Vectorization..."))
     @tree_operation(

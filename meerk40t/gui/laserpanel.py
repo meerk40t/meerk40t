@@ -18,7 +18,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon,
     icons8_save,
 )
-from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel, JogDistancePanel
+from meerk40t.gui.navigationpanels import Drag, Jog, JogDistancePanel, MovePanel
 from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
@@ -45,7 +45,7 @@ def register_panel_laser(window, context):
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
     jog_drag.SetupScrolling()
-    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
+    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, suppress_z_controls=True)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)
     distance_panel = JogDistancePanel(jog_drag, wx.ID_ANY, context=context)
     main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -95,7 +95,7 @@ def register_panel_laser(window, context):
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
     notebook.AddPage(move_panel, _("Move"))
-    
+
     def on_page_change(event):
         event.Skip()
         page = notebook.GetCurrentPage()

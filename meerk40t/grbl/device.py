@@ -182,6 +182,30 @@ class GRBLDevice(Service, Status):
                 "subsection": "_60_Home position",
             },
             {
+                "attr": "supports_z_axis",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Supports Z-axis"),
+                "tip": _("Does this device have a Z-axis?"),
+                "subsection": "_70_Z-Axis support",
+            },
+            {
+                "attr": "z_home_command",
+                "object": self,
+                "default": "$HZ",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "$HZ",
+                    "G28 Z",
+                ],
+                "exclusive": False,
+                "label": _("Z-Homing"),
+                "tip": _("Which command triggers the z-homing sequence"),
+                "subsection": "_70_Z-Axis support",
+            },
+            {
                 "attr": "signal_updates",
                 "object": self,
                 "default": True,
@@ -657,6 +681,56 @@ class GRBLDevice(Service, Status):
 
         if self.permit_serial:
             self._register_console_serial()
+
+        @self.console_command(
+            "z_home",
+            help=_("Homes the z-Axis"),
+            input_type=None,
+        )
+        def command_zhome(command, channel, _, data=None, remainder=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            zhome = self.z_home_command
+            if not zhome:
+                channel(_("There is no homing sequence defined."))
+                return
+            channel(_("Z-Homing..."))
+            self.driver(zhome + self.driver.line_end)
+
+        @self.console_argument("step", type=Length, help=_("Amount to move the z-axis"))
+        @self.console_command(
+            "z_move",
+            help=_("Moves the z-Axis by the given amount"),
+            input_type=None,
+        )
+        def command_zmove_rel(command, channel, _, data=None, step=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            if step is None:
+                channel(_("No z-movement defined"))
+                return
+            # relative movement in mm
+            gcode = f"G91 G21 Z{step.mm:.3f}"
+            self.driver(gcode + self.driver.line_end)
+
+        @self.console_argument("step", type=Length, help=_("New z-axis position"))
+        @self.console_command(
+            "z_move_to",
+            help=_("Moves the z-Axis to the given position"),
+            input_type=None,
+        )
+        def command_zmove_abs(command, channel, _, data=None, step=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            if step is None:
+                channel(_("No z-movement defined"))
+                return
+            # absolute movement in mm
+            gcode = f"G91 G20 Z{step.mm:.3f}"
+            self.driver(gcode + self.driver.line_end)
 
         @self.console_command(
             ("gcode", "grbl"),
