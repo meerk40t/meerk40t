@@ -4,8 +4,8 @@ from math import tau
 
 from meerk40t.core.node.mixins import (
     FunctionalParameter,
-    Stroked,
     LabelDisplay,
+    Stroked,
     Suppressable,
 )
 from meerk40t.core.node.node import Node
@@ -196,18 +196,24 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         return default_map
 
     def can_drop(self, drag_node):
+        if self.is_a_child_of(drag_node):
+            return False
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or
-            hasattr(drag_node, "as_image") or
-            drag_node.type in ("op raster", "file", "group")
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("op raster", "file", "group")
         )
 
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):
             return False
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("file", "group")
+        ):
             if modify:
                 self.insert_sibling(drag_node)
             return True
