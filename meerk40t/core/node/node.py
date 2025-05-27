@@ -1389,6 +1389,14 @@ class Node:
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
 
+    def is_a_child_of(self, node):
+        candidate = self
+        while candidate is not None:
+            if candidate is node:
+                return True
+            candidate = candidate.parent
+        return False
+
     def has_ancestor(self, type):
         """
         Return whether this node has an ancestor node that matches the given type, or matches the major type.
