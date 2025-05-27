@@ -1,5 +1,5 @@
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.mixins import LabelDisplay
+from meerk40t.core.node.node import Node
 
 
 class GroupNode(Node, LabelDisplay):
@@ -76,18 +76,14 @@ class GroupNode(Node, LabelDisplay):
         default_map["id"] = str(self.id)
         return default_map
 
-    def is_a_child_of(self, node):
-        candidate = self
-        while candidate is not None:
-            if candidate is node:
-                return True
-            candidate = candidate.parent
-        return False
-
     def can_drop(self, drag_node):
         if self.is_a_child_of(drag_node):
             return False
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type == "group":
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type == "group"
+        ):
             # Move a group
             return True
         elif drag_node.type.startswith("op"):
@@ -121,7 +117,11 @@ class GroupNode(Node, LabelDisplay):
             if result and modify:
                 # changed = []
                 for e in self.flat():
-                    if hasattr(drag_node, "color") and drag_node.color is not None and hasattr(e, "stroke"):
+                    if (
+                        hasattr(drag_node, "color")
+                        and drag_node.color is not None
+                        and hasattr(e, "stroke")
+                    ):
                         e.stroke = drag_node.color
                         # changed.append(e)
                 for ref in old_references:

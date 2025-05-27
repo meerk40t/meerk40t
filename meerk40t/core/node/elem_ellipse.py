@@ -3,8 +3,8 @@ from math import cos, sin, sqrt, tau
 
 from meerk40t.core.node.mixins import (
     FunctionalParameter,
-    Stroked,
     LabelDisplay,
+    Stroked,
     Suppressable,
 )
 from meerk40t.core.node.node import Fillrule, Node
@@ -171,12 +171,16 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         tablen = self.mktablength
         numtabs = self.mktabpositions
         if tablen and numtabs:
-            path = Geomstr.wobble_tab(path, tablen, resolution, numtabs, unit_factor=unit_factor)
+            path = Geomstr.wobble_tab(
+                path, tablen, resolution, numtabs, unit_factor=unit_factor
+            )
         # Is there a dash/dot pattern to apply?
         dashlen = self.stroke_dash
         irrelevant = 50
         if dashlen:
-            path = Geomstr.wobble_dash(path, dashlen, resolution, irrelevant, unit_factor=unit_factor)
+            path = Geomstr.wobble_dash(
+                path, dashlen, resolution, irrelevant, unit_factor=unit_factor
+            )
 
         return path
 
@@ -261,19 +265,25 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         return default_map
 
     def can_drop(self, drag_node):
+        if self.is_a_child_of(drag_node):
+            return False
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or
-            hasattr(drag_node, "as_image") or
-            (drag_node.type.startswith("op ") and drag_node.type != "op dots") or
-            drag_node.type in ("file", "group")
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+            or drag_node.type in ("file", "group")
         )
 
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):
             return False
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("file", "group")
+        ):
             if modify:
                 self.insert_sibling(drag_node)
             return True
