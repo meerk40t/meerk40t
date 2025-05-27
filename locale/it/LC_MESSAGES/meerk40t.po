@@ -20388,6 +20388,9 @@ msgstr "GCode M7/M9"
 msgid "GCode M8/M9"
 msgstr "GCode M8/M9"
 
+#: meerk40t/gui/basicops.py:476
+msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
+msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / sarà acceso o spento all'inizio di questo processo"
 
 #: meerk40t/core/elements/shapes.py:181
 msgid "X-coordinate of center"
@@ -21472,14 +21475,6 @@ msgstr "Il controller JCZ è un tipo di controller per laser galvanometrici per 
 msgid "UV-Laser"
 msgstr "Laser UV"
 
-#: meerk40t/grbl/device.py:607
-msgid "Startup commands"
-msgstr "Comandi di avvio"
-
-#: meerk40t/grbl/device.py:610
-msgid "Which commands should be sent to the device on a successful connect?"
-msgstr "Quali comandi devono essere inviati al dispositivo in caso di connessione riuscita?"
-
 #: meerk40t/grbl/device.py:902
 msgid "macro to run (1-5)."
 msgstr "macro da eseguire (1-5)"
@@ -22233,10 +22228,6 @@ msgstr "Traccia un contorno interno agli elementi selezionati"
 msgid "Empty job definition..."
 msgstr "Definizione del lavoro vuota...."
 
-#: meerk40t/gui/basicops.py:476
-msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
-msgstr "C: Refrigerante = determina se il refrigerante rimane attivo / sarà acceso o spento all'inizio di questo processo"
-
 #: meerk40t/core/planner.py:189
 msgid "Combine path segments"
 msgstr "Combina i segmenti del percorso"
@@ -22356,6 +22347,14 @@ msgstr "Riferimento asse Z"
 msgid "Which command triggers the z-homing sequence"
 msgstr "Quale comando attiva la sequenza di riferimento dell'asse Z"
 
+#: meerk40t/grbl/device.py:607
+msgid "Startup commands"
+msgstr "Comandi di avvio"
+
+#: meerk40t/grbl/device.py:610
+msgid "Which commands should be sent to the device on a successful connect?"
+msgstr "Quali comandi devono essere inviati al dispositivo in caso di connessione riuscita?"
+
 #: meerk40t/grbl/device.py:665
 msgid "Homes the z-Axis"
 msgstr "Riferimenti dell'asse Z"
@@ -22383,6 +22382,14 @@ msgstr "Muove l'asse Z della quantità specificata"
 #: meerk40t/grbl/device.py:690
 msgid "No z-movement defined"
 msgstr "Nessun movimento dell'asse Z definito"
+
+#: meerk40t/grbl/device.py:696
+msgid "New z-axis position"
+msgstr "Nuova posizione dell'asse Z"
+
+#: meerk40t/grbl/device.py:699
+msgid "Moves the z-Axis to the given position"
+msgstr "Sposta l'asse Z nella posizione indicata"
 
 #: meerk40t/gui/navigationpanels.py:463
 msgid "Move the laser to the defined Z-Home-Position"
@@ -22435,3 +22442,39 @@ msgstr "Seleziona la posizione di posizionamento"
 #: meerk40t/gui/propertypanels/imageproperty.py:610
 msgid "No contours found."
 msgstr "Nessun contorno trovato."
+
+#: meerk40t/core/elements/element_treeops.py:3970
+msgid "Trace bitmap via vtracer"
+msgstr "Traccia bitmap tramite vtracer"
+
+#: meerk40t/core/elements/shapes.py:678
+msgid "property to get"
+msgstr "proprietà da ottenere"
+
+#: meerk40t/core/elements/shapes.py:681
+msgid "get property value"
+msgstr "ottieni il valore della proprietà"
+
+#: meerk40t/core/elements/shapes.py:729
+msgid "You need to provide the property to get."
+msgstr "Devi fornire la proprietà da ottenere."
+
+#: meerk40t/extra/vtracer.py:146
+msgid "Nothing selected"
+msgstr "Niente di selezionato"
+
+#: meerk40t/extra/vtracer.py:158
+msgid "Vectorizing image"
+msgstr "Vettorizzazione dell'immagine"
+
+#: meerk40t/extra/vtracer.py:215
+msgid "Time needed for vectorisation: {time_total}sec (analysis: {time_convert}sec, loading: {time_load}sec)"
+msgstr "Tempo necessario per la vettorizzazione: {time_total} sec (analisi: {time_convert} sec, caricamento: {time_load} sec)"
+
+#: meerk40t/gui/navigationpanels.py:535
+msgid "Right click: autofocus the Z-Axis"
+msgstr "Clic destro: autofocus dell'asse Z"
+
+#: meerk40t/network/console_server.py:20
+msgid "suppress input prompt '>>'"
+msgstr "DIsabilita il prompt di input '>>'"
