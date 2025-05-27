@@ -884,7 +884,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_command(
             "magnet",
             help=_("magnet <action> <axis> <position>"),
-            input_type="scene",
+            input_type=("scene", None),
         )
         def magnet_set(
             command,
@@ -908,6 +908,9 @@ class MeerK40tScenePanel(wx.Panel):
                     + _(
                         "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
                     )
+                    + _(
+                        "split x <count> - split y <count>: will generate <count> lines between the selection boundaries on the given axis"
+                    )
                 )
                 if opt_msg:
                     channel(opt_msg)
@@ -918,21 +921,33 @@ class MeerK40tScenePanel(wx.Panel):
             action = action.lower()
             axis = axis.upper()
             value = None
-            if pos:
-                try:
-                    rel_len = (
-                        self.context.device.view.width
-                        if axis == "X"
-                        else self.context.device.view.height
-                    )
-                    value = float(Length(pos, relative_length=rel_len))
-                except ValueError:
-                    info(f"Invalid length: {pos}")
-                    return
+            if action == "split":
+                if pos:
+                    try:
+                        value = int(pos)
+                    except ValueError:
+                        info(f"Invalid count: {pos}")
+                        return
 
-            if action != "clear" and value is None:
-                info(_("You need to provide a position"))
-                return
+                if value is None or value <= 0:
+                    info(_("You need to provide a number of splits"))
+                    return
+            else:
+                if pos:
+                    try:
+                        rel_len = (
+                            self.context.device.view.width
+                            if axis == "X"
+                            else self.context.device.view.height
+                        )
+                        value = float(Length(pos, relative_length=rel_len))
+                    except ValueError:
+                        info(f"Invalid length: {pos}")
+                        return
+
+                if action != "clear" and value is None:
+                    info(_("You need to provide a position"))
+                    return
 
             if action == "clear":
                 if axis == "X":
@@ -948,6 +963,38 @@ class MeerK40tScenePanel(wx.Panel):
                         axis=axis, count=count
                     )
                 )
+            elif action == "split":
+                bb = self.context.elements.selected_area()
+                if bb is None:
+                    channel(_("Nothing selected"))
+                    return
+
+                min_v = bb[0] if axis == "X" else bb[1]
+                max_v = bb[2] if axis == "X" else bb[3]
+                count = value + 1
+                delta = (max_v - min_v) / count
+                mvalue = min_v
+                while mvalue + delta < max_v:
+                    mvalue += delta
+                    if axis == "X":
+                        if mvalue not in self.magnet_x:
+                            self.magnet_x.append(mvalue)
+                    else:
+                        if mvalue not in self.magnet_y:
+                            self.magnet_y.append(mvalue)
+                self.save_magnets()
+                channel(
+                    _(
+                        "Created {count} magnet lines on {axis}-axis between {min_len} and {max_len}"
+                    ).format(
+                        count=count,
+                        axis=axis,
+                        min_len=Length(min_v, digits=1).length_mm,
+                        max_len=Length(max_v, digits=1).length_mm,
+                    )
+                )
+                self.context.signal("refresh_scene", "Scene")
+
             elif action == "set":
                 done = False
                 if axis == "X":
