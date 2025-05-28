@@ -2865,4 +2865,93 @@ def init_commands(kernel):
         self.set_emphasis(data_out)
         return "elements", data_out
 
+    @self.console_argument("xpos", type=Length, help=_("X-Position of cross center"))
+    @self.console_argument("ypos", type=Length, help=_("Y-Position of cross center"))
+    @self.console_argument("diameter", type=Length, help=_("Diameter of cross"))
+    @self.console_option(
+        "circle",
+        "c",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw a circle around cross"),
+    )
+    @self.console_option(
+        "diagonal",
+        "d",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw the cross diagonally"),
+    )
+    @self.console_command(
+        "cross",
+        help=_("Create a small cross at the given position"),
+        input_type=None,
+        output_type="elements",
+    )
+    def cross(
+        command,
+        channel,
+        _,
+        data=None,
+        xpos=None,
+        ypos=None,
+        diameter=None,
+        circle=None,
+        diagonal=None,
+        post=None,
+        **kwargs,
+    ):
+        if xpos is None or ypos is None or diameter is None:
+            channel(_("You need to provide center-point and diameter: cross x y d"))
+            return
+        try:
+            xp = float(xpos)
+            yp = float(ypos)
+            dia = float(diameter)
+        except ValueError:
+            channel(_("Invalid values given"))
+            return
+        if circle is None:
+            circle = False
+        if diagonal is None:
+            diagonal = False
+        geom = Geomstr()
+        if diagonal:
+            sincos45 = dia / 2 * sqrt(2) / 2
+            geom.line(
+                complex(xp - sincos45, yp - sincos45),
+                complex(xp + sincos45, yp + sincos45),
+            )
+            geom.line(
+                complex(xp + sincos45, yp - sincos45),
+                complex(xp - sincos45, yp + sincos45),
+            )
+        else:
+            geom.line(complex(xp - dia / 2, yp), complex(xp + dia / 2, yp))
+            geom.line(complex(xp, yp - dia / 2), complex(xp, yp + dia / 2))
+        if circle:
+            geom.append(Geomstr.circle(dia / 2, xp, yp))
+        # _("Create cross") - hint for translator
+        with self.undoscope("Create cross"):
+            node = self.elem_branch.add(
+                label=_("Cross at ({xp}, {yp})").format(
+                    xp=xpos.length_mm, yp=ypos.length_mm
+                ),
+                geometry=geom,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=None,
+                type="elem path",
+            )
+            if data is None:
+                data = []
+            data.append(node)
+
+            # Newly created! Classification needed?
+            post.append(classify_new(data))
+        self.signal("refresh_scene", "Scene")
+        return "elements", data
+
     # --------------------------- END COMMANDS ------------------------------
