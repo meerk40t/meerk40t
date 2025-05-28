@@ -22224,3 +22224,11 @@ msgstr "Die Anzahl der Zwischenlinien fehlt"
 #: meerk40t/gui/wxmscene.py:989
 msgid "Created {count} magnet lines on {axis}-axis between {min_len} and {max_len}"
 msgstr "Es wurden {count} Magnetlinien zwischen {min_len} und {max_len} auf der {axis}-Achse erzeugt"
+
+#: meerk40t/gui/wxmmain.py:4071
+msgid "Editing History"
+msgstr "Bearbeitungshistorie"
+
+#: meerk40t/gui/wxmmain.py:4084
+msgid "Recall..."
+msgstr "Wiederherstellen..."
