@@ -2196,10 +2196,9 @@ class MeerK40t(MWindow):
                 "action": exec_plain("clipboard cut\n"),
                 "size": bsize_small,
                 "identifier": "editcut",
-                "rule_enabled": lambda cond: len(
-                    list(kernel.elements.elems(emphasized=True))
-                )
-                > 0,
+                "rule_enabled": lambda cond: any(
+                    kernel.elements.elems(emphasized=True)
+                ),
             },
         )
         kernel.register(
@@ -2212,10 +2211,9 @@ class MeerK40t(MWindow):
                 "action": exec_plain("clipboard copy\n"),
                 "size": bsize_small,
                 "identifier": "editcopy",
-                "rule_enabled": lambda cond: len(
-                    list(kernel.elements.elems(emphasized=True))
-                )
-                > 0,
+                "rule_enabled": lambda cond: any(
+                    kernel.elements.elems(emphasized=True)
+                ),
             },
         )
 
@@ -4002,6 +4000,9 @@ class MeerK40t(MWindow):
         local_choices = choices
         return handler
 
+    """
+    Old code for separated undo / redo menu entries
+
     def _update_undo_redo_submenu_splitted(self):
         def undo_jump(index):
             def handler(event):
@@ -4056,14 +4057,9 @@ class MeerK40t(MWindow):
                 submenu.Append(menuitem)
                 self.Bind(wx.EVT_MENU, redo_jump(idx), id=menuitem.GetId())
         edit_menu.Insert(redo_index + 1, wx.ID_ANY, label, submenu)
+    """
 
     def _update_undo_redo_submenu(self):
-        def undo_jump(index):
-            def handler(event):
-                self.context(f"undo {index}\n")
-
-            return handler
-
         def redo_jump(index):
             def handler(event):
                 self.context(f"undo {index + 1}\n")
