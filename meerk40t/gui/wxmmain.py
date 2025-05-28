@@ -10,7 +10,7 @@ import wx
 from PIL import Image
 from wx import aui
 
-from meerk40t.core.exceptions import BadFileError
+# from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.gui_mixins import FormatPainter, Warnings
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.infowidget import (
@@ -970,7 +970,7 @@ class MeerK40t(MWindow):
         # print (f"Set Tooltips to {self.tooltips}")
         try:
             wx.ToolTip.Enable(self.tooltips)
-        except Exception as e:
+        except Exception:
             pass
 
     # --- Listen to external events to toggle regmark visibility
@@ -2516,11 +2516,9 @@ class MeerK40t(MWindow):
             my_parent = None
             for node in data:
                 this_parent = None
-                if hasattr(node, "parent"):
-                    if hasattr(node.parent, "type"):
-                        if node.parent.type in ("group", "file"):
-                            this_parent = node.parent
-                if my_parent is None:
+                if hasattr(node, "parent") and hasattr(node.parent, "type"):
+                    if node.parent.type in ("group", "file"):
+                        this_parent = node.parent
                     if this_parent is not None:
                         my_parent = this_parent
                 else:
@@ -2578,27 +2576,25 @@ class MeerK40t(MWindow):
             with kernel.elements.undoscope("Ungroup"):
                 found_some = False
                 for node in list(kernel.elements.elems(emphasized=True)):
-                    if node is not None:
-                        if node.type in ("group", "file"):
-                            found_some = True
-                            release_em(node)
+                    if node is not None and node.type in ("group", "file"):
+                        found_some = True
+                        release_em(node)
                 if not found_some:
                     # So let's see that we address the parents...
                     for node in list(kernel.elements.elems(emphasized=True)):
-                        if node is not None:
-                            if hasattr(node, "parent"):
-                                if hasattr(node.parent, "type"):
-                                    if node.parent.type in ("group", "file"):
-                                        release_em(node.parent)
+                        if (
+                            node is not None
+                            and hasattr(node, "parent")
+                            and hasattr(node.parent, "type")
+                            and node.parent.type in ("group", "file")
+                        ):
+                            release_em(node.parent)
 
         def part_of_group():
-            result = False
             for node in list(kernel.elements.elems(emphasized=True)):
-                if hasattr(node, "parent"):
-                    if node.parent.type in ("group", "file"):
-                        result = True
-                        break
-            return result
+                if hasattr(node, "parent") and node.parent.type in ("group", "file"):
+                    return True
+            return False
 
         kernel.register(
             "button/group/Ungroup",
@@ -4006,7 +4002,7 @@ class MeerK40t(MWindow):
         local_choices = choices
         return handler
 
-    def _update_undo_redo_submenu(self):
+    def _update_undo_redo_submenu_splitted(self):
         def undo_jump(index):
             def handler(event):
                 self.context(f"undo {index}\n")
@@ -4060,6 +4056,64 @@ class MeerK40t(MWindow):
                 submenu.Append(menuitem)
                 self.Bind(wx.EVT_MENU, redo_jump(idx), id=menuitem.GetId())
         edit_menu.Insert(redo_index + 1, wx.ID_ANY, label, submenu)
+
+    def _update_undo_redo_submenu(self):
+        def undo_jump(index):
+            def handler(event):
+                self.context(f"undo {index}\n")
+
+            return handler
+
+        def redo_jump(index):
+            def handler(event):
+                self.context(f"undo {index + 1}\n")
+
+            return handler
+
+        is_windows = platform.system() == "Windows"
+        edit_menu = self.edit_menu
+        label = _("Editing History")
+        index = edit_menu.FindItem(label)
+        if index != -1:
+            item = edit_menu.Remove(index)
+            if item:
+                item.Destroy()
+        undo = self.context.elements.undo
+        if not (undo.has_undo() or undo.has_redo()):
+            return
+        undo.validate()
+        # We need the position of the menu to insert
+        item, redo_index = edit_menu.FindChildItem(wx.ID_REDO)
+        submenu = wx.Menu()
+        menuitem = wx.MenuItem(submenu, wx.ID_ANY, _("Recall..."), "")
+        # if is_windows:
+        #     font = menuitem.GetFont()
+        #     font.MakeBold()
+        #     menuitem.SetFont(font)
+        submenu.Append(menuitem)
+        menuitem.Enable(False)
+        has_entries = False
+        for idx in range(1, len(undo._undo_stack) - 1):
+            state = undo._undo_stack[idx]
+            # print (f"{idx}{'*' if idx == undo._undo_index else ' '}: {state.message}")
+            trailer = ""
+            has_entries = True
+            if idx == undo._undo_index - 1:
+                trailer = " (*)"
+            menuitem = wx.MenuItem(
+                submenu, wx.ID_ANY, f"{idx}: {_(state.message)}{trailer}"
+            )
+            if idx == undo._undo_index - 1 and is_windows:
+                font = menuitem.GetFont()
+                font.MakeBold()
+                menuitem.SetFont(font)
+
+            submenu.Append(menuitem)
+            self.Bind(wx.EVT_MENU, redo_jump(idx), id=menuitem.GetId())
+        if has_entries:
+            edit_menu.Insert(redo_index + 1, wx.ID_ANY, label, submenu)
+        else:
+            submenu.Destroy()
 
     def __set_edit_menu(self):
         """
