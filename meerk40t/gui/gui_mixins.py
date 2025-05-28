@@ -63,6 +63,8 @@ class FormatPainter:
             ("linecap", True),
             ("linejoin", True),
             ("fillrule", True),
+            ("stroke_dash", True),
+            ("mktablength", False),
             # Image attributes
             ("dpi", False),
             ("operations", False),
@@ -193,6 +195,8 @@ class FormatPainter:
                         flag_changed = True
 
                     if flag_changed:
+                        if hasattr(node, "empty_cache"):
+                            node.empty_cache()
                         nodes_changed.append(node)
                         if node.type == "elem image":
                             nodes_images.append(node)
