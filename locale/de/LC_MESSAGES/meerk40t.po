@@ -22176,3 +22176,51 @@ msgstr "Vektorisiere Bitmap-Grafik"
 #: meerk40t/extra/vtracer.py:215
 msgid "Time needed for vectorisation: {time_total}sec (analysis: {time_convert}sec, loading: {time_load}sec)"
 msgstr "Benötigte Zeit für Vektorisierung: {time_total}sec (Analyse: {time_convert}sec, Laden: {time_load}sec)"
+
+#: meerk40t/core/elements/shapes.py:2868
+msgid "X-Position of cross center"
+msgstr "X-Position des Kreuz-Mittelpunkts"
+
+#: meerk40t/core/elements/shapes.py:2869
+msgid "Y-Position of cross center"
+msgstr "Y-Position des Kreuz-Mittelpunkts"
+
+#: meerk40t/core/elements/shapes.py:2870
+msgid "Diameter of cross"
+msgstr "Abmessungen des Kreuzes"
+
+#: meerk40t/core/elements/shapes.py:2877
+msgid "Draw a circle around cross"
+msgstr "Zeichnet einen Kreis um das Kreuz"
+
+#: meerk40t/core/elements/shapes.py:2885
+msgid "Draw the cross diagonally"
+msgstr "Zeichnet das Kreuz diagonal"
+
+#: meerk40t/core/elements/shapes.py:2889
+msgid "Create a small cross at the given position"
+msgstr "Erzeugt ein kleines (Markierungs-)Kreuz an der angegebenen Position"
+
+#: meerk40t/core/elements/shapes.py:2907
+msgid "You need to provide center-point and diameter: cross x y d"
+msgstr "Der Mittelpunkt und die Abmessungen des Kreuzes müssen angegeben werden: cross x y d"
+
+#: meerk40t/core/elements/shapes.py:2936
+msgid "Create cross"
+msgstr "Erzeuge Kreuz"
+
+#: meerk40t/core/elements/shapes.py:2939
+msgid "Cross at ({xp}, {yp})"
+msgstr "Kreuz bei ({xp}, {yp})"
+
+#: meerk40t/gui/wxmscene.py:913
+msgid "split x <count> - split y <count>: will generate <count> lines between the selection boundaries on the given axis"
+msgstr "split x <count> - split y <count>: generiert <count> Magnetlinien zwischen den Auswahl-Abmessungen auf der angegebenen Achse"
+
+#: meerk40t/gui/wxmscene.py:933
+msgid "You need to provide a number of splits"
+msgstr "Die Anzahl der Zwischenlinien fehlt"
+
+#: meerk40t/gui/wxmscene.py:989
+msgid "Created {count} magnet lines on {axis}-axis between {min_len} and {max_len}"
+msgstr "Es wurden {count} Magnetlinien zwischen {min_len} und {max_len} auf der {axis}-Achse erzeugt"
