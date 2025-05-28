@@ -1168,7 +1168,7 @@ class TemplatePanel(wx.Panel):
 
                     # Do we need to prep the op?
                     if param_prepper_1 is not None:
-                        param_prepper_1(this_op)
+                        param_prepper_1(master_op)
 
                     if param_keep_unit_1:
                         value = str(p_value_1) + param_unit_1
@@ -1207,7 +1207,7 @@ class TemplatePanel(wx.Panel):
 
                     # Do we need to prep the op?
                     if param_prepper_2 is not None:
-                        param_prepper_2(this_op)
+                        param_prepper_2(master_op)
 
                     if param_keep_unit_2:
                         value = str(p_value_2) + param_unit_2
