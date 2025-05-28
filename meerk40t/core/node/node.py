@@ -540,12 +540,17 @@ class Node:
             "_emphasized_time",
             "_highlighted",
             "_expanded",
+            "_translated_text",
         )
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
             for att in attrib_list:
-                if getattr(node_copy, att) != getattr(c, att):
+                if not hasattr(c, att):
+                    continue
+                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
+                    c, att
+                ):
                     # print (f"Strange {att} not identical, fixing")
                     setattr(node_copy, att, getattr(c, att))
             node_copy._root = self._root
