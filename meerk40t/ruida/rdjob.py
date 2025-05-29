@@ -703,7 +703,7 @@ class RDJob:
     def set_color(self, color):
         self.color = color
 
-    def process(self, array, offset=0xFFFFFF):
+    def process(self, array, offset=None):
         """
         Parses an individual unswizzled ruida command, updating the emulator state.
 
@@ -1242,7 +1242,8 @@ class RDJob:
         else:
             desc = "Unknown Command!"
         if self.channel:
-            self.channel(f"{offset:06x}-**-> {str(bytes(array).hex())}\t({desc})")
+            prefix = f"{offset:06x}" if offset is not None else ''
+            self.channel(f"{prefix}-**-> {str(bytes(array).hex())}\t({desc})")
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
