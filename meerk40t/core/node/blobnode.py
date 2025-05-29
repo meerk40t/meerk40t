@@ -41,8 +41,8 @@ class BlobNode(Node):
         return False
 
     @staticmethod
-    def hex_view(data, data_type):
-        header1 = f"Data-Type: {data_type}, Length={len(data)}\n"
+    def hex_view(data, data_type, info=''):
+        header1 = f"Data-Type: {data_type}, Length={len(data)}{info}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
         if isinstance(data, str):
@@ -70,8 +70,8 @@ class BlobNode(Node):
         return header1 + header2 + "".join(hex_data)
 
     @staticmethod
-    def ascii_view(data, data_type):
-        header1 = f"Data-Type: {data_type}, Length={len(data)}\n"
+    def ascii_view(data, data_typee, info=''):
+        header1 = f"Data-Type: {data_type}, Length={len(data)}{info}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
         if isinstance(data, str):
