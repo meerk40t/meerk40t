@@ -42,6 +42,13 @@ class BlobNode(Node):
 
     @staticmethod
     def hex_view(data, data_type, info=''):
+        """
+        Render a hex dump with an optional info header.
+
+        data: bytes to display
+        data_type: mime type
+        info: an arbitrary string to append to the end of first line of header
+        """
         header1 = f"Data-Type: {data_type}, Length={len(data)}{info}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
@@ -71,6 +78,14 @@ class BlobNode(Node):
 
     @staticmethod
     def ascii_view(data, data_type, info=''):
+        """
+        Render an ascii view with an optional info header.
+
+        data: bytes to display
+        data_type: mime type
+        info: an arbitrary string to append to the end of first line of header
+        """
+
         header1 = f"Data-Type: {data_type}, Length={len(data)}{info}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
