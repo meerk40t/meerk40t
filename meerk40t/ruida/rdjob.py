@@ -1012,12 +1012,44 @@ class RDJob:
         elif array[0] == 0xD8:
             if array[1] == 0x00:
                 desc = "Start Process"
-            if array[1] == 0x10:
+            elif array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
-            if array[1] == 0x11:
+            elif array[1] == 0x11:
                 desc = "Ref Point Mode 1, Anchor Point"
-            if array[1] == 0x12:
+            elif array[1] == 0x12:
                 desc = "Ref Point Mode 0, Current Position"
+        elif array[0] == 0xD9:
+            if array[1] == 0x00:
+                opts = array[2]
+                value = abscoord(array[2:7])
+                desc = f"Rapid move X ({value}μm)"
+            elif array[1] == 0x01:
+                opts = array[2]
+                value = abscoord(array[2:7])
+                desc = f"Rapid move Y ({value}μm)"
+            elif array[1] == 0x02:
+                opts = array[2]
+                value = abscoord(array[2:7])
+                desc = f"Rapid move Z ({value}μm)"
+            elif array[1] == 0x03:
+                opts = array[2]
+                value = abscoord(array[2:7])
+                desc = f"Rapid move U ({value}μm)"
+            elif array[1] == 0x0F:
+                opts = array[2]
+                value = abscoord(array[2:7])
+                desc = f"Rapid move Feed ({value}μm)"
+            elif array[1] == 0x10:
+                opts = array[2]
+                x = abscoord(array[2:7])
+                y = abscoord(array[7:12])
+                desc = f"Rapid move XY ({x}μm, {y}μm)"
+            elif array[1] == 0x30:
+                opts = array[2]
+                x = abscoord(array[2:7])
+                y = abscoord(array[7:12])
+                u = abscoord(array[12:17])
+                desc = f"Rapid move XYU ({x}μm, {y}μm, {u}μm)"
         elif array[0] == 0xDA:
             mem = parse_mem(array[2:4])
             if array[1] == 0x01:
