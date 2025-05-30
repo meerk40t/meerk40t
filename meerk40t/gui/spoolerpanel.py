@@ -143,7 +143,9 @@ class SpoolerPanel(wx.Panel):
         self.check_silent = wx.CheckBox(self.win_top, wx.ID_ANY)
         self.check_silent.SetValue(self.context.silent_mode)
         self.check_silent.SetToolTip(
-            _("If checked, the spooler will not emit any signals while processing jobs")
+            _(
+                "If checked, the spooler will not emit any sound signals while processing jobs"
+            )
         )
 
         self.list_job_spool = wxListCtrl(
