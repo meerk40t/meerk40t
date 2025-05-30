@@ -256,6 +256,8 @@ def encode_relcoord(coord):
 
 
 def encode_color(color):
+    # Scewed on RDC 22.01
+    # Maybe 16bit color is used?
     return encode32(int(color))
 
 
@@ -976,7 +978,7 @@ class RDJob:
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.set_color(c.hex)
-                desc = f"{part}, Color {self.color}"
+                desc = f"Color Part {part}, {self.color}"
             elif array[1] == 0x10:
                 value = array[2]
                 desc = f"EnExIO Start {value}"
@@ -1325,6 +1327,9 @@ class RDJob:
             color = current_settings.get("line_color", 0)
             frequency = current_settings.get("frequency")
 
+            if color == 0:
+                color = current_settings.get("color", color)
+
             self.speed_laser_1_part(part, speed)
             if frequency:
                 self.frequency_part(0, part, frequency)
@@ -1670,7 +1675,7 @@ class RDJob:
         self(LAYER_COLOR, encode_color(color), output=output)
 
     def layer_color_part(self, part, color, output=None):
-        self(LAYER_COLOR, encode_part(part), encode_color(color), output=output)
+        self(LAYER_COLOR_PART, encode_part(part), encode_color(color), output=output)
 
     def en_ex_io(self, value, output=None):
         """
