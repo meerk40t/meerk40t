@@ -5,6 +5,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.node.effect_hatch import HatchEffectNode
+from meerk40t.core.node.effect_wobble import WobbleEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
@@ -185,7 +186,14 @@ class TemplatePanel(wx.Panel):
         self.callback = None
         self.secondary_callback = None
         self.current_op = None
-        opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
+        opchoices = [
+            _("Cut"),
+            _("Engrave"),
+            _("Raster"),
+            _("Image"),
+            _("Hatch"),
+            _("Wobble"),
+        ]
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
         self.secondary_default_op = []
@@ -211,6 +219,12 @@ class TemplatePanel(wx.Panel):
         op = EngraveOpNode()
         self.default_op.append(op)
         self.secondary_default_op.append(HatchEffectNode())
+        self.color_scheme_free.append(True)
+
+        # Wobble = Cut
+        op = CutOpNode()
+        self.default_op.append(op)
+        self.secondary_default_op.append(WobbleEffectNode())
         self.color_scheme_free.append(True)
 
         self.use_image = [False] * len(self.default_op)
@@ -765,6 +779,51 @@ class TemplatePanel(wx.Panel):
                 ("hatch_distance", None, _("Hatch Distance"), "mm", False, True, None),
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True, None),
             ]
+        elif opidx == 5:
+            # Wobble
+            # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive, type)
+            self.parameters = [
+                ("speed", None, _("Speed"), speed_unit, False, True, None),
+                ("power", None, _("Power"), ppi, False, True, None),
+                ("passes", preset_passes, _("Passes"), "x", False, True, int),
+                # wobble_radius
+                (
+                    "wobble_radius",
+                    preset_balor_wobble,
+                    _("Wobble Radius"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_interval",
+                    preset_balor_wobble,
+                    _("Wobble Interval"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_speed",
+                    preset_balor_wobble,
+                    _("Wobble Speed Multiplier"),
+                    "x",
+                    False,
+                    True,
+                    None,
+                ),
+                # (
+                #     "wobble_type",
+                #     preset_balor_wobble,
+                #     _("Wobble Type"),
+                #     "",
+                #     True,
+                #     True,
+                #     None,
+                # ),
+            ]
 
         if "balor" in self.context.device.path:
             balor_choices = [
@@ -805,34 +864,39 @@ class TemplatePanel(wx.Panel):
                     False,
                     None,
                 ),
-                (
-                    "wobble_radius",
-                    preset_balor_wobble,
-                    _("Wobble Radius"),
-                    "mm",
-                    True,
-                    True,
-                    None,
-                ),
-                (
-                    "wobble_interval",
-                    preset_balor_wobble,
-                    _("Wobble Interval"),
-                    "mm",
-                    True,
-                    True,
-                    None,
-                ),
-                (
-                    "wobble_speed",
-                    preset_balor_wobble,
-                    _("Wobble Speed Multiplier"),
-                    "x",
-                    False,
-                    True,
-                    None,
-                ),
             ]
+            if opidx != 5:  # Wobble
+                balor_choices.extend(
+                    [
+                        (
+                            "wobble_radius",
+                            preset_balor_wobble,
+                            _("Wobble Radius"),
+                            "mm",
+                            True,
+                            True,
+                            None,
+                        ),
+                        (
+                            "wobble_interval",
+                            preset_balor_wobble,
+                            _("Wobble Interval"),
+                            "mm",
+                            True,
+                            True,
+                            None,
+                        ),
+                        (
+                            "wobble_speed",
+                            preset_balor_wobble,
+                            _("Wobble Speed Multiplier"),
+                            "x",
+                            False,
+                            True,
+                            None,
+                        ),
+                    ]
+                )
             if self.context.device.pulse_width_enabled:
                 balor_choices.append(
                     (
@@ -846,8 +910,7 @@ class TemplatePanel(wx.Panel):
                     )
                 )
 
-            for entry in balor_choices:
-                self.parameters.append(entry)
+            self.parameters.extend(balor_choices)
         # for p in self.parameters:
         #     if len(p) != 7:
         #         print (f"No good: {p}")
@@ -1197,6 +1260,13 @@ class TemplatePanel(wx.Panel):
                         master_op.add_node(this_op)
 
                         # We need to add a hatch node and make this the target for parameter application
+                        usefill = False
+                    elif optype == 5:  # Wobble
+                        # Wobble is a special case, we need to create a master op and a secondary op
+                        # We need to add a wobble node and make this the target for parameter application
+                        master_op = copy(self.default_op[optype])
+                        this_op = copy(self.secondary_default_op[optype])
+                        master_op.add_node(this_op)
                         usefill = False
                     else:
                         return
