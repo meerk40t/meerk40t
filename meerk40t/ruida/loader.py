@@ -15,9 +15,11 @@ def data_viewer(data, data_type):
 
     if not data:
         return ""
+    magic = determine_magic_via_histogram(data)
     return BlobNode.hex_view(
-        data=decode_bytes(data, determine_magic_via_histogram(data)),
+        data=decode_bytes(data, magic),
         data_type=data_type,
+        info = f', Magic={magic} (0x{magic:02x})'
     )
 
 

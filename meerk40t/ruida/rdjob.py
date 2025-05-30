@@ -490,6 +490,7 @@ class RDJob:
         self._stopped = True
         self.enabled = True
         self._estimate = 0
+        self.offset = 0
 
         self.scale = UNITS_PER_uM
 
@@ -600,7 +601,8 @@ class RDJob:
             command = self.buffer.pop(0)
         try:
             array = list(command)
-            self.process(array)
+            self.process(array, offset=self.offset)
+            self.offset += len(command)
         except IndexError as e:
             raise RuidaCommandError(
                 f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}"
@@ -703,7 +705,7 @@ class RDJob:
     def set_color(self, color):
         self.color = color
 
-    def process(self, array):
+    def process(self, array, offset=None):
         """
         Parses an individual unswizzled ruida command, updating the emulator state.
 
@@ -1274,7 +1276,8 @@ class RDJob:
         else:
             desc = "Unknown Command!"
         if self.channel:
-            self.channel(f"-**-> {str(bytes(array).hex())}\t({desc})")
+            prefix = f"{offset:06x}" if offset is not None else ''
+            self.channel(f"{prefix}-**-> {str(bytes(array).hex())}\t({desc})")
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
