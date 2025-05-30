@@ -182,6 +182,7 @@ class Kernel(Settings):
 
         self.os_information = self._get_environment()
         self.show_aio_prompt = True
+        self.silent_mode = False
 
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
@@ -2865,8 +2866,35 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        @self.console_command("silent", _("Set/unset silent mode"))
+        def set_silent(channel, _, remainder=None, **kwargs):
+            """
+            Set or unset silent mode. In silent mode no beeps will be played.
+            """
+            if remainder is None:
+                channel(
+                    _("Silent mode is currently {mode}.").format(
+                        mode="ON" if self.silent_mode else "OFF"
+                    )
+                )
+                return
+            if remainder.lower() not in ("on", "off"):
+                channel(_("Please specify 'on' or 'off' to set silent mode."))
+                return
+            if remainder.lower() == "on":
+                self.silent_mode = True
+            else:
+                self.silent_mode = False
+            if self.silent_mode:
+                channel(_("Silent mode is now ON."))
+            else:
+                channel(_("Silent mode is now OFF."))
+
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
+            if self.silent_mode:
+                channel(_("Silent mode is on, no beep will be played."))
+                return
             OS_NAME = self.os_information["OS_NAME"]
             system_sound = {
                 "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
