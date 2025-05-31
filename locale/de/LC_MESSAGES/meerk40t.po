@@ -5281,6 +5281,10 @@ msgstr ""
 "Innenliegendes zuerst' \n"
 "* Falls mehrere Durchgänge genutzt werden, wähle 'Verbinde Durchläufe' aus"
 
+#: meerk40t/core/planner.py:104 meerk40t/core/planner.py:236
+msgid "Notabene: Reduce Travel Time and Burn Inner First cannont be used at the same time."
+msgstr "Achtung: 'Verringere Bewegungen' und 'Brenne innenliegendes' können nicht gleichzeitig verwendet werden."
+
 #: meerk40t/core/planner.py:173
 msgid "Group Inner Burns"
 msgstr "Fasse Innere Brennvorgänge zusammen"
