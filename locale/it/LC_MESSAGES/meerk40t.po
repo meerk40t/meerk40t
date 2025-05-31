@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
-"PO-Revision-Date: 29-05-25 10:00UTC\n"
+"PO-Revision-Date: 30-05-25 10:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation\n"
@@ -21924,7 +21924,9 @@ msgstr "Visualizzazione coordinate"
 
 #: meerk40t/gui/wxmmain.py:1222
 msgid "What coordination information shall be displayed while moving: to all edges, left/upper edge or none at all"
-msgstr "Quali informazioni di coordinata devono essere visualizzate durante lo spostamento: a tutti i bordi, al bordo sinistro/superiore o nessuno?"
+msgstr ""
+"Quali informazioni di coordinata devono essere visualizzate durante lo spostamento: \n"
+"a tutti i bordi, al bordo sinistro/superiore o nessuno?"
 
 #: meerk40t/gui/wxmmain.py:1227
 msgid "All edges"
@@ -22551,3 +22553,7 @@ msgstr "Cronologia modifiche"
 #: meerk40t/gui/wxmmain.py:4084
 msgid "Recall..."
 msgstr "Richiama..."
+
+#: meerk40t/core/planner.py:48
+msgid "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+msgstr "Nota bene: Riduce il tempo di percorrenza e processa prima l'interno. Non possono essere utilizzati contemporaneamente"
