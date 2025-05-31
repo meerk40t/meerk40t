@@ -198,65 +198,77 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
     Returns:
         List of stitched Geomstr objects, or None if no stitches were made.
     """
+    # def coord(point):
+    #     return f"{point.real:.2f},{point.imag:.2f}"
 
     geometries = [g for g in geometry_list if g is not None]
     if not geometries:
         return None
     if tolerance == 0:
         tolerance = 1e-6
+    anystitches = 1
+    pass_count = 0
+    while anystitches > 0:
+        stitched_geometries = []
+        anystitches = 0
+        while geometries:
+            g1 = geometries.pop(0)
+            stitched = False
+            for i, g2 in enumerate(stitched_geometries):
+                for reverse1 in (False, True):
+                    for reverse2 in (False, True):
+                        g1_start = g1.last_point if reverse1 else g1.first_point
+                        g1_end = g1.first_point if reverse1 else g1.last_point
+                        g2_start = g2.last_point if reverse2 else g2.first_point
+                        g2_end = g2.first_point if reverse2 else g2.last_point
 
-    stitched_geometries = []
-    while geometries:
-        g1 = geometries.pop(0)
-        stitched = False
-        for i, g2 in enumerate(stitched_geometries):
-            for reverse1 in (False, True):
-                for reverse2 in (False, True):
-                    g1_start = g1.last_point if reverse1 else g1.first_point
-                    g1_end = g1.first_point if reverse1 else g1.last_point
-                    g2_start = g2.last_point if reverse2 else g2.first_point
-                    g2_end = g2.first_point if reverse2 else g2.last_point
+                        if (
+                            g1_start is None
+                            or g1_end is None
+                            or g2_start is None
+                            or g2_end is None
+                        ):
+                            continue
 
-                    if (
-                        g1_start is None
-                        or g1_end is None
-                        or g2_start is None
-                        or g2_end is None
-                    ):
-                        continue
-                    if abs(g2_end - g1_start) <= tolerance:
-                        if abs(g2_end - g1_start) > 0:
-                            g2.line(g2_end, g1_start)
-                        if reverse1:
-                            g1.reverse()
-                        g2.append(g1, end=False)
-                        stitched_geometries[i] = g2
-                        stitched = True
-                        break
-                    elif abs(g2_start - g1_end) <= tolerance:
-                        if abs(g2_start - g1_end) > 0:
-                            g1.line(g1_end, g2_start)
-                        if reverse1:
-                            g1.reverse()
-                        g2.insert(0, g1.segments[: g1.index])
-                        stitched_geometries[i] = g2
-                        stitched = True
+                        if abs(g2_end - g1_start) <= tolerance:
+                            if abs(g2_end - g1_start) > 0:
+                                g2.line(g2_end, g1_start)
+                            if reverse1:
+                                g1.reverse()
+                            g2.append(g1, end=False)
+                            stitched_geometries[i] = g2
+                            stitched = True
+                            break
+                        elif abs(g2_start - g1_end) <= tolerance:
+                            if abs(g2_start - g1_end) > 0:
+                                g1.line(g1_end, g2_start)
+                            if reverse1:
+                                g1.reverse()
+                            g2.insert(0, g1.segments[: g1.index])
+                            stitched_geometries[i] = g2
+                            stitched = True
+                            break
+                    if stitched:
                         break
                 if stitched:
                     break
+
             if stitched:
-                break
+                anystitches += 1
+            else:
+                stitched_geometries.append(g1)
 
-        if not stitched:
-            stitched_geometries.append(g1)
-
-    # Close any remaining small gaps between start and end points.
-    for g in stitched_geometries:
-        if 0 < abs(g.last_point - g.first_point) <= tolerance:
-            g.line(g.last_point, g.first_point)
+        # Close any remaining small gaps between start and end points.
+        for g in stitched_geometries:
+            if 0 < abs(g.last_point - g.first_point) <= tolerance:
+                g.line(g.last_point, g.first_point)
+        # print (f"Stitch pass {pass_count}: {len(stitched_geometries)} geometries, {anystitches} stitches made.")
+        if anystitches > 0:
+            # Stitches were made, so lets try again
+            geometries = list(stitched_geometries)
+            pass_count += 1
 
     return stitched_geometries
-
 
 
 class Simplifier:
