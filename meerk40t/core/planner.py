@@ -97,6 +97,10 @@ def plugin(kernel, lifecycle=None):
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
+                )
+                + "\n"
+                + _(
+                    "Notabene: Reduce Travel Time and Burn Inner First cannont be used at the same time."
                 ),
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
@@ -187,9 +191,11 @@ def plugin(kernel, lifecycle=None):
                 "default": False,
                 "type": bool,
                 "label": _("Combine path segments"),
-                "tip": 
-                    _("Stitch segments together that are very close (ideally having joint start/end points).") + "\n" +
-                    _("Only inside a single cut/engrave operation."),
+                "tip": _(
+                    "Stitch segments together that are very close (ideally having joint start/end points)."
+                )
+                + "\n"
+                + _("Only inside a single cut/engrave operation."),
                 "page": "Optimisations",
                 "section": "_05_Stitching",
             },
@@ -199,7 +205,9 @@ def plugin(kernel, lifecycle=None):
                 "default": "0",
                 "type": Length,
                 "label": _("Tolerance"),
-                "tip": _("Tolerance to decide whether two path segments should be joined."),
+                "tip": _(
+                    "Tolerance to decide whether two path segments should be joined."
+                ),
                 "page": "Optimisations",
                 "section": "_05_Stitching",
                 "conditional": (context, "opt_stitching"),
@@ -221,6 +229,10 @@ def plugin(kernel, lifecycle=None):
                     + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
+                )
+                + "\n"
+                + _(
+                    "Notabene: Reduce Travel Time and Burn Inner First cannont be used at the same time."
                 ),
                 "page": "Optimisations",
                 "section": "_10_Burn sequence",
@@ -285,8 +297,11 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Keep effect lines together"),
                 "tip": (
-                    _("Active: effects like hatches are dealt with as a bigger shape") + "\n" +
-                    _("Inactive: every single line segment will be dealt with individually.")
+                    _("Active: effects like hatches are dealt with as a bigger shape")
+                    + "\n"
+                    + _(
+                        "Inactive: every single line segment will be dealt with individually."
+                    )
                 ),
                 "page": "Optimisations",
                 "section": "_25_Effects",
@@ -298,8 +313,9 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Optimize internally"),
                 "tip": (
-                    _("Active: hatch lines will be optimized internally") + "\n" +
-                    _("Inactive: hatch lines will be burnt sequentially.")
+                    _("Active: hatch lines will be optimized internally")
+                    + "\n"
+                    + _("Inactive: hatch lines will be burnt sequentially.")
                 ),
                 "page": "Optimisations",
                 "section": "_25_Effects",

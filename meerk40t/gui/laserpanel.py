@@ -888,6 +888,22 @@ class OptimizePanel(wx.Panel):
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
 
+    @signal_listener("opt_inner_first")
+    def opt_inner_update(self, origin, *message):
+        # opt_inner_first and opt_reduce_travel are mutually exclusive
+        inner_first = self.context.planner.opt_inner_first
+        if inner_first and self.context.planner.opt_reduce_travel:
+            self.context.planner.opt_reduce_travel = False
+            self.optimize_panel.reload()
+
+    @signal_listener("opt_reduce_travel")
+    def opt_reduce_travel_update(self, origin, *message):
+        # opt_inner_first and opt_reduce_travel are mutually exclusive
+        reduce_travel = self.context.planner.opt_reduce_travel
+        if reduce_travel and self.context.planner.opt_inner_first:
+            self.context.planner.opt_inner_first = False
+            self.optimize_panel.reload()
+
     def on_optimize(self, event):
         newvalue = bool(self.checkbox_optimize.GetValue())
         if newvalue != self.context.planner.do_optimization:
