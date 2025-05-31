@@ -43,7 +43,9 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("planner", choices)
-
+        INNER_WARNING = _(
+            "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+        )
         choices = [
             {
                 "attr": "opt_raster_optimisation",
@@ -99,9 +101,7 @@ def plugin(kernel, lifecycle=None):
                     + "reducing the time taken moving between burn items."
                 )
                 + "\n"
-                + _(
-                    "Notabene: Reduce Travel Time and Burn Inner First cannont be used at the same time."
-                ),
+                + INNER_WARNING,
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
             },
@@ -231,9 +231,7 @@ def plugin(kernel, lifecycle=None):
                     + "* If you are using multiple passes, check Merge Passes"
                 )
                 + "\n"
-                + _(
-                    "Notabene: Reduce Travel Time and Burn Inner First cannont be used at the same time."
-                ),
+                + INNER_WARNING,
                 "page": "Optimisations",
                 "section": "_10_Burn sequence",
             },
