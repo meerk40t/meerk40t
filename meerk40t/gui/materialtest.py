@@ -595,8 +595,8 @@ class TemplatePanel(wx.Panel):
         self.combo_images.Bind(wx.EVT_COMBOBOX, self.on_combo_image)
         self.spin_count_1.Bind(wx.EVT_SPINCTRL, self.validate_input)
         self.spin_count_2.Bind(wx.EVT_SPINCTRL, self.validate_input)
-        self.list_options_1.Bind(wx.EVT_CHECKLISTBOX, self.validate_input)
-        self.list_options_2.Bind(wx.EVT_CHECKLISTBOX, self.validate_input)
+        self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_1)
+        self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_2)
 
         self.SetSizer(sizer_main)
         self.Layout()
@@ -829,17 +829,20 @@ class TemplatePanel(wx.Panel):
                     None,
                     None,
                 ),
-                (
-                    "wobble_type",
-                    preset_balor_wobble,
-                    _("Wobble Type"),
-                    "",
-                    True,
-                    True,
-                    None,
-                    wobble_choices,
-                ),
             ]
+            if wobble_choices:
+                self.parameters.append(
+                    (
+                        "wobble_type",
+                        preset_balor_wobble,
+                        _("Wobble Type"),
+                        "",
+                        True,
+                        True,
+                        None,
+                        wobble_choices,
+                    ),
+                )
 
         if "balor" in self.context.device.path:
             balor_choices = [
@@ -944,9 +947,12 @@ class TemplatePanel(wx.Panel):
                 standard_items = False
                 choices = self.parameters[idx][7]
                 self.list_options_1.Set(choices)
-                self.list_options_1.SetCheckedStrings(
-                    self.context.template_list1.split("|")
-                )
+                checked_strings = [
+                    s for s in self.context.template_list1.split("|") if s
+                ]
+                if not checked_strings:
+                    checked_strings = choices
+                self.list_options_1.SetCheckedStrings(checked_strings)
 
         self.unit_param_1a.SetLabel(s_unit)
         self.unit_param_1b.SetLabel(s_unit)
@@ -975,9 +981,12 @@ class TemplatePanel(wx.Panel):
                 standard_items = False
                 choices = self.parameters[idx][7]
                 self.list_options_2.Set(choices)
-                self.list_options_2.SetCheckedStrings(
-                    self.context.template_list2.split("|")
-                )
+                checked_strings = [
+                    s for s in self.context.template_list2.split("|") if s
+                ]
+                if not checked_strings:
+                    checked_strings = choices
+                self.list_options_2.SetCheckedStrings(checked_strings)
         self.unit_param_2a.SetLabel(s_unit)
         self.unit_param_2b.SetLabel(s_unit)
         self.min_max_container_2.ShowItems(standard_items)
@@ -1580,11 +1589,8 @@ class TemplatePanel(wx.Panel):
             clear_all()
         elif result == wx.ID_CANCEL:
             return
-        try:
-            create_operations(range1=valid_range_1, range2=valid_range_2)
-        except Exception as e:
-            print(f"Error during creation: {e}")
-            return
+
+        create_operations(range1=valid_range_1, range2=valid_range_2)
 
         self.context.signal("rebuild_tree")
         self.context.signal("refresh_scene", "Scene")
