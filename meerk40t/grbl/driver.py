@@ -262,7 +262,6 @@ class GRBLDriver(Parameters):
             self.power = power
             self.power_dirty = False
         if speed is not None:
-            print(f"Laser on with speed={speed}")
             sspeed = f"G1 F{speed}{self.line_end}"
             self.speed = speed
             self.speed_dirty = False
