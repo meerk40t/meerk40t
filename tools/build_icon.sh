@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 # This script builds the Meerk40t icon in various sizes.
 if [ ! -d images ]; then
     echo "Please run this script from the root of the meerk40t repository."
