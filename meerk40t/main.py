@@ -11,7 +11,7 @@ import os.path
 import sys
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.7040"
+APPLICATION_VERSION = "0.9.7050"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -229,19 +229,24 @@ def _exe(restarted, args):
     server_mode = False
     if command:
         for c in command:
-            server_mode = server_mode or any(substring in c for substring in ("lhyserver", "grblserver", "ruidacontrol", "grblcontrol", "webserver"))
-    nogui = (
-        (hasattr(kernel.args, "gui_suppress") and kernel.args.gui_suppress) or
-        (hasattr(kernel.args, "no_gui") and kernel.args.no_gui) 
+            server_mode = server_mode or any(
+                substring in c
+                for substring in (
+                    "lhyserver",
+                    "grblserver",
+                    "ruidacontrol",
+                    "grblcontrol",
+                    "webserver",
+                )
+            )
+    nogui = (hasattr(kernel.args, "gui_suppress") and kernel.args.gui_suppress) or (
+        hasattr(kernel.args, "no_gui") and kernel.args.no_gui
     )
     for idx, attrib in enumerate(("mktablength", "mktabpositions")):
         kernel.register(f"registered_mk_svg_parameters/tabs{idx}", attrib)
 
     require_partial_mode = False
-    if (
-        (not console or nogui) and
-        (auto or daemon or server_mode)
-    ):
+    if (not console or nogui) and (auto or daemon or server_mode):
         require_partial_mode = True
     # print (f"Auto: {auto}, Command: {command}, Console: {console}, daemon: {daemon}, nogui:{nogui}, Server: {server_mode} -> {require_partial_mode}")
     kernel(partial=require_partial_mode)
