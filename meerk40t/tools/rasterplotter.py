@@ -462,7 +462,12 @@ class RasterPlotter:
         of the width and height.
         @return:
         """
-        if self.final_x is None:  # image is blank.
+        if self.final_x is None or isinf(self.final_x):  # image is blank.
+            if self.use_integers:
+                return int(round(self.offset_x)), int(round(self.offset_y))
+            else:
+                return self.offset_x, self.offset_y
+        if self.use_integers:
             if self.use_integers:
                 return int(round(self.offset_x)), int(round(self.offset_y))
             else:
