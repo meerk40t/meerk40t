@@ -63,6 +63,8 @@ class FormatPainter:
             ("linecap", True),
             ("linejoin", True),
             ("fillrule", True),
+            ("stroke_dash", True),
+            ("mktablength", False),
             # Image attributes
             ("dpi", False),
             ("operations", False),
@@ -193,6 +195,8 @@ class FormatPainter:
                         flag_changed = True
 
                     if flag_changed:
+                        if hasattr(node, "empty_cache"):
+                            node.empty_cache()
                         nodes_changed.append(node)
                         if node.type == "elem image":
                             nodes_images.append(node)
@@ -584,7 +588,10 @@ class Warnings:
                             image_node = node.node if hasattr(node, "node") else node
                             if getattr(image_node, "hidden", False):
                                 continue
-                            opdpi = op.dpi if useop else image_node.dpi
+                            if hasattr(image_node, "dpi"):
+                                opdpi = op.dpi if useop else image_node.dpi
+                            else:
+                                opdpi = op.dpi
                             step_x, step_y = self.context.device.view.dpi_to_steps(opdpi)
                             step_x *= self.context.device.view.native_scale_x
                             step_y *= self.context.device.view.native_scale_y

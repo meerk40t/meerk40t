@@ -5,10 +5,10 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Length
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class NewlyDevice(Service, Status):
@@ -757,12 +757,16 @@ class NewlyDevice(Service, Status):
             help=_("Sets the default file index to use"),
             all_arguments_required=True,
         )
-        def set_file_index(command, channel, _, file_index=None, data=None, remainder=None, **kwgs):
+        def set_file_index(
+            command, channel, _, file_index=None, data=None, remainder=None, **kwgs
+        ):
             old_value = self.file_index
             if file_index is None or file_index < 0 or file_index >= 10:
                 file_index = 0
             self.file_index = file_index
-            channel(f"File index was set to #{file_index} (previous value: {old_value})")
+            channel(
+                f"File index was set to #{file_index} (previous value: {old_value})"
+            )
             # Let propertypanels know that this value was updated
             self.signal("file_index", file_index, self)
 
@@ -855,6 +859,9 @@ class NewlyDevice(Service, Status):
             origin_y=home_dy,
         )
         self.signal("view;realized")
+
+    def location(self):
+        return "mock" if self.mock else "usb"
 
     @property
     def current(self):

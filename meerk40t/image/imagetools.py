@@ -19,11 +19,11 @@ from .dither import dither
 
 
 def img_to_polygons(
-        node_image,                 # The image
-        minimal,                    # Minimum area in percent (int) to consider
-        maximal,                    # Maximum area in percent (int) to consider
-        ignoreinner,                # Ignore inner contours
-        needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+    node_image,  # The image
+    minimal,  # Minimum area in percent (int) to consider
+    maximal,  # Maximum area in percent (int) to consider
+    ignoreinner,  # Ignore inner contours
+    needs_invert=True,  # Does the image require inverting (we need white strcutures on a black background)
 ):
     """
     Takes the image and provides a list of geomstr + associated matrix
@@ -33,7 +33,7 @@ def img_to_polygons(
         import cv2
         from PIL import ImageOps
     except ImportError:
-        return ([], [])
+        return [[], []]
     geom_list = list()
 
     # Convert the image to grayscale
@@ -43,7 +43,14 @@ def img_to_polygons(
     _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Find contours in the binary image
-    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    try:
+        contours, hierarchies = cv2.findContours(
+            th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+    except ValueError:
+        # Invalid data
+        return [[], []]
+
     # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
     width, height = node_image.size
     minarea = int(minimal / 100.0 * width * height)
@@ -63,12 +70,12 @@ def img_to_polygons(
             continue
         region = contour.squeeze().astype(float).tolist()
         if type(region[0]) is list and len(region) > 2:
-            crdnts = [{'x': i[0], 'y': i[1]} for i in region]
+            crdnts = [{"x": i[0], "y": i[1]} for i in region]
 
             geom = Geomstr()
             notfirst = False
             for pnt in crdnts:
-                rx, ry = pnt['x'], pnt['y']
+                rx, ry = pnt["x"], pnt["y"]
                 if notfirst:
                     geom.line(complex(lx, ly), complex(rx, ry))
                 notfirst = True
@@ -76,20 +83,20 @@ def img_to_polygons(
                 ly = ry
             geom.close()
             matrix = Matrix()
-            geom_list.append( (geom, 100 * area / (width * height)) )
+            geom_list.append((geom, 100 * area / (width * height)))
 
     return geom_list
 
-def do_innerwhite(
-        minimal=None,
-        outer=False,
-        simplified=False,
-        line=False,
-        breakdown=False,
-        whiten=False,
-        data=None,
-    ):
 
+def do_innerwhite(
+    minimal=None,
+    outer=False,
+    simplified=False,
+    line=False,
+    breakdown=False,
+    whiten=False,
+    data=None,
+):
     import cv2
 
     def org_bounds(node):
@@ -147,9 +154,14 @@ def do_innerwhite(
         _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
 
         # Find contours
-        contours, hierarchy = cv2.findContours(
-            thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        try:
+            contours, hierarchy = cv2.findContours(
+                thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
+        except ValueError:
+            # Invalid data
+            continue
+
         linecandidates = list()
 
         minarea = int(minimal / 100.0 * width * height)
@@ -332,9 +344,7 @@ def do_innerwhite(
                     # print(f"Erasing right: {dx}:{rwidth}")
                 newnode = copy(inode)
                 newnode.matrix = copy(inode.matrix)
-                newnode.label = (
-                    f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
-                )
+                newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                 # newnode.dither = False
                 # newnode.operations.clear()
                 # newnode.prevent_crop = True
@@ -354,9 +364,7 @@ def do_innerwhite(
                 anyslices += 1
                 newnode = copy(inode)
                 newnode.matrix = copy(inode.matrix)
-                newnode.label = (
-                    f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
-                )
+                newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
                 # newnode.dither = False
                 # newnode.operations.clear()
                 # newnode.prevent_crop = True
@@ -372,12 +380,13 @@ def do_innerwhite(
                 data_out.append(newnode)
     return data_out
 
+
 def img_to_rectangles(
-        node_image,                 # The image
-        minimal,                    # Minimum area in percent (int) to consider
-        maximal,                    # Maximum area in percent (int) to consider
-        ignoreinner,                # Ignore inner contours
-        needs_invert=True           # Does the image require inverting (we need white strcutures on a black background)
+    node_image,  # The image
+    minimal,  # Minimum area in percent (int) to consider
+    maximal,  # Maximum area in percent (int) to consider
+    ignoreinner,  # Ignore inner contours
+    needs_invert=True,  # Does the image require inverting (we need white strcutures on a black background)
 ):
     """
     Takes the image and provides a list of geomstr + associated matrix
@@ -402,7 +411,14 @@ def img_to_rectangles(
     _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Find contours in the binary image
-    contours, hierarchies = cv2.findContours(th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    try:
+        contours, hierarchies = cv2.findContours(
+            th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+    except ValueError:
+        # Invalid data
+        return ([], [])
+
     # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
     width, height = node_image.size
     minarea = int(minimal / 100.0 * width * height)
@@ -427,12 +443,20 @@ def img_to_rectangles(
         # print (f"center: {center_x:.2f}, {center_y:.2f}, dimension: {rect_width:.2f}x{rect_height:.2f}, angle={angle_deg:.1f}")
         # print (box)
         geom = Geomstr()
-        geom.line(start=complex(box[0][0], box[0][1]), end=complex(box[1][0], box[1][1]))
-        geom.line(start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1]))
-        geom.line(start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1]))
-        geom.line(start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1]))
+        geom.line(
+            start=complex(box[0][0], box[0][1]), end=complex(box[1][0], box[1][1])
+        )
+        geom.line(
+            start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1])
+        )
+        geom.line(
+            start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1])
+        )
+        geom.line(
+            start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1])
+        )
         # Geometry plus enclosed area
-        geom_list.append( (geom, 100 * area / (width * height)) )
+        geom_list.append((geom, 100 * area / (width * height)))
 
     return geom_list
 
@@ -494,7 +518,9 @@ def plugin(kernel, lifecycle=None):
             "default": True,
             "type": bool,
             "label": _("Scale oversized images"),
-            "tip": _("Set: Will scale down large images so they will fit on the laserbed."),
+            "tip": _(
+                "Set: Will scale down large images so they will fit on the laserbed."
+            ),
             "page": "Input/Output",
             "section": "Images",
         },
@@ -702,8 +728,9 @@ def plugin(kernel, lifecycle=None):
     ):
         if threshold_min is None:
             raise CommandSyntaxError
-        threshold_min, threshold_max = min(threshold_min, threshold_max), max(
-            threshold_max, threshold_min
+        threshold_min, threshold_max = (
+            min(threshold_min, threshold_max),
+            max(threshold_max, threshold_min),
         )
         divide = (threshold_max - threshold_min) / 255.0
         for node in data:
@@ -1267,7 +1294,7 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image #opaque_image
+            img = inode.image  # opaque_image
             original_mode = inode.image.mode
             img = img.convert("RGBA")
             try:
@@ -1480,7 +1507,7 @@ def plugin(kernel, lifecycle=None):
     )
     @context.console_command(
         "linecut",
-        help=_("Cuts and image with a line"),
+        help=_("Cuts an image with a line"),
         input_type="image",
         output_type="image",
         hidden=True,
@@ -1844,7 +1871,9 @@ def plugin(kernel, lifecycle=None):
             update_image_node(inode)
         return "image", data
 
-    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
+    @context.console_option(
+        "minimal", "m", type=float, help=_("minimal area (%)"), default=2
+    )
     @context.console_option(
         "outer",
         "o",
@@ -1900,7 +1929,6 @@ def plugin(kernel, lifecycle=None):
         post=None,
         **kwargs,
     ):
-
         try:
             import cv2
         except ImportError:
@@ -1935,7 +1963,7 @@ def plugin(kernel, lifecycle=None):
         if len(data_out):
             # _("Image white")
             with context.elements.undoscope("Image white"):
-                needs_adding = [True]*len(data_out)
+                needs_adding = [True] * len(data_out)
                 if breakdown or whiten:
                     for inode in data:
                         if inode in data_out:
@@ -1950,8 +1978,16 @@ def plugin(kernel, lifecycle=None):
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
 
-    @context.console_option("threshold", "t", type=float, help=_("Threshold for simplification"), default=0.25)
-    @context.console_option("minimal", "m", type=float, help=_("minimal area (%)"), default=2)
+    @context.console_option(
+        "threshold",
+        "t",
+        type=float,
+        help=_("Threshold for simplification"),
+        default=0.25,
+    )
+    @context.console_option(
+        "minimal", "m", type=float, help=_("minimal area (%)"), default=2
+    )
     @context.console_option(
         "inner",
         "i",
@@ -2013,7 +2049,9 @@ def plugin(kernel, lifecycle=None):
         elements = context.elements
         # from PIL import Image
         if data is None:
-            data = list(e for e in elements.flat(emphasized=True) if e.type == "elem image")
+            data = list(
+                e for e in elements.flat(emphasized=True) if e.type == "elem image"
+            )
         if data is None or len(data) == 0:
             channel(_("No images selected"))
             return
@@ -2035,7 +2073,9 @@ def plugin(kernel, lifecycle=None):
         if threshold is None:
             # We are on pixel level
             threshold = 0.25
-        channel(f"Contouring: {minimal:.2f} <= area <= {maximal:.2f}, inverting: {'No' if dontinvert else 'Yes'}, threshold: {threshold:.2f}, inner: {'No' if ignoreinner else 'Yes'}")
+        channel(
+            f"Contouring: {minimal:.2f} <= area <= {maximal:.2f}, inverting: {'No' if dontinvert else 'Yes'}, threshold: {threshold:.2f}, inner: {'No' if ignoreinner else 'Yes'}"
+        )
         data_out = list()
 
         remembered_dithers = list()
@@ -2058,13 +2098,25 @@ def plugin(kernel, lifecycle=None):
                     continue
                 # Extract polygons from the image
                 if rectangles:
-                    contours = img_to_rectangles(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                    contours = img_to_rectangles(
+                        node_image,
+                        minimal,
+                        maximal,
+                        ignoreinner,
+                        needs_invert=not dontinvert,
+                    )
                     msg = "Bounding"
                 else:
-                    contours = img_to_polygons(node_image, minimal, maximal, ignoreinner, needs_invert=not dontinvert)
+                    contours = img_to_polygons(
+                        node_image,
+                        minimal,
+                        maximal,
+                        ignoreinner,
+                        needs_invert=not dontinvert,
+                    )
                     msg = "Contour"
                 pidx = 0
-                for (geom, c_info) in contours:
+                for geom, c_info in contours:
                     pidx += 1
                     channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
                     if simplified:
@@ -2086,7 +2138,9 @@ def plugin(kernel, lifecycle=None):
                 inode.update(None)
 
         t_total_overall = time.perf_counter() - t0
-        channel(f"Done, created: {len(data_out)} contour elements >= {minimal}% (Total time: {t_total_overall:.2f} sec)")
+        channel(
+            f"Done, created: {len(data_out)} contour elements >= {minimal}% (Total time: {t_total_overall:.2f} sec)"
+        )
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
@@ -2104,7 +2158,11 @@ def plugin(kernel, lifecycle=None):
         **kwargs,
     ):
         if data is None:
-            data = list(e for e in context.elements.flat(emphasized=True) if e.type == "elem image")
+            data = list(
+                e
+                for e in context.elements.flat(emphasized=True)
+                if e.type == "elem image"
+            )
         if len(data) == 0:
             channel("No image provided")
             return
@@ -2126,8 +2184,8 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "linefill",
         help=_("Create a linefill representation of the provided images"),
-        input_type = (None, "image", "elements"),
-        output_type = "elements",
+        input_type=(None, "image", "elements"),
+        output_type="elements",
     )
     def do_linefill(
         command,
@@ -2138,6 +2196,7 @@ def plugin(kernel, lifecycle=None):
         **kwargs,
     ):
         from time import perf_counter
+
         def trace_black_areas(image):
             def dfs(x, y):
                 path = []
@@ -2150,7 +2209,14 @@ def plugin(kernel, lifecycle=None):
                         continue
                     visited[x, y] = True
                     path.append((x_prev, y_prev, x, y))
-                    stack.extend([(x, y, x + 1, y), (x, y, x - 1, y), (x, y, x, y + 1), (x, y, x, y - 1)])
+                    stack.extend(
+                        [
+                            (x, y, x + 1, y),
+                            (x, y, x - 1, y),
+                            (x, y, x, y + 1),
+                            (x, y, x, y - 1),
+                        ]
+                    )
                 return path
 
             visited = np.zeros_like(image, dtype=bool)
@@ -2166,7 +2232,11 @@ def plugin(kernel, lifecycle=None):
             return separated
 
         if data is None:
-            data = list(e for e in context.elements.flat(emphasized=True) if e.type == "elem image")
+            data = list(
+                e
+                for e in context.elements.flat(emphasized=True)
+                if e.type == "elem image"
+            )
         if len(data) == 0:
             channel("No image provided")
             return
@@ -2194,13 +2264,15 @@ def plugin(kernel, lifecycle=None):
 
             multiple = trace_black_areas(image)
             points = sum(len(path) for path in multiple)
-            channel (f"Found points: {points}, subpaths={len(multiple)}")
+            channel(f"Found points: {points}, subpaths={len(multiple)}")
             # for y in range(20):
             #     msg = f"[{y:2d}]"
             #     for x in range(20):
             #         msg =f"{msg} {image[x,y]}"
             #     print (msg)
-            matrix = Matrix(f"scale ({(bounds[2] - bounds[0]) / node_image.width}, {(bounds[3] - bounds[1]) / node_image.height})")
+            matrix = Matrix(
+                f"scale ({(bounds[2] - bounds[0]) / node_image.width}, {(bounds[3] - bounds[1]) / node_image.height})"
+            )
             matrix.post_translate(bounds[0], bounds[1])
             # matrix = node.active_matrix
 
@@ -2219,8 +2291,8 @@ def plugin(kernel, lifecycle=None):
                     stroke=Color("blue"),
                     label=label,
                     type="elem path",
-                    stroke_width = 1000,
-                    linejoin=Linejoin.JOIN_ROUND
+                    stroke_width=1000,
+                    linejoin=Linejoin.JOIN_ROUND,
                 )
                 data_out.append(rnode)
                 return idx
@@ -2239,7 +2311,9 @@ def plugin(kernel, lifecycle=None):
                         y_prev, x_prev, y, x = path[i]
                         dx = x - x_prev
                         dy = y - y_prev
-                        if (dx * dx + dy * dy) >= 4: # Thats too wide by definition, new subpath
+                        if (
+                            dx * dx + dy * dy
+                        ) >= 4:  # Thats too wide by definition, new subpath
                             idx = save_geom(geom, idx, matrix)
                             geom = Geomstr()
                             continue
@@ -2253,6 +2327,7 @@ def plugin(kernel, lifecycle=None):
         post.append(context.elements.post_classify(data_out))
         return "elements", data_out
 
+
 class RasterImagePreprocessor:
     def __init__(self, kernel):
         self.test = False
@@ -2260,7 +2335,10 @@ class RasterImagePreprocessor:
         _ = self.kernel.translation
         RASTER_METHOD_OFFSET = 100
         self.methods = {
-            RASTER_METHOD_OFFSET + 0: (_("Split image along white areas"), self.process_innerwhite),
+            RASTER_METHOD_OFFSET + 0: (
+                _("Split image along white areas"),
+                self.process_innerwhite,
+            ),
         }
         self.register_methods()
 
@@ -2296,11 +2374,12 @@ class RasterImagePreprocessor:
         operation.bidirectional = True
         # print (f"Innerwhite exit: {len(operation.children)} children of {operation.type}")
 
-
     def register_methods(self):
         # Split image along white areas
         for method, (description, routine) in self.methods.items():
-            self.kernel.register(f"raster_preprocessor/Method_{method}", (method, description, routine))
+            self.kernel.register(
+                f"raster_preprocessor/Method_{method}", (method, description, routine)
+            )
 
 
 class RasterScripts:

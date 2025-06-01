@@ -246,7 +246,15 @@ class CutOpNode(Node, Parameters):
             return False, False, None
         feedback = []
         if node.type in self._allowed_elements:
-            if not self.default:
+            if self.default and usedefault:
+                # Have classified but more classification might be needed
+                if self.valid_node_for_reference(node):
+                    self.add_reference(node)
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+            else:
+                # Even if the default attribute set that would be a valid thing
                 if self.has_attributes():
                     result = False
                     for attribute in self.allowed_attributes:
@@ -271,13 +279,6 @@ class CutOpNode(Node, Parameters):
                         feedback.append("stroke")
                         feedback.append("fill")
                         return True, self.stopop, feedback
-            elif self.default and usedefault:
-                # Have classified but more classification might be needed
-                if self.valid_node_for_reference(node):
-                    self.add_reference(node)
-                    feedback.append("stroke")
-                    feedback.append("fill")
-                    return True, self.stopop, feedback
         return False, False, None
 
     def add_reference(self, node=None, pos=None, **kwargs):

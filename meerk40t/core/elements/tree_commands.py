@@ -2,7 +2,6 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-
 from meerk40t.kernel import CommandSyntaxError
 
 from .element_types import *
@@ -39,9 +38,10 @@ def init_commands(kernel):
             for i, n in enumerate(node.children):
                 p = list(path)
                 p.append(str(i))
-                channel(
-                    f"{'.'.join(p).ljust(10)}: {str(n._bounds)} - {str(n._bounds_dirty)} {str(n.type)} - {str(str(n)[:16])}"
-                )
+                if hasattr(n, "_bounds"):
+                    channel(
+                        f"{'.'.join(p).ljust(10)}: {str(n._bounds)} - {str(n._bounds_dirty)} {str(n.type)} - {str(str(n)[:16])}"
+                    )
                 b_list(p, n)
 
         for d in data:
@@ -49,7 +49,12 @@ def init_commands(kernel):
             if d.type == "root":
                 channel(_("Tree:"))
             else:
-                channel(f"{str(d)}:")
+                if hasattr(d, "_bounds"):
+                    channel(
+                        f"{str(d)}: {str(d._bounds)} - {str(d._bounds_dirty)} {str(d.type)} - {str(str(d)[:16])}"
+                    )
+                else:
+                    channel(f"{str(d)}:")
             b_list([], d)
             channel("----------")
 

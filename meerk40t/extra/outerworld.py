@@ -3,7 +3,6 @@ This module exposes a couple of simple commands to send some simple commands to 
 """
 import urllib
 import os.path
-from meerk40t.kernel import get_safe_path
 
 HTTPD = None
 SERVER_THREAD = None
@@ -109,7 +108,7 @@ def plugin(kernel, lifecycle):
                             candidate = "_webload.svg"
                     file_data = response.read()
 
-                    safe_dir = os.path.realpath(get_safe_path(kernel.name))
+                    safe_dir = kernel.os_information["WORKDIR"]
                     filename = os.path.join(safe_dir, candidate)
                     channel(f"Writing result to {filename}")
                     with open(filename, "wb") as f:
@@ -150,7 +149,7 @@ def plugin(kernel, lifecycle):
         if org_x != 0 or org_y != 0:
             channel(f"Upper left corner at: {Length(org_x, digits=2, preferred_units=units)}, {Length(org_y, digits=2, preferred_units=units)}")
 
-        res = elements_service.load(filename)
+        res = elements_service.load(filename, svg_ppi = elements_service.svg_ppi)
         if not res:
             channel("Could not load any data")
             return

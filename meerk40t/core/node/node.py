@@ -193,7 +193,7 @@ class Node:
     def targeted(self, value):
         self._target = value
         self.notify_targeted(self)
-    
+
     @property
     def expanded(self):
         return self._expanded
@@ -457,17 +457,23 @@ class Node:
 
     def restore_tree(self, tree_data):
         # Takes a backup and reapplies it again to the tree
-        # Caveat: we can't just simply take the backup and load it into the tree, 
-        # although it is already a perfectly independent copy. 
+        # Caveat: we can't just simply take the backup and load it into the tree,
+        # although it is already a perfectly independent copy.
         #           self._children.extend(tree_data)
-        # If loaded directly as above then this stored state will be used 
-        # as the basis for further modifications consequently changing the 
+        # If loaded directly as above then this stored state will be used
+        # as the basis for further modifications consequently changing the
         # original data (as it is still the original structure) used in the undostack.
         # tree_data contains the copied branch nodes
-        
+
         self._children.clear()
         links = {id(self): (self, None)}
-        attrib_list = ("_selected", "_emphasized", "_emphasized_time", "_highlighted", "_expanded")
+        attrib_list = (
+            "_selected",
+            "_emphasized",
+            "_emphasized_time",
+            "_highlighted",
+            "_expanded",
+        )
         for c in tree_data:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
@@ -499,9 +505,12 @@ class Node:
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
             if node.type == "reference":
-                original_referenced, copied_referenced = links[id(node.node)]
-                node_copy.node = copied_referenced
-                copied_referenced._references.append(node_copy)
+                try:
+                    original_referenced, copied_referenced = links[id(node.node)]
+                    node_copy.node = copied_referenced
+                    copied_referenced._references.append(node_copy)
+                except KeyError:
+                    pass
 
     def _validate_tree(self):
         for c in self._children:
@@ -525,12 +534,23 @@ class Node:
         """
         if links is None:
             links = {id(self): (self, None)}
-        attrib_list = ("_selected", "_emphasized", "_emphasized_time", "_highlighted", "_expanded")
+        attrib_list = (
+            "_selected",
+            "_emphasized",
+            "_emphasized_time",
+            "_highlighted",
+            "_expanded",
+            "_translated_text",
+        )
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
             for att in attrib_list:
-                if getattr(node_copy, att) != getattr(c, att):
+                if not hasattr(c, att):
+                    continue
+                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
+                    c, att
+                ):
                     # print (f"Strange {att} not identical, fixing")
                     setattr(node_copy, att, getattr(c, att))
             node_copy._root = self._root
@@ -580,7 +600,7 @@ class Node:
             result = "<invalid pattern>"
         return result
 
-    def default_map(self, default_map=None):   # , skip_label=False
+    def default_map(self, default_map=None):  # , skip_label=False
         if default_map is None:
             default_map = self._default_map
         default_map["id"] = str(self.id) if self.id is not None else "-"
@@ -814,7 +834,9 @@ class Node:
                 node = self
             self._parent.notify_modified(node=node, **kwargs)
 
-    def notify_translated(self, node=None, dx=0, dy=0, invalidate=False, interim=False, **kwargs):
+    def notify_translated(
+        self, node=None, dx=0, dy=0, invalidate=False, interim=False, **kwargs
+    ):
         if invalidate:
             self.set_dirty_bounds()
         if self._parent is not None:
@@ -826,7 +848,15 @@ class Node:
             )
 
     def notify_scaled(
-        self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, interim=False, **kwargs
+        self,
+        node=None,
+        sx=1,
+        sy=1,
+        ox=0,
+        oy=0,
+        invalidate=False,
+        interim=False,
+        **kwargs,
     ):
         if invalidate:
             self.set_dirty_bounds()
@@ -835,7 +865,14 @@ class Node:
                 node = self
             # Any change to position / size needs a recalculation of the bounds
             self._parent.notify_scaled(
-                node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate=True, interim=interim, **kwargs
+                node=node,
+                sx=sx,
+                sy=sy,
+                ox=ox,
+                oy=oy,
+                invalidate=True,
+                interim=interim,
+                **kwargs,
             )
 
     def notify_altered(self, node=None, **kwargs):
@@ -950,6 +987,7 @@ class Node:
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering its properties
         """
+
         def apply_it(box):
             x0, y0, x1, y1 = box
             if sx != 1.0:
@@ -1217,7 +1255,9 @@ class Node:
         If the node exists elsewhere in the tree it will be removed from that location.
         """
         reference_sibling = self
-        source_siblings = None if new_sibling.parent is None else new_sibling.parent.children 
+        source_siblings = (
+            None if new_sibling.parent is None else new_sibling.parent.children
+        )
         destination_siblings = reference_sibling.parent.children
 
         if source_siblings:
@@ -1331,7 +1371,8 @@ class Node:
         if children:
             self.remove_all_children(fast=fast)
         if self._parent:
-            self._parent._children.remove(self)
+            if self in self._parent._children:
+                self._parent._children.remove(self)
             self._parent.set_dirty_bounds()
         if not fast:
             self.notify_detached(self)
@@ -1352,6 +1393,14 @@ class Node:
         for child in list(self.children):
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
+
+    def is_a_child_of(self, node):
+        candidate = self
+        while candidate is not None:
+            if candidate is node:
+                return True
+            candidate = candidate.parent
+        return False
 
     def has_ancestor(self, type):
         """
@@ -1391,7 +1440,9 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     @staticmethod
-    def union_bounds(nodes, bounds=None, attr="bounds", ignore_locked=True, ignore_hidden=False):
+    def union_bounds(
+        nodes, bounds=None, attr="bounds", ignore_locked=True, ignore_hidden=False
+    ):
         """
         Returns the union of the node list given, optionally unioned the given bounds value
 

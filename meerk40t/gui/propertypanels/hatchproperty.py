@@ -11,6 +11,8 @@ _ = wx.GetTranslation
 
 
 class HatchPropertyPanel(ScrolledPanel):
+    name = _("Hatch")
+
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

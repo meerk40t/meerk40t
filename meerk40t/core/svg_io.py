@@ -124,7 +124,6 @@ def plugin(kernel, lifecycle=None):
                 "page": "Input/Output",
                 "section": "Input",
             },
-
         ]
         kernel.register_choices("preferences", choices)
         # The order is relevant as both loaders support SVG
@@ -237,7 +236,9 @@ class SVGWriter:
             if elements.last_file_autoexec is not None:
                 subelement = SubElement(root, "autoexec")
                 subelement.set("autoexec", str(elements.last_file_autoexec))
-                subelement.set("autoexec-active", str(elements.last_file_autoexec_active))
+                subelement.set(
+                    "autoexec-active", str(elements.last_file_autoexec_active)
+                )
 
         SVGWriter._write_tree(root, elements._tree, version)
 
@@ -279,7 +280,7 @@ class SVGWriter:
             if len(c.children) > 1:
                 flag = False
             return flag
-                    
+
         if c.type == "elem ellipse":
             subelement = SubElement(xml_tree, SVG_TAG_ELLIPSE)
             subelement.set(SVG_ATTR_CENTER_X, str(c.cx))
@@ -632,7 +633,12 @@ class SVGWriter:
                 pass
         # Node does not have settings, write object dict
         for key, value in node.__dict__.items():
-            if not key or key.startswith("_") or key in saved_attributes or value is None:
+            if (
+                not key
+                or key.startswith("_")
+                or key in saved_attributes
+                or value is None
+            ):
                 continue
             if key in (
                 "references",
@@ -663,7 +669,8 @@ class SVGWriter:
         for c in node.children:
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-                contains.append(c.id)
+                if c.id is not None:  # Something strange happened here...
+                    contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
 
@@ -706,7 +713,13 @@ class SVGProcessor:
     Special care is taken to load MK specific objects like `note` and `operations`
     """
 
-    def __init__(self, elements, load_operations, load_hidden_to_regmarks = True, reuse_operations=True):
+    def __init__(
+        self,
+        elements,
+        load_operations,
+        load_hidden_to_regmarks=True,
+        reuse_operations=True,
+    ):
         self.elements = elements
 
         self.operation_list = list()
@@ -789,7 +802,7 @@ class SVGProcessor:
             self.elements.classify(self.element_list)
 
     def check_for_bound_information(self, node, element):
-        # Do we have existing boundary information? 
+        # Do we have existing boundary information?
         if "bounds" not in element.values:
             return False
         bbstr = element.values["bounds"]
@@ -816,15 +829,16 @@ class SVGProcessor:
                             bbox[idx] = val
                 except Exception:
                     # Whatever it was, we don't continue...
-                    pass                    
+                    pass
             node._paint_bounds = list(bbox)
             node._paint_bounds_dirty = False
             return True
 
-    def check_for_mk_path_attributes(self, node, element):
+    def check_for_mk_path_attributes(self, node, element, skip=None):
         """
         Checks for some mk special parameters starting with mk. Especially mkparam, and uses this property to fill in
-        the functional_parameter attribute for the node.
+        the functional_parameter attribute for the node. This can be skipped if needed (eg. for basic shapes) as this
+        is not needed for them.
 
         @param node:
         @param element:
@@ -833,7 +847,8 @@ class SVGProcessor:
         for prop in element.values:
             lc = element.values.get(prop)
             if prop.startswith("mk"):
-                # print (f"Property: {prop} = [{type(lc).__name__}] {lc}")
+                if skip and prop in skip:
+                    continue
                 if lc is not None:
                     setattr(node, prop, lc)
                     # This needs to be done as some node types are not based on Parameters
@@ -975,7 +990,9 @@ class SVGProcessor:
             return tag_label
         return local_dict.get("label")
 
-    def _parse_text(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_text(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses an SVGText object, into an `elem text` node.
 
@@ -1024,7 +1041,9 @@ class SVGProcessor:
         self.check_for_bound_information(node, element)
         e_list.append(node)
 
-    def _parse_path(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_path(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses an SVG Path object.
 
@@ -1055,7 +1074,12 @@ class SVGProcessor:
             pass
         element.approximate_arcs_with_cubics()
         node = context_node.add(
-            path=element, type="elem path", id=ident, label=label, lock=lock, hidden=set_hidden
+            path=element,
+            type="elem path",
+            id=ident,
+            label=label,
+            lock=lock,
+            hidden=set_hidden,
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
@@ -1064,7 +1088,9 @@ class SVGProcessor:
         self.check_for_bound_information(node, element)
         e_list.append(node)
 
-    def _parse_polyline(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_polyline(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses svg Polyline and Polygon objects into `elem polyline` nodes.
 
@@ -1089,7 +1115,7 @@ class SVGProcessor:
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
         if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             if element.transform.is_identity():
@@ -1113,7 +1139,9 @@ class SVGProcessor:
             node._points_dirty = False
         e_list.append(node)
 
-    def _parse_ellipse(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_ellipse(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses the SVG Circle, and Ellipse nodes into `elem ellipse` nodes.
 
@@ -1137,11 +1165,13 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
         self.check_for_bound_information(node, element)
         e_list.append(node)
 
-    def _parse_rect(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_rect(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parse SVG Rect objects into `elem rect` objects.
 
@@ -1165,7 +1195,7 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
         if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
@@ -1191,7 +1221,9 @@ class SVGProcessor:
             node._points_dirty = False
         e_list.append(node)
 
-    def _parse_line(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_line(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parse SVG Line objects into `elem line`
 
@@ -1215,7 +1247,7 @@ class SVGProcessor:
         )
         self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
         if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
@@ -1239,7 +1271,9 @@ class SVGProcessor:
             node._points_dirty = False
         e_list.append(node)
 
-    def _parse_image(self, element, ident, label, lock, context_node, e_list, set_hidden):
+    def _parse_image(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parse SVG Image objects into either `image raster` or `elem image` objects, potentially other classes.
 
@@ -1516,7 +1550,6 @@ class SVGProcessor:
                 if branch not in ("elements", "regmarks"):
                     return
         if element.values.get("visibility") == "hidden" or display == "none":
-
             if self.load_hidden_to_regmarks:
                 if branch != "regmarks":
                     self.parse(
@@ -1554,19 +1587,33 @@ class SVGProcessor:
             self.check_for_bound_information(node, element)
             e_list.append(node)
         elif isinstance(element, SVGText):
-            self._parse_text(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_text(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, Path):
-            self._parse_path(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_path(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, (Polygon, Polyline)):
-            self._parse_polyline(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_polyline(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, (Circle, Ellipse)):
-            self._parse_ellipse(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_ellipse(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, Rect):
-            self._parse_rect(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_rect(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, SimpleLine):
-            self._parse_line(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_line(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, SVGImage):
-            self._parse_image(element, ident, _label, _lock, context_node, e_list, set_hidden)
+            self._parse_image(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, SVG):
             # SVG is type of group, it must be processed before Group. Nothing special is done with the type.
             if self.reverse:
@@ -1708,7 +1755,9 @@ class SVGProcessor:
             file_node = context_node.add(type="file", filepath=self.pathname)
             for node in self.regmark_list:
                 if node._parent is context_node:
-                    if node.type == "group" and (node.id == "regmarks" or node.label == "regmarks"):
+                    if node.type == "group" and (
+                        node.id == "regmarks" or node.label == "regmarks"
+                    ):
                         for n in list(node.children):
                             file_node.append_child(n)
                         node.remove_node()  # Removing group/file node.
@@ -1739,6 +1788,7 @@ class SVGProcessor:
 
         if needs_update:
             self.elements.process_keyhole_updates(None)
+
 
 class SVGLoader:
     """
@@ -1783,7 +1833,12 @@ class SVGLoader:
         reuse = elements_service.reuse_operations_on_load
         to_regmarks = elements_service.load_hidden_to_regmarks
         elements_service._loading_cleared = True
-        svg_processor = SVGProcessor(elements_service, load_operations=True, reuse_operations=reuse, load_hidden_to_regmarks=to_regmarks)
+        svg_processor = SVGProcessor(
+            elements_service,
+            load_operations=True,
+            reuse_operations=reuse,
+            load_hidden_to_regmarks=to_regmarks,
+        )
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
         return True
@@ -1830,7 +1885,9 @@ class SVGLoaderPlain:
             raise BadFileError(str(e)) from e
         elements_service._loading_cleared = True
         to_regmarks = elements_service.load_hidden_to_regmarks
-        svg_processor = SVGProcessor(elements_service, load_operations=False, load_hidden_to_regmarks=to_regmarks)
+        svg_processor = SVGProcessor(
+            elements_service, load_operations=False, load_hidden_to_regmarks=to_regmarks
+        )
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
         return True

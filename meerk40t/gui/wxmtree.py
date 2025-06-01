@@ -580,7 +580,7 @@ class ShadowTree:
         self.tree_images = None
         self.name = "Project"
         self._freeze = False
-        testsize = dip_size(self, 20, 20)
+        testsize = dip_size(self.wxtree, 20, 20)
         self.iconsize = testsize[1]
         self.iconstates = {}
         self.last_call = 0
@@ -1379,11 +1379,13 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        self.do_not_select = True
 
         item = node._item
         if item is None:
-            raise ValueError(f"Item was None for node {repr(node)}")
+            print(f"Item was None for node {repr(node)}")
+            return
+
+        self.do_not_select = True
         self.check_validity(item)
         # We might need to update the decorations for all parent objects
         informed = []
@@ -1430,17 +1432,23 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        parent = node.parent
-        parent_item = parent._item
-        if parent_item is None:
-            # We are appending items in tree before registration.
+        try:
+            parent = node.parent
+            parent_item = parent._item
+            if parent_item is None:
+                # We are appending items in tree before registration.
+                return
+            tree = self.wxtree
+            if pos is None:
+                node._item = tree.AppendItem(parent_item, self.name)
+            else:
+                node._item = tree.InsertItem(parent_item, pos, self.name)
+            tree.SetItemData(node._item, node)
+        except Exception as e:
+            # Invalid tree?
+            self.context.signal("rebuild_tree", "all")
+            print (f"We encountered an error at node registration: {e}")
             return
-        tree = self.wxtree
-        if pos is None:
-            node._item = tree.AppendItem(parent_item, self.name)
-        else:
-            node._item = tree.InsertItem(parent_item, pos, self.name)
-        tree.SetItemData(node._item, node)
         self.update_decorations(node, False)
         wxcolor = self.wxtree.GetForegroundColour()
         attribute_to_try = "fill" if node.type == "elem text" else "stroke"

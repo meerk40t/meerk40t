@@ -48,6 +48,7 @@ class MockConnection:
 
     def write(self, index=0, packet=None):
         from meerk40t.balormk.controller import GetSerialNo
+
         packet_length = len(packet)
         assert packet_length == 0xC or packet_length == 0xC00
         if packet is not None:
@@ -88,6 +89,7 @@ class MockConnection:
 
     def _parse_single(self, packet):
         from meerk40t.balormk.controller import single_command_lookup
+
         b0 = packet[1] << 8 | packet[0]
         b1 = packet[3] << 8 | packet[2]
         b2 = packet[5] << 8 | packet[4]
@@ -104,12 +106,11 @@ class MockConnection:
 
         # Convert input to bytes early
         if isinstance(data, str):
-            data = data.encode('ascii')
+            data = data.encode("ascii")
 
         # Create fixed-size response with padding
         self._implied_response = bytearray(8)
-        self._implied_response[:len(data)] = data[:8]
-
+        self._implied_response[: len(data)] = data[:8]
 
     def read(self, index=0):
         if self._implied_response is None:

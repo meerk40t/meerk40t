@@ -27,18 +27,20 @@ Methods:
     bbox(transformed=True, with_stroke=False): Returns the bounding box of the image.
 """
 
-import numpy as np
 import threading
 import time
 from copy import copy
 from math import ceil, floor
 
-from meerk40t.core.node.node import Node
+import numpy as np
+
 from meerk40t.core.node.mixins import LabelDisplay, Suppressable
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
 from meerk40t.tools.geomstr import Geomstr
+
 
 class ImageNode(Node, LabelDisplay, Suppressable):
     """
@@ -153,7 +155,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._process_image_failed = False
 
         self.message = None
-        if (self.operations or self.dither or self.prevent_crop or self.keyhole_reference) and startup:
+        if (
+            self.operations
+            or self.dither
+            or self.prevent_crop
+            or self.keyhole_reference
+        ) and startup:
             step = self._default_units / self.dpi
             step_x = step
             step_y = step
@@ -186,7 +193,6 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             time.sleep(0.05)
             counter += 1
         if self._processed_image is None:
-
             step = self._default_units / self.dpi
             step_x = step
             step_y = step
@@ -320,18 +326,24 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         return default_map
 
     def can_drop(self, drag_node):
+        if self.is_a_child_of(drag_node):
+            return False
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or
-            hasattr(drag_node, "as_image") or
-            drag_node.type in ("op image", "op raster", "file", "group")
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("op image", "op raster", "file", "group")
         )
 
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):
             return False
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("file", "group")
+        ):
             if modify:
                 self.insert_sibling(drag_node)
             return True
@@ -418,12 +430,18 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 # Unset cache.
                 self._cache = None
             else:
-                if self._keyhole_reference is not None and self._keyhole_geometry is None:
+                if (
+                    self._keyhole_reference is not None
+                    and self._keyhole_geometry is None
+                ):
                     get_keyhole_geometry()
 
                 # We need to have a thread per image, so we need to provide a node specific thread_name!
                 self._update_thread = context.threaded(
-                    self._process_image_thread, result=clear, daemon=True, thread_name=f"image_update_{self.id}_{str(time.perf_counter())}"
+                    self._process_image_thread,
+                    result=clear,
+                    daemon=True,
+                    thread_name=f"image_update_{self.id}_{str(time.perf_counter())}",
                 )
 
     def _process_image_thread(self):
@@ -460,6 +478,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         """
 
         from PIL import Image, ImageDraw
+
         while self._processing:
             time.sleep(0.05)
 
@@ -491,6 +510,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
     @property
     def opaque_image(self):
         from PIL import Image
+
         img = self.image
         if img is not None and img.mode == "RGBA":
             r, g, b, a = img.split()
@@ -503,6 +523,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         # Convert image to L type.
         if image.mode == "I":
             from PIL import Image
+
             # Load the 32-bit signed grayscale image
             img = np.array(image, dtype=np.int32)
 
@@ -510,7 +531,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             # img = img.reshape((image.width, image.height))
 
             # Normalize the image to the range 0-255
-            img_normalized = ((img - img.min()) / (img.max() - img.min()) * 255).astype(np.uint8)
+            img_normalized = ((img - img.min()) / (img.max() - img.min()) * 255).astype(
+                np.uint8
+            )
 
             # Convert the NumPy array to a Pillow Image
             img_pil = Image.fromarray(img_normalized)
@@ -684,7 +707,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     pass
             elif name == "contrast":
                 try:
-                    if op["enable"] and (op["contrast"] is not None and op["brightness"] is not None):
+                    if op["enable"] and (
+                        op["contrast"] is not None and op["brightness"] is not None
+                    ):
                         contrast = ImageEnhance.Contrast(image)
                         c = (op["contrast"] + 128.0) / 128.0
                         image = contrast.enhance(c)
@@ -924,7 +949,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             try:
                 image = ImageOps.invert(image)
             except OSError as e:
-                print (f"Image inversion crashed: {e}\nMode: {image.mode}, {image.width}x{image.height} pixel")
+                print(
+                    f"Image inversion crashed: {e}\nMode: {image.mode}, {image.width}x{image.height} pixel"
+                )
 
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
@@ -950,7 +977,10 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             image = self.image
         if self._keyhole_geometry is not None:
             # Let's check whether the keyhole dimensions match
-            if self._keyhole_image is not None and (self._keyhole_image.width != image.width or self._keyhole_image.height != image.height):
+            if self._keyhole_image is not None and (
+                self._keyhole_image.width != image.width
+                or self._keyhole_image.height != image.height
+            ):
                 self._keyhole_image = None
             if self._keyhole_image is None:
                 actualized_matrix = self._actualized_matrix
@@ -973,19 +1003,21 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     # Let's simplify things, if we don't have any overlap then we don't need to do something
                     # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
                     #     continue
-                    geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
+                    geom_points = list(
+                        geom.as_interpolated_points(int(UNITS_PER_MM / 10))
+                    )
                     points = list()
                     for pt in geom_points:
                         if pt is None:
                             continue
                         gx = pt.real
                         gy = pt.imag
-                        x = int(maskimage.width * (gx - x0) / i_wd )
-                        y = int(maskimage.height * (gy - y0) / i_ht )
-                        points.append( (x, y) )
+                        x = int(maskimage.width * (gx - x0) / i_wd)
+                        y = int(maskimage.height * (gy - y0) / i_ht)
+                        points.append((x, y))
 
                     # print (points)
-                    draw.polygon( points, fill="white", outline="white")
+                    draw.polygon(points, fill="white", outline="white")
                 self._keyhole_image = maskimage
                 # For debug purposes...
                 # maskimage.save("C:\\temp\\maskimage.png")

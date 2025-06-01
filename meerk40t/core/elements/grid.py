@@ -163,7 +163,7 @@ def init_commands(kernel):
         **kwargs,
     ):
         """
-        The grid command wil take the selection and crete copies orienting them in a rectangualr grid like fashion.
+        The grid command wil take the selection and create copies orienting them in a rectangular grid like fashion.
         You can define the amount of rows/columns and how the grid should be orientated around the original elements
         """
         if rows is None:
@@ -198,7 +198,14 @@ def init_commands(kernel):
                 y_distance += height
             if origin is None:
                 origin = (1, 1)
-            cx, cy = origin
+            if isinstance(origin, (tuple, list)) and isinstance(origin[0], (tuple, list)):
+                origin = origin[0]
+            try:
+                cx, cy = origin
+            except ValueError:
+                cx = 1
+                cy = 1
+            
             data_out = list(data)
             if cx is None:
                 cx = 1

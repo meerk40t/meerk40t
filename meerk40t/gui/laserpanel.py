@@ -18,7 +18,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon,
     icons8_save,
 )
-from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
+from meerk40t.gui.navigationpanels import Drag, Jog, JogDistancePanel, MovePanel
 from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
@@ -45,12 +45,16 @@ def register_panel_laser(window, context):
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
     jog_drag.SetupScrolling()
-    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
+    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, suppress_z_controls=True)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)
-    main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    distance_panel = JogDistancePanel(jog_drag, wx.ID_ANY, context=context)
+    main_sizer = wx.BoxSizer(wx.VERTICAL)
+    sub_sizer = wx.BoxSizer(wx.HORIZONTAL)
     # main_sizer.AddStretchSpacer()
-    main_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    sub_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    sub_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.Add(sub_sizer, 1, wx.EXPAND, 0)
+    main_sizer.Add(distance_panel, 0, wx.EXPAND, 0)
     # main_sizer.AddStretchSpacer()
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
@@ -91,13 +95,13 @@ def register_panel_laser(window, context):
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
     notebook.AddPage(move_panel, _("Move"))
-    
+
     def on_page_change(event):
         event.Skip()
         page = notebook.GetCurrentPage()
         if page is None:
             return
-        pages = [jog_panel, drag_panel] if page is jog_drag else [page]
+        pages = [jog_panel, drag_panel, distance_panel] if page is jog_drag else [page]
         for p in pages:
             if hasattr(p, "pane_show"):
                 p.pane_show()
@@ -127,8 +131,9 @@ def register_panel_laser(window, context):
         else:
             panel_size = (wb_size[0] / 2, wb_size[1])
 
-        jog_panel.set_icons(dimension=panel_size)
-        drag_panel.set_icons(dimension=panel_size)
+        for panel in (jog_panel, drag_panel, distance_panel):
+            if hasattr(panel, "set_icons"):
+                panel.set_icons(dimension=panel_size)
 
     jog_drag.Bind(wx.EVT_SIZE, on_resize)
 
@@ -361,6 +366,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
         # self.btn_config_laser.Bind(wx.EVT_LEFT_DOWN, self.on_config_button)
         self.btn_config_laser.Bind(wx.EVT_BUTTON, self.on_config_button)
+        self.combo_devices.Bind(wx.EVT_RIGHT_DOWN, self.on_control_right)
+        self.btn_config_laser.Bind(wx.EVT_RIGHT_DOWN, self.on_control_right)
         # end wxGlade
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
@@ -693,6 +700,9 @@ class LaserPanel(wx.Panel):
         self.context(f"window open Simulation z 0 {param}\n")
         self.context.kernel.busyinfo.end()
 
+    def on_control_right(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("window open DeviceManager\n")
+
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
         try:
@@ -877,6 +887,25 @@ class OptimizePanel(wx.Panel):
         if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
+
+    def ensure_mutually_exclusive(self, prio: str):
+        # Ensure that opt_inner_first and opt_reduce_travel are mutually exclusive
+        inner_first = self.context.planner.opt_inner_first
+        reduce_travel = self.context.planner.opt_reduce_travel
+        if inner_first and reduce_travel:
+            if prio == "opt_inner_first":
+                self.context.planner.opt_reduce_travel = False
+            else:
+                self.context.planner.opt_inner_first = False
+            self.optimize_panel.reload()
+
+    @signal_listener("opt_inner_first")
+    def opt_inner_update(self, origin, *message):
+        self.ensure_mutually_exclusive("opt_inner_first")
+
+    @signal_listener("opt_reduce_travel")
+    def opt_reduce_travel_update(self, origin, *message):
+        self.ensure_mutually_exclusive("opt_reduce_travel")
 
     def on_optimize(self, event):
         newvalue = bool(self.checkbox_optimize.GetValue())

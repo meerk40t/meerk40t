@@ -487,7 +487,7 @@ class SpeedPpiPanel(wx.Panel):
             self.update_power_speed_properties()
         except RuntimeError:
             # Pane was already destroyed
-            pass
+            return
         self.set_widgets(self.operation)
 
     def update_power_speed_properties(self):

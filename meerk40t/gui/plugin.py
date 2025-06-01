@@ -327,13 +327,19 @@ and a wxpython version <= 4.1.1."""
 
         kernel.yesno = yesno_popup
 
-        from meerk40t.gui.busy import BusyInfo
+        from meerk40t.gui.busy import SimpleBusyInfo, BusyInfo
 
-        kargs = {}
+        kargs = {"kernel": kernel,}
         if kernel.themes.dark:
             kargs["bgcolor"] = kernel.themes.get("win_bg")
             kargs["fgcolor"] = kernel.themes.get("win_fg")
-        kernel.busyinfo = BusyInfo(**kargs)
+        if kernel.os_information["OS_NAME"] != "Linux":
+            # The Linux implementation of wxWidgets 
+            # cannot properly update controls (n idea why,
+            # any hint to circumvent this would be welcome)
+            kernel.busyinfo = BusyInfo(**kargs)
+        else:
+            kernel.busyinfo = SimpleBusyInfo(**kargs)
 
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)

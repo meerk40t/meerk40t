@@ -134,3 +134,4 @@ MeerK40t-*.txt
 
 # Sourcery settings
 .sourcery.yaml
+.pre-commit-config.yaml

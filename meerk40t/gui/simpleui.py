@@ -13,7 +13,7 @@ from wx import aui
 from ..core.exceptions import BadFileError
 from .icons import get_default_icon_size, icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
-from .navigationpanels import Drag, Jog
+from .navigationpanels import Drag, Jog, JogDistancePanel
 from .wxutils import StaticBoxSizer, TextCtrl, wxButton, wxStaticText
 
 _ = wx.GetTranslation
@@ -26,19 +26,24 @@ class JogMovePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
-
+        distance_panel = JogDistancePanel(self, wx.ID_ANY, context=context)
         jog_panel = Jog(self, wx.ID_ANY, context=context)
         drag_panel = Drag(self, wx.ID_ANY, context=context)
-        self.panels = [jog_panel, drag_panel]
-        self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.main_sizer.Add(jog_panel, 1, wx.EXPAND, 0)
-        self.main_sizer.Add(drag_panel, 1, wx.EXPAND, 0)
+        self.panels = [distance_panel, jog_panel, drag_panel]
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.jog_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.jog_sizer.Add(jog_panel, 1, wx.EXPAND, 0)
+        self.jog_sizer.Add(drag_panel, 1, wx.EXPAND, 0)
+        self.main_sizer.Add(distance_panel, 0, wx.EXPAND, 0)
+        self.main_sizer.Add(self.jog_sizer, 1, wx.EXPAND, 0)
         self.SetSizer(self.main_sizer)
         self.Layout()
         self.Bind(wx.EVT_SIZE, self.on_resize)
+        # Force initial resizing
+        wx.CallAfter(self.on_resize)
 
-    def on_resize(self, event):
-        wb_size = event.GetSize()
+    def on_resize(self, event=None):
+        wb_size = self.jog_sizer.GetSize()
         panel_size = (wb_size[0] / 2, wb_size[1])
         for p in self.panels:
             if hasattr(p, "set_icons"):

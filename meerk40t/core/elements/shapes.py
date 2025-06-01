@@ -66,7 +66,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -181,12 +181,18 @@ def init_commands(kernel):
     @self.console_argument("x_pos", type=Length, help=_("X-coordinate of center"))
     @self.console_argument("y_pos", type=Length, help=_("Y-coordinate of center"))
     @self.console_argument("rx", type=Length, help=_("Primary radius of ellipse"))
-    @self.console_argument("ry", type=Length, help=_("Secondary radius of ellipse (default equal to primary radius=circle)"))
-    @self.console_argument("start_angle", type=Angle, help=_("Start angle of arc (default 0°)"))
-    @self.console_argument("end_angle", type=Angle, help=_("End angle of arc (default 360°)"))
-    @self.console_option(
-        "rotation", "r", type=Angle, help=_("Rotation of arc")
+    @self.console_argument(
+        "ry",
+        type=Length,
+        help=_("Secondary radius of ellipse (default equal to primary radius=circle)"),
     )
+    @self.console_argument(
+        "start_angle", type=Angle, help=_("Start angle of arc (default 0°)")
+    )
+    @self.console_argument(
+        "end_angle", type=Angle, help=_("End angle of arc (default 360°)")
+    )
+    @self.console_option("rotation", "r", type=Angle, help=_("Rotation of arc"))
     @self.console_command(
         "arc",
         help=_("arc <cx> <cy> <rx> <ry> <start> <end>"),
@@ -195,7 +201,18 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_arc(
-        channel, _, x_pos, y_pos, rx, ry=None, start_angle=None, end_angle=None, rotation=None, data=None, post=None, **kwargs
+        channel,
+        _,
+        x_pos,
+        y_pos,
+        rx,
+        ry=None,
+        start_angle=None,
+        end_angle=None,
+        rotation=None,
+        data=None,
+        post=None,
+        **kwargs,
     ):
         if start_angle is None:
             start_angle = Angle("0deg")
@@ -211,7 +228,7 @@ def init_commands(kernel):
         cy = float(y_pos)
         geom = Geomstr()
         geom.arc_as_cubics(
-            start_t=start_angle.radians, 
+            start_t=start_angle.radians,
             end_t=end_angle.radians,
             rx=rx_val,
             ry=ry_val,
@@ -355,6 +372,7 @@ def init_commands(kernel):
             data = list(self.elems(emphasized=True))
 
         if len(data) == 0:
+            channel(_("No selected elements."))
             return
         for node in data:
             eparent = node.parent
@@ -655,7 +673,83 @@ def init_commands(kernel):
                 height=500,
             )
         except Exception:
-            pass # Not relevant...
+            pass  # Not relevant...
+
+    @self.console_argument("prop", type=str, help=_("property to get"))
+    @self.console_command(
+        "property-get",
+        help=_("get property value"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+    )
+    def element_property_get(command, channel, _, data, post=None, prop=None, **kwargs):
+        def possible_representation(node, prop) -> str:
+            def simple_rep(prop, value):
+                if isinstance(value, (float, int)) and prop in (
+                    "x",
+                    "y",
+                    "cx",
+                    "cy",
+                    "r",
+                    "rx",
+                    "ry",
+                ):
+                    try:
+                        s = Length(value).length_mm
+                        return s
+                    except ValueError:
+                        pass
+                elif isinstance(value, Length):
+                    return value.length_mm
+                elif isinstance(value, Angle):
+                    return value.angle_degrees
+                elif isinstance(value, str):
+                    return f"'{value}'"
+                return repr(value)
+
+            value = getattr(node, prop, None)
+            if isinstance(value, (str, float, int)):
+                return simple_rep(prop, value)
+            elif isinstance(value, (tuple, list)):
+                stuff = []
+                for v in value:
+                    stuff.append(simple_rep("x", v))
+                return ",".join(stuff)
+            return simple_rep(prop, value)
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        if prop is None or (prop == "?"):
+            channel(_("You need to provide the property to get."))
+            identified = []
+            for op in data:
+                if op.type in identified:
+                    continue
+                identified.append(op.type)
+                prop_str = f"{op.type} has the following properties:"
+                first = True
+                for d in op.__dict__:
+                    if d.startswith("_"):
+                        continue
+                    prop_str = f"{prop_str}{'' if first else ','} {d}"
+                    first = False
+                channel(prop_str)
+            return
+        for d in data:
+            if not hasattr(d, prop):
+                channel(
+                    f"Node: {d.display_label()} (Type: {d.type}) has no property called '{prop}'"
+                )
+            else:
+                channel(
+                    f"Node: {d.display_label()} (Type: {d.type}): {prop}={getattr(d, prop, '')} ({possible_representation(d, prop)})"
+                )
 
     @self.console_argument("prop", type=str, help=_("property to set"))
     @self.console_argument("new_value", type=str, help=_("new property value"))
@@ -680,7 +774,7 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        if prop is None or (prop == "?" and new_value=="?"):
+        if prop is None or (prop == "?" and new_value == "?"):
             channel(_("You need to provide the property to set."))
             if prop == "?":
                 identified = []
@@ -688,13 +782,17 @@ def init_commands(kernel):
                     if op.type in identified:
                         continue
                     identified.append(op.type)
-                    prop_str = f"{op.type} has the following properties: "
+                    prop_str = f"{op.type} has the following properties:"
+                    first = True
                     for d in op.__dict__:
                         if d.startswith("_"):
                             continue
-                        prop_str = f"{prop_str}, {d}"
+                        prop_str = f"{prop_str}{'' if first else ','} {d}"
+                        first = False
                     channel(prop_str)
-                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
+                channel(
+                    "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
+                )
             return
         classify_required = False
         prop = prop.lower()
@@ -751,69 +849,249 @@ def init_commands(kernel):
                     e.lock = setval
                     changed.append(e)
         else:
+            # _("Update property")
+            with self.undoscope("Update property"):
+                for e in data:
+                    # dbg = ""
+                    # if hasattr(e, "bounds"):
+                    #     bb = e.bounds
+                    #     dbg += (
+                    #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                    #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                    #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                    #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                    #     )
+                    # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                    # print (f"Before: {dbg}")
+                    if prop in ("x", "y"):
+                        if not e.can_move(self.lock_allows_move):
+                            channel(
+                                _("Element can not be moved: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        # We need to adjust the matrix
+                        if hasattr(e, "bounds") and hasattr(e, "matrix"):
+                            dx = 0
+                            dy = 0
+                            bb = e.bounds
+                            if prop == "x":
+                                dx = new_value - bb[0]
+                            else:
+                                dy = new_value - bb[1]
+                            e.matrix.post_translate(dx, dy)
+                        else:
+                            channel(
+                                _("Element has no matrix to modify: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                    elif prop in ("width", "height"):
+                        if new_value == 0:
+                            channel(_("Can't set {field} to zero").format(field=prop))
+                            continue
+                        if hasattr(e, "can_scale") and not e.can_scale:
+                            channel(
+                                _("Element can not be scaled: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        if hasattr(e, "matrix") and hasattr(e, "bounds"):
+                            bb = e.bounds
+                            sx = 1.0
+                            sy = 1.0
+                            wd = bb[2] - bb[0]
+                            ht = bb[3] - bb[1]
+                            if prop == "width":
+                                sx = new_value / wd
+                            else:
+                                sy = new_value / ht
+                            e.matrix.post_scale(sx, sy)
+                        else:
+                            channel(
+                                _("Element has no matrix to modify: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                    elif hasattr(e, prop):
+                        if hasattr(e, "can_modify") and not e.can_modify:
+                            channel(
+                                _("Can't modify a locked element: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        try:
+                            oldval = getattr(e, prop)
+                            if prevalidated:
+                                setval = new_value
+                            else:
+                                if oldval is not None:
+                                    proptype = type(oldval)
+                                    setval = proptype(new_value)
+                                    if isinstance(oldval, bool):
+                                        if new_value.lower() in ("1", "true"):
+                                            setval = True
+                                        elif new_value.lower() in ("0", "false"):
+                                            setval = False
+                                else:
+                                    setval = new_value
+                            setattr(e, prop, setval)
+                        except TypeError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+                        except ValueError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+                        except AttributeError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+
+                        if "font" in prop:
+                            # We need to force a recalculation of the underlying wxfont property
+                            if hasattr(e, "wxfont"):
+                                delattr(e, "wxfont")
+                                text_elems.append(e)
+                        if prop in ("mktext", "mkfont"):
+                            for property_op in self.kernel.lookup_all(
+                                "path_updater/.*"
+                            ):
+                                property_op(self.kernel.root, e)
+                        if prop in (
+                            "dpi",
+                            "dither",
+                            "dither_type",
+                            "invert",
+                            "red",
+                            "green",
+                            "blue",
+                            "lightness",
+                        ):
+                            # Images require some recalculation too
+                            self.do_image_update(e)
+
+                    else:
+                        channel(
+                            _("Element {name} has no property {field}").format(
+                                name=str(e), field=prop
+                            )
+                        )
+                        continue
+                    e.altered()
+                    # dbg = ""
+                    # if hasattr(e, "bounds"):
+                    #     bb = e.bounds
+                    #     dbg += (
+                    #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                    #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                    #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                    #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                    #     )
+                    # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                    # print (f"After: {dbg}")
+                    changed.append(e)
+        if len(changed) > 0:
+            if len(text_elems) > 0:
+                # Recalculate bounds
+                calculate_text_bounds(text_elems)
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_update", changed)
+            self.validate_selected_area()
+            if classify_required:
+                post.append(classify_new(changed))
+
+        return "elements", data
+
+    @self.console_argument("prop", type=str, help=_("property to set"))
+    @self.console_argument("new_value", type=str, help=_("new property value"))
+    @self.console_command(
+        "op-property-set",
+        help=_("set operation property to new value"),
+        input_type=(
+            None,
+            "ops",
+        ),
+        output_type="ops",
+        all_arguments_required=True,
+    )
+    def operation_property_set(
+        command, channel, _, data, post=None, prop=None, new_value=None, **kwargs
+    ):
+        """
+        Generic node manipulation routine, use with care
+        """
+        if data is None:
+            data = list(self.ops(selected=True))
+        if not data:
+            channel(_("No selected operations."))
+            return
+        if prop is None or (prop == "?" and new_value == "?"):
+            channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties: "
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}, {d}"
+                    channel(prop_str)
+                channel(
+                    "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
+                )
+            return
+        prop = prop.lower()
+        if len(new_value) == 0:
+            new_value = None
+        # Let's distinguish a couple of special cases...
+        prevalidated = False
+        if prop == "color":
+            if new_value is not None:
+                if new_value.lower() == "none":
+                    # The text...
+                    new_value = None
+                try:
+                    new_value = Color(new_value)
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid color value: {value}").format(value=new_value))
+                    return
+        if prop in ("power", "speed", "dpi"):
+            try:
+                testval = float(new_value)
+            except ValueError:
+                channel(f"Invalid value: {new_value}")
+                return
+            if testval < 0:
+                channel(f"Invalid value: {new_value}")
+                return
+            if prop == "power" and testval > 1000:
+                channel(f"Invalid value: {new_value}")
+                return
+            new_value = testval
+            prevalidated = True
+
+        changed = []
+        # _("Update property")
+        with self.undoscope("Update property"):
             for e in data:
-                # dbg = ""
-                # if hasattr(e, "bounds"):
-                #     bb = e.bounds
-                #     dbg += (
-                #         f"x:{Length(bb[0], digits=2).length_mm}, "
-                #         + f"y:{Length(bb[1], digits=2).length_mm}, "
-                #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
-                #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
-                #     )
-                # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
-                # print (f"Before: {dbg}")
-                if prop in ("x", "y"):
-                    if not e.can_move(self.lock_allows_move):
-                        channel(
-                            _("Element can not be moved: {name}").format(name=str(e))
-                        )
-                        continue
-                    # We need to adjust the matrix
-                    if hasattr(e, "bounds") and hasattr(e, "matrix"):
-                        dx = 0
-                        dy = 0
-                        bb = e.bounds
-                        if prop == "x":
-                            dx = new_value - bb[0]
-                        else:
-                            dy = new_value - bb[1]
-                        e.matrix.post_translate(dx, dy)
-                    else:
-                        channel(
-                            _("Element has no matrix to modify: {name}").format(
-                                name=str(e)
-                            )
-                        )
-                        continue
-                elif prop in ("width", "height"):
-                    if new_value == 0:
-                        channel(_("Can't set {field} to zero").format(field=prop))
-                        continue
-                    if hasattr(e, "can_scale") and not e.can_scale:
-                        channel(
-                            _("Element can not be scaled: {name}").format(name=str(e))
-                        )
-                        continue
-                    if hasattr(e, "matrix") and hasattr(e, "bounds"):
-                        bb = e.bounds
-                        sx = 1.0
-                        sy = 1.0
-                        wd = bb[2] - bb[0]
-                        ht = bb[3] - bb[1]
-                        if prop == "width":
-                            sx = new_value / wd
-                        else:
-                            sy = new_value / ht
-                        e.matrix.post_scale(sx, sy)
-                    else:
-                        channel(
-                            _("Element has no matrix to modify: {name}").format(
-                                name=str(e)
-                            )
-                        )
-                        continue
-                elif hasattr(e, prop):
+                if hasattr(e, prop):
                     if hasattr(e, "can_modify") and not e.can_modify:
                         channel(
                             _("Can't modify a locked element: {name}").format(
@@ -856,186 +1134,15 @@ def init_commands(kernel):
                             ).format(val=new_value, field=prop, oldval=oldval)
                         )
 
-                    if "font" in prop:
-                        # We need to force a recalculation of the underlying wxfont property
-                        if hasattr(e, "wxfont"):
-                            delattr(e, "wxfont")
-                            text_elems.append(e)
-                    if prop in ("mktext", "mkfont"):
-                        for property_op in self.kernel.lookup_all("path_updater/.*"):
-                            property_op(self.kernel.root, e)
-                    if prop in (
-                        "dpi",
-                        "dither",
-                        "dither_type",
-                        "invert",
-                        "red",
-                        "green",
-                        "blue",
-                        "lightness",
-                    ):
-                        # Images require some recalculation too
-                        self.do_image_update(e)
-
                 else:
                     channel(
-                        _("Element {name} has no property {field}").format(
+                        _("Operation {name} has no property {field}").format(
                             name=str(e), field=prop
                         )
                     )
                     continue
                 e.altered()
-                # dbg = ""
-                # if hasattr(e, "bounds"):
-                #     bb = e.bounds
-                #     dbg += (
-                #         f"x:{Length(bb[0], digits=2).length_mm}, "
-                #         + f"y:{Length(bb[1], digits=2).length_mm}, "
-                #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
-                #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
-                #     )
-                # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
-                # print (f"After: {dbg}")
                 changed.append(e)
-        if len(changed) > 0:
-            if len(text_elems) > 0:
-                # Recalculate bounds
-                calculate_text_bounds(text_elems)
-            self.signal("refresh_scene", "Scene")
-            self.signal("element_property_update", changed)
-            self.validate_selected_area()
-            if classify_required:
-                post.append(classify_new(changed))
-
-        return "elements", data
-
-    @self.console_argument("prop", type=str, help=_("property to set"))
-    @self.console_argument("new_value", type=str, help=_("new property value"))
-    @self.console_command(
-        "op-property-set",
-        help=_("set operation property to new value"),
-        input_type=(
-            None,
-            "ops",
-        ),
-        output_type="ops",
-        all_arguments_required=True,
-    )
-    def operation_property_set(
-        command, channel, _, data, post=None, prop=None, new_value=None, **kwargs
-    ):
-        """
-        Generic node manipulation routine, use with care
-        """
-        if data is None:
-            data = list(self.ops(selected=True))
-        if not data:
-            channel(_("No selected operations."))
-            return
-        if prop is None or (prop == "?" and new_value=="?"):
-            channel(_("You need to provide the property to set."))
-            if prop == "?":
-                identified = []
-                for op in data:
-                    if op.type in identified:
-                        continue
-                    identified.append(op.type)
-                    prop_str = f"{op.type} has the following properties: "
-                    for d in op.__dict__:
-                        if d.startswith("_"):
-                            continue
-                        prop_str = f"{prop_str}, {d}"
-                    channel(prop_str)
-                channel ("Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever...")
-            return
-        prop = prop.lower()
-        if len(new_value) == 0:
-            new_value = None
-        # Let's distinguish a couple of special cases...
-        prevalidated = False
-        if prop == "color":
-            if new_value is not None:
-                if new_value.lower() == "none":
-                    # The text...
-                    new_value = None
-                try:
-                    new_value = Color(new_value)
-                    prevalidated = True
-                except ValueError:
-                    channel(_("Invalid color value: {value}").format(value=new_value))
-                    return
-        if prop in ("power", "speed", "dpi"):
-            try:
-                testval = float(new_value)
-            except ValueError:
-                channel(f"Invalid value: {new_value}")
-                return
-            if testval < 0:
-                channel(f"Invalid value: {new_value}")
-                return
-            if prop == "power" and testval > 1000:
-                channel(f"Invalid value: {new_value}")
-                return
-            new_value = testval
-            prevalidated = True
-
-
-        changed = []
-
-        for e in data:
-            if hasattr(e, prop):
-                if hasattr(e, "can_modify") and not e.can_modify:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(
-                            name=str(e)
-                        )
-                    )
-                    continue
-                try:
-                    oldval = getattr(e, prop)
-                    if prevalidated:
-                        setval = new_value
-                    else:
-                        if oldval is not None:
-                            proptype = type(oldval)
-                            setval = proptype(new_value)
-                            if isinstance(oldval, bool):
-                                if new_value.lower() in ("1", "true"):
-                                    setval = True
-                                elif new_value.lower() in ("0", "false"):
-                                    setval = False
-                        else:
-                            setval = new_value
-                    setattr(e, prop, setval)
-                except TypeError:
-                    channel(
-                        _(
-                            "Can't set '{val}' for {field} (invalid type, old={oldval})."
-                        ).format(val=new_value, field=prop, oldval=oldval)
-                    )
-                except ValueError:
-                    channel(
-                        _(
-                            "Can't set '{val}' for {field} (invalid value, old={oldval})."
-                        ).format(val=new_value, field=prop, oldval=oldval)
-                    )
-                except AttributeError:
-                    channel(
-                        _(
-                            "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
-                        ).format(val=new_value, field=prop, oldval=oldval)
-                    )
-
-
-            else:
-                channel(
-                    _("Operation {name} has no property {field}").format(
-                        name=str(e), field=prop
-                    )
-                )
-                continue
-            e.altered()
-            changed.append(e)
         if len(changed) > 0:
             self.signal("refresh_scene", "Scene")
             self.signal("element_property_update", changed)
@@ -1093,39 +1200,41 @@ def init_commands(kernel):
             method = "visvalingam"
         if tolerance is None:
             tolerance = 25  # About 1/1000 mil
-        for node in data:
-            try:
-                sub_before = len(list(node.as_geometry().as_subpaths()))
-            except AttributeError:
-                sub_before = 0
-            if hasattr(node, "geometry"):
-                geom = node.geometry
-                seg_before = node.geometry.index
-                if method == "douglaspeucker":
-                    node.geometry = geom.simplify(tolerance)
-                else:
-                    # Let's try Visvalingam line simplification
-                    node.geometry = geom.simplify_geometry(threshold=tolerance)
-                node.altered()
-                seg_after = node.geometry.index
+        # _("Simplify")
+        with self.undoscope("Simplify"):
+            for node in data:
                 try:
-                    sub_after = len(list(node.as_geometry().as_subpaths()))
+                    sub_before = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
-                    sub_after = 0
-                channel(
-                    f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
-                )
-                if seg_before:
-                    saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                    sub_before = 0
+                if hasattr(node, "geometry"):
+                    geom = node.geometry
+                    seg_before = node.geometry.index
+                    if method == "douglaspeucker":
+                        node.geometry = geom.simplify(tolerance)
+                    else:
+                        # Let's try Visvalingam line simplification
+                        node.geometry = geom.simplify_geometry(threshold=tolerance)
+                    node.altered()
+                    seg_after = node.geometry.index
+                    try:
+                        sub_after = len(list(node.as_geometry().as_subpaths()))
+                    except AttributeError:
+                        sub_after = 0
+                    channel(
+                        f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
+                    )
+                    if seg_before:
+                        saving = f"({(seg_before - seg_after) / seg_before * 100:.1f}%)"
+                    else:
+                        saving = ""
+                    channel(f"Subpaths before: {sub_before} to {sub_after}")
+                    channel(f"Segments before: {seg_before} to {seg_after} {saving}")
+                    data_changed.append(node)
                 else:
-                    saving = ""
-                channel(f"Subpaths before: {sub_before} to {sub_after}")
-                channel(f"Segments before: {seg_before} to {seg_after} {saving}")
-                data_changed.append(node)
-            else:
-                channel(
-                    f"Invalid node for simplify {node.type} ({node.display_label()})"
-                )
+                    channel(
+                        f"Invalid node for simplify {node.type} ({node.display_label()})"
+                    )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
@@ -1353,25 +1462,28 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
-                continue
-            e.stroke_width = stroke_width
-            try:
-                e.stroke_width_zero()
-            except AttributeError:
-                pass
-            # No full modified required, we are effectively only adjusting
-            # the painted_bounds
-            e.translated(0, 0)
+        # _("Set stroke-width")
+        with self.undoscope("Set stroke-width"):
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
+                    continue
+                e.stroke_width = stroke_width
+                try:
+                    e.stroke_width_zero()
+                except AttributeError:
+                    pass
+                # No full modified required, we are effectively only adjusting
+                # the painted_bounds
+                e.translated(0, 0)
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
         ("enable_stroke_scale", "disable_stroke_scale"),
-        help=_("stroke-width <length>"),
         input_type=(
             None,
             "elements",
@@ -1385,12 +1497,16 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
-                continue
-            e.stroke_scaled = command == "enable_stroke_scale"
-            e.altered()
+        # _("Update stroke-scale")
+        with self.undoscope("Update stroke-scale"):
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
+                    continue
+                e.stroke_scaled = command == "enable_stroke_scale"
+                e.altered()
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return "elements", data
@@ -1691,7 +1807,9 @@ def init_commands(kernel):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = None
@@ -1703,7 +1821,9 @@ def init_commands(kernel):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = Color(color)
@@ -1729,7 +1849,7 @@ def init_commands(kernel):
                 # self.signal("rebuild_tree")
                 self.signal("refresh_tree", apply)
             else:
-                self.signal("element_property_update", apply)
+                self.signal("element_property_reload", apply)
                 self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -1794,13 +1914,14 @@ def init_commands(kernel):
             return "elements", data
         # _("Set fill")
         with self.undoscope("Set fill"):
-
             if color == "none":
                 self.set_start_time("fill")
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = None
@@ -1812,7 +1933,9 @@ def init_commands(kernel):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = Color(color)
@@ -1963,28 +2086,30 @@ def init_commands(kernel):
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
         images = []
-        try:
-            if not absolute:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    node.matrix.post_rotate(angle, cx, cy)
-                    node.modified()
-                    if hasattr(node, "update"):
-                        images.append(node)
-            else:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    start_angle = node.matrix.rotation
-                    node.matrix.post_rotate(angle - start_angle, cx, cy)
-                    node.modified()
-                    if hasattr(node, "update"):
-                        images.append(node)
-        except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            self.do_image_update(node)
+        # _("Rotate")
+        with self.undoscope("Rotate"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        node.matrix.post_rotate(angle, cx, cy)
+                        node.modified()
+                        if hasattr(node, "update"):
+                            images.append(node)
+                else:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        start_angle = node.matrix.rotation
+                        node.matrix.post_rotate(angle - start_angle, cx, cy)
+                        node.modified()
+                        if hasattr(node, "update"):
+                            images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
 
         self.signal("refresh_scene", "Scene")
         return "elements", data
@@ -2613,6 +2738,187 @@ def init_commands(kernel):
                 self.first_emphasized = old_first
             else:
                 self.first_emphasized = None
+        return "elements", data
+
+    @self.console_argument(
+        "tolerance", type=str, help=_("Tolerance to stitch paths together")
+    )
+    @self.console_option(
+        "keep",
+        "k",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Keep original paths"),
+    )
+    @self.console_command(
+        "stitch",
+        help=_("stitch selected elements"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def stitched(
+        command, channel, _, data=None, tolerance=None, keep=None, post=None, **kwargs
+    ):
+        def _prepare_stitching_params(channel, data, tolerance, keep):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel("There is nothing to be stitched together")
+                return data, tolerance, keep, False
+            if keep is None:
+                keep = False
+            if tolerance is None:
+                tolerance_val = 0
+            else:
+                try:
+                    tolerance_val = float(Length(tolerance))
+                except ValueError as e:
+                    channel(f"Invalid tolerance value: {tolerance}")
+                    return data, tolerance, keep, False
+            return data, tolerance_val, keep, True
+
+        data, tolerance, keep, valid = _prepare_stitching_params(
+            channel, data, tolerance, keep
+        )
+        if not valid:
+            return
+        s_data = stitcheable_nodes(data, tolerance)
+        if not s_data:
+            channel("No stitcheable nodes found")
+            return
+
+        geoms = []
+        data_out = []
+        to_be_deleted = []
+        # _("Stitch paths")
+        with self.undoscope("Stitch paths"):
+            default_stroke = None
+            default_strokewidth = None
+            default_fill = None
+            for node in s_data:
+                geom: Geomstr = node.as_geometry()
+                geoms.extend(iter(geom.as_contiguous()))
+                if default_stroke is None and hasattr(node, "stroke"):
+                    default_stroke = node.stroke
+                if default_strokewidth is None and hasattr(node, "stroke_width"):
+                    default_strokewidth = node.stroke_width
+                to_be_deleted.append(node)
+            prev_len = len(geoms)
+            if geoms:
+                result = stitch_geometries(geoms, tolerance)
+                if result is None:
+                    channel("Could not stitch anything")
+                    return
+                if not keep:
+                    for node in to_be_deleted:
+                        node.remove_node()
+                for idx, g in enumerate(result):
+                    node = self.elem_branch.add(
+                        label=f"Stitch # {idx + 1}",
+                        stroke=default_stroke,
+                        stroke_width=default_strokewidth,
+                        fill=default_fill,
+                        geometry=g,
+                        type="elem path",
+                    )
+                    data_out.append(node)
+            new_len = len(data_out)
+            channel(
+                f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths"
+            )
+
+        post.append(classify_new(data_out))
+        self.set_emphasis(data_out)
+        return "elements", data_out
+
+    @self.console_argument("xpos", type=Length, help=_("X-Position of cross center"))
+    @self.console_argument("ypos", type=Length, help=_("Y-Position of cross center"))
+    @self.console_argument("diameter", type=Length, help=_("Diameter of cross"))
+    @self.console_option(
+        "circle",
+        "c",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw a circle around cross"),
+    )
+    @self.console_option(
+        "diagonal",
+        "d",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw the cross diagonally"),
+    )
+    @self.console_command(
+        "cross",
+        help=_("Create a small cross at the given position"),
+        input_type=None,
+        output_type="elements",
+    )
+    def cross(
+        command,
+        channel,
+        _,
+        data=None,
+        xpos=None,
+        ypos=None,
+        diameter=None,
+        circle=None,
+        diagonal=None,
+        post=None,
+        **kwargs,
+    ):
+        if xpos is None or ypos is None or diameter is None:
+            channel(_("You need to provide center-point and diameter: cross x y d"))
+            return
+        try:
+            xp = float(xpos)
+            yp = float(ypos)
+            dia = float(diameter)
+        except ValueError:
+            channel(_("Invalid values given"))
+            return
+        if circle is None:
+            circle = False
+        if diagonal is None:
+            diagonal = False
+        geom = Geomstr()
+        if diagonal:
+            sincos45 = dia / 2 * sqrt(2) / 2
+            geom.line(
+                complex(xp - sincos45, yp - sincos45),
+                complex(xp + sincos45, yp + sincos45),
+            )
+            geom.line(
+                complex(xp + sincos45, yp - sincos45),
+                complex(xp - sincos45, yp + sincos45),
+            )
+        else:
+            geom.line(complex(xp - dia / 2, yp), complex(xp + dia / 2, yp))
+            geom.line(complex(xp, yp - dia / 2), complex(xp, yp + dia / 2))
+        if circle:
+            geom.append(Geomstr.circle(dia / 2, xp, yp))
+        # _("Create cross") - hint for translator
+        with self.undoscope("Create cross"):
+            node = self.elem_branch.add(
+                label=_("Cross at ({xp}, {yp})").format(
+                    xp=xpos.length_mm, yp=ypos.length_mm
+                ),
+                geometry=geom,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=None,
+                type="elem path",
+            )
+            if data is None:
+                data = []
+            data.append(node)
+
+            # Newly created! Classification needed?
+            post.append(classify_new(data))
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------

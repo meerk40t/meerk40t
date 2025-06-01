@@ -183,22 +183,34 @@ class TemplatePanel(wx.Panel):
         self.SetHelpText("testpattern")
         self.storage = storage
         self.callback = None
+        self.secondary_callback = None
         self.current_op = None
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
+        self.secondary_default_op = []
         # A tuple defining whether a free color-selection scheme is allowed, linked to default_op
         self.color_scheme_free = []
         self.default_op.append(CutOpNode())
+        self.secondary_default_op.append(None)
         self.color_scheme_free.append(True)
+
         self.default_op.append(EngraveOpNode())
         self.color_scheme_free.append(True)
+        self.secondary_default_op.append(None)
+
         self.default_op.append(RasterOpNode())
         self.color_scheme_free.append(False)
+        self.secondary_default_op.append(None)
+
         self.default_op.append(ImageOpNode())
         self.color_scheme_free.append(True)
+        self.secondary_default_op.append(None)
+
+        # Hatch = Engrave
         op = EngraveOpNode()
         self.default_op.append(op)
+        self.secondary_default_op.append(HatchEffectNode())
         self.color_scheme_free.append(True)
 
         self.use_image = [False] * len(self.default_op)
@@ -577,6 +589,7 @@ class TemplatePanel(wx.Panel):
         return result
 
     def on_combo_image(self, event):
+        self.validate_input(event)
         op = self.combo_ops.GetSelection()
         if op != 3:  # No Image?
             return
@@ -592,8 +605,27 @@ class TemplatePanel(wx.Panel):
     def set_callback(self, routine):
         self.callback = routine
         idx = self.combo_ops.GetSelection()
+        opnode = None
+        secondary_node = None
+        if idx >= 0:
+            opnode = self.default_op[idx]
+            secondary_node = self.secondary_default_op[idx]
         if self.callback is not None and idx >= 0:
-            self.callback(self.default_op[idx])
+            self.callback(opnode)
+        if self.secondary_callback is not None:
+            self.secondary_callback(secondary_node)
+
+    def set_secondary_callback(self, routine):
+        self.secondary_callback = routine
+        idx = self.combo_ops.GetSelection()
+        # opnode = None
+        secondary_node = None
+        if idx >= 0:
+            # opnode = self.default_op[idx]
+            secondary_node = self.secondary_default_op[idx]
+
+        if self.secondary_callback is not None:
+            self.secondary_callback(secondary_node)
 
     def use_percent(self):
         self.context.device.setting(bool, "use_percent_for_power_display", False)
@@ -653,19 +685,24 @@ class TemplatePanel(wx.Panel):
         self.Freeze()
         if opidx < 0:
             opnode = None
+            secondary_node = None
             self._freecolor = True
             self.combo_images.Show(False)
             self.text_dim_1.Enable(True)
             self.text_dim_2.Enable(True)
         else:
             opnode = self.default_op[opidx]
+            secondary_node = self.secondary_default_op[opidx]
             self._freecolor = self.color_scheme_free[opidx]
             self.combo_images.Show(self.use_image[opidx])
             self.text_dim_1.Enable(not self.use_image[opidx])
             self.text_dim_2.Enable(not self.use_image[opidx])
+
         self.sizer_param_op.Layout()
         if self.callback is not None:
             self.callback(opnode)
+        if self.secondary_callback is not None:
+            self.secondary_callback(secondary_node)
         self.combo_color_1.Enable(self._freecolor)
         self.combo_color_2.Enable(self._freecolor)
         self.check_color_direction_1.Enable(self._freecolor)
@@ -732,13 +769,69 @@ class TemplatePanel(wx.Panel):
         if "balor" in self.context.device.path:
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True, None),
-                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True, None,),
-                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False, None,),
-                ("delay_laser_off", preset_balor_timings, _("Laser Off Delay"), "µs", False, False, None,),
-                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False, None,),
-                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True, None,),
-                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True, None,),
-                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True, None,),
+                (
+                    "rapid_speed",
+                    preset_balor_rapid,
+                    _("Rapid Speed"),
+                    "mm/s",
+                    False,
+                    True,
+                    None,
+                ),
+                (
+                    "delay_laser_on",
+                    preset_balor_timings,
+                    _("Laser On Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "delay_laser_off",
+                    preset_balor_timings,
+                    _("Laser Off Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "delay_polygon",
+                    preset_balor_timings,
+                    _("Polygon Delay"),
+                    "µs",
+                    False,
+                    False,
+                    None,
+                ),
+                (
+                    "wobble_radius",
+                    preset_balor_wobble,
+                    _("Wobble Radius"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_interval",
+                    preset_balor_wobble,
+                    _("Wobble Interval"),
+                    "mm",
+                    True,
+                    True,
+                    None,
+                ),
+                (
+                    "wobble_speed",
+                    preset_balor_wobble,
+                    _("Wobble Speed Multiplier"),
+                    "x",
+                    False,
+                    True,
+                    None,
+                ),
             ]
             if self.context.device.pulse_width_enabled:
                 balor_choices.append(
@@ -1100,7 +1193,7 @@ class TemplatePanel(wx.Panel):
                         usefill = False
                     elif optype == 4:  # Hatch
                         master_op = copy(self.default_op[optype])
-                        this_op = HatchEffectNode()
+                        this_op = copy(self.secondary_default_op[optype])
                         master_op.add_node(this_op)
 
                         # We need to add a hatch node and make this the target for parameter application
@@ -1111,7 +1204,7 @@ class TemplatePanel(wx.Panel):
 
                     # Do we need to prep the op?
                     if param_prepper_1 is not None:
-                        param_prepper_1(this_op)
+                        param_prepper_1(master_op)
 
                     if param_keep_unit_1:
                         value = str(p_value_1) + param_unit_1
@@ -1125,9 +1218,10 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        if param_type_1 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        if param_type_1 == "hatch_distance" and not str(value).endswith(
+                            "mm"
+                        ):
+                            value = f"{value}mm"
                         setattr(master_op, param_type_1, value)
                     # else:  # Try setting
                     #     master_op.settings[param_type_1] = value
@@ -1135,16 +1229,21 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
-                        if param_type_1 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        elif param_type_1 == "hatch_distance" and not str(
+                            value
+                        ).endswith("mm"):
+                            value = f"{value}mm"
+                        elif param_type_1 == "hatch_angle" and not str(value).endswith(
+                            "deg"
+                        ):
+                            value = f"{value}deg"
                         setattr(this_op, param_type_1, value)
                     elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_1] = value
 
                     # Do we need to prep the op?
                     if param_prepper_2 is not None:
-                        param_prepper_2(this_op)
+                        param_prepper_2(master_op)
 
                     if param_keep_unit_2:
                         value = str(p_value_2) + param_unit_2
@@ -1158,16 +1257,22 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_2 == "passes":
                             value = int(value)
-                        if param_type_2 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        if param_type_2 == "hatch_distance" and not str(value).endswith(
+                            "mm"
+                        ):
+                            value = f"{value}mm"
                         setattr(master_op, param_type_2, value)
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
-                        if param_type_2 == "hatch_distance":
-                            if not str(value).endswith("mm"):
-                                value = f"{value}mm"
+                        elif param_type_2 == "hatch_distance" and not str(
+                            value
+                        ).endswith("mm"):
+                            value = f"{value}mm"
+                        elif param_type_2 == "hatch_angle" and not str(value).endswith(
+                            "deg"
+                        ):
+                            value = f"{value}deg"
                         setattr(this_op, param_type_2, value)
                     elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_2] = value
@@ -1186,10 +1291,8 @@ class TemplatePanel(wx.Panel):
                     # Add op to tree.
                     operation_branch.add_node(master_op)
                     # Now add a rectangle to the scene and assign it to the newly created op
-                    if usefill:
-                        fill_color = set_color
-                    else:
-                        fill_color = None
+                    fill_color = set_color if usefill else None
+                    elemnode = None
                     if shapetype == "image":
                         idx = self.combo_images.GetSelection() - 1
                         if 0 <= idx < len(self.images):
@@ -1217,8 +1320,9 @@ class TemplatePanel(wx.Panel):
                             fill=fill_color,
                             type="elem ellipse",
                         )
-                    elemnode.label = s_lbl
-                    this_op.add_reference(elemnode, 0)
+                    if elemnode is not None:
+                        elemnode.label = s_lbl
+                        this_op.add_reference(elemnode, 0)
                     _p_value_2 += delta_2
                     yy = yy + gap_y + size_y
                 _p_value_1 += delta_1
@@ -1284,8 +1388,8 @@ class TemplatePanel(wx.Panel):
             return
 
         if param_unit_1 == "deg":
-            min_value_1 = Angle(self.text_min_1.GetValue()).degrees
-            max_value_1 = Angle(self.text_max_1.GetValue()).degrees
+            min_value_1 = float(self.text_min_1.GetValue())
+            max_value_1 = float(self.text_max_1.GetValue())
         elif param_unit_1 == "ppi":
             min_value_1 = max(min_value_1, 0)
             max_value_1 = min(max_value_1, 1000)
@@ -1299,8 +1403,8 @@ class TemplatePanel(wx.Panel):
                 max_value_1 = max(max_value_1, 0)
 
         if param_unit_2 == "deg":
-            min_value_2 = Angle(self.text_min_2.GetValue()).degrees
-            max_value_2 = Angle(self.text_max_2.GetValue()).degrees
+            min_value_2 = float(self.text_min_2.GetValue())
+            max_value_2 = float(self.text_max_2.GetValue())
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
@@ -1543,7 +1647,9 @@ class TemplateTool(MWindow):
 
         self.storage = Settings(self.context.kernel.name, "templates.cfg")
         self.storage.read_configuration()
-        self.panel_instances = list()
+        self.panel_instances = []
+        self.primary_prop_panels = []
+        self.secondary_prop_panels = []
         self.panel_template = TemplatePanel(
             self,
             wx.ID_ANY,
@@ -1577,6 +1683,7 @@ class TemplateTool(MWindow):
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
 
         self.panel_template.set_callback(self.set_node)
+        self.panel_template.set_secondary_callback(self.set_secondary_node)
         self.add_module_delegate(self.panel_template)
 
         self.notebook_main.AddPage(self.panel_saveload, _("Templates"))
@@ -1628,13 +1735,13 @@ class TemplateTool(MWindow):
         busy = wx.BusyCursor()
         self.Freeze()
         pages_to_instance = []
-        pages_in_node = []
+        self.primary_prop_panels = []
         found = False
         for property_sheet in self.context.lookup_all(
             f"property/{node.__class__.__name__}/.*"
         ):
             if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
-                pages_in_node.append((property_sheet, node))
+                self.primary_prop_panels.append((property_sheet, node))
                 found = True
         # If we did not have any hits and the node is a reference
         # then we fall back to the master. So if in the future we
@@ -1649,11 +1756,94 @@ class TemplateTool(MWindow):
                 if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
                     snode
                 ):
-                    pages_in_node.append((property_sheet, snode))
+                    self.primary_prop_panels.append((property_sheet, snode))
                     found = True
 
-        pages_in_node.sort(key=sort_priority, reverse=True)
-        pages_to_instance.extend(pages_in_node)
+        self.primary_prop_panels.sort(key=sort_priority, reverse=True)
+        pages_to_instance.extend(self.primary_prop_panels)
+        pages_to_instance.extend(self.secondary_prop_panels)
+
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+            self.remove_module_delegate(p)
+
+        # Delete all but the first and last page...
+        while self.notebook_main.GetPageCount() > 2:
+            self.notebook_main.DeletePage(1)
+        for prop_sheet, instance in pages_to_instance:
+            page_panel = prop_sheet(
+                self.notebook_main, wx.ID_ANY, context=self.context, node=instance
+            )
+            try:
+                name = prop_sheet.name
+            except AttributeError:
+                name = instance.__class__.__name__
+
+            self.notebook_main.InsertPage(1, page_panel, _(name))
+            try:
+                page_panel.set_widgets(instance)
+            except AttributeError:
+                pass
+            self.add_module_delegate(page_panel)
+            self.panel_instances.append(page_panel)
+            try:
+                page_panel.pane_show()
+            except AttributeError:
+                pass
+            page_panel.Layout()
+            try:
+                page_panel.SetupScrolling()
+            except AttributeError:
+                pass
+
+        self.Layout()
+        self.Thaw()
+        del busy
+
+    def set_secondary_node(self, node):
+        def sort_priority(prop):
+            prop_sheet, node = prop
+            return (
+                getattr(prop_sheet, "priority")
+                if hasattr(prop_sheet, "priority")
+                else 0
+            )
+
+        if node is None:
+            return
+        busy = wx.BusyCursor()
+        self.Freeze()
+        pages_to_instance = []
+        self.secondary_prop_panels = []
+        found = False
+        for property_sheet in self.context.lookup_all(
+            f"property/{node.__class__.__name__}/.*"
+        ):
+            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
+                self.secondary_prop_panels.append((property_sheet, node))
+                found = True
+        # If we did not have any hits and the node is a reference
+        # then we fall back to the master. So if in the future we
+        # would have a property panel dealing with reference-nodes
+        # then this would no longer apply.
+        if node.type == "reference" and not found:
+            snode = node.node
+            found = False
+            for property_sheet in self.context.lookup_all(
+                f"property/{snode.__class__.__name__}/.*"
+            ):
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                    snode
+                ):
+                    self.secondary_prop_panels.append((property_sheet, snode))
+                    found = True
+
+        self.secondary_prop_panels.sort(key=sort_priority, reverse=True)
+        pages_to_instance.extend(self.primary_prop_panels)
+        pages_to_instance.extend(self.secondary_prop_panels)
 
         for p in self.panel_instances:
             try:

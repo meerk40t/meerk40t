@@ -11,7 +11,6 @@ import webbrowser
 
 import wx
 
-from ..kernel import get_safe_path
 from .icons import (
     icon_outline,
     icon_youtube,
@@ -23,7 +22,14 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox, wxStaticBitmap, wxStaticText
+from .wxutils import (
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
@@ -43,7 +49,7 @@ class TipPanel(wx.Panel):
         self.tip_image = ""
         self.tips = []
 
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         self.local_file = os.path.join(safe_dir, "tips.txt")
 
         self.setup_tips()
@@ -99,6 +105,9 @@ class TipPanel(wx.Panel):
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         self.check_startup = wxCheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup.SetFont(
+            wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        )
         self.check_startup.SetToolTip(
             _(
                 "Show tips at program start.\n"
@@ -235,6 +244,10 @@ class TipPanel(wx.Panel):
             self.image_tip.Show(True)
             return True
 
+        img_size = self.image_tip.GetSize()
+        if img_size[0] == 0 or img_size[1] == 0:
+            # Invalid display area
+            return False
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
         self.tip_image = path
@@ -538,7 +551,7 @@ class TipPanel(wx.Panel):
         Check for existence of a subdirectory to store images
         and create it if not found
         """
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         cache_dir = os.path.join(safe_dir, "tip_images")
         if not os.path.exists(cache_dir):
             try:

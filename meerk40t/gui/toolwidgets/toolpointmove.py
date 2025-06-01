@@ -147,6 +147,7 @@ class PointMoveTool(ToolWidget):
 
     def reset(self):
         self.points.clear()
+        self.point_index.clear()
 
     def done(self):
         self.scene.pane.tool_active = False
@@ -156,7 +157,8 @@ class PointMoveTool(ToolWidget):
         self.scene.context("tool none\n")
 
     def tool_change(self):
-        self.points.clear()
+        self.reset()
+
         for node in self.scene.context.elements.flat(emphasized=True):
             if not hasattr(node, "as_geometry"):
                 continue

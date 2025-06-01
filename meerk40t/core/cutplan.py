@@ -15,15 +15,16 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
+from functools import lru_cache
 from math import isinf
 from os import times
 from time import perf_counter, time
 from typing import Optional
-from functools import lru_cache
+
 import numpy as np
 
 from ..svgelements import Group, Matrix, Path, Polygon
-from ..tools.geomstr import Geomstr
+from ..tools.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
@@ -31,7 +32,7 @@ from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
 from .node.node import Node
 from .node.util_console import ConsoleOperation
-from .units import Length, UNITS_PER_MM
+from .units import UNITS_PER_MM, Length
 
 """
 The time to compile does outweigh the benefit...
@@ -46,6 +47,7 @@ except Exception as e:
 
         return inner
 """
+
 
 class CutPlanningFailedError(Exception):
     pass
@@ -172,7 +174,9 @@ class CutPlan:
         for place in self.plan:
             if not hasattr(place, "type"):
                 continue
-            if place.type.startswith("place ") and (hasattr(place, "output") and place.output):
+            if place.type.startswith("place ") and (
+                hasattr(place, "output") and place.output
+            ):
                 loops = 1
                 if hasattr(place, "loops") and place.loops > 1:
                     loops = place.loops
@@ -187,6 +191,7 @@ class CutPlan:
             placements.append(scene_to_device_matrix)
 
         original_ops = copy(self.plan)
+
         if self.context.opt_raster_optimisation and self.context.do_optimization:
             try:
                 margin = float(Length(self.context.opt_raster_opt_margin, "0"))
@@ -225,7 +230,9 @@ class CutPlan:
                                 coolop = ConsoleOperation(command=cmd)
                                 self.plan.append(coolop)
                             else:
-                                self.channel("The current device does not support a coolant method")
+                                self.channel(
+                                    "The current device does not support a coolant method"
+                                )
                         current_cool = cool
                 # Is there already a coolant operation?
                 if getattr(original_op, "type", "") == "util console":
@@ -244,8 +251,55 @@ class CutPlan:
                 op_type = getattr(op, "type", "")
                 if op_type.startswith("place "):
                     continue
+                if (
+                    op_type == "op cut"
+                    and self.context.opt_stitching
+                    and self.context.do_optimization
+                ):
+                    # This isn't a lossless operation: dotted/dashed lines will be treated as solid lines
+                    try:
+                        stitch_tolerance = float(
+                            Length(self.context.opt_stitch_tolerance)
+                        )
+                    except ValueError:
+                        stitch_tolerance = 0
+                    default_stroke = None
+                    default_strokewidth = None
+                    geoms = []
+                    to_be_deleted = []
+                    data = stitcheable_nodes(list(op.flat()), stitch_tolerance)
+                    for node in data:
+                        if node is op:
+                            continue
+                        if hasattr(node, "as_geometry"):
+                            geom: Geomstr = node.as_geometry()
+                            geoms.extend(iter(geom.as_contiguous()))
+                            if default_stroke is None and hasattr(node, "stroke"):
+                                default_stroke = node.stroke
+                            if default_strokewidth is None and hasattr(
+                                node, "stroke_width"
+                            ):
+                                default_strokewidth = node.stroke_width
+                            to_be_deleted.append(node)
+                    result = stitch_geometries(geoms, stitch_tolerance)
+                    if result is not None:
+                        # print (f"Paths at start of action: {len(list(op.flat()))}")
+                        for node in to_be_deleted:
+                            node.remove_node()
+                        for idx, g in enumerate(result):
+                            node = op.add(
+                                label=f"Stitch # {idx + 1}",
+                                stroke=default_stroke,
+                                stroke_width=default_strokewidth,
+                                geometry=g,
+                                type="elem path",
+                            )
+                        # print (f"Paths at start of action: {len(list(op.flat()))}")
+
                 self.plan.append(op)
-                if (op_type.startswith("op") or op_type.startswith("util")) and hasattr(op, "preprocess"):
+                if (op_type.startswith("op") or op_type.startswith("util")) and hasattr(
+                    op, "preprocess"
+                ):
                     op.preprocess(self.context, placement, self)
                 if op_type.startswith("op"):
                     for node in op.flat():
@@ -455,11 +509,15 @@ class CutPlan:
         """
         if not isinstance(last_item, CutCode):
             # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
-            self.channel (f"last_item is no cutcode ({type(last_item).__name__}), can't merge")
+            self.channel(
+                f"last_item is no cutcode ({type(last_item).__name__}), can't merge"
+            )
             return False
         if not isinstance(current_item, CutObject):
             # The object to be merged is not a cutObject and cannot be added to Cutcode.
-            self.channel (f"current_item is no cutcode ({type(current_item).__name__}), can't merge")
+            self.channel(
+                f"current_item is no cutcode ({type(current_item).__name__}), can't merge"
+            )
             return False
         last_op = last_item.original_op
         if last_op is None:
@@ -468,7 +526,9 @@ class CutPlan:
         if current_op is None:
             current_op = ""
         if last_op.startswith("util") or current_op.startswith("util"):
-            self.channel (f"{last_op} / {current_op} - at least one is a util operation, can't merge")
+            self.channel(
+                f"{last_op} / {current_op} - at least one is a util operation, can't merge"
+            )
             return False
 
         if (
@@ -476,7 +536,9 @@ class CutPlan:
             and last_item.pass_index != current_item.pass_index
         ):
             # Do not merge if opt_merge_passes is off, and pass_index do not match
-            self.channel (f"{last_item.pass_index} / {current_item.pass_index} - pass indices are different, can't merge")
+            self.channel(
+                f"{last_item.pass_index} / {current_item.pass_index} - pass indices are different, can't merge"
+            )
             return False
 
         if (
@@ -485,11 +547,15 @@ class CutPlan:
         ):
             # Do not merge if opt_merge_ops is off, and the original ops do not match
             # Same settings object implies same original operation
-            self.channel (f"Settings do differ from {last_op} to {current_op} and merge ops= {context.opt_merge_ops}")
+            self.channel(
+                f"Settings do differ from {last_op} to {current_op} and merge ops= {context.opt_merge_ops}"
+            )
             return False
         if not context.opt_inner_first and last_item.original_op == "op cut":
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
-            self.channel (f"Inner first {context.opt_inner_first}, last op= {last_item.original_op} - Last op was a cut, can't merge")
+            self.channel(
+                f"Inner first {context.opt_inner_first}, last op= {last_item.original_op} - Last op was a cut, can't merge"
+            )
             return False
         return True  # No reason these should not be merged.
 
@@ -705,7 +771,9 @@ class CutPlan:
             # We don't combine across plan boundaries
             if not isinstance(pitem, CutGroup):
                 continue
-            grouping, to_be_deleted, item_combined, total = process_plan_item(pitem, busy, total, plan_idx, l_plan)
+            grouping, to_be_deleted, item_combined, total = process_plan_item(
+                pitem, busy, total, plan_idx, l_plan
+            )
             combined += item_combined
             group_count += len(grouping)
 
@@ -1096,7 +1164,9 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
                 return False
         return True
 
-    def scanbeam_code_not_working_reliably(outer_cut, outer_path, inner_cut, inner_path):
+    def scanbeam_code_not_working_reliably(
+        outer_cut, outer_path, inner_cut, inner_path
+    ):
         from ..tools.geomstr import Polygon as Gpoly
         from ..tools.geomstr import Scanbeam
 
@@ -1127,24 +1197,25 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
 
             p1x, p1y = poly[0]
             old_sq_dist = sq_length(p1x - x, p1y - y)
-            for i in range(n+1):
+            for i in range(n + 1):
                 p2x, p2y = poly[i % n]
                 new_sq_dist = sq_length(p2x - x, p2y - y)
                 # We are approximating the edge to an extremely thin ellipse and see
                 # whether our point is on that ellipse
                 reldist = (
-                    old_sq_dist + new_sq_dist +
-                    2.0 * np.sqrt(old_sq_dist * new_sq_dist) -
-                    sq_length(p2x - p1x, p2y - p1y)
+                    old_sq_dist
+                    + new_sq_dist
+                    + 2.0 * np.sqrt(old_sq_dist * new_sq_dist)
+                    - sq_length(p2x - p1x, p2y - p1y)
                 )
                 if reldist < tolerance_square:
                     return True
 
-                if y > min(p1y,p2y):
-                    if y <= max(p1y,p2y):
-                        if x <= max(p1x,p2x):
+                if y > min(p1y, p2y):
+                    if y <= max(p1y, p2y):
+                        if x <= max(p1x, p2x):
                             if p1y != p2y:
-                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                                xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
                             if p1x == p2x or x <= xints:
                                 inside = not inside
                 p1x, p1y = p2x, p2y
@@ -1163,20 +1234,20 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
 
         # Separating Axis Theorem (SAT) for Polygon Containment
 
-        # The Separating Axis Theorem (SAT) is a powerful technique for collision detection 
+        # The Separating Axis Theorem (SAT) is a powerful technique for collision detection
         # between convex polygons. It can also be adapted to determine polygon containment.
 
         # How SAT Works:
 
         # Generate Axes: For each edge of the outer polygon, create a perpendicular axis.
         # Project Polygons: Project both the inner and outer polygons onto each axis.
-        # Check Overlap: If the projections of the inner polygon are completely contained 
-        # within the projections of the outer polygon on all axes, 
+        # Check Overlap: If the projections of the inner polygon are completely contained
+        # within the projections of the outer polygon on all axes,
         # then the inner polygon is fully contained.
-        
-        # Convex Polygons: SAT is most efficient for convex polygons. 
+
+        # Convex Polygons: SAT is most efficient for convex polygons.
         # For concave polygons, you might need to decompose them into convex sub-polygons.
-        # Computational Cost: SAT can be computationally expensive for large numbers of polygons. 
+        # Computational Cost: SAT can be computationally expensive for large numbers of polygons.
         # In such cases, spatial indexing can be used to reduce the number of pairwise comparisons.
         def project_polygon(polygon, axis):
             # Projects a polygon onto a given axis.
@@ -1212,7 +1283,6 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
     """
 
     def raycasting_code_new(outer_polygon, inner_polygon):
-
         def precompute_intersections(polygon):
             slopes = []
             intercepts = []
@@ -1241,9 +1311,13 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
                 slope = slopes[i]
                 intercept = intercepts[i]
                 p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
-                
+
                 if np.isnan(slope):  # Vertical line
-                    if x == intercept and y >= min(p1[1], p2[1]) and y <= max(p1[1], p2[1]):
+                    if (
+                        x == intercept
+                        and y >= min(p1[1], p2[1])
+                        and y <= max(p1[1], p2[1])
+                    ):
                         inside = not inside
                 else:
                     if y > min(p1[1], p2[1]):
@@ -1253,17 +1327,21 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
                                     xints = (y - intercept) / slope
                                 if p1[0] == p2[0] or x <= xints:
                                     inside = not inside
-                                
+
             return inside
-                
+
         def is_polygon_inside(outer_polygon, inner_polygon):
             slopes, intercepts, is_vertical = precompute_intersections(outer_polygon)
             for point in inner_polygon:
-                if not point_in_polygon(point[0], point[1], slopes, intercepts, is_vertical, outer_polygon):
+                if not point_in_polygon(
+                    point[0], point[1], slopes, intercepts, is_vertical, outer_polygon
+                ):
                     return False
             return True
 
-        return is_polygon_inside(outer_polygon=outer_polygon, inner_polygon=inner_polygon)
+        return is_polygon_inside(
+            outer_polygon=outer_polygon, inner_polygon=inner_polygon
+        )
 
     def shapely_code(outer_polygon, inner_polygon):
         from shapely.geometry import Polygon
@@ -1273,15 +1351,18 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
         poly_b = Polygon(outer_polygon)
         # Check for containment
         return poly_a.within(poly_b)
-            
+
     @lru_cache(maxsize=128)
     def get_polygon(path, resolution):
         geom = Geomstr.svg(path)
         polygon = np.array(
-            list((p.real, p.imag) for p in geom.as_equal_interpolated_points(distance = resolution))
+            list(
+                (p.real, p.imag)
+                for p in geom.as_equal_interpolated_points(distance=resolution)
+            )
         )
         return polygon
-    
+
     """
     # Testroutines
     from time import perf_counter
@@ -1304,13 +1385,14 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
         t5 = perf_counter()
     except ImportError:
         res4 = "Shapely missing"
-        t5 = t4     
+        t5 = t4
     print (f"Tolerance: {tolerance}, vm={res0} in {t1 - t0:.3f}s, sb={res1} in {t1 - t0:.3f}s, ray-old={res2} in {t2 - t1:.3f}s, ray-new={res3} in {t3 - t2:.3f}s, shapely={res4} in {t4 - t3:.3f}s")
     """
     inner_polygon = get_polygon(inner_path.d(), resolution)
-    outer_polygon = get_polygon(outer_path.d(), resolution)        
+    outer_polygon = get_polygon(outer_path.d(), resolution)
     try:
         import shapely
+
         return shapely_code(outer_polygon, inner_polygon)
     except ImportError:
         return vm_code(outer, outer_polygon, inner, inner_polygon)
@@ -1318,6 +1400,7 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
     # return scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
     # return vm_code(outer, outer_path, inner, inner_path)
     return
+
 
 def reify_matrix(self):
     """Apply the matrix to the path and reset matrix."""
@@ -1398,13 +1481,15 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
     if kernel:
         busy = kernel.busyinfo
         _ = kernel.translation
-        min_res = min(kernel.device.view.native_scale_x, kernel.device.view.native_scale_y)
+        min_res = min(
+            kernel.device.view.native_scale_x, kernel.device.view.native_scale_y
+        )
         # a 0.5 mm resolution is enough
         resolution = int(0.5 * UNITS_PER_MM / min_res)
         # print(f"Chosen resolution: {resolution} - minscale = {min_res}")
     else:
         busy = None
-        resolution = 10 
+        resolution = 10
     for outer in closed_groups:
         for inner in groups:
             current_pass += 1
@@ -1627,7 +1712,13 @@ def short_travel_cutcode(
         for idx, c in enumerate(unordered):
             if isinstance(c, CutGroup):
                 c.skip = False
-                unordered[idx] = short_travel_cutcode(context=c, kernel=kernel, complete_path=False, grouped_inner=False, channel=channel)
+                unordered[idx] = short_travel_cutcode(
+                    context=c,
+                    kernel=kernel,
+                    complete_path=False,
+                    grouped_inner=False,
+                    channel=channel,
+                )
     # As these are reversed, we reverse again...
     ordered.extend(reversed(unordered))
     # print (f"And after extension {len(ordered)} items in list")

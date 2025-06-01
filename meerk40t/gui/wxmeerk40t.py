@@ -24,6 +24,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
+from meerk40t.core.units import Length
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -500,7 +501,8 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         self.name = f"MeerK40t-{wx.GetUserId()}"
-        self.instance = wx.SingleInstanceChecker(self.name)
+        mkdir = self.context.kernel.os_information["OS_TEMPDIR"]
+        self.instance = wx.SingleInstanceChecker(self.name, path=mkdir)
         self.context.setting(bool, "single_instance_only", True)
         if self.context.kernel._was_restarted:
             return True
@@ -560,15 +562,17 @@ class wxMeerK40t(wx.App, Module):
     def MacOpenFile(self, filename):
         try:
             if self.context is not None:
-                self.context.elements.load(os.path.realpath(filename))
+                channel = self.context.kernel.channel("console")
+                self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
         except AttributeError:
             pass
 
     def MacOpenFiles(self, filenames):
         try:
             if self.context is not None:
+                channel = self.context.kernel.channel("console")
                 for filename in filenames:
-                    self.context.elements.load(os.path.realpath(filename))
+                    self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
         except AttributeError:
             pass
 
@@ -831,6 +835,31 @@ class wxMeerK40t(wx.App, Module):
             else:
                 dialog.cancel_it()
             dialog.Destroy()
+
+        @kernel.console_argument("info", type=str, help=_("Unit to translate"))
+        @kernel.console_command("unit", help=_("Translate units"))
+        def show_unit_info(command, channel, _, info=None, **kwargs):
+            if info is None:
+                channel(_("You need to provide a value to translate"))
+            device = kernel.root.device
+            try:
+                valuex = Length(info, relative_length=device.view.width, digits=4)
+            except ValueError:
+                channel(f"Invalid value: '{info}'")
+                return
+            channel(f"{info} translates to:")
+            channel(f"tat          :  {float(valuex):.4f}")
+            channel(f"mil          :  {valuex.mil}")
+            channel(f"um           :  {valuex.um}")
+            channel(f"nm           :  {valuex.nm}")
+            channel(f"mm           :  {valuex.mm}")
+            channel(f"cm           :  {valuex.cm}")
+            channel(f"Pixels       :  {valuex.pixels}")
+            channel(f"Point        :  {valuex.pt}")
+            channel(f"spx (screen) :  {valuex.spx}")
+            channel(f"inch         :  {valuex.inches}")
+            channel(f"Device units :  {float(valuex) / device.view.native_scale_x:.4f}")
+            
 
     def module_open(self, *args, **kwargs):
         context = self.context

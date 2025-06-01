@@ -1,6 +1,7 @@
 """
 This code initializes the FPGA on cloned boards.
 """
+
 import hashlib
 import struct
 
@@ -422,7 +423,7 @@ def load_sys(sys_file, channel=None):
             channel(f"{len(devices)} devices need initializing.")
         for i, device in enumerate(devices):
             if channel:
-                channel(f"Clone board #{i+1} detected. Sending Initialize.")
+                channel(f"Clone board #{i + 1} detected. Sending Initialize.")
             _send_device_sys(device, sys_file, channel=channel)
     except usb.core.USBError as e:
         channel(str(e))
@@ -446,7 +447,7 @@ def load_chunks(chunks=None, channel=None):
             channel(f"{len(devices)} devices need initializing.")
         for i, device in enumerate(devices):
             if channel:
-                channel(f"Clone board #{i+1} detected. Sending Initialize.")
+                channel(f"Clone board #{i + 1} detected. Sending Initialize.")
             _write_chunks(device, chunks)
     except usb.core.USBError as e:
         channel(str(e))

@@ -6,6 +6,7 @@ from PIL import Image
 
 from meerk40t.core.elements.element_types import place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.gui.wxutils import get_gc_scale
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -39,7 +40,6 @@ from ..tools.geomstr import (  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image
 from .zmatrix import ZMatrix
-from meerk40t.gui.wxutils import get_gc_scale
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -211,7 +211,9 @@ class LaserRender:
                     c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
                 )
 
-    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255, msg="unknown"):
+    def render(
+        self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255, msg="unknown"
+    ):
         """
         Render scene information.
 
@@ -268,7 +270,10 @@ class LaserRender:
             self.render_node(
                 node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
             )
-        self.context.elements.set_end_time(f"renderscene_{msg}", message=f"Rendered: {self.nodes_rendered}, skipped: {self.nodes_skipped}, caches created: {self.caches_generated}")
+        self.context.elements.set_end_time(
+            f"renderscene_{msg}",
+            message=f"Rendered: {self.nodes_rendered}, skipped: {self.nodes_skipped}, caches created: {self.caches_generated}",
+        )
 
     def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -282,11 +287,16 @@ class LaserRender:
         """
         node_bb = node.bounds if hasattr(node, "bounds") else None
         vis_bb = self._visible_area
-        if self.suppress_it and vis_bb is not None and node_bb is not None and (
-            node_bb[0] > vis_bb[2] or
-            node_bb[1] > vis_bb[3] or
-            node_bb[2] < vis_bb[0] or
-            node_bb[3] < vis_bb[1] 
+        if (
+            self.suppress_it
+            and vis_bb is not None
+            and node_bb is not None
+            and (
+                node_bb[0] > vis_bb[2]
+                or node_bb[1] > vis_bb[3]
+                or node_bb[2] < vis_bb[0]
+                or node_bb[3] < vis_bb[1]
+            )
         ):
             self.nodes_skipped += 1
             return False
@@ -300,7 +310,7 @@ class LaserRender:
             self.nodes_skipped += 1
             return False
         self.nodes_rendered += 1
-        if not hasattr(node, "draw"): # or not hasattr(node, "_make_cache"):
+        if not hasattr(node, "draw"):  # or not hasattr(node, "_make_cache"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
                 "elem path",
@@ -562,10 +572,11 @@ class LaserRender:
         self,
         cutcode: CutCode,
         gc: wx.GraphicsContext,
-        x: int = 0, y: int = 0,
+        x: int = 0,
+        y: int = 0,
         raster_as_image: bool = True,
-        residual = None,
-        laserspot_width = None,
+        residual=None,
+        laserspot_width=None,
     ):
         """
         Draw cutcode object into wxPython graphics code.
@@ -591,7 +602,6 @@ class LaserRender:
             return max(default_pix, pixelwidth)
 
         def process_cut(cut, p, last_point):
-
             def process_as_image():
                 image = cut.image
                 gc.PushState()
@@ -836,7 +846,9 @@ class LaserRender:
             q = ~cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
             # Applying the matrix will scale our stroke, so we scale the stroke back down.
-            stroke_factor = 1.0 if q.determinant == 0 else 1.0 / sqrt(abs(q.determinant))
+            stroke_factor = (
+                1.0 if q.determinant == 0 else 1.0 / sqrt(abs(q.determinant))
+            )
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
         sw = node.implied_stroke_width * stroke_factor
@@ -1140,7 +1152,9 @@ class LaserRender:
                 matrix = node.active_matrix
                 bounds = 0, 0, image.width, image.height
                 if matrix is not None and not matrix.is_identity():
-                    gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                    gc.ConcatTransform(
+                        wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
+                    )
             except AttributeError:
                 pass
 
@@ -1341,15 +1355,16 @@ class LaserRender:
         """
         if bounds is None:
             return None
+        # Cover invalid step values
+        if step_x == 0:
+            step_x = 1
+        if step_y == 0:
+            step_y = 1
         x_min = float("inf")
         y_min = float("inf")
         x_max = -float("inf")
         y_max = -float("inf")
-        if not isinstance(nodes, (tuple, list)):
-            _nodes = [nodes]
-        else:
-            _nodes = nodes
-
+        _nodes = [nodes] if not isinstance(nodes, (tuple, list)) else nodes
         # if it's a raster we will always translate text variables...
         variable_translation = True
         nodecopy = list(_nodes)
@@ -1415,7 +1430,12 @@ class LaserRender:
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(x_min - 1, y_min - 1, x_max + 1, y_max + 1)
-        self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES, msg="make_raster")
+        self.render(
+            _nodes,
+            gc,
+            draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES,
+            msg="make_raster",
+        )
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(

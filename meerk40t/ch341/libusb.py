@@ -514,6 +514,12 @@ class LibCH341Driver:
                 self.driver_value = None
                 self.state("STATE_CONNECTION_FAILED")
                 raise ConnectionRefusedError from e  # No more devices.
+            except Exception as e:
+                self.channel(_("Connection to USB failed: {e}.\n"))
+                self.driver_value = None
+                self.state("STATE_CONNECTION_FAILED")
+                raise ConnectionRefusedError from e  # No more devices.
+
             self.driver_index = usb_index
             self.channel(_("USB Connected."))
             self.state("STATE_USB_CONNECTED")

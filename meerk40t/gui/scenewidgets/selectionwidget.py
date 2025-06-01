@@ -31,6 +31,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
+    dip_size,
     StaticBoxSizer,
     create_menu_for_node,
     get_gc_full_scale,
@@ -268,7 +269,7 @@ class BorderWidget(Widget):
             if self.show_rb:
                 gc.StrokeLine(sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h)
                 gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
-    
+
             mypen.SetStyle(wx.PENSTYLE_DOT)
             gc.SetPen(mypen)
             gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
@@ -335,7 +336,7 @@ class BorderWidget(Widget):
                 s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 pos = self.right + rpos / 2.0 - t_width / 2
-                if pos - t_width - distance <= self.right:
+                if pos - distance <= self.right:
                     pos = self.right + distance
                 gc.DrawText(s_txt, pos, center_y)
 
@@ -1610,23 +1611,26 @@ class MoveWidget(Widget):
                 """
                 Calculates the shortest distance between two arrays of 2-dimensional points.
                 """
-                # Calculate the Euclidean distance between each point in p1 and p2
-                if tuplemode:
-                    # For an array of tuples:
-                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-                else:
-                    # For an array of complex numbers
-                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
-                # Find the minimum distance and its corresponding indices
-                min_dist = np.min(dist)
-                if np.isnan(min_dist):
-                    # print (f"Encountered the infamous bug: {p1} {p2}")
-                    # Still need an example when that happens
-                    return None, 0, 0
-                min_indices = np.argwhere(dist == min_dist)
+                try:
+                    # Calculate the Euclidean distance between each point in p1 and p2
+                    if tuplemode:
+                        # For an array of tuples:
+                        dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                    else:
+                        # For an array of complex numbers
+                        dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+                    # Find the minimum distance and its corresponding indices
+                    min_dist = np.min(dist)
+                    if np.isnan(min_dist):
+                        # print (f"Encountered the infamous bug: {p1} {p2}")
+                        # Still need an example when that happens
+                        return None, 0, 0
+                    min_indices = np.argwhere(dist == min_dist)
 
-                # Return the coordinates of the two points
-                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+                    # Return the coordinates of the two points
+                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+                except Exception: # out of memory eg
+                    return None, None, None
 
             b = elements._emphasized_bounds
             if b is None:
@@ -2390,6 +2394,8 @@ class SelectionWidget(Widget):
         self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
         # want to have sharp edges
         self.handle_pen.SetJoin(wx.JOIN_MITER)
+        fact = dip_size(self.scene.pane, 100, 100)
+        self.font_size_factor = (fact[0] + fact[1]) / 100 * 0.5
 
         self.gc = None
         self.reset_variables()
@@ -2797,7 +2803,7 @@ class SelectionWidget(Widget):
             try:
                 factor = math.sqrt(abs(matrix.determinant))
                 self.line_width = 2.0 / factor
-                self.font_size = 14.0 / factor
+                self.font_size = 12.0 / factor * self.font_size_factor
             except ZeroDivisionError:
                 matrix.reset()
                 return

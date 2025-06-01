@@ -75,6 +75,7 @@ def plugin(kernel, lifecycle=None):
             tree_commands,
             undo_redo,
             wordlist,
+            testcases,
         )
 
         return [
@@ -96,6 +97,7 @@ def plugin(kernel, lifecycle=None):
             placements.plugin,
             offset_mk.plugin,
             offset_clpr.plugin,
+            testcases.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
@@ -217,7 +219,7 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Track changes and allow undo"),
                 "tip": _(
-                    "MK will save intermediate states to undo/redo changes") + "\n" + 
+                    "MK will save intermediate states to undo/redo changes") + "\n" +
                     _("This may consume a significant amount of memory"),
                 "page": "Start",
                 "section": "_60_Undo",
@@ -305,6 +307,22 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _(
                     "Unticked: Classify will assign black elements to an engrave operation"
+                ),
+                "page": "Classification",
+                "section": "_10_Assignment-Logic",
+            },
+            {
+                "attr": "classify_fill",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Classify elements on fill"),
+                "tip": _(
+                    "Usually MK will use the fill attribute as an indicator for a raster and will not distinguish between individual colors."
+                )
+                + "\n"
+                + _(
+                    "If you want to distinguish between different raster types then activate this option."
                 ),
                 "page": "Classification",
                 "section": "_10_Assignment-Logic",
@@ -646,6 +664,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
         self.setting(bool, "update_statusbar_on_material_load", True)
+        self.setting(bool, "classify_fill", False)
         # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
@@ -2693,12 +2712,44 @@ class Elemental(Service):
         def emptydebug(value):
             return
 
+        def _get_next_auto_raster_count(operations):
+            auto_raster_count = 0
+            for op in operations:
+                if op.type == "op raster" and op.id is not None and op.id.startswith("AR#"):
+                    try:
+                        used_id = int(op.id[3:])
+                        auto_raster_count = max(auto_raster_count, used_id)
+                    except (IndexError, ValueError):
+                        pass
+            return auto_raster_count + 1
+
+        def _select_raster_candidate(operations, node, fuzzydistance):
+            candidate = None
+            candidate_dist = float("inf")
+            for cand_op in operations:
+                if cand_op.type != "op raster":
+                    continue
+                col_d = Color.distance(cand_op.color, abs(node.fill))
+                if col_d > fuzzydistance:
+                    continue
+                if candidate is None or col_d < candidate_dist:
+                    candidate = cand_op
+                    candidate_dist = col_d
+            return candidate
+
         # I am tired of changing the code all the time, so let's do it properly
         debug = self.kernel.channel("classify", timestamp=True)
 
         if elements is None:
             return
         new_operations_added = False
+        debug_set = {}
+
+        def update_debug_set(debug_set, opnode):
+            if opnode.type not in debug_set:
+                debug_set[opnode.type] = 0
+            debug_set[opnode.type] = debug_set[opnode.type] + 1
+
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
             has_cut = False
@@ -2732,6 +2783,13 @@ class Elemental(Service):
             add_op_function = self.add_classify_op
         for node in elements:
             node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.display_label()}"
+            if hasattr(node, "stroke") or hasattr(node, "fill"):
+                info = ""
+                if hasattr(node, "stroke") and node.stroke is not None:
+                    info += f"S:{node.stroke},"
+                if hasattr(node, "fill") and node.fill is not None:
+                    info += f"F:{node.fill},"
+                node_desc += f"({info})"
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
@@ -2758,7 +2816,7 @@ class Elemental(Service):
                     if not do_fill and op.type in ("op raster", "op image"):
                         continue
                     is_black = False
-                    whisperer = True
+                    perform_classification = True
                     if (
                         hasattr(node, "stroke")
                         and node.stroke is not None
@@ -2780,27 +2838,69 @@ class Elemental(Service):
                         and is_black
                         and isinstance(op, RasterOpNode)
                     ):
-                        whisperer = False
+                        perform_classification = False
                     elif (
                         self.classify_black_as_raster
                         and is_black
                         and isinstance(op, EngraveOpNode)
                     ):
-                        whisperer = False
+                        perform_classification = False
                     if debug:
                         debug(
-                            f"For {op.type}.{op.id}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                            f"For {op.type}.{op.id}: black={is_black}, perform={perform_classification}, flag={self.classify_black_as_raster}"
                         )
-                    if hasattr(op, "classify") and whisperer:
+                    if not (hasattr(op, "classify") and perform_classification):
+                        continue
+                    classified = False
+                    classifying_op = None
+                    if (
+                        self.classify_fill and
+                        op.type=="op raster" and
+                        hasattr(node, "fill") and node.fill is not None
+                    ):
+                        # This is a special use case:
+                        # Usually we don't distinguish a fill color - all non-transparent objects
+                        # are assigned to a single raster operation.
+                        # If the classify_fill flag is set, then we will use the fill attribute
+                        # to look for / create a matching raster operation
+                        raster_candidate = _select_raster_candidate(operations, node, fuzzydistance)
+                        if raster_candidate is None and self.classify_autogenerate:
+                            # We need to create one...
+                            auto_raster_count = _get_next_auto_raster_count(operations)
+                            raster_candidate = RasterOpNode(
+                                id = f"AR#{auto_raster_count}",
+                                label = f"Auto-Raster #{auto_raster_count}",
+                                color = abs(node.fill),
+                                output = True,
+                            )
+                            add_op_function(raster_candidate)
+                            new_operations_added = True
+
+                        classified, should_break, feedback = raster_candidate.classify(
+                            node,
+                            fuzzy=tempfuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=False,
+                        )
+                        if classified:
+                            classifying_op = raster_candidate
+                            should_break = True
+                            if debug:
+                                debug(
+                                    f"{node_desc} was color-raster-classified: {sstroke} {sfill} matching operation: {type(classifying_op).__name__}, break={should_break}"
+                                )
+
+                    if not classified:
                         classified, should_break, feedback = op.classify(
                             node,
                             fuzzy=tempfuzzy,
                             fuzzydistance=fuzzydistance,
                             usedefault=False,
                         )
-                    else:
-                        continue
+                        if classified:
+                            classifying_op = op
                     if classified:
+                        update_debug_set(debug_set, classifying_op)
                         if feedback is not None and "stroke" in feedback:
                             classif_info[0] = True
                         if feedback is not None and "fill" in feedback:
@@ -2816,7 +2916,7 @@ class Elemental(Service):
                             sfill = ""
                         if debug:
                             debug(
-                                f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(classifying_op).__name__}, break={should_break}"
                             )
                     if should_break:
                         break
@@ -2869,78 +2969,41 @@ class Elemental(Service):
                 # let's iterate through the default ops and add them
                 if debug:
                     debug("Pass 2 (wasn't classified), looking for default ops")
+                default_candidates = []
                 for op in operations:
-                    if classif_info[0] and op.type in (
-                        "op engrave",
-                        "op cut",
-                        "op dots",
-                    ):
-                        continue
-                    if classif_info[1] and op.type in ("op raster", "op image"):
-                        continue
-                    is_black = False
-                    whisperer = True
                     if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and node.stroke.argb is not None
-                        and node.type != "elem text"
+                        hasattr(op, "classify") and
+                        getattr(op, "default", False) and
+                        hasattr(op, "valid_node_for_reference") and
+                        op.valid_node_for_reference(node)
                     ):
-                        if fuzzy:
-                            is_black = (
-                                Color.distance("black", abs(node.stroke))
-                                <= fuzzydistance
-                                or Color.distance("white", abs(node.stroke))
-                                <= fuzzydistance
-                            )
-                        else:
-                            is_black = Color("black") == abs(node.stroke) or Color(
-                                "white"
-                            ) == abs(node.stroke)
-                    if (
-                        not self.classify_black_as_raster
-                        and is_black
-                        and isinstance(op, RasterOpNode)
-                    ):
-                        # print ("Default Skip Raster")
-                        whisperer = False
-                    elif (
-                        self.classify_black_as_raster
-                        and is_black
-                        and isinstance(op, EngraveOpNode)
-                    ):
-                        whisperer = False
-                    if debug:
-                        debug(
-                            f"For {op.type}.{op.id}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
-                        )
-                    if hasattr(op, "classify") and whisperer:
-                        classified, should_break, feedback = op.classify(
-                            node,
-                            fuzzy=fuzzy,
-                            fuzzydistance=fuzzydistance,
-                            usedefault=True,
-                        )
-                    else:
-                        continue
+                        default_candidates.append(op)
+                if len(default_candidates) > 1 and debug:
+                    debug(f"For node {node_desc} there were {len(default_candidates)} default operations available, nb the very first will be taken!")
+                for op in default_candidates:
+                    classified, should_break, feedback = op.classify(
+                        node,
+                        fuzzy=fuzzy,
+                        fuzzydistance=fuzzydistance,
+                        usedefault=True,
+                    )
                     if classified:
-                        if feedback is not None and "stroke" in feedback:
-                            classif_info[0] = True
-                        if feedback is not None and "fill" in feedback:
-                            classif_info[1] = True
+                        update_debug_set(debug_set, op)
+                        # Default ops fulfill stuff by definition
+                        classif_info[0] = True
+                        classif_info[1] = True
                         was_classified = True
                         if debug:
                             debug(
-                                f"Was classified to default operation: {type(op).__name__}, break={should_break}"
+                                f"Was classified to default operation: {type(op).__name__}"
                             )
-                    if should_break:
                         break
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    # even if it has, we are not going to something with it
+                    # even if it has, we are not going to do something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
@@ -3152,7 +3215,15 @@ class Elemental(Service):
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    op = RasterOpNode(color="black")
+                    default_color = abs(node.fill) if self.classify_fill else Color("black")
+                    default_id = "AR#1" if self.classify_fill else "R1"
+                    default_label = "Auto-Raster #1" if self.classify_fill else "Standard-Raster"
+                    op = RasterOpNode(
+                        id=default_id,
+                        label=default_label,
+                        color=default_color,
+                        output = True,
+                    )
                     stdops.append(op)
                     if debug:
                         debug("add an op raster due to fill")
@@ -3218,8 +3289,14 @@ class Elemental(Service):
 
                     if not existing:
                         op.add_reference(node)
+                        update_debug_set(debug_set, op)
+
 
         self.remove_unused_default_copies()
+        if debug:
+            debug("Summary:")
+            for key, count in debug_set.items():
+                debug(f"{count} items assigned to {key}")
         if new_operations_added:
             self.signal("tree_changed")
 
