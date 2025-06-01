@@ -1630,6 +1630,12 @@ class wxListBox(wx.ListBox):
 class wxCheckListBox(StaticBoxSizer):
     """
     This class recreates the functionality of a wx.CheckListBox, as this class has issues to properly refresh in nested sizers
+
+    Known Limitations:
+    - This custom implementation may not fully replicate all native wx.CheckListBox behaviors.
+    - Keyboard navigation (e.g., arrow keys, space/enter to toggle) may not work as expected.
+    - Accessibility features such as screen reader support may be limited or unavailable.
+    - If your application requires full accessibility or native keyboard handling, consider using the native wx.CheckListBox where possible.
     """
 
     def __init__(
