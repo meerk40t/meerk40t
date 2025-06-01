@@ -4,7 +4,7 @@ if [ ! -d images ]; then
     echo "Please run this script from the root of the meerk40t repository."
     exit 1
 fi
-if [ ! -x "$(command -v magick)" ]; then
+if [ ! -x "$(command -v convert)" ]; then
     echo "This script requires ImageMagick to be installed."
     echo "Please install ImageMagick and try again."
     exit 1
@@ -24,10 +24,10 @@ fi
 echo Converting master image to a couple of smaller images
 echo This requires imagemagick \(https://imagemagick.org\)
 echo Superimposing Version information: "$VER"
-magick images/meerk40t.png -fuzz 10% -transparent green1 mk_big.png
-magick images/meerk40t_simple.png -fuzz 10% -transparent green1 mk_small.png
+convert images/meerk40t.png -fuzz 10% -transparent green1 mk_big.png
+convert images/meerk40t_simple.png -fuzz 10% -transparent green1 mk_small.png
 
-magick mk_big.png \
+convert mk_big.png \
 \( mk_small.png -resize 16x16 -extent 16x16 -background transparent \) \
 \( mk_small.png -resize 32x32 -extent 32x32 -background transparent \) \
 \( -clone 0 -resize 48x48 -extent 48x48 -background transparent \) \
