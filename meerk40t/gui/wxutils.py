@@ -1,6 +1,7 @@
 """
 Mixin functions for wxMeerk40t
 """
+
 import platform
 from typing import List
 
@@ -1686,6 +1687,7 @@ class wxCheckListBox(StaticBoxSizer):
 
         for ctrl in self._children:
             ctrl.Bind(wx.EVT_CHECKBOX, self.on_check)
+            ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
 
         for ctrl in self._children:
             set_color_according_to_theme(ctrl, "text_bg", "text_fg")
@@ -1721,8 +1723,8 @@ class wxCheckListBox(StaticBoxSizer):
             ctrl.Show(flag)
         self.ShowItems(flag)
 
-    def Bind(self, event_type, routine):
-        self.parent.Bind(event_type, routine, self)
+    # def Bind(self, event_type, routine):
+    #     self.parent.Bind(event_type, routine, self)
 
     def on_check(self, orgevent):
         #
@@ -1732,6 +1734,32 @@ class wxCheckListBox(StaticBoxSizer):
         event.SetEventObject(self)
         # event.Int = self.GetSelection()
         wx.PostEvent(self.parent, event)
+
+    def on_right_click(self, event):
+        menu = wx.Menu()
+        parent = self.parent
+        item = menu.Append(wx.ID_ANY, _("Check all"), "")
+        parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.SetCheckedItems(range(len(self._children))),
+            id=item.GetId(),
+        )
+        item = menu.Append(wx.ID_ANY, _("Uncheck all"), "")
+        parent.Bind(wx.EVT_MENU, lambda e: self.SetCheckedItems([]), id=item.GetId())
+        item = menu.Append(wx.ID_ANY, _("Invert selection"), "")
+        parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.SetCheckedItems(
+                [
+                    i
+                    for i in range(len(self._children))
+                    if not self._children[i].GetValue()
+                ]
+            ),
+            id=item.GetId(),
+        )
+        parent.PopupMenu(menu)
+        menu.Destroy()
 
     def SetForegroundColour(self, wc):
         for ctrl in self._children:
@@ -1800,11 +1828,8 @@ class wxCheckListBox(StaticBoxSizer):
         Set the checked items in the CheckListBox based on a list of indices.
         :param choices: A list of indices to check.
         """
-        for idx in choices:
-            if 0 <= idx < len(self._children):
-                self.Check(idx, True)
-            else:
-                self.Check(idx, False)
+        for idx in range(len(self._children)):
+            self.Check(idx, idx in choices)
 
     def Set(self, choices):
         """
