@@ -1585,6 +1585,7 @@ class wxRadioBox(StaticBoxSizer):
     def Show(self, flag):
         for ctrl in self._children + self._labels:
             ctrl.Show(flag)
+        super().Show(flag)
 
     def Bind(self, event_type, routine):
         self.parent.Bind(event_type, routine, self)
@@ -1701,23 +1702,6 @@ class wxCheckListBox(StaticBoxSizer):
         for ctrl in self._children:
             ctrl.SetToolTip(self._tool_tip)
 
-    def Select(self, n):
-        self.SetSelection(n)
-
-    def SetSelection(self, n):
-        for idx, ctrl in enumerate(self._children):
-            ctrl.SetValue(idx == n)
-
-    def GetSelection(self):
-        for idx, ctrl in enumerate(self._children):
-            if ctrl.GetValue():
-                return idx
-        return -1
-
-    def GetStringSelection(self):
-        idx = self.GetSelection()
-        return None if idx < 0 else self.choices[idx]
-
     def Disable(self):
         self.Enable(False)
 
@@ -1735,6 +1719,7 @@ class wxCheckListBox(StaticBoxSizer):
     def Show(self, flag):
         for ctrl in self._children:
             ctrl.Show(flag)
+        self.ShowItems(flag)
 
     def Bind(self, event_type, routine):
         self.parent.Bind(event_type, routine, self)
