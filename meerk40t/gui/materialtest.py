@@ -1031,7 +1031,7 @@ class TemplatePanel(wx.Panel):
             if self.parameters[idx1][7] is not None:
                 if not self.list_options_1.GetCheckedStrings():
                     active = False
-                valid_interval_1 = True
+                valid_interval_1 = False
             else:
                 if not valid_float(self.text_min_1):
                     active = False
@@ -1042,7 +1042,7 @@ class TemplatePanel(wx.Panel):
             if self.parameters[idx2][7] is not None:
                 if not self.list_options_2.GetCheckedStrings():
                     active = False
-                valid_interval_2 = True
+                valid_interval_2 = False
             else:
                 if not valid_float(self.text_min_2):
                     active = False
