@@ -1839,10 +1839,15 @@ class TemplateTool(MWindow):
             except AttributeError:
                 pass
             self.remove_module_delegate(p)
+        self.panel_instances.clear()
 
         # Delete all but the first and last page...
         while self.notebook_main.GetPageCount() > 2:
             self.notebook_main.DeletePage(1)
+        print(
+            f"Adding {len(pages_to_instance)} pages to the notebook, remaining {self.notebook_main.GetPageCount()} pages: content={self.notebook_main.GetPageText(0)} and {self.notebook_main.GetPageText(1)}"
+        )
+        # Add the primary property panels
         for prop_sheet, instance in pages_to_instance:
             page_panel = prop_sheet(
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
@@ -1871,6 +1876,8 @@ class TemplateTool(MWindow):
 
         self.Layout()
         self.Thaw()
+        self.notebook_main.SetSelection(1)
+        self.notebook_main.SetSelection(0)
         del busy
 
     def set_secondary_node(self, node):
