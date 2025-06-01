@@ -1003,7 +1003,11 @@ class GalvoController:
     def get_scale_from_correction_file(filename):
         with open(filename, "rb") as f:
             label = f.read(0x16)
-            if label.decode("utf-16") == "LMC1COR_1.0":
+            try:
+                decoded_label = label.decode("utf-16")
+            except UnicodeDecodeError:
+                decoded_label = label.decode("utf-8", errors="ignore")
+            if decoded_label == "LMC1COR_1.0":
                 unk = f.read(2)
                 return struct.unpack("63d", f.read(0x1F8))[43]
             else:
@@ -1049,7 +1053,11 @@ class GalvoController:
         """
         with open(filename, "rb") as f:
             label = f.read(0x16)
-            if label.decode("utf-16") == "LMC1COR_1.0":
+            try:
+                decoded_label = label.decode("utf-16")
+            except UnicodeDecodeError:
+                decoded_label = label.decode("utf-8", errors="ignore")
+            if decoded_label == "LMC1COR_1.0":
                 header = f.read(0x1FA)
                 return self._read_float_correction_file(f)
             else:
