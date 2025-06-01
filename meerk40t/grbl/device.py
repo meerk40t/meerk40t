@@ -496,6 +496,19 @@ class GRBLDevice(Service, Status):
                 "subsection": "_10_",
             },
             {
+                "attr": "rapid_speed",
+                "object": self,
+                "default": 600,
+                "type": float,
+                "label": _("Travel speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the travel speed for your device to move from point to another."
+                ),
+                "section": "_25_" + _("Travel"),
+                "subsection": "_10_",
+            },
+            {
                 "attr": "limit_buffer",
                 "object": self,
                 "default": True,
@@ -900,7 +913,8 @@ class GRBLDevice(Service, Status):
                 # self.redlight_preferred = True
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
                 self.driver._clean()
-                self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
+                rapid_speed = self.setting(float, "rapid_speed", 600.0)
+                self.driver.laser_on(power=int(self.red_dot_level), speed=rapid_speed)
                 # By default, any move is a G0 move which will not activate the laser,
                 # so we need to switch to G1 mode:
                 self.driver.move_mode = 1
