@@ -1,4 +1,26 @@
-VER=0.9.74
+!/bin/bash
+# This script builds the Meerk40t icon in various sizes.
+if [ ! -d images ]; then
+    echo "Please run this script from the root of the meerk40t repository."
+    exit 1
+fi
+if [ ! -x "$(command -v magick)" ]; then
+    echo "This script requires ImageMagick to be installed."
+    echo "Please install ImageMagick and try again."
+    exit 1
+fi
+if [ $# -eq 0 ]
+  then
+    echo Usage: build_icon.sh version
+    echo Example: build_icon.sh 0.9.75
+    exit 1
+fi
+
+VER=$1
+if [ -z "$VER" ]; then
+    echo "Version number is required."
+    exit 1
+fi
 echo Converting master image to a couple of smaller images
 echo This requires imagemagick \(https://imagemagick.org\)
 echo Superimposing Version information: "$VER"
