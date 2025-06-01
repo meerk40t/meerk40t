@@ -184,7 +184,6 @@ class TemplatePanel(wx.Panel):
         self.SetHelpText("testpattern")
         self.storage = storage
         self.callback = None
-        self.secondary_callback = None
         self.current_op = None
         opchoices = [
             _("Cut"),
@@ -625,21 +624,7 @@ class TemplatePanel(wx.Panel):
             opnode = self.default_op[idx]
             secondary_node = self.secondary_default_op[idx]
         if self.callback is not None and idx >= 0:
-            self.callback(opnode)
-        if self.secondary_callback is not None:
-            self.secondary_callback(secondary_node)
-
-    def set_secondary_callback(self, routine):
-        self.secondary_callback = routine
-        idx = self.combo_ops.GetSelection()
-        # opnode = None
-        secondary_node = None
-        if idx >= 0:
-            # opnode = self.default_op[idx]
-            secondary_node = self.secondary_default_op[idx]
-
-        if self.secondary_callback is not None:
-            self.secondary_callback(secondary_node)
+            self.callback(opnode, secondary_node)
 
     def use_percent(self):
         self.context.device.setting(bool, "use_percent_for_power_display", False)
@@ -714,9 +699,7 @@ class TemplatePanel(wx.Panel):
 
         self.sizer_param_op.Layout()
         if self.callback is not None:
-            self.callback(opnode)
-        if self.secondary_callback is not None:
-            self.secondary_callback(secondary_node)
+            self.callback(opnode, secondary_node)
         self.combo_color_1.Enable(self._freecolor)
         self.combo_color_2.Enable(self._freecolor)
         self.check_color_direction_1.Enable(self._freecolor)
@@ -1719,7 +1702,6 @@ class TemplateTool(MWindow):
         self.storage.read_configuration()
         self.panel_instances = []
         self.primary_prop_panels = []
-        self.secondary_prop_panels = []
         self.panel_template = TemplatePanel(
             self,
             wx.ID_ANY,
@@ -1753,7 +1735,6 @@ class TemplateTool(MWindow):
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
 
         self.panel_template.set_callback(self.set_node)
-        self.panel_template.set_secondary_callback(self.set_secondary_node)
         self.add_module_delegate(self.panel_template)
 
         self.notebook_main.AddPage(self.panel_saveload, _("Templates"))
@@ -1791,7 +1772,7 @@ class TemplateTool(MWindow):
 
         return None
 
-    def set_node(self, node):
+    def set_node(self, primary_node, secondary_node=None):
         def sort_priority(prop):
             prop_sheet, node = prop
             return (
@@ -1800,25 +1781,26 @@ class TemplateTool(MWindow):
                 else 0
             )
 
-        if node is None:
+        if primary_node is None:
             return
         busy = wx.BusyCursor()
         self.Freeze()
-        pages_to_instance = []
-        self.primary_prop_panels = []
-        found = False
+        primary_panels = []
+        secondary_panels = []
         for property_sheet in self.context.lookup_all(
-            f"property/{node.__class__.__name__}/.*"
+            f"property/{primary_node.__class__.__name__}/.*"
         ):
-            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
-                self.primary_prop_panels.append((property_sheet, node))
-                found = True
+            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                primary_node
+            ):
+                primary_panels.append((property_sheet, primary_node))
+        found = len(primary_panels) > 0
         # If we did not have any hits and the node is a reference
         # then we fall back to the master. So if in the future we
         # would have a property panel dealing with reference-nodes
         # then this would no longer apply.
-        if node.type == "reference" and not found:
-            snode = node.node
+        if primary_node.type == "reference" and not found:
+            snode = primary_node.node
             found = False
             for property_sheet in self.context.lookup_all(
                 f"property/{snode.__class__.__name__}/.*"
@@ -1826,12 +1808,19 @@ class TemplateTool(MWindow):
                 if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
                     snode
                 ):
-                    self.primary_prop_panels.append((property_sheet, snode))
-                    found = True
+                    primary_panels.append((property_sheet, snode))
+        if secondary_node is not None:
+            for property_sheet in self.context.lookup_all(
+                f"property/{secondary_node.__class__.__name__}/.*"
+            ):
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                    secondary_node
+                ):
+                    secondary_panels.append((property_sheet, secondary_node))
 
-        self.primary_prop_panels.sort(key=sort_priority, reverse=True)
-        pages_to_instance.extend(self.primary_prop_panels)
-        pages_to_instance.extend(self.secondary_prop_panels)
+        primary_panels.sort(key=sort_priority, reverse=True)
+        secondary_panels.sort(key=sort_priority, reverse=True)
+        pages_to_instance = primary_panels + secondary_panels
 
         for p in self.panel_instances:
             try:
@@ -1844,9 +1833,9 @@ class TemplateTool(MWindow):
         # Delete all but the first and last page...
         while self.notebook_main.GetPageCount() > 2:
             self.notebook_main.DeletePage(1)
-        print(
-            f"Adding {len(pages_to_instance)} pages to the notebook, remaining {self.notebook_main.GetPageCount()} pages: content={self.notebook_main.GetPageText(0)} and {self.notebook_main.GetPageText(1)}"
-        )
+        # print(
+        #     f"Adding {len(pages_to_instance)} pages to the notebook, remaining {self.notebook_main.GetPageCount()} pages: content={self.notebook_main.GetPageText(0)} and {self.notebook_main.GetPageText(1)}"
+        # )
         # Add the primary property panels
         for prop_sheet, instance in pages_to_instance:
             page_panel = prop_sheet(
@@ -1878,88 +1867,6 @@ class TemplateTool(MWindow):
         self.Thaw()
         self.notebook_main.SetSelection(1)
         self.notebook_main.SetSelection(0)
-        del busy
-
-    def set_secondary_node(self, node):
-        def sort_priority(prop):
-            prop_sheet, node = prop
-            return (
-                getattr(prop_sheet, "priority")
-                if hasattr(prop_sheet, "priority")
-                else 0
-            )
-
-        if node is None:
-            return
-        busy = wx.BusyCursor()
-        self.Freeze()
-        pages_to_instance = []
-        self.secondary_prop_panels = []
-        found = False
-        for property_sheet in self.context.lookup_all(
-            f"property/{node.__class__.__name__}/.*"
-        ):
-            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
-                self.secondary_prop_panels.append((property_sheet, node))
-                found = True
-        # If we did not have any hits and the node is a reference
-        # then we fall back to the master. So if in the future we
-        # would have a property panel dealing with reference-nodes
-        # then this would no longer apply.
-        if node.type == "reference" and not found:
-            snode = node.node
-            found = False
-            for property_sheet in self.context.lookup_all(
-                f"property/{snode.__class__.__name__}/.*"
-            ):
-                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                    snode
-                ):
-                    self.secondary_prop_panels.append((property_sheet, snode))
-                    found = True
-
-        self.secondary_prop_panels.sort(key=sort_priority, reverse=True)
-        pages_to_instance.extend(self.primary_prop_panels)
-        pages_to_instance.extend(self.secondary_prop_panels)
-
-        for p in self.panel_instances:
-            try:
-                p.pane_hide()
-            except AttributeError:
-                pass
-            self.remove_module_delegate(p)
-
-        # Delete all but the first and last page...
-        while self.notebook_main.GetPageCount() > 2:
-            self.notebook_main.DeletePage(1)
-        for prop_sheet, instance in pages_to_instance:
-            page_panel = prop_sheet(
-                self.notebook_main, wx.ID_ANY, context=self.context, node=instance
-            )
-            try:
-                name = prop_sheet.name
-            except AttributeError:
-                name = instance.__class__.__name__
-
-            self.notebook_main.InsertPage(1, page_panel, _(name))
-            try:
-                page_panel.set_widgets(instance)
-            except AttributeError:
-                pass
-            self.add_module_delegate(page_panel)
-            self.panel_instances.append(page_panel)
-            try:
-                page_panel.pane_show()
-            except AttributeError:
-                pass
-            page_panel.Layout()
-            try:
-                page_panel.SetupScrolling()
-            except AttributeError:
-                pass
-
-        self.Layout()
-        self.Thaw()
         del busy
 
     def window_open(self):
