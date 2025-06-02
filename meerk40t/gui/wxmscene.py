@@ -27,6 +27,7 @@ from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
 # from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
+from meerk40t.gui.scenewidgets.rotaryaxiswidget import RotaryAxisWidget
 
 # from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
 from meerk40t.gui.toolwidgets.toolcircle import CircleTool
@@ -199,6 +200,9 @@ class MeerK40tScenePanel(wx.Panel):
 
         # Draw Machine Origin widget.
         self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
+
+        # Draw Machine Origin widget.
+        self.widget_scene.add_scenewidget(RotaryAxisWidget(self.widget_scene))
 
         # Draw Grid.
         self.grid = GridWidget(self.widget_scene)
