@@ -3338,7 +3338,7 @@ msgid "Outline"
 msgstr ""
 
 #: meerk40t/gui/laserpanel.py:163
-msgid "Trace the outline the job"
+msgid "Trace the outline of the job"
 msgstr ""
 
 #: meerk40t/gui/laserpanel.py:167 meerk40t/gui/simulation.py:2150
@@ -14877,4 +14877,3 @@ msgstr "Luftzufuhr"
 #: meerk40t/ruida/gui/ruidaoperationproperties.py:26
 msgid "Trigger the per element air assist"
 msgstr ""
-

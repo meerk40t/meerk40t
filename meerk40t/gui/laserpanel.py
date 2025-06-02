@@ -262,7 +262,7 @@ class LaserPanel(wx.Panel):
         self.check_laser_arm()
 
         self.button_outline = wxButton(self, wx.ID_ANY, _("Outline"))
-        self.button_outline.SetToolTip(_("Trace the outline the job"))
+        self.button_outline.SetToolTip(_("Trace the outline of the job"))
         self.button_outline.SetBitmap(
             icons8_pentagon.GetBitmap(
                 resize=self.icon_size,

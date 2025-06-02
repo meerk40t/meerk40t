@@ -3382,7 +3382,7 @@ msgid "Outline"
 msgstr "Esboço"
 
 #: meerk40t/gui/laserpanel.py:163
-msgid "Trace the outline the job"
+msgid "Trace the outline of the job"
 msgstr "Rastrear o esboço do trabalho"
 
 #: meerk40t/gui/laserpanel.py:167 meerk40t/gui/simulation.py:2150
@@ -17173,4 +17173,3 @@ msgstr ""
 
 #~ msgid "Oval"
 #~ msgstr "Oval"
-
