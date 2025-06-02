@@ -199,13 +199,17 @@ def stitcheable_nodes(data, tolerance) -> list:
     if tolerance == 0:
         tolerance = 1e-6
     for idx1, (nodeidx1, g1) in enumerate(geoms):
+        fp1 = g1.first_point
+        lp1 = g1.last_point
+        if fp1 is None or lp1 is None:
+            continue
         for idx2 in range(idx1 + 1, len(geoms)):
             nodeidx2 = geoms[idx2][0]
             g2 = geoms[idx2][1]
-            fp1 = g1.first_point
             fp2 = g2.first_point
-            lp1 = g1.last_point
             lp2 = g2.last_point
+            if fp2 is None or lp2 is None:
+                continue
             if (
                 abs(lp1 - lp2) <= tolerance
                 or abs(lp1 - fp2) <= tolerance
@@ -251,11 +255,16 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
         while geometries:
             candidate = geometries.pop(0)
             stitched = False
+            cand_fp = candidate.first_point
+            cand_lp = candidate.last_point
+            if cand_fp is None or cand_lp is None:
+                stitched_geometries.append(candidate)
+                continue
             for i, target in enumerate(stitched_geometries):
-                cand_fp = candidate.first_point
-                cand_lp = candidate.last_point
                 targ_fp = target.first_point
                 targ_lp = target.last_point
+                if targ_fp is None or targ_lp is None:
+                    continue
                 if abs(targ_lp - cand_fp) <= tolerance:
                     # Just append g1 to g2
                     if abs(targ_lp - cand_fp) > 0:
