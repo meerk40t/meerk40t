@@ -73,11 +73,11 @@ class Rotary:
             Applies the rotary scale to selected elements.
     Signal Listeners:
         - rotary_active_roller
-        - rotary_scale_x
-        - rotary_scale_y
+        - rotary_roller_scale_x
+        - rotary_roller_scale_y
         - rotary_active_chuck
-        - rotary_flip_x
-        - rotary_flip_y
+        - rotary_roller_flip_x
+        - rotary_roller_flip_y
         - view;realized
     Listeners ensure that changes in rotary settings are applied to the device and its view.
     Usage:
@@ -92,16 +92,18 @@ class Rotary:
         self._rotary_active_chuck = False
         self._rotary_active_roller = False
         self.rotary_suppress_home = False
-        self.rotary_scale_x = 1.0
-        self.rotary_scale_y = 1.0
+        self.rotary_roller_scale_x = 1.0
+        self.rotary_roller_scale_y = 1.0
         self.rotary_microsteps_per_revolution = 6400
         self.object_diameter = Length("1cm")
-        self.rotary_flip_x = False
-        self.rotary_flip_y = False
+        self.rotary_roller_flip_x = False
+        self.rotary_roller_flip_y = False
         self.rotary_suppress_home = False
         self.rotary_reverse = False
         self.rotary_chuck_alignment_axis = 0
         self.rotary_chuck_offset = 0.5
+        self.rotary_roller_alignment_axis = 0
+        self.rotary_roller_offset = 0.5
 
         _ = service._
         choices = [
@@ -116,7 +118,7 @@ class Rotary:
                 "conditional": (service, "supports_rotary_roller"),
             },
             {
-                "attr": "rotary_scale_x",
+                "attr": "rotary_roller_scale_x",
                 "object": self,
                 "default": 1.0,
                 "type": float,
@@ -126,7 +128,7 @@ class Rotary:
                 "subsection": _("Scale"),
             },
             {
-                "attr": "rotary_scale_y",
+                "attr": "rotary_roller_scale_y",
                 "object": self,
                 "default": 1.0,
                 "type": float,
@@ -136,7 +138,7 @@ class Rotary:
                 "subsection": _("Scale"),
             },
             {
-                "attr": "rotary_flip_x",
+                "attr": "rotary_roller_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -146,7 +148,7 @@ class Rotary:
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_flip_y",
+                "attr": "rotary_roller_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -154,6 +156,24 @@ class Rotary:
                 "tip": _("Mirror the elements on the Y-Axis"),
                 "conditional": (self, "rotary_active_roller"),
                 "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_roller_alignment_axis",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Aligned to axis"),
+                "style": "option",
+                "choices": (0, 1),
+                "display": (
+                    _("X-Axis"),
+                    _("Y-Axis"),
+                ),
+                "tip": _(
+                    "How is your rotary aligned: perpendicular to the X- or the Y-Axis?"
+                ),
+                # "conditional": (self, "rotary_active_chuck"),
+                "subsection": _("Orientation"),
             },
         ]
         service.register_choices("rotary_roller", choices)
@@ -271,11 +291,14 @@ class Rotary:
             # fmt: off
             if service.rotary.rotary_active_roller:
                 channel(_("Rotary active: Roller-Mode"))
-                channel(f"  Scale X: {service.rotary.rotary_scale_x:.3f}")
-                channel(f"  Scale Y: {service.rotary.rotary_scale_y:.3f}")
-                channel(f"  Flip X: {'Yes' if service.rotary.rotary_flip_x else 'No'}")
-                channel(f"  Flip Y: {'Yes' if service.rotary.rotary_flip_y else 'No'}")
+                channel(f"  Scale X: {service.rotary.rotary_roller_scale_x:.3f}")
+                channel(f"  Scale Y: {service.rotary.rotary_roller_scale_y:.3f}")
+                channel(f"  Flip X: {'Yes' if service.rotary.rotary_roller_flip_x else 'No'}")
+                channel(f"  Flip Y: {'Yes' if service.rotary.rotary_roller_flip_y else 'No'}")
                 channel(f"  Suppress Home: {'Yes' if service.rotary.suppress_home else 'No'}")
+                channel(f"  Aligned to axis: {'X-Axis' if self.rotary_roller_alignment_axis == 0 else 'Y-Axis'}")
+                zero_pos = Length(f"{self.rotary_roller_offset*100}%", relative_length=service.view.unit_width if self.rotary_roller_alignment_axis == 0 else service.view.unit_height)
+                channel(f"  Rotary position: {self.rotary_roller_offset*100:.1f}% ({zero_pos.length_mm})")
             elif service.rotary.rotary_active_chuck:
                 channel(_("Rotary active: Chuck-Mode"))
                 channel(f"  Microsteps per revolution: {service.rotary.rotary_microsteps_per_revolution}")
@@ -460,8 +483,8 @@ class Rotary:
             "rotaryscale", help=_("Rotary Scale selected elements")
         )
         def apply_rotary_scale(*args, **kwargs):
-            sx = service.rotary_scale_x
-            sy = service.rotary_scale_y
+            sx = service.rotary_roller_scale_x
+            sy = service.rotary_roller_scale_y
             x, y = service.device.current
             matrix = Matrix(f"scale({sx}, {sy}, {x}, {y})")
             for node in service.elements.elems():
@@ -497,11 +520,11 @@ class Rotary:
 
     @property
     def scale_x(self):
-        return self.rotary_scale_x if self.rotary_active_roller else 1.0
+        return self.rotary_roller_scale_x if self.rotary_active_roller else 1.0
 
     @property
     def scale_y(self):
-        return self.rotary_scale_y if self.rotary_active_roller else 1.0
+        return self.rotary_roller_scale_y if self.rotary_active_roller else 1.0
 
     @property
     def active(self):
@@ -509,21 +532,37 @@ class Rotary:
 
     @property
     def flip_x(self):
-        return self.rotary_flip_x if self.rotary_active_roller else False
+        return self.rotary_roller_flip_x if self.rotary_active_roller else False
 
     @property
     def flip_y(self):
-        return self.rotary_flip_y if self.rotary_active_roller else False
+        return self.rotary_roller_flip_y if self.rotary_active_roller else False
 
     @property
     def suppress_home(self):
         return self.rotary_suppress_home
 
+    def set_roller_center(self, pos):
+        """
+        Set the center position of the roller rotary.
+        @param pos: Position in percentage (0.0 to 1.0)
+        """
+        self.rotary_roller_offset = pos
+        self.service.device.realize()
+
+    def set_chuck_center(self, pos):
+        """
+        Set the center position of the chuck rotary.
+        @param pos: Position in percentage (0.0 to 1.0)
+        """
+        self.rotary_chuck_offset = pos
+        self.service.device.realize()
+
     @lookup_listener("service/device/active")
-    @signal_listener("rotary_scale_x")
-    @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_flip_x")
-    @signal_listener("rotary_flip_y")
+    @signal_listener("rotary_roller_scale_x")
+    @signal_listener("rotary_roller_scale_y")
+    @signal_listener("rotary_roller_flip_x")
+    @signal_listener("rotary_roller_flip_y")
     @signal_listener("rotary_active_chuck")
     @signal_listener("rotary_active_roller")
     @signal_listener("rotary_chuck_offset")
@@ -553,9 +592,9 @@ class Rotary:
             return
         device = self.service.device
         device.view.scale(self.scale_x, self.scale_y)
-        if self.rotary_flip_x:
+        if self.rotary_roller_flip_x:
             device.view.flip_x()
-        if self.rotary_flip_y:
+        if self.rotary_roller_flip_y:
             device.view.flip_y()
 
     def consider_rotation(self, x, y):
@@ -606,7 +645,7 @@ def map_coordinates_to_rotary(
     y_rotary_origin: float,
     hardware_microsteps_per_rev: int,
     virtual_microsteps_per_rev: int = None,
-) -> tuple[float, int, float]:
+):
     """
     Maps a Y-coordinate to a rotary axis position for a laser cutter.
 
