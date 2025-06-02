@@ -242,7 +242,7 @@ def read_po(locale):
             if id_str and msgid_mode and id_str not in id_strings:
                 id_strings.append(id_str)
             elif id_str and msgid_mode:
-                print(f"Duplicte entry found for {locale}: ´{id_str}´")
+                print(f"Duplicate entry found for {locale}: ´{id_str}´")
     print(f"Read {linecount} lines for {locale} and found {len(id_strings)} entries...")
     return id_strings
 
