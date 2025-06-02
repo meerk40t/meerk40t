@@ -4,3 +4,4 @@ pyclipr
 meerk40t-barcodes
 numba
 scipy<=1.12.0
+vtracer

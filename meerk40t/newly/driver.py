@@ -39,7 +39,7 @@ class NewlyDriver:
         self._queue_total = 0
 
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True
+            dict(), single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
         )
         self._aborting = False
         self._list_bits = None

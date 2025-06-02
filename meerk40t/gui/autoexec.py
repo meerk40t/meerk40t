@@ -192,3 +192,8 @@ class AutoExec(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Edit commands to be executed on file load")
+    

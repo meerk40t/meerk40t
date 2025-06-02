@@ -184,8 +184,9 @@ def init_commands(kernel):
             self.tolerance = 0.5 * factor2 * 0.5 * factor2
             geom_list = []
             g = Geomstr.svg(path)
-            geom_list.append(g)
-            self.add_geometries(geom_list)
+            if g.index:
+                geom_list.append(g)
+                self.add_geometries(geom_list)
 
         def process_data(self, offset, jointype="round", separate=False):
             self.clipr_offset.clear()
@@ -875,9 +876,6 @@ def init_commands(kernel):
         if method is None:
             method = "union"
         method = method.lower()
-        if filltype is None:
-            filltype = "evenodd"
-        filltype = filltype.lower()
         if keep is None:
             keep = False
 
@@ -889,6 +887,10 @@ def init_commands(kernel):
             long_method = "Xor"
         else:
             long_method = "Union"
+
+        if filltype is None:
+            filltype = "evenodd" if method != "union" else "nonzero"
+        filltype = filltype.lower()
 
         if filltype.startswith("no") or filltype.startswith("z"):
             long_filltype = "NonZero"
@@ -908,22 +910,24 @@ def init_commands(kernel):
         clipper.add_nodes(data)
         # Perform the clip operation
         clipper.process_data(method=method, filltype=filltype)
-        for geom in clipper.result_geometry():
-            if geom is not None:
-                newnode = self.elem_branch.add(
-                    geometry=geom, type="elem path", stroke=firstnode.stroke
-                )
-                newnode.stroke_width = UNITS_PER_PIXEL
-                newnode.linejoin = Linejoin.JOIN_ROUND
-                newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.display_label()}"
-                data_out.append(newnode)
+        # _("Create clipper data")
+        with self.undoscope("Create clipper data"):
+            for geom in clipper.result_geometry():
+                if geom is not None:
+                    newnode = self.elem_branch.add(
+                        geometry=geom, type="elem path", stroke=firstnode.stroke
+                    )
+                    newnode.stroke_width = UNITS_PER_PIXEL
+                    newnode.linejoin = Linejoin.JOIN_ROUND
+                    newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.display_label()}"
+                    data_out.append(newnode)
 
-        # Newly created! Classification needed?
-        if len(data_out) > 0:
-            post.append(classify_new(data_out))
-            self.signal("refresh_scene", "Scene")
-            if not keep:
-                self.remove_nodes(data)
+            # Newly created! Classification needed?
+            if len(data_out) > 0:
+                post.append(classify_new(data_out))
+                self.signal("refresh_scene", "Scene")
+                if not keep:
+                    self.remove_nodes(data)
 
         return "elements", data_out
 

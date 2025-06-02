@@ -32,6 +32,10 @@ class CylinderSettings(MWindow):
     def submenu():
         return "Device-Settings", "Cylinder-Correction"
 
+    @staticmethod
+    def helptext():
+        return _("Edit and activate planar cylinder correction")
+
     @signal_listener("cylinder_update")
     def signal_cylinder(self, origin=None, *args, **kwargs):
         self.panel.reload()

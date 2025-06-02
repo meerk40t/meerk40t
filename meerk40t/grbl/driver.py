@@ -47,7 +47,12 @@ class GRBLDriver(Parameters):
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, ppi=False, shift=False, group=True
+            self.settings,
+            single=True,
+            ppi=False,
+            shift=False,
+            group=True,
+            require_uniform_movement=False,
         )
         self.queue = []
         self._queue_current = 0
@@ -150,8 +155,6 @@ class GRBLDriver(Parameters):
             self.power_dirty = True
         if key == "speed":
             self.speed_dirty = True
-        if key == "zaxis":
-            self.zaxis_dirty = True
         self.settings[key] = value
 
     def status(self):
@@ -407,6 +410,18 @@ class GRBLDriver(Parameters):
         total = len(self.queue)
         current = 0
         for q in self.queue:
+            # Are there any custom commands to be executed?
+            # Usecase (as described in issue https://github.com/meerk40t/meerk40t/issues/2764 ):
+            # Switch between M3 and M4 mode for cut / raster
+            #   M3=used to cut as gantry acceleration doesn't matter on a cut.
+            #   M4=used for Raster/Engrave operations, as grblHAL will
+            #   adjust power based on gantry speed including acceleration.
+
+            cmd_string = q.settings.get("custom_commands", "")
+            if cmd_string:
+                for cmd in cmd_string.splitlines():
+                    self(f"{cmd}{self.line_end}")
+
             current += 1
             self._set_queue_status(current, total)
             while self.hold_work(0):
@@ -425,6 +440,14 @@ class GRBLDriver(Parameters):
             if self.on_value != 1.0:
                 self.power_dirty = True
             self.on_value = 1.0
+            # Do we have a custom z-Value?
+            # NB: zaxis is not a property inside Parameters like power/or speed
+            # so we need to deal with it more directly
+            # (e.g. self.power is the equivalent to self.settings.["power"]))
+            qzaxis = q.settings.get("zaxis", self.zaxis)
+            if qzaxis != self.zaxis:
+                self.zaxis = qzaxis
+                self.zaxis_dirty = True
             # Default-Values?!
             qpower = q.settings.get("power", self.power)
             qspeed = q.settings.get("speed", self.speed)
@@ -516,6 +539,7 @@ class GRBLDriver(Parameters):
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
                             # self.move_mode = 0
+                            self.rapid_mode()
                             self._move(x, y)
                         continue
                     # if on == 0:
@@ -591,6 +615,10 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
+        speedvalue = self.service.setting(float, "rapid_speed", 600.0)
+        if self.speed != speedvalue:
+            self.speed = speedvalue
+            self.speed_dirty = True
 
     def finished_mode(self, *values):
         """

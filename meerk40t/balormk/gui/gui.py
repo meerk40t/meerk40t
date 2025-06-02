@@ -79,6 +79,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_full,
                         "help": "devicebalor",
                         "action": lambda e: service("full-light\n"),
+                        "multi_autoexec": False,
                     },
                     # {
                     #     "identifier": "live-regmark",
@@ -93,6 +94,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_bounds,
                         "help": "devicebalor",
                         "action": lambda e: service("select-light\n"),
+                        "multi_autoexec": False,
                     },
                     {
                         "identifier": "live-hull",
@@ -100,6 +102,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_hull,
                         "help": "devicebalor",
                         "action": lambda e: service("hull-light\n"),
+                        "multi_autoexec": False,
                     },
                     {
                         "identifier": "hull",
@@ -107,6 +110,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_hull,
                         "help": "devicebalor",
                         "action": lambda e: service("element* geometry hull light\n"),
+                        "multi_autoexec": False,
                     },
                     {
                         "identifier": "box",
@@ -114,6 +118,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_bounds,
                         "help": "devicebalor",
                         "action": lambda e: service("box light\n"),
+                        "multi_autoexec": False,
                     },
                     # {
                     #     "identifier": "ants",
@@ -126,6 +131,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_full,
                         "help": "devicebalor",
                         "action": lambda e: service("element* geometry light\n"),
+                        "multi_autoexec": False,
                     },
                 ],
                 "toggle": {

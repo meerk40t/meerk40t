@@ -1,6 +1,6 @@
 import math
 import platform
-from time import perf_counter, sleep
+from time import perf_counter
 
 import wx
 
@@ -280,7 +280,6 @@ class OperationsPanel(wx.Panel):
     def on_text_operation_param(self, event):
         content = self.text_operation_param.GetValue()
         idx = self.list_operations.GetFirstSelected()
-        flag = False
         if idx < 0:
             return
         op = self.cutplan.plan[idx]
@@ -325,7 +324,7 @@ class OperationsPanel(wx.Panel):
                 content = op.command
                 flag = True
             elif isinstance(op, GotoOperation):
-                content = str(op.x) + "," + str(op.y)
+                content = f"{str(op.x)},{str(op.y)}"
                 flag = True
             elif isinstance(op, WaitOperation):
                 content = str(op.wait)
@@ -485,9 +484,7 @@ class CutcodePanel(wx.Panel):
 
         self.cutcode = cutcode
         self.plan_name = plan_name
-        self.list_cutcode = wxListBox(
-            self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE
-        )
+        self.list_cutcode = wxListBox(self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE)
         self.last_selected = []
         self.display_highlighted_only = False
         # self.text_operation_param = TextCtrl(
@@ -818,6 +815,14 @@ class SimulationPanel(wx.Panel, Job):
         self._playback_cuts = True
         self._cut_end_time = []
 
+        self.update_job = Job(
+            process=self.cache_updater,
+            job_name="cache_updater",
+            interval=0.25,
+            times=1,
+            run_main=True,
+        )
+
         self.job_name = "simulate"
         self.run_main = True
         self.process = self.animate_sim
@@ -836,6 +841,7 @@ class SimulationPanel(wx.Panel, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
+
         self.statistics = self.cutcode.provide_statistics()
 
         self.max = max(len(self.cutcode), 0) + 1
@@ -892,15 +898,9 @@ class SimulationPanel(wx.Panel, Job):
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
-        self.text_distance_laser = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.text_distance_travel = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.text_distance_total = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
+        self.text_distance_laser = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_distance_travel = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_distance_total = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_laser = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_extra = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -914,18 +914,10 @@ class SimulationPanel(wx.Panel, Job):
         self.text_distance_total_step = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_laser_step = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.text_time_travel_step = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.text_time_extra_step = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.text_time_total_step = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
+        self.text_time_laser_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_travel_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_extra_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_total_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.button_play = wxButton(self, wx.ID_ANY, "")
         self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
@@ -1029,6 +1021,16 @@ class SimulationPanel(wx.Panel, Job):
         self.slided_in = True
         self.start_time = perf_counter()
         self.debug(f"Init done: {perf_counter()-self.start_time}")
+
+    def reload_statistics(self):
+        try:
+            self.statistics = self.cutcode.provide_statistics()
+            self._set_slider_dimensions()
+            self.sim_travel.initvars()
+            self.update_fields()
+        except RuntimeError:
+            # Was already deleted
+            pass
 
     def debug(self, message):
         # print (message)
@@ -1238,18 +1240,20 @@ class SimulationPanel(wx.Panel, Job):
         try:
             if newvalue:
                 # Slided in ->
-                self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
+                self.hscene_sizer.Show(
+                    sizer=self.voption_sizer, show=False, recursive=True
+                )
                 self.voption_sizer.Layout()
                 self.btn_slide_options.SetLabel("<")
-                self.hscene_sizer.Layout()
-                self.Layout()
             else:
                 # Slided out ->
-                self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
+                self.hscene_sizer.Show(
+                    sizer=self.voption_sizer, show=True, recursive=True
+                )
                 self.voption_sizer.Layout()
                 self.btn_slide_options.SetLabel(">")
-                self.hscene_sizer.Layout()
-                self.Layout()
+            self.hscene_sizer.Layout()
+            self.Layout()
         except RuntimeError:
             return
 
@@ -1299,7 +1303,10 @@ class SimulationPanel(wx.Panel, Job):
         if self.laserspot_display:
             spot_value = getattr(self.context.device, "laserspot", "0.3mm")
             try:
-                scale = 0.5 * (self.context.device.view.native_scale_x + self.context.device.view.native_scale_y)
+                scale = 0.5 * (
+                    self.context.device.view.native_scale_x
+                    + self.context.device.view.native_scale_y
+                )
                 spotwidth_in_scene = float(Length(spot_value))
                 spot_width = spotwidth_in_scene / scale
                 # print (f"Scale for device: {scale}, spot in scene: {spot_value} = {spotwidth_in_scene} -> {spot_width}")
@@ -1444,8 +1451,12 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
-        mx = float(Length(self.context.device.view.margin_x))
-        my = float(Length(self.context.device.view.margin_y))
+        try:
+            mx = float(Length(self.context.device.view.margin_x))
+            my = float(Length(self.context.device.view.margin_y))
+        except ValueError:
+            mx = 0
+            my = 0
         # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
         if mx != 0.0 or my != 0.0:
             menu.AppendSeparator()
@@ -1539,10 +1550,7 @@ class SimulationPanel(wx.Panel, Job):
         self.slider_progress.SetValue(self.max)
         value = self.slider_playbackspeed.GetValue()
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
-        if self.radio_cut.GetValue():
-            factor = 0.1  # steps
-        else:
-            factor = 1  # seconds
+        factor = 0.1 if self.radio_cut.GetValue() else 1  # steps / seconds
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
@@ -1552,6 +1560,8 @@ class SimulationPanel(wx.Panel, Job):
             self._stop()
             return
         # Refresh cutcode
+        self.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+
         if self.plan_name:
             self.cutplan = self.context.planner.get_or_make_plan(self.plan_name)
         else:
@@ -1576,12 +1586,11 @@ class SimulationPanel(wx.Panel, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
-        self.statistics = self.cutcode.provide_statistics()
+
+        # self.reload_statistics()
+
         # for idx, stat in enumerate(self.statistics):
         #     print(f"#{idx}: {stat}")
-        self._set_slider_dimensions()
-        self.sim_travel.initvars()
-        self.update_fields()
         bb = self.cutplan._previous_bounds
         if bb is None or math.isinf(bb[0]):
             self.parent.SetTitle(_("Simulation"))
@@ -1595,14 +1604,20 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
+
+        self.update_job.cancel()
+        self.context.schedule(self.update_job)
+        self.reload_statistics()
         self._startup()
         self.request_refresh()
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
+    @signal_listener("device;modified")
     @signal_listener("plan")
-    def on_plan_change(self, origin, plan_name, status):
+    def on_plan_change(self, origin, plan_name=None, status=None):
         def resend_signal():
             self.debug(f"Resending signal: {perf_counter()-self.start_time}")
-            self.context.signal("plan", self.plan_name, 1)
+            self.context.signal("plan", plan_name=self.plan_name, status=1)
 
         winsize = self.view_pane.GetSize()
         winsize1 = self.hscene_sizer.GetSize()
@@ -1659,6 +1674,37 @@ class SimulationPanel(wx.Panel, Job):
         else:
             self.options_optimize.Enable(False)
 
+    def cache_updater(self):
+        try:
+            self.button_spool.Enable(False)
+        except RuntimeError:
+            # Control no longer existant
+            return
+        msg = self.button_spool.GetLabel()
+        self.button_spool.SetLabel(_("Calculating"))
+        for cut in self.cutcode:
+            if isinstance(cut, (RasterCut, PlotCut)):
+                if hasattr(cut, "_plotcache") and cut._plotcache is not None:
+                    continue
+                if isinstance(cut, RasterCut):
+                    try:
+                        cut._plotcache = list(cut.plot.plot())
+                    except MemoryError:
+                        cut._plotcache = None
+                elif isinstance(cut, PlotCut):
+                    try:
+                        cut._plotcache = list(cut.plot)
+                    except MemoryError:
+                        cut._plotcache = None
+                self.context.signal("refresh_scene", self.widget_scene.name)
+        self.reload_statistics()
+        try:
+            self.button_spool.SetLabel(msg)
+            self.button_spool.Enable(True)
+        except RuntimeError:
+            # No longer existing
+            pass
+
     def update_fields(self):
         def len_str(value):
             if abs(value) >= 1000000:
@@ -1675,6 +1721,7 @@ class SimulationPanel(wx.Panel, Job):
             "total_distance_travel": 0,
             "total_distance_cut": 0,
             "total_time_travel": 0,
+            "total_internal_travel": 0,
             "total_time_cut": 0,
             "total_time_extra": 0,
         }
@@ -1692,10 +1739,16 @@ class SimulationPanel(wx.Panel, Job):
         travel_mm = (
             item["total_distance_travel"] + partials["total_distance_travel"]
         ) / mm
+        internal_mm = (
+            item["total_internal_travel"] + partials["total_internal_travel"]
+        ) / mm
         cuts_mm = (item["total_distance_cut"] + partials["total_distance_cut"]) / mm
         # travel_mm = self.cutcode.length_travel(stop_at=step) / mm
         # cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
-        self.text_distance_travel_step.SetValue(len_str(travel_mm))
+        info = len_str(travel_mm)
+        if internal_mm != 0:
+            info += f" ({len_str(internal_mm)})"
+        self.text_distance_travel_step.SetValue(info)
         self.text_distance_laser_step.SetValue(len_str(cuts_mm))
         self.text_distance_total_step.SetValue(len_str(travel_mm + cuts_mm))
         try:
@@ -1784,6 +1837,15 @@ class SimulationPanel(wx.Panel, Job):
         event.Skip()
 
     def on_redo_it(self, event):
+        # Dont occupy gui event handling too long
+        wx.CallAfter(self.redo_action)
+
+    def redo_action(self):
+        self.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+        self.btn_redo_it.SetLabel(_("Preparing simulation..."))
+        self.btn_redo_it.Enable(False)
+        self.btn_redo_it.Refresh()
+        self.btn_redo_it.Update()
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing simulation..."))
 
@@ -1800,6 +1862,9 @@ class SimulationPanel(wx.Panel, Job):
         )
         busy.end()
         self._refresh_simulated_plan()
+        self.btn_redo_it.Enable(True)
+        self.btn_redo_it.SetLabel(_("Recalculate"))
+        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def pane_show(self):
         self.Layout()
@@ -1890,10 +1955,7 @@ class SimulationPanel(wx.Panel, Job):
 
         value = self.slider_playbackspeed.GetValue()
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
-        if self.radio_cut.GetValue():
-            factor = 0.1  # steps
-        else:
-            factor = 1  # seconds
+        factor = 0.1 if self.radio_cut.GetValue() else 1  # steps / seconds
         self.interval = factor * 100.0 / float(value)
 
         self.text_playback_speed.SetValue(f"{value}%")
@@ -1918,7 +1980,7 @@ class SimulationWidget(Widget):
         self.matrix.post_cat(~scene.context.device.view.matrix)
         self.last_msg = None
         self.raster_as_image = True
-        self.laserspot_width = None # 1 Pixel
+        self.laserspot_width = None  # 1 Pixel
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.sim.progress < 0:
@@ -1932,7 +1994,9 @@ class SimulationWidget(Widget):
             sim_cut = self.sim.cutcode[:idx]
         else:
             sim_cut = self.sim.cutcode
-        self.renderer.draw_cutcode(sim_cut, gc, 0, 0, self.raster_as_image, laserspot_width=spot_width)
+        self.renderer.draw_cutcode(
+            sim_cut, gc, 0, 0, self.raster_as_image, laserspot_width=spot_width
+        )
         if residual <= 0:
             return
         # We draw interpolated lines to acknowledge we are in the middle of a cut operation
@@ -1949,7 +2013,9 @@ class SimulationWidget(Widget):
                 image = cut.image
                 gc.PushState()
                 matrix = Matrix.scale(cut.step_x, cut.step_y)
-                matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
+                matrix.post_translate(
+                    cut.offset_x + x, cut.offset_y + y
+                )  # Adjust image xy
                 gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 try:
                     cache = cut._cache
@@ -1970,31 +2036,23 @@ class SimulationWidget(Widget):
                     cut._cache_id = id(image)
                 # Set draw - constraint
                 if cut.horizontal:
+                    # mode = "T2B"
+                    clip_w = cut._cache_width
+                    clip_h = int(residual * cut._cache_height)
                     if cut.start_minimum_y:
-                        # mode = "T2B"
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
                         clip_y = 0
                     else:
-                        # mode = "B2T"
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
                         clip_y = cut._cache_height - clip_h
+                    clip_x = 0
                 else:
+                    # mode = "L2R"
+                    clip_w = int(residual * cut._cache_width)
+                    clip_h = cut._cache_height
+                    clip_y = 0
                     if cut.start_minimum_x:
-                        # mode = "L2R"
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
                         clip_x = 0
-                        clip_y = 0
                     else:
-                        # mode = "R2L"
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
                         clip_x = cut._cache_width - clip_w
-                        clip_y = 0
 
                 # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
                 # if msg != self.last_msg:
@@ -2021,8 +2079,16 @@ class SimulationWidget(Widget):
                 gc.PopState()
             else:
                 # We draw the cutcode up to a certain percentage
-                simcut = (self.sim.cutcode[idx], )
-                self.renderer.draw_cutcode(simcut, gc, 0, 0, self.raster_as_image, residual=residual, laserspot_width=spot_width)
+                simcut = (self.sim.cutcode[idx],)
+                self.renderer.draw_cutcode(
+                    simcut,
+                    gc,
+                    0,
+                    0,
+                    self.raster_as_image,
+                    residual=residual,
+                    laserspot_width=spot_width,
+                )
 
             return
             # # We draw a rectangle covering the raster area
@@ -2090,9 +2156,9 @@ class SimulationTravelWidget(Widget):
         self.initvars()
 
     def initvars(self):
-        self.starts = list()
-        self.ends = list()
-        self.pos = list()
+        self.starts = []
+        self.ends = []
+        self.pos = []
         self.starts.append(wx.Point2D(0, 0))
         self.ends.append(wx.Point2D(0, 0))
         prev = None
@@ -2129,8 +2195,8 @@ class SimulationTravelWidget(Widget):
                             self.ends.append(wx.Point2D(m1.real, m1.imag))
             else:
                 end = wx.Point2D(*curr.start)
-                self.starts = list()
-                self.ends = list()
+                self.starts = []
+                self.ends = []
                 self.starts.append(wx.Point2D(0, 0))
                 self.ends.append(end)
             self.pos.append(len(self.starts))
@@ -2224,17 +2290,20 @@ class SimReticleWidget(Widget):
         y = 0
         if (
             # self.sim.progress > 0 and
-            self.sim.cutcode is not None
-            and len(self.sim.cutcode)
+            self.sim.cutcode is not None and len(self.sim.cutcode)
         ):
             idx, residual = self.sim.progress_to_idx(self.sim.progress)
+            if idx >= len(self.sim.cutcode):
+                idx = len(self.sim.cutcode) - 1
+                self.sim.progress = 0
             dx = 0
             dy = 0
             if self.sim.progress != self.sim.max:
-                if idx > 0:
-                    pos = self.sim.cutcode[idx - 1].end
-                else:
-                    pos = self.sim.cutcode[idx].start
+                pos = (
+                    self.sim.cutcode[idx - 1].end
+                    if idx > 0
+                    else self.sim.cutcode[idx].start
+                )
                 if residual > 0:
                     # We could still be traversing or already burning...
                     # We have two time stamps one after travel,
@@ -2326,7 +2395,7 @@ class Simulation(MWindow):
             busy.start()
 
             kernel.console(
-                f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
+                f"planz clear copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
             )
             busy.end()
 
@@ -2342,7 +2411,9 @@ class Simulation(MWindow):
             {
                 "label": _("Simulate"),
                 "icon": icons8_laser_beam_hazard,
-                "tip": _("Simulate the current laser job"),
+                "tip": _("Simulate the current laser job")
+                + "\n"
+                + _("(Right click: no optimisation)"),
                 "action": open_simulator,
                 "action_right": open_simulator_simple,
                 "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
@@ -2372,3 +2443,7 @@ class Simulation(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Simulation"
+
+    @staticmethod
+    def helptext():
+        return _("Display the job simulation window to see what will happen...")

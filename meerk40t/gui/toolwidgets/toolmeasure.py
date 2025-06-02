@@ -24,7 +24,8 @@ class MeasureTool(PointListTool):
         self.line_pen.SetColour(self.scene.colors.color_measure_line)
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)
         self.line_pen.SetWidth(1000)
-        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
+        fact = dip_size(self.scene.pane, 100, 100)
+        self.font_size_factor = (fact[0] + fact[1]) / 100 * 0.5
 
     def create_node(self):
         # No need to create anything
@@ -44,6 +45,7 @@ class MeasureTool(PointListTool):
             font_size = 5000
         if font_size > 1e8:
             font_size = 5000
+        font_size *= self.font_size_factor            
         # print ("Fontsize=%.3f, " % self.font_size)
         if font_size < 1.0:
             font_size = 1.0  # Mac does not allow values lower than 1.

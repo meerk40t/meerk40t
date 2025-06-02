@@ -22,6 +22,7 @@ def register_panel_snapoptions(window, context):
     pane.dock_proportion = 150
     pane.control = panel
     pane.submenu = "_40_" + _("Editing")
+    pane.helptext = _("Edit element movement snap options")
 
     window.on_pane_create(pane)
     context.register("pane/snapoptions", pane)

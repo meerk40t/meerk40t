@@ -898,3 +898,7 @@ class KerfTool(MWindow):
     @staticmethod
     def submenu():
         return "Laser-Tools", "Kerf-Test"
+
+    @staticmethod
+    def helptext():
+        return _("Help establish the laser kerf width")

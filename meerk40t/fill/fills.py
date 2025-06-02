@@ -23,6 +23,9 @@ class Wobble:
         self.userdata = None
         self.may_close_path = True
 
+    def __repr__(self):
+        return f"Wobble: r={self.radius}, s={self.speed}, i={self.interval}, alg={repr(self._algorithm)}"
+    
     def __call__(self, x0, y0, x1, y1):
         yield from self._algorithm(self, x0, y0, x1, y1)
 
@@ -716,6 +719,8 @@ def _dashed(wobble, x0, y0, x1, y1):
                     except ValueError:
                         continue
                     pattern.append(value * UNITS_PER_MM * wobble.unit_factor)
+        elif isinstance(wobble.radius, (tuple, list)):
+            pattern.extend(r * UNITS_PER_MM * wobble.unit_factor for r in wobble.radius)
         else:
             pattern.append(wobble.radius * UNITS_PER_MM * wobble.unit_factor)
         if len(pattern) % 2 == 1:

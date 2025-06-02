@@ -24,7 +24,8 @@ def register_panel(window, context):
     pane.dock_proportion = 100
     pane.control = panel
     pane.submenu = "_50_" + _("Tools")
-
+    pane.helptext = _("Edit job notes")
+ 
     window.on_pane_create(pane)
     context.register("pane/notes", pane)
 
@@ -135,3 +136,8 @@ class Notes(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Edit job notes")
+    

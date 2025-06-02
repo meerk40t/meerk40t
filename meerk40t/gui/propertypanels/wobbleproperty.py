@@ -4,12 +4,14 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Length
 from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox, wxComboBox
-from .attributes import ColorPanel, IdPanel, AutoHidePanel
+from .attributes import AutoHidePanel, ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 
 
 class WobblePropertyPanel(ScrolledPanel):
+    name = _("Wobble")
+
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -62,7 +64,9 @@ class WobblePropertyPanel(ScrolledPanel):
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
         self.panels.append(panel_id)
 
-        panel_hide = AutoHidePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
+        panel_hide = AutoHidePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         main_sizer.Add(panel_hide, 1, wx.EXPAND, 0)
         self.panels.append(panel_hide)
 

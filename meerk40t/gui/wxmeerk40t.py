@@ -24,6 +24,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
+from meerk40t.core.units import Length
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -89,6 +90,7 @@ from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
+from .functionwrapper import ConsoleCommandUI
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -276,6 +278,7 @@ def register_panel_go(window, context):
         .Hide()
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a laser start button")
     pane.dock_proportion = 98
     panel = GoPanel(window, wx.ID_ANY, context=context)
     pane.control = panel
@@ -300,6 +303,7 @@ def register_panel_stop(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a job abort button")
     pane.dock_proportion = 98
     fgcol = context.themes.get("stop_fg")
     bgcol = context.themes.get("stop_bg")
@@ -337,6 +341,7 @@ def register_panel_home(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a laser homing button")
     pane.dock_proportion = 98
 
     fgcol = None
@@ -373,6 +378,7 @@ def register_panel_pause(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.submenu = "_10_" + _("Laser")
+    pane.helptext = _("Display a job pause button")
     pane.dock_proportion = 98
 
     bgcol = context.themes.get("pause_bg")
@@ -495,7 +501,8 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         self.name = f"MeerK40t-{wx.GetUserId()}"
-        self.instance = wx.SingleInstanceChecker(self.name)
+        mkdir = self.context.kernel.os_information["OS_TEMPDIR"]
+        self.instance = wx.SingleInstanceChecker(self.name, path=mkdir)
         self.context.setting(bool, "single_instance_only", True)
         if self.context.kernel._was_restarted:
             return True
@@ -544,7 +551,8 @@ class wxMeerK40t(wx.App, Module):
     def MacNewFile(self):
         try:
             if self.context is not None:
-                self.context.elements.clear_all()
+                with self.context.elements.undoscope("New"):
+                    self.context.elements.clear_all()
         except AttributeError:
             pass
 
@@ -554,15 +562,17 @@ class wxMeerK40t(wx.App, Module):
     def MacOpenFile(self, filename):
         try:
             if self.context is not None:
-                self.context.elements.load(os.path.realpath(filename))
+                channel = self.context.kernel.channel("console")
+                self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
         except AttributeError:
             pass
 
     def MacOpenFiles(self, filenames):
         try:
             if self.context is not None:
+                channel = self.context.kernel.channel("console")
                 for filename in filenames:
-                    self.context.elements.load(os.path.realpath(filename))
+                    self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
         except AttributeError:
             pass
 
@@ -804,6 +814,53 @@ class wxMeerK40t(wx.App, Module):
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
+        @kernel.console_argument("func", type=str, help=_("Function to call interactively"))
+        @kernel.console_command("gui", help=_("Provides a GUI wrapper around a console command"))
+        def gui_func(command, channel, _, func=None, **kwargs):
+            if func is None:
+                channel(_("You need to provide a function name"))
+                return
+            if func in ("gui", "help", "?", "??", "quit", "shutdown", "exit"):
+                channel (_("It does not make sense, to run '{command}' in a GUI").format(command=func))
+                return
+            context = kernel.root
+            try:
+                parent = context.gui
+            except AttributeError:
+                parent = None
+            dialog: wx.Dialog = ConsoleCommandUI(parent, wx.ID_ANY, title=_("Command {command}").format(command=func), context=context, command_string=func)
+            res = dialog.ShowModal()
+            if res == wx.ID_OK:
+                dialog.accept_it()
+            else:
+                dialog.cancel_it()
+            dialog.Destroy()
+
+        @kernel.console_argument("info", type=str, help=_("Unit to translate"))
+        @kernel.console_command("unit", help=_("Translate units"))
+        def show_unit_info(command, channel, _, info=None, **kwargs):
+            if info is None:
+                channel(_("You need to provide a value to translate"))
+            device = kernel.root.device
+            try:
+                valuex = Length(info, relative_length=device.view.width, digits=4)
+            except ValueError:
+                channel(f"Invalid value: '{info}'")
+                return
+            channel(f"{info} translates to:")
+            channel(f"tat          :  {float(valuex):.4f}")
+            channel(f"mil          :  {valuex.mil}")
+            channel(f"um           :  {valuex.um}")
+            channel(f"nm           :  {valuex.nm}")
+            channel(f"mm           :  {valuex.mm}")
+            channel(f"cm           :  {valuex.cm}")
+            channel(f"Pixels       :  {valuex.pixels}")
+            channel(f"Point        :  {valuex.pt}")
+            channel(f"spx (screen) :  {valuex.spx}")
+            channel(f"inch         :  {valuex.inches}")
+            channel(f"Device units :  {float(valuex) / device.view.native_scale_x:.4f}")
+            
+
     def module_open(self, *args, **kwargs):
         context = self.context
         kernel = context.kernel
@@ -926,12 +983,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
-        if (
+        if not (
             hasattr(kernel.args, "lock_device_config")
             and kernel.args.lock_device_config
         ):
-            pass
-        else:
             kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
@@ -977,6 +1032,10 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.snapoptions import register_panel_snapoptions
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
+
+        from meerk40t.gui.magnetoptions import register_panel_magnetoptions
+
+        kernel.register("wxpane/magnet", register_panel_magnetoptions)
 
         from meerk40t.gui.wordlisteditor import register_panel_wordlist
 

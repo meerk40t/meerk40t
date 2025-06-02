@@ -15,9 +15,11 @@ def data_viewer(data, data_type):
 
     if not data:
         return ""
+    magic = determine_magic_via_histogram(data)
     return BlobNode.hex_view(
-        data=decode_bytes(data, determine_magic_via_histogram(data)),
+        data=decode_bytes(data, magic),
         data_type=data_type,
+        info = f', Magic={magic} (0x{magic:02x})'
     )
 
 
@@ -26,10 +28,13 @@ def command_viewer(data, data_type):
 
     job = RDJob()
     job.write_blob(data)
-    commands = list()
+    commands = []
     job.channel = commands.append
-    while not job.execute(None):
-        pass
+    try:
+        while not job.execute(None):
+            pass
+    except Exception as e:
+        commands.append(f"!! Error !!: {e}")
     return "\n".join(commands)
 
 

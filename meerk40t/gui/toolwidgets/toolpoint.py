@@ -44,16 +44,18 @@ class PointTool(ToolWidget):
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])
             elements = self.scene.context.elements
-            node = elements.elem_branch.add(
-                point=point,
-                matrix=Matrix(),
-                type="elem point",
-                stroke_width=elements.default_strokewidth,
-                stroke=elements.default_stroke,
-                fill=elements.default_fill,
-            )
-            if elements.classify_new:
-                elements.classify([node])
+            # _("Create point")
+            with elements.undoscope("Create point"):
+                node = elements.elem_branch.add(
+                    point=point,
+                    matrix=Matrix(),
+                    type="elem point",
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
+                )
+                if elements.classify_new:
+                    elements.classify([node])
             self.notify_created(node)
             self.end_tool()
             response = RESPONSE_CONSUME

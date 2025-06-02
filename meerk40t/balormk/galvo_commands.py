@@ -4,6 +4,7 @@ import struct
 import time
 
 from usb.core import NoBackendError
+
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
@@ -375,6 +376,7 @@ def plugin(service, lifecycle):
                             )
                             if v[0] == 0x8002:
                                 break
+
                 try:
                     driver.connection.connect_if_needed()
                 except (ConnectionRefusedError, NoBackendError):
@@ -563,7 +565,7 @@ def plugin(service, lifecycle):
                     except (ValueError, struct.error):
                         pass
                 if not isinstance(v, int):
-                    channel(f'Compile error. Line #{cmd_i+1} value "{b}"')
+                    channel(f'Compile error. Line #{cmd_i + 1} value "{b}"')
                     return
                 values[byte_i] = v
                 byte_i += 1
@@ -1153,7 +1155,6 @@ def plugin(service, lifecycle):
         import platform
 
         from meerk40t.balormk.clone_loader import load_sys
-        from meerk40t.kernel import get_safe_path
 
         kernel = service.kernel
 
@@ -1173,7 +1174,7 @@ def plugin(service, lifecycle):
             return
 
         # Check for file in the meerk40t directory (safe_path)
-        directory = get_safe_path(kernel.name, create=True)
+        directory = kernel.os_information["WORKDIR"]
         p = os.path.join(directory, service.clone_sys)
         if os.path.exists(p):
             load_sys(p, channel=channel)

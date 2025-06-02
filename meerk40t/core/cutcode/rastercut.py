@@ -1,7 +1,6 @@
 from meerk40t.core.cutcode.cutobject import CutObject
 from meerk40t.tools.rasterplotter import RasterPlotter
 
-
 class RasterCut(CutObject):
     """
     Rastercut accepts an image of type "L" or "1", and an offset in the x and y.
@@ -15,6 +14,7 @@ class RasterCut(CutObject):
         step_x,
         step_y,
         inverted=False,
+        direction = 0,
         bidirectional=True,
         horizontal=True,
         start_minimum_y=True,
@@ -26,6 +26,8 @@ class RasterCut(CutObject):
         color=None,
         post_filter=None,
         label=None,
+        laserspot=0,
+        special=None,
     ):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color, label=label,
@@ -59,6 +61,7 @@ class RasterCut(CutObject):
 
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+
         if post_filter is None:
             post_filter = image_filter
 
@@ -66,6 +69,7 @@ class RasterCut(CutObject):
             data=image.load(),
             width=self.width,
             height=self.height,
+            direction=direction,
             horizontal=self.horizontal,
             start_minimum_y=self.start_minimum_y,
             start_minimum_x=self.start_minimum_x,
@@ -77,6 +81,8 @@ class RasterCut(CutObject):
             step_x=self.step_x,
             step_y=self.step_y,
             filter=post_filter,
+            laserspot=laserspot,
+            special=special,
         )
 
     def reversible(self):
@@ -113,6 +119,8 @@ class RasterCut(CutObject):
 
         overscan is in device units
 
+        Todo: this is unaware of the optimisation algorithms introduced, so this needs to be revised.
+
         @return:
         """
 
@@ -136,10 +144,16 @@ class RasterCut(CutObject):
         return scanlines * total_distance_per_scanline
 
     def extra(self):
-        if self.horizontal:
-            return self.height * 0.119
-        else:
-            return self.width * 0.119
+        return self.height * 0.119 if self.horizontal else self.width * 0.119
+
+    def internal_travel(self):
+        return self.plot.distance_travel
+
+    def internal_length(self):
+        distance = self.plot.distance_burn
+        if distance == 0:
+            distance = self.length()
+        return distance
 
     def major_axis(self):
         return 0 if self.plot.horizontal else 1

@@ -283,9 +283,19 @@ class FontGlyphPicker(wx.Dialog):
             return
         as_stroke = getattr(cfont, "STROKE_BASED", False)
         for c in cfont.glyphs:
-            if ord(c) == 65535:
+            if isinstance(c, str):
+                if len(c) > 1:
+                    # print (f"Strange: {c}, use {idx} instead")
+                    continue
+                if ord(c) == 65535:
+                    continue
+                cstr = str(c)
+            elif isinstance(c, int):
+                if c == 65535:
+                    continue
+                cstr = chr(c)
+            else:
                 continue
-            cstr = str(c)
             hexa = cstr.encode("utf-8")
             item = self.list_glyphs.InsertItem(self.list_glyphs.ItemCount, hexa)
             self.list_glyphs.SetItem(item, 1, str(ord(cstr)))
@@ -294,7 +304,7 @@ class FontGlyphPicker(wx.Dialog):
             try:
                 cfont.render(
                     path,
-                    c,
+                    cstr,
                     True,
                     12.0,
                     1.0,
@@ -934,6 +944,10 @@ class HersheyFontSelector(MWindow):
         # Suppress = True
         return "", "Font-Selector", True
 
+    @staticmethod
+    def helptext():
+        return _("Pick a font to use for vector text")
+
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
         # Signal provides a tuple with (togglegroup, id)
@@ -1404,6 +1418,10 @@ class HersheyFontManager(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Font-Manager", True
+
+    @staticmethod
+    def helptext():
+        return _("Manage the fonts available to MeerK40t")
 
 
 def register_hershey_stuff(kernel):

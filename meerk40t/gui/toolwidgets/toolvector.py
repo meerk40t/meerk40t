@@ -193,15 +193,17 @@ class VectorTool(ToolWidget):
         t = self.path
         if t is not None and len(t) > 1:
             elements = self.scene.context.elements
-            node = elements.elem_branch.add(
-                path=t,
-                type="elem path",
-                stroke_width=elements.default_strokewidth,
-                stroke=elements.default_stroke,
-                fill=elements.default_fill,
-            )
-            if elements.classify_new:
-                elements.classify([node])
+            # _("Create path")
+            with elements.undoscope("Create path"):
+                node = elements.elem_branch.add(
+                    path=t,
+                    type="elem path",
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
+                )
+                if elements.classify_new:
+                    elements.classify([node])
             self.notify_created(node)
         self.path = None
         self.scene.context.signal("statusmsg", "")
