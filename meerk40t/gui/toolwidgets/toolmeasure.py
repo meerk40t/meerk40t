@@ -40,7 +40,7 @@ class MeasureTool(PointListTool):
             return
         mat_fact = get_gc_scale(gc)
         try:
-            font_size = 10.0 / mat_fact
+            font_size = 10.0 * self.magnification / mat_fact
         except ZeroDivisionError:
             font_size = 5000
         if font_size > 1e8:

@@ -262,7 +262,7 @@ class LaserPanel(wx.Panel):
         self.check_laser_arm()
 
         self.button_outline = wxButton(self, wx.ID_ANY, _("Outline"))
-        self.button_outline.SetToolTip(_("Trace the outline the job"))
+        self.button_outline.SetToolTip(_("Trace the outline of the job"))
         self.button_outline.SetBitmap(
             icons8_pentagon.GetBitmap(
                 resize=self.icon_size,
@@ -887,6 +887,25 @@ class OptimizePanel(wx.Panel):
         if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
+
+    def ensure_mutually_exclusive(self, prio: str):
+        # Ensure that opt_inner_first and opt_reduce_travel are mutually exclusive
+        inner_first = self.context.planner.opt_inner_first
+        reduce_travel = self.context.planner.opt_reduce_travel
+        if inner_first and reduce_travel:
+            if prio == "opt_inner_first":
+                self.context.planner.opt_reduce_travel = False
+            else:
+                self.context.planner.opt_inner_first = False
+            self.optimize_panel.reload()
+
+    @signal_listener("opt_inner_first")
+    def opt_inner_update(self, origin, *message):
+        self.ensure_mutually_exclusive("opt_inner_first")
+
+    @signal_listener("opt_reduce_travel")
+    def opt_reduce_travel_update(self, origin, *message):
+        self.ensure_mutually_exclusive("opt_reduce_travel")
 
     def on_optimize(self, event):
         newvalue = bool(self.checkbox_optimize.GetValue())

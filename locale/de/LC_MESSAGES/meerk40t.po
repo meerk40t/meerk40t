@@ -1607,6 +1607,10 @@ msgstr ""
 msgid "Listening {name} on port {port}..."
 msgstr ""
 
+#: meerk40t/network/console_server.py:20
+msgid "suppress input prompt '>>'"
+msgstr ""
+
 #: meerk40t/kernelserver.py:195
 msgid "Socket Connected: {address}"
 msgstr "Socket verbunden: {address}"
@@ -5277,6 +5281,10 @@ msgstr ""
 "Innenliegendes zuerst' \n"
 "* Falls mehrere Durchgänge genutzt werden, wähle 'Verbinde Durchläufe' aus"
 
+#: meerk40t/core/planner.py:104 meerk40t/core/planner.py:236
+msgid "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+msgstr "Achtung: 'Verringere Bewegungen' und 'Brenne innenliegendes' können nicht gleichzeitig verwendet werden."
+
 #: meerk40t/core/planner.py:173
 msgid "Group Inner Burns"
 msgstr "Fasse Innere Brennvorgänge zusammen"
@@ -6850,7 +6858,7 @@ msgid "Outline"
 msgstr "Umriss abfahren"
 
 #: meerk40t/gui/laserpanel.py:136
-msgid "Trace the outline the job"
+msgid "Trace the outline of the job"
 msgstr "Fährt den Umriss des Jobs ab"
 
 #: meerk40t/gui/laserpanel.py:140 meerk40t/gui/simulation.py:830
@@ -22144,3 +22152,195 @@ msgstr "... nach innen mit {offset}mm Abstand"
 #: meerk40t/core/elements/element_treeops.py:3833
 msgid "Create an inner offset around the selected elements"
 msgstr "Erzeuge inneren Offset um die selektierten Elemente"
+
+#: meerk40t/core/elements/element_treeops.py:3970
+msgid "Trace bitmap via vtracer"
+msgstr "Bitmap mittels vtracer vektorisieren"
+
+#: meerk40t/core/elements/shapes.py:678
+msgid "property to get"
+msgstr "Auszulesende Eigenschaft"
+
+#: meerk40t/core/elements/shapes.py:681
+msgid "get property value"
+msgstr "Lese Eigenschaftswert aus"
+
+#: meerk40t/core/elements/shapes.py:729
+msgid "You need to provide the property to get."
+msgstr "Der auszulesende Eigenschaftswert muss angegeben werden"
+
+#: meerk40t/extra/vtracer.py:146
+msgid "Nothing selected"
+msgstr "Kein Element ausgewählt"
+
+#: meerk40t/extra/vtracer.py:158
+msgid "Vectorizing image"
+msgstr "Vektorisiere Bitmap-Grafik"
+
+#: meerk40t/extra/vtracer.py:215
+msgid "Time needed for vectorisation: {time_total}sec (analysis: {time_convert}sec, loading: {time_load}sec)"
+msgstr "Benötigte Zeit für Vektorisierung: {time_total}sec (Analyse: {time_convert}sec, Laden: {time_load}sec)"
+
+#: meerk40t/core/elements/shapes.py:2868
+msgid "X-Position of cross center"
+msgstr "X-Position des Kreuz-Mittelpunkts"
+
+#: meerk40t/core/elements/shapes.py:2869
+msgid "Y-Position of cross center"
+msgstr "Y-Position des Kreuz-Mittelpunkts"
+
+#: meerk40t/core/elements/shapes.py:2870
+msgid "Diameter of cross"
+msgstr "Abmessungen des Kreuzes"
+
+#: meerk40t/core/elements/shapes.py:2877
+msgid "Draw a circle around cross"
+msgstr "Zeichnet einen Kreis um das Kreuz"
+
+#: meerk40t/core/elements/shapes.py:2885
+msgid "Draw the cross diagonally"
+msgstr "Zeichnet das Kreuz diagonal"
+
+#: meerk40t/core/elements/shapes.py:2889
+msgid "Create a small cross at the given position"
+msgstr "Erzeugt ein kleines (Markierungs-)Kreuz an der angegebenen Position"
+
+#: meerk40t/core/elements/shapes.py:2907
+msgid "You need to provide center-point and diameter: cross x y d"
+msgstr "Der Mittelpunkt und die Abmessungen des Kreuzes müssen angegeben werden: cross x y d"
+
+#: meerk40t/core/elements/shapes.py:2936
+msgid "Create cross"
+msgstr "Erzeuge Kreuz"
+
+#: meerk40t/core/elements/shapes.py:2939
+msgid "Cross at ({xp}, {yp})"
+msgstr "Kreuz bei ({xp}, {yp})"
+
+#: meerk40t/gui/wxmscene.py:913
+msgid "split x <count> - split y <count>: will generate <count> lines between the selection boundaries on the given axis"
+msgstr "split x <count> - split y <count>: generiert <count> Magnetlinien zwischen den Auswahl-Abmessungen auf der angegebenen Achse"
+
+#: meerk40t/gui/wxmscene.py:933
+msgid "You need to provide a number of splits"
+msgstr "Die Anzahl der Zwischenlinien fehlt"
+
+#: meerk40t/gui/wxmscene.py:989
+msgid "Created {count} magnet lines on {axis}-axis between {min_len} and {max_len}"
+msgstr "Es wurden {count} Magnetlinien zwischen {min_len} und {max_len} auf der {axis}-Achse erzeugt"
+
+#: meerk40t/gui/wxmmain.py:4071
+msgid "Editing History"
+msgstr "Bearbeitungshistorie"
+
+#: meerk40t/gui/wxmmain.py:4084
+msgid "Recall..."
+msgstr "Wiederherstellen..."
+
+#: meerk40t/grbl/device.py:503
+msgid "Travel speed"
+msgstr "Transfer-Geschwindigkeit"
+
+#: meerk40t/grbl/device.py:507
+msgid "What is the travel speed for your device to move from point to another."
+msgstr "Wie hoch ist die Geschwindigkeit, um einen (inaktiven) Laser von A nach B zu bewegen."
+
+#: meerk40t/grbl/device.py:508
+msgid "Travel"
+msgstr "Laser-Bewegung"
+
+#: meerk40t/gui/materialtest.py:195 meerk40t/gui/propertypanels/wobbleproperty.py:13
+msgid "Wobble"
+msgstr "Wobble"
+
+#: meerk40t/gui/materialtest.py:287 meerk40t/gui/materialtest.py:310
+msgid "Pick values"
+msgstr "Werte auswählen"
+
+#: meerk40t/gui/materialtest.py:838
+msgid "Wobble Type"
+msgstr "Wobble-Typ"
+
+#: meerk40t/gui/spoolerpanel.py:148
+msgid "If checked, the spooler will not emit any sound signals while processing jobs"
+msgstr ""
+
+#: meerk40t/gui/wxutils.py:1747
+msgid "Check all"
+msgstr "Alle wählen"
+
+#: meerk40t/gui/wxutils.py:1753
+msgid "Uncheck all"
+msgstr "Alle abwählen"
+
+#: meerk40t/gui/wxutils.py:1755
+msgid "Invert selection"
+msgstr "Auswahl umkehren"
+
+#: meerk40t/kernel/kernel.py:2869
+msgid "Set/unset silent mode"
+msgstr "Aktiviere/Deaktiviere Silent-Modus"
+
+#: meerk40t/kernel/kernel.py:2876
+msgid "Silent mode is currently {mode}."
+msgstr "Aktueller Silent-Modus: {mode}"
+
+#: meerk40t/kernel/kernel.py:2882
+msgid "Please specify 'on' or 'off' to set silent mode."
+msgstr "Bitte geben Sie 'on' oder 'off' an, um den Silen-Modus zu ändern."
+
+#: meerk40t/kernel/kernel.py:2889
+msgid "Silent mode is now ON."
+msgstr "Silent-Modus ist nun AN"
+
+#: meerk40t/kernel/kernel.py:2891
+msgid "Silent mode is now OFF."
+msgstr "Silent-Modus ist nun AUS"
+
+#: meerk40t/kernel/kernel.py:2896
+msgid "Silent mode is on, no beep will be played."
+msgstr "Silent-Modus aktiv, beep..."
+
+#: meerk40t/gui/materialtest.py:951 meerk40t/gui/materialtest.py:990
+msgid "Select the values you want to test for {param}"
+msgstr "Bitte wählen Sie die zu testenden Einträge für {param} aus"
+
+#: meerk40t/grbl/device.py:475
+msgid "Active during Outline"
+msgstr "Aktiv während Umriss-Abfahren"
+
+#: meerk40t/grbl/device.py:478
+msgid "If active then the red dot will automatically be used if you outline the burn area"
+msgstr "Falls aktiv, dann wird der Laserpunkt automatisch beim Abfahren des Umrisses der zu brennenden Elemente angeschaltet"
+
+#: meerk40t/grbl/device.py:894
+msgid "Set the dot laser strength (0..1000)."
+msgstr "Setze die Stärke des Laserpunktes (0..1000)"
+
+#: meerk40t/grbl/device.py:901
+msgid "Force the red dot command even if a job is running."
+msgstr "Schaltet den Laserpunkt auch während eines Jobs an: Vorsicht!!"
+
+#: meerk40t/grbl/device.py:921
+msgid "Red Dot feature is not enabled, see config"
+msgstr "Laserpunkt-Feature ist nicht aktiv, siehe Konfiguration"
+
+#: meerk40t/grbl/device.py:925
+msgid "Won't interfere with a running job, abort..."
+msgstr "Es läuft ein Job, deswegen Abbruch..."
+
+#: meerk40t/grbl/device.py:931
+msgid "Laser strength for red dot is now: {power}"
+msgstr "Stärke für den Laserpunkt ist nun: {power}"
+
+#: meerk40t/grbl/device.py:939
+msgid "Laser strength for red dot must be between 0 and 1000, not {power}"
+msgstr "Die Stärke für den Laserpunkt muss zwischen 0 und 1000 liegen, nicht {power}"
+
+#: meerk40t/grbl/device.py:944
+msgid "Red light is now off."
+msgstr "Laserpunkt ist nun aus."
+
+#: meerk40t/grbl/device.py:948
+msgid "Red light is now on."
+msgstr "Laserpunkt ist nun an."

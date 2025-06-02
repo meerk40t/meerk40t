@@ -11,7 +11,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import get_gc_scale
+from meerk40t.gui.wxutils import get_gc_scale, dip_size
 
 _ = wx.GetTranslation
 
@@ -35,6 +35,7 @@ class SimpleSlider:
             trailer = ""
         self.trailer = trailer
         self.no_value_display = False
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
 
     @property
     def value(self):
@@ -77,7 +78,7 @@ class SimpleSlider:
         """
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.pt_offset * self.magnification / s
 
         mypen = wx.Pen(wx.LIGHT_GREY)
         sx = get_gc_scale(gc)
@@ -119,7 +120,7 @@ class SimpleSlider:
             if not self.trailer.startswith("%"):
                 symbol += " "
             symbol += _(self.trailer)
-        font_size = 10 / s
+        font_size = 10 * self.magnification / s
         if font_size < 1.0:
             font_size = 1.0
         try:
@@ -146,7 +147,7 @@ class SimpleSlider:
 
     def hit(self, xpos, ypos):
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.pt_offset * self.magnification / s
         inside = bool(abs(self.ptx - xpos) <= offset and abs(self.pty - ypos) <= offset)
         return inside
 
@@ -177,6 +178,7 @@ class TabEditTool(ToolWidget):
         slider = SimpleSlider(0, self.scene, minval, maxval, 0, 0, self.slider_size, info )
         slider.no_value_display = True
         self.sliders.append(slider)
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
 
     def reset(self):
         self.points.clear()
@@ -358,7 +360,7 @@ class TabEditTool(ToolWidget):
         if len(self.sliders) == 0:
             return
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.pt_offset * self.magnification / s
         width = self.slider_size / s
         x = bb[0]
         y = bb[1]
@@ -377,7 +379,7 @@ class TabEditTool(ToolWidget):
         """
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.pt_offset * self.magnification / s
         gc.SetPen(wx.RED_PEN)
         gc.SetBrush(wx.RED_BRUSH)
         for index, g in enumerate(self.points):
@@ -424,7 +426,7 @@ class TabEditTool(ToolWidget):
                 return RESPONSE_CHAIN
             self.scene.pane.tool_active = True
             self.scene.pane.modif_active = True
-            offset = self.pt_offset
+            offset = self.pt_offset * self.magnification
             s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
             offset /= s
             xp = space_pos[0]

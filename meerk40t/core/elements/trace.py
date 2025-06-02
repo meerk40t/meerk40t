@@ -31,6 +31,7 @@ from meerk40t.core.units import Length
 from meerk40t.svgelements import Circle, Path, Point, Polyline
 from meerk40t.tools.geomstr import Geomstr
 
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -317,6 +318,7 @@ def generate_hull_shape_hull(data):
         pts.append(pts[0])  # loop
     return pts
 
+
 """
 There is no need for shape_complex any more as the regular hull routine already uses interpolation
 def generate_hull_shape_complex(data, resolution=None):
@@ -355,6 +357,7 @@ def generate_hull_shape_complex(data, resolution=None):
         hull.append(hull[0])  # loop
     return hull
 """
+
 
 def generate_hull_shape_circle_data(data):
     pts = []
@@ -476,9 +479,7 @@ def init_commands(kernel):
         method = method.lower()
         if method not in ("segment", "quick", "hull", "circle"):
             channel(
-                _(
-                    "Invalid method, please use one of quick, hull, segment, circle."
-                )
+                _("Invalid method, please use one of quick, hull, segment, circle.")
             )
             return
 
@@ -553,6 +554,9 @@ def init_commands(kernel):
                     # Wait for some seconds
                     yield "wait", 5000
 
+                if hasattr(_spooler.context, "pre_outline"):
+                    yield from _spooler.context.pre_outline()
+
                 yield "wait_finish"
                 yield "rapid_mode"
                 idx = 0
@@ -563,6 +567,8 @@ def init_commands(kernel):
                         Length(amount=p[0]).length_mm,
                         Length(amount=p[1]).length_mm,
                     )
+                if hasattr(_spooler.context, "post_outline"):
+                    yield from _spooler.context.post_outline()
 
             _spooler.laserjob(
                 list(trace_hull(startmethod)), label=f"Trace Job: {method}", helper=True
@@ -598,9 +604,7 @@ def init_commands(kernel):
         method = method.lower()
         if not method in ("segment", "quick", "hull", "circle"):
             channel(
-                _(
-                    "Invalid method, please use one of quick, hull, segment, circle."
-                )
+                _("Invalid method, please use one of quick, hull, segment, circle.")
             )
             return
 

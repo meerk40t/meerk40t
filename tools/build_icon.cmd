@@ -1,5 +1,12 @@
 @echo off
-set ver=0.9.73
+if "%1" == "" (
+    echo Usage: build_icon.cmd version
+    echo Example: build_icon.cmd 0.9.75
+    echo This script requires ImageMagick to be installed and in the PATH.
+    echo It will create an icon file for Meerk40t.
+    exit /b 1
+)
+set ver=%1
 echo Converting master image to a couple of smaller images
 echo This requires imagemagick (https://imagemagick.org)
 echo Superimposing Version information: '%ver%'

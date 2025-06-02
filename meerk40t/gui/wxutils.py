@@ -1,6 +1,7 @@
 """
 Mixin functions for wxMeerk40t
 """
+
 import platform
 from typing import List
 
@@ -1250,6 +1251,9 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def SetLabel(self, label):
         self.sbox.SetLabel(label)
 
+    def GetLabel(self):
+        return self.sbox.GetLabel()
+
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
 
@@ -1582,6 +1586,7 @@ class wxRadioBox(StaticBoxSizer):
     def Show(self, flag):
         for ctrl in self._children + self._labels:
             ctrl.Show(flag)
+        super().Show(flag)
 
     def Bind(self, event_type, routine):
         self.parent.Bind(event_type, routine, self)
@@ -1620,6 +1625,251 @@ class wxListBox(wx.ListBox):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         set_color_according_to_theme(self, "list_bg", "list_fg")
+
+
+class wxCheckListBox(StaticBoxSizer):
+    """
+    This class recreates the functionality of a wx.CheckListBox, as this class has issues to properly refresh in nested sizers
+
+    Known Limitations:
+    - This custom implementation may not fully replicate all native wx.CheckListBox behaviors.
+    - Keyboard navigation (e.g., arrow keys, space/enter to toggle) may not work as expected.
+    - Accessibility features such as screen reader support may be limited or unavailable.
+    - If your application requires full accessibility or native keyboard handling, consider using the native wx.CheckListBox where possible.
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        id=None,
+        label=None,
+        choices=None,
+        majorDimension=0,
+        style=0,
+        *args,
+        **kwargs,
+    ):
+        self.parent = parent
+        self.choices = []
+        self._children = []
+        self._tool_tip = ""
+        self._help = None
+        super().__init__(
+            parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL
+        )
+        self.majorDimension = majorDimension
+        self.style = style
+        if choices is None:
+            choices = []
+        self.Set(choices)
+
+    @property
+    def Children(self):
+        return self._children
+
+    def on_mouse_over_check(self, event):
+        """
+        Handle mouse over events to show tooltips on Linux.
+        """
+        if self._tool_tip:
+            event.GetEventObject().SetToolTip(self._tool_tip)
+        event.Skip()
+
+    def GetParent(self):
+        return self.parent
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        for ctrl in self._children:
+            ctrl.SetToolTip(self._tool_tip)
+
+    def Disable(self):
+        self.Enable(False)
+
+    def EnableItem(self, n, flag):
+        if 0 <= n < len(self._children):
+            self._children[n].Enable(flag)
+
+    def Enable(self, flag):
+        for ctrl in self._children:
+            ctrl.Enable(flag)
+
+    def Hide(self):
+        self.Show(False)
+
+    def Show(self, flag):
+        for ctrl in self._children:
+            ctrl.Show(flag)
+        self.ShowItems(flag)
+
+    # def Bind(self, event_type, routine):
+    #     self.parent.Bind(event_type, routine, self)
+
+    def on_check(self, orgevent):
+        #
+        event = orgevent.Clone()
+        event.SetEventType(wx.wxEVT_CHECKLISTBOX)
+        event.SetId(self.Id)
+        event.SetEventObject(self)
+        # event.Int = self.GetSelection()
+        wx.PostEvent(self.parent, event)
+
+    def on_right_click(self, event):
+        menu = wx.Menu()
+        parent = self.parent
+        item = menu.Append(wx.ID_ANY, _("Check all"), "")
+        parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.SetCheckedItems(range(len(self._children))),
+            id=item.GetId(),
+        )
+        item = menu.Append(wx.ID_ANY, _("Uncheck all"), "")
+        parent.Bind(wx.EVT_MENU, lambda e: self.SetCheckedItems([]), id=item.GetId())
+        item = menu.Append(wx.ID_ANY, _("Invert selection"), "")
+        parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.SetCheckedItems(
+                [
+                    i
+                    for i in range(len(self._children))
+                    if not self._children[i].GetValue()
+                ]
+            ),
+            id=item.GetId(),
+        )
+        # Test routines
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set few items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set(["A", "B", "C"]), id=item.GetId())
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set many items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set([f"Item {i}" for i in range(20)]), id=item.GetId())
+        parent.PopupMenu(menu)
+        menu.Destroy()
+
+    def SetForegroundColour(self, wc):
+        for ctrl in self._children:
+            ctrl.SetForegroundColour(wc)
+
+    def SetBackgroundColour(self, wc):
+        for ctrl in self._children:
+            ctrl.SetBackgroundColour(wc)
+
+    def SetHelpText(self, help):
+        self._help = help
+
+    def GetHelpText(self):
+        return self._help
+
+    def Clear(self) -> None:
+        with wx.BusyCursor():
+            for child in self._children:
+                child.Destroy()
+        self._children.clear()
+        self.choices.clear()
+
+    def Check(self, item: int, check: bool = True) -> None:
+        """
+        Check or uncheck an item in the CheckListBox.
+        :param item: The index of the item to check or uncheck.
+        :param check: True to check, False to uncheck.
+        """
+        if 0 <= item < len(self._children):
+            self._children[item].SetValue(check)
+
+    def GetCheckItems(self) -> list:
+        """
+        Get a list of indices of checked items in the CheckListBox.
+        :return: A list of indices of checked items.
+        """
+        return [idx for idx, ctrl in enumerate(self._children) if ctrl.GetValue()]
+
+    def GetCheckedStrings(self) -> list:
+        """
+        Get a list of strings of checked items in the CheckListBox.
+        :return: A list of strings of checked items.
+        """
+        return [self.choices[idx] for idx in self.GetCheckItems()]
+
+    def GetSelections(self) -> list:
+        """
+        Get a list of indices of selected items in the CheckListBox.
+        :return: A list of indices of selected items.
+        """
+        return self.GetCheckItems()
+
+    def SetCheckedStrings(self, choices):
+        """
+        Set the checked items in the CheckListBox based on a list of strings.
+        :param choices: A list of strings to check.
+        """
+        for idx, choice in enumerate(self.choices):
+            if choice in choices:
+                self.Check(idx, True)
+            else:
+                self.Check(idx, False)
+
+    def SetCheckedItems(self, choices):
+        """
+        Set the checked items in the CheckListBox based on a list of indices.
+        :param choices: A list of indices to check.
+        """
+        for idx in range(len(self._children)):
+            self.Check(idx, idx in choices)
+
+    def Set(self, choices):
+        """
+        Set the choices for the CheckListBox.
+        :param choices: A list of strings to set as choices.
+        """
+        # print (f"Setting choices for {self.GetLabel()}: {choices}")
+        """
+        This is more efficient than clearing and rebuilding the controls.
+        Update the labels of existing controls to match new_choices.
+        If there are more controls than choices, extra controls are destroyed.
+        If there are fewer controls than choices, new controls are created.
+        """
+        # Update existing controls
+        if self.majorDimension == 0 or self.style == wx.RA_SPECIFY_ROWS:
+            self.majorDimension = 1000
+        last_container = None
+        for idx, choice in enumerate(choices):
+            if idx < len(self._children):
+                self._children[idx].SetLabel(choice)
+                # self._children[idx].Show(True)
+            else:
+                # Add new controls if needed
+                check_option = wx.CheckBox(self.parent, wx.ID_ANY, label=choice)
+                if self._tool_tip:
+                    check_option.SetToolTip(self._tool_tip)
+                check_option.Bind(wx.EVT_CHECKBOX, self.on_check)
+                check_option.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
+                if platform.system() == "Linux":
+                    check_option.Bind(wx.EVT_MOTION, self.on_mouse_over_check)
+                set_color_according_to_theme(check_option, "text_bg", "text_fg")
+                self._children.append(check_option)
+                # Add to layout
+                # Find or create the appropriate container
+                if idx % self.majorDimension == 0:
+                    last_container = wx.BoxSizer(wx.HORIZONTAL)
+                    self.Add(last_container, 0, wx.EXPAND, 0)
+                else:
+                    # Find the last container
+                    if last_container is None:
+                        for c in self.GetChildren():
+                            if c.IsSizer():
+                                last_container = c.GetSizer()
+                    if last_container is None:
+                        # fallback: create new container
+                        last_container = wx.BoxSizer(wx.HORIZONTAL)
+                        self.Add(last_container, 0, wx.EXPAND, 0)
+                last_container.Add(check_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        # Remove extra controls
+        if len(self._children) > len(choices):
+            for idx in range(len(choices), len(self._children)):
+                self._children[idx].Destroy()
+            self._children = self._children[: len(choices)]
+        self.Layout()
+        self.parent.Layout()
+        self.choices = list(choices)
 
 
 ##############

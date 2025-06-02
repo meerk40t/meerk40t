@@ -66,7 +66,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr, stitch_geometries
+from meerk40t.tools.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -2778,38 +2778,6 @@ def init_commands(kernel):
                     return data, tolerance, keep, False
             return data, tolerance_val, keep, True
 
-        def stitcheable_nodes(data, tolerance) -> list:
-            out = []
-            geoms = []
-            # Store all geometries together with an indicator, to which node they belong
-            for idx, node in enumerate(data):
-                if not hasattr(node, "as_geometry"):
-                    continue
-                for g1 in node.as_geometry().as_contiguous():
-                    geoms.append((idx, g1))
-            if tolerance == 0:
-                tolerance = 1e-6
-            for idx1, (nodeidx1, g1) in enumerate(geoms):
-                for idx2 in range(idx1 + 1, len(geoms)):
-                    nodeidx2 = geoms[idx2][0]
-                    g2 = geoms[idx2][1]
-                    fp1 = g1.first_point
-                    fp2 = g2.first_point
-                    lp1 = g1.last_point
-                    lp2 = g2.last_point
-                    if (
-                        abs(lp1 - lp2) <= tolerance
-                        or abs(lp1 - fp2) <= tolerance
-                        or abs(fp1 - fp2) <= tolerance
-                        or abs(fp1 - lp2) <= tolerance
-                    ):
-                        if nodeidx1 not in out:
-                            out.append(nodeidx1)
-                        if nodeidx2 not in out:
-                            out.append(nodeidx2)
-
-            return [data[idx] for idx in out]
-
         data, tolerance, keep, valid = _prepare_stitching_params(
             channel, data, tolerance, keep
         )
@@ -2829,13 +2797,12 @@ def init_commands(kernel):
             default_strokewidth = None
             default_fill = None
             for node in s_data:
-                if hasattr(node, "as_geometry"):
-                    geom: Geomstr = node.as_geometry()
-                    geoms.extend(iter(geom.as_contiguous()))
-                    if default_stroke is None and hasattr(node, "stroke"):
-                        default_stroke = node.stroke
-                    if default_strokewidth is None and hasattr(node, "stroke_width"):
-                        default_strokewidth = node.stroke_width
+                geom: Geomstr = node.as_geometry()
+                geoms.extend(iter(geom.as_contiguous()))
+                if default_stroke is None and hasattr(node, "stroke"):
+                    default_stroke = node.stroke
+                if default_strokewidth is None and hasattr(node, "stroke_width"):
+                    default_strokewidth = node.stroke_width
                 to_be_deleted.append(node)
             prev_len = len(geoms)
             if geoms:
@@ -2864,5 +2831,94 @@ def init_commands(kernel):
         post.append(classify_new(data_out))
         self.set_emphasis(data_out)
         return "elements", data_out
+
+    @self.console_argument("xpos", type=Length, help=_("X-Position of cross center"))
+    @self.console_argument("ypos", type=Length, help=_("Y-Position of cross center"))
+    @self.console_argument("diameter", type=Length, help=_("Diameter of cross"))
+    @self.console_option(
+        "circle",
+        "c",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw a circle around cross"),
+    )
+    @self.console_option(
+        "diagonal",
+        "d",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw the cross diagonally"),
+    )
+    @self.console_command(
+        "cross",
+        help=_("Create a small cross at the given position"),
+        input_type=None,
+        output_type="elements",
+    )
+    def cross(
+        command,
+        channel,
+        _,
+        data=None,
+        xpos=None,
+        ypos=None,
+        diameter=None,
+        circle=None,
+        diagonal=None,
+        post=None,
+        **kwargs,
+    ):
+        if xpos is None or ypos is None or diameter is None:
+            channel(_("You need to provide center-point and diameter: cross x y d"))
+            return
+        try:
+            xp = float(xpos)
+            yp = float(ypos)
+            dia = float(diameter)
+        except ValueError:
+            channel(_("Invalid values given"))
+            return
+        if circle is None:
+            circle = False
+        if diagonal is None:
+            diagonal = False
+        geom = Geomstr()
+        if diagonal:
+            sincos45 = dia / 2 * sqrt(2) / 2
+            geom.line(
+                complex(xp - sincos45, yp - sincos45),
+                complex(xp + sincos45, yp + sincos45),
+            )
+            geom.line(
+                complex(xp + sincos45, yp - sincos45),
+                complex(xp - sincos45, yp + sincos45),
+            )
+        else:
+            geom.line(complex(xp - dia / 2, yp), complex(xp + dia / 2, yp))
+            geom.line(complex(xp, yp - dia / 2), complex(xp, yp + dia / 2))
+        if circle:
+            geom.append(Geomstr.circle(dia / 2, xp, yp))
+        # _("Create cross") - hint for translator
+        with self.undoscope("Create cross"):
+            node = self.elem_branch.add(
+                label=_("Cross at ({xp}, {yp})").format(
+                    xp=xpos.length_mm, yp=ypos.length_mm
+                ),
+                geometry=geom,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=None,
+                type="elem path",
+            )
+            if data is None:
+                data = []
+            data.append(node)
+
+            # Newly created! Classification needed?
+            post.append(classify_new(data))
+        self.signal("refresh_scene", "Scene")
+        return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------

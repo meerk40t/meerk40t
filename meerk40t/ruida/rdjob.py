@@ -256,6 +256,8 @@ def encode_relcoord(coord):
 
 
 def encode_color(color):
+    # Scewed on RDC 22.01
+    # Maybe 16bit color is used?
     return encode32(int(color))
 
 
@@ -488,6 +490,7 @@ class RDJob:
         self._stopped = True
         self.enabled = True
         self._estimate = 0
+        self.offset = 0
 
         self.scale = UNITS_PER_uM
 
@@ -598,7 +601,8 @@ class RDJob:
             command = self.buffer.pop(0)
         try:
             array = list(command)
-            self.process(array)
+            self.process(array, offset=self.offset)
+            self.offset += len(command)
         except IndexError as e:
             raise RuidaCommandError(
                 f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}"
@@ -701,7 +705,7 @@ class RDJob:
     def set_color(self, color):
         self.color = color
 
-    def process(self, array):
+    def process(self, array, offset=None):
         """
         Parses an individual unswizzled ruida command, updating the emulator state.
 
@@ -976,7 +980,7 @@ class RDJob:
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.set_color(c.hex)
-                desc = f"{part}, Color {self.color}"
+                desc = f"Color Part {part}, {self.color}"
             elif array[1] == 0x10:
                 value = array[2]
                 desc = f"EnExIO Start {value}"
@@ -1012,12 +1016,44 @@ class RDJob:
         elif array[0] == 0xD8:
             if array[1] == 0x00:
                 desc = "Start Process"
-            if array[1] == 0x10:
+            elif array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
-            if array[1] == 0x11:
+            elif array[1] == 0x11:
                 desc = "Ref Point Mode 1, Anchor Point"
-            if array[1] == 0x12:
+            elif array[1] == 0x12:
                 desc = "Ref Point Mode 0, Current Position"
+        elif array[0] == 0xD9:
+            if array[1] == 0x00:
+                opts = array[2]
+                value = abscoord(array[3:8])
+                desc = f"Rapid move X ({value}μm)"
+            elif array[1] == 0x01:
+                opts = array[2]
+                value = abscoord(array[3:8])
+                desc = f"Rapid move Y ({value}μm)"
+            elif array[1] == 0x02:
+                opts = array[2]
+                value = abscoord(array[3:8])
+                desc = f"Rapid move Z ({value}μm)"
+            elif array[1] == 0x03:
+                opts = array[2]
+                value = abscoord(array[3:8])
+                desc = f"Rapid move U ({value}μm)"
+            elif array[1] == 0x0F:
+                opts = array[2]
+                value = abscoord(array[3:8])
+                desc = f"Rapid move Feed ({value}μm)"
+            elif array[1] == 0x10:
+                opts = array[2]
+                x = abscoord(array[3:8])
+                y = abscoord(array[8:13])
+                desc = f"Rapid move XY ({x}μm, {y}μm)"
+            elif array[1] == 0x30:
+                opts = array[2]
+                x = abscoord(array[3:7])
+                y = abscoord(array[8:13])
+                u = abscoord(array[13:18])
+                desc = f"Rapid move XYU ({x}μm, {y}μm, {u}μm)"
         elif array[0] == 0xDA:
             mem = parse_mem(array[2:4])
             if array[1] == 0x01:
@@ -1240,7 +1276,8 @@ class RDJob:
         else:
             desc = "Unknown Command!"
         if self.channel:
-            self.channel(f"-**-> {str(bytes(array).hex())}\t({desc})")
+            prefix = f"{offset:06x}" if offset is not None else ''
+            self.channel(f"{prefix}-**-> {str(bytes(array).hex())}\t({desc})")
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
@@ -1324,6 +1361,9 @@ class RDJob:
             power = current_settings.get("power", 1000) / 10.0
             color = current_settings.get("line_color", 0)
             frequency = current_settings.get("frequency")
+
+            if color == 0:
+                color = current_settings.get("color", color)
 
             self.speed_laser_1_part(part, speed)
             if frequency:
@@ -1670,7 +1710,7 @@ class RDJob:
         self(LAYER_COLOR, encode_color(color), output=output)
 
     def layer_color_part(self, part, color, output=None):
-        self(LAYER_COLOR, encode_part(part), encode_color(color), output=output)
+        self(LAYER_COLOR_PART, encode_part(part), encode_color(color), output=output)
 
     def en_ex_io(self, value, output=None):
         """

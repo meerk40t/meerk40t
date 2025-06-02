@@ -468,6 +468,18 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Red Dot",
             },
             {
+                "attr": "use_red_dot_for_outline",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Active during Outline"),
+                "tip": _(
+                    "If active then the red dot will automatically be used if you outline the burn area"
+                ),
+                "conditional": (self, "use_red_dot"),
+                "section": "_10_Red Dot",
+            },
+            {
                 "attr": "max_vector_speed",
                 "object": self,
                 "default": 140,
@@ -493,6 +505,19 @@ class GRBLDevice(Service, Status):
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "rapid_speed",
+                "object": self,
+                "default": 600,
+                "type": float,
+                "label": _("Travel speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the travel speed for your device to move from point to another."
+                ),
+                "section": "_25_" + _("Travel"),
                 "subsection": "_10_",
             },
             {
@@ -888,7 +913,14 @@ class GRBLDevice(Service, Status):
             self("bind w +yforward")
 
         @self.console_option(
-            "strength", "s", type=int, help="Set the dot laser strength."
+            "strength", "s", type=int, help=_("Set the dot laser strength (0..1000).")
+        )
+        @self.console_option(
+            "force",
+            "f",
+            type=bool,
+            action="store_true",
+            help=_("Force the red dot command even if a job is running."),
         )
         @self.console_argument("off", type=str)
         @self.console_command(
@@ -896,39 +928,46 @@ class GRBLDevice(Service, Status):
             help=_("Turns redlight on/off"),
         )
         def red_dot_on(
-            command, channel, _, off=None, strength=None, remainder=None, **kwgs
+            command,
+            channel,
+            _,
+            off=None,
+            strength=None,
+            force=None,
+            remainder=None,
+            **kwgs,
         ):
+            if force is None:
+                force = False
             if not self.use_red_dot:
-                channel("Red Dot feature is not enabled, see config")
+                channel(_("Red Dot feature is not enabled, see config"))
                 # self.redlight_preferred = False
                 return
-            if not self.spooler.is_idle:
-                channel("Won't interfere with a running job, abort...")
+            if not force and not self.spooler.is_idle:
+                channel(_("Won't interfere with a running job, abort..."))
                 return
             if strength is not None:
                 if 0 <= strength <= 1000:
                     self.red_dot_level = strength
                     channel(
-                        f"Laser strength for red dot is now: {self.red_dot_level/10.0}%"
+                        _("Laser strength for red dot is now: {power}").format(
+                            power=f"{self.red_dot_level / 10.0:.1f}%"
+                        )
                     )
+                else:
+                    channel(
+                        _(
+                            "Laser strength for red dot must be between 0 and 1000, not {power}"
+                        ).format(power=strength)
+                    )
+                    return
             if off == "off":
-                self.driver.laser_off()
-                # self.driver.grbl("G0")
-                self.driver.move_mode = 0
-                # self.redlight_preferred = False
-                channel("Turning off redlight.")
+                self.red_dot(False)
+                channel(_("Red light is now off."))
                 self.signal("grbl_red_dot", False)
             else:
-                # self.redlight_preferred = True
-                # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
-                self.driver._clean()
-                self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
-                # By default, any move is a G0 move which will not activate the laser,
-                # so we need to switch to G1 mode:
-                self.driver.move_mode = 1
-                # An arbitrary move to turn the laser really on!
-                # self.driver.grbl("G1")
-                channel("Turning on redlight.")
+                self.red_dot(True)
+                channel(_("Red light is now on."))
                 self.signal("grbl_red_dot", True)
 
         @self.console_option(
@@ -1177,3 +1216,31 @@ class GRBLDevice(Service, Status):
         return {
             "gantry": True,
         }
+
+    def red_dot(self, turn_on):
+        if turn_on:
+            # self.redlight_preferred = True
+            # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
+            self.driver._clean()
+            rapid_speed = self.setting(float, "rapid_speed", 600.0)
+            self.driver.laser_on(power=int(self.red_dot_level), speed=rapid_speed)
+            # By default, any move is a G0 move which will not activate the laser,
+            # so we need to switch to G1 mode:
+            self.driver.move_mode = 1
+            # An arbitrary move to turn the laser really on!
+            # self.driver.grbl("G1")
+        else:
+            self.driver.laser_off()
+            # self.driver.grbl("G0")
+            self.driver.move_mode = 0
+            # self.redlight_preferred = False
+
+    def pre_outline(self):
+        if not (self.use_red_dot and self.use_red_dot_for_outline):
+            return
+        yield ("console", "red on -f")
+
+    def post_outline(self):
+        if not (self.use_red_dot and self.use_red_dot_for_outline):
+            return
+        yield ("console", "red off -f")
