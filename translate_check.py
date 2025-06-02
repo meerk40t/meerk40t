@@ -79,7 +79,7 @@ def read_source():
                                             msgid = "\\" + msgid
                                             idx += 1
                                         elif idx > 0:
-                                            if msgid[idx-1] != "\\":
+                                            if msgid[idx - 1] != "\\":
                                                 msgid = msgid[:idx] + "\\" + msgid[idx:]
                                                 idx += 1
                                         else:
@@ -91,7 +91,9 @@ def read_source():
                                         id_usage.append(f"#: {pfname}:{localline}")
                                     else:
                                         found_index = id_strings_source.index(msgid)
-                                        id_usage[found_index] += f" {pfname}:{localline}"
+                                        id_usage[
+                                            found_index
+                                        ] += f" {pfname}:{localline}"
                                     # print (f"'{orgline}' -> '{msgid}'")
                                 msgid_mode = False
                                 msgid = ""
@@ -179,7 +181,16 @@ def read_po(locale):
     id_strings = []
     localedir = "./locale"
     po_dir = localedir + "/" + locale + "/LC_MESSAGES/"
-    po_files = [f for f in next(os.walk(po_dir))[2] if os.path.splitext(f)[1] == ".po"]
+    if not os.path.isdir(po_dir):
+        print(f"Locale directory {po_dir} does not exist or is empty.")
+        return id_strings
+    try:
+        po_files = [
+            f for f in next(os.walk(po_dir))[2] if os.path.splitext(f)[1] == ".po"
+        ]
+    except StopIteration:
+        print(f"Locale directory {po_dir} does not exist or is empty.")
+        return id_strings
     linecount = 0
     for po_file in po_files:
         fname = po_dir + po_file
@@ -234,7 +245,7 @@ def read_po(locale):
             if id_str and msgid_mode and id_str not in id_strings:
                 id_strings.append(id_str)
             elif id_str and msgid_mode:
-                print (f"Duplicte entry found for {locale}: ´{id_str}´")
+                print(f"Duplicate entry found for {locale}: ´{id_str}´")
     print(f"Read {linecount} lines for {locale} and found {len(id_strings)} entries...")
     return id_strings
 

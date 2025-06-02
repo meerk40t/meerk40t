@@ -6856,7 +6856,7 @@ msgid "Outline"
 msgstr "Traccia del contorno"
 
 #: meerk40t/gui/laserpanel.py:136
-msgid "Trace the outline the job"
+msgid "Trace the outline of the job"
 msgstr "Traccia il profilo del lavoro"
 
 #: meerk40t/gui/laserpanel.py:140 meerk40t/gui/simulation.py:830
