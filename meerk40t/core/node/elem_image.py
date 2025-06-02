@@ -27,18 +27,20 @@ Methods:
     bbox(transformed=True, with_stroke=False): Returns the bounding box of the image.
 """
 
-import numpy as np
 import threading
 import time
 from copy import copy
 from math import ceil, floor
 
-from meerk40t.core.node.node import Node
+import numpy as np
+
 from meerk40t.core.node.mixins import LabelDisplay, Suppressable
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
 from meerk40t.tools.geomstr import Geomstr
+
 
 class ImageNode(Node, LabelDisplay, Suppressable):
     """
@@ -72,6 +74,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._keyhole_image = None
         self._processing = False
         self._convex_hull = None
+        self._default_units = UNITS_PER_INCH
         startup = True
         if "comingfromcopy" in kwargs:
             startup = False
@@ -152,8 +155,13 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         self._process_image_failed = False
 
         self.message = None
-        if (self.operations or self.dither or self.prevent_crop or self.keyhole_reference) and startup:
-            step = UNITS_PER_INCH / self.dpi
+        if (
+            self.operations
+            or self.dither
+            or self.prevent_crop
+            or self.keyhole_reference
+        ) and startup:
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
@@ -185,7 +193,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             time.sleep(0.05)
             counter += 1
         if self._processed_image is None:
-            step = UNITS_PER_INCH / self.dpi
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
@@ -283,6 +291,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         We require a context to calculate the correct step values relative to the device
         """
+
+        dev_x, dev_y = context.device.view.dpi_to_steps(1)
+        self._default_units = (dev_x + dev_y) / 2
         self.step_x, self.step_y = context.device.view.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
@@ -315,18 +326,24 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         return default_map
 
     def can_drop(self, drag_node):
+        if self.is_a_child_of(drag_node):
+            return False
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or
-            hasattr(drag_node, "as_image") or
-            drag_node.type in ("op image", "op raster", "file", "group")
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("op image", "op raster", "file", "group")
         )
 
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):
             return False
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image") or drag_node.type in ("file", "group"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("file", "group")
+        ):
             if modify:
                 self.insert_sibling(drag_node)
             return True
@@ -406,19 +423,25 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 # Direct execution
                 self._needs_update = False
                 # Calculate scene step_x, step_y values
-                step = UNITS_PER_INCH / self.dpi
+                step = self._default_units / self.dpi
                 step_x = step
                 step_y = step
                 self.process_image(step_x, step_y, not self.prevent_crop)
                 # Unset cache.
                 self._cache = None
             else:
-                if self._keyhole_reference is not None and self._keyhole_geometry is None:
+                if (
+                    self._keyhole_reference is not None
+                    and self._keyhole_geometry is None
+                ):
                     get_keyhole_geometry()
 
                 # We need to have a thread per image, so we need to provide a node specific thread_name!
                 self._update_thread = context.threaded(
-                    self._process_image_thread, result=clear, daemon=True, thread_name=f"image_update_{self.id}_{str(time.perf_counter())}"
+                    self._process_image_thread,
+                    result=clear,
+                    daemon=True,
+                    thread_name=f"image_update_{self.id}_{str(time.perf_counter())}",
                 )
 
     def _process_image_thread(self):
@@ -430,7 +453,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         while self._needs_update:
             self._needs_update = False
             # Calculate scene step_x, step_y values
-            step = UNITS_PER_INCH / self.dpi
+            step = self._default_units / self.dpi
             step_x = step
             step_y = step
             with self._update_lock:
@@ -455,6 +478,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         """
 
         from PIL import Image, ImageDraw
+
         while self._processing:
             time.sleep(0.05)
 
@@ -462,6 +486,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             step_x = self.step_x
         if step_y is None:
             step_y = self.step_y
+        # print (f"process called with step_x={step_x}, step_y={step_y} (node: {self.step_x}, {self.step_y})")
         try:
             actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
             inverted_main_matrix = Matrix(self.matrix).inverse()
@@ -498,6 +523,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
         # Convert image to L type.
         if image.mode == "I":
             from PIL import Image
+
             # Load the 32-bit signed grayscale image
             img = np.array(image, dtype=np.int32)
 
@@ -505,7 +531,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             # img = img.reshape((image.width, image.height))
 
             # Normalize the image to the range 0-255
-            img_normalized = ((img - img.min()) / (img.max() - img.min()) * 255).astype(np.uint8)
+            img_normalized = ((img - img.min()) / (img.max() - img.min()) * 255).astype(
+                np.uint8
+            )
 
             # Convert the NumPy array to a Pillow Image
             img_pil = Image.fromarray(img_normalized)
@@ -679,7 +707,9 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     pass
             elif name == "contrast":
                 try:
-                    if op["enable"] and (op["contrast"] is not None and op["brightness"] is not None):
+                    if op["enable"] and (
+                        op["contrast"] is not None and op["brightness"] is not None
+                    ):
                         contrast = ImageEnhance.Contrast(image)
                         c = (op["contrast"] + 128.0) / 128.0
                         image = contrast.enhance(c)
@@ -866,6 +896,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             or self.matrix.c != 0.0
             or self.matrix.d != step_y
         ):
+            # print (f"another transform called while {image.width}x{image.height} - requested: {image_width}x{image_height}")
             if image_height <= 0:
                 image_height = 1
             if image_width <= 0:
@@ -884,6 +915,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 resample=BICUBIC,
                 fillcolor="black" if self.invert else "white",
             )
+            # print (f"after transform {image.width}x{image.height}")
         actualized_matrix = Matrix()
 
         if step_y < 0:
@@ -914,7 +946,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
 
         # Invert black to white if needed.
         if self.invert:
-            image = ImageOps.invert(image)
+            try:
+                image = ImageOps.invert(image)
+            except OSError as e:
+                print(
+                    f"Image inversion crashed: {e}\nMode: {image.mode}, {image.width}x{image.height} pixel"
+                )
 
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
@@ -940,7 +977,10 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             image = self.image
         if self._keyhole_geometry is not None:
             # Let's check whether the keyhole dimensions match
-            if self._keyhole_image is not None and (self._keyhole_image.width != image.width or self._keyhole_image.height != image.height):
+            if self._keyhole_image is not None and (
+                self._keyhole_image.width != image.width
+                or self._keyhole_image.height != image.height
+            ):
                 self._keyhole_image = None
             if self._keyhole_image is None:
                 actualized_matrix = self._actualized_matrix
@@ -963,19 +1003,21 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                     # Let's simplify things, if we don't have any overlap then we don't need to do something
                     # if x0 > bounds[2] or x2 < bounds [0] or y0 > bounds[3] or y2 < bounds[1]:
                     #     continue
-                    geom_points = list(geom.as_interpolated_points(int(UNITS_PER_MM/10)))
+                    geom_points = list(
+                        geom.as_interpolated_points(int(UNITS_PER_MM / 10))
+                    )
                     points = list()
                     for pt in geom_points:
                         if pt is None:
                             continue
                         gx = pt.real
                         gy = pt.imag
-                        x = int(maskimage.width * (gx - x0) / i_wd )
-                        y = int(maskimage.height * (gy - y0) / i_ht )
-                        points.append( (x, y) )
+                        x = int(maskimage.width * (gx - x0) / i_wd)
+                        y = int(maskimage.height * (gy - y0) / i_ht)
+                        points.append((x, y))
 
                     # print (points)
-                    draw.polygon( points, fill="white", outline="white")
+                    draw.polygon(points, fill="white", outline="white")
                 self._keyhole_image = maskimage
                 # For debug purposes...
                 # maskimage.save("C:\\temp\\maskimage.png")

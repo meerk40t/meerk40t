@@ -178,18 +178,20 @@ class RectTool(ToolWidget):
                     x1 = max(self.p1.real, self.p2.real)
                     y1 = max(self.p1.imag, self.p2.imag)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(
-                    x=x0,
-                    y=y0,
-                    width=x1 - x0,
-                    height=y1 - y0,
-                    stroke_width=elements.default_strokewidth,
-                    stroke=elements.default_stroke,
-                    fill=elements.default_fill,
-                    type="elem rect",
-                )
-                if elements.classify_new:
-                    elements.classify([node])
+                # _("Create rectangle")
+                with elements.undoscope("Create rectangle"):
+                    node = elements.elem_branch.add(
+                        x=x0,
+                        y=y0,
+                        width=x1 - x0,
+                        height=y1 - y0,
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
+                        type="elem rect",
+                    )
+                    if elements.classify_new:
+                        elements.classify([node])
                 self.notify_created(node)
             except IndexError:
                 pass

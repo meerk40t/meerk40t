@@ -895,3 +895,7 @@ class Preferences(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Preferences", True
+
+    @staticmethod
+    def helptext():
+        return _("Configure MeerK40ts behaviour")

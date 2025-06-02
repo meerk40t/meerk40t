@@ -1,7 +1,6 @@
 import functools
 import inspect
 import os
-import platform
 import re
 import subprocess
 import threading
@@ -181,8 +180,22 @@ class Kernel(Settings):
         # Arguments Objects
         self.args = None
 
+        self.os_information = self._get_environment()
+        self.show_aio_prompt = True
+        self.silent_mode = False
+
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
+
+    def _get_environment(self):
+        from platform import system
+        from tempfile import gettempdir
+
+        return {
+            "OS_NAME": system(),
+            "OS_TEMPDIR": os.path.realpath(gettempdir()),
+            "WORKDIR": os.path.realpath(get_safe_path(self.name, create=True)),
+        }
 
     def set_language(self, language, localedir="locale"):
         from . import set_language
@@ -244,15 +257,21 @@ class Kernel(Settings):
                 kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = f"Calling {str(obj)}.{func.__name__}({signature})"
-                debug_file.write(start + "\n")
+                try:
+                    debug_file.write(start + "\n")
+                except (ValueError, OSError):
+                    pass
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
                 finish = f"    {func.__name__} returned {value} after {t * 1000}ms"
                 print(finish)
-                debug_file.write(finish + "\n")
-                debug_file.flush()
+                try:
+                    debug_file.write(finish + "\n")
+                    debug_file.flush()
+                except (ValueError, OSError):
+                    pass
                 return value
 
             return wrapper_debug
@@ -1222,11 +1241,12 @@ class Kernel(Settings):
 
             async def aio_readline(loop):
                 while not self._shutdown:
-                    print(">>", end="", flush=True)
+                    if self.show_aio_prompt:
+                        print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
-                    if line in ("quit", "shutdown", "restart"):
+                    if line in ("quit", "shutdown", "exit", "restart"):
                         self._quit = True
                         if line == "restart":
                             self._restart = True
@@ -1906,6 +1926,8 @@ class Kernel(Settings):
             # Could be recurring job. Reset on reschedule.
         except AttributeError:
             pass
+        if job.job_name is None:
+            job.job_name = f"job_{id(job)}"
         self.jobs[job.job_name] = job
         return job
 
@@ -2278,7 +2300,7 @@ class Kernel(Settings):
         it will execute that in the console_parser. This works like a
         terminal, where each letter of data can be sent to the console and
         execution will occur at the carriage return.
-
+        Additionally you can provide a '|' character that will separate commands on a single line
         @param data:
         @return:
         """
@@ -2287,6 +2309,18 @@ class Kernel(Settings):
                 data = data.decode()
             except UnicodeDecodeError:
                 return
+        start = 0
+        while True:
+            idx = data.find("|", start)
+            if idx < 0:
+                break
+            # Is the amount of quotation marks odd (ie non-even)?
+            # Yes: we are in the middle of a str
+            # No: we can split the command
+            quotations = data.count('"', 0, idx)
+            if quotations % 2 == 0:
+                data = data[:idx].rstrip() + "\n" + data[idx + 1 :].lstrip()
+            start = idx + 1
         self._console_buffer += data
         data_out = None
         while "\n" in self._console_buffer:
@@ -2298,6 +2332,17 @@ class Kernel(Settings):
 
     def _console_interface(self, command: str):
         pass
+
+    def has_command(self, command: str) -> bool:
+        command = command.lower()
+        input_type = None  # Initial command context is None
+        # Process command matches.
+        for funct, name, regex in self.find("command", str(input_type), ".*"):
+            # Find all commands with matching input_type.
+            if not funct.regex and regex == command:
+                # Exact match only.
+                return True
+        return False
 
     def _console_parse(self, text: str, channel: "Channel"):
         """
@@ -2313,7 +2358,6 @@ class Kernel(Settings):
         post = list()
         post_data = dict()
         _ = self.translation
-
         while len(text) > 0:
             # Split command from remainder.
             pos = text.find(" ")
@@ -2492,9 +2536,7 @@ class Kernel(Settings):
                     if not helpstr:
                         helpstr = func.help
                     if helpstr:
-                        channel(
-                            "\t" + inspect.cleandoc(helpstr).replace("\n", " ")
-                        )
+                        channel("\t" + inspect.cleandoc(helpstr).replace("\n", " "))
                         channel("\n")
 
                     channel(f"\t{command_item} {' '.join(help_args)}")
@@ -2656,6 +2698,9 @@ class Kernel(Settings):
             channel(_("----------"))
             channel(_("Scheduled Processes:"))
             for i, job_name in enumerate(self.jobs):
+                if job_name is None:
+                    channel(_("Empty job definition..."))
+                    continue
                 job = self.jobs[job_name]
                 parts = list()
                 parts.append(f"{i + 1}:")
@@ -2726,6 +2771,8 @@ class Kernel(Settings):
                 channel(_("Timers:"))
                 i = 0
                 for job_name in self.jobs:
+                    if job_name is None:
+                        continue
                     if not job_name.startswith("timer"):
                         continue
                     i += 1
@@ -2761,6 +2808,8 @@ class Kernel(Settings):
                     skipped = False
                     canceled = False
                     for job_name in list(self.jobs):
+                        if job_name is None:
+                            continue
                         if not job_name.startswith("timer"):
                             continue
                         timer_name = job_name[5:]
@@ -2817,39 +2866,78 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        @self.console_command("silent", _("Set/unset silent mode"))
+        def set_silent(channel, _, remainder=None, **kwargs):
+            """
+            Set or unset silent mode. In silent mode no beeps will be played.
+            """
+            if remainder is None:
+                channel(
+                    _("Silent mode is currently {mode}.").format(
+                        mode="ON" if self.silent_mode else "OFF"
+                    )
+                )
+                return
+            if remainder.lower() not in ("on", "off"):
+                channel(_("Please specify 'on' or 'off' to set silent mode."))
+                return
+            if remainder.lower() == "on":
+                self.silent_mode = True
+            else:
+                self.silent_mode = False
+            if self.silent_mode:
+                channel(_("Silent mode is now ON."))
+            else:
+                channel(_("Silent mode is now OFF."))
+
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
-            OS_NAME = platform.system()
+            if self.silent_mode:
+                channel(_("Silent mode is on, no beep will be played."))
+                return
+            OS_NAME = self.os_information["OS_NAME"]
             system_sound = {
                 "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
                 "Darwin": "/System/Library/Sounds/Ping.aiff",
                 "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
             }
 
-            sys_snd = self.root.setting(str, "beep_soundfile", system_sound.get(OS_NAME, ""))
+            sys_snd = self.root.setting(
+                str, "beep_soundfile", system_sound.get(OS_NAME, "")
+            )
             use_default = not sys_snd or not os.path.exists(sys_snd)
 
             def _play_windows():
                 try:
                     import winsound
+
                     if use_default:
                         for x in range(5):
                             winsound.Beep(2000, 100)
                     else:
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
-                except Exception:
+                except Exception as e:
+                    channel("Encountered exception {e} during play")
                     pass
 
             def _play_darwin():
-                cmd = system_sound['Darwin'] if use_default else sys_snd
-                subprocess.run(['afplay', cmd], shell=False)
+                arg = system_sound["Darwin"] if use_default else sys_snd
+                cmd = ["afplay", arg]
+                try:
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel(f"Could not run {cmd[0]}: {e}")
 
             def _play_linux():
-                if not use_default:
-                    subprocess.run(['play', sys_snd], shell=False)
-                else:
-                    print("\a")
-                    subprocess.run(['say', 'Ding'], shell=False)
+                try:
+                    if not use_default:
+                        cmd = ["play", sys_snd]
+                    else:
+                        print("\a")
+                        cmd = ["say", "Ding"]
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel(f"Could not run {cmd[0]}: {e}")
 
             players = {
                 "Windows": _play_windows,
@@ -3141,7 +3229,9 @@ class Kernel(Settings):
         # ==========
         @self.console_command(
             "execute",
-            help=_("Loads a given file and executes all lines as commmands (as long as they don't start with a #)"),
+            help=_(
+                "Loads a given file and executes all lines as commmands (as long as they don't start with a #)"
+            ),
         )
         def load_and_execute(channel, _, remainder=None, **kwargs):
             if not remainder:
@@ -3307,13 +3397,17 @@ class Kernel(Settings):
                 channel(_("Infinite Loop Error."))
             else:
                 if not force and channel_name not in self.channels:
-                    channel(f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch.")
+                    channel(
+                        f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch."
+                    )
                     channel(_("----------"))
                     channel(_("Channels Active:"))
                     for i, name in enumerate(self.channels):
                         channel_name = self.channels[name]
                         is_watched = (
-                            "* " if self._console_channel in channel_name.watchers else "  "
+                            "* "
+                            if self._console_channel in channel_name.watchers
+                            else "  "
                         )
                         channel(f"{is_watched}{i + 1}: {name}")
                     return "channel", None

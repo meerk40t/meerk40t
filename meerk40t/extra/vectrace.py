@@ -15,24 +15,25 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.root.elements
             path = Path(fill="black", stroke="blue")
             paths = []
-            for node in data:
-                matrix = node.matrix
-                image = node.image
-                width, height = node.image.size
-                if image.mode != "L":
-                    image = image.convert("L")
-                image = image.point(lambda e: int(e > 127) * 255)
-                for points in _vectrace(image.load(), width, height):
-                    path += Polygon(*points)
-                path.transform *= Matrix(matrix)
-                paths.append(
-                    elements.elem_branch.add(
-                        path=abs(path),
-                        stroke_width=500,
-                        stroke_scaled=False,
-                        type="elem path",
+            with elements.undoscope("Vectrace"):
+                for node in data:
+                    matrix = node.matrix
+                    image = node.image
+                    width, height = node.image.size
+                    if image.mode != "L":
+                        image = image.convert("L")
+                    image = image.point(lambda e: int(e > 127) * 255)
+                    for points in _vectrace(image.load(), width, height):
+                        path += Polygon(*points)
+                    path.transform *= Matrix(matrix)
+                    paths.append(
+                        elements.elem_branch.add(
+                            path=abs(path),
+                            stroke_width=500,
+                            stroke_scaled=False,
+                            type="elem path",
+                        )
                     )
-                )
             return "elements", paths
 
 

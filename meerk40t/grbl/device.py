@@ -7,6 +7,7 @@ Registers relevant commands and options.
 
 from time import sleep
 
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -16,7 +17,6 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
-from meerk40t.device.devicechoices import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -182,6 +182,30 @@ class GRBLDevice(Service, Status):
                 "subsection": "_60_Home position",
             },
             {
+                "attr": "supports_z_axis",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Supports Z-axis"),
+                "tip": _("Does this device have a Z-axis?"),
+                "subsection": "_70_Z-Axis support",
+            },
+            {
+                "attr": "z_home_command",
+                "object": self,
+                "default": "$HZ",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "$HZ",
+                    "G28 Z",
+                ],
+                "exclusive": False,
+                "label": _("Z-Homing"),
+                "tip": _("Which command triggers the z-homing sequence"),
+                "subsection": "_70_Z-Axis support",
+            },
+            {
                 "attr": "signal_updates",
                 "object": self,
                 "default": True,
@@ -257,18 +281,22 @@ class GRBLDevice(Service, Status):
                 choice_dict["choices"] = ["UNCONFIGURED"]
                 choice_dict["display"] = ["pyserial-not-installed"]
 
+        from platform import system
+
+        is_linux = system() == "Linux"
         choices = [
             {
                 "attr": "serial_port",
                 "object": self,
                 "default": "UNCONFIGURED",
                 "type": str,
-                "style": "option",
+                "style": "combosmall" if is_linux else "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
+                "exclusive": not is_linux,
             },
             {
                 "attr": "baud_rate",
@@ -480,6 +508,19 @@ class GRBLDevice(Service, Status):
                 "subsection": "_10_",
             },
             {
+                "attr": "rapid_speed",
+                "object": self,
+                "default": 600,
+                "type": float,
+                "label": _("Travel speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the travel speed for your device to move from point to another."
+                ),
+                "section": "_25_" + _("Travel"),
+                "subsection": "_10_",
+            },
+            {
                 "attr": "limit_buffer",
                 "object": self,
                 "default": True,
@@ -610,6 +651,18 @@ class GRBLDevice(Service, Status):
                 ),
                 "section": "_40_Validation",
             },
+            {
+                "attr": "startup_commands",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "multiline",
+                "label": _("Startup commands"),
+                "tip": _(
+                    "Which commands should be sent to the device on a successful connect?"
+                ),
+                "section": "_40_Validation",
+            },
         ]
         self.register_choices("protocol", choices)
 
@@ -653,14 +706,64 @@ class GRBLDevice(Service, Status):
             if not (self.use_red_dot and self.use_red_dot_for_outline):
                 return
             yield ("console", "red on -f")
-        
+
         def post_outline(self):
             if not (self.use_red_dot and self.use_red_dot_for_outline):
                 return
-            yield("console", "red off -f")
+            yield ("console", "red off -f")
 
         @self.console_command(
-            "gcode",
+            "z_home",
+            help=_("Homes the z-Axis"),
+            input_type=None,
+        )
+        def command_zhome(command, channel, _, data=None, remainder=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            zhome = self.z_home_command
+            if not zhome:
+                channel(_("There is no homing sequence defined."))
+                return
+            channel(_("Z-Homing..."))
+            self.driver(zhome + self.driver.line_end)
+
+        @self.console_argument("step", type=Length, help=_("Amount to move the z-axis"))
+        @self.console_command(
+            "z_move",
+            help=_("Moves the z-Axis by the given amount"),
+            input_type=None,
+        )
+        def command_zmove_rel(command, channel, _, data=None, step=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            if step is None:
+                channel(_("No z-movement defined"))
+                return
+            # relative movement in mm
+            gcode = f"G91 G21 Z{step.mm:.3f}"
+            self.driver(gcode + self.driver.line_end)
+
+        @self.console_argument("step", type=Length, help=_("New z-axis position"))
+        @self.console_command(
+            "z_move_to",
+            help=_("Moves the z-Axis to the given position"),
+            input_type=None,
+        )
+        def command_zmove_abs(command, channel, _, data=None, step=None, **kwgs):
+            if not self.supports_z_axis:
+                channel(_("This device does not support a z-axis."))
+                return
+            if step is None:
+                channel(_("No z-movement defined"))
+                return
+            # absolute movement in mm
+            gcode = f"G91 G20 Z{step.mm:.3f}"
+            self.driver(gcode + self.driver.line_end)
+
+        @self.console_command(
+            ("gcode", "grbl"),
             help=_("Send raw gcode to the device"),
             input_type=None,
         )
@@ -671,7 +774,7 @@ class GRBLDevice(Service, Status):
                 # self.channel("grbl/send")(remainder + self.driver.line_end)
 
         @self.console_command(
-            "gcode_realtime",
+            ("gcode_realtime", "grbl_realtime"),
             help=_("Send raw gcode to the device (via realtime channel)"),
             input_type=None,
         )
@@ -818,7 +921,11 @@ class GRBLDevice(Service, Status):
             "strength", "s", type=int, help="Set the dot laser strength."
         )
         @self.console_option(
-            "force", "f", type=bool, action="store_true", help="Set the dot laser strength."
+            "force",
+            "f",
+            type=bool,
+            action="store_true",
+            help="Set the dot laser strength.",
         )
         @self.console_argument("off", type=str)
         @self.console_command(
@@ -826,7 +933,14 @@ class GRBLDevice(Service, Status):
             help=_("Turns redlight on/off"),
         )
         def red_dot_on(
-            command, channel, _, off=None, force=False, strength=None, remainder=None, **kwgs
+            command,
+            channel,
+            _,
+            off=None,
+            force=False,
+            strength=None,
+            remainder=None,
+            **kwgs,
         ):
             if not self.use_red_dot:
                 if channel:
@@ -850,9 +964,17 @@ class GRBLDevice(Service, Status):
                     channel("Turning off redlight.")
                 self.signal("grbl_red_dot", False)
             else:
-                self.red_dot(True)
-                if channel:
-                    channel("Turning on redlight.")
+                # self.redlight_preferred = True
+                # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
+                self.driver._clean()
+                rapid_speed = self.setting(float, "rapid_speed", 600.0)
+                self.driver.laser_on(power=int(self.red_dot_level), speed=rapid_speed)
+                # By default, any move is a G0 move which will not activate the laser,
+                # so we need to switch to G1 mode:
+                self.driver.move_mode = 1
+                # An arbitrary move to turn the laser really on!
+                # self.driver.grbl("G1")
+                channel("Turning on redlight.")
                 self.signal("grbl_red_dot", True)
 
         @self.console_option(
@@ -921,6 +1043,49 @@ class GRBLDevice(Service, Status):
             except KeyError:
                 channel(_("Interpreter cannot be attached to any device."))
             return
+
+        @self.console_argument("index", type=int, help=_("macro to run (1-5)."))
+        @self.console_command(
+            "macro",
+            help=_("Send a predefined macro to the device."),
+        )
+        def run_macro(command, channel, _, index=None, remainder=None, **kwargs):
+            for idx in range(5):
+                macrotext = self.setting(str, f"macro_{idx}", "")
+            if index is None:
+                for idx in range(5):
+                    macrotext = self.setting(str, f"macro_{idx}", "")
+                    channel(f"Content of macro {idx + 1}:")
+                    for no, line in enumerate(macrotext.splitlines()):
+                        channel(f"{no:2d}: {line}")
+                return
+            err = True
+            try:
+                macro_index = int(index) - 1
+                if 0 <= macro_index <= 4:
+                    err = False
+            except ValueError:
+                pass
+            if err:
+                channel(f"Invalid macro-number '{index}', valid: 1-5")
+            if remainder is not None:
+                remainder.strip()
+            # channel(f"Remainder: {remainder}")
+            if remainder:
+                channel(f"Redefining macro {index} to:")
+                macrotext = remainder.replace("|", "\n")
+                for line in macrotext.splitlines():
+                    channel(line)
+                setattr(self, f"macro_{macro_index}", macrotext)
+                return
+
+            macrotext = self.setting(str, f"macro_{macro_index}", "")
+            # channel(f"{macro_index}: {macrotext}")
+            for line in macrotext.splitlines():
+                channel(f"> {line}")
+                if line.startswith("#"):
+                    continue
+                self.driver(f"{line}{self.driver.line_end}")
 
     @property
     def safe_label(self):
@@ -1053,3 +1218,8 @@ class GRBLDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_raster_instructions(self):
+        return {
+            "gantry": True,
+        }

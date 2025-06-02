@@ -4072,7 +4072,7 @@ msgid "Align laser with the first position"
 msgstr "Állítsa a lézert az első pozícióba"
 
 #: meerk40t/gui/navigationpanels.py:416
-msgid "Perform a convex hull trace of the selection (Right different algorithm)"
+msgid "Perform a convex hull trace of the selection"
 msgstr ""
 
 #: meerk40t/gui/navigationpanels.py:422

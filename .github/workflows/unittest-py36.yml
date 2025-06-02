@@ -1,4 +1,4 @@
-name: Unittest
+name: Unittest Python 3.6
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019]
+        os: [windows-latest]
         python-version: [3.6]
 
     steps:

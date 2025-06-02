@@ -181,3 +181,7 @@ class RuidaController(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Balor-Controller"
+
+    @staticmethod
+    def helptext():
+        return _("Display the device controller window")

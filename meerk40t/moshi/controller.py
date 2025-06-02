@@ -100,7 +100,10 @@ class MoshiController:
         """
         buffer = f"Current Working Buffer: {str(self._buffer)}\n"
         for p in self._programs:
-            buffer += f"{str(p.data)}\n"
+            if hasattr(p, "data"):
+                buffer += f"{str(p.data)}\n"
+            else:
+                buffer += f"{str(p)} [dataless]\n"
         return buffer
 
     def added(self, *args, **kwargs):

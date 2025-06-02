@@ -46,8 +46,8 @@ def find_erroneous_translations(file_path):
                 msgids.append("")
                 lineids.append(index)
                 # Find msgid and all multi-lined message ids
-                if re.match('msgid \s*"(.*)"', file_lines[index]):
-                    m = re.match('msgid \s*"(.*)"', file_lines[index])
+                if re.match(r'msgid \s*"(.*)"', file_lines[index]):
+                    m = re.match(r'msgid \s*"(.*)"', file_lines[index])
                     msgids[-1] = m.group(1)
                     m_id = m.group(1)
                     index += 1

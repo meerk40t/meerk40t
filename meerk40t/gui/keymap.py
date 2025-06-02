@@ -348,3 +348,7 @@ class Keymap(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Keymap", True
+
+    @staticmethod
+    def helptext():
+        return _("Configure key-shortcuts to MeerK40ts tool arsenal")

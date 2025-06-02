@@ -36,6 +36,25 @@ class ElementsWidget(Widget):
             zoom_scale = 1
         if zoom_scale < 1:
             zoom_scale = 1
+        win_x_max, win_y_max = self.scene.gui.ClientSize
+        win_x_min = 0
+        win_y_min = 0
+        xmin = float("inf")
+        ymin = float("inf")
+        xmax = -float("inf")
+        ymax = -float("inf")
+        # look at the four edges as we could be rotated / inverted etc.
+        for x in (win_x_min, win_x_max):
+            for y in (win_y_min, win_y_max):
+                win_pos = (x, y)
+                scene_pos = self.scene.convert_window_to_scene(win_pos)
+                xmin = min(xmin, scene_pos[0])
+                xmax = max(xmax, scene_pos[0])
+                ymin = min(ymin, scene_pos[1])
+                ymax = max(ymax, scene_pos[1])
+        # Set visible area
+        box = (xmin, ymin, xmax, ymax)
+        self.renderer.set_visible_area(box)
         draw_mode = self.renderer.context.draw_mode
         if (draw_mode & DRAW_MODE_REGMARKS) == 0:
             # Very faint in the background as orientation - alpha 64

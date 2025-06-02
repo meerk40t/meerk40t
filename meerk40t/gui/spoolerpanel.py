@@ -23,7 +23,7 @@ from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
 )
-from meerk40t.kernel import Job, get_safe_path, signal_listener
+from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
 
@@ -67,6 +67,7 @@ def register_panel_spooler(window, context):
     )
     pane.dock_proportion = 600
     pane.control = panel
+    pane.helptext = _("Opens the spooler window with all job information")
 
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
@@ -102,6 +103,8 @@ class SpoolerPanel(wx.Panel):
         self.context.setting(int, "spooler_sash_position", 0)
         self.context.setting(bool, "spool_history_clear_on_start", False)
         self.context.setting(bool, "spool_ignore_helper_jobs", True)
+        self.context.setting(bool, "silent_mode", False)
+        self.context(f".silent {'on' if self.context.silent_mode else 'off'}\n")
 
         self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         sty = wx.BORDER_SUNKEN
@@ -130,11 +133,20 @@ class SpoolerPanel(wx.Panel):
             )
         )
         self.button_stop.SetBitmapFocus(
-            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
+            icons8_emergency_stop_button.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
         )
         self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
         self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
         self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
+        self.check_silent = wx.CheckBox(self.win_top, wx.ID_ANY)
+        self.check_silent.SetValue(self.context.silent_mode)
+        self.check_silent.SetToolTip(
+            _(
+                "If checked, the spooler will not emit any sound signals while processing jobs"
+            )
+        )
 
         self.list_job_spool = wxListCtrl(
             self.win_top,
@@ -144,9 +156,7 @@ class SpoolerPanel(wx.Panel):
             list_name="list_spoolerjobs",
         )
 
-        self.info_label = wxStaticText(
-            self.win_bottom, wx.ID_ANY, _("Completed jobs:")
-        )
+        self.info_label = wxStaticText(self.win_bottom, wx.ID_ANY, _("Completed jobs:"))
         self.button_clear_history = wxButton(
             self.win_bottom, wx.ID_ANY, _("Clear History")
         )
@@ -183,7 +193,7 @@ class SpoolerPanel(wx.Panel):
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
         )
-        # end wxGlade
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_silent, self.check_silent)
         self._last_invokation = 0
         self.dirty = False
         self.update_buffer_size = False
@@ -297,6 +307,7 @@ class SpoolerPanel(wx.Panel):
         sizer_combo_cmds.Add(self.combo_device, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.check_silent, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_top.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
         sizer_top.Add(self.list_job_spool, 4, wx.EXPAND, 0)
@@ -317,6 +328,10 @@ class SpoolerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def on_check_silent(self, event):
+        self.context.silent_mode = self.check_silent.GetValue()
+        self.context(f".silent {'on' if self.context.silent_mode else 'off'}\n")
+
     def on_sash_changed(self, event):
         position = self.splitter.GetSashPosition()
         self.context.spooler_sash_position = position
@@ -329,7 +344,7 @@ class SpoolerPanel(wx.Panel):
         self.current_item = event.Index
 
     def write_csv(self):
-        filename = Path(get_safe_path(self.context.kernel.name, create=True)).joinpath(
+        filename = Path(self.context.kernel.os_information["WORKDIR"]).joinpath(
             "history.csv"
         )
         if self.filter_device:
@@ -672,15 +687,6 @@ class SpoolerPanel(wx.Panel):
 
         return routine
 
-    def pane_show(self, *args):
-        self.shown = True
-        self.context.schedule(self.timerjob)
-        self.refresh_spooler_list()
-
-    def pane_hide(self, *args):
-        self.context.unschedule(self.timerjob)
-        self.shown = False
-
     @staticmethod
     def _name_str(named_obj):
         try:
@@ -768,7 +774,10 @@ class SpoolerPanel(wx.Panel):
                         info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                         if hasattr(spooler, "driver"):
                             if hasattr(spooler.driver, "get_internal_queue_status"):
-                                internal_current, internal_total = spooler.driver.get_internal_queue_status()
+                                (
+                                    internal_current,
+                                    internal_total,
+                                ) = spooler.driver.get_internal_queue_status()
                                 if internal_current != 0:
                                     info_s += f" ({internal_current}/{internal_total})"
                     except AttributeError:
@@ -1121,7 +1130,10 @@ class SpoolerPanel(wx.Panel):
                 info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                 if hasattr(spooler, "driver"):
                     if hasattr(spooler.driver, "get_internal_queue_status"):
-                        internal_current, internal_total = spooler.driver.get_internal_queue_status()
+                        (
+                            internal_current,
+                            internal_total,
+                        ) = spooler.driver.get_internal_queue_status()
                         if internal_current != 0:
                             info_s += f" ({internal_current}/{internal_total})"
             except AttributeError:
@@ -1170,10 +1182,16 @@ class SpoolerPanel(wx.Panel):
             self.on_device_update(None)
 
     def pane_show(self):
+        self.shown = True
         self.list_job_history.load_column_widths()
         self.list_job_spool.load_column_widths()
+        self.context.schedule(self.timerjob)
+        self.refresh_spooler_list()
 
     def pane_hide(self):
+        self.context.unschedule(self.timerjob)
+        self.shown = False
+
         self.list_job_history.save_column_widths()
         self.list_job_spool.save_column_widths()
 
@@ -1220,3 +1238,7 @@ class JobSpooler(MWindow):
     @staticmethod
     def submenu():
         return "Burning", "Spooler"
+
+    @staticmethod
+    def helptext():
+        return _("Opens the spooler window with all job information")

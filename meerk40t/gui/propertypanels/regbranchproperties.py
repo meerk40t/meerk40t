@@ -47,11 +47,10 @@ class RegBranchPanel(wx.Panel):
 
     def on_move_back(self, event):
         elements = self.context.elements
-        with elements.static("move_back"):
-            drop_node = elements.elem_branch
-            data = list(elements.regmarks_nodes())
-            if len(data):
-                elements.drag_and_drop(data, drop_node)
+        drop_node = elements.elem_branch
+        data = list(elements.regmarks_nodes())
+        if len(data):
+            elements.drag_and_drop(data, drop_node)
         self.set_widgets(self.node)
         elements.set_selected([self.node])
         self.context.signal("selected")

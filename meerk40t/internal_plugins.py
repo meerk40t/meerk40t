@@ -76,6 +76,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(potrace.plugin)
 
+        from .extra import vtracer
+
+        plugins.append(vtracer.plugin)
+
         from .extra import inkscape
 
         plugins.append(inkscape.plugin)
@@ -91,6 +95,10 @@ def plugin(kernel, lifecycle):
         from .extra import lbrn
 
         plugins.append(lbrn.plugin)
+
+        from .extra import xcs_reader
+
+        plugins.append(xcs_reader.plugin)
 
         from .extra import updater
 

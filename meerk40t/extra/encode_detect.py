@@ -165,13 +165,19 @@ class EncodingDetectFile:
 
     def load(self, file_path):
         # open file
-        fh = open(file_path, "rb")
+        try:
+            fh = open(file_path, "rb")
+        except Exception:
+            return False
 
         # detect a byte order mark (BOM)
         file_encoding, bom_marker, file_data = self._detect_bom(fh)
         if file_encoding:
             # file has a BOM - decode everything past it
-            decode = fh.read().decode(file_encoding)
+            try:
+                decode = fh.read().decode(file_encoding)
+            except UnicodeDecodeError:
+                return False
             # print(f"decoded: {decode}")
             fh.close()
 

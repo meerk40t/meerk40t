@@ -1126,16 +1126,18 @@ class PlacementPanel(wx.Panel):
         self.operation.rotation = 0
         self.updated()
         if self.check_generate.GetValue() and geom is not None:
-            node = self.context.elements.elem_branch.add(
-                type="elem path",
-                geometry=geom,
-                stroke=Color("blue"),
-                stroke_width=1000,
-                label="Template",
-            )
-            data = [node]
-            if self.context.elements.classify_new:
-                self.context.elements.classify(data)
+            # _("Create template")
+            with self.context.elements.undoscope("Create template"):
+                node = self.context.elements.elem_branch.add(
+                    type="elem path",
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    stroke_width=1000,
+                    label="Template",
+                )
+                data = [node]
+                if self.context.elements.classify_new:
+                    self.context.elements.classify(data)
             self.context.root.signal("refresh_scene", "Scene")
 
     def updated(self):

@@ -63,6 +63,8 @@ class FormatPainter:
             ("linecap", True),
             ("linejoin", True),
             ("fillrule", True),
+            ("stroke_dash", True),
+            ("mktablength", False),
             # Image attributes
             ("dpi", False),
             ("operations", False),
@@ -124,9 +126,17 @@ class FormatPainter:
         self.context.signal(self.identifier, toggle)
 
     def on_emphasis(self, *args):
+
+        def get_effect_parent(node):
+            while node.parent is not None:
+                if node.parent.type.startswith("effect "):
+                    return node.parent
+                node = node.parent
+            return None
+
         if self.state == INACTIVE:
             return
-        elif self.state == WAITING:
+        if self.state == WAITING:
             node = self.context.elements.first_emphasized
             if node is None:
                 return
@@ -135,7 +145,7 @@ class FormatPainter:
             self.template = node
             self.state = PASTING
             return
-        elif self.state == PASTING:
+        if self.state == PASTING:
             try:
                 _id = self.template.id
             except (RuntimeError, AttributeError):
@@ -144,36 +154,53 @@ class FormatPainter:
             nodes_changed = []
             nodes_classify = []
             nodes_images = []
-            for node in self.context.elements.elems(emphasized=True):
-                if node is self.template:
-                    continue
-                flag_changed = False
-                flag_classify = False
-                flag_pathupdate = False
-                for entry in self.possible_attributes:
-                    attr = entry[0]
-                    generic = entry[1]
-                    if not generic and node.type != self.template.type:
+            data = list(self.context.elements.elems(emphasized=True))
+            if not data:
+                return
+            effect_parent = get_effect_parent(self.template)
+            with self.context.elements.undoscope("Paste format"):
+                for node in data:
+                    if node is self.template:
                         continue
-                    if hasattr(self.template, attr) and hasattr(node, attr):
-                        value = getattr(self.template, attr, None)
-                        if isinstance(value, (list, tuple)):
-                            value = copy(value)
-                        try:
-                            setattr(node, attr, value)
-                            flag_changed = True
-                            if attr in ("stroke", "fill"):
-                                flag_classify = True
-                            if attr in self.path_update_needed:
-                                flag_pathupdate = True
-                        except ValueError:
+                    flag_changed = False
+                    flag_classify = False
+                    flag_pathupdate = False
+                    for entry in self.possible_attributes:
+                        attr = entry[0]
+                        generic = entry[1]
+                        if not generic and node.type != self.template.type:
                             continue
-                if flag_changed:
-                    nodes_changed.append(node)
-                    if node.type == "elem image":
-                        nodes_images.append(node)
-                if flag_pathupdate:
-                    if hasattr(node, "mktext"):
+                        if hasattr(self.template, attr) and hasattr(node, attr):
+                            value = getattr(self.template, attr, None)
+                            if isinstance(value, (list, tuple)):
+                                value = copy(value)
+                            try:
+                                setattr(node, attr, value)
+                                flag_changed = True
+                                if attr in ("stroke", "fill"):
+                                    flag_classify = True
+                                if attr in self.path_update_needed:
+                                    flag_pathupdate = True
+                            except ValueError:
+                                continue
+                    this_effect_parent = get_effect_parent(node)
+                    # print (f"template: {'no effect' if effect_parent is None else 'effect'}, target: {'no effect' if this_effect_parent is None else 'effect'}")
+                    if this_effect_parent is not effect_parent:
+                        if effect_parent is None:
+                            # print (f"Will reparent to own effect parent: {this_effect_parent.parent.type}")
+                            self.context.elements.drag_and_drop([node], this_effect_parent.parent)
+                        else:
+                            # print (f"Will reparent to template effect: {effect_parent.type}")
+                            self.context.elements.drag_and_drop([node], effect_parent)
+                        flag_changed = True
+
+                    if flag_changed:
+                        if hasattr(node, "empty_cache"):
+                            node.empty_cache()
+                        nodes_changed.append(node)
+                        if node.type == "elem image":
+                            nodes_images.append(node)
+                    if flag_pathupdate and hasattr(node, "mktext"):
                         newtext = self.context.elements.wordlist_translate(
                             node.mktext, elemnode=node, increment=False
                         )
@@ -186,15 +213,15 @@ class FormatPainter:
                         if hasattr(node, "_cache"):
                             node._cache = None
 
-                if flag_classify:
-                    nodes_classify.append(node)
-            if len(nodes_changed) > 0:
-                for node in nodes_images:
-                    self.context.elements.do_image_update(node, self.context)
-                if len(nodes_classify) > 0 and self.context.elements.classify_new:
-                    self.context.elements.classify(nodes_classify)
-                self.context.signal("element_property_update", nodes_changed)
-                self.context.signal("refresh_scene", "Scene")
+                    if flag_classify:
+                        nodes_classify.append(node)
+                if nodes_changed:
+                    for node in nodes_images:
+                        self.context.elements.do_image_update(node, self.context)
+                    if nodes_classify and self.context.elements.classify_new:
+                        self.context.elements.classify(nodes_classify)
+                    self.context.signal("element_property_update", nodes_changed)
+                    self.context.signal("refresh_scene", "Scene")
 
     def on_click(self, *args):
         # print(f"On_click called, state was : {self.state}")
@@ -536,6 +563,10 @@ class Warnings:
             except ValueError:
                 diameter = float(Length("0.3mm"))
             for op in self.context.elements.ops():
+                if getattr(op, "consider_laserspot", False) and check_type=="high":
+                    # This isn't a relevant comparison, as we have a relevant flag in the op set
+                    continue
+
                 if (
                     hasattr(op, "output")
                     and op.output
@@ -557,7 +588,10 @@ class Warnings:
                             image_node = node.node if hasattr(node, "node") else node
                             if getattr(image_node, "hidden", False):
                                 continue
-                            opdpi = op.dpi if useop else image_node.dpi
+                            if hasattr(image_node, "dpi"):
+                                opdpi = op.dpi if useop else image_node.dpi
+                            else:
+                                opdpi = op.dpi
                             step_x, step_y = self.context.device.view.dpi_to_steps(opdpi)
                             step_x *= self.context.device.view.native_scale_x
                             step_y *= self.context.device.view.native_scale_y
@@ -569,6 +603,24 @@ class Warnings:
 
             return flag, count
 
+        def check_optimisation():
+            flag = False
+            count = 0
+            active = self.context.setting(bool, "warning_optimisation", True)
+            if not active:
+                return flag, count
+            unsupported = ()
+            if hasattr(self.context.device, "get_raster_instructions"):
+                instructions = self.context.device.get_raster_instructions()
+                unsupported = instructions.get("unsupported_opt", ())
+            if not unsupported:
+                return flag, count
+            for op in self.context.elements.ops():
+                if hasattr(op, "raster_direction") and op.raster_direction in unsupported:
+                    flag = True
+                    count += 1
+
+            return flag, count
 
         self._concerns.clear()
 
@@ -669,6 +721,15 @@ class Warnings:
                 (
                     _("- Raster/Images have a high dpi and lines will overlap") + f" ({info})\n",
                     CONCERN_LOW
+                )
+            )
+
+        invalid_opt, info = check_optimisation()
+        if invalid_opt:
+            self._concerns.append(
+                (
+                    _("- Raster/Images have a raster method that is unsupported on this device: no optimisation will be applied in these cases") + f" ({info})\n",
+                    CONCERN_NORMAL
                 )
             )
 

@@ -1,0 +1,13 @@
+"""
+Definition of commonly used constants
+"""
+
+RASTER_T2B = 0
+RASTER_B2T = 1
+RASTER_R2L = 2
+RASTER_L2R = 3
+RASTER_HATCH = 4
+RASTER_GREEDY_H = 5
+RASTER_GREEDY_V = 6
+RASTER_CROSSOVER = 7
+RASTER_SPIRAL = 8

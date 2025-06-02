@@ -111,7 +111,7 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
-
+    pane.helptext = _("Tree containing all objects")
     notetab.AddPage(basic_op, _("Burn-Operation"))
     notetab.AddPage(wxtree, _("Details"))
     notetab.SetSelection(lastpage)
@@ -156,7 +156,7 @@ class TreePanel(wx.Panel):
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self._keybind_channel = self.context.channel("keybinds")
 
-        self.context.signal("rebuild_tree")
+        self.context.signal("rebuild_tree", "all")
 
     def setup_warn_panel(self):
         def fix_unassigned_create(event):
@@ -176,6 +176,7 @@ class TreePanel(wx.Panel):
             self.context.elements.signal("refresh_tree")
 
         def fix_unburnt(event):
+            to_reload = []
             for node in self.context.elements.elems():
                 will_be_burnt = False
                 first_op = None
@@ -194,12 +195,14 @@ class TreePanel(wx.Panel):
                 if not will_be_burnt and first_op is not None:
                     try:
                         first_op.output = True
-                        self.context.elements.signal(
-                            "element_property_update", first_op
-                        )
-                        self.context.elements.signal("warn_state_update")
+                        to_reload.append(first_op)
                     except AttributeError:
                         pass
+            if to_reload:
+                self.context.elements.signal(
+                    "element_property_reload", to_reload
+                )
+                self.context.elements.signal("warn_state_update")
 
         self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
         unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
@@ -281,6 +284,10 @@ class TreePanel(wx.Panel):
             self.shadow_tree.on_item_right_click,
             self.wxtree,
         )
+        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.shadow_tree.on_collapse, self.wxtree)
+        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.shadow_tree.on_expand, self.wxtree)
+        self.Bind(wx.EVT_TREE_STATE_IMAGE_CLICK, self.shadow_tree.on_state_icon, self.wxtree)
+
         self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
         self.wxtree.Bind(wx.EVT_LEAVE_WINDOW, self.on_lost_focus, self.wxtree)
 
@@ -421,6 +428,10 @@ class TreePanel(wx.Panel):
     def on_reset_formatter(self, origin, target=None, *args):
         self.shadow_tree.reset_formatter_cache()
 
+    @signal_listener("sync_expansion")
+    def on_sync_expansion(self, origin, target=None, *args):
+        self.shadow_tree.sync_expansion()
+
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, target=None, *args):
         """
@@ -450,7 +461,9 @@ class TreePanel(wx.Panel):
         #     self.shadow_tree.wxtree.Expand(startnode)
         # else:
         #     self.shadow_tree.rebuild_tree()
-        self.shadow_tree.rebuild_tree("signal")
+        if target is None:
+            target = "all"
+        self.shadow_tree.rebuild_tree(source="signal", target=target)
 
     @signal_listener("refresh_tree")
     def on_refresh_tree_signal(self, origin, nodes=None, *args):
@@ -567,10 +580,11 @@ class ShadowTree:
         self.tree_images = None
         self.name = "Project"
         self._freeze = False
-        testsize = dip_size(self, 20, 20)
+        testsize = dip_size(self.wxtree, 20, 20)
         self.iconsize = testsize[1]
         self.iconstates = {}
         self.last_call = 0
+        self._nodes_to_expand = []
 
         # fact = get_default_scale_factor()
         # if fact > 1.0:
@@ -706,6 +720,22 @@ class ShadowTree:
         """
         self.node_register(node, **kwargs)
         self.register_children(node)
+        if node.expanded:
+            # Needs to be done later...
+            self._nodes_to_expand.append(node)
+            if not self.context.elements.suppress_signalling:
+                self.context.elements.signal("sync_expansion")
+
+    def sync_expansion(self):
+        for node in self._nodes_to_expand:
+            item = node._item
+            if item is None or not item.IsOk():
+                continue
+            if node.expanded:
+                self.wxtree.Expand(item)
+            else:
+                self.wxtree.Collapse(item)
+        self._nodes_to_expand.clear()
 
     def node_changed(self, node):
         """
@@ -726,7 +756,7 @@ class ShadowTree:
     def check_validity(self, item):
         if item is None or not item.IsOk():
             # raise ValueError("Bad Item")
-            self.rebuild_tree("validity")
+            self.rebuild_tree(source="validity", target="all")
             self.elements.signal("refresh_scene", "Scene")
             return False
         return True
@@ -874,6 +904,7 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
+        node.expanded = True
         item = node._item
         self.check_validity(item)
         self.wxtree.ExpandAllChildren(item)
@@ -908,6 +939,7 @@ class ShadowTree:
         """
         if node is None:
             return
+        node.expanded = False
         item = node._item
         if item is None:
             return
@@ -934,7 +966,20 @@ class ShadowTree:
         @param node:
         @return:
         """
-        self.rebuild_tree("reorder")
+        target = "all"
+        while node.parent is not None:
+            if node.parent.type == "branch reg":
+                target = "regmarks"
+                break
+            if node.parent.type == "branch elem":
+                target = "elements"
+                break
+            if node.parent.type == "branch ops":
+                target = "operations"
+                break
+            node = node.parent
+        
+        self.rebuild_tree("reorder", target=target)
 
     def update(self, node):
         """
@@ -1176,7 +1221,7 @@ class ShadowTree:
         self.dragging_nodes = None
         self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
-    def rebuild_tree(self, source):
+    def rebuild_tree(self, source:str, target:str="all" ):
         """
         Tree requires being deleted and completely rebuilt.
 
@@ -1185,7 +1230,7 @@ class ShadowTree:
         # print (f"Rebuild called from {source}")
         # let's try to remember which branches were expanded:
         busy = wx.BusyCursor()
-        self.context.elements.set_start_time("rebuild_tree")
+        self.context.elements.set_start_time(f"rebuild_tree_{target}")
         self.freeze_tree(True)
 
         # self.reset_expanded()
@@ -1198,71 +1243,100 @@ class ShadowTree:
 
         # self.parse_tree(self.wxtree.GetRootItem(), 0)
         # Rebuild tree destroys the emphasis, so let's store it...
+        def delete_items(target):
+            if target == "regmarks":
+                node = self.elements.reg_branch
+                item = node._item
+                if item is not None:
+                    self.wxtree.DeleteChildren(item)
+            elif target == "operations":
+                node = self.elements.op_branch
+                item = node._item
+                if item is not None:
+                    self.wxtree.DeleteChildren(item)
+            elif target == "elements":
+                node = self.elements.elem_branch
+                item = node._item
+                if item is not None:
+                    self.wxtree.DeleteChildren(item)
+            else:
+                self.wxtree.DeleteAllItems()
+        
+        def rebuild_items(target):
+            if target == "all":
+                if self.tree_images is not None:
+                    self.tree_images.Destroy()
+                    self.image_cache = []
+                self.tree_images = wx.ImageList()
+                self.tree_images.Create(width=self.iconsize, height=self.iconsize)
+
+                self.wxtree.SetImageList(self.tree_images)
+            if target == "regmarks":
+                elemtree = self.elements.reg_branch
+            elif target == "operations":
+                elemtree = self.elements.op_branch
+            elif target == "elements":
+                elemtree = self.elements.elem_branch
+            else:
+                elemtree = self.elements._tree
+                elemtree._item = self.wxtree.AddRoot(self.name)
+                self.wxtree.SetItemData(elemtree._item, elemtree)
+                self.set_icon(
+                    elemtree,
+                    icon_meerk40t.GetBitmap(
+                        False,
+                        resize=(self.iconsize, self.iconsize),
+                        noadjustment=True,
+                        buffer=1,
+                    ),
+                )
+            self.register_children(elemtree)
+            branch_list = (
+                ("branch ops", "operations", icons8_laser_beam),
+                ("branch reg", "regmarks", icon_regmarks),
+                ("branch elems", "elements", icon_canvas),
+            )
+            for branch_name, branch_type, icon in branch_list:
+                if target not in ("all", branch_type):
+                    continue
+                node_branch = elemtree.get(type=branch_name)
+                self.set_icon(
+                    node_branch,
+                    icon.GetBitmap(
+                        resize=(self.iconsize, self.iconsize),
+                        noadjustment=True,
+                        buffer=1,
+                    ),
+                )
+                for n in node_branch.children:
+                    self.set_icon(n, force=True)
+            if target in {"all", "operations"}:
+                self.update_op_labels()
+            if target in {"all", "elements"}:
+                self.update_group_labels("rebuild_tree")
+
         emphasized_list = list(self.elements.elems(emphasized=True))
-        elemtree = self.elements._tree
-        self.wxtree.DeleteAllItems()
-        if self.tree_images is not None:
-            self.tree_images.Destroy()
-            self.image_cache = []
 
-        self.tree_images = wx.ImageList()
-        self.tree_images.Create(width=self.iconsize, height=self.iconsize)
+        delete_items(target)
+        rebuild_items(target)
 
-        self.wxtree.SetImageList(self.tree_images)
-        elemtree._item = self.wxtree.AddRoot(self.name)
-
-        self.wxtree.SetItemData(elemtree._item, elemtree)
-
-        self.set_icon(
-            elemtree,
-            icon_meerk40t.GetBitmap(
-                False,
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-        self.register_children(elemtree)
-
-        node_operations = elemtree.get(type="branch ops")
-        self.set_icon(
-            node_operations,
-            icons8_laser_beam.GetBitmap(
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-
-        for n in node_operations.children:
-            self.set_icon(n, force=True)
-
-        node_elements = elemtree.get(type="branch elems")
-        self.set_icon(
-            node_elements,
-            icon_canvas.GetBitmap(
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-
-        node_registration = elemtree.get(type="branch reg")
-        self.set_icon(
-            node_registration,
-            icon_regmarks.GetBitmap(
-                resize=(self.iconsize, self.iconsize),
-                noadjustment=True,
-                buffer=1,
-            ),
-        )
-        self.update_op_labels()
-        self.update_group_labels("rebuild_tree")
         # Expand Ops, Element, and Regmarks nodes only
-        self.wxtree.CollapseAll()
-        self.wxtree.Expand(node_operations._item)
-        self.wxtree.Expand(node_elements._item)
-        self.wxtree.Expand(node_registration._item)
+        # self.wxtree.CollapseAll()
+        self.wxtree.Expand(self.elements.op_branch._item)
+        self.wxtree.Expand(self.elements.elem_branch._item)
+        self.wxtree.Expand(self.elements.reg_branch._item)
+        startnode = self.elements._tree._item
+        
+        def expand_leaf(snode):
+            child, cookie = self.wxtree.GetFirstChild(snode)
+            while child.IsOk():
+                node = self.wxtree.GetItemData(child)  
+                if node.expanded:
+                    self.wxtree.Expand(child)
+                expand_leaf(child)
+                child, cookie = self.wxtree.GetNextChild(snode, cookie)
+        
+        expand_leaf(startnode)
         self.elements.signal("warn_state_update")
 
         # Restore emphasis
@@ -1270,7 +1344,7 @@ class ShadowTree:
             e.emphasized = True
         # self.restore_tree(self.wxtree.GetRootItem(), 0)
         self.freeze_tree(False)
-        self.context.elements.set_end_time("rebuild_tree", display=True)
+        self.context.elements.set_end_time(f"rebuild_tree_{target}", display=True)
         # print(f"Rebuild done for {source}")
         del busy
 
@@ -1305,11 +1379,13 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        self.do_not_select = True
 
         item = node._item
         if item is None:
-            raise ValueError(f"Item was None for node {repr(node)}")
+            print(f"Item was None for node {repr(node)}")
+            return
+
+        self.do_not_select = True
         self.check_validity(item)
         # We might need to update the decorations for all parent objects
         informed = []
@@ -1356,17 +1432,23 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        parent = node.parent
-        parent_item = parent._item
-        if parent_item is None:
-            # We are appending items in tree before registration.
+        try:
+            parent = node.parent
+            parent_item = parent._item
+            if parent_item is None:
+                # We are appending items in tree before registration.
+                return
+            tree = self.wxtree
+            if pos is None:
+                node._item = tree.AppendItem(parent_item, self.name)
+            else:
+                node._item = tree.InsertItem(parent_item, pos, self.name)
+            tree.SetItemData(node._item, node)
+        except Exception as e:
+            # Invalid tree?
+            self.context.signal("rebuild_tree", "all")
+            print (f"We encountered an error at node registration: {e}")
             return
-        tree = self.wxtree
-        if pos is None:
-            node._item = tree.AppendItem(parent_item, self.name)
-        else:
-            node._item = tree.InsertItem(parent_item, pos, self.name)
-        tree.SetItemData(node._item, node)
         self.update_decorations(node, False)
         wxcolor = self.wxtree.GetForegroundColour()
         attribute_to_try = "fill" if node.type == "elem text" else "stroke"
@@ -1733,7 +1815,7 @@ class ShadowTree:
             force = False
         if node._item is None:
             # This node is not registered the tree has desynced.
-            self.rebuild_tree("desync")
+            self.rebuild_tree(source="desync", target="all")
             return
 
         self.set_icon(node, force=force)
@@ -1958,8 +2040,10 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
+        # Is the node expanded? If yes regular dnd applies, if not we will add the node to the end...
+        closed_leaf = (self.wxtree.ItemHasChildren(drop_item) and not self.wxtree.IsExpanded(drop_item))
         # We extend the logic by calling the appropriate elems routine
-        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node)
+        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node, flag=closed_leaf)
         if skip:
             event.Skip()
             self.dragging_nodes = None
@@ -2222,6 +2306,43 @@ class ShadowTree:
         if activate is not None:
             activate(first_element)
 
+    def on_collapse(self, event):
+        if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
+            return
+        item = event.GetItem()
+        if not item:
+            return
+        node = self.wxtree.GetItemData(item)
+        node.expanded = False
+
+    def on_expand(self, event):
+        if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
+            return
+        item = event.GetItem()
+        if not item:
+            return
+        node = self.wxtree.GetItemData(item)
+        node.expanded = True
+
+    def on_state_icon(self, event):
+        if self.do_not_select:
+            # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
+            # cause them to appear to drop invalid nodes.
+            return
+        item = event.GetItem()
+        if not item:
+            return
+        node = self.wxtree.GetItemData(item)
+        if hasattr(node, "hidden"):
+            node.hidden = False
+            self.context.elements.set_emphasis([node])
+            # self.context.signal("refresh_scene", "Scene")
+            self.update_decorations(node)
+
     def on_item_selection_changed(self, event):
         """
         Tree menu item is changed. Modify the selection.
@@ -2283,7 +2404,15 @@ class ShadowTree:
         """
         self.do_not_select = True
         self.wxtree.UnselectAll()
-
+        require_rebuild = False
         for e in self.elements.elems_nodes(emphasized=True):
-            self.wxtree.SelectItem(e._item, True)
+            if e._item:
+                self.wxtree.SelectItem(e._item, True)
+            else:
+                # That should not happen, apparently we have a not fully built tree
+                require_rebuild = True
+                break
+        if require_rebuild:
+            self.context.signal("rebuild_tree", "all")
+
         self.do_not_select = False

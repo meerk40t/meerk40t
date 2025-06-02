@@ -71,3 +71,7 @@ class BufferView(MWindow):
     @staticmethod
     def submenu():
         return "Device-Control", "Buffer"
+
+    @staticmethod
+    def helptext():
+        return _("Display the command flow buffer to a device")

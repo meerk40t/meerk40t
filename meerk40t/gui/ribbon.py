@@ -128,6 +128,7 @@ class Button:
         self.state_unpressed = None
         self.group = None
         self.toggle_attr = None
+        self.multi_autoexec = None
         self.identifier = None
         self.action = None
         self.action_right = None
@@ -155,6 +156,7 @@ class Button:
         rule_enabled=None,
         rule_visible=None,
         object=None,
+        multi_autoexec=None,
         **kwargs,
     ):
         """
@@ -205,6 +207,7 @@ class Button:
         self.action_right = action_right
         self.rule_enabled = rule_enabled
         self.rule_visible = rule_visible
+        self.multi_autoexec = multi_autoexec 
         if object is not None:
             self.object = object
         else:
@@ -274,6 +277,9 @@ class Button:
             "client_data": self.client_data,
             "rule_enabled": self.rule_enabled,
             "rule_visible": self.rule_visible,
+            "toggle_attr": self.toggle_attr,
+            "object": self.object,
+            "multi_autoexec": self.multi_autoexec,
         }
         self._update_button_aspect(key, **kwargs)
 
@@ -435,6 +441,27 @@ class Button:
             self.state_unpressed = key_id
             self._restore_button_aspect(key_id)
             # self.ensure_realize()
+            # And now execute it, provided it would be enabled...
+            auto_execute = False if self.multi_autoexec is None else self.multi_autoexec
+            auto_execute = auto_execute and self.context.setting(bool, "button_multi_menu_execute", True)
+            if auto_execute:
+                is_visible = True
+                is_enabled = True
+                if self.rule_visible:
+                    try:
+                        is_visible = self.rule_visible(0)
+                    except (AttributeError, TypeError):
+                        is_visible = False
+                if self.rule_enabled:
+                    try:
+                        is_enabled = self.rule_enabled(0)
+                    except (AttributeError, TypeError):
+                        is_enabled = False
+                if is_visible and is_enabled:
+                    try:
+                        self.action(None)
+                    except AttributeError:
+                        pass
 
         return menu_item_click
 
@@ -454,6 +481,8 @@ class Button:
             # This is not a context, we tried.
             pass
         initial_value = getattr(self.object, self.save_id, "default")
+        if "signal" in self.button_dict and "attr" in self.button_dict:
+            self._create_generic_signal_for_multi(self.object, self.button_dict.get("attr"), self.button_dict.get("signal"))
 
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
@@ -474,7 +503,26 @@ class Button:
         @return:
         """
 
-        def multi_click(origin, set_value):
+        def multi_click(origin, *args):
+            self._restore_button_aspect(key)
+
+        self.context.listen(signal, multi_click)
+        self.parent._registered_signals.append((signal, multi_click))
+
+    def _create_generic_signal_for_multi(self, q_object, q_attr, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def multi_click(origin, *args):
+            try:
+                key = getattr(q_object, q_attr)
+            except AttributeError:
+                return
             self._restore_button_aspect(key)
 
         self.context.listen(signal, multi_click)
@@ -519,7 +567,11 @@ class Button:
         @return:
         """
 
-        def toggle_click(origin, set_value, *args):
+        def toggle_click(origin, *args):
+            # Whats the value to set?
+            set_value = args[0] if args else not self.toggle
+            # But if we have a toggle_attr then this has precedence
+            set_value = getattr(self.object, self.toggle_attr) if self.toggle_attr else set_value
             self.set_button_toggle(set_value)
 
         self.context.listen(signal, toggle_click)
@@ -703,7 +755,10 @@ class RibbonPanel:
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
             item.Enable(v.enabled)
-            item.SetHelp(v.tip)
+            if callable(v.tip):
+                item.SetHelp(v.tip())
+            else:
+                item.SetHelp(v.tip)
             if v.icon:
                 item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2, buffer=2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
@@ -2050,7 +2105,11 @@ class Art:
         # Now that we have gathered all information we can assign
         # the space...
         available_space = 0
-        for p, panel in enumerate(page.panels):
+        p = -1
+        for panel in page.panels:
+            if panel.visible_button_count == 0:
+                continue
+            p += 1
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:

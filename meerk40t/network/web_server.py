@@ -34,6 +34,13 @@ class WebServer(Module):
         )
         self.server_headers = dict()
         self.client_headers = dict()
+        self.handover = None
+        root = self.context.root
+        for result in root.find("gui/handover"):
+            # Do we have a thread handover routine?
+            if result is not None:
+                self.handover, _path, suffix_path  = result
+                break
 
     def stop(self):
         self.state = "terminate"
@@ -45,6 +52,13 @@ class WebServer(Module):
         if self.socket is not None:
             self.socket.close()
             self.socket = None
+    
+    def send(self, command):
+        if self.handover is None:
+            self.context(f"{command}\n")
+        else:
+            self.handover(command)
+
 
     def receive(self, data):
         def parse_received_data():
@@ -92,7 +106,7 @@ class WebServer(Module):
                     content = f"Received command: '{command}'"
             elif self.client_headers["TYPE"] == "POST" and "post_cmd" in self.client_headers:
                 command = self.client_headers["post_cmd"]
-                self.context(command + "\n")
+                self.send(command)
                 content = f"Received command: '{command}'"
             return content_type, content
 
