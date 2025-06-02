@@ -22300,3 +22300,7 @@ msgstr "Silent-Modus ist nun AUS"
 #: meerk40t/kernel/kernel.py:2896
 msgid "Silent mode is on, no beep will be played."
 msgstr "Silent-Modus aktiv, beep..."
+
+#: meerk40t/gui/materialtest.py:951 meerk40t/gui/materialtest.py:990
+msgid "Select the values you want to test for {param}"
+msgstr "Bitte wählen Sie die zu testenden Einträge für {param} aus"
