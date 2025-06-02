@@ -947,6 +947,11 @@ class TemplatePanel(wx.Panel):
                 standard_items = False
                 choices = self.parameters[idx][7]
                 self.list_options_1.Set(choices)
+                self.list_options_1.SetToolTip(
+                    _("Select the values you want to test for {param}").format(
+                        param=self.parameters[idx][2]
+                    )
+                )
                 checked_strings = [
                     s for s in self.context.template_list1.split("|") if s
                 ]
@@ -981,6 +986,11 @@ class TemplatePanel(wx.Panel):
                 standard_items = False
                 choices = self.parameters[idx][7]
                 self.list_options_2.Set(choices)
+                self.list_options_2.SetToolTip(
+                    _("Select the values you want to test for {param}").format(
+                        param=self.parameters[idx][2]
+                    )
+                )
                 checked_strings = [
                     s for s in self.context.template_list2.split("|") if s
                 ]
