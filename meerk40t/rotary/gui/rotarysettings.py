@@ -329,29 +329,37 @@ class HelperPanelRoller(ScrolledPanel):
             return
         factor = l_roller / l_object
         if self.radio_roller.GetSelection() == 0:
-            self.context.device.rotary.rotary_scale_x = factor
-            self.context.device.rotary.rotary_scale_y = 1.0
+            self.context.device.rotary.rotary_roller_scale_x = factor
+            self.context.device.rotary.rotary_roller_scale_y = 1.0
         else:
-            self.context.device.rotary.rotary_scale_x = 1.0
-            self.context.device.rotary.rotary_scale_y = factor
+            self.context.device.rotary.rotary_roller_scale_x = 1.0
+            self.context.device.rotary.rotary_roller_scale_y = factor
         # print(
-        #     f"Roller factor: {factor} -> {self.context.device.rotary.rotary_scale_x}, {self.context.device.rotary.rotary_scale_y}"
+        #     f"Roller factor: {factor} -> {self.context.device.rotary.rotary_roller_scale_x}, {self.context.device.rotary.rotary_roller_scale_y}"
         # )
-        self.context.signal("rotary_scale_x", self.context.device.rotary.rotary_scale_x)
-        self.context.signal("rotary_scale_y", self.context.device.rotary.rotary_scale_y)
+        self.context.signal(
+            "rotary_roller_scale_x", self.context.device.rotary.rotary_roller_scale_x
+        )
+        self.context.signal(
+            "rotary_roller_scale_y", self.context.device.rotary.rotary_roller_scale_y
+        )
 
     def on_radio_roller(self, event=None):
-        sx = self.context.device.rotary.rotary_scale_x
-        sy = self.context.device.rotary.rotary_scale_y
+        sx = self.context.device.rotary.rotary_roller_scale_x
+        sy = self.context.device.rotary.rotary_roller_scale_y
         factor = sx if sx != 1.0 else sy
         if self.radio_roller.GetSelection() == 0:
-            self.context.device.rotary.rotary_scale_y = 1.0
-            self.context.device.rotary.rotary_scale_x = factor
+            self.context.device.rotary.rotary_roller_scale_y = 1.0
+            self.context.device.rotary.rotary_roller_scale_x = factor
         else:
-            self.context.device.rotary.rotary_scale_y = factor
-            self.context.device.rotary.rotary_scale_x = 1.0
-        self.context.signal("rotary_scale_x", self.context.device.rotary.rotary_scale_x)
-        self.context.signal("rotary_scale_y", self.context.device.rotary.rotary_scale_y)
+            self.context.device.rotary.rotary_roller_scale_y = factor
+            self.context.device.rotary.rotary_roller_scale_x = 1.0
+        self.context.signal(
+            "rotary_roller_scale_x", self.context.device.rotary.rotary_roller_scale_x
+        )
+        self.context.signal(
+            "rotary_roller_scale_y", self.context.device.rotary.rotary_roller_scale_y
+        )
 
 
 class RotarySettings(MWindow):
@@ -416,10 +424,10 @@ class RotarySettings(MWindow):
     def helptext():
         return _("Activate and configure rotary")
 
-    @signal_listener("rotary_scale_x")
-    @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_flip_x")
-    @signal_listener("rotary_flip_y")
+    @signal_listener("rotary_roller_scale_x")
+    @signal_listener("rotary_roller_scale_y")
+    @signal_listener("rotary_roller_flip_x")
+    @signal_listener("rotary_roller_flip_y")
     @signal_listener("rotary_active_chuck")
     @signal_listener("rotary_active_roller")
     @signal_listener("rotary_chuck_offset")
