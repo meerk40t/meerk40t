@@ -1737,6 +1737,11 @@ class wxCheckListBox(StaticBoxSizer):
             ),
             id=item.GetId(),
         )
+        # Test routines
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set few items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set(["A", "B", "C"]), id=item.GetId())
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set many items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set([f"Item {i}" for i in range(20)]), id=item.GetId())
         parent.PopupMenu(menu)
         menu.Destroy()
 
@@ -1823,6 +1828,9 @@ class wxCheckListBox(StaticBoxSizer):
         If there are fewer controls than choices, new controls are created.
         """
         # Update existing controls
+        if self.majorDimension == 0 or self.style == wx.RA_SPECIFY_ROWS:
+            self.majorDimension = 1000
+        last_container = None
         for idx, choice in enumerate(choices):
             if idx < len(self._children):
                 self._children[idx].SetLabel(choice)
@@ -1840,27 +1848,27 @@ class wxCheckListBox(StaticBoxSizer):
                 self._children.append(check_option)
                 # Add to layout
                 # Find or create the appropriate container
-                if self.majorDimension == 0 or self.style == wx.RA_SPECIFY_ROWS:
-                    self.majorDimension = 1000
                 if idx % self.majorDimension == 0:
-                    container = wx.BoxSizer(wx.HORIZONTAL)
-                    self.Add(container, 0, wx.EXPAND, 0)
+                    last_container = wx.BoxSizer(wx.HORIZONTAL)
+                    self.Add(last_container, 0, wx.EXPAND, 0)
                 else:
                     # Find the last container
-                    container = None
-                    for c in self.GetChildren():
-                        if c.IsSizer():
-                            container = c.GetSizer()
-                    if container is None:
+                    if last_container is None:
+                        for c in self.GetChildren():
+                            if c.IsSizer():
+                                last_container = c.GetSizer()
+                    if last_container is None:
                         # fallback: create new container
-                        container = wx.BoxSizer(wx.HORIZONTAL)
-                        self.Add(container, 0, wx.EXPAND, 0)
-                container.Add(check_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                        last_container = wx.BoxSizer(wx.HORIZONTAL)
+                        self.Add(last_container, 0, wx.EXPAND, 0)
+                last_container.Add(check_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Remove extra controls
         if len(self._children) > len(choices):
             for idx in range(len(choices), len(self._children)):
                 self._children[idx].Destroy()
             self._children = self._children[: len(choices)]
+        self.Layout()
+        self.parent.Layout()
         self.choices = list(choices)
 
 
