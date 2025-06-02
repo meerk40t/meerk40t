@@ -1650,57 +1650,30 @@ class wxCheckListBox(StaticBoxSizer):
         **kwargs,
     ):
         self.parent = parent
-        self.choices = choices
+        self.choices = []
         self._children = []
-        self._tool_tip = None
+        self._tool_tip = ""
         self._help = None
         super().__init__(
             parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL
         )
         self.majorDimension = majorDimension
         self.style = style
-        self._build_controls()
-
-    def _build_controls(self):
-        """
-        Build the controls for the CheckListBox.
-        This method is called during initialization to create the checkboxes.
-        """
-        if self.choices is None:
-            self.choices = []
-        if self.majorDimension == 0 or self.style == wx.RA_SPECIFY_ROWS:
-            self.majorDimension = 1000
-        container = None
-        for idx, c in enumerate(self.choices):
-            if idx % self.majorDimension == 0:
-                container = wx.BoxSizer(wx.HORIZONTAL)
-                self.Add(container, 0, wx.EXPAND, 0)
-            check_option = wx.CheckBox(self.parent, wx.ID_ANY, label=c)
-            container.Add(check_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-            self._children.append(check_option)
-
-        if platform.system() == "Linux":
-
-            def on_mouse_over_check(ctrl):
-                def mouse(event=None):
-                    ctrl.SetToolTip(self._tool_tip)
-                    event.Skip()
-
-                return mouse
-
-            for ctrl in self._children:
-                ctrl.Bind(wx.EVT_MOTION, on_mouse_over_check(ctrl))
-
-        for ctrl in self._children:
-            ctrl.Bind(wx.EVT_CHECKBOX, self.on_check)
-            ctrl.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
-
-        for ctrl in self._children:
-            set_color_according_to_theme(ctrl, "text_bg", "text_fg")
+        if choices is None:
+            choices = []
+        self.Set(choices)
 
     @property
     def Children(self):
         return self._children
+
+    def on_mouse_over_check(self, event):
+        """
+        Handle mouse over events to show tooltips on Linux.
+        """
+        if self._tool_tip:
+            event.GetEventObject().SetToolTip(self._tool_tip)
+        event.Skip()
 
     def GetParent(self):
         return self.parent
@@ -1764,6 +1737,11 @@ class wxCheckListBox(StaticBoxSizer):
             ),
             id=item.GetId(),
         )
+        # Test routines
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set few items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set(["A", "B", "C"]), id=item.GetId())
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set many items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set([f"Item {i}" for i in range(20)]), id=item.GetId())
         parent.PopupMenu(menu)
         menu.Destroy()
 
@@ -1843,9 +1821,55 @@ class wxCheckListBox(StaticBoxSizer):
         :param choices: A list of strings to set as choices.
         """
         # print (f"Setting choices for {self.GetLabel()}: {choices}")
-        self.Clear()
+        """
+        This is more efficient than clearing and rebuilding the controls.
+        Update the labels of existing controls to match new_choices.
+        If there are more controls than choices, extra controls are destroyed.
+        If there are fewer controls than choices, new controls are created.
+        """
+        # Update existing controls
+        if self.majorDimension == 0 or self.style == wx.RA_SPECIFY_ROWS:
+            self.majorDimension = 1000
+        last_container = None
+        for idx, choice in enumerate(choices):
+            if idx < len(self._children):
+                self._children[idx].SetLabel(choice)
+                # self._children[idx].Show(True)
+            else:
+                # Add new controls if needed
+                check_option = wx.CheckBox(self.parent, wx.ID_ANY, label=choice)
+                if self._tool_tip:
+                    check_option.SetToolTip(self._tool_tip)
+                check_option.Bind(wx.EVT_CHECKBOX, self.on_check)
+                check_option.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
+                if platform.system() == "Linux":
+                    check_option.Bind(wx.EVT_MOTION, self.on_mouse_over_check)
+                set_color_according_to_theme(check_option, "text_bg", "text_fg")
+                self._children.append(check_option)
+                # Add to layout
+                # Find or create the appropriate container
+                if idx % self.majorDimension == 0:
+                    last_container = wx.BoxSizer(wx.HORIZONTAL)
+                    self.Add(last_container, 0, wx.EXPAND, 0)
+                else:
+                    # Find the last container
+                    if last_container is None:
+                        for c in self.GetChildren():
+                            if c.IsSizer():
+                                last_container = c.GetSizer()
+                    if last_container is None:
+                        # fallback: create new container
+                        last_container = wx.BoxSizer(wx.HORIZONTAL)
+                        self.Add(last_container, 0, wx.EXPAND, 0)
+                last_container.Add(check_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        # Remove extra controls
+        if len(self._children) > len(choices):
+            for idx in range(len(choices), len(self._children)):
+                self._children[idx].Destroy()
+            self._children = self._children[: len(choices)]
+        self.Layout()
+        self.parent.Layout()
         self.choices = list(choices)
-        self._build_controls()
 
 
 ##############
