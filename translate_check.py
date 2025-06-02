@@ -181,6 +181,9 @@ def read_po(locale):
     id_strings = []
     localedir = "./locale"
     po_dir = localedir + "/" + locale + "/LC_MESSAGES/"
+    if not os.path.isdir(po_dir):
+        print(f"Locale directory {po_dir} does not exist or is empty.")
+        return id_strings
     try:
         po_files = [
             f for f in next(os.walk(po_dir))[2] if os.path.splitext(f)[1] == ".po"
