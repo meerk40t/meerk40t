@@ -95,6 +95,13 @@ def plugin(kernel, lifecycle=None):
             kernel.register("interpreter/lihuiyu", LihuiyuInterpreter)
         except ImportError:
             pass
+        # Add LaserJob as handler for spoolerjob/egv
+        try:
+            from .egvjob import EGVJob
+            kernel.register("spoolerjob/egv", EGVJob)
+        except ImportError:
+            pass
+
     if lifecycle == "preboot":
         prefix = "lhystudios"
         for d in kernel.section_startswith(prefix):
