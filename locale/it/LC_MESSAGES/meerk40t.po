@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
-"PO-Revision-Date: 30-05-25 10:00UTC\n"
+"PO-Revision-Date: 03-06-25 20:30UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation\n"
@@ -5288,6 +5288,10 @@ msgstr ""
 "* Inserire i percorsi interni in un processo(i) separato(i) e non utilizzare\n   "
 "Unisci Processi o Lavora prima l'interno\n"
 "* Se stai utilizzando passaggi multipli, seleziona Unisci passaggi"
+
+#: meerk40t/core/planner.py:104 meerk40t/core/planner.py:236
+msgid "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+msgstr "Nota bene: Riduce il tempo di percorrenza e processa prima l'interno. Non possono essere utilizzati contemporaneamente"
 
 #: meerk40t/core/planner.py:173
 msgid "Group Inner Burns"
@@ -22554,6 +22558,110 @@ msgstr "Cronologia modifiche"
 msgid "Recall..."
 msgstr "Richiama..."
 
-#: meerk40t/core/planner.py:48
-msgid "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
-msgstr "Nota bene: Riduce il tempo di percorrenza e processa prima l'interno. Non possono essere utilizzati contemporaneamente"
+#: meerk40t/grbl/device.py:503
+msgid "Travel speed"
+msgstr "Velocità di spostamento"
+
+#: meerk40t/grbl/device.py:507
+msgid "What is the travel speed for your device to move from point to another."
+msgstr "Qual è la velocità di spostamento del dispositivo tra un punto e l'altro?"
+
+#: meerk40t/grbl/device.py:508
+msgid "Travel"
+msgstr "Spostamento"
+
+#: meerk40t/gui/materialtest.py:195 meerk40t/gui/propertypanels/wobbleproperty.py:13
+msgid "Wobble"
+msgstr "Oscillazione"
+
+#: meerk40t/gui/materialtest.py:287 meerk40t/gui/materialtest.py:310
+msgid "Pick values"
+msgstr "Seleziona i valori"
+
+#: meerk40t/gui/materialtest.py:838
+msgid "Wobble Type"
+msgstr "Tipo di oscillazione"
+
+#: meerk40t/gui/spoolerpanel.py:148
+msgid "If checked, the spooler will not emit any sound signals while processing jobs"
+msgstr "Se selezionato, lo spooler non emetterà segnali sonori durante l'elaborazione dei lavori"
+
+#: meerk40t/gui/wxutils.py:1747
+msgid "Check all"
+msgstr "Seleziona tutto"
+
+#: meerk40t/gui/wxutils.py:1753
+msgid "Uncheck all"
+msgstr "Deseleziona tutto"
+
+#: meerk40t/gui/wxutils.py:1755
+msgid "Invert selection"
+msgstr "Inverti selezione"
+
+#: meerk40t/kernel/kernel.py:2869
+msgid "Set/unset silent mode"
+msgstr "Attiva/disattiva modalità silenziosa"
+
+#: meerk40t/kernel/kernel.py:2876
+msgid "Silent mode is currently {mode}."
+msgstr "La modalità silenziosa è attualmente {mode}."
+
+#: meerk40t/kernel/kernel.py:2882
+msgid "Please specify 'on' or 'off' to set silent mode."
+msgstr "Specifica 'on' o 'off' per impostare la modalità silenziosa."
+
+#: meerk40t/kernel/kernel.py:2889
+msgid "Silent mode is now ON."
+msgstr "La modalità silenziosa è ora ATTIVA."
+
+#: meerk40t/kernel/kernel.py:2891
+msgid "Silent mode is now OFF."
+msgstr "La modalità silenziosa è ora DISATTIVATA."
+
+#: meerk40t/kernel/kernel.py:2896
+msgid "Silent mode is on, no beep will be played."
+msgstr "La modalità silenziosa è attiva, nessun segnale acustico verrà emesso."
+
+#: meerk40t/gui/materialtest.py:951 meerk40t/gui/materialtest.py:990
+msgid "Select the values you want to test for {param}"
+msgstr "Seleziona i valori da testare per {param}"
+
+#: meerk40t/grbl/device.py:475
+msgid "Active during Outline"
+msgstr "Attivo durante il contorno"
+
+#: meerk40t/grbl/device.py:478
+msgid "If active then the red dot will automatically be used if you outline the burn area"
+msgstr "Se attivo, il punto rosso verrà utilizzato automaticamente quando si delinea l'area di incisione"
+
+#: meerk40t/grbl/device.py:894
+msgid "Set the dot laser strength (0..1000)."
+msgstr "Imposta la potenza del laser a punto (0..1000)."
+
+#: meerk40t/grbl/device.py:901
+msgid "Force the red dot command even if a job is running."
+msgstr "Forza il comando del punto rosso anche se un lavoro è in esecuzione."
+
+#: meerk40t/grbl/device.py:921
+msgid "Red Dot feature is not enabled, see config"
+msgstr "La funzione Punto Rosso non è abilitata, controlla la configurazione"
+
+#: meerk40t/grbl/device.py:925
+msgid "Won't interfere with a running job, abort..."
+msgstr "Non interferirà con un lavoro in corso, annullamento..."
+
+#: meerk40t/grbl/device.py:931
+msgid "Laser strength for red dot is now: {power}"
+msgstr "La potenza del laser per il punto rosso è ora: {power}"
+
+#: meerk40t/grbl/device.py:939
+msgid "Laser strength for red dot must be between 0 and 1000, not {power}"
+msgstr "La potenza del laser per il punto rosso deve essere tra 0 e 1000, non {power}"
+
+#: meerk40t/grbl/device.py:944
+msgid "Red light is now off."
+msgstr "La luce rossa è ora spenta."
+
+#: meerk40t/grbl/device.py:948
+msgid "Red light is now on."
+msgstr "La luce rossa è ora accesa."
