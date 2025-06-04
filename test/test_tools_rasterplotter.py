@@ -8,6 +8,50 @@ from meerk40t.tools.rasterplotter import RasterPlotter
 
 
 class TestRasterPlotter(unittest.TestCase):
+    def test_onepixel_black_image(self):
+        """
+        Tests the speed of rasterplotter for a one pixel image.
+
+        :return:
+        """
+        image = Image.new("RGBA", (1, 1), "white")
+        draw = ImageDraw.Draw(image)
+        draw.point((0, 0), "black")
+        image = image.convert("L")
+        img = np.array(image)
+        # img = image.load()
+        plotter = RasterPlotter(img, 1, 1)
+        t = time.time()
+        i = 0
+        for x, y, on in plotter.plot():
+            i += 1
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        print(f"\nOne pixel black found: {i} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
+        print(f"Time taken to finish process {time.time() - t:.3f}s\n")
+
+    def test_onepixel_white_image(self):
+        """
+        Tests the speed of rasterplotter for a one pixel image.
+
+        :return:
+        """
+        image = Image.new("RGBA", (1, 1), "white")
+        # draw = ImageDraw.Draw(image)
+        # draw.point((0, 0), "black")
+        image = image.convert("L")
+        img = np.array(image)
+        # img = image.load()
+        plotter = RasterPlotter(img, 1, 1)
+        t = time.time()
+        i = 0
+        for x, y, on in plotter.plot():
+            i += 1
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        print(f"\nOne pixel white found: {i} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
+        print(f"Time taken to finish process {time.time() - t:.3f}s\n")
+
     def test_rasterplotter_largecircle(self):
         """
         Tests the speed of rasterplotter for large circle.
@@ -25,5 +69,7 @@ class TestRasterPlotter(unittest.TestCase):
         i = 0
         for x, y, on in plotter.plot():
             i += 0
-        print(i)
-        print(f"\nTime taken to finish process {time.time() - t}\n")
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        print(f"\nLarge found: {i} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
+        print(f"Time taken to finish process {time.time() - t:.3f}s\n")
