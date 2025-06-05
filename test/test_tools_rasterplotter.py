@@ -14,20 +14,22 @@ class TestRasterPlotter(unittest.TestCase):
 
         :return:
         """
-        image = Image.new("RGBA", (1, 1), "white")
-        draw = ImageDraw.Draw(image)
-        draw.point((0, 0), "black")
+        image = Image.new("RGBA", (1, 1), "black") # This is an empty image
         image = image.convert("L")
-        img = np.array(image)
-        # img = image.load()
+        img = image.load()
         plotter = RasterPlotter(img, 1, 1)
         t = time.time()
         i = 0
-        for x, y, on in plotter.plot():
-            i += 1
         ipos = plotter.initial_position_in_scene()
         lpos = plotter.final_position_in_scene()
-        print(f"\nOne pixel black found: {i} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
+        lastx, lasty = ipos 
+        pixels = 0
+        for x, y, on in plotter.plot():
+            i += 1
+            if on:
+                pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
+            lastx, lasty = x, y
+        print(f"\nOne pixel empty found: {i} lines, {pixels} pixels, ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
         print(f"Time taken to finish process {time.time() - t:.3f}s\n")
 
     def test_onepixel_white_image(self):
@@ -36,20 +38,24 @@ class TestRasterPlotter(unittest.TestCase):
 
         :return:
         """
-        image = Image.new("RGBA", (1, 1), "white")
+        image = Image.new("RGBA", (1, 1), "white") # This is a one-pixel image
         # draw = ImageDraw.Draw(image)
         # draw.point((0, 0), "black")
         image = image.convert("L")
-        img = np.array(image)
-        # img = image.load()
+        img = image.load()
         plotter = RasterPlotter(img, 1, 1)
         t = time.time()
         i = 0
-        for x, y, on in plotter.plot():
-            i += 1
         ipos = plotter.initial_position_in_scene()
         lpos = plotter.final_position_in_scene()
-        print(f"\nOne pixel white found: {i} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
+        lastx, lasty = ipos 
+        pixels = 0
+        for x, y, on in plotter.plot():
+            i += 1
+            if on:
+                pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
+            lastx, lasty = x, y
+        print(f"\nOne pixel full found: {i} lines, {pixels} pixels, ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
         print(f"Time taken to finish process {time.time() - t:.3f}s\n")
 
     def test_rasterplotter_largecircle(self):
@@ -62,14 +68,20 @@ class TestRasterPlotter(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((0, 0, 2560, 2560), "black")
         image = image.convert("L")
-        img = np.array(image)
-        # img = image.load()
+        img = image.load()
         plotter = RasterPlotter(img, 2560, 2560)
         t = time.time()
         i = 0
-        for x, y, on in plotter.plot():
-            i += 0
         ipos = plotter.initial_position_in_scene()
         lpos = plotter.final_position_in_scene()
-        print(f"\nLarge found: {i} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
+        lastx, lasty = ipos 
+        pixels = 0
+        for x, y, on in plotter.plot():
+            i += 1
+            if on:
+                pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
+            lastx, lasty = x, y
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        print(f"\nLarge circle found: {i} lines, {pixels} pixels,ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})") 
         print(f"Time taken to finish process {time.time() - t:.3f}s\n")
