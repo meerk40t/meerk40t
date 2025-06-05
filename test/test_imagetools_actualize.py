@@ -1,10 +1,10 @@
 import unittest
-from test import bootstrap
 
 from PIL import Image, ImageDraw
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.svgelements import Matrix
+from test import bootstrap
 
 
 class TestActualize(unittest.TestCase):
