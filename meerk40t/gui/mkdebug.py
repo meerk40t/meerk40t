@@ -1,7 +1,7 @@
 """
-    This module contains panels that display internal developer information.
-    They will become visible if you type 'set debug_mode True' in the
-    console and restart the program.
+This module contains panels that display internal developer information.
+They will become visible if you type 'set debug_mode True' in the
+console and restart the program.
 """
 
 import time
@@ -10,6 +10,17 @@ import wx
 from wx import aui
 
 import meerk40t.gui.icons as mkicons
+from meerk40t.constants import (
+    RASTER_B2T,
+    RASTER_CROSSOVER,
+    RASTER_GREEDY_H,
+    RASTER_GREEDY_V,
+    RASTER_HATCH,
+    RASTER_L2R,
+    RASTER_R2L,
+    RASTER_SPIRAL,
+    RASTER_T2B,
+)
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
@@ -121,6 +132,25 @@ def register_panel_window(window, context):
     pane.helptext = _("Show available windows")
     window.on_pane_create(pane)
     context.register("pane/debug_window", pane)
+
+
+def register_panel_plotter(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(225, 110)
+        .FloatingSize(400, 400)
+        .Caption(_("Plotter Test"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_plotter")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugRasterPlotterPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Raster plotter test")
+    window.on_pane_create(pane)
+    context.register("pane/debug_plotter", pane)
 
 
 class ShutdownPanel(wx.Panel):
@@ -339,7 +369,7 @@ class DebugColorPanel(ScrolledPanel):
                     sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
                     count = 0
 
-                col:wx.Colour = wx.SystemSettings().GetColour(getattr(wx, prop))
+                col: wx.Colour = wx.SystemSettings().GetColour(getattr(wx, prop))
                 infosizer = wx.BoxSizer(wx.VERTICAL)
                 box = wxStaticBitmap(
                     self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
@@ -518,8 +548,13 @@ class DebugIconPanel(wx.Panel):
             if obj is not None:
                 if isinstance(obj, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
                     imgs = self.icon_show.Size
-                    ms = min(imgs[0], imgs[1]) * self.context.root.bitmap_correction_scale
-                    bmp = obj.GetBitmap(resize=ms, force_darkmode=self.context.themes.dark)
+                    ms = (
+                        min(imgs[0], imgs[1])
+                        * self.context.root.bitmap_correction_scale
+                    )
+                    bmp = obj.GetBitmap(
+                        resize=ms, force_darkmode=self.context.themes.dark
+                    )
                     self.icon_show.SetBitmap(bmp)
 
     def pane_show(self, *args):
@@ -578,11 +613,19 @@ class DebugWindowPanel(wx.Panel):
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
         radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
         btn_bmap_left = wx.BitmapButton(
-            self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=mkicons.get_default_icon_size(self.context)/2)
+            self,
+            wx.ID_ANY,
+            mkicons.icon_bell.GetBitmap(
+                resize=mkicons.get_default_icon_size(self.context) / 2
+            ),
         )
         slider_left = wx.Slider(self, wx.ID_ANY, value=0, minValue=0, maxValue=100)
         static_left = wx.StaticBitmap(
-            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=mkicons.get_default_icon_size(self.context))
+            self,
+            wx.ID_ANY,
+            mkicons.icon_closed_door.GetBitmap(
+                resize=mkicons.get_default_icon_size(self.context)
+            ),
         )
         left_side.Add(cb_left, 0, 0, 0)
         left_side.Add(text_left, 0, 0, 0)
@@ -605,7 +648,11 @@ class DebugWindowPanel(wx.Panel):
         toggle_right = wxToggleButton(self, wx.ID_ANY, "Toggle")
         radio_right = wxRadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
         static_right = wxStaticBitmap(
-            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=mkicons.get_default_icon_size(self.context))
+            self,
+            wx.ID_ANY,
+            mkicons.icon_closed_door.GetBitmap(
+                resize=mkicons.get_default_icon_size(self.context)
+            ),
         )
         # right_side.Add(cb_right, 0, 0, 0)
         right_side.Add(text_right, 0, 0, 0)
@@ -644,3 +691,216 @@ class DebugWindowPanel(wx.Panel):
 
     def pane_hide(self, *args):
         return
+
+
+class DebugRasterPlotterPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+
+        self.context = context
+        self.context.themes.set_window_colors(self)
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        info = StaticBoxSizer(
+            self, wx.ID_ANY, _("Raster Plotter Test Info"), wx.HORIZONTAL
+        )
+        info.Add(
+            wxStaticText(self, wx.ID_ANY, "Dimensions:"), 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        self.text_x = TextCtrl(self, wx.ID_ANY, "1", check="int")
+        self.text_y = TextCtrl(self, wx.ID_ANY, "1", check="int")
+        info.Add(self.text_x, 1, wx.EXPAND, 0)
+        info.Add(wxStaticText(self, wx.ID_ANY, "x"), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        info.Add(self.text_y, 1, wx.EXPAND, 0)
+        info.Add(wxStaticText(self, wx.ID_ANY, "pixel"), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        # raster properties
+        raster_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Raster Properties"), wx.VERTICAL
+        )
+        raster_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        raster_sizer.Add(raster_type_sizer, 0, wx.EXPAND, 0)    
+        self.raster_terms = [
+            (RASTER_T2B, "Top To Bottom"),
+            (RASTER_B2T, "Bottom To Top"),
+            (RASTER_R2L, "Right To Left"),
+            (RASTER_L2R, "Left To Right"),
+            (RASTER_HATCH, "Crosshatch"),
+            (RASTER_GREEDY_H, "Greedy horizontal"),
+            (RASTER_GREEDY_V, "Greedy vertical"),
+            (RASTER_CROSSOVER, "Crossover"),
+            (RASTER_SPIRAL, "Spiral"),
+        ]
+        # Look for registered raster (image) preprocessors,
+        # these are routines that take one image as parameter
+        # and deliver a set of (result image, method (aka raster_direction) )
+        # that will be dealt with independently
+        # The registered datastructure is (rasterid, description, method)
+        self.raster_terms.extend(
+            (key, description)
+            for key, description, method in self.context.kernel.lookup_all(
+                "raster_preprocessor/.*"
+            )
+        )
+        # Add a couple of testcases
+        # test_methods = (
+        #     (-1, "Test: Horizontal Rectangle"),
+        #     (-2, "Test: Vertical Rectangle"),
+        #     (-3, "Test: Horizontal Snake"),
+        #     (-4, "Test: Vertical Snake"),
+        #     (-5,  "Test: Spiral"),
+        # )
+        # self.raster_terms.extend(test_methods)
+
+        self.raster_methods = [key for key, info in self.raster_terms]
+
+        self.combo_raster_direction = wxComboBox(
+            self,
+            wx.ID_ANY,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        raster_type_sizer.Add(
+            wxStaticText(self, wx.ID_ANY, "Raster Direction:"),
+            0,
+            wx.ALIGN_CENTER_VERTICAL,
+            0,
+        )
+        self.combo_raster_direction.AppendItems(
+            [info for key, info in self.raster_terms]
+        )
+        raster_type_sizer.Add(
+            self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        self.check_raster_unidirectional = wxCheckBox(self, wx.ID_ANY, "Unidirectional")
+
+        raster_type_sizer.Add(
+            self.check_raster_unidirectional, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        self.combo_raster_direction.SetSelection(0)
+
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_test_onepixel_black = wxButton(self, wx.ID_ANY, "Fully Black")
+        self.btn_test_onepixel_white = wxButton(self, wx.ID_ANY, "Fully White")
+        buttons.Add(self.btn_test_onepixel_black, 1, wx.EXPAND, 0)
+        buttons.Add(self.btn_test_onepixel_white, 1, wx.EXPAND, 0)
+        self.text_result = TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
+        )
+
+        sizer_main.Add(info, 0, wx.EXPAND, 0)
+        sizer_main.Add(raster_sizer, 0, wx.EXPAND, 0)
+        sizer_main.Add(buttons, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.text_result, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+        self.btn_test_onepixel_black.Bind(wx.EVT_BUTTON, self.test_empty_image)
+        self.btn_test_onepixel_white.Bind(wx.EVT_BUTTON, self.test_fully_covered_image)
+
+    def test_empty_image(self, event):
+        """
+        Tests the speed of rasterplotter for a fully black image.
+        """
+        import numpy as np
+        from PIL import Image, ImageDraw
+
+        from meerk40t.tools.rasterplotter import RasterPlotter
+
+        try:
+            x = int(self.text_x.GetValue())
+            y = int(self.text_y.GetValue())
+        except ValueError:
+            self.text_result.SetValue("Invalid dimensions. Please enter integers.")
+            return
+        raster_string = self.combo_raster_direction.GetStringSelection()
+        raster_direction = -1
+        for key, info in self.raster_terms:
+            if raster_string == info:
+                raster_direction = key
+                break   
+        if raster_direction < 0:
+            self.text_result.SetValue("Invalid raster direction selected.")
+            return
+        bidir = not self.check_raster_unidirectional.GetValue()
+
+        # Notabene: a black pixel is a non-burnt one, so we invert the logic here
+        image = Image.new("RGBA", (x, y), "white")
+        image = image.convert("L")
+        img = np.array(image)
+        plotter = RasterPlotter(img, x, y, direction=raster_direction, bidirectional=bidir)  
+        t = time.time()
+        i = 0
+        res = []
+        pixels = 0
+        last_x, last_y = plotter.initial_position_in_scene()
+        for x, y, on in plotter.plot():
+            i += 1
+            if on:
+                pixels += (abs(x - last_x) + 1) * (abs(y - last_y) + 1)
+            res.append(f"{i}: ({x}, {y}) {'on' if on else 'off'}")
+            last_x, last_y = x, y
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        res.insert(
+            0,
+            f"Black found: {pixels} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})",
+        )
+        res.append(f"Time taken to finish process {time.time() - t:.3f}s\n")
+        self.text_result.SetValue("\n".join(res))
+
+    def test_fully_covered_image(self, event):
+        """
+        Tests the speed of rasterplotter for a fully black image.
+        """
+        import numpy as np
+        from PIL import Image, ImageDraw
+
+        from meerk40t.tools.rasterplotter import RasterPlotter
+
+        try:
+            x = int(self.text_x.GetValue())
+            y = int(self.text_y.GetValue())
+        except ValueError:
+            self.text_result.SetValue("Invalid dimensions. Please enter integers.")
+            return
+        if self.combo_raster_direction.GetSelection() < 0:
+            self.text_result.SetValue("Please select a raster direction.")
+            return
+        raster_string = self.combo_raster_direction.GetStringSelection()
+        raster_direction = -1
+        for key, info in self.raster_terms:
+            if raster_string == info:
+                raster_direction = key
+                break   
+        if raster_direction < 0:
+            self.text_result.SetValue("Invalid raster direction selected.")
+            return
+        bidir = not self.check_raster_unidirectional.GetValue()
+
+        # Notabene: a black pixel is a non-burnt one, so we invert the logic here
+        image = Image.new("RGBA", (x, y), "black")
+        image = image.convert("L")
+        img = np.array(image)
+        plotter = RasterPlotter(img, x, y, direction=raster_direction, bidirectional=bidir)   
+        t = time.time()
+        i = 0
+        res = []
+        pixels = 0
+        last_x, last_y = plotter.initial_position_in_scene()
+        for x, y, on in plotter.plot():
+            i += 1
+            if on:
+                pixels += (abs(x - last_x) + 1) * (abs(y - last_y) + 1)
+            res.append(f"{i}: ({x}, {y}) {'on' if on else 'off'}")
+            last_x, last_y = x, y
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        res.insert(
+            0,
+            f"White found: {pixels} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})",
+        )
+        res.append(f"Time taken to finish process {time.time() - t:.3f}s\n")
+        self.text_result.SetValue("\n".join(res))
