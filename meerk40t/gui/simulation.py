@@ -1133,8 +1133,8 @@ class SimulationPanel(wx.Panel, Job):
         self.btn_redo_it.Reparent(self.subpanel_optimize)
 
         self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
-        opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
         opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
+        opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
         opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
         self.subpanel_optimize.SetSizer(opt_sizer)
         self.subpanel_optimize.Layout()
