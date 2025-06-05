@@ -772,10 +772,10 @@ class DebugRasterPlotterPanel(wx.Panel):
         raster_type_sizer.Add(
             self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0
         )
-        self.check_raster_unidirectional = wxCheckBox(self, wx.ID_ANY, "Unidirectional")
+        self.check_raster_bidirectional = wxCheckBox(self, wx.ID_ANY, "Bidirectional")
 
         raster_type_sizer.Add(
-            self.check_raster_unidirectional, 0, wx.ALIGN_CENTER_VERTICAL, 0
+            self.check_raster_bidirectional, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         self.combo_raster_direction.SetSelection(0)
 
@@ -824,13 +824,12 @@ class DebugRasterPlotterPanel(wx.Panel):
         if raster_direction < 0:
             self.text_result.SetValue("Invalid raster direction selected.")
             return
-        bidir = not self.check_raster_unidirectional.GetValue()
+        bidir = self.check_raster_bidirectional.GetValue()
 
         # Notabene: a black pixel is a non-burnt one, so we invert the logic here
         image = Image.new("RGBA", (x, y), "white")
         image = image.convert("L")
-        img = np.array(image)
-        plotter = RasterPlotter(img, x, y, direction=raster_direction, bidirectional=bidir)  
+        plotter = RasterPlotter(image.load(), x, y, direction=raster_direction, bidirectional=bidir)  
         t = time.time()
         i = 0
         res = []
@@ -878,26 +877,26 @@ class DebugRasterPlotterPanel(wx.Panel):
         if raster_direction < 0:
             self.text_result.SetValue("Invalid raster direction selected.")
             return
-        bidir = not self.check_raster_unidirectional.GetValue()
+        bidir = self.check_raster_bidirectional.GetValue()
 
         # Notabene: a black pixel is a non-burnt one, so we invert the logic here
         image = Image.new("RGBA", (x, y), "black")
         image = image.convert("L")
-        img = np.array(image)
-        plotter = RasterPlotter(img, x, y, direction=raster_direction, bidirectional=bidir)   
+        
+        plotter = RasterPlotter(image.load(), x, y, direction=raster_direction, bidirectional=bidir)   
         t = time.time()
         i = 0
         res = []
         pixels = 0
-        last_x, last_y = plotter.initial_position_in_scene()
+        ipos = plotter.initial_position_in_scene()
+        lpos = plotter.final_position_in_scene()
+        last_x, last_y = ipos
         for x, y, on in plotter.plot():
             i += 1
             if on:
                 pixels += (abs(x - last_x) + 1) * (abs(y - last_y) + 1)
             res.append(f"{i}: ({x}, {y}) {'on' if on else 'off'}")
             last_x, last_y = x, y
-        ipos = plotter.initial_position_in_scene()
-        lpos = plotter.final_position_in_scene()
         res.insert(
             0,
             f"White found: {pixels} pixels: ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})",
