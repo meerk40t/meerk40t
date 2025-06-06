@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 echo "..."
 echo "If this doesn't find pip or python then you need to get them from https://www.python.org/downloads/"
 echo "..."
@@ -20,6 +20,9 @@ read -p "Do you want to install optional (but helpful) packages (Y/N)? [N]: " ch
 choice=${choice:0:1}
 if [[ "$choice" == "Y" || "$choice" == "y" ]]; then
     pip3 install -r requirements-optional-linux.txt
+    if [[ $? -ne 0 ]]; then
+        echo "Warning: Optional package installation failed. Some features may not be available."
+    fi
 else
     echo "Okay, skip these for now"
 fi
