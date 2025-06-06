@@ -3,7 +3,7 @@ echo "..."
 echo "If this doesn't find pip or python then you need to get them from https://www.python.org/downloads/"
 echo "..."
 echo "..."
-pip3 install -r requirements.txt
+python3 -m pip install -r requirements.txt
 if [ $? -ne 0 ]; then
     echo "Failed to install required packages. Please check your Python and pip installation."
     echo "For some linux distributions you may need to install python3-pip and some development libraries."
