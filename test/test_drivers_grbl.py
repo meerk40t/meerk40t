@@ -1,5 +1,6 @@
 import os
 import unittest
+
 from test import bootstrap
 
 gcode_rect = """G90

@@ -1,12 +1,12 @@
 import os
 import unittest
-from test import bootstrap
 
 from PIL import Image, ImageDraw
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import Matrix
+from test import bootstrap
 
 egv_rect = """Document type : LHYMICRO-GL file
 File version: 1.0.01
@@ -18,7 +18,7 @@ IBzzzvRzzzvS1P
 ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
 """
 
-egv_image="""Document type : LHYMICRO-GL file
+egv_image = """Document type : LHYMICRO-GL file
 File version: 1.0.01
 Copyright: Unknown
 Creator-Software: MeerK40t v0.0.0-testing
@@ -188,7 +188,7 @@ class TestDriverLihuiyu(unittest.TestCase):
             kernel()
         with open(file1) as f:
             data = f.read()
-            print (f'egv_image="""{data}"""')
+            print(f'egv_image="""{data}"""')
         self.assertEqual(data, egv_image)
 
 
