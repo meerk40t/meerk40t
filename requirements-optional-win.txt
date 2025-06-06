@@ -1,5 +1,5 @@
 potracer
-pypotrace
+pypotrace-windows
 pyclipr
 meerk40t-barcodes
 numba
