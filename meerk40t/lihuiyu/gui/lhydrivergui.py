@@ -468,3 +468,9 @@ class LihuiyuDriverGui(MWindow):
     @staticmethod
     def helptext():
         return _("Display the device configuration window")
+
+    @signal_listener("activate;device")
+    def on_device_changes(self, *args):
+        # Device activated, make sure we are still fine...
+        if self.context.device.name != 'LihuiyuDevice':
+            wx.CallAfter(self.Close)
