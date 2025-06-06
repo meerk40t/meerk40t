@@ -114,3 +114,9 @@ class NewlyConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Configuration"
+
+    @signal_listener("activate;device")
+    def on_device_changes(self, *args):
+        # Device activated, make sure we are still fine...
+        if self.context.device.name != 'newly':
+            wx.CallAfter(self.Close)
