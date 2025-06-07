@@ -705,6 +705,13 @@ class MKRibbonBarPanel(RibbonBarPanel):
                         button.tip = (
                             newtooltip if newtooltip is not None else button.tip
                         )
+                    if "multi" in button.button_dict:
+                        for subbutton in button.button_dict["multi"]:
+                            if subbutton["identifier"] in node:
+                                if newlabel is not None:
+                                    subbutton["label"] = newlabel
+                                if newtooltip is not None:
+                                    subbutton["tip"] = newtooltip
         self.redrawn()  
 
     @signal_listener("tool_changed")
