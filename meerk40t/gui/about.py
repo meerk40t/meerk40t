@@ -1595,6 +1595,13 @@ class InformationPanel(ScrolledPanel):
         info += f"Version: {uname.version}" + "\n"
         info += f"Machine: {uname.machine}" + "\n"
         info += f"Processor: {uname.processor}" + "\n"
+        try:
+            import psutil
+            mem = psutil.virtual_memory()
+            available_mb = f"{mem.available / (1024 * 1024):.2f} MB"
+            info += f"Available memory: {available_mb}\n"
+        except ImportError:
+            pass
         info += f"Theme: {self.context.themes.theme}, Darkmode: {self.context.themes.dark}\n"
         try:
             info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"

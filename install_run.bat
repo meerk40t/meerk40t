@@ -13,7 +13,7 @@ IF '%choice%'=='y' GOTO yes
 echo Okay, skip these for now
 goto execute
 :yes
-pip install -r requirements-optional.txt
+pip install -r requirements-optional-win.txt
 :execute
 python meerk40t.py
 pause

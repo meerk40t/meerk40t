@@ -1,12 +1,12 @@
 import os
 import unittest
-from test import bootstrap
 
 from PIL import Image, ImageDraw
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import Matrix
+from test import bootstrap
 
 mos_rect = (
     b"\n\x0e\x0e\x00\x00\x00\x13\x03\x13\x03\x8a\x00\x00\x00\x00\x8a\x00\x00\x00\x00"

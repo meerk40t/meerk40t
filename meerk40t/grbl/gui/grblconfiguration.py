@@ -371,3 +371,9 @@ class GRBLConfiguration(MWindow):
         else:
             # Different command
             pass
+
+    @signal_listener("activate;device")
+    def on_device_changes(self, *args):
+        # Device activated, make sure we are still fine...
+        if self.context.device.name != 'GRBLDevice':
+            wx.CallAfter(self.Close)

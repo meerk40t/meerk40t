@@ -7,6 +7,7 @@ from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -114,3 +115,9 @@ class NewlyConfiguration(MWindow):
     @staticmethod
     def submenu():
         return "Device-Settings", "Configuration"
+
+    @signal_listener("activate;device")
+    def on_device_changes(self, *args):
+        # Device activated, make sure we are still fine...
+        if self.context.device.name != 'newly':
+            wx.CallAfter(self.Close)

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 23-04-21 06:37UTC\n"
-"PO-Revision-Date: 30-05-25 10:00UTC\n"
+"POT-Creation-Date: 23-04-21 14:10UTC\n"
+"PO-Revision-Date: 07-06-25 20:30UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation\n"
@@ -5288,6 +5288,10 @@ msgstr ""
 "* Inserire i percorsi interni in un processo(i) separato(i) e non utilizzare\n   "
 "Unisci Processi o Lavora prima l'interno\n"
 "* Se stai utilizzando passaggi multipli, seleziona Unisci passaggi"
+
+#: meerk40t/core/planner.py:104 meerk40t/core/planner.py:236
+msgid "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+msgstr "Nota bene: Riduce il tempo di percorrenza e processa prima l'interno. Non possono essere utilizzati contemporaneamente"
 
 #: meerk40t/core/planner.py:173
 msgid "Group Inner Burns"
@@ -10663,15 +10667,15 @@ msgstr ""
 
 #: meerk40t/kernel/kernel.py:1277
 msgid "Waiting for thread {name}: {object}"
-msgstr ""
+msgstr "In attesa del thread {name}: {object}"
 
 #: meerk40t/kernel/kernel.py:1284
 msgid "Thread {name} has finished. {object}"
-msgstr ""
+msgstr "Il thread {name} è terminato. {object}"
 
 #: meerk40t/kernel/kernel.py:1291
 msgid "Thread {name} is daemon. It will die automatically: {object}"
-msgstr ""
+msgstr "Il thread {name} è un daemon. Si terminerà automaticamente: {object}"
 
 #: meerk40t/kernel/kernel.py:1297
 msgid "No threads required halting."
@@ -10679,7 +10683,7 @@ msgstr "Non è necessario mettere in pausa alcun thread"
 
 #: meerk40t/kernel/kernel.py:1305
 msgid "WARNING: Listener '{listener}' still registered to {object}."
-msgstr ""
+msgstr "ATTENZIONE: Il listener '{listener}' è ancora registrato a {object}."
 
 #: meerk40t/kernel/kernel.py:1316
 msgid "Shutdown."
@@ -10687,39 +10691,39 @@ msgstr "Spegni"
 
 #: meerk40t/kernel/kernel.py:1630
 msgid "Thread: {name} already exists. Waiting..."
-msgstr ""
+msgstr "Thread: {name} esiste già. In attesa..."
 
 #: meerk40t/kernel/kernel.py:1639
 msgid "Thread: {name}, Initialized"
-msgstr ""
+msgstr "Thread: {name}, Inizializzato"
 
 #: meerk40t/kernel/kernel.py:1644
 msgid "Thread: {name}, Set"
-msgstr ""
+msgstr "Thread: {name}, Impostato"
 
 #: meerk40t/kernel/kernel.py:1647
 msgid "Thread: {name}, Start"
-msgstr ""
+msgstr "Thread: {name}, Avvio"
 
 #: meerk40t/kernel/kernel.py:1650
 msgid "Thread: {name}, End "
-msgstr ""
+msgstr "Thread: {name}, Fine"
 
 #: meerk40t/kernel/kernel.py:1653
 msgid "Thread: {name}, Exception-End"
-msgstr ""
+msgstr "Thread: {name}, Fine con Eccezione"
 
 #: meerk40t/kernel/kernel.py:1660
 msgid "Thread: {name}, Unset"
-msgstr ""
+msgstr "Thread: {name}, Disimpostato"
 
 #: meerk40t/kernel/kernel.py:1665
 msgid "Thread: {name}, Result Function"
-msgstr ""
+msgstr "Thread: {name}, Funzione di Risultato"
 
 #: meerk40t/kernel/kernel.py:1669
 msgid "Thread: {name}, Finished"
-msgstr ""
+msgstr "Thread: {name}, Terminato"
 
 #: meerk40t/kernel/kernel.py:1681
 msgid "Unstarted"
@@ -10767,11 +10771,11 @@ msgstr "Stampa il registro di spegnimento quando è chiuso."
 
 #: meerk40t/kernel/kernel.py:2241
 msgid "Output type to match"
-msgstr ""
+msgstr "Tipo di output da corrispondere"
 
 #: meerk40t/kernel/kernel.py:2242
 msgid "Input type to match"
-msgstr ""
+msgstr "Tipo di input da corrispondere"
 
 #: meerk40t/kernel/kernel.py:2244
 msgid "help <help>"
@@ -10779,63 +10783,64 @@ msgstr "aiuto <help>"
 
 #: meerk40t/kernel/kernel.py:2288
 msgid "\tArgument: {type} '{name}'{help}"
-msgstr ""
+msgstr "\tArgomento: {type} '{name}'{help}"
 
 #: meerk40t/kernel/kernel.py:2299
 msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr ""
+msgstr "\tOpzione: {type} ('--{name}', '-{short}'){help}"
 
 #: meerk40t/kernel/kernel.py:2309
 msgid "No extended help for: {name}"
-msgstr ""
+msgstr "Nessun aiuto esteso per: {name}"
 
 #: meerk40t/kernel/kernel.py:2325
 msgid "Base"
-msgstr ""
+msgstr "Base"
 
 #: meerk40t/kernel/kernel.py:2327
 msgid "--- {category} Commands ---"
-msgstr ""
+msgstr "--- Comandi {category} ---"
 
 #: meerk40t/kernel/kernel.py:2340
 msgid "find <substr>"
-msgstr ""
+msgstr "trova <substr>"
 
 #: meerk40t/kernel/kernel.py:2395
 msgid "No commands found that contained: [red]{string}[normal]"
-msgstr ""
+msgstr "Nessun comando trovato contenente: [red]{string}[normal]"
 
 #: meerk40t/kernel/kernel.py:2403
 msgid "If you want to have a list of all available commands, just type 'help'"
-msgstr ""
+msgstr "Se vuoi un elenco di tutti i comandi disponibili, digita 'help'"
 
 #: meerk40t/kernel/kernel.py:2412
 msgid "show threads"
-msgstr ""
+msgstr "mostra i thread"
 
 #: meerk40t/kernel/kernel.py:2418
 msgid "Registered Threads:"
-msgstr ""
+msgstr "Thread Registrati:"
 
 #: meerk40t/kernel/kernel.py:2425
 msgid "is alive."
-msgstr ""
+msgstr "è attivo."
 
 #: meerk40t/kernel/kernel.py:2429
 msgid "show scheduled events"
-msgstr ""
+msgstr "mostra eventi pianificati"
 
 #: meerk40t/kernel/kernel.py:2432
 msgid "Scheduled Processes:"
-msgstr ""
+msgstr "Processi Pianificati:"
+
 
 #: meerk40t/kernel/kernel.py:2439 meerk40t/kernel/kernel.py:2509
 msgid "forever,"
-msgstr "dauerhaft,"
+msgstr "per sempre,"
 
 #: meerk40t/kernel/kernel.py:2441
 msgid "{times} times,"
-msgstr ""
+msgstr "{times} volte,"
 
 #: meerk40t/kernel/kernel.py:2443 meerk40t/kernel/kernel.py:2517
 msgid "never"
@@ -10843,11 +10848,11 @@ msgstr "Mai"
 
 #: meerk40t/kernel/kernel.py:2446 meerk40t/kernel/kernel.py:2520
 msgid "each {interval} seconds"
-msgstr ""
+msgstr "ogni {interval} secondi"
 
 #: meerk40t/kernel/kernel.py:2453
 msgid "Echo text to console"
-msgstr ""
+msgstr "Esegui il testo sulla console"
 
 #: meerk40t/kernel/kernel.py:2460
 msgid "Turn this timer off"
@@ -22554,6 +22559,126 @@ msgstr "Cronologia modifiche"
 msgid "Recall..."
 msgstr "Richiama..."
 
-#: meerk40t/core/planner.py:48
-msgid "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
-msgstr "Nota bene: Riduce il tempo di percorrenza e processa prima l'interno. Non possono essere utilizzati contemporaneamente"
+#: meerk40t/grbl/device.py:503
+msgid "Travel speed"
+msgstr "Velocità di spostamento"
+
+#: meerk40t/grbl/device.py:507
+msgid "What is the travel speed for your device to move from point to another."
+msgstr "Qual è la velocità di spostamento del dispositivo tra un punto e l'altro?"
+
+#: meerk40t/grbl/device.py:508
+msgid "Travel"
+msgstr "Spostamento"
+
+#: meerk40t/gui/materialtest.py:195 meerk40t/gui/propertypanels/wobbleproperty.py:13
+msgid "Wobble"
+msgstr "Oscillazione"
+
+#: meerk40t/gui/materialtest.py:287 meerk40t/gui/materialtest.py:310
+msgid "Pick values"
+msgstr "Seleziona i valori"
+
+#: meerk40t/gui/materialtest.py:838
+msgid "Wobble Type"
+msgstr "Tipo di oscillazione"
+
+#: meerk40t/gui/spoolerpanel.py:148
+msgid "If checked, the spooler will not emit any sound signals while processing jobs"
+msgstr "Se selezionato, lo spooler non emetterà segnali sonori durante l'elaborazione dei lavori"
+
+#: meerk40t/gui/wxutils.py:1747
+msgid "Check all"
+msgstr "Seleziona tutto"
+
+#: meerk40t/gui/wxutils.py:1753
+msgid "Uncheck all"
+msgstr "Deseleziona tutto"
+
+#: meerk40t/gui/wxutils.py:1755
+msgid "Invert selection"
+msgstr "Inverti selezione"
+
+#: meerk40t/kernel/kernel.py:2869
+msgid "Set/unset silent mode"
+msgstr "Attiva/disattiva modalità silenziosa"
+
+#: meerk40t/kernel/kernel.py:2876
+msgid "Silent mode is currently {mode}."
+msgstr "La modalità silenziosa è attualmente {mode}."
+
+#: meerk40t/kernel/kernel.py:2882
+msgid "Please specify 'on' or 'off' to set silent mode."
+msgstr "Specifica 'on' o 'off' per impostare la modalità silenziosa."
+
+#: meerk40t/kernel/kernel.py:2889
+msgid "Silent mode is now ON."
+msgstr "La modalità silenziosa è ora ATTIVA."
+
+#: meerk40t/kernel/kernel.py:2891
+msgid "Silent mode is now OFF."
+msgstr "La modalità silenziosa è ora DISATTIVATA."
+
+#: meerk40t/kernel/kernel.py:2896
+msgid "Silent mode is on, no beep will be played."
+msgstr "La modalità silenziosa è attiva, nessun segnale acustico verrà emesso."
+
+#: meerk40t/gui/materialtest.py:951 meerk40t/gui/materialtest.py:990
+msgid "Select the values you want to test for {param}"
+msgstr "Seleziona i valori da testare per {param}"
+
+#: meerk40t/grbl/device.py:475
+msgid "Active during Outline"
+msgstr "Attivo durante il contorno"
+
+#: meerk40t/grbl/device.py:478
+msgid "If active then the red dot will automatically be used if you outline the burn area"
+msgstr "Se attivo, il punto rosso verrà utilizzato automaticamente quando si delinea l'area di incisione"
+
+#: meerk40t/grbl/device.py:894
+msgid "Set the dot laser strength (0..1000)."
+msgstr "Imposta la potenza del laser a punto (0..1000)."
+
+#: meerk40t/grbl/device.py:901
+msgid "Force the red dot command even if a job is running."
+msgstr "Forza il comando del punto rosso anche se un lavoro è in esecuzione."
+
+#: meerk40t/grbl/device.py:921
+msgid "Red Dot feature is not enabled, see config"
+msgstr "La funzione Punto Rosso non è abilitata, controlla la configurazione"
+
+#: meerk40t/grbl/device.py:925
+msgid "Won't interfere with a running job, abort..."
+msgstr "Non interferirà con un lavoro in corso, annullamento..."
+
+#: meerk40t/grbl/device.py:931
+msgid "Laser strength for red dot is now: {power}"
+msgstr "La potenza del laser per il punto rosso è ora: {power}"
+
+#: meerk40t/grbl/device.py:939
+msgid "Laser strength for red dot must be between 0 and 1000, not {power}"
+msgstr "La potenza del laser per il punto rosso deve essere tra 0 e 1000, non {power}"
+
+#: meerk40t/grbl/device.py:944
+msgid "Red light is now off."
+msgstr "La luce rossa è ora spenta."
+
+#: meerk40t/grbl/device.py:948
+msgid "Red light is now on."
+msgstr "La luce rossa è ora accesa."
+
+#: meerk40t/gui/mkdebug.py:143
+msgid "Plotter Test"
+msgstr "Test del Plotter"
+
+#: meerk40t/gui/mkdebug.py:151
+msgid "Raster plotter test"
+msgstr "Test del Plotter Raster"
+
+#: meerk40t/gui/mkdebug.py:707
+msgid "Raster Plotter Test Info"
+msgstr "Informazioni sul Test del Plotter Raster"
+
+#: meerk40t/gui/mkdebug.py:720
+msgid "Raster Properties"
+msgstr "Proprietà Raster"
