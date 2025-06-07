@@ -232,9 +232,15 @@ class CameraPanel(wx.Panel, Job):
             # If this is a pane, we set the title of the pane.
             # print (f"Setting pane title to {label}")
             self.pane_aui.Caption(label)
+            self.pane_aui.caption = label
         else:
             self.GetParent().SetTitle(label)
             
+    @property 
+    def caption(self):
+        return getattr(self.camera, "desc", "") or _("Camera {index}").format(index=self.index) 
+
+
     def pane_hide(self, *args):
         self.camera(f"camera{self.index} stop\n")
         self.camera.unschedule(self)
@@ -908,7 +914,9 @@ class CameraInterface(MWindow):
                     self.camera.desc = new_label
                     self.update_title()
                     label = f"#{self.index} ({new_label})"
+                    # Reload ribbon + pane menu 
                     self.context.signal("icon;label", f"cam{self.index}", label)
+                    self.context.signal("pane")
             dialog.Destroy()    
 
         wxglade_tmp_menu = wx.Menu()
