@@ -100,6 +100,26 @@ def plugin(kernel, lifecycle=None):
                 data.set_uri(uri)
             return "camera", data
 
+        @kernel.console_argument("label", type=str)
+        @kernel.console_command(
+            "label", help="Set camera label", output_type="camera", input_type="camera"
+        )
+        def camera_label(
+            _,
+            channel,
+            data=None,
+            label=None,
+            **kwargs,
+        ):
+            if label is None:
+                channel(_("Current labels:"))
+                for d in kernel.section_startswith("camera/"):
+                    context = kernel.get_context(d)
+                    channel(f"{d}: {getattr(context, 'desc', '---')}")
+            else:
+                data.desc = label
+            return "camera", data
+
         @kernel.console_command(
             "info", help="list camera info", output_type="camera", input_type="camera"
         )
