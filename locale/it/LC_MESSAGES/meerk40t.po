@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 23-04-21 06:37UTC\n"
-"PO-Revision-Date: 03-06-25 20:30UTC\n"
+"POT-Creation-Date: 23-04-21 14:10UTC\n"
+"PO-Revision-Date: 07-06-25 20:30UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation\n"
@@ -10667,15 +10667,15 @@ msgstr ""
 
 #: meerk40t/kernel/kernel.py:1277
 msgid "Waiting for thread {name}: {object}"
-msgstr ""
+msgstr "In attesa del thread {name}: {object}"
 
 #: meerk40t/kernel/kernel.py:1284
 msgid "Thread {name} has finished. {object}"
-msgstr ""
+msgstr "Il thread {name} è terminato. {object}"
 
 #: meerk40t/kernel/kernel.py:1291
 msgid "Thread {name} is daemon. It will die automatically: {object}"
-msgstr ""
+msgstr "Il thread {name} è un daemon. Si terminerà automaticamente: {object}"
 
 #: meerk40t/kernel/kernel.py:1297
 msgid "No threads required halting."
@@ -10683,7 +10683,7 @@ msgstr "Non è necessario mettere in pausa alcun thread"
 
 #: meerk40t/kernel/kernel.py:1305
 msgid "WARNING: Listener '{listener}' still registered to {object}."
-msgstr ""
+msgstr "ATTENZIONE: Il listener '{listener}' è ancora registrato a {object}."
 
 #: meerk40t/kernel/kernel.py:1316
 msgid "Shutdown."
@@ -10691,39 +10691,39 @@ msgstr "Spegni"
 
 #: meerk40t/kernel/kernel.py:1630
 msgid "Thread: {name} already exists. Waiting..."
-msgstr ""
+msgstr "Thread: {name} esiste già. In attesa..."
 
 #: meerk40t/kernel/kernel.py:1639
 msgid "Thread: {name}, Initialized"
-msgstr ""
+msgstr "Thread: {name}, Inizializzato"
 
 #: meerk40t/kernel/kernel.py:1644
 msgid "Thread: {name}, Set"
-msgstr ""
+msgstr "Thread: {name}, Impostato"
 
 #: meerk40t/kernel/kernel.py:1647
 msgid "Thread: {name}, Start"
-msgstr ""
+msgstr "Thread: {name}, Avvio"
 
 #: meerk40t/kernel/kernel.py:1650
 msgid "Thread: {name}, End "
-msgstr ""
+msgstr "Thread: {name}, Fine"
 
 #: meerk40t/kernel/kernel.py:1653
 msgid "Thread: {name}, Exception-End"
-msgstr ""
+msgstr "Thread: {name}, Fine con Eccezione"
 
 #: meerk40t/kernel/kernel.py:1660
 msgid "Thread: {name}, Unset"
-msgstr ""
+msgstr "Thread: {name}, Disimpostato"
 
 #: meerk40t/kernel/kernel.py:1665
 msgid "Thread: {name}, Result Function"
-msgstr ""
+msgstr "Thread: {name}, Funzione di Risultato"
 
 #: meerk40t/kernel/kernel.py:1669
 msgid "Thread: {name}, Finished"
-msgstr ""
+msgstr "Thread: {name}, Terminato"
 
 #: meerk40t/kernel/kernel.py:1681
 msgid "Unstarted"
@@ -10771,11 +10771,11 @@ msgstr "Stampa il registro di spegnimento quando è chiuso."
 
 #: meerk40t/kernel/kernel.py:2241
 msgid "Output type to match"
-msgstr ""
+msgstr "Tipo di output da corrispondere"
 
 #: meerk40t/kernel/kernel.py:2242
 msgid "Input type to match"
-msgstr ""
+msgstr "Tipo di input da corrispondere"
 
 #: meerk40t/kernel/kernel.py:2244
 msgid "help <help>"
@@ -10783,63 +10783,64 @@ msgstr "aiuto <help>"
 
 #: meerk40t/kernel/kernel.py:2288
 msgid "\tArgument: {type} '{name}'{help}"
-msgstr ""
+msgstr "\tArgomento: {type} '{name}'{help}"
 
 #: meerk40t/kernel/kernel.py:2299
 msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr ""
+msgstr "\tOpzione: {type} ('--{name}', '-{short}'){help}"
 
 #: meerk40t/kernel/kernel.py:2309
 msgid "No extended help for: {name}"
-msgstr ""
+msgstr "Nessun aiuto esteso per: {name}"
 
 #: meerk40t/kernel/kernel.py:2325
 msgid "Base"
-msgstr ""
+msgstr "Base"
 
 #: meerk40t/kernel/kernel.py:2327
 msgid "--- {category} Commands ---"
-msgstr ""
+msgstr "--- Comandi {category} ---"
 
 #: meerk40t/kernel/kernel.py:2340
 msgid "find <substr>"
-msgstr ""
+msgstr "trova <substr>"
 
 #: meerk40t/kernel/kernel.py:2395
 msgid "No commands found that contained: [red]{string}[normal]"
-msgstr ""
+msgstr "Nessun comando trovato contenente: [red]{string}[normal]"
 
 #: meerk40t/kernel/kernel.py:2403
 msgid "If you want to have a list of all available commands, just type 'help'"
-msgstr ""
+msgstr "Se vuoi un elenco di tutti i comandi disponibili, digita 'help'"
 
 #: meerk40t/kernel/kernel.py:2412
 msgid "show threads"
-msgstr ""
+msgstr "mostra i thread"
 
 #: meerk40t/kernel/kernel.py:2418
 msgid "Registered Threads:"
-msgstr ""
+msgstr "Thread Registrati:"
 
 #: meerk40t/kernel/kernel.py:2425
 msgid "is alive."
-msgstr ""
+msgstr "è attivo."
 
 #: meerk40t/kernel/kernel.py:2429
 msgid "show scheduled events"
-msgstr ""
+msgstr "mostra eventi pianificati"
 
 #: meerk40t/kernel/kernel.py:2432
 msgid "Scheduled Processes:"
-msgstr ""
+msgstr "Processi Pianificati:"
+
 
 #: meerk40t/kernel/kernel.py:2439 meerk40t/kernel/kernel.py:2509
 msgid "forever,"
-msgstr "dauerhaft,"
+msgstr "per sempre,"
 
 #: meerk40t/kernel/kernel.py:2441
 msgid "{times} times,"
-msgstr ""
+msgstr "{times} volte,"
 
 #: meerk40t/kernel/kernel.py:2443 meerk40t/kernel/kernel.py:2517
 msgid "never"
@@ -10847,11 +10848,11 @@ msgstr "Mai"
 
 #: meerk40t/kernel/kernel.py:2446 meerk40t/kernel/kernel.py:2520
 msgid "each {interval} seconds"
-msgstr ""
+msgstr "ogni {interval} secondi"
 
 #: meerk40t/kernel/kernel.py:2453
 msgid "Echo text to console"
-msgstr ""
+msgstr "Esegui il testo sulla console"
 
 #: meerk40t/kernel/kernel.py:2460
 msgid "Turn this timer off"
@@ -22665,3 +22666,19 @@ msgstr "La luce rossa è ora spenta."
 #: meerk40t/grbl/device.py:948
 msgid "Red light is now on."
 msgstr "La luce rossa è ora accesa."
+
+#: meerk40t/gui/mkdebug.py:143
+msgid "Plotter Test"
+msgstr "Test del Plotter"
+
+#: meerk40t/gui/mkdebug.py:151
+msgid "Raster plotter test"
+msgstr "Test del Plotter Raster"
+
+#: meerk40t/gui/mkdebug.py:707
+msgid "Raster Plotter Test Info"
+msgstr "Informazioni sul Test del Plotter Raster"
+
+#: meerk40t/gui/mkdebug.py:720
+msgid "Raster Properties"
+msgstr "Proprietà Raster"
