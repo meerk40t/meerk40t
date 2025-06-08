@@ -3545,6 +3545,7 @@ class MeerK40t(MWindow):
         if hasattr(context.kernel.busyinfo, "reparent"):
             context.kernel.busyinfo.reparent(self)
 
+    @signal_listener("pane")
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
         def toggle_pane(pane_toggle):
@@ -3620,15 +3621,14 @@ class MeerK40t(MWindow):
                 pane_name = pane.name
             except AttributeError:
                 pane_name = suffix_path
-
-            pane_caption = pane_name[0].upper() + pane_name[1:] + "."
-            try:
+            pane_caption = ""
+            src = "default"
+            if hasattr(pane, "control") and hasattr(pane.control, "caption"):
+                pane_caption = pane.control.caption
+            elif hasattr(pane, "caption"):
                 pane_caption = pane.caption
-            except AttributeError:
-                pass
             if not pane_caption:
                 pane_caption = pane_name[0].upper() + pane_name[1:] + "."
-
             menu_item = menu_context.Append(wx.ID_ANY, pane_caption, "", wx.ITEM_CHECK)
             menu_item.SetHelp(helptext)
             self.Bind(

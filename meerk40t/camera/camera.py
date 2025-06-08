@@ -38,6 +38,7 @@ class Camera(Service):
         self.camera_thread = None
         self.max_tries_connect = 10
         self.max_tries_frame = 10
+        self.setting(str, "desc", "")
         self.setting(int, "width", 640)
         self.setting(int, "height", 480)
         self.setting(bool, "correction_fisheye", False)
