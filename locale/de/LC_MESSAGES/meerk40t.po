@@ -22344,3 +22344,44 @@ msgstr "Laserpunkt ist nun aus."
 #: meerk40t/grbl/device.py:948
 msgid "Red light is now on."
 msgstr "Laserpunkt ist nun an."
+
+#: meerk40t/camera/plugin.py:121
+msgid "Current labels:"
+msgstr "Aktuelle Bezeichnungen:"
+
+#: meerk40t/camera/plugin.py:318
+msgid "No camera selected."
+msgstr "Keine Kamera ausgewählt"
+
+#: meerk40t/camera/gui/camerapanel.py:511 meerk40t/camera/gui/camerapanel.py:928
+msgid "Enter a new label for the camera:"
+msgstr "Geben Sie eine neue Bezeichnung für die Kamera an:"
+
+#: meerk40t/camera/gui/camerapanel.py:512 meerk40t/camera/gui/camerapanel.py:929
+msgid "Change camera label"
+msgstr "Kamera-Bezeichnung ändern"
+
+#: meerk40t/camera/gui/camerapanel.py:775
+msgid "Change Label"
+msgstr "Bezeichnung ändern"
+
+
+#: meerk40t/camera/gui/camerapanel.py:1018
+msgid "Detects cameras on the system and sets them up"
+msgstr "Erkennt angeschlossene Kameras und richtet diese ein"
+
+#: meerk40t/gui/mkdebug.py:143
+msgid "Plotter Test"
+msgstr "Plotter Test"
+
+#: meerk40t/gui/mkdebug.py:151
+msgid "Raster plotter test"
+msgstr "Rasterplotter Test"
+
+#: meerk40t/gui/mkdebug.py:707
+msgid "Raster Plotter Test Info"
+msgstr "Information"
+
+#: meerk40t/gui/mkdebug.py:720
+msgid "Raster Properties"
+msgstr "Raster-Eigenschaften"
