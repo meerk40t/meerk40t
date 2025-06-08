@@ -260,7 +260,7 @@ class GRBLControllerPanel(wx.Panel):
 
     def edit_macro(self, idx):
         def handler(event):
-            macro = self.macros[idx]
+            macro = str(self.macros[idx])
             dlg = wx.TextEntryDialog(
                 self, _("Content for macro {index}").format(index = idx + 1),
                 value=macro,

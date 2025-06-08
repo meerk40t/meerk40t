@@ -3002,7 +3002,7 @@ class MeerK40t(MWindow):
 
         @context.console_command("dialog_gear", hidden=True)
         def gear(**kwargs):
-            dlg = wx.TextEntryDialog(gui, _("Enter Forced Gear"), _("Gear Entry"), "")
+            dlg = wx.TextEntryDialog(gui, _("Enter Forced Gear"), _("Gear Entry"), "0")
             dlg.SetValue("")
 
             if dlg.ShowModal() == wx.ID_OK:

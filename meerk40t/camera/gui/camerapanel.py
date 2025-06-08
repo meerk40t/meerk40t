@@ -510,7 +510,7 @@ class CamInterfaceWidget(Widget):
                     self.cam,
                     _("Enter a new label for the camera:"),
                     _("Change camera label"),
-                    self.cam.camera.desc or "",
+                    str(self.cam.camera.desc or ""),
                 )
                 if dialog.ShowModal() == wx.ID_OK:
                     new_label = dialog.GetValue().strip()
@@ -927,7 +927,7 @@ class CameraInterface(MWindow):
                 self,
                 _("Enter a new label for the camera:"),
                 _("Change camera label"),
-                self.camera.desc or "",
+                str(self.camera.desc or ""),
             )
             if dialog.ShowModal() == wx.ID_OK:
                 new_label = dialog.GetValue().strip()
