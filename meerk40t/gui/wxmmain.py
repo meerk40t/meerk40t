@@ -5611,7 +5611,7 @@ class MeerK40t(MWindow):
         Zoom scene to bed size.
         """
         zoom = self.context.zoom_margin
-        self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
+        self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom + 100}% {zoom + 100}%\n")
 
     def update_statusbar(self, text):
         self.main_statusbar.SetStatusText(text, 0)
@@ -5701,7 +5701,7 @@ class MeerK40t(MWindow):
                 return
             helptext = menuitem.GetHelp()
             if not helptext:
-                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+                helptext = f"{menuitem.GetItemLabelText()} ({_('No help text')})"
             self.update_statusbar(helptext)
         except RuntimeError:
             pass
