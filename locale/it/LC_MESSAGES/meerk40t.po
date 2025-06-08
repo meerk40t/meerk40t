@@ -22637,7 +22637,7 @@ msgstr "Se attivo, il punto rosso verrà utilizzato automaticamente quando si de
 
 #: meerk40t/grbl/device.py:894
 msgid "Set the dot laser strength (0..1000)."
-msgstr "Imposta la potenza del laser a punto (0..1000)."
+msgstr "Imposta la potenza del laser (0..1000)."
 
 #: meerk40t/grbl/device.py:901
 msgid "Force the red dot command even if a job is running."
@@ -22682,3 +22682,27 @@ msgstr "Informazioni sul Test del Plotter Raster"
 #: meerk40t/gui/mkdebug.py:720
 msgid "Raster Properties"
 msgstr "Proprietà Raster"
+
+#: meerk40t/camera/plugin.py:121
+msgid "Current labels:"
+msgstr "Etichette attuali:"
+
+#: meerk40t/camera/plugin.py:318
+msgid "No camera selected."
+msgstr "Nessuna fotocamera selezionata."
+
+#: meerk40t/camera/gui/camerapanel.py:511 meerk40t/camera/gui/camerapanel.py:928
+msgid "Enter a new label for the camera:"
+msgstr "Inserisci una nuova etichetta per la fotocamera:"
+
+#: meerk40t/camera/gui/camerapanel.py:512 meerk40t/camera/gui/camerapanel.py:929 meerk40t/camera/gui/camerapanel.py:972
+msgid "Change camera label"
+msgstr "Cambia etichetta fotocamera"
+
+#: meerk40t/camera/gui/camerapanel.py:775
+msgid "Change Label"
+msgstr "Cambia etichetta"
+
+#: meerk40t/camera/gui/camerapanel.py:1018
+msgid "Detects cameras on the system and sets them up"
+msgstr "Rileva le fotocamere nel sistema e le configura"
