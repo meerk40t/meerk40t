@@ -6,7 +6,6 @@ LaserSpeed
 This is the standard library for converting to and from speed code information for LHYMICRO-GL.
 """
 
-
 from math import floor
 
 
@@ -456,3 +455,35 @@ def get_equation(board, accel=1, suffix_c=False, fix_speeds=False):
         if suffix_c:
             return 8.0, m / 12.0
     return b, m
+
+
+def debug_packet(packet):
+    """
+    Debugging function to print the packet in a readable format.
+    """
+    if isinstance(packet, list):
+        ascii = "".join(chr(int(x)) if 32 <= x < 127 else "." for x in packet)
+        packet = (
+            " ".join(f"{int(x):02X}" for x in packet)
+            + f" ({len(packet)} bytes)"
+            + f" ASCII: {ascii}"
+        )
+    print(f"Packet: {packet}")
+
+
+def set_PWM_register(pct_power, ms=254):
+    # power: 0-100%
+    power = int(pct_power * 10)
+    m = power / 254
+    n = power % 254
+    # fmt: off
+    pack  = [166,0,65,84,49,m,n,ms,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,166,15]
+    # fmt: on
+    debug_packet(pack)
+    # print(power,m,n)
+
+
+if __name__ == "__main__":
+    # Example usage
+    for pct_power in range(0, 100, 10):
+        set_PWM_register(pct_power)
