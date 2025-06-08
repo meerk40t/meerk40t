@@ -3545,6 +3545,7 @@ class MeerK40t(MWindow):
         if hasattr(context.kernel.busyinfo, "reparent"):
             context.kernel.busyinfo.reparent(self)
 
+    @signal_listener("pane")
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
         def toggle_pane(pane_toggle):

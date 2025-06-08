@@ -27,6 +27,11 @@ _ = wx.GetTranslation
 
 CORNER_SIZE = 25
 
+def _get_camera_attribute(kernel, camera, attribute, default=None):
+    if isinstance(camera, int):
+        camera = f"camera/{camera}"
+    label = kernel.read_persistent(str, camera, attribute, default)
+    return label or default
 
 def register_panel_camera(window, context):
     for index in range(5):
@@ -227,7 +232,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera.listen("camera;stopped", self.on_camera_stop)
         self.camera.gui = self
         self.camera("camera focus -5% -5% 105% 105%\n")
-        label = getattr(self.camera, "desc", "") or _("Camera {index}").format(index=self.index)
+        label = _get_camera_attribute(self.context.kernel, self.index, "desc", _("Camera {index}").format(index=self.index))
         if self.pane and self.pane_aui is not None:
             # If this is a pane, we set the title of the pane.
             # print (f"Setting pane title to {label}")
@@ -238,7 +243,8 @@ class CameraPanel(wx.Panel, Job):
             
     @property 
     def caption(self):
-        return getattr(self.camera, "desc", "") or _("Camera {index}").format(index=self.index) 
+        # Property to get the caption of the corresponding pane menu item
+        return _get_camera_attribute(self.context.kernel, self.index, "desc", _("Camera {index}").format(index=self.index))
 
 
     def pane_hide(self, *args):
@@ -887,12 +893,8 @@ class CameraInterface(MWindow):
         """
         Updates the title of the window to reflect the current camera index.
         """
-        cam = self.context.get_context(f"camera/{self.index}")
-        if cam is None:
-            self.SetTitle(_("CameraInterface {index}").format(index=self.index))
-        else:
-            label = getattr(cam, "desc", "") or _("Camera {index}").format(index=self.index)
-            self.SetTitle(label)
+        label = _get_camera_attribute(self.context.kernel, self.index, "desc", _("Camera {index}").format(index=self.index))
+        self.SetTitle(label)
 
     def create_menu(self, append):
         def identify_cameras(event=None):
@@ -984,7 +986,7 @@ class CameraInterface(MWindow):
 
         caminfo = []
         for idx in range(5):
-            label = _("Camera {index}").format(index=idx)
+            label = _get_camera_attribute(kernel, idx, "desc", _("Camera {index}").format(index=idx))
             caminfo.append(
                 {
                     "identifier": f"cam{idx}",
