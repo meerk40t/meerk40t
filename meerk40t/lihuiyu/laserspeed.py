@@ -466,12 +466,12 @@ def debug_packet(packet):
         packet = (
             " ".join(f"{int(x):02X}" for x in packet)
             + f" ({len(packet)} bytes)"
-            + f" ASCII: {ascii}"
+            + f" {ascii}"
         )
     print(f"Packet: {packet}")
 
 
-def set_PWM_register(pct_power, ms=254):
+def set_PWM_register(pct_power, ms=0):
     # power: 0-100%
     power = int(pct_power * 10)
     m = power / 254
