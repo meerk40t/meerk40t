@@ -205,6 +205,7 @@ class LihuiyuDriver(Parameters):
         self.plot_planner.force_shift = self.service.plot_shift
         self.plot_planner.phase_type = self.service.plot_phase_type
         self.plot_planner.phase_value = self.service.plot_phase_value
+        self.plot_planner.set_ppi(not self.service.supports_pwm)
 
     def hold_work(self, priority):
         """
@@ -537,6 +538,12 @@ class LihuiyuDriver(Parameters):
         else:
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
+        if self.service.supports_pwm:
+            power_val = self.power
+            if power_val != 1000.0:
+                self(b"\n")  # Force flush
+        else:
+            power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -548,6 +555,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=False,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=horizontal,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -593,7 +601,12 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
-
+        if self.service.supports_pwm:
+            power_val = self.power
+            if power_val != 1000.0:
+                self(b"\n")  # Force flush
+        else:
+            power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -605,6 +618,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=suffix_c,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=self._horizontal_major,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -1463,4 +1477,18 @@ class LihuiyuDriver(Parameters):
             self._x_engaged = False
             self._y_engaged = True
             return x_dir + y_dir
-        
+
+    # def get_board_info(self):
+    #     try:
+    #         self.out_pipe.write_raw(b"\xac\x2e", 73 - 27)
+    #     except AttributeError:
+    #         pass
+
+    # def get_param_info(self):
+    #     try:
+    #         self.out_pipe.write_raw(b"\xac\xe0", 251 - 27)
+    #     except AttributeError:
+    #         pass
+
+    def get_m3_hardware_info(self):
+        self(b"AT01")
