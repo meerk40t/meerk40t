@@ -502,6 +502,22 @@ class CamInterfaceWidget(Widget):
                 else: # Empty or None
                     self.cam.cam_device_link.pop(self.cam.index, None)
 
+            def change_label(event=None):   
+                """
+                Change the label of the camera.
+                """
+                dialog = wx.TextEntryDialog(
+                    self.cam,
+                    _("Enter a new label for the camera:"),
+                    _("Change Camera Label"),
+                    self.cam.camera.desc or "",
+                )
+                if dialog.ShowModal() == wx.ID_OK:
+                    new_label = dialog.GetValue().strip()
+                    if new_label:
+                        self.cam.context(f'camera{self.cam.index} label "{new_label}"\n')
+                dialog.Destroy()    
+
             menu = wx.Menu()
 
             item = menu.Append(wx.ID_ANY, _("Update Background"), "")
@@ -755,6 +771,9 @@ class CamInterfaceWidget(Widget):
                 _("Manage URIs"),
                 sub_menu,
             )
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Change Label"), "")
+            self.cam.Bind(wx.EVT_MENU, change_label, id=item.GetId(),)      
             if menu.MenuItemCount != 0:
                 self.cam.PopupMenu(menu)
                 menu.Destroy()
@@ -913,12 +932,8 @@ class CameraInterface(MWindow):
             if dialog.ShowModal() == wx.ID_OK:
                 new_label = dialog.GetValue().strip()
                 if new_label:
-                    self.camera.desc = new_label
+                    self.context(f'camera{self.index} label "{new_label}"\n')
                     self.update_title()
-                    label = f"#{self.index} ({new_label})"
-                    # Reload ribbon + pane menu 
-                    self.context.signal("icon;label", f"cam{self.index}", label)
-                    self.context.signal("pane")
             dialog.Destroy()    
 
         wxglade_tmp_menu = wx.Menu()
