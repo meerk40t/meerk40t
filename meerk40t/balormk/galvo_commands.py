@@ -1206,7 +1206,7 @@ def plugin(service, lifecycle):
     @service.console_option("source_dir", "d", type=str, help="Directory where you have placed the drivers to install")
     @service.console_command(
         "driver_install",
-        help=_("install driver"),
+        help=_("Install fibre laser driver"),
     )
     def driver_install(command, channel, _, source_dir=None, **kwgs):
         import subprocess
@@ -1217,22 +1217,32 @@ def plugin(service, lifecycle):
         # Find existing drivers assigned to specified VID/PID
         # This doesn't require elevated privileges
         list_process = r'pnputil.exe /enum-devices /deviceid USB\VID_{0}&PID_{1}'.format(vid, pid)
-        p = subprocess.Popen(list_process, shell=False, stdout=subprocess.PIPE, universal_newlines=True)
+        try:
+            p = subprocess.Popen(list_process, shell=False, stdout=subprocess.PIPE, universal_newlines=True)
+        except Exception as e:
+            channel(_("Could not run: {command}").format(command=list_process))
+            channel(_("Error: {error}").format(error=str(e)))
+            return
         output = p.stdout.read()
         result = regex_extract(output)
         if result == {}:
-            channel("Could not find laser with the VID/PID: {0}/{1}".format(vid, pid))
+            channel(_("Could not find laser with the VID/PID: {0}/{1}").format(vid, pid))
             return
         channel(str(result))
 
         # Couldn't find existing device. Probably in future we can change this
         # so that it just doesn't do the delete when the previous device doesn't exist
-        if 'args' not in kwgs: return
+        if 'args' not in kwgs: 
+            return
 
         # Existing driver found. Delete it using elevated privileges
         prev_driver = result['Driver Name']
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", "pnputil.exe", '/delete-driver {0} /force'.format(prev_driver), None, 1)
-
+        try:
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", "pnputil.exe", '/delete-driver {0} /force'.format(prev_driver), None, 1)
+        except Exception as e:
+            channel(_("Could not run: {command}").format(command='pnputil.exe /delete-driver {0} /force'.format(prev_driver)))
+            channel(_("Error: {error}").format(error=str(e)))
+            return
         # Massage source directory where the new drivers should be found
         if source_dir is None:
             source_dir = os.path.expanduser('~')+'\\Downloads\\balor-drivers\\'
@@ -1245,4 +1255,10 @@ def plugin(service, lifecycle):
             args = '/add-driver {0}{1} /install'.format(source_dir, "MeerK40t_Balor.inf")
         elif requested_driver == "ezcad":
             args = '/add-driver {0}{1} /install'.format(source_dir, "Lmcv2u.inf")
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", "pnputil.exe", args, None, 1)
+        try:
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", "pnputil.exe", args, None, 1)
+        except Exception as e:  
+            channel(_("Could not run: {command}").format(command='pnputil.exe {0}'.format(args)))
+            channel(_("Error: {error}").format(error=str(e)))
+            return  
+        channel(_("Driver {0} installed successfully.").format(requested_driver))
