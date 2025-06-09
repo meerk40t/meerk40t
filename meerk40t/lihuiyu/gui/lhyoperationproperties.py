@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, wxCheckBox
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, wxCheckBox, wxComboBox
 
 _ = wx.GetTranslation
 
@@ -113,7 +113,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
         sizer_20.Add(self.text_dot_length, 1, wx.EXPAND, 0)
 
-        self.combo_dot_length_units = wx.ComboBox(
+        self.combo_dot_length_units = wxComboBox(
             self,
             wx.ID_ANY,
             choices=["steps", "mm", "cm", "inch", "mil", "%"],

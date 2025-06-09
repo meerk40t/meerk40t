@@ -2,4 +2,4 @@ wheel
 Pillow
 pyusb
 pyserial
-numpy
+numpy<=1.26.4

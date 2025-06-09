@@ -253,7 +253,7 @@ def plugin(kernel, lifecycle):
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, turtle, n, iterations, base=None, **kwargs):
+        def fractal_t(command, channel, turtle, n, iterations, base=None, **kwargs):
             """
             Add a turtle fractal to the scene. All fractals are geometry outputs.
             F - Forward
@@ -333,7 +333,7 @@ def plugin(kernel, lifecycle):
         @self.console_command(
             "quad_corners", input_type="geometry", output_type="geometry"
         )
-        def round_corners(command, channel, data, amount=0.2, **kwargs):
+        def quad_corners(command, channel, data, amount=0.2, **kwargs):
             data.bezier_corners(amount)
             if hasattr(data, "parameter_store"):
                 param = list(data.parameter_store)  # make it editable
@@ -435,11 +435,11 @@ def plugin(kernel, lifecycle):
         @self.console_argument("inversions", nargs="*", type=int)
         @context.console_command(
             "ffractal",
-            help=_("ffractal iterations"),
+            help=_("fractal iterations"),
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, svg_path, iterations, inversions, **kwargs):
+        def fractal_f(command, channel, svg_path, iterations, inversions, **kwargs):
             seed = Geomstr.svg(svg_path)
             segments = seed.segments
             for i, q in enumerate(inversions):
@@ -912,7 +912,7 @@ def plugin(kernel, lifecycle):
             # print(f"Created geometry from {len(pts) / 2} pts: {geom.capacity}")
             return geom
 
-        # Shape (ie star) routine
+        # Shape (i.e. star) routine
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
@@ -1002,7 +1002,7 @@ def plugin(kernel, lifecycle):
                 cy = 0
             if radius is None:
                 radius = 0
-            sangle = float(startangle)
+            sangle = 0 if startangle is None else float(startangle)
             if corners <= 2:
                 # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
                 geom = create_star_shape(
@@ -1101,17 +1101,17 @@ def plugin(kernel, lifecycle):
                             "To hit all, the density parameters should be e.g. {combinations}"
                         ).format(combinations=possible_combinations)
                     )
-
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.stroke = self.default_stroke
-            node.stroke_width = self.default_strokewidth
-            node.fill = self.default_fill
-            node.altered()
-            node.emphasized = True
+            # _("Create shape")
+            with self.undoscope("Create shape"):
+                node = self.elem_branch.add(type="elem path", geometry=geom)
+                node.stroke = self.default_stroke
+                node.stroke_width = self.default_strokewidth
+                node.fill = self.default_fill
+                node.altered()
+            self.set_emphasis([node])
             node.focus()
 
             data = [node]
-            node.emphasized = True
             # Newly created! Classification needed?
             post.append(classify_new(data))
 
@@ -1394,11 +1394,13 @@ def plugin(kernel, lifecycle):
                 startangle,
                 gap_angle,
             )
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.label = f"Growing Polygon w. {sides} sides"
-            node.stroke = self.default_stroke
-            node.stroke_width = 1000  # self.default_strokewidth
-            node.altered()
+            # _("Create shape")
+            with self.undoscope("Create shape"):
+                node = self.elem_branch.add(type="elem path", geometry=geom)
+                node.label = f"Growing Polygon w. {sides} sides"
+                node.stroke = self.default_stroke
+                node.stroke_width = 1000  # self.default_strokewidth
+                node.altered()
             pt0 = None
             pt1 = None
             for pt in geom.as_points():

@@ -48,8 +48,8 @@ https://feirell.github.io/offset-bezier/
 The algorithm deals with the challenge as follows:
 a) It walks through the subpaths of a given path so that we have a continuous curve
 b) It looks at the different segment typs and deals with them,
-generating a new offseted segement
-c) Finally it stitches those segments together, treating for the simplifaction
+generating a new offseted segment
+c) Finally it stitches those segments together, preparing for the simplification
 """
 
 
@@ -122,7 +122,7 @@ def linearize_segment(segment, interpolation=500, reduce=True):
                 this_slope = atan2(dy, dx)
                 if last_slope is not None:
                     if abs(last_slope - this_slope) < slope_tolerance:
-                        # Combine segments, ie get rid of mid point
+                        # Combine segments, i.e. get rid of mid point
                         this_slope = last_slope
                         appendit = False
                 last_slope = this_slope
@@ -360,21 +360,23 @@ def offset_path(self, path, offset_value=0):
     # As this oveloading a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
+    # Radial connectors seem to have issues, so we don't use them for now...
     p = path_offset(
         path,
         offset_value=-offset_value,
-        radial_connector=True,
+        radial_connector=False,
         linearize=True,
         interpolation=500,
     )
     if p is None:
         return path
     g = Geomstr.svg(p)
-    # We are already at device resolution, so we need to reduce tolerance a lot
-    # Standard is 25 tats, so about 1/3 of a mil
-    p = g.simplify(tolerance=0.1).as_path()
-    p.stroke = path.stroke
-    p.fill = path.fill
+    if g.index:
+        # We are already at device resolution, so we need to reduce tolerance a lot
+        # Standard is 25 tats, so about 1/3 of a mil
+        p = g.simplify(tolerance=0.1).as_path()
+        p.stroke = path.stroke
+        p.fill = path.fill
     return p
 
 
@@ -948,7 +950,9 @@ def init_commands(kernel):
             )
             newnode.stroke_width = UNITS_PER_PIXEL
             newnode.linejoin = Linejoin.JOIN_ROUND
-            newnode.label = f"Offset of {node.id if node.label is None else node.label}"
+            newnode.label = (
+                f"Offset of {node.id if node.label is None else node.display_label()}"
+            )
             data_out.append(newnode)
 
         # Newly created! Classification needed?

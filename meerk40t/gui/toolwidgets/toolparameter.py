@@ -1,22 +1,23 @@
 import math
-
+import numpy as np
 import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.tools.geomstr import TYPE_END
+from meerk40t.gui.wxutils import dip_size, get_matrix_scale, get_gc_scale
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 _ = wx.GetTranslation
 
 
 class SimpleCheckbox:
-    def __init__(self, index, scene, x, y, trailer):
+    def __init__(self, index, scene, x, y, trailer, magnification=1):
         self.identifier = index
         self._value = False
         self.scene = scene
         self.x = x
         self.y = y
+        self.magnification = magnification
         self.pt_offset = 5
         if trailer is None:
             trailer = ""
@@ -40,7 +41,7 @@ class SimpleCheckbox:
         """
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         mypen = wx.Pen(wx.LIGHT_GREY)
         linewidth = 1 / s
@@ -75,7 +76,7 @@ class SimpleCheckbox:
                 ]
             )
         if self.trailer:
-            font_size = 8 / s
+            font_size = 8 * self.magnification / s
             if font_size < 1.0:
                 font_size = 1.0
             try:
@@ -102,13 +103,13 @@ class SimpleCheckbox:
 
     def hit(self, xpos, ypos):
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         inside = bool(abs(self.x - xpos) <= offset and abs(self.y - ypos) <= offset)
         return inside
 
 
 class SimpleSlider:
-    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
+    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer, magnification=1):
         self.identifier = index
         self._minimum = min(minimum, maximum)
         self._maximum = max(minimum, maximum)
@@ -122,6 +123,7 @@ class SimpleSlider:
         self.width = width
         self.ptx = x
         self.pty = y
+        self.magnification = magnification
         self.pt_offset = 5
         if trailer is None:
             trailer = ""
@@ -168,16 +170,10 @@ class SimpleSlider:
         """
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
 
         mypen = wx.Pen(wx.LIGHT_GREY)
-        gcmat = gc.GetTransform()
-        mat_param = gcmat.Get()
-        sx = mat_param[0]
-        sy = mat_param[3]
-        sx = max(sx, sy)
-        if sx == 0:
-            sx = 0.01
+        sx = get_gc_scale(gc)
         linewidth = 1 / sx
         try:
             mypen.SetWidth(linewidth)
@@ -213,7 +209,7 @@ class SimpleSlider:
             if not self.trailer.startswith("%"):
                 symbol += " "
             symbol += _(self.trailer)
-        font_size = 10 / s
+        font_size = 10 * self.magnification / s
         if font_size < 1.0:
             font_size = 1.0
         try:
@@ -234,13 +230,14 @@ class SimpleSlider:
         (t_width, t_height) = gc.GetTextExtent(symbol)
         x = self.x + self.width + 1.5 * offset
         y = self.y - t_height / 2
+        # print(f"y={y}, self.y={self.y}, height={t_height}, label='{symbol}', font_size={font_size}")
         gc.DrawText(symbol, int(x), int(y))
 
         gc.PopState()
 
     def hit(self, xpos, ypos):
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         inside = bool(abs(self.ptx - xpos) <= offset and abs(self.pty - ypos) <= offset)
         return inside
 
@@ -263,10 +260,12 @@ class ParameterTool(ToolWidget):
         self.point_index = -1
         self.slider_index = -1
         self.read_functions()
+        # Establish the scaling function of the underlying GUI
+        self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
         self.pt_offset = 5
         self.is_hovering = False
         self.pin_box = None
-        self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"))
+        self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"), magnification=self.magnification)
         self.pinned = False
         self.is_moving = False
         self.slider_size = 200
@@ -295,7 +294,7 @@ class ParameterTool(ToolWidget):
         if len(self.sliders) == 0:
             return
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         width = self.slider_size / s
         if self.pinned:
             x = offset
@@ -356,7 +355,7 @@ class ParameterTool(ToolWidget):
                         if len(gui_info) > 2:
                             maxval = gui_info[2]
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info
+                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info, magnification=self.magnification
                 )
                 self.sliders.append(slider)
                 slider.value = parameters[idx + 1]
@@ -378,7 +377,7 @@ class ParameterTool(ToolWidget):
                             maxval = gui_info[2]
                 info = "% " + info
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info
+                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info, magnification=self.magnification
                 )
                 self.sliders.append(slider)
                 slider.value = int(100.0 * parameters[idx + 1])
@@ -393,6 +392,7 @@ class ParameterTool(ToolWidget):
             pass
         self.scene.pane.tool_active = True
         self.scene.pane.modif_active = True
+        self.scene.pane.ignore_snap = False
 
     def update_parameter(self):
         if self.element is None:
@@ -455,7 +455,7 @@ class ParameterTool(ToolWidget):
         self.update_and_draw_sliders(gc)
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset = self.pt_offset / s
+        offset = self.magnification * self.pt_offset / s
         mypen = wx.Pen(wx.RED)
         linewidth = 1 / s
         try:
@@ -496,7 +496,7 @@ class ParameterTool(ToolWidget):
             Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
 
-        offset = 5
+        offset = self.magnification * 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
         self.is_moving = False
@@ -581,6 +581,7 @@ class ParameterTool(ToolWidget):
                             # print(f"Found slider: {slider.identifier}")
                             self.slider_index = idx
                             self.active_slider = slider
+                            self.scene.pane.ignore_snap = True
                             break
                     if self.slider_index >= 0:
                         break
@@ -602,6 +603,8 @@ class ParameterTool(ToolWidget):
                 return RESPONSE_CHAIN
             # print(f"Move: {self.point_index}, {self.slider_index}")
             self.is_moving = True
+            self.scene.pane.ignore_snap = False
+
             if self.point_index >= 0:
                 # We need to reverse the point in the element matrix
                 if nearest_snap is None:
@@ -619,6 +622,7 @@ class ParameterTool(ToolWidget):
                     self.scene.refresh_scene()
             elif self.slider_index >= 0:
                 if self.active_slider is not None:
+                    self.scene.pane.ignore_snap = True
                     self.active_slider.update_according_to_pos(
                         space_pos[0], space_pos[1]
                     )
@@ -637,6 +641,7 @@ class ParameterTool(ToolWidget):
                         self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
+            self.scene.pane.ignore_snap = False
             doit = (
                 self.point_index >= 0
                 and self.scene.context.snap_points
@@ -644,7 +649,7 @@ class ParameterTool(ToolWidget):
             )
             if doit:
                 matrix = self.scene.widget_root.scene_widget.matrix
-                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
                 this_point = (
                     self.params[self.point_index][0]
                     + 1j * self.params[self.point_index][1]
@@ -661,10 +666,14 @@ class ParameterTool(ToolWidget):
                     last = None
                     for seg in geom.segments[: geom.index]:
                         start = seg[0]
-                        seg_type = int(seg[2].real)
+                        seg_type = geom._segtype(seg)
                         end = seg[4]
-                        if seg_type == TYPE_END:
+                        if seg_type in NON_GEOMETRY_TYPES:
                             continue
+                        if np.isnan(start) or np.isnan(end):
+                            print (f"Strange, encountered within toolparameter a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                            continue
+
                         if start != last:
                             delta = abs(start - this_point)
                             if delta < smallest_gap:
@@ -697,6 +706,7 @@ class ParameterTool(ToolWidget):
     def done(self):
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.ignore_snap = False
         self.scene.pane.suppress_selection = False
         self.reset()
         if self.is_hovering:
@@ -713,6 +723,8 @@ class ParameterTool(ToolWidget):
                 hasattr(node, "functional_parameter")
                 and node.functional_parameter is not None
             ):
+                if node.lock:
+                    continue
                 selected_node = node
                 break
         self.scene.pane.suppress_selection = selected_node is not None
@@ -738,4 +750,5 @@ class ParameterTool(ToolWidget):
     def final(self, context):
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.ignore_snap = False
         self.scene.pane.suppress_selection = False

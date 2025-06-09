@@ -1,5 +1,45 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing materials within the application.
+Users can save, load, delete, and list materials, facilitating the organization and retrieval of material settings.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up material commands.
+- init_commands(kernel): Initializes the material commands and defines the associated operations.
+- materials(command, channel, _, data=None, remainder=None, **kwargs): Displays information about materials or lists the available material sections.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The operations to retrieve materials from.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the type of materials and the data.
+- save_materials(command, channel, _, data=None, name=None, author=None, description=None, **kwargs): Saves the current materials to persistent settings under a specified name.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The materials to save.
+    name: The name to save the materials under.
+    author: The name of the user for the library entry.
+    description: A description of the library entry.
+  Returns:
+    A tuple containing the type of materials and the data.
+- load_materials(name=None, **kwargs): Loads materials from persistent settings based on the specified name.
+  Args:
+    name: The name to load the materials from.
+  Returns:
+    A tuple containing the type of operations and the loaded materials.
+- delete_materials(name=None, **kwargs): Deletes materials from persistent settings based on the specified name.
+  Args:
+    name: The name to delete the materials from.
+  Returns:
+    A tuple containing the type of materials and the remaining operations.
+- materials_list(channel, _, data=None, name=None, **kwargs): Displays information about the current materials and their settings.
+  Args:
+    channel: The communication channel for messages.
+    data: The materials to list.
+    name: The name to display the materials from.
+  Returns:
+    None
 """
 
 from meerk40t.kernel import CommandSyntaxError

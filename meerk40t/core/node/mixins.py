@@ -18,6 +18,7 @@ class Stroked(ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
+        self._acts_as_keyhole = False
 
     @property
     def stroke_scaled(self):
@@ -105,3 +106,30 @@ class FunctionalParameter(ABC):
     def functional_parameter(self, value):
         if isinstance(value, (list, tuple)):
             self.mkparam = value
+
+
+class LabelDisplay(ABC):
+    """
+    Any node inheriting this allow the display of the label on the scene
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.label_display = False
+        super().__init__()
+
+
+class Suppressable(ABC):
+    """
+    Any node inheriting this can be suppressed
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.hidden = False
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
+        super().__init__()

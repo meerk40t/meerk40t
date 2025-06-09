@@ -3,18 +3,21 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Length
-from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox
-from .attributes import ColorPanel, IdPanel
+from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox, wxComboBox
+from .attributes import AutoHidePanel, ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 
 
 class WobblePropertyPanel(ScrolledPanel):
+    name = _("Wobble")
+
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
@@ -55,10 +58,17 @@ class WobblePropertyPanel(ScrolledPanel):
         # )
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Wobble:"), wx.VERTICAL)
-
+        self.panels = []
         # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
+        self.panels.append(panel_id)
+
+        panel_hide = AutoHidePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        main_sizer.Add(panel_hide, 1, wx.EXPAND, 0)
+        self.panels.append(panel_hide)
 
         panel_stroke = ColorPanel(
             self,
@@ -70,6 +80,7 @@ class WobblePropertyPanel(ScrolledPanel):
             node=self.node,
         )
         main_sizer.Add(panel_stroke, 1, wx.EXPAND, 0)
+        self.panels.append(panel_stroke)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_radius = StaticBoxSizer(
@@ -120,7 +131,7 @@ class WobblePropertyPanel(ScrolledPanel):
         main_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.fills = list(self.context.match("wobble", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
+        self.combo_fill_style = wxComboBox(
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
@@ -132,6 +143,17 @@ class WobblePropertyPanel(ScrolledPanel):
         main_sizer.Add(self.check_classify, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
+
+        self.text_interval.SetToolTip(
+            _("Segmentation size, the wobble pattern will be applied at every segment")
+        )
+        self.text_radius.SetToolTip(
+            _("Wobble size, does influence the size of the wobble pattern")
+        )
+        self.text_speed.SetToolTip(
+            _("How quickly does the wobble pattern revolve around the path")
+        )
+        self.combo_fill_style.SetToolTip(_("The wobble pattern to be applied"))
 
         self.text_radius.SetActionRoutine(self.on_text_radius)
         self.text_interval.SetActionRoutine(self.on_text_interval)
@@ -154,6 +176,8 @@ class WobblePropertyPanel(ScrolledPanel):
         return node.type in ("effect wobble",)
 
     def set_widgets(self, node):
+        for panel in self.panels:
+            panel.set_widgets(node)
         self.node = node
         if self.node is None or not self.accepts(node):
             self.Hide()

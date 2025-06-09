@@ -77,3 +77,9 @@ version=1.0
 
 tip=Do you need to convert a graphic into a vector object? Double click the graphic and use the vectorization panel...
 img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=If you want the content of a file that you load to be automatically placed at a specific point
+(e.g. aligned to the corners or at the center of the bed) then press and hold the Shift-key when selecting the file.
+MeerK40t will then ask you for your desired location.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTkyMTQ0OTMsIm5iZiI6MTcxOTIxNDE5MywicGF0aCI6Ii8yNjcwNzg0LzM0MjEwOTA2OS1jODM2ZmViZC0zZWVkLTRkNWEtOTMxZS1jNGQ2NTRiZDJhNzkucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MDYyNCUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDA2MjRUMDcyOTUzWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9YjAxODA1MTcwODcwMzQwYzgyMzdlMGZlNTQ0ZWM0NTA2Y2FjMWFiYmEyZWYwZWU1MzI4OWNlMWE1NjkwNjdlNSZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmYWN0b3JfaWQ9MCZrZXlfaWQ9MCZyZXBvX2lkPTAifQ.z-4tYRGnPHAH3I5mVOkZDjD49z98BIy0QMn4nzEhDkY
+version=0.9.5

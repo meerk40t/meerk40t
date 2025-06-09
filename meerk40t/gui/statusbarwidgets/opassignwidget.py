@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import wxCheckBox
+from meerk40t.gui.wxutils import wxCheckBox, wxComboBox, wxStaticBitmap
 from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
@@ -32,7 +32,7 @@ class OperationAssignOptionWidget(StatusBarWidget):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.combo_apply_color = wx.ComboBox(
+        self.combo_apply_color = wxComboBox(
             self.parent,
             wx.ID_ANY,
             choices=choices,
@@ -114,7 +114,7 @@ class OperationAssignWidget(StatusBarWidget):
         super().GenerateControls(parent, panelidx, identifier, context)
 
         for __ in range(self.MAXBUTTONS):
-            btn = wx.StaticBitmap(
+            btn = wxStaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
                 size=(self.buttonsize, self.buttonsize),
@@ -225,7 +225,8 @@ class OperationAssignWidget(StatusBarWidget):
                         iconcolor = c2
                 return iconcolor, background
 
-            iconsize = 20
+            iconsize = int(20 * self.context.root.bitmap_correction_scale)
+
             result = None
             d = None
             if node.type == "op raster":

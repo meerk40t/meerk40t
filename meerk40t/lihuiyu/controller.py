@@ -665,7 +665,14 @@ class LihuiyuController:
         # find pipe commands.
         if packet.endswith(b"\n"):
             packet = packet[:-1]
-            if packet.endswith(b"-"):  # wait finish
+            # There's a special case where we have a trailing "\n" at an exactly 30 byte command,
+            # that requires another package of 30 x F to be sent, so we need to deal with an empty string...
+            if len(packet) == 0:
+                packet += b"F"
+            if packet.endswith(b"P"):
+                # This is a special case where the m3nano seems to fail. So we extend the buffer...
+                packet += b"F"
+            elif packet.endswith(b"-"):  # wait finish
                 packet = packet[:-1]
                 post_send_command = self.wait_finished
             elif packet.endswith(b"*"):  # abort

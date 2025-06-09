@@ -5,8 +5,6 @@ from subprocess import PIPE, TimeoutExpired, run
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel.kernel import get_safe_path
-
 
 def get_inkscape(context, manual_candidate=None):
     root_context = context
@@ -143,7 +141,7 @@ class MultiLoader:
                     break
 
         context_root = kernel.root
-        safe_dir = os.path.realpath(get_safe_path(kernel.name))
+        safe_dir = kernel.os_information["WORKDIR"]
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         inkscape = get_inkscape(context_root)
@@ -159,6 +157,11 @@ class MultiLoader:
             version = "inkscape 1.x"
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
+        if os.path.exists(svg_temp_file):
+            try:
+                os.remove(svg_temp_file)
+            except (OSError, FileNotFoundError):
+                raise BadFileError("Couldn't delete temporary inkscape file")
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         # Check Version of Inkscape
@@ -183,6 +186,9 @@ class MultiLoader:
 
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
+            return False
+        # Has an output file been created?
+        if not os.path.exists(svg_temp_file):
             return False
 
         def unescaped(filename):
@@ -220,7 +226,7 @@ def plugin(kernel, lifecycle):
             inkscape_path, filename = data
             channel(_("inkscape load - loading the previous conversion..."))
             try:
-                kernel.elements.load(filename)
+                kernel.elements.load(filename, svg_ppi=kernel.elements.svg_ppi)
             except BadFileError as e:
                 channel(_("File is Malformed."))
                 channel(str(e))
@@ -415,7 +421,7 @@ def plugin(kernel, lifecycle):
                 ],
                 "pattern": [False, ("<pattern",), METHOD_CONVERT_TO_PNG],
             }
-            safe_dir = os.path.realpath(get_safe_path(kernel.name))
+            safe_dir = kernel.os_information["WORKDIR"]
             svg_temp_file = os.path.join(safe_dir, "temp.svg")
             png_temp_file = os.path.join(safe_dir, "temp.png")
             needs_conversion = 0

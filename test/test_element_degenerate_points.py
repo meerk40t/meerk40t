@@ -1,9 +1,9 @@
 import os
 import unittest
-from test import bootstrap
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.elem_point import PointNode
+from test import bootstrap
 
 
 class TestShapePoints(unittest.TestCase):

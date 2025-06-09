@@ -1092,7 +1092,7 @@ class TestGeomstr(unittest.TestCase):
                 self.assertFalse(r[i])
         try:
             print(
-                f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1/t2}x"
+                f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1 / t2}x"
             )
         except ZeroDivisionError:
             pass
@@ -1248,7 +1248,7 @@ class TestGeomstr(unittest.TestCase):
             self.assertEqual(bool(p1), bool(p2))
         try:
             print(
-                f"ScanBeam PiP: {sb3-sb2} seconds, {sb3-sb1} total. Beamtable PiP {bt3-bt2} seconds, {bt3-bt1} total."
+                f"ScanBeam PiP: {sb3 - sb2} seconds, {sb3 - sb1} total. Beamtable PiP {bt3 - bt2} seconds, {bt3 - bt1} total."
             )
         except ZeroDivisionError:
             pass
@@ -2086,7 +2086,7 @@ class TestGeomstr(unittest.TestCase):
             self.assertEqual(rr[i], r[i])
         try:
             print(
-                f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x"
+                f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2 / t1}x"
             )
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
@@ -2634,7 +2634,7 @@ class TestGeomstr(unittest.TestCase):
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
             print(
-                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
+                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time / bo_time}x or {bo_time / brute_time}x"
             )
             print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 

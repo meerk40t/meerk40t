@@ -51,6 +51,23 @@ default_color = {
     "guide3": "#A0A0A080",
 }
 
+# Laserology proposed the following values:
+def to_hex(col:wx.Colour):
+    def plain(num:int):
+        return hex(num)[2:4]
+    s = f"#{plain(col.red)}{plain(col.green)}{plain(col.blue)}{plain(col.alpha)}"
+    return s
+
+default_colors_dark= {
+    "grid": "#6B6B6B",
+    "guide": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "background": "#282C57",
+    "bed": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)),
+    "grid2": "#6B6B6B",
+    "guide2": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+    "grid3": "#6B6B6B",
+    "guide3": to_hex(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)),
+}
 
 def base_color(item):
     """
@@ -73,8 +90,11 @@ class GuiColors(Service):
     def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "colors")
         _ = kernel.translation
-        for key in default_color:
-            self.setting(str, key, default_color[key])
+        for key, value in default_color.items():
+            if self._kernel.root.themes.dark and key in default_colors_dark:
+                value = default_colors_dark[key]
+            self.setting(str, key, value)
+
         self.sanity_check()
 
     def __getattr__(self, item):
@@ -174,9 +194,12 @@ class GuiColors(Service):
         for key in default_color:
             setattr(self, key, random_color())
 
-    def set_default_colors(self):
+    def set_default_colors(self, brighter=False):
         """
         Reset all colors to default values...
         """
-        for key in default_color:
-            setattr(self, key, default_color[key])
+        for key, value in default_color.items():
+            setattr(self, key, value)
+        if self._kernel.root.themes.dark and not brighter:
+            for key, value in default_colors_dark.items():
+                setattr(self, key, value)

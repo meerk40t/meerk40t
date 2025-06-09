@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.wxutils import wxCheckBox
+from meerk40t.gui.wxutils import wxCheckBox, wxStaticText
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -22,6 +22,7 @@ def register_panel_snapoptions(window, context):
     pane.dock_proportion = 150
     pane.control = panel
     pane.submenu = "_40_" + _("Editing")
+    pane.helptext = _("Edit element movement snap options")
 
     window.on_pane_create(pane)
     context.register("pane/snapoptions", pane)
@@ -33,7 +34,9 @@ class SnapOptionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("snap")
+
         # Main Sizer
         sizer_snap = wx.BoxSizer(wx.VERTICAL)
         maxpoints = 75
@@ -76,9 +79,9 @@ class SnapOptionPanel(wx.Panel):
         # Visibility
         sizer_snap_visibility = wx.BoxSizer(wx.VERTICAL)
         sizer_sub_visible = wx.BoxSizer(wx.HORIZONTAL)
-        label_vis = wx.StaticText(self, wx.ID_ANY, _("Overall visibility"))
+        label_vis = wxStaticText(self, wx.ID_ANY, _("Overall visibility"))
 
-        label_vis_dist = wx.StaticText(self, wx.ID_ANY, _("Distance"))
+        label_vis_dist = wxStaticText(self, wx.ID_ANY, _("Distance"))
         sizer_sub_visible.Add(label_vis_dist, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_sub_visible.Add(self.slider_visibility, 1, wx.EXPAND, 0)
 
@@ -88,7 +91,7 @@ class SnapOptionPanel(wx.Panel):
         sizer_points = wx.BoxSizer(wx.VERTICAL)
 
         sizer_sub_points = wx.BoxSizer(wx.HORIZONTAL)
-        label_pts_dist = wx.StaticText(self, wx.ID_ANY, _("Distance"))
+        label_pts_dist = wxStaticText(self, wx.ID_ANY, _("Distance"))
         sizer_sub_points.Add(label_pts_dist, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_sub_points.Add(self.slider_distance_points, 1, wx.EXPAND, 0)
 
@@ -99,7 +102,7 @@ class SnapOptionPanel(wx.Panel):
 
         sizer_sub_grid = wx.BoxSizer(wx.HORIZONTAL)
 
-        label_grid_dist = wx.StaticText(self, wx.ID_ANY, _("Distance"))
+        label_grid_dist = wxStaticText(self, wx.ID_ANY, _("Distance"))
         sizer_sub_grid.Add(label_grid_dist, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_sub_grid.Add(self.slider_distance_grid, 1, wx.EXPAND, 0)
 

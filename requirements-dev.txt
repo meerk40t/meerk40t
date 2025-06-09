@@ -1,4 +1,4 @@
-numpy
+numpy<=1.26.4
 wheel
 Pillow
 pyusb
@@ -7,3 +7,4 @@ ezdxf
 opencv-python-headless
 pytest
 flake8
+polib

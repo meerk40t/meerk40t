@@ -23,7 +23,7 @@ class LayerNode(Node):
             if hasattr(self.parent, "activate"):
                 self.parent.activate(self.layer_name)
 
-    def drop(self, drag_node, modify=True):
+    def drop(self, drag_node, modify=True, flag=False):
         return False
 
     @property

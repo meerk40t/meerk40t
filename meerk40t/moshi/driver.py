@@ -53,7 +53,9 @@ class MoshiDriver(Parameters):
         self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.queue = list()
+        self.queue = []
+        self._queue_current = 0
+        self._queue_total = 0
 
         self.program = MoshiBuilder()
 
@@ -69,6 +71,8 @@ class MoshiDriver(Parameters):
 
         self.out_pipe = None
         self.out_real = None
+
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
         def primary_hold():
             if self.out_pipe is None:
@@ -90,6 +94,13 @@ class MoshiDriver(Parameters):
             self.out_real(e)
         else:
             self.out_pipe(e)
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     def hold_work(self, priority):
         """
@@ -284,15 +295,60 @@ class MoshiDriver(Parameters):
 
         @return:
         """
+        total = len(self.queue)
+        current = 0
         for q in self.queue:
+            current += 1
+            self._set_queue_status(current, total)
+            p_set = Parameters(q.settings)
+            if p_set.power != self.power:
+                self._set_power(p_set.power)
+            if (
+                p_set.speed != self.speed
+                or p_set.raster_step_x != self.raster_step_x
+                or p_set.raster_step_y != self.raster_step_y
+            ):
+                self._set_speed(p_set.speed)
+                self._set_step(p_set.raster_step_x, p_set.raster_step_y)
+                self.rapid_mode()
+            self.settings.update(q.settings)
+
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
             if x != start_x or y != start_y:
                 self._goto_absolute(start_x, start_y, 0)
-            self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self._goto_absolute(*q.end, 1)
+                x0, y0, x1, y1 = int(q.start[0]), int(q.start[1]), int(q.end[0]), int(q.end[1])
+                dx, dy = abs(x1 - x0), abs(y1 - y0)
+                # horizontal, vertical or 45 deg angled line
+                if dx == 0 or dy == 0 or dx == dy:
+                    self._goto_absolute(*q.end, 1)
+                else:
+                    # other oblique line
+                    if dx > dy:
+                        d = dy
+                        sx = float((x1 - x0) / dy)
+                        if y1 - y0 > 0:
+                            sy = 1
+                        else:
+                            sy = -1
+                    else:
+                        d = dx
+                        if x1 - x0 > 0:
+                            sx = 1
+                        else:
+                            sx = -1
+                        sy = float((y1 - y0) / dx)
+                    x = x0
+                    y = y0
+                    self._goto_absolute(*q.start, 0)
+                    for i in range(d):
+                        while self.hold_work(0):
+                            time.sleep(0.05)
+                        x += sx
+                        y += sy
+                        self._goto_absolute(int(x), int(y), 1)
             elif isinstance(q, QuadCut):
                 interp = self.service.interp
                 g = Geomstr()
@@ -381,6 +437,7 @@ class MoshiDriver(Parameters):
                         continue
                     self._goto_absolute(x, y, on & 1)
         self.queue.clear()
+        self._set_queue_status(0, 0)
 
     def move_abs(self, x, y):
         """
@@ -417,7 +474,7 @@ class MoshiDriver(Parameters):
         if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.rapid_mode()
-        self.speed = 40
+        self.set("speed", 40)
         self.program_mode(0, 0, 0, 0)
         self.rapid_mode()
         self.native_x = 0
@@ -425,7 +482,7 @@ class MoshiDriver(Parameters):
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
         self.home()
 
@@ -664,7 +721,6 @@ class MoshiDriver(Parameters):
             speed = 20
         if normal_speed is None:
             normal_speed = speed
-
         # Normal speed is rapid. Passing same speed so PPI isn't crazy.
         self.program.vector_speed(speed, normal_speed)
         self.program.set_offset(0, offset_x, offset_y)
@@ -694,11 +750,7 @@ class MoshiDriver(Parameters):
         self.native_y = move_y
 
     def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.power = max(0, min(1000, power))
 
     def _set_overscan(self, overscan=None):
         self.overscan = overscan
@@ -780,10 +832,11 @@ class MoshiDriver(Parameters):
         self.native_y = y
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def _move_absolute(self, x, y):
         """
@@ -796,10 +849,11 @@ class MoshiDriver(Parameters):
         self.native_y = y
 
         new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self._signal_updates:
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def laser_disable(self, *values):
         self.laser_enabled = False

@@ -88,6 +88,7 @@ from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, Length
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
 SVG_ATTR_FILL_RULE = "fill-rule"
+SVG_ATTR_STROKE_DASH = "stroke-dasharray"
 
 
 def plugin(kernel, lifecycle=None):
@@ -103,6 +104,22 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "SVG files can be saved without real physical units.\n"
                     "This setting uses the SVG viewport dimensions to scale the rest of the elements in the file."
+                ),
+                "page": "Input/Output",
+                "section": "Input",
+            },
+            {
+                "attr": "load_hidden_to_regmarks",
+                "object": kernel.elements,
+                "default": True,
+                "type": bool,
+                "label": _("Load hidden objects to regmarks"),
+                "tip": _(
+                    "Ticked: When loading a file invisible elements will be loaded to the regmarks branch."
+                )
+                + "\n"
+                + _(
+                    "Unticked: Invisible elements will be loaded as regular elements and will be hidden."
                 ),
                 "page": "Input/Output",
                 "section": "Input",
@@ -161,10 +178,7 @@ def rulestr(fillrule):
     @param fillrule:
     @return:
     """
-    if fillrule == Fillrule.FILLRULE_EVENODD:
-        return "evenodd"
-    else:
-        return "nonzero"
+    return "evenodd" if fillrule == Fillrule.FILLRULE_EVENODD else "nonzero"
 
 
 class SVGWriter:
@@ -219,6 +233,12 @@ class SVGWriter:
             if elements.note is not None:
                 subelement = SubElement(root, "note")
                 subelement.set(SVG_TAG_TEXT, str(elements.note))
+            if elements.last_file_autoexec is not None:
+                subelement = SubElement(root, "autoexec")
+                subelement.set("autoexec", str(elements.last_file_autoexec))
+                subelement.set(
+                    "autoexec-active", str(elements.last_file_autoexec_active)
+                )
 
         SVGWriter._write_tree(root, elements._tree, version)
 
@@ -285,6 +305,9 @@ class SVGWriter:
                 "xlink:href",
                 f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
             )
+            ref = c.keyhole_reference
+            if ref is not None:
+                subelement.set("keyhole_reference", ref)
             subelement.set(SVG_ATTR_X, "0")
             subelement.set(SVG_ATTR_Y, "0")
             subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
@@ -395,6 +418,8 @@ class SVGWriter:
             group_element = SubElement(xml_tree, SVG_TAG_GROUP)
             if hasattr(c, "label") and c.label is not None and c.label != "":
                 group_element.set("inkscape:label", str(c.label))
+            if hasattr(c, "label_display") and c.label_display is not None:
+                group_element.set("label_display", str(c.label_display))
             SVGWriter._write_elements(group_element, c, version)
             return
         elif c.type.startswith("effect"):
@@ -437,6 +462,7 @@ class SVGWriter:
                     "linejoin",
                     "fillrule",
                     "stroke_width",
+                    "stroke_dash",
                 )
                 and value is not None
                 and isinstance(value, (str, int, float, complex, list, tuple, dict))
@@ -459,6 +485,8 @@ class SVGWriter:
             subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
         if hasattr(c, "fillrule"):
             subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
+        if hasattr(c, "stroke_dash") and c.stroke_dash:
+            subelement.set(SVG_ATTR_STROKE_DASH, c.stroke_dash)
 
         ###############
         # SAVE LABEL
@@ -469,10 +497,7 @@ class SVGWriter:
         ###############
         # SAVE STROKE
         ###############
-        if hasattr(c, "stroke"):
-            stroke = c.stroke
-        else:
-            stroke = None
+        stroke = c.stroke if hasattr(c, "stroke") else None
         if stroke is not None:
             stroke_opacity = stroke.opacity
             stroke = (
@@ -503,10 +528,7 @@ class SVGWriter:
         ###############
         # SAVE FILL
         ###############
-        if hasattr(c, "fill"):
-            fill = c.fill
-        else:
-            fill = None
+        fill = c.fill if hasattr(c, "fill") else None
         if fill is not None:
             fill_opacity = fill.opacity
             fill = (
@@ -519,7 +541,19 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
         else:
             subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
+
+        if hasattr(c, "hidden") and c.hidden:
+            subelement.set("visibility", "hidden")
+
         subelement.set(SVG_ATTR_ID, str(c.id))
+        if hasattr(c, "bounds"):
+            bb = c.bounds
+            bbstr = f"{bb[0]}, {bb[1]}, {bb[2]}, {bb[3]}"
+            subelement.set("bounds", bbstr)
+        if hasattr(c, "paint_bounds"):
+            bb = c.paint_bounds
+            bbstr = f"{bb[0]}, {bb[1]}, {bb[2]}, {bb[3]}"
+            subelement.set("paint_bounds", bbstr)
 
     @staticmethod
     def _write_operations(xml_tree, op_tree, version):
@@ -557,43 +591,67 @@ class SVGWriter:
         if node.label is not None:
             subelement.set("label", str(node.label))
 
-        if node.lock is not None:
-            subelement.set("lock", str(node.lock))
+        # We might end up with items in settings that have an unwanted equivalent in the node.dict
+        # as the settings instance is read and initiated on svg load...
+        for key, value in node.__dict__.items():
+            if not key or key.startswith("_"):
+                continue
+            if key in (
+                "references",
+                "tag",
+                "type",
+                "draw",
+                "stroke_width",
+                "matrix",
+                "settings",
+            ):
+                continue
+            if hasattr(node, "settings"):
+                if key in node.settings:
+                    settings_value = node.settings[key]
+                    if settings_value != value:
+                        # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
+                        node.settings[key] = value
 
-        try:
-            for key, value in node.settings.items():
-                if not key:
-                    # If key is None, do not save.
-                    continue
-                if key.startswith("_"):
-                    continue
-                if value is None:
-                    continue
-                if key in ("references", "tag", "type"):
-                    # References key from previous loaded version (filter out, rebuild)
-                    continue
-                subelement.set(key, str(value))
-        except AttributeError:
-            # Node does not have settings, write object dict
-            for key, value in node.__dict__.items():
-                if not key:
-                    # If key is None, do not save.
-                    continue
-                if key.startswith("_"):
-                    continue
-                if value is None:
-                    continue
-                if key in (
-                    "references",
-                    "tag",
-                    "type",
-                    "draw",
-                    "stroke_width",
-                    "matrix",
-                ):
-                    # References key from previous loaded version (filter out, rebuild)
-                    continue
-                subelement.set(key, str(value))
+        saved_attributes = []
+        if hasattr(node, "settings"):
+            try:
+                for key, value in node.settings.items():
+                    saved_attributes.append(key)
+                    if not key:
+                        # If key is None, do not save.
+                        continue
+                    if key.startswith("_"):
+                        continue
+                    if value is None:
+                        continue
+                    if key in ("references", "tag", "type"):
+                        # References key from previous loaded version (filter out, rebuild)
+                        continue
+                    subelement.set(key, str(value))
+            except AttributeError:
+                pass
+        # Node does not have settings, write object dict
+        for key, value in node.__dict__.items():
+            if (
+                not key
+                or key.startswith("_")
+                or key in saved_attributes
+                or value is None
+            ):
+                continue
+            if key in (
+                "references",
+                "tag",
+                "type",
+                "draw",
+                "stroke_width",
+                "matrix",
+                "settings",
+            ):
+                # References key from previous loaded version (filter out, rebuild)
+                continue
+            subelement.set(key, str(value))
 
         # Store current node reference values.
         SVGWriter._write_references(subelement, node)
@@ -611,7 +669,8 @@ class SVGWriter:
         for c in node.children:
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-                contains.append(c.id)
+                if c.id is not None:  # Something strange happened here...
+                    contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
 
@@ -654,18 +713,26 @@ class SVGProcessor:
     Special care is taken to load MK specific objects like `note` and `operations`
     """
 
-    def __init__(self, elements, load_operations):
+    def __init__(
+        self,
+        elements,
+        load_operations,
+        load_hidden_to_regmarks=True,
+        reuse_operations=True,
+    ):
         self.elements = elements
 
         self.operation_list = list()
         self.element_list = list()
         self.regmark_list = list()
+        self.load_hidden_to_regmarks = load_hidden_to_regmarks
 
         self.reverse = False
         self.requires_classification = True
-        self.operations_replaced = False
+        self.operations_generated = False
         self.pathname = None
         self.load_operations = load_operations
+        self.reuse_operations = reuse_operations
         self.mk_params = list(
             self.elements.kernel.lookup_all("registered_mk_svg_parameters")
         )
@@ -693,6 +760,11 @@ class SVGProcessor:
         @param pathname:
         @return:
         """
+        retain_op_list = [
+            child
+            for child in list(self.elements.ops())
+            if child._children is not None and len(child._children) > 0
+        ]
         self.pathname = pathname
 
         context_node = self.elements.elem_branch
@@ -701,12 +773,17 @@ class SVGProcessor:
 
         self.parse(svg, file_node, self.element_list, branch="elements")
 
-        if self.load_operations and self.operations_replaced:
+        if self.load_operations and self.operations_generated:
+            # print ("Will replace all operations...")
+            self.requires_classification = False
             for child in list(self.elements.op_branch.children):
+                if child in retain_op_list:
+                    continue
                 if not hasattr(child, "_ref_load"):
                     child.remove_all_children(fast=True, destroy=True)
                     child.remove_node(fast=True, destroy=True)
-            self.elements.undo.mark("op-replaced")
+            # Hint for translate check: _("File loaded")
+            self.elements.undo.mark("File loaded")
             for op in self.elements.op_branch.flat():
                 try:
                     refs = op._ref_load
@@ -716,8 +793,6 @@ class SVGProcessor:
                 if refs is None:
                     continue
 
-                self.requires_classification = False
-
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
@@ -726,10 +801,44 @@ class SVGProcessor:
         if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
 
-    def check_for_mk_path_attributes(self, node, element):
+    def check_for_bound_information(self, node, element):
+        # Do we have existing boundary information?
+        if "bounds" not in element.values:
+            return False
+        bbstr = element.values["bounds"]
+        if not bbstr:
+            return False
+        bb_info = bbstr.split(",")
+        if len(bb_info) == 4:
+            bbox = [0, 0, 0, 0]
+            try:
+                for idx in range(4):
+                    val = float(bb_info[idx])
+                    bbox[idx] = val
+            except ValueError:
+                return False
+            node._bounds = list(bbox)
+            node._bounds_dirty = False
+            if "paint_bounds" in element.values:
+                try:
+                    bbstr = element.values["paint_bounds"]
+                    bb_info = bbstr.split(",")
+                    if len(bb_info) == 4:
+                        for idx in range(4):
+                            val = float(bb_info[idx])
+                            bbox[idx] = val
+                except Exception:
+                    # Whatever it was, we don't continue...
+                    pass
+            node._paint_bounds = list(bbox)
+            node._paint_bounds_dirty = False
+            return True
+
+    def check_for_mk_path_attributes(self, node, element, skip=None):
         """
         Checks for some mk special parameters starting with mk. Especially mkparam, and uses this property to fill in
-        the functional_parameter attribute for the node.
+        the functional_parameter attribute for the node. This can be skipped if needed (eg. for basic shapes) as this
+        is not needed for them.
 
         @param node:
         @param element:
@@ -738,7 +847,8 @@ class SVGProcessor:
         for prop in element.values:
             lc = element.values.get(prop)
             if prop.startswith("mk"):
-                # print (f"Property: {prop} = [{type(lc).__name__}] {lc}")
+                if skip and prop in skip:
+                    continue
                 if lc is not None:
                     setattr(node, prop, lc)
                     # This needs to be done as some node types are not based on Parameters
@@ -756,6 +866,18 @@ class SVGProcessor:
                         except (ValueError, SyntaxError):
                             pass
 
+    def check_for_label_display(self, node, element):
+        """
+        Called for all nodes to check whether the label_display needs to be set
+        @param node:
+        @param element:
+        @return:
+        """
+        lc = element.values.get("label_display")
+        if lc is not None and hasattr(node, "label_display"):
+            d_val = bool(ast.literal_eval(lc))
+            node.label_display = d_val
+
     def check_for_fill_attributes(self, node, element):
         """
         Called for paths and poly lines. This checks for an attribute of `fill-rule` in the SVG and sets the MK equal.
@@ -765,14 +887,15 @@ class SVGProcessor:
         @return:
         """
         lc = element.values.get(SVG_ATTR_FILL_RULE)
+        # SVG default is nonzero
+        nlc = Fillrule.FILLRULE_NONZERO
         if lc is not None:
-            nlc = Fillrule.FILLRULE_NONZERO
             lc = lc.lower()
             if lc == SVG_RULE_EVENODD:
                 nlc = Fillrule.FILLRULE_EVENODD
             elif lc == SVG_RULE_NONZERO:
                 nlc = Fillrule.FILLRULE_NONZERO
-            node.fillrule = nlc
+        node.fillrule = nlc
 
     def check_for_line_attributes(self, node, element):
         """
@@ -784,16 +907,19 @@ class SVGProcessor:
         @return:
         """
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
+        # SVG default is butt
+        nlc = Linecap.CAP_BUTT
         if lc is not None:
-            nlc = Linecap.CAP_ROUND
             if lc == "butt":
                 nlc = Linecap.CAP_BUTT
             elif lc == "round":
                 nlc = Linecap.CAP_ROUND
             elif lc == "square":
                 nlc = Linecap.CAP_SQUARE
-            node.linecap = nlc
+        node.linecap = nlc
         lj = element.values.get(SVG_ATTR_STROKE_JOIN)
+        # SVG default is miter
+        nlj = Linejoin.JOIN_MITER
         if lj is not None:
             nlj = Linejoin.JOIN_MITER
             if lj == "arcs":
@@ -806,7 +932,10 @@ class SVGProcessor:
                 nlj = Linejoin.JOIN_MITER_CLIP
             elif lj == "round":
                 nlj = Linejoin.JOIN_ROUND
-            node.linejoin = nlj
+        node.linejoin = nlj
+        lj = element.values.get(SVG_ATTR_STROKE_DASH)
+        if lj not in (None, "", "none"):
+            node.stroke_dash = lj
 
     @staticmethod
     def is_dot(element):
@@ -861,7 +990,9 @@ class SVGProcessor:
             return tag_label
         return local_dict.get("label")
 
-    def _parse_text(self, element, ident, label, lock, context_node, e_list):
+    def _parse_text(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses an SVGText object, into an `elem text` node.
 
@@ -904,10 +1035,15 @@ class SVGProcessor:
             type="elem text",
             label=label,
             settings=element.values,
+            hidden=set_hidden,
         )
+        self.check_for_label_display(node, element)
+        self.check_for_bound_information(node, element)
         e_list.append(node)
 
-    def _parse_path(self, element, ident, label, lock, context_node, e_list):
+    def _parse_path(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses an SVG Path object.
 
@@ -938,14 +1074,23 @@ class SVGProcessor:
             pass
         element.approximate_arcs_with_cubics()
         node = context_node.add(
-            path=element, type="elem path", id=ident, label=label, lock=lock
+            path=element,
+            type="elem path",
+            id=ident,
+            label=label,
+            lock=lock,
+            hidden=set_hidden,
         )
+        self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
+        self.check_for_bound_information(node, element)
         e_list.append(node)
 
-    def _parse_polyline(self, element, ident, label, lock, context_node, e_list):
+    def _parse_polyline(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses svg Polyline and Polygon objects into `elem polyline` nodes.
 
@@ -965,11 +1110,13 @@ class SVGProcessor:
             id=ident,
             label=label,
             lock=lock,
+            hidden=set_hidden,
         )
+        self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
-        if self.precalc_bbox:
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
+        if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             if element.transform.is_identity():
                 points = element.points
@@ -992,7 +1139,9 @@ class SVGProcessor:
             node._points_dirty = False
         e_list.append(node)
 
-    def _parse_ellipse(self, element, ident, label, lock, context_node, e_list):
+    def _parse_ellipse(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parses the SVG Circle, and Ellipse nodes into `elem ellipse` nodes.
 
@@ -1012,10 +1161,17 @@ class SVGProcessor:
             id=ident,
             label=label,
             lock=lock,
+            hidden=set_hidden,
         )
+        self.check_for_label_display(node, element)
+        self.check_for_line_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
+        self.check_for_bound_information(node, element)
         e_list.append(node)
 
-    def _parse_rect(self, element, ident, label, lock, context_node, e_list):
+    def _parse_rect(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parse SVG Rect objects into `elem rect` objects.
 
@@ -1030,10 +1186,17 @@ class SVGProcessor:
         if element.is_degenerate():
             return
         node = context_node.add(
-            shape=element, type="elem rect", id=ident, label=label, lock=lock
+            shape=element,
+            type="elem rect",
+            id=ident,
+            label=label,
+            lock=lock,
+            hidden=set_hidden,
         )
+        self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
-        if self.precalc_bbox:
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
+        if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
                 Point(element.x, element.y),
@@ -1058,7 +1221,9 @@ class SVGProcessor:
             node._points_dirty = False
         e_list.append(node)
 
-    def _parse_line(self, element, ident, label, lock, context_node, e_list):
+    def _parse_line(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parse SVG Line objects into `elem line`
 
@@ -1073,10 +1238,17 @@ class SVGProcessor:
         if element.is_degenerate():
             return
         node = context_node.add(
-            shape=element, type="elem line", id=ident, label=label, lock=lock
+            shape=element,
+            type="elem line",
+            id=ident,
+            label=label,
+            lock=lock,
+            hidden=set_hidden,
         )
+        self.check_for_label_display(node, element)
         self.check_for_line_attributes(node, element)
-        if self.precalc_bbox:
+        self.check_for_mk_path_attributes(node, element, skip=("mkparam",))
+        if not self.check_for_bound_information(node, element) and self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
                 Point(element.x1, element.y1),
@@ -1099,7 +1271,9 @@ class SVGProcessor:
             node._points_dirty = False
         e_list.append(node)
 
-    def _parse_image(self, element, ident, label, lock, context_node, e_list):
+    def _parse_image(
+        self, element, ident, label, lock, context_node, e_list, set_hidden
+    ):
         """
         Parse SVG Image objects into either `image raster` or `elem image` objects, potentially other classes.
 
@@ -1163,6 +1337,12 @@ class SVGProcessor:
                     _dither_type = element.values.get("dither_type")
                 except (ValueError, TypeError):
                     pass
+                _keyhole = None
+                try:
+                    _keyhole = element.values.get("keyhole_reference")
+                except (ValueError, TypeError):
+                    pass
+
                 _red = None
                 try:
                     _red = float(element.values.get("red"))
@@ -1183,6 +1363,18 @@ class SVGProcessor:
                     _lightness = float(element.values.get("lightness"))
                 except (ValueError, TypeError):
                     pass
+                _is_depthmap = False
+                try:
+                    _is_depthmap = bool(element.values.get("is_depthmap") == "True")
+                except (ValueError, TypeError):
+                    pass
+                _depth_resolution = 256
+                try:
+                    _depth_resolution = int(element.values.get("depth_resolution"))
+                    if _depth_resolution <= 1 or _depth_resolution > 256:
+                        _depth_resolution = 256
+                except (ValueError, TypeError):
+                    pass
                 node = context_node.add(
                     image=element.image,
                     matrix=element.transform,
@@ -1201,7 +1393,13 @@ class SVGProcessor:
                     label=label,
                     operations=operations,
                     lock=lock,
+                    is_depthmap=_is_depthmap,
+                    depth_resolution=_depth_resolution,
+                    keyhole_reference=_keyhole,
+                    hidden=set_hidden,
                 )
+                self.check_for_label_display(node, element)
+                self.check_for_bound_information(node, element)
                 e_list.append(node)
         except OSError:
             pass
@@ -1233,6 +1431,14 @@ class SVGProcessor:
         if tag == "note":
             self.elements.note = element.values.get(SVG_TAG_TEXT)
             self.elements.signal("note", self.pathname)
+            return
+
+        # Check if note-type
+        if tag == "autoexec":
+            self.elements.last_file_autoexec = element.values.get("autoexec")
+            s = element.values.get("autoexec-active")
+            self.elements.last_file_autoexec_active = bool(s in ("1", "True"))
+            self.elements.signal("autoexec", self.pathname)
             return
 
         node_type = element.values.get("type")
@@ -1278,8 +1484,8 @@ class SVGProcessor:
             if not self.load_operations:
                 # We don't do that.
                 return
-            if not self.operations_replaced:
-                self.operations_replaced = True
+
+            self.operations_generated = True
 
             try:
                 if node_type == "op hatch":
@@ -1312,6 +1518,9 @@ class SVGProcessor:
                     "settings"
                 ]  # If settings was set, delete it, or it will mess things up
             elem = context_node.add(type=node_type, **attrs)
+            # This could be an elem point
+            self.check_for_label_display(elem, element)
+            self.check_for_bound_information(elem, element)
             try:
                 elem.validate()
             except AttributeError:
@@ -1333,6 +1542,7 @@ class SVGProcessor:
         @param uselabel:
         @return:
         """
+        set_hidden = False
         display = ""
         if "display" in element.values:
             display = element.values.get("display").lower()
@@ -1340,22 +1550,21 @@ class SVGProcessor:
                 if branch not in ("elements", "regmarks"):
                     return
         if element.values.get("visibility") == "hidden" or display == "none":
-            if branch != "regmarks":
-                self.parse(
-                    element,
-                    self.elements.reg_branch,
-                    self.regmark_list,
-                    branch="regmarks",
-                )
-                return
+            if self.load_hidden_to_regmarks:
+                if branch != "regmarks":
+                    self.parse(
+                        element,
+                        self.elements.reg_branch,
+                        self.regmark_list,
+                        branch="regmarks",
+                    )
+                    return
+            else:
+                set_hidden = True
 
         ident = element.id
 
-        if uselabel:
-            _label = uselabel
-        else:
-            _label = self.get_tag_label(element)
-
+        _label = uselabel if uselabel else self.get_tag_label(element)
         _lock = None
         try:
             _lock = bool(element.values.get("lock") == "True")
@@ -1372,22 +1581,39 @@ class SVGProcessor:
                 stroke=element.stroke,
                 label=_label,
                 lock=_lock,
+                hidden=set_hidden,
             )
+            self.check_for_label_display(node, element)
+            self.check_for_bound_information(node, element)
             e_list.append(node)
         elif isinstance(element, SVGText):
-            self._parse_text(element, ident, _label, _lock, context_node, e_list)
+            self._parse_text(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, Path):
-            self._parse_path(element, ident, _label, _lock, context_node, e_list)
+            self._parse_path(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, (Polygon, Polyline)):
-            self._parse_polyline(element, ident, _label, _lock, context_node, e_list)
+            self._parse_polyline(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, (Circle, Ellipse)):
-            self._parse_ellipse(element, ident, _label, _lock, context_node, e_list)
+            self._parse_ellipse(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, Rect):
-            self._parse_rect(element, ident, _label, _lock, context_node, e_list)
+            self._parse_rect(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, SimpleLine):
-            self._parse_line(element, ident, _label, _lock, context_node, e_list)
+            self._parse_line(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, SVGImage):
-            self._parse_image(element, ident, _label, _lock, context_node, e_list)
+            self._parse_image(
+                element, ident, _label, _lock, context_node, e_list, set_hidden
+            )
         elif isinstance(element, SVG):
             # SVG is type of group, it must be processed before Group. Nothing special is done with the type.
             if self.reverse:
@@ -1419,7 +1645,7 @@ class SVGProcessor:
                 if not self.load_operations:
                     # We don't do that.
                     return
-                self.operations_replaced = True
+                self.operations_generated = True
                 self.parse(
                     element,
                     self.elements.op_branch,
@@ -1434,9 +1660,62 @@ class SVGProcessor:
             for attr in ("type", "id", "label"):
                 if attr in e_dict:
                     del e_dict[attr]
-            context_node = context_node.add(
-                type=e_type, id=ident, label=_label, **e_dict
-            )
+
+            #
+            already = False
+            if self.reuse_operations:
+                # No need to create another operation, if we do
+                # have an identical operation in place
+                if e_type.startswith("op "):
+                    # It needs to be non-empty to be used!
+                    for testop in self.elements.ops():
+                        if len(testop.children) == 0:
+                            continue
+                        if e_type != testop.type:
+                            continue
+                        differs = False
+                        for check_attr, check_default in (
+                            ("id", None),
+                            ("power", "1000"),
+                            ("speed", None),
+                            ("passes", "0"),
+                            ("color", None),
+                        ):
+                            if not hasattr(testop, check_attr):
+                                if check_attr in e_dict:
+                                    differs = True
+                                    break
+                                continue
+                            test_val = getattr(testop, check_attr, check_default)
+                            if test_val is None:
+                                test_val = ""
+                            else:
+                                test_val = str(test_val)
+                            if check_attr == "id":
+                                eop_val = ident
+                            else:
+                                if check_attr not in e_dict:
+                                    eop_val = check_default
+                                else:
+                                    eop_val = e_dict[check_attr]
+                            if eop_val is None:
+                                eop_val = ""
+                            if test_val != eop_val:
+                                differs = True
+                                # print (f"{testop.type}.{check_attr}: {eop_val} != {test_val}")
+                                break
+                        if differs:
+                            continue
+                        context_node = testop
+                        already = True
+                        break
+
+            if not already:
+                context_node = context_node.add(
+                    type=e_type, id=ident, label=_label, **e_dict
+                )
+                self.check_for_label_display(context_node, element)
+                self.check_for_bound_information(context_node, element)
             context_node._ref_load = element.values.get("references")
             e_list.append(context_node)
             if hasattr(context_node, "validate"):
@@ -1470,12 +1749,46 @@ class SVGProcessor:
         # 1) Fix regmark grouping.
         # Regmarks nodes are saved under a group with visibility=False set
         # So let's flatten this top group
+        if len(self.regmark_list) > 0:
+            # We need to add another filenode under regmarks and move all elements to it
+            context_node = self.elements.reg_branch
+            file_node = context_node.add(type="file", filepath=self.pathname)
+            for node in self.regmark_list:
+                if node._parent is context_node:
+                    if node.type == "group" and (
+                        node.id == "regmarks" or node.label == "regmarks"
+                    ):
+                        for n in list(node.children):
+                            file_node.append_child(n)
+                        node.remove_node()  # Removing group/file node.
+                    else:
+                        file_node.append_child(node)
+
         regmark = self.elements.reg_branch
         for c in regmark.children:
             if c.type == "group" and (c.id == "regmarks" or c.label == "regmarks"):
                 for n in list(c.children):
                     c.insert_sibling(n)
                 c.remove_node()  # Removing group/file node.
+
+        needs_update = False
+        for c in self.elements.flat():
+            # All nodes including regmarks and elements
+            if c.type == "elem image" and c.keyhole_reference is not None:
+                refnode = self.elements.find_node(c.keyhole_reference)
+                if refnode is None or not hasattr(refnode, "as_geometry"):
+                    # Invalid -> remove
+                    c.keyhole_reference = None
+                else:
+                    try:
+                        self.elements.register_keyhole(refnode, c)
+                        needs_update = True
+                    except ValueError as e:
+                        c.keyhole_reference = None
+
+        if needs_update:
+            self.elements.process_keyhole_updates(None)
+
 
 class SVGLoader:
     """
@@ -1488,10 +1801,7 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_service, pathname, **kwargs):
-        if "svg_ppi" in kwargs:
-            ppi = float(kwargs["svg_ppi"])
-        else:
-            ppi = DEFAULT_PPI
+        ppi = float(kwargs["svg_ppi"]) if "svg_ppi" in kwargs else DEFAULT_PPI
         if ppi == 0:
             ppi = DEFAULT_PPI
         scale_factor = NATIVE_UNIT_PER_INCH / ppi
@@ -1520,7 +1830,15 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
-        svg_processor = SVGProcessor(elements_service, True)
+        reuse = elements_service.reuse_operations_on_load
+        to_regmarks = elements_service.load_hidden_to_regmarks
+        elements_service._loading_cleared = True
+        svg_processor = SVGProcessor(
+            elements_service,
+            load_operations=True,
+            reuse_operations=reuse,
+            load_hidden_to_regmarks=to_regmarks,
+        )
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
         return True
@@ -1537,10 +1855,7 @@ class SVGLoaderPlain:
 
     @staticmethod
     def load(context, elements_service, pathname, **kwargs):
-        if "svg_ppi" in kwargs:
-            ppi = float(kwargs["svg_ppi"])
-        else:
-            ppi = DEFAULT_PPI
+        ppi = float(kwargs["svg_ppi"]) if "svg_ppi" in kwargs else DEFAULT_PPI
         if ppi == 0:
             ppi = DEFAULT_PPI
         scale_factor = NATIVE_UNIT_PER_INCH / ppi
@@ -1568,7 +1883,11 @@ class SVGLoaderPlain:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
-        svg_processor = SVGProcessor(elements_service, False)
+        elements_service._loading_cleared = True
+        to_regmarks = elements_service.load_hidden_to_regmarks
+        svg_processor = SVGProcessor(
+            elements_service, load_operations=False, load_hidden_to_regmarks=to_regmarks
+        )
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
         return True

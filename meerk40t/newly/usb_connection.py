@@ -271,12 +271,12 @@ class USBConnection:
                 dev.write(
                     endpoint=WRITE_INTERRUPT, data=length_data, timeout=self.timeout
                 )
-                self.channel(f"Length Sent.")
+                self.channel("Length Sent.")
                 #####################################
                 # Step 2: read the confirmation value.
                 #####################################
                 # endpoint, data, timeout
-                self.channel(f"Read Confirmation.")
+                self.channel("Read Confirmation.")
                 read = dev.read(
                     endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
                 )
@@ -289,9 +289,9 @@ class USBConnection:
                 # Step #3, write the bulk data of the packet.
                 #####################################
                 # endpoint, data, timeout
-                self.channel(f"Writing Data")
+                self.channel("Writing Data")
                 dev.write(endpoint=WRITE_BULK, data=packet, timeout=self.timeout)
-                self.channel(f"Data Written.")
+                self.channel("Data Written.")
 
                 data = data[packet_length:]
                 data_remaining -= packet_length

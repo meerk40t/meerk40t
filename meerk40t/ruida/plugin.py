@@ -27,8 +27,7 @@ def plugin(kernel, lifecycle=None):
                 "friendly_name": _("K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"),
                 "extended_info": _("This driver is incomplete. Use at your own risk."),
                 "priority": -1,
-                "family": _("CO2-Laser"),
-                "family_priority": 0,
+                "family": _("K-Series CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",

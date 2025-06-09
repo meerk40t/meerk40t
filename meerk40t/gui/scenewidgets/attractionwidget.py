@@ -9,7 +9,7 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import HITCHAIN_PRIORITY_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.gui.wxutils import get_matrix_scale
 
 TYPE_BOUND = 0
 TYPE_POINT = 1
@@ -101,6 +101,9 @@ class AttractionWidget(Widget):
 
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
             # Nothing is active that would need snapping.
+            return RESPONSE_CHAIN
+
+        if self.scene.pane.ignore_snap:
             return RESPONSE_CHAIN
 
         self._show_snap_points = True
@@ -236,16 +239,16 @@ class AttractionWidget(Widget):
         matrix = self.parent.matrix
         try:
             # Intentionally big to clearly see shape
-            self.symbol_size = 10 / matrix_scale(matrix)
+            self.symbol_size = 10 / get_matrix_scale(matrix)
         except ZeroDivisionError:
             matrix.reset()
             return
         # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
-        local_attract_len = self.context.show_attract_len / matrix_scale(matrix)
-        local_action_attract_len = self.context.action_attract_len / matrix_scale(
+        local_attract_len = self.context.show_attract_len / get_matrix_scale(matrix)
+        local_action_attract_len = self.context.action_attract_len / get_matrix_scale(
             matrix
         )
-        local_grid_attract_len = self.context.grid_attract_len / matrix_scale(matrix)
+        local_grid_attract_len = self.context.grid_attract_len / get_matrix_scale(matrix)
 
         min_delta = float("inf")
         min_x = None
@@ -305,6 +308,8 @@ class AttractionWidget(Widget):
         Signal commands which indicate that we need to refresh / discard some data
         """
         if signal in ("modified", "emphasized", "element_added", "modified_by_tool"):
+            self.scene.context.elements.set_start_time("attraction")
             self.scene.reset_snap_attraction()
+            self.scene.context.elements.set_end_time("attraction")
         elif signal == "theme":
             self.load_colors()

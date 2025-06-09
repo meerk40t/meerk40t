@@ -43,16 +43,21 @@ def plugin(service, lifecycle):
                 "action": lambda e: service("window toggle Controller\n"),
             },
         )
-        service.register(
-            "button/device/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support,
-                "tip": _("Opens device-specific configuration window"),
-                "help": "devicebalor",
-                "action": lambda v: service("window toggle Configuration\n"),
-            },
-        )
+        kernel = service.kernel
+        if not (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
+            service.register(
+                "button/device/Configuration",
+                {
+                    "label": _("Config"),
+                    "icon": icons8_computer_support,
+                    "tip": _("Opens device-specific configuration window"),
+                    "help": "devicebalor",
+                    "action": lambda v: service("window toggle Configuration\n"),
+                },
+            )
 
         service.register("property/RasterOpNode/Balor", BalorOperationPanel)
         service.register("property/CutOpNode/Balor", BalorOperationPanel)
@@ -74,6 +79,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_full,
                         "help": "devicebalor",
                         "action": lambda e: service("full-light\n"),
+                        "multi_autoexec": False,
                     },
                     # {
                     #     "identifier": "live-regmark",
@@ -88,6 +94,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_bounds,
                         "help": "devicebalor",
                         "action": lambda e: service("select-light\n"),
+                        "multi_autoexec": False,
                     },
                     {
                         "identifier": "live-hull",
@@ -95,6 +102,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_hull,
                         "help": "devicebalor",
                         "action": lambda e: service("hull-light\n"),
+                        "multi_autoexec": False,
                     },
                     {
                         "identifier": "hull",
@@ -102,6 +110,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_hull,
                         "help": "devicebalor",
                         "action": lambda e: service("element* geometry hull light\n"),
+                        "multi_autoexec": False,
                     },
                     {
                         "identifier": "box",
@@ -109,6 +118,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_bounds,
                         "help": "devicebalor",
                         "action": lambda e: service("box light\n"),
+                        "multi_autoexec": False,
                     },
                     # {
                     #     "identifier": "ants",
@@ -121,6 +131,7 @@ def plugin(service, lifecycle):
                         "icon": icon_balor_full,
                         "help": "devicebalor",
                         "action": lambda e: service("element* geometry light\n"),
+                        "multi_autoexec": False,
                     },
                 ],
                 "toggle": {
@@ -145,6 +156,7 @@ def plugin(service, lifecycle):
                     "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
                     "icon": icons8_flash_off,
+                    "signal": "red_dot",
                 },
             },
         )

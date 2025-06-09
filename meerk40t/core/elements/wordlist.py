@@ -1,5 +1,92 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing wordlists within the application.
+These commands allow users to add, retrieve, and manipulate wordlist entries, as well as manage wordlist files.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up wordlist commands.
+- init_commands(kernel): Initializes the wordlist commands and defines the associated operations.
+- wordlist_base(command, channel, _, remainder=None, **kwargs): Base operation for wordlist commands.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    remainder: Additional command arguments.
+  Returns:
+    A tuple containing the wordlist type and an empty string.
+- wordlist_add(command, channel, _, key=None, value=None, **kwargs): Adds a value to the wordlist under the specified key.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The key for the wordlist entry.
+    value: The content to associate with the key.
+  Returns:
+    A tuple containing the wordlist type and the key.
+- wordlist_addcounter(command, channel, _, key=None, value=None, **kwargs): Adds a numeric counter to the wordlist under the specified key.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The key for the wordlist entry.
+    value: The initial value for the counter.
+  Returns:
+    A tuple containing the wordlist type and the key.
+- wordlist_get(command, channel, _, key=None, index=None, **kwargs): Retrieves the current value from the wordlist for the specified key and index.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The key for the wordlist entry.
+    index: The index of the value to retrieve.
+  Returns:
+    A tuple containing the wordlist type and the retrieved value.
+- wordlist_set(command, channel, _, key=None, value=None, index=None, **kwargs): Sets a value in the wordlist for the specified key and index.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The key for the wordlist entry.
+    value: The value to set.
+    index: The index to use for the value.
+  Returns:
+    A tuple containing the wordlist type and the key.
+- wordlist_index(command, channel, _, key=None, index=None, **kwargs): Sets the index in the wordlist for the specified key.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The key for the wordlist entry.
+    index: The index to set.
+  Returns:
+    A tuple containing the wordlist type and the key.
+- wordlist_restore(command, channel, _, filename=None, remainder=None, **kwargs): Loads a previously saved wordlist from the specified file.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    filename: The name of the wordlist file to load.
+  Returns:
+    A tuple containing the wordlist type and an empty string.
+- wordlist_backup(command, channel, _, filename=None, remainder=None, **kwargs): Saves the current wordlist to the specified file.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    filename: The name of the file to save the wordlist to.
+  Returns:
+    A tuple containing the wordlist type and an empty string.
+- wordlist_list(command, channel, _, key=None, **kwargs): Lists the values in the wordlist for the specified key.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    key: The key for the wordlist entry.
+  Returns:
+    A tuple containing the wordlist type and the key.
+- wordlist_load(command, channel, _, filename=None, **kwargs): Attaches a CSV file to the wordlist.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    filename: The name of the CSV file to load.
+  Returns:
+    A tuple containing the wordlist type and the names of the loaded entries.
+- wordlist_advance(command, channel, _, **kwargs): Advances all indices in the wordlist if they are in use.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    A tuple containing the wordlist type and an empty string.
 """
 
 import os.path

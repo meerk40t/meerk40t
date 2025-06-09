@@ -1,5 +1,6 @@
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices
 from meerk40t.kernel import Service, signal_listener
 
 from .mixins import Status
@@ -92,6 +93,9 @@ class DummyDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
+
+        self.register_choices("dummy-effects", get_effect_choices(self))
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -157,3 +161,9 @@ class DummyDevice(Service, Status):
         @return: the location in device native units for the current known position.
         """
         return self.native_x, self.native_y
+
+    def location(self):
+        """
+        Provide information about the device interface
+        """
+        return "mock"

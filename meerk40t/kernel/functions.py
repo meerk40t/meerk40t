@@ -224,7 +224,10 @@ def console_command(
                 k = stack[idx]
                 value = k.get("default")
                 if "type" in k and value is not None:
-                    value = k["type"](value)
+                    try:
+                        value = k["type"](value)
+                    except (TypeError, ValueError):
+                        pass
                 key = k["name"]
                 current = kwargs.get(key)
                 if current is None:
@@ -238,7 +241,10 @@ def console_command(
                 if "default" in pk and key not in kwargs:
                     value = pk.get("default")
                     if "type" in pk and value is not None:
-                        value = pk["type"](value)
+                        try:
+                            value = pk["type"](value)
+                        except (TypeError, ValueError):
+                            pass
                     kwargs[key] = value
 
             # Any parallel_cast opts should be cast in parallel

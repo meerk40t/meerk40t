@@ -43,7 +43,9 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("planner", choices)
-
+        INNER_WARNING = _(
+            "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+        )
         choices = [
             {
                 "attr": "opt_raster_optimisation",
@@ -53,7 +55,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Cluster raster objects"),
                 "tip": _(
                     "Separate non-overlapping raster objects.\n"
-                    "Active: this will raster close (ie overlapping) objects as one,\n"
+                    "Active: this will raster close (i.e. overlapping) objects as one,\n"
                     "but will separately process objects lying apart from each other.\n"
                     "Inactive: all objects will be lasered as one single unit."
                 ),
@@ -97,7 +99,9 @@ def plugin(kernel, lifecycle=None):
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
-                ),
+                )
+                + "\n"
+                + INNER_WARNING,
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
             },
@@ -182,6 +186,33 @@ def plugin(kernel, lifecycle=None):
                 "conditional": (context, "opt_reduce_travel"),
             },
             {
+                "attr": "opt_stitching",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Combine path segments"),
+                "tip": _(
+                    "Stitch segments together that are very close (ideally having joint start/end points)."
+                )
+                + "\n"
+                + _("Only inside a single cut/engrave operation."),
+                "page": "Optimisations",
+                "section": "_05_Stitching",
+            },
+            {
+                "attr": "opt_stitch_tolerance",
+                "object": context,
+                "default": "0",
+                "type": Length,
+                "label": _("Tolerance"),
+                "tip": _(
+                    "Tolerance to decide whether two path segments should be joined."
+                ),
+                "page": "Optimisations",
+                "section": "_05_Stitching",
+                "conditional": (context, "opt_stitching"),
+            },
+            {
                 "attr": "opt_inner_first",
                 "object": context,
                 "default": True,
@@ -198,7 +229,9 @@ def plugin(kernel, lifecycle=None):
                     + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
-                ),
+                )
+                + "\n"
+                + INNER_WARNING,
                 "page": "Optimisations",
                 "section": "_10_Burn sequence",
             },
@@ -254,6 +287,37 @@ def plugin(kernel, lifecycle=None):
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "hidden": True,
+            },
+            {
+                "attr": "opt_effect_combine",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Keep effect lines together"),
+                "tip": (
+                    _("Active: effects like hatches are dealt with as a bigger shape")
+                    + "\n"
+                    + _(
+                        "Inactive: every single line segment will be dealt with individually."
+                    )
+                ),
+                "page": "Optimisations",
+                "section": "_25_Effects",
+            },
+            {
+                "attr": "opt_effect_optimize",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Optimize internally"),
+                "tip": (
+                    _("Active: hatch lines will be optimized internally")
+                    + "\n"
+                    + _("Inactive: hatch lines will be burnt sequentially.")
+                ),
+                "page": "Optimisations",
+                "section": "_25_Effects",
+                "conditional": (context, "opt_effect_combine"),
             },
             {
                 "attr": "opt_reduce_details",
