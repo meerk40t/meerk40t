@@ -505,7 +505,7 @@ class Simplifier:
 
     def by_ratio(self, r):
         if r <= 0 or r > 1:
-            raise ValueError("Ratio must be 0<r<=1. Got {}".format(r))
+            raise ValueError(f"Ratio must be 0<r<=1. Got {r}")
 
         return self.by_number(r * len(self.thresholds))
 
@@ -540,7 +540,7 @@ class Clip:
                 x3 < y3,
             )
         ).all(axis=2)
-        splits = [list() for _ in range(len(subject))]
+        splits = [[] for _ in range(len(subject))]
         for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
             splits[s0].extend(
                 [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
@@ -555,7 +555,7 @@ class Clip:
         @param clip:
         @return:
         """
-        splits = [list() for _ in range(len(subject))]
+        splits = [[] for _ in range(len(subject))]
         for s0 in range(len(subject)):
             for s1 in range(len(clip)):
                 for t0, t1 in subject.intersections(int(s0), clip.segments[s1]):
@@ -783,12 +783,12 @@ class Pattern:
         # Scale once, translate often
         m = Matrix.scale(cw, ch)
         geom = self.geomstr.as_transformed(m)
-        for col in range(start_value_x, cols + end_value_x, 1):
+        for col in range(start_value_x, cols + end_value_x):
             x_offset = col * (cw + 2 * px)
             x = top_left_x + x_offset
 
             top_left_y = y0
-            for row in range(start_value_y, rows + end_value_y, 1):
+            for row in range(start_value_y, rows + end_value_y):
                 y_offset = row * (ch + 2 * py)
                 if col % 2:
                     y_offset += (ch + 2 * py) / 2
@@ -951,9 +951,9 @@ class BeamTable:
             event = events[i]
             pt, adds, removes, sorts = event
             try:
-                next, _, _, _ = events[i + 1]
+                next_idx, _, _, _ = events[i + 1]
             except IndexError:
-                next = complex(float("inf"), float("inf"))
+                next_idx = complex(float("inf"), float("inf"))
 
             for index in removes:
                 try:
@@ -987,7 +987,7 @@ class BeamTable:
                     # was removed
                     pass
             i += 1
-            if pt == next:
+            if pt == next_idx:
                 continue
             if len(actives) > largest_actives:
                 largest_actives = len(actives)
@@ -1050,11 +1050,11 @@ class BeamTable:
             pt, index, swap = event
 
             try:
-                next, _, _ = events[i + 1]
-                scanline = (pt + next) / 2
+                next_idx, _, _ = events[i + 1]
+                scanline = (pt + next_idx) / 2
             except IndexError:
-                next = complex(float("inf"), float("inf"))
-                scanline = next
+                next_idx = complex(float("inf"), float("inf"))
+                scanline = next_idx
 
             if swap is not None:
                 s1 = actives.index(swap[0])
@@ -1067,7 +1067,7 @@ class BeamTable:
                 remove_index = actives.index(~index)
                 del actives[remove_index]
 
-            if pt != next:
+            if pt != next_idx:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
                 # actives.sort(key=y_ints)
@@ -1134,9 +1134,9 @@ class BeamTable:
         starts = np.ravel(np.real(from_vals) + y_start * 1j)
         ends = np.ravel(np.real(to_vals) + y_end * 1j)
 
-        filter = np.dstack((starts != ends, ~np.isnan(starts))).all(axis=2)[0]
-        starts = starts[filter]
-        ends = ends[filter]
+        filtered = np.dstack((starts != ends, ~np.isnan(starts))).all(axis=2)[0]
+        starts = starts[filtered]
+        ends = ends[filtered]
         count = starts.shape[0]
         segments = np.dstack(
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
@@ -1584,7 +1584,7 @@ class Geomstr:
     """
 
     def __init__(self, segments=None):
-        self._settings = dict()
+        self._settings = {}
         if segments is not None:
             if isinstance(segments, Geomstr):
                 self._settings.update(segments._settings)
@@ -2270,13 +2270,13 @@ class Geomstr:
         @param end_pos:
         @param start_pos:
         """
-        segments = list()
+        segments = []
         for point in self.as_contiguous_points(start_pos=start_pos, end_pos=end_pos):
             if isinstance(point, tuple):
                 point, settings = point
                 if segments:
                     yield segments, settings
-                    segments = list()
+                    segments = []
             else:
                 segments.append(point)
 
@@ -2340,12 +2340,12 @@ class Geomstr:
         @param distance:
         @return:
         """
-        segments = list()
+        segments = []
         for point in self.as_equal_interpolated_points(distance=distance):
             if point is None:
                 if segments:
                     yield segments
-                    segments = list()
+                    segments = []
             else:
                 segments.append(point)
         if segments:
@@ -2454,12 +2454,12 @@ class Geomstr:
         @param interpolate:
         @return:
         """
-        segments = list()
+        segments = []
         for point in self.as_interpolated_points(interpolate=interpolate):
             if point is None:
                 if segments:
                     yield segments
-                    segments = list()
+                    segments = []
             else:
                 segments.append(point)
         if segments:
@@ -2880,7 +2880,7 @@ class Geomstr:
 
         p_start = point_at_t(current_t)
 
-        for i in range(0, slices):
+        for i in range(slices):
             next_t = current_t + t_slice
             mid_t = (next_t + current_t) / 2
 
@@ -2941,7 +2941,7 @@ class Geomstr:
 
         p_start = point_at_t(current_t)
 
-        for i in range(0, slices):
+        for i in range(slices):
             next_t = current_t + t_slice
             if i == slices - 1:
                 next_t = end_t
@@ -3044,7 +3044,7 @@ class Geomstr:
         c = Clip(other)
         polycut = c.polycut(self, breaks=True)
 
-        geoms = list()
+        geoms = []
         g = Geomstr()
         geoms.append(g)
         for e in polycut.segments[: self.index]:
@@ -4018,10 +4018,9 @@ class Geomstr:
             return
         if segtype2 in NON_GEOMETRY_TYPES:
             return
-        if segtype1 == TYPE_LINE:
-            if segtype2 == TYPE_LINE:
-                yield from self._line_line_intersections(line1, line2)
-                return
+        if segtype1 == TYPE_LINE and segtype2 == TYPE_LINE:
+            yield from self._line_line_intersections(line1, line2)
+            return
         #     if oinfo.real == TYPE_QUAD:
         #         yield from self._line_quad_intersections(line1, line2)
         #         return
@@ -5236,22 +5235,34 @@ class Geomstr:
     def as_contiguous(self):
         """
         Generate individual subpaths of contiguous segments
+        Attention: this will not yield meta segments, like TYPE_NOP and others
 
         @return:
         """
-        last = 0
+        new_segments = []
         for idx, seg in enumerate(self.segments[: self.index]):
             segtype = self._segtype(seg)
+            if segtype in META_TYPES:
+                # Skip meta segments
+                continue
             if segtype == TYPE_END:
-                yield Geomstr(self.segments[last:idx])
-                last = idx + 1
-            elif idx > 0:
-                # are the start and endpositions different?
-                if self.segments[idx, 0] != self.segments[idx - 1, -1]:
-                    yield Geomstr(self.segments[last:idx])
-                    last = idx
-        if last != self.index:
-            yield Geomstr(self.segments[last : self.index])
+                if len(new_segments) > 0:
+                    yield Geomstr(new_segments)
+                new_segments.clear()
+            else:
+                if len(new_segments) == 0:
+                    new_segments.append(seg)
+                elif seg[0] != new_segments[-1][-1]:
+                    # If the start of the current segment is not the end of the last segment
+                    yield Geomstr(new_segments)
+                    new_segments.clear()
+                    new_segments.append(seg)
+                else:
+                    # If the start of the current segment is the end of the last segment
+                    new_segments.append(seg)
+        if len(new_segments) > 0:
+            # If there are still segments left, yield them
+            yield Geomstr(new_segments)
 
     def ensure_proper_subpaths(self):
         """
@@ -5498,7 +5509,7 @@ class Geomstr:
         """
         infos = self.segments[: self.index, 2]
         q = np.where(np.real(infos).astype(int) & 0b1001)[0]
-        for mid in range(0, len(q)):
+        for mid in range(len(q)):
             idxs = q[mid:]
             p1 = idxs[0]
             pen_downs = self.segments[idxs, 0]
@@ -5685,8 +5696,8 @@ class Geomstr:
         if lines is None:
             lines = self.segments[: self.index]
         if function_dict is None:
-            function_dict = dict()
-        default_dict = dict()
+            function_dict = {}
+        default_dict = {}
         defining_function = 0
         function_start = 0
         for index, line in enumerate(lines):
@@ -5744,7 +5755,7 @@ class Geomstr:
         final = Geomstr()
         for subgeom in geom.as_subpaths():
             newgeom = Geomstr()
-            points = list()
+            points = []
             closed = subgeom.is_closed()
 
             def processpts():
