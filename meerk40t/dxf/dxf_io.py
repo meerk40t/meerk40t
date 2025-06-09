@@ -132,6 +132,7 @@ class DXFProcessor:
                 # else, is within the bed dimensions correctly, change nothing.
         if self.elements.classify_new:
             self.elements.classify(self.elements_list)
+        self.elements.signal("element_property_update", self.elements_list)
         return True
 
     def check_for_attributes(self, node, entity):
@@ -169,6 +170,8 @@ class DXFProcessor:
                 assign_type = "op engrave"
             elif "CUT" in s_layer.upper() or "CUT" in entity.dxf.layer.upper():
                 assign_type = "op cut" 
+            # print (f"Layer: {s_layer} ({entity.dxf.layer}), assign_type: {assign_type}")
+            node.label = s_layer
             if assign_type:
                 if s_layer == "":
                     s_layer = entity.dxf.layer
