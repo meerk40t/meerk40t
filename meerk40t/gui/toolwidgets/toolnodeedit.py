@@ -907,7 +907,10 @@ class EditTool(ToolWidget):
                 path.approximate_arcs_with_cubics()
         except AttributeError:
             return
-        newnode = node.replace_node(path=path, type="elem path")
+        try:
+            newnode = node.replace_node(path=path, type="elem path")
+        except ValueError:
+            return
         for item in oldstuff:
             setattr(newnode, item[0], item[1])
         newnode.altered()
