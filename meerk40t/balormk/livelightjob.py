@@ -41,11 +41,12 @@ class LiveLightJob:
         self._travel_speed = travel_speed
         self._jump_delay = jump_delay
 
+        self._signal_mode = True
         # Kernel Job definition
         self.redlight_lock = threading.RLock()
         self.redlight_job = Job(
             self.jobevent,
-            interval=0.1,
+            # interval=0.1,
             job_name=f"redlight_{self.mode}_{time.perf_counter():3f}",
             run_main=False,
         )
@@ -177,20 +178,22 @@ class LiveLightJob:
                 con._goto_speed = self.service.redlight_speed
             con.light_mode()
 
+        # print (f"Redlight job {self.label} running...")
         if self.stopped or self._connection is None:
             return
         con = self._connection
-        if self.changed:
-            # print ("Something changed")
-            with self.redlight_lock:
-                if self.update_method is not None:
-                    self.update_method()
-                # print (f"We are having now {len(self.points)} points")
-                self.changed = False
-            init_red(con)
+        while not self.stopped:
+            if self.changed:
+                # print ("Something changed")
+                with self.redlight_lock:
+                    if self.update_method is not None:
+                        self.update_method()
+                    # print (f"We are having now {len(self.points)} points")
+                    self.changed = False
+                init_red(con)
 
-        # Now draw the stuff
-        self.trace_redlight(con)
+            # Now draw the stuff
+            self.trace_redlight(con)
 
     def trace_redlight(self, con):
         """Trace the redlight path.
@@ -243,7 +246,13 @@ class LiveLightJob:
         """
         if not self.listen:
             return
-        for method in ("emphasized", "modified_by_tool", "updating", "view;realized"):
+        for method in (
+            "emphasized",
+            "modified_by_tool",
+            "updating",
+            "view;realized",
+            "update_group_labels",
+        ):
             if start:
                 self.service.listen(method, self.on_emphasis_changed)
             else:
@@ -265,6 +274,8 @@ class LiveLightJob:
         self._connection = driver.connection
         self._connection.rapid_mode()
         self._connection.light_mode()
+        self._signal_mode = driver.service.signal_updates
+        driver.service.signal_updates = False
         self.update()
         self.service.kernel.schedule(self.redlight_job)
 
@@ -283,6 +294,7 @@ class LiveLightJob:
         self.redlight_job.cancel()
         self.service.kernel.unschedule(self.redlight_job)
         self.setup_listen(False)
+        driver.service.signal_updates = self._signal_mode
         if self._connection is not None:
             self._connection.abort()
             if self.service.redlight_preferred:
@@ -458,7 +470,7 @@ class LiveLightJob:
         geometry.transform(rotate)
         self.points = list(
             geometry.as_equal_interpolated_points(
-                distance=self.quantization, expand_lines=True
+                distance=self.quantization,  # expand_lines=True
             )
         )
         # print (f"Interpolation delivered: {len(self.points)} segments")
