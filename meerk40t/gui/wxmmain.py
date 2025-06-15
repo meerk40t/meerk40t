@@ -1241,6 +1241,20 @@ class MeerK40t(MWindow):
                 "page": "Scene",
                 "section": "General",
             },
+            {
+                "attr": "file_selection",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Treat file selection as group selection"),
+                "tip": _(
+                    "Active: Single click within the boundaries of the contained elements of a filenode selects all elements within the file"
+                )
+                + "\n"
+                + _("Inactive: filenodes will not be used for selection"),
+                "page": "Scene",
+                "section": "General",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 
