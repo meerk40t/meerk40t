@@ -471,19 +471,86 @@ def debug_packet(packet):
     print(f"Packet: {packet}")
 
 
-def set_PWM_register(pct_power, ms=0):
+def prepare_packet(packet):
+    def crc8(data):
+        """
+        Compute CRC, based on tables
+        """
+        crctab1 = (
+            b"\x00\x5E\xBC\xE2\x61\x3F\xDD\x83" b"\xC2\x9C\x7E\x20\xA3\xFD\x1F\x41"
+        )
+        crctab2 = (
+            b"\x00\x9D\x23\xBE\x46\xDB\x65\xF8" b"\x8C\x11\xAF\x32\xCA\x57\xE9\x74"
+        )
+
+        crc = 0
+        for i in range(len(data)):
+            crc ^= data[i]  ## just re-using crc as intermediate
+            crc = crctab1[crc & 0x0F] ^ crctab2[(crc >> 4) & 0x0F]
+        return crc
+
+    if len(packet) == 34:
+        packet[-1] = crc8(packet[1 : len(packet) - 2])
+    return packet
+
+
+def set_PWM_register(pct_power, ms: int = 0):
     # power: 0-100%
     power = int(pct_power * 10)
-    m = power / 254
-    n = power % 254
+    m = int(power / 254)
+    n = int(power % 254)
     # fmt: off
-    pack  = [166,0,65,84,49,m,n,ms,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,166,15]
+    pack  = prepare_packet([166,0,65,84,49,m,n,ms,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,166,0])
     # fmt: on
     debug_packet(pack)
     # print(power,m,n)
+
+
+def _test_hw_info():
+    print("hw info")
+    pack = prepare_packet(
+        [
+            166,
+            0,
+            65,
+            84,
+            48,
+            49,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            166,
+            0,
+        ]
+    )
+    debug_packet(pack)
 
 
 if __name__ == "__main__":
     # Example usage
     for pct_power in range(0, 100, 10):
         set_PWM_register(pct_power)
+    _test_hw_info()
