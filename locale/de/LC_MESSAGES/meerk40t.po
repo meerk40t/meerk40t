@@ -22385,3 +22385,15 @@ msgstr "Information"
 #: meerk40t/gui/mkdebug.py:720
 msgid "Raster Properties"
 msgstr "Raster-Eigenschaften"
+
+#: meerk40t/gui/wxmmain.py:1249
+msgid "Treat file selection as group selection"
+msgstr "Behandle Dateinode wie eine Gruppe bei der Element-Auswahl"
+
+#: meerk40t/gui/wxmmain.py:1252
+msgid "Active: Single click within the boundaries of the contained elements of a filenode selects all elements within the file"
+msgstr "Aktiv: Ein Click innerhalb der Grenzen der Elemente einer Dateinode selektiert alle Elemente innerhalb der Datei"
+
+#: meerk40t/gui/wxmmain.py:1254
+msgid "Inactive: filenodes will not be used for selection"
+msgstr "Inaktiv: Dateinodes werden nicht bei der Objektauswhl berücksichtigt"
