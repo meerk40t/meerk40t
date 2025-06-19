@@ -23,36 +23,37 @@ _SYSTEMCTL_TARGETS = [
 def _run_systemctl(action: str):
     try:
         # Check if systemctl is available
-        return_code = subprocess.run(["systemctl", action] + _SYSTEMCTL_TARGETS)
+        proc = subprocess.run(["systemctl", action] + _SYSTEMCTL_TARGETS)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("systemctl is not available on this system.")
         return False
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
-    return return_code == 0
+    print(f"systemctl {action} returned {proc.returncode} [{proc}]")
+    return proc.returncode == 0
 
 
 def _darwin_inhibit():
     try:
-        return_code = subprocess.call(["caffeinate", "-i"])
+        proc = subprocess.call(["caffeinate", "-i"])
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("caffeinate is not available on this system.")
         return False
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
-    return return_code == 0
+    return proc.returncode == 0
 
 
 def _darwin_release():
     try:
         # Use killall to stop caffeinate
-        return_code = subprocess.call(["killall", "caffeinate"])
+        proc = subprocess.call(["killall", "caffeinate"])
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
-    return return_code == 0
+    return proc.returncode == 0
 
 
 def _linux_inhibit():
@@ -114,9 +115,3 @@ class Inhibitor:
             return
         if self._actions["release"]():
             self.active = False
-
-    @property
-    def status(self) -> str:
-        if not self.available:
-            return f"Inhibitor not implemented for {self._os}"
-        return "Inhibitor is active" if self.active else "Inhibitor is not active"
