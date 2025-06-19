@@ -30,13 +30,13 @@ def _run_systemctl(action: str):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
-    print(f"systemctl {action} returned {proc.returncode} [{proc}]")
+    # print(f"systemctl {action} returned {proc.returncode} [{proc}]")
     return proc.returncode == 0
 
 
 def _darwin_inhibit():
     try:
-        proc = subprocess.call(["caffeinate", "-i"])
+        proc = subprocess.run(["caffeinate", "-i"])
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("caffeinate is not available on this system.")
         return False
@@ -49,7 +49,7 @@ def _darwin_inhibit():
 def _darwin_release():
     try:
         # Use killall to stop caffeinate
-        proc = subprocess.call(["killall", "caffeinate"])
+        proc = subprocess.run(["killall", "caffeinate"])
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
