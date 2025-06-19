@@ -22397,3 +22397,71 @@ msgstr "Aktiv: Ein Click innerhalb der Grenzen der Elemente einer Dateinode sele
 #: meerk40t/gui/wxmmain.py:1254
 msgid "Inactive: filenodes will not be used for selection"
 msgstr "Inaktiv: Dateinodes werden nicht bei der Objektauswhl berücksichtigt"
+
+#: meerk40t/device/gui/defaultactions.py:50
+msgid "Move the laser head to the home position."
+msgstr "Bewegt den Laserkopf zur Home-Position."
+
+#: meerk40t/device/gui/defaultactions.py:55
+msgid "Move the laser head to the origin position."
+msgstr "Bewegt den Laserkopf zur Ausgangsposition."
+
+#: meerk40t/device/gui/defaultactions.py:61
+msgid "Move the laser head to the absolute position 0,0."
+msgstr "Bewegt den Laserkopf zu 0,0."
+
+#: meerk40t/device/gui/defaultactions.py:63
+msgid "Make audible beep."
+msgstr "Gibt ein hörbares Signal aus."
+
+#: meerk40t/device/gui/defaultactions.py:68
+msgid "Interrupt the current operation and display a message."
+msgstr "Pausiert den Laser-Vorgang und zeigt eine Meldung an."
+
+#: meerk40t/device/gui/defaultactions.py:70
+msgid "Execute a command in the console."
+msgstr "Führt ein Konsolen-Kommando aus."
+
+#: meerk40t/device/gui/defaultactions.py:71
+msgid "Turn on the coolant."
+msgstr "Air-Assist einschalten."
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Turn off the coolant."
+msgstr "Air-Assist ausschalten."
+
+#: meerk40t/device/gui/defaultactions.py:95
+msgid "Prevent the system from entering hibernation mode."
+msgstr "Verbietet dem System, in Ruhezustand zu wechseln."
+
+#: meerk40t/device/gui/defaultactions.py:101
+msgid "Allow the system to enter hibernation mode."
+msgstr "Erlaubt dem System, in Ruhezustand zu wechseln."
+
+#: meerk40t/kernel/kernel.py:2864
+msgid "Mode to set: prevent/allow"
+msgstr "Modus: prevent/allow"
+
+#: meerk40t/kernel/kernel.py:2867
+msgid "Prevent/allow system hibernation."
+msgstr "Unterdrückt/Erlaubt den System-Ruhezustand."
+
+#: meerk40t/kernel/kernel.py:2875
+msgid "Inhibitor is not available on this system."
+msgstr "Das Unterdrücken des Ruhezustands ist auf diesem System nicht verfügbar."
+
+#: meerk40t/kernel/kernel.py:2879
+msgid "Please specify 'prevent' or 'allow'."
+msgstr "Bitte geben Sie 'prevent' oder 'allow' an."
+
+#: meerk40t/kernel/kernel.py:2885
+msgid "You might need system administrator priviliges."
+msgstr "Dieser Vorgang benötigt evt. Administrator-Rechte"
+
+#: meerk40t/kernel/kernel.py:2887
+msgid "System hibernation is prevented."
+msgstr "Ruhezustand wird unterdrückt."
+
+#: meerk40t/kernel/kernel.py:2889
+msgid "System hibernation is allowed."
+msgstr "Ruhezustand wird erlaubt."
