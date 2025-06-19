@@ -19,6 +19,7 @@ from .functions import (
     console_option,
     get_safe_path,
 )
+from .inhibitor import Inhibitor
 from .jobs import ConsoleFunction, Job
 from .lifecycles import *
 from .module import Module
@@ -183,6 +184,7 @@ class Kernel(Settings):
         self.os_information = self._get_environment()
         self.show_aio_prompt = True
         self.silent_mode = False
+        self.inhibitor = Inhibitor()
 
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
@@ -2854,6 +2856,36 @@ class Kernel(Settings):
             except ValueError:
                 channel(_("Syntax Error: timer<name> <times> <interval> <command>"))
             return
+
+        # ==========
+        # Sleep Commands
+        # ==========
+        @self.console_argument(
+            "mode", type=str, help=_("Mode to set: prevent/allow"), default=None
+        )
+        @self.console_command(
+            "system_hibernate", _("Prevent/allow system hibernation.")
+        )
+        def system_hibernate(channel, _, mode=None, **kwargs):
+            """
+            Prevent or allow system hibernation. This is a toggle command.
+            If no mode is specified, it will print the current state.
+            """
+            if not self.inhibitor.available:
+                channel(_("Inhibitor is not available on this system."))
+                return
+            if mode is None:
+                channel(self.inhibitor.status)
+                return
+            if mode.lower() not in ("prevent", "allow"):
+                channel(_("Please specify 'prevent' or 'allow'."))
+                return
+            if mode.lower() == "prevent":
+                self.inhibitor.inhibit()
+                channel(_("System hibernation is now prevented."))
+            else:
+                self.inhibitor.release()
+                channel(_("System hibernation is now allowed."))
 
         # ==========
         # CORE OBJECTS COMMANDS
