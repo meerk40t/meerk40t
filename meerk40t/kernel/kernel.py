@@ -2874,18 +2874,24 @@ class Kernel(Settings):
             if not self.inhibitor.available:
                 channel(_("Inhibitor is not available on this system."))
                 return
-            if mode is None:
-                channel(self.inhibitor.status)
-                return
-            if mode.lower() not in ("prevent", "allow"):
-                channel(_("Please specify 'prevent' or 'allow'."))
-                return
-            if mode.lower() == "prevent":
-                self.inhibitor.inhibit()
-                channel(_("System hibernation is now prevented."))
+            if mode is not None:
+                if mode.lower() not in ("prevent", "allow"):
+                    channel(_("Please specify 'prevent' or 'allow'."))
+                    return
+                if mode.lower() == "prevent":
+                    self.inhibitor.inhibit()
+                else:
+                    self.inhibitor.release()
+            sudo_msg = _("You might need system administrator priviliges.")
+            if self.inhibitor.active:
+                channel(_("System hibernation is prevented."))
             else:
-                self.inhibitor.release()
-                channel(_("System hibernation is now allowed."))
+                channel(_("System hibernation is allowed."))
+            if self.os_information["OS_NAME"] == "Linux" and (
+                (mode == "prevent" and not self.inhibitor.active)
+                or (mode == "allow" and self.inhibitor.active)
+            ):
+                channel(sudo_msg)
 
         # ==========
         # CORE OBJECTS COMMANDS
