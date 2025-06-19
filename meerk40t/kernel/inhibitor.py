@@ -7,6 +7,24 @@ It is not intended to be used for general-purpose tasks.
 from platform import system
 
 
+class InhibitorMacOS:
+    """Inhibitor class for macOS."""
+
+    def inhibit(self):
+        """Inhibit the OS from sleeping."""
+        import subprocess
+
+        # print('Inhibit (prevent) suspend mode')
+        subprocess.call(["caffeinate", "-i"])
+
+    def release(self):
+        """Release the inhibition."""
+        import subprocess
+
+        # print('Release (allow) suspend mode')
+        subprocess.call(["killall", "caffeinate"])
+
+
 class InhibitorWindows:
     """Inhibitor class for Windows."""
 
@@ -32,31 +50,29 @@ class InhibitorWindows:
 class InhibitorLinux:
     """Inhibitor class for Linux."""
 
-    def inhibit(self):
-        """Inhibit the OS from sleeping."""
-        import ctypes
+    COMMAND = "systemctl"
+    ARGS = ["sleep.target", "suspend.target", "hibernate.target", "hybrid-sleep.target"]
 
-        self._handle = ctypes.CDLL("libc.so.6").system(
-            "dbus-send --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.Inhibit string:'sleep' string:'meerk40t'"
-        )
+    @classmethod
+    def inhibit(cls):
+        import subprocess
 
-    def release(self):
-        """Release the inhibition."""
-        import ctypes
+        subprocess.run([cls.COMMAND, "mask", *cls.ARGS])
 
-        self._handle = ctypes.CDLL("libc.so.6").system(
-            "dbus-send --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.UnInhibit string:'meerk40t'"
-        )
+    @classmethod
+    def release(cls):
+        import subprocess
+
+        subprocess.run([cls.COMMAND, "unmask", *cls.ARGS])
 
 
 class Inhibitor:
     """Inhibitor class to prevent the OS from sleeping."""
 
     def __init__(self):
-        self.available = True
         self._inhibit = None
         self.active: bool = False
-        self.available = system() in ("Linux", "Windows")
+        self.available: bool = system() in ("Linux", "Windows", "Darwin")
 
     def inhibit(self):
         """Inhibit the OS from sleeping."""
@@ -66,6 +82,8 @@ class Inhibitor:
             self._inhibit = InhibitorLinux()
         elif system() == "Windows":
             self._inhibit = InhibitorWindows()
+        elif system() == "Darwin":
+            self._inhibit = InhibitorMacOS()
         self._inhibit.inhibit()
         self.active = True
 
