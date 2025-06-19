@@ -86,9 +86,12 @@ def _windows_release():
     return True
 
 
-# Flatten the mapping to simple function pointers
+# Darwin does not have a systemctl, but uses caffeinate
+# Linux uses systemctl to mask/unmask sleep targets
+# Windows uses SetThreadExecutionState to prevent sleep
+# NB: Darwin does not to work relaibly on my testsystem, so has been disabled
 _ACTIONS = {
-    "Darwin": {"inhibit": _darwin_inhibit, "release": _darwin_release},
+    # "Darwin": {"inhibit": _darwin_inhibit, "release": _darwin_release},
     "Linux": {"inhibit": _linux_inhibit, "release": _linux_release},
     "Windows": {"inhibit": _windows_inhibit, "release": _windows_release},
 }
