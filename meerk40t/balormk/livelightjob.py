@@ -188,7 +188,9 @@ class LiveLightJob:
                 with self.redlight_lock:
                     if self.update_method is not None:
                         self.update_method()
-                    # print (f"We are having now {len(self.points)} points")
+                        # print (f"We are having now {len(self.points)} points")
+                        # for i, e in enumerate(self.points):
+                        #     print (f"Point {i}: {e}")
                     self.changed = False
                 init_red(con)
 
@@ -209,6 +211,9 @@ class LiveLightJob:
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
         move = True
+        # We need to jump back to the first point
+        first = True
+        first_x, first_y = None, None
         for i, e in enumerate(self.points):
             if self.stopped or self.changed:
                 # Abort due to stoppage or change, no sense to continue
@@ -230,11 +235,16 @@ class LiveLightJob:
                 # Fix them.
                 x &= 0xFFFF
                 y &= 0xFFFF
+            if first:
+                first_x, first_y = x, y
+                first = False
             if move:
                 con.dark(x, y, long=delay_dark, short=delay_dark)
                 move = False
                 continue
             con.light(x, y, long=delay_between, short=delay_between)
+        if first_x is not None and first_y is not None:
+            con.dark(first_x, first_y, long=delay_dark, short=delay_dark)
         con.light_off()
         con.write_port()
 
