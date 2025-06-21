@@ -15,13 +15,13 @@ def plugin(kernel, lifecycle=None):
         kernel.set_feature("camera")
     if lifecycle == "invalidate":
         try:
-            import cv2
+            import cv2 # pylint: disable=unused-import
         except ImportError:
             print("OpenCV is not installed. Disabling Camera. Install with:")
             print("\tpip install opencv-python-headless")
             return True
         try:
-            import numpy as np
+            import numpy as np # pylint: disable=unused-import
         except ImportError:
             print("Numpy is not installed. Disabling Camera.")
             return True
@@ -31,6 +31,12 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("camera-enabled", True)
         _ = kernel.translation
+
+        def get_camera_attribute(camera, attribute, default=None):
+            if isinstance(camera, int):
+                camera = f"camera/{camera}"
+            return kernel.read_persistent(str, camera, attribute, default) or default
+
 
         @kernel.console_option("width", "w", type=int, help="force the camera width")
         @kernel.console_option("height", "h", type=int, help="force the camera height")
@@ -100,6 +106,32 @@ def plugin(kernel, lifecycle=None):
                 data.set_uri(uri)
             return "camera", data
 
+        @kernel.console_argument("label", type=str)
+        @kernel.console_command(
+            "label", help="Set camera label", output_type="camera", input_type="camera"
+        )
+        def camera_label(
+            _,
+            channel,
+            data=None,
+            label=None,
+            **kwargs,
+        ):
+            if label is None:
+                channel(_("Current labels:"))
+                for d in kernel.section_startswith("camera/"):
+                    # We read the persistent description instead of the context, 
+                    # as this might not be set.
+                    desc = get_camera_attribute(d, "desc", "No description set")
+                    channel(f"{d}: {desc}")
+            else:
+                data.desc = label
+                kernel.write_persistent(f"camera/{data.uri}", "desc", label)
+                # Alert UI to the change
+                kernel.signal("pane", "/", "")
+                kernel.signal("icon;label", "/", f"cam{data.uri}", label)
+            return "camera", data
+
         @kernel.console_command(
             "info", help="list camera info", output_type="camera", input_type="camera"
         )
@@ -110,9 +142,14 @@ def plugin(kernel, lifecycle=None):
             **kwargs,
         ):
             channel(_("Camera Information:"))
+            channel("Camera-Path\turi\tDescription")
+            channel("----\t---\t-----------")
             for d in kernel.section_startswith("camera/"):
-                context = kernel.get_context(d)
-                channel(f"{d}: {getattr(context, 'uri', '---')}")
+                # context = kernel.get_context(d)
+                # channel(f"{d}: {getattr(context, 'uri', '---')}")
+                camera_uri = get_camera_attribute(d, "uri", "No URI set")
+                camera_lbl = get_camera_attribute(d, "desc", "No description set")
+                channel(f"{d}:\t{camera_uri}\t{camera_lbl}")
             return "camera", data
 
         @kernel.console_command(
@@ -277,7 +314,11 @@ def plugin(kernel, lifecycle=None):
             input_type="camera",
         )
         def list_camera_resolutions(_, channel, data=None, **kwargs):
-            channel(f"Available resolutions for camera #{data.uri}")
+            if data is None:
+                channel(_("No camera selected."))
+                return
+            lbl = f" ({data.desc})" if data.desc  else ""
+            channel(f"Available resolutions for camera #{data.uri}{lbl}")
             info_array = data.guess_supported_resolutions()
             for width, height, description in info_array:
                 channel (f"{width}x{height} - {description}")

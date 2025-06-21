@@ -57,6 +57,7 @@ class BalorDriver:
         self.plot_planner.settings_then_jog = True
         self._aborting = False
         self._list_bits = None
+        self.service.setting(bool, "signal_updates", True)
 
     def __repr__(self):
         return f"BalorDriver({self.name})"
@@ -529,11 +530,12 @@ class BalorDriver:
         if self.native_y < 0:
             self.native_y = 0
         self.connection.set_xy(self.native_x, self.native_y)
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self.service.signal_updates:
+            new_current = self.service.current
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def move_rel(self, dx, dy):
         """
@@ -558,11 +560,12 @@ class BalorDriver:
         if self.native_y < 0:
             self.native_y = 0
         self.connection.set_xy(self.native_x, self.native_y)
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        if self.service.signal_updates:
+            new_current = self.service.current
+            self.service.signal(
+                "driver;position",
+                (old_current[0], old_current[1], new_current[0], new_current[1]),
+            )
 
     def home(self):
         """

@@ -19,7 +19,13 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import TextCtrl, wxButton, wxBitmapButton, wxCheckBox, wxListCtrl
+from meerk40t.gui.wxutils import (
+    TextCtrl,
+    wxBitmapButton,
+    wxButton,
+    wxCheckBox,
+    wxListCtrl,
+)
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
@@ -28,23 +34,32 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
+def _get_camera_attribute(kernel, camera, attribute, default=None):
+    if isinstance(camera, int):
+        camera = f"camera/{camera}"
+    label = kernel.read_persistent(str, camera, attribute, default)
+    return label or default
+
+
 def register_panel_camera(window, context):
     for index in range(5):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
         )
+        label = _("Camera {index}").format(index=index)
         pane = (
             aui.AuiPaneInfo()
             .Left()
             .MinSize(200, 150)
             .FloatingSize(640, 480)
-            .Caption(_("Camera {index}").format(index=index))
+            .Caption(label)
             .Name(f"camera{index}")
             .CaptionVisible(not context.pane_lock)
             .Hide()
         )
         pane.dock_proportion = 200
         pane.control = panel
+        panel.pane_aui = pane
         pane.submenu = "_60_" + _("Camera")
         pane.helptext = _("Show camera capture panel")
         window.on_pane_create(pane)
@@ -64,6 +79,7 @@ class CameraPanel(wx.Panel, Job):
         self.index = index
         self.cam_device_link = {}
         self.pane = pane
+        self.pane_aui = None
 
         if pane:
             job_name = f"CamPane{self.index}"
@@ -83,12 +99,16 @@ class CameraPanel(wx.Panel, Job):
 
         if not pane:
             self.button_update = wxBitmapButton(
-                self, wx.ID_ANY, icons8_camera.GetBitmap(resize=get_default_icon_size(self.context))
+                self,
+                wx.ID_ANY,
+                icons8_camera.GetBitmap(resize=get_default_icon_size(self.context)),
             )
             self.button_export = wxBitmapButton(
                 self,
                 wx.ID_ANY,
-                icons8_image_in_frame.GetBitmap(resize=get_default_icon_size(self.context)),
+                icons8_image_in_frame.GetBitmap(
+                    resize=get_default_icon_size(self.context)
+                ),
             )
             self.button_reconnect = wxBitmapButton(
                 self,
@@ -224,6 +244,29 @@ class CameraPanel(wx.Panel, Job):
         self.camera.listen("camera;stopped", self.on_camera_stop)
         self.camera.gui = self
         self.camera("camera focus -5% -5% 105% 105%\n")
+        label = _get_camera_attribute(
+            self.context.kernel,
+            self.index,
+            "desc",
+            _("Camera {index}").format(index=self.index),
+        )
+        if self.pane and self.pane_aui is not None:
+            # If this is a pane, we set the title of the pane.
+            # print (f"Setting pane title to {label}")
+            self.pane_aui.Caption(label)
+            self.pane_aui.caption = label
+        else:
+            self.GetParent().SetTitle(label)
+
+    @property
+    def caption(self):
+        # Property to get the caption of the corresponding pane menu item
+        return _get_camera_attribute(
+            self.context.kernel,
+            self.index,
+            "desc",
+            _("Camera {index}").format(index=self.index),
+        )
 
     def pane_hide(self, *args):
         self.camera(f"camera{self.index} stop\n")
@@ -407,6 +450,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera(f"camera{self.index} --uri {str(uri)} stop start\n")
         self.frame_bitmap = None
 
+
 class CamInterfaceWidget(Widget):
     def __init__(self, scene, camera):
         Widget.__init__(self, scene, all=True)
@@ -436,6 +480,7 @@ class CamInterfaceWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "rightdown":
+
             def set_resolution(width, height):
                 def handler(*args):
                     self.cam.set_resolution(this_w, this_h)
@@ -477,8 +522,26 @@ class CamInterfaceWidget(Widget):
             def set_device_link(devlabel):
                 if devlabel:
                     self.cam.cam_device_link[self.cam.index] = devlabel
-                else: # Empty or None
+                else:  # Empty or None
                     self.cam.cam_device_link.pop(self.cam.index, None)
+
+            def change_label(event=None):
+                """
+                Change the label of the camera.
+                """
+                dialog = wx.TextEntryDialog(
+                    self.cam,
+                    _("Enter a new label for the camera:"),
+                    _("Change camera label"),
+                    str(self.cam.camera.desc or ""),
+                )
+                if dialog.ShowModal() == wx.ID_OK:
+                    new_label = dialog.GetValue().strip()
+                    if new_label:
+                        self.cam.context(
+                            f'camera{self.cam.index} label "{new_label}"\n'
+                        )
+                dialog.Destroy()
 
             menu = wx.Menu()
 
@@ -519,7 +582,9 @@ class CamInterfaceWidget(Widget):
             def has_live_job():
                 we_have_a_job = False
                 try:
-                    obj = self.cam.context.kernel.jobs[f"timer.updatebg{self.cam.index}"]
+                    obj = self.cam.context.kernel.jobs[
+                        f"timer.updatebg{self.cam.index}"
+                    ]
                     if obj is not None:
                         we_have_a_job = True
                 except KeyError:
@@ -539,15 +604,19 @@ class CamInterfaceWidget(Widget):
             def set_link(devlabel):
                 def handler(event):
                     set_device_link(devlabel)
+
                 return handler
 
             def unset_link(devlabel):
                 def handler(event):
                     set_device_link("")
+
                 return handler
 
             link = get_device_link()
-            item = submenu.Append(wx.ID_ANY, _("Device independent"), kind=wx.ITEM_RADIO)
+            item = submenu.Append(
+                wx.ID_ANY, _("Device independent"), kind=wx.ITEM_RADIO
+            )
             if link == "":
                 item.Check(True)
                 self.cam.Bind(wx.EVT_MENU, unset_link(""), id=item.GetId())
@@ -587,16 +656,17 @@ class CamInterfaceWidget(Widget):
                 cam_w, cam_h = self.cam.camera.get_resolution()
                 resmen = wx.Menu()
                 for res_w, res_h, res_desc in self.cam.available_resolutions:
-                    item = resmen.Append(wx.ID_ANY, f"{res_w}x{res_h} - {res_desc}", kind=wx.ITEM_RADIO)
+                    item = resmen.Append(
+                        wx.ID_ANY, f"{res_w}x{res_h} - {res_desc}", kind=wx.ITEM_RADIO
+                    )
                     if res_h == cam_h and res_w == cam_w:
                         item.Check(True)
                     self.cam.Bind(
                         wx.EVT_MENU,
                         set_resolution(res_w, res_h),
                         id=item.GetId(),
-                     )
+                    )
                 menu.AppendSubMenu(resmen, _("Set camera resolution..."))
-
 
             item = menu.Append(wx.ID_ANY, _("Open CameraInterface"), "")
             self.cam.Bind(
@@ -733,6 +803,13 @@ class CamInterfaceWidget(Widget):
                 _("Manage URIs"),
                 sub_menu,
             )
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Change Label"), "")
+            self.cam.Bind(
+                wx.EVT_MENU,
+                change_label,
+                id=item.GetId(),
+            )
             if menu.MenuItemCount != 0:
                 self.cam.PopupMenu(menu)
                 menu.Destroy()
@@ -863,13 +940,42 @@ class CameraInterface(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("CameraInterface {index}").format(index=self.index))
+        self.update_title()
         self.Layout()
         self.restore_aspect()
+
+    def update_title(self):
+        """
+        Updates the title of the window to reflect the current camera index.
+        """
+        label = _get_camera_attribute(
+            self.context.kernel,
+            self.index,
+            "desc",
+            _("Camera {index}").format(index=self.index),
+        )
+        self.SetTitle(label)
 
     def create_menu(self, append):
         def identify_cameras(event=None):
             self.context("camdetect\n")
+
+        def change_label(event=None):
+            """
+            Change the label of the camera.
+            """
+            dialog = wx.TextEntryDialog(
+                self,
+                _("Enter a new label for the camera:"),
+                _("Change camera label"),
+                str(self.camera.desc or ""),
+            )
+            if dialog.ShowModal() == wx.ID_OK:
+                new_label = dialog.GetValue().strip()
+                if new_label:
+                    self.context(f'camera{self.index} label "{new_label}"\n')
+                    self.update_title()
+            dialog.Destroy()
 
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -904,6 +1010,12 @@ class CameraInterface(MWindow):
             )
             self.Bind(wx.EVT_MENU, self.panel.swap_camera(i), id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Change camera label"), "")
+        self.Bind(
+            wx.EVT_MENU,
+            change_label,
+            id=item.GetId(),
+        )
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Identify cameras"), "")
         self.Bind(wx.EVT_MENU, identify_cameras, id=item.GetId())
 
@@ -932,6 +1044,29 @@ class CameraInterface(MWindow):
         def detect_usb_cameras(event=None):
             camera("camdetect\n")
 
+        caminfo = []
+        for idx in range(5):
+            label = _get_camera_attribute(
+                kernel, idx, "desc", _("Camera {index}").format(index=idx)
+            )
+            caminfo.append(
+                {
+                    "identifier": f"cam{idx}",
+                    "label": label,
+                    "action": camera_click(idx),
+                    "signal": f"camset{idx}",
+                    "multi_autoexec": True,
+                },
+            )
+        caminfo.append(
+            {
+                "identifier": "id_cam",
+                "label": _("Identify cameras"),
+                "tip": _("Detects cameras on the system and sets them up"),
+                "action": detect_usb_cameras,
+                "multi_autoexec": True,
+            },
+        )
         kernel.register(
             "button/preparation/Camera",
             {
@@ -941,49 +1076,7 @@ class CameraInterface(MWindow):
                 "identifier": "camera_id",
                 "action": camera_click(),
                 "priority": 3,
-                "multi": [
-                    {
-                        "identifier": "cam0",
-                        "label": _("Camera {index}").format(index=0),
-                        "action": camera_click(0),
-                        "signal": "camset0",
-                        "multi_autoexec": True,
-                    },
-                    {
-                        "identifier": "cam1",
-                        "label": _("Camera {index}").format(index=1),
-                        "action": camera_click(1),
-                        "signal": "camset1",
-                        "multi_autoexec": True,
-                    },
-                    {
-                        "identifier": "cam2",
-                        "label": _("Camera {index}").format(index=2),
-                        "action": camera_click(2),
-                        "signal": "camset2",
-                        "multi_autoexec": True,
-                    },
-                    {
-                        "identifier": "cam3",
-                        "label": _("Camera {index}").format(index=3),
-                        "action": camera_click(3),
-                        "signal": "camset3",
-                        "multi_autoexec": True,
-                    },
-                    {
-                        "identifier": "cam4",
-                        "label": _("Camera {index}").format(index=4),
-                        "action": camera_click(4),
-                        "signal": "camset4",
-                        "multi_autoexec": True,
-                    },
-                    {
-                        "identifier": "id_cam",
-                        "label": _("Identify cameras"),
-                        "action": detect_usb_cameras,
-                        "multi_autoexec": True,
-                    },
-                ],
+                "multi": caminfo,
             },
         )
         kernel.register("window/CameraURI", CameraURI)
@@ -1058,6 +1151,7 @@ class CameraInterface(MWindow):
     def helptext():
         return _("Display the camera window")
 
+
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1070,8 +1164,11 @@ class CameraURIPanel(wx.Panel):
         assert isinstance(self.index, int)
         self.context.setting(list, "uris", [])
         self.list_uri = wxListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES,
-            context=self.context, list_name="list_camerauri",
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES,
+            context=self.context,
+            list_name="list_camerauri",
         )
         self.button_add = wxButton(self, wx.ID_ANY, _("Add URI"))
         self.text_uri = TextCtrl(self, wx.ID_ANY, "")
@@ -1198,8 +1295,7 @@ class CameraURIPanel(wx.Panel):
     def on_tree_popup_clear(self, index):
         def delete(event):
             if self.context.kernel.yesno(
-                _("Do you really want to delete all entries?"),
-                caption=_("URI-Manager")
+                _("Do you really want to delete all entries?"), caption=_("URI-Manager")
             ):
                 self.context.uris.clear()
                 self.changed = True

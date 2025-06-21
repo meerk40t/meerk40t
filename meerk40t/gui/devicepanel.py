@@ -521,8 +521,9 @@ class DevicePanel(wx.Panel):
 
     def on_tree_popup_rename(self, service):
         def renameit(event=None):
+            lbl = str(service.label or "")
             with wx.TextEntryDialog(
-                None, _("What do you call this device?"), _("Device Label"), ""
+                None, _("What do you call this device?"), _("Device Label"), lbl
             ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:
@@ -630,8 +631,9 @@ class DevicePanel(wx.Panel):
     def on_button_rename_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
         if service is not None:
+            label = str(service.label or "")
             with wx.TextEntryDialog(
-                None, _("What do you call this device?"), _("Device Label"), ""
+                None, _("What do you call this device?"), _("Device Label"), label
             ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:

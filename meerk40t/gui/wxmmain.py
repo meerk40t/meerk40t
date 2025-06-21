@@ -1241,6 +1241,20 @@ class MeerK40t(MWindow):
                 "page": "Scene",
                 "section": "General",
             },
+            {
+                "attr": "file_selection",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Treat file selection as group selection"),
+                "tip": _(
+                    "Active: Single click within the boundaries of the contained elements of a filenode selects all elements within the file"
+                )
+                + "\n"
+                + _("Inactive: filenodes will not be used for selection"),
+                "page": "Scene",
+                "section": "General",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 
@@ -3002,7 +3016,7 @@ class MeerK40t(MWindow):
 
         @context.console_command("dialog_gear", hidden=True)
         def gear(**kwargs):
-            dlg = wx.TextEntryDialog(gui, _("Enter Forced Gear"), _("Gear Entry"), "")
+            dlg = wx.TextEntryDialog(gui, _("Enter Forced Gear"), _("Gear Entry"), "0")
             dlg.SetValue("")
 
             if dlg.ShowModal() == wx.ID_OK:
@@ -3545,6 +3559,7 @@ class MeerK40t(MWindow):
         if hasattr(context.kernel.busyinfo, "reparent"):
             context.kernel.busyinfo.reparent(self)
 
+    @signal_listener("pane")
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
         def toggle_pane(pane_toggle):
@@ -3620,15 +3635,14 @@ class MeerK40t(MWindow):
                 pane_name = pane.name
             except AttributeError:
                 pane_name = suffix_path
-
-            pane_caption = pane_name[0].upper() + pane_name[1:] + "."
-            try:
+            pane_caption = ""
+            src = "default"
+            if hasattr(pane, "control") and hasattr(pane.control, "caption"):
+                pane_caption = pane.control.caption
+            elif hasattr(pane, "caption"):
                 pane_caption = pane.caption
-            except AttributeError:
-                pass
             if not pane_caption:
                 pane_caption = pane_name[0].upper() + pane_name[1:] + "."
-
             menu_item = menu_context.Append(wx.ID_ANY, pane_caption, "", wx.ITEM_CHECK)
             menu_item.SetHelp(helptext)
             self.Bind(
@@ -5611,7 +5625,7 @@ class MeerK40t(MWindow):
         Zoom scene to bed size.
         """
         zoom = self.context.zoom_margin
-        self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
+        self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom + 100}% {zoom + 100}%\n")
 
     def update_statusbar(self, text):
         self.main_statusbar.SetStatusText(text, 0)
@@ -5701,7 +5715,7 @@ class MeerK40t(MWindow):
                 return
             helptext = menuitem.GetHelp()
             if not helptext:
-                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+                helptext = f"{menuitem.GetItemLabelText()} ({_('No help text')})"
             self.update_statusbar(helptext)
         except RuntimeError:
             pass

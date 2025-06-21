@@ -31,9 +31,9 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
-    dip_size,
     StaticBoxSizer,
     create_menu_for_node,
+    dip_size,
     get_gc_full_scale,
     get_matrix_scale,
     wxButton,
@@ -178,6 +178,7 @@ def process_event(
     else:
         return RESPONSE_CHAIN
 
+
 def update_elements(scene):
     elements = scene.context.elements
     with elements.undofree():
@@ -267,7 +268,9 @@ class BorderWidget(Widget):
                 gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
                 gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
             if self.show_rb:
-                gc.StrokeLine(sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h)
+                gc.StrokeLine(
+                    sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h
+                )
                 gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
 
             mypen.SetStyle(wx.PENSTYLE_DOT)
@@ -308,7 +311,9 @@ class BorderWidget(Widget):
                 # Show Y-Value
                 s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
-                distance = 0.25 * t_height # No text in the way, so a minimal gap suffices
+                distance = (
+                    0.25 * t_height
+                )  # No text in the way, so a minimal gap suffices
                 pos = self.top / 2.0 - t_height / 2
                 if pos + t_height + distance >= self.top:
                     pos = self.top - t_height - distance
@@ -325,7 +330,7 @@ class BorderWidget(Widget):
                 rpos = bed_h - self.bottom
                 s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
-                distance = 1.5 * t_height # There's text in the way
+                distance = 1.5 * t_height  # There's text in the way
                 pos = self.bottom + rpos / 2 - t_height / 2
                 if pos - t_height - distance <= self.bottom:
                     pos = self.bottom + distance
@@ -804,7 +809,7 @@ class CornerWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1: # End
+        if event == 1:  # End
             update_elements(self.scene)
         elif event == -1:
             self.scene.pane.modif_active = True
@@ -1474,7 +1479,9 @@ class MoveWidget(Widget):
                     e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
                     e.altered()
                     changed_nodes.append(e)
-                elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                elif elements.copy_increases_wordlist_references and hasattr(
+                    e, "mktext"
+                ):
                     e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
                     e.altered()
                     changed_nodes.append(e)
@@ -1629,7 +1636,7 @@ class MoveWidget(Widget):
 
                     # Return the coordinates of the two points
                     return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-                except Exception: # out of memory eg
+                except Exception:  # out of memory eg
                     return None, None, None
 
             b = elements._emphasized_bounds
@@ -1673,7 +1680,9 @@ class MoveWidget(Widget):
                         if seg_type in NON_GEOMETRY_TYPES:
                             continue
                         if np.isnan(start) or np.isnan(end):
-                            print (f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                            print(
+                                f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers"
+                            )
                             continue
                         if start != last:
                             xx = start.real
@@ -1762,7 +1771,9 @@ class MoveWidget(Widget):
                     move_to(lastdx, lastdy, interim=False)
                 else:
                     move_to(
-                        lastdx - self.master.offset_x, lastdy - self.master.offset_y, interim=False
+                        lastdx - self.master.offset_x,
+                        lastdy - self.master.offset_y,
+                        interim=False,
                     )
                 self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
@@ -2715,11 +2726,13 @@ class SelectionWidget(Widget):
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )
+            use_files = bool(self.scene.context.file_selection)
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
                 use_smallest=smallest,
                 exit_over_selection=True,
+                force_filenodes_too=use_files,
             )
             # Check if reference is still existing
             self.scene.pane.validate_reference()
@@ -2735,11 +2748,13 @@ class SelectionWidget(Widget):
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )
+            use_files = bool(self.scene.context.file_selection)
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
                 use_smallest=smallest,
                 exit_over_selection=True,
+                force_filenodes_too=use_files,
             )
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME

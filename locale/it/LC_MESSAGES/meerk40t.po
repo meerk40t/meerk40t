@@ -8,10 +8,10 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 07-06-25 20:30UTC\n"
+"PO-Revision-Date: 17-06-25 19:10UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
-"Language-Team: Cicioni Italian traslation\n"
+"Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -11023,15 +11023,15 @@ msgstr "Comandi batch"
 
 #: meerk40t/kernel/kernel.py:2888
 msgid "add a batch command 'batch add <line>'"
-msgstr ""
+msgstr "Aggiungi un comando batch 'batch add <line>'"
 
 #: meerk40t/kernel/kernel.py:2901
 msgid "delete line located at specific index"
-msgstr ""
+msgstr "Elimina la riga situata all'indice specificato"
 
 #: meerk40t/kernel/kernel.py:2914
 msgid "execute line located at specific index"
-msgstr ""
+msgstr "Esegui la riga situata all'indice specificato"
 
 #: meerk40t/kernel/kernel.py:2927
 msgid "disable/enable the command at the particular index"
@@ -11055,92 +11055,92 @@ msgstr "nome del canale"
 
 #: meerk40t/kernel/kernel.py:2979
 msgid "watch this channel in the console"
-msgstr ""
+msgstr "Monitora questo canale nella console"
 
 #: meerk40t/kernel/kernel.py:2985 meerk40t/kernel/kernel.py:3011
 #: meerk40t/kernel/kernel.py:3038 meerk40t/kernel/kernel.py:3068
 msgid "channel_name is not specified."
-msgstr ""
+msgstr "Il nome del canale non è specificato."
 
 #: meerk40t/kernel/kernel.py:2996
 msgid "Infinite Loop Error."
-msgstr ""
+msgstr "Errore di ciclo infinito."
 
 #: meerk40t/kernel/kernel.py:2999
 msgid "Watching Channel: {name}"
-msgstr ""
+msgstr "Monitoraggio canale: {name}"
 
 #: meerk40t/kernel/kernel.py:3002 meerk40t/kernel/kernel.py:3029
 msgid "channel name"
-msgstr ""
+msgstr "Nome del canale"
 
 #: meerk40t/kernel/kernel.py:3005
 msgid "stop watching this channel in the console"
-msgstr ""
+msgstr "Interrompi il monitoraggio di questo canale nella console"
 
 #: meerk40t/kernel/kernel.py:3023
 msgid "No Longer Watching Channel: {name}"
-msgstr ""
+msgstr "Monitoraggio del canale {name} interrotto"
 
 #: meerk40t/kernel/kernel.py:3026
 msgid "Channel {name} is not opened."
-msgstr ""
+msgstr "Il canale {name} non è aperto."
 
 #: meerk40t/kernel/kernel.py:3032
 msgid "print this channel to the standard out"
-msgstr ""
+msgstr "Stampa questo canale sull'output standard"
 
 #: meerk40t/kernel/kernel.py:3047
 msgid "Printing Channel: {name}"
-msgstr ""
+msgstr "Stampa canale: {name}"
 
 #: meerk40t/kernel/kernel.py:3052
 msgid "Use this filename rather than default"
-msgstr ""
+msgstr "Usa questo nome file anziché quello predefinito"
 
 #: meerk40t/kernel/kernel.py:3055
 msgid "channel name (you may comma delimit)"
-msgstr ""
+msgstr "Nome del canale (puoi separare con virgole)"
 
 #: meerk40t/kernel/kernel.py:3059
 msgid "save this channel to disk"
-msgstr ""
+msgstr "Salva questo canale su disco"
 
 #: meerk40t/kernel/kernel.py:3079
 msgid "Opening file: {filename}"
-msgstr ""
+msgstr "Apertura file: {filename}"
 
 #: meerk40t/kernel/kernel.py:3083
 msgid "Recording Channel: {name} to file {filename}"
-msgstr ""
+msgstr "Registrazione canale: {name} nel file {filename}"
 
 #: meerk40t/kernel/kernel.py:3102
 msgid "set [<key> <value>]"
-msgstr ""
+msgstr "Imposta [<chiave> <valore>]"
 
 #: meerk40t/kernel/kernel.py:3132
 msgid "Attempt failed. Produced a runtime error."
-msgstr ""
+msgstr "Tentativo fallito. Errore di runtime."
 
 #: meerk40t/kernel/kernel.py:3134
 msgid "Attempt failed. Produced a value error."
-msgstr ""
+msgstr "Tentativo fallito. Errore di valore."
 
 #: meerk40t/kernel/kernel.py:3136
 msgid "Attempt failed. Produced an attribute error."
-msgstr ""
+msgstr "Tentativo fallito. Errore di attributo."
 
 #: meerk40t/kernel/kernel.py:3139
 msgid "flush current settings to disk"
-msgstr ""
+msgstr "Salva immediatamente le impostazioni correnti su disco"
 
 #: meerk40t/kernel/kernel.py:3145
 msgid "Persistent settings force saved."
-msgstr ""
+msgstr "Impostazioni persistenti salvate forzatamente."
 
 #: meerk40t/kernel/kernel.py:3152
 msgid "shuts down all processes and exits"
-msgstr "Chiude tutti i processi e esce"
+msgstr "Chiude tutti i processi ed esce"
 
 #: meerk40t/kernel/kernel.py:3164
 msgid "list directory"
@@ -11172,39 +11172,39 @@ msgstr "Nessuna cartella di questo tipo"
 
 #: meerk40t/lihuiyu/device.py:278
 msgid "Pulse laser for {time}ms"
-msgstr ""
+msgstr "Impulso laser per {time}ms"
 
 #: meerk40t/lihuiyu/device.py:285
 msgid "Set the movement speed"
-msgstr ""
+msgstr "Imposta la velocità di movimento"
 
 #: meerk40t/lihuiyu/device.py:290
 msgid "move_at_speed <speed> <dx> <dy>"
-msgstr ""
+msgstr "move_at_speed <speed> <dx> <dy>"
 
 #: meerk40t/lihuiyu/device.py:315
 msgid "Set the driver speed."
-msgstr ""
+msgstr "Imposta la velocità del driver."
 
 #: meerk40t/lihuiyu/device.py:317
 msgid "Set current speed of driver."
-msgstr ""
+msgstr "Imposta la velocità attuale del driver."
 
 #: meerk40t/lihuiyu/device.py:326
 msgid "Speed is unset."
-msgstr ""
+msgstr "La velocità non è impostata."
 
 #: meerk40t/lihuiyu/device.py:329 meerk40t/lihuiyu/device.py:351
 msgid "Speed set at: {speed} mm/s"
-msgstr ""
+msgstr "Velocità impostata a: {speed} mm/s"
 
 #: meerk40t/lihuiyu/device.py:353
 msgid "pulses per inch [0-1000]"
-msgstr ""
+msgstr "impulsi per pollice [0-1000]"
 
 #: meerk40t/lihuiyu/device.py:354
 msgid "Set Driver Power"
-msgstr ""
+msgstr "Imposta la potenza del driver"
 
 #: meerk40t/lihuiyu/device.py:359
 msgid "Power is not set."
@@ -11216,126 +11216,126 @@ msgstr "Potenza impostata a: {power} impulsi per pollice"
 
 #: meerk40t/lihuiyu/device.py:369
 msgid "Acceleration amount [1-4]"
-msgstr ""
+msgstr "Quantità di accelerazione [1-4]"
 
 #: meerk40t/lihuiyu/device.py:372
 msgid "Set Driver Acceleration [1-4]"
-msgstr ""
+msgstr "Imposta accelerazione del driver [1-4]"
 
 #: meerk40t/lihuiyu/device.py:383 meerk40t/lihuiyu/device.py:396
 msgid "Acceleration is set to default."
-msgstr ""
+msgstr "L'accelerazione è impostata ai valori predefiniti."
 
 #: meerk40t/lihuiyu/device.py:386 meerk40t/lihuiyu/device.py:400
 msgid "Acceleration: {acceleration}"
-msgstr ""
+msgstr "Accelerazione: {acceleration}"
 
 #: meerk40t/lihuiyu/device.py:405
 msgid "Invalid Acceleration [1-4]."
-msgstr ""
+msgstr "Accelerazione non valida [1-4]."
 
 #: meerk40t/lihuiyu/device.py:411
 msgid "Update m2nano codes for movement"
-msgstr ""
+msgstr "Aggiorna codici m2nano per il movimento"
 
 #: meerk40t/lihuiyu/device.py:419
 msgid "Updates network state for m2nano networked."
-msgstr ""
+msgstr "Aggiorna lo stato di rete per m2nano connesso"
 
 #: meerk40t/lihuiyu/device.py:426 meerk40t/lihuiyu/device.py:437
 #: meerk40t/moshi/device.py:375
 msgid "abort waiting process on the controller."
-msgstr ""
+msgstr "Interrompi il processo di attesa sul controller."
 
 #: meerk40t/lihuiyu/device.py:433 meerk40t/moshi/device.py:371
 msgid "Could not check status, usb not connected."
-msgstr ""
+msgstr "Impossibile verificare lo stato, USB non connesso."
 
 #: meerk40t/lihuiyu/device.py:444
 msgid "realtime pause/resume of the machine"
-msgstr ""
+msgstr "Pausa/ripresa in tempo reale della macchina"
 
 #: meerk40t/lihuiyu/device.py:452 meerk40t/moshi/device.py:349
 msgid "Abort Job"
-msgstr ""
+msgstr "Interrompi lavoro"
 
 #: meerk40t/lihuiyu/device.py:455
 msgid "Lihuiyu Channel Aborted."
-msgstr ""
+msgstr "Canale Lihuiyu interrotto."
 
 #: meerk40t/lihuiyu/device.py:459
 msgid "limit x speed for rapid."
-msgstr ""
+msgstr "Limita la velocità X per movimenti rapidi."
 
 #: meerk40t/lihuiyu/device.py:462
 msgid "limit y speed for rapid."
-msgstr ""
+msgstr "Limita la velocità Y per movimenti rapidi."
 
 #: meerk40t/lihuiyu/device.py:466
 msgid "limit speed of typical rapid moves."
-msgstr ""
+msgstr "Limita la velocità dei movimenti rapidi tipici."
 
 #: meerk40t/lihuiyu/device.py:476
 msgid "Rapid Limit: {max_x}, {max_y}"
-msgstr ""
+msgstr "Limite rapido: {max_x}, {max_y}"
 
 #: meerk40t/lihuiyu/device.py:483
 msgid "Rapid Limit Off"
-msgstr ""
+msgstr "Limite rapido disattivato"
 
 #: meerk40t/lihuiyu/device.py:514
 msgid "Lihuiyu Engrave Buffer Import. egv_import <egv_file>"
-msgstr ""
+msgstr "Importazione buffer di incisione Lihuiyu. egv_import <egv_file>"
 
 #: meerk40t/lihuiyu/device.py:547
 msgid "Could not load: {filename}"
-msgstr ""
+msgstr "Impossibile caricare: {filename}"
 
 #: meerk40t/lihuiyu/device.py:552
 msgid "Lihuiyu Engrave Buffer Export. egv_export <egv_file>"
-msgstr ""
+msgstr "Esportazione buffer di incisione Lihuiyu. egv_export <egv_file>"
 
 #: meerk40t/lihuiyu/device.py:575
 msgid "Lihuiyu Engrave Code Sender. egv <lhymicro-gl>"
-msgstr ""
+msgstr "Invio codice di incisione Lihuiyu. egv <lhymicro-gl>"
 
 #: meerk40t/lihuiyu/device.py:587
 msgid "Challenge code, challenge <serial number>"
-msgstr ""
+msgstr "Codice di sfida, challenge <serial number>"
 
 #: meerk40t/lihuiyu/device.py:599 meerk40t/moshi/device.py:322
 msgid "Start Pipe to Controller"
-msgstr ""
+msgstr "Avvia connessione al controller"
 
 #: meerk40t/lihuiyu/device.py:603
 msgid "Lihuiyu Channel Started."
-msgstr ""
+msgstr "Canale Lihuiyu avviato."
 
 #: meerk40t/lihuiyu/device.py:605 meerk40t/lihuiyu/gui/lhycontrollergui.py:454
 #: meerk40t/moshi/device.py:331
 msgid "Hold Controller"
-msgstr "Controller anhalten"
+msgstr "Mantieni il controller"
 
 #: meerk40t/lihuiyu/device.py:611 meerk40t/lihuiyu/gui/lhycontrollergui.py:479
 #: meerk40t/moshi/device.py:340
 msgid "Resume Controller"
-msgstr "Controller fortsetzen"
+msgstr "Riprendi controller"
 
 #: meerk40t/lihuiyu/device.py:615
 msgid "Lihuiyu Channel Resumed."
-msgstr ""
+msgstr "Canale Lihuiyu ripreso."
 
 #: meerk40t/lihuiyu/device.py:617
 msgid "Connects USB"
-msgstr "Verbindet mit USB"
+msgstr "Connette USB"
 
 #: meerk40t/lihuiyu/device.py:621
 msgid "Usb Connection Opened."
-msgstr ""
+msgstr "Connessione USB aperta."
 
 #: meerk40t/lihuiyu/device.py:623
 msgid "Usb Connection Refused"
-msgstr ""
+msgstr "Connessione USB rifiutata"
 
 #: meerk40t/lihuiyu/device.py:625
 msgid "Disconnects USB"
@@ -11343,63 +11343,63 @@ msgstr "Disconnetti USB"
 
 #: meerk40t/lihuiyu/device.py:628
 msgid "CH341 Closed."
-msgstr "CH341 geschlossen."
+msgstr "CH341 chiuso."
 
 #: meerk40t/lihuiyu/device.py:630
 msgid "Reset USB device"
-msgstr "Setzt USB Gerät zurück"
+msgstr "Ripristina dispositivo USB"
 
 #: meerk40t/lihuiyu/device.py:635
 msgid "Usb Connection Reset"
-msgstr ""
+msgstr "Reset connessione USB"
 
 #: meerk40t/lihuiyu/device.py:637 meerk40t/lihuiyu/device.py:645
 msgid "Usb Connection Error"
-msgstr ""
+msgstr "Errore di connessione USB"
 
 #: meerk40t/lihuiyu/device.py:639
 msgid "Release USB device"
-msgstr "Gibt USB Gerät frei"
+msgstr "Rilascia dispositivo USB"
 
 #: meerk40t/lihuiyu/device.py:643
 msgid "Usb Connection Released"
-msgstr ""
+msgstr "Connessione USB rilasciata"
 
 #: meerk40t/lihuiyu/device.py:651
 msgid "Continues USB retries"
-msgstr ""
+msgstr "Ritenta connessione USB continuamente"
 
 #: meerk40t/lihuiyu/device.py:666
 msgid "watch send/recv data"
-msgstr ""
+msgstr "Monitora dati inviati/ricevuti"
 
 #: meerk40t/lihuiyu/device.py:675
 msgid "activate the lhyserver."
-msgstr ""
+msgstr "Attiva il server LHY."
 
 #: meerk40t/lihuiyu/device.py:686
 msgid "TCP Server for lihuiyu on port: {port}"
-msgstr ""
+msgstr "Server TCP per Lihuiyu sulla porta: {port}"
 
 #: meerk40t/lihuiyu/device.py:692
 msgid "Watching Channel: {channel}"
-msgstr ""
+msgstr "Monitoraggio canale: {channel}"
 
 #: meerk40t/lihuiyu/device.py:694
 msgid "Attached: {output}"
-msgstr ""
+msgstr "Collegato: {output}"
 
 #: meerk40t/lihuiyu/device.py:699
 msgid "Server cannot be attached to any device."
-msgstr ""
+msgstr "Il server non può essere collegato a nessun dispositivo."
 
 #: meerk40t/lihuiyu/device.py:702
 msgid "activate the lhyemulator."
-msgstr ""
+msgstr "Attiva l'emulatore LHY."
 
 #: meerk40t/lihuiyu/device.py:707
 msgid "Lihuiyu Emulator attached to {device}"
-msgstr ""
+msgstr "Emulatore Lihuiyu collegato a {device}"
 
 #: meerk40t/lihuiyu/device.py:710
 msgid "Emulator cannot be attached to any device."
@@ -11415,15 +11415,15 @@ msgstr "Scollegare l'USB"
 
 #: meerk40t/moshi/device.py:338
 msgid "Moshi Channel Paused."
-msgstr ""
+msgstr "Canale Moshi in pausa."
 
 #: meerk40t/moshi/device.py:347
 msgid "Moshi Channel Resumed."
-msgstr ""
+msgstr "Canale Moshi ripreso."
 
 #: meerk40t/moshi/device.py:356
 msgid "Moshi Channel Aborted."
-msgstr ""
+msgstr "Canale Moshi interrotto."
 
 #: meerk40t/moshi/device.py:362
 msgid "Update moshiboard controller status"
@@ -18487,7 +18487,7 @@ msgstr "Abbandona"
 msgid "Ribbon-Size:"
 msgstr "Dimensione della barra:"
 
-#: ./meerk40t\gui\wxmmain.py:3640
+#: ./meerk40t\gui\wxmmain.py:3643
 msgid "&Help\tF1"
 msgstr "&Aiuto\tF1"
 
@@ -20875,7 +20875,7 @@ msgstr ""
 "tutte le immagini vengono ingrandite involontariamente. Questo può essere riconosciuto dalle icone che sono troppo grandi/molto pixelate.\n"
 "Consigliamo vivamente di impostare il ridimensionamento dell'utente nelle impostazioni di sistema a un valore inferiore al 150%."
 
-#: meerk40t/gui/wxmmain.py:241
+#: meerk40t./gui/wxmmain.py:241
 msgid "Unfortunate System Settings"
 msgstr "Impostazioni di sistema sfavorevoli"
 
@@ -22637,7 +22637,7 @@ msgstr "Se attivo, il punto rosso verrà utilizzato automaticamente quando si de
 
 #: meerk40t/grbl/device.py:894
 msgid "Set the dot laser strength (0..1000)."
-msgstr "Imposta la potenza del laser a punto (0..1000)."
+msgstr "Imposta la potenza del laser (0..1000)."
 
 #: meerk40t/grbl/device.py:901
 msgid "Force the red dot command even if a job is running."
@@ -22667,6 +22667,30 @@ msgstr "La luce rossa è ora spenta."
 msgid "Red light is now on."
 msgstr "La luce rossa è ora accesa."
 
+#: meerk40t/camera/plugin.py:121
+msgid "Current labels:"
+msgstr "Etichette attuali:"
+
+#: meerk40t/camera/plugin.py:318
+msgid "No camera selected."
+msgstr "Nessuna fotocamera selezionata."
+
+#: meerk40t/camera/gui/camerapanel.py:511 meerk40t/camera/gui/camerapanel.py:928
+msgid "Enter a new label for the camera:"
+msgstr "Inserisci una nuova etichetta per la fotocamera:"
+
+#: meerk40t/camera/gui/camerapanel.py:512 meerk40t/camera/gui/camerapanel.py:929
+msgid "Change camera label"
+msgstr "Cambia etichetta fotocamera"
+
+#: meerk40t/camera/gui/camerapanel.py:775
+msgid "Change Label"
+msgstr "Cambia etichetta"
+
+#: meerk40t/camera/gui/camerapanel.py:1018
+msgid "Detects cameras on the system and sets them up"
+msgstr "Rileva le fotocamere nel sistema e le configura"
+
 #: meerk40t/gui/mkdebug.py:143
 msgid "Plotter Test"
 msgstr "Test del Plotter"
@@ -22682,3 +22706,16 @@ msgstr "Informazioni sul Test del Plotter Raster"
 #: meerk40t/gui/mkdebug.py:720
 msgid "Raster Properties"
 msgstr "Proprietà Raster"
+
+#: meerk40t/gui/wxmmain.py:1254
+msgid "Inactive: filenodes will not be used for selection"
+msgstr "Inattivo: i nodi file non verranno utilizzati per la selezione"
+
+#: meerk40t/gui/wxmmain.py:1249
+msgid "Treat file selection as group selection"
+msgstr "Tratta la selezione dei file come selezione di gruppo"
+
+#: meerk40t/gui/wxmmain.py:1252
+msgid "Active: Single click within the boundaries of the contained elements of a filenode selects all elements within the file"
+msgstr "Attivo: Un singolo clic all'interno dei confini degli elementi contenuti in un nodo file seleziona tutti gli elementi nel file"
+
