@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 17-06-25 19:10UTC\n"
+"PO-Revision-Date: 20-06-25 16:45UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
@@ -22707,10 +22707,6 @@ msgstr "Informazioni sul Test del Plotter Raster"
 msgid "Raster Properties"
 msgstr "Proprietà Raster"
 
-#: meerk40t/gui/wxmmain.py:1254
-msgid "Inactive: filenodes will not be used for selection"
-msgstr "Inattivo: i nodi file non verranno utilizzati per la selezione"
-
 #: meerk40t/gui/wxmmain.py:1249
 msgid "Treat file selection as group selection"
 msgstr "Tratta la selezione dei file come selezione di gruppo"
@@ -22719,3 +22715,74 @@ msgstr "Tratta la selezione dei file come selezione di gruppo"
 msgid "Active: Single click within the boundaries of the contained elements of a filenode selects all elements within the file"
 msgstr "Attivo: Un singolo clic all'interno dei confini degli elementi contenuti in un nodo file seleziona tutti gli elementi nel file"
 
+#: meerk40t/gui/wxmmain.py:1254
+msgid "Inactive: filenodes will not be used for selection"
+msgstr "Inattivo: i nodi file non verranno utilizzati per la selezione"
+
+#: meerk40t/device/gui/defaultactions.py:50
+msgid "Move the laser head to the home position."
+msgstr "Sposta la testa del laser nella posizione iniziale (home)."
+
+#: meerk40t/device/gui/defaultactions.py:55
+msgid "Move the laser head to the origin position."
+msgstr "Sposta la testa del laser nella posizione di origine."
+
+#: meerk40t/device/gui/defaultactions.py:61
+msgid "Move the laser head to the absolute position 0,0."
+msgstr "Sposta la testa del laser alla posizione assoluta 0,0."
+
+#: meerk40t/device/gui/defaultactions.py:63
+msgid "Make audible beep."
+msgstr "Emetti un segnale acustico."
+
+#: meerk40t/device/gui/defaultactions.py:68
+msgid "Interrupt the current operation and display a message."
+msgstr "Interrompi l'operazione in corso e mostra un messaggio."
+
+#: meerk40t/device/gui/defaultactions.py:70
+msgid "Execute a command in the console."
+msgstr "Esegui un comando nella console."
+
+#: meerk40t/device/gui/defaultactions.py:71
+msgid "Turn on the coolant."
+msgstr "Attiva il sistema di raffreddamento."
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Turn off the coolant."
+msgstr "Disattiva il sistema di raffreddamento."
+
+#: meerk40t/device/gui/defaultactions.py:95
+msgid "Prevent the system from entering hibernation mode."
+msgstr "Impedisci al sistema di entrare in modalità ibernazione."
+
+#: meerk40t/device/gui/defaultactions.py:101
+msgid "Allow the system to enter hibernation mode."
+msgstr "Consenti al sistema di entrare in modalità ibernazione."
+
+#: meerk40t/kernel/kernel.py:2864
+msgid "Mode to set: prevent/allow"
+msgstr "Modalità da impostare: impedisci/consenti"
+
+#: meerk40t/kernel/kernel.py:2867
+msgid "Prevent/allow system hibernation."
+msgstr "Impedisci/consenti l'ibernazione del sistema."
+
+#: meerk40t/kernel/kernel.py:2875
+msgid "Inhibitor is not available on this system."
+msgstr "La funzione di inibizione non è disponibile su questo sistema."
+
+#: meerk40t/kernel/kernel.py:2879
+msgid "Please specify 'prevent' or 'allow'."
+msgstr "Specificare 'impedisci' o 'consenti'."
+
+#: meerk40t/kernel/kernel.py:2885
+msgid "You might need system administrator priviliges."
+msgstr "Potrebbero essere necessari i privilegi di amministratore del sistema."
+
+#: meerk40t/kernel/kernel.py:2887
+msgid "System hibernation is prevented."
+msgstr "L'ibernazione del sistema è stata impedita."
+
+#: meerk40t/kernel/kernel.py:2889
+msgid "System hibernation is allowed."
+msgstr "L'ibernazione del sistema è consentita."
