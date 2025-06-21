@@ -567,6 +567,8 @@ class Rotary:
     @signal_listener("rotary_active_roller")
     @signal_listener("rotary_chuck_offset")
     @signal_listener("rotary_chuck_alignment_axis")
+    @signal_listener("rotary_roller_offset")
+    @signal_listener("rotary_roller_alignment_axis")
     @signal_listener("rotary_reverse")
     def rotary_settings_changed(self, origin=None, *args):
         """
