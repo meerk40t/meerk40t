@@ -154,6 +154,19 @@ class LihuiyuDevice(Service, Status):
                 "subsection": _("Board Setup"),
             },
             {
+                "attr": "supports_pwm",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Hardware-PWM"),
+                "tip": _(
+                    "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Board Setup"),
+                "conditional": (self, "board", "M3"),
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
@@ -892,6 +905,27 @@ class LihuiyuDevice(Service, Status):
                 code = b"A%s\n" % challenge
                 self.output.write(code)
 
+        def _validate_board(channel, board):
+            """
+            Validates the board type
+            """
+            if self.board != board:
+                channel(
+                    _(
+                        "This command is only available for {target} boards. This is a {board}."
+                    ).format(target=board, board=self.board)
+                )
+                return False
+            return True
+
+        @self.console_command(
+            "get_m3nano_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_m3nano_info(command, channel, _, remainder=None, **kwgs):
+            if _validate_board(channel, "M3"):
+                self.driver.get_m3_hardware_info()
+
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwgs):
             self.controller.update_state("active")
@@ -1050,6 +1084,7 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("plot_shift")
     @signal_listener("plot_phase_type")
     @signal_listener("plot_phase_value")
+    @signal_listener("supports_pwm")
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 

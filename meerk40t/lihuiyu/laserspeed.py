@@ -6,7 +6,6 @@ LaserSpeed
 This is the standard library for converting to and from speed code information for LHYMICRO-GL.
 """
 
-
 from math import floor
 
 
@@ -55,6 +54,7 @@ class LaserSpeed:
         fix_speeds=False,
         fix_lows=False,
         fix_limit=False,
+        power_value=None,
     ):
         self.speed = speed
         self.board = board
@@ -67,7 +67,7 @@ class LaserSpeed:
         self.fix_speeds = fix_speeds
         self.fix_lows = fix_lows
         self.fix_limit = fix_limit
-
+        self.power_value = power_value
         if isinstance(speed, str):
             # this is a speedcode value.
             (
@@ -114,6 +114,8 @@ class LaserSpeed:
             parts.append(f"fix_limit={str(self.fix_limit)}")
         if not self.raster_horizontal:
             parts.append(f"raster_horizontal={str(self.raster_horizontal)}")
+        if self.power_value:
+            parts.append(f"power_value={str(self.power_value)}")
         return f"LaserSpeed({', '.join(parts)})"
 
     @property
@@ -129,6 +131,7 @@ class LaserSpeed:
             fix_speeds=self.fix_speeds,
             fix_lows=self.fix_lows,
             raster_horizontal=self.raster_horizontal,
+            power_value=self.power_value,
         )
 
 
@@ -163,6 +166,7 @@ def get_code_from_speed(
     fix_speeds=False,
     fix_lows=False,
     raster_horizontal=True,
+    power_value=None,
 ):
     """
     Get a speedcode from a given speed. The raster step appends the 'G' value and uses speed ranges.
@@ -204,21 +208,24 @@ def get_code_from_speed(
         # produced a negative speed value, go ahead and set that to 0
         speed_value = 0
     encoded_speed = encode_16bit(speed_value)
-
+    if power_value is None or power_value >= 1000:
+        power_suffix = ""
+    else:
+        power_suffix = f"W{int(power_value):03d}"
     if raster_step != 0:
         # There is no C suffix notation for raster step.
         if isinstance(raster_step, tuple):
-            return f"V{encoded_speed}{acceleration:1d}G{abs(raster_step[0]):03d}G{abs(raster_step[1]):03d}"
+            return f"V{encoded_speed}{acceleration:1d}G{abs(raster_step[0]):03d}G{abs(raster_step[1]):03d}{power_suffix}"
         else:
-            return f"V{encoded_speed}{acceleration:1d}G{abs(raster_step):03d}"
+            return f"V{encoded_speed}{acceleration:1d}G{abs(raster_step):03d}{power_suffix}"
 
     if d_ratio == 0 or board in ("A", "B", "M"):
         # We do not need the diagonal code.
         if raster_step == 0:
             if suffix_c:
-                return f"CV{encoded_speed}1C"
+                return f"CV{encoded_speed}1C{power_suffix}"
             else:
-                return f"CV{encoded_speed}{acceleration:1d}"
+                return f"CV{encoded_speed}{acceleration:1d}{power_suffix}"
     else:
         step_value = min(int(floor(mm_per_second) + 1), 128)
         frequency_kHz = float(mm_per_second) / 25.4
@@ -235,11 +242,11 @@ def get_code_from_speed(
                 d_value = 0
         encoded_diagonal = encode_16bit(d_value)
         if suffix_c:
-            return f"CV{encoded_speed}1{step_value:03d}{encoded_diagonal}C"
-        else:
             return (
-                f"CV{encoded_speed}{acceleration:1d}{step_value:03d}{encoded_diagonal}"
+                f"CV{encoded_speed}1{step_value:03d}{encoded_diagonal}C{power_suffix}"
             )
+        else:
+            return f"CV{encoded_speed}{acceleration:1d}{step_value:03d}{encoded_diagonal}{power_suffix}"
 
 
 def parse_speed_code(speed_code):
@@ -448,3 +455,102 @@ def get_equation(board, accel=1, suffix_c=False, fix_speeds=False):
         if suffix_c:
             return 8.0, m / 12.0
     return b, m
+
+
+def debug_packet(packet):
+    """
+    Debugging function to print the packet in a readable format.
+    """
+    if isinstance(packet, list):
+        ascii = "".join(chr(int(x)) if 32 <= x < 127 else "." for x in packet)
+        packet = (
+            " ".join(f"{int(x):02X}" for x in packet)
+            + f" ({len(packet)} bytes)"
+            + f" {ascii}"
+        )
+    print(f"Packet: {packet}")
+
+
+def prepare_packet(packet):
+    def crc8(data):
+        """
+        Compute CRC, based on tables
+        """
+        crctab1 = (
+            b"\x00\x5E\xBC\xE2\x61\x3F\xDD\x83" b"\xC2\x9C\x7E\x20\xA3\xFD\x1F\x41"
+        )
+        crctab2 = (
+            b"\x00\x9D\x23\xBE\x46\xDB\x65\xF8" b"\x8C\x11\xAF\x32\xCA\x57\xE9\x74"
+        )
+
+        crc = 0
+        for i in range(len(data)):
+            crc ^= data[i]  ## just re-using crc as intermediate
+            crc = crctab1[crc & 0x0F] ^ crctab2[(crc >> 4) & 0x0F]
+        return crc
+
+    if len(packet) == 34:
+        packet[-1] = crc8(packet[1 : len(packet) - 2])
+    return packet
+
+
+def set_PWM_register(pct_power, ms: int = 0):
+    # power: 0-100%
+    power = int(pct_power * 10)
+    m = int(power / 254)
+    n = int(power % 254)
+    # fmt: off
+    pack  = prepare_packet([166,0,65,84,49,m,n,ms,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,166,0])
+    # fmt: on
+    debug_packet(pack)
+    # print(power,m,n)
+
+
+def _test_hw_info():
+    print("hw info")
+    pack = prepare_packet(
+        [
+            166,
+            0,
+            65,
+            84,
+            48,
+            49,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            166,
+            0,
+        ]
+    )
+    debug_packet(pack)
+
+
+if __name__ == "__main__":
+    # Example usage
+    for pct_power in range(0, 100, 10):
+        set_PWM_register(pct_power)
+    _test_hw_info()
