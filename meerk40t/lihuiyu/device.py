@@ -154,6 +154,19 @@ class LihuiyuDevice(Service, Status):
                 "subsection": _("Board Setup"),
             },
             {
+                "attr": "supports_pwm",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Hardware-PWM"),
+                "tip": _(
+                    "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Board Setup"),
+                "conditional": (self, "board", "M3"),
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
@@ -476,6 +489,171 @@ class LihuiyuDevice(Service, Status):
             },
         ]
         self.register_choices("lhy-speed", choices)
+
+        choices = [
+            {
+                "attr": "info_firmware",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("firmware of device"),
+                "tip": _("The firmware of the board version"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+            {
+                "attr": "info_copyright",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Copyright"),
+                "tip": _("Copyright of the firmware"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+            {
+                "attr": "info_factory_sn",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Factory Serial Number"),
+                "tip": _("Device Serial Number"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+            {
+                "attr": "info_manufacturer_date",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Manufacture Date"),
+                "tip": _("Date the board was manufactured"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+            {
+                "attr": "info_authorize",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Authorize"),
+                "tip": _("Authorize"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+            {
+                "attr": "info_fw_feature",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("FW Feature"),
+                "tip": _("FW Feature"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+            {
+                "attr": "info_ic_feature",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("IC Feature"),
+                "tip": _("IC Feature"),
+                "section": "_40_" + _("Mainboard Info"),
+            },
+        ]
+        self.register_choices("lhy-information", choices)
+
+        choices = [
+            {
+                "attr": "board_device_model",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Device Model"),
+                "tip": _("Written Device Model Information"),
+                "section": "_30_" + _("Params"),
+            },
+            {
+                "attr": "board_manufacturer",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Manufacturer"),
+                "tip": _("Written Manufacturer"),
+                "section": "_30_" + _("Params"),
+            },
+            {
+                "attr": "board_assembly_date",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Assembly Date"),
+                "tip": _("Written Assembly Date"),
+                "section": "_30_" + _("Params"),
+            },
+            {
+                "attr": "board_dev_password",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Dev Password"),
+                "tip": _("Written Dev Password"),
+                "section": "_30_" + _("Params"),
+            },
+            {
+                "attr": "board_x_accelerate",
+                "object": self,
+                "default": _("X-Accelerate 1"),
+                "type": str,
+                "style": "combo",
+                "choices": [_("X-Accelerate 1"), _("X-Accelerate 1"), _("X-Accelerate 2")],
+                "label": _("X-Accelerate"),
+                "tip": _("Written X-Accelerate Information"),
+                "section": "_40_" + _("Speeds"),
+            },
+            {
+                "attr": "board_rapid_speed",
+                "object": self,
+                "default": 68.88,
+                "type": float,
+                "label": _("Rapid Speed"),
+                "tip": _("Written Rapid Speed Information"),
+                "section": "_40_" + _("Speeds"),
+            },
+            {
+                "attr": "board_home_speed",
+                "object": self,
+                "default": 68.88,
+                "type": float,
+                "label": _("Home Speed"),
+                "tip": _("Written Home Speed Information"),
+                "section": "_40_" + _("Speeds"),
+            },
+            {
+                "attr": "board_laser_power",
+                "object": self,
+                "default": 10,
+                "type": float,
+                "label": _("Laser Power"),
+                "tip": _("Written Laser Power Information"),
+                "trailer": "%",
+                "section": "_40_" + _("Speeds"),
+            },
+            {
+                "attr": "board_shot_time",
+                "object": self,
+                "default": 100,
+                "type": float,
+                "label": _("Shot Time"),
+                "tip": _("Written Shot Time Information"),
+                "section": "_40_" + _("Speeds"),
+            },
+            {
+                "attr": "board_reset_origin",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Reset Origin"),
+                "tip": _("Reset Origin or move by hands"),
+                "section": "_40_" + _("Speeds"),
+            },
+
+        ]
+        self.register_choices("lhy-overwrite", choices)
 
         # This device prefers to display power level in ppi
         self.setting(bool, "use_percent_for_power_display", False)
@@ -892,6 +1070,28 @@ class LihuiyuDevice(Service, Status):
                 code = b"A%s\n" % challenge
                 self.output.write(code)
 
+        @self.console_command(
+            "get_board_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_board_info(command, channel, _, remainder=None, **kwgs):
+            self.driver.get_board_info()
+
+        @self.console_command(
+            "get_m3nano_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_m3nano_info(command, channel, _, remainder=None, **kwgs):
+            self.driver.get_m3_hardware_info()
+
+        @self.console_command(
+            "get_param_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_param_info(command, channel, _, remainder=None, **kwgs):
+            self.driver.get_param_info()
+
+
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwgs):
             self.controller.update_state("active")
@@ -1050,6 +1250,7 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("plot_shift")
     @signal_listener("plot_phase_type")
     @signal_listener("plot_phase_value")
+    @signal_listener("supports_pwm")
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 

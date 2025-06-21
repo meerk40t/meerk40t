@@ -691,19 +691,25 @@ class LihuiyuController:
                 self.update_state("terminate")
                 self.is_shutdown = True
                 packet = packet[:-1]
-            if packet.startswith(b"A"):
-                # This is a challenge code. A is only used for serial challenges.
-                post_send_command = self._confirm_serial
-            if len(packet) != 0:
-                if packet.endswith(b"#"):
-                    packet = packet[:-1]
-                    try:
-                        c = packet[-1]
-                    except IndexError:
-                        c = b"F"  # Packet was simply #. We can do nothing.
-                    packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
-                else:
-                    packet += b"F" * (30 - len(packet))  # Padding. '\n'
+            if packet.startswith(b"AT"):
+                # This is as special case for the M3 only:
+                # AT command packages are padded with 0x00 and not 'F' as usal
+                c = b"\x00"
+                packet += c * (30 - len(packet))  # Padding with 0 character
+            else:
+                if packet.startswith(b"A"):
+                    # This is a challenge code. A is only used for serial challenges.
+                    post_send_command = self._confirm_serial
+                if len(packet) != 0:
+                    if packet.endswith(b"#"):
+                        packet = packet[:-1]
+                        try:
+                            c = packet[-1]
+                        except IndexError:
+                            c = b"F"  # Packet was simply #. We can do nothing.
+                        packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
+                    else:
+                        packet += b"F" * (30 - len(packet))  # Padding. '\n'
         if not realtime and self.state in ("pause", "busy"):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
