@@ -106,6 +106,7 @@ class RotaryAxisWidget(Widget):
             # Chuck mode
             self.scene.context.device.rotary.set_chuck_center(pos)
         self.update_parameters()
+        self.inform_about_updates()
         self.scene.request_refresh()
 
     def event(
@@ -149,6 +150,7 @@ class RotaryAxisWidget(Widget):
                     else:
                         self.scene.context.device.rotary.set_chuck_center(pos)
                     self.update_parameters()
+                    self.inform_about_updates()
                     self.scene.request_refresh()
 
                 def set_to_bed_center(event):
@@ -224,6 +226,11 @@ class RotaryAxisWidget(Widget):
 
     def update_parameters(self):
         rotary = self.scene.context.device.rotary
+        # print (
+        #     f"Rotary Axis Widget: active_chuck={rotary.rotary_active_chuck}, active_roller={rotary.rotary_active_roller}\n"
+        #     f"rotary_chuck_alignment_axis={rotary.rotary_chuck_alignment_axis}, rotary_chuck_offset={rotary.rotary_chuck_offset}\n"
+        #     f"rotary_roller_alignment_axis={rotary.rotary_roller_alignment_axis}, rotary_roller_offset={rotary.rotary_roller_offset}"
+        #     )
         if rotary.rotary_active_chuck:
             self.rotary_mode = 2  # Chuck mode
             self.axis = rotary.rotary_chuck_alignment_axis
@@ -241,6 +248,13 @@ class RotaryAxisWidget(Widget):
             else self.scene.context.device.view.unit_height,
         )
         # print (f"Rotary Axis Widget: mode={self.rotary_mode}, axis={self.axis}, offset={self.offset}, zero_pos={self.zero_pos}")
+
+    def inform_about_updates(self):
+        rotary = self.scene.context.device.rotary
+        if rotary.rotary_active_chuck:
+            self.scene.context.signal("rotary_chuck_offset", self.offset)
+        elif rotary.rotary_active_roller:
+            self.scene.context.signal("rotary_roller_offset", self.offset)
 
     def process_draw(self, gc):
         """
