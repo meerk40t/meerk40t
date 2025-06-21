@@ -144,6 +144,7 @@ Functions:
 import re
 from copy import copy
 
+from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
@@ -153,8 +154,9 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix
-from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
+
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -572,10 +574,9 @@ def init_commands(kernel):
             return
         for e in data:
             e.label = label
-        self.signal("element_property_update", data)
+        self.signal("element_property_reload", data)
         self.signal("refresh_scene", "Scene")
         return data_type, data
-
 
     @self.console_command(
         "empty",
@@ -1339,7 +1340,9 @@ def init_commands(kernel):
         input_type=("elements", "ops"),
         output_type=("elements", "ops"),
     )
-    def e_copy(data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs):
+    def e_copy(
+        data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs
+    ):
         if data is None:
             # Take tree selection for ops, scene selection for elements
             if data_type == "ops":
@@ -1646,19 +1649,44 @@ def init_commands(kernel):
         channel("----------")
         return "elements", data
 
-    @kernel.console_option("stitchtolerance", "s", type=Length, help=_("By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"))
-    @kernel.console_option("nostitch", "n", type=bool, action="store_true", help=_("By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"))
+    @kernel.console_option(
+        "stitchtolerance",
+        "s",
+        type=Length,
+        help=_(
+            "By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"
+        ),
+    )
+    @kernel.console_option(
+        "nostitch",
+        "n",
+        type=bool,
+        action="store_true",
+        help=_(
+            "By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"
+        ),
+    )
     @self.console_command(
         "merge",
         help=_("merge elements"),
         input_type="elements",
         output_type="elements",
     )
-    def element_merge(command, channel, _, data=None, post=None, nostitch=None, stitchtolerance=None, **kwargs):
+    def element_merge(
+        command,
+        channel,
+        _,
+        data=None,
+        post=None,
+        nostitch=None,
+        stitchtolerance=None,
+        **kwargs,
+    ):
         """
         Merge combines the geometries of the inputs. This matters in some cases where fills are used. Such that two
         nested circles forms a toroid rather two independent circles.
         """
+
         def set_nonset_attributes(node, e):
             try:
                 if node.stroke is None:
@@ -1681,15 +1709,17 @@ def init_commands(kernel):
                 def segtype(info):
                     return int(info[2].real) & 0xFF
 
-                if segtype(aseg) not in NON_GEOMETRY_TYPES and segtype(bseg) not in NON_GEOMETRY_TYPES:
+                if (
+                    segtype(aseg) not in NON_GEOMETRY_TYPES
+                    and segtype(bseg) not in NON_GEOMETRY_TYPES
+                ):
                     s1, _dummy2, _dummy3, _dummy4, e1 = aseg
                     s2, _dummy2, _dummy3, _dummy4, e2 = bseg
                     c1 = s1 if starta else e1
                     c2 = s2 if startb else e2
-                    if abs(c1 - c2) <= tolerance + 1E-6:
+                    if abs(c1 - c2) <= tolerance + 1e-6:
                         return True
                 return False
-
 
             seg1_start = other.segments[0]
             seg1_end = other.segments[other.index - 1]
@@ -1726,7 +1756,12 @@ def init_commands(kernel):
                 orientation = False
                 path_before = False
                 separate = False
-                to_set_seg, to_set_idx, from_seg, from_idx = path.index - 1, 4, other.index - 1, 4
+                to_set_seg, to_set_idx, from_seg, from_idx = (
+                    path.index - 1,
+                    4,
+                    other.index - 1,
+                    4,
+                )
             else:
                 # ignore, path after other, proper orientation, disjoint
                 separate = True
@@ -1734,8 +1769,15 @@ def init_commands(kernel):
                 path_before = False
                 to_set_seg, to_set_idx, from_seg, from_idx = None, None, None, None
 
-            return separate, orientation, path_before, to_set_seg, to_set_idx, from_seg, from_idx
-
+            return (
+                separate,
+                orientation,
+                path_before,
+                to_set_seg,
+                to_set_idx,
+                from_seg,
+                from_idx,
+            )
 
         if nostitch is None:
             nostitch = False
@@ -1779,16 +1821,26 @@ def init_commands(kernel):
             else:
                 other = node.geometry
 
-                separate, orientation, path_before, to_set_seg, to_set_idx, from_seg, from_idx = merge_paths(other, path, nostitch, tolerance)
+                (
+                    separate,
+                    orientation,
+                    path_before,
+                    to_set_seg,
+                    to_set_idx,
+                    from_seg,
+                    from_idx,
+                ) = merge_paths(other, path, nostitch, tolerance)
                 if to_set_seg is not None:
-                    path.segments[to_set_seg, to_set_idx] = other.segments[from_seg, from_idx]
-                actionstr = 'Insert' if path_before else 'Append'
-                typestr = 'regular' if orientation else 'reversed'
+                    path.segments[to_set_seg, to_set_idx] = other.segments[
+                        from_seg, from_idx
+                    ]
+                actionstr = "Insert" if path_before else "Append"
+                typestr = "regular" if orientation else "reversed"
                 channel(f"{actionstr} a {typestr} path - separate: {separate}")
                 if not orientation:
                     path.reverse()
                 if path_before:
-                    node.geometry.insert(0, path.segments[:path.index])
+                    node.geometry.insert(0, path.segments[: path.index])
                 else:
                     node.geometry.append(path, end=separate)
 
@@ -1815,7 +1867,7 @@ def init_commands(kernel):
             return
         elements_nodes = []
         elems = []
-        groups= []
+        groups = []
         # _("Break elements")
         with self.undoscope("Break elements"):
             for node in data:
@@ -1825,7 +1877,9 @@ def init_commands(kernel):
                     if hasattr(node, attrib):
                         oldval = getattr(node, attrib, None)
                         node_attributes[attrib] = oldval
-                group_node = node.replace_node(type="group", label=node_label, expanded=True)
+                group_node = node.replace_node(
+                    type="group", label=node_label, expanded=True
+                )
                 groups.append(group_node)
                 try:
                     if hasattr(node, "final_geometry"):
