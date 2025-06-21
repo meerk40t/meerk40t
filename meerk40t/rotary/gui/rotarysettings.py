@@ -99,6 +99,7 @@ class HelperPanelChuck(ScrolledPanel):
             relative_length=service.view.width
             if service.rotary.rotary_chuck_alignment_axis == 0
             else service.view.height,
+            digits=3,
         )
         self.txt_position.SetValue(zero_pos.length_mm)
         if self.job_active:
@@ -125,7 +126,8 @@ class HelperPanelChuck(ScrolledPanel):
             newval = min(newval, max_val)
             self.context.device.rotary.rotary_chuck_offset = newval / max_val
             self.context.signal("rotary_chuck_offset", newval)
-            self.txt_position.SetValue(Length(newval).length_mm)
+            self.txt_position.SetValue(Length(newval, digits=3).length_mm)
+            self.context.signal("refresh_scene", "Scene")
             if self.job_active:
                 self.start_display()
                 # Update Live Lightjob / Laserhead position
@@ -231,10 +233,17 @@ class HelperPanelRoller(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.radio_roller = wxRadioBox(
-            self, wx.ID_ANY, _("Rotation-Axis"), choices=["X", "Y"], majorDimension=0
-        )
-        self.radio_roller.SetToolTip(_("Select the rotation axis of the roller"))
+        # self.radio_roller = wxRadioBox(
+        #     self, wx.ID_ANY, _("Rotation-Axis"), choices=["X", "Y"], majorDimension=0
+        # )
+        # self.radio_roller.SetToolTip(_("Select the rotation axis of the roller"))
+        self.txt_position = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.txt_position.Enable(False)
+        self.btn_plus = wxButton(self, wx.ID_ANY, "+")
+        self.btn_plus.SetToolTip(_("Shift to right by 1mm / by 10mm on right click"))
+        self.btn_minus = wxButton(self, wx.ID_ANY, "-")
+        self.btn_minus.SetToolTip(_("Shift to left by 1mm / by 10mm on right click"))
+
         self.text_rotary_roller_circumference = TextCtrl(
             self,
             wx.ID_ANY,
@@ -261,11 +270,13 @@ class HelperPanelRoller(ScrolledPanel):
         self.btn_calculate = wxButton(self, wx.ID_ANY, _("Calculate"))
         self.btn_calculate.SetToolTip(_("Calculate the scale for the rotary roller"))
 
-        self.text_position = TextCtrl(
-            self, wx.ID_ANY, check="length", limited=True, style=wx.TE_PROCESS_ENTER
-        )
         self.text_extension = TextCtrl(
-            self, wx.ID_ANY, check="length", limited=True, style=wx.TE_PROCESS_ENTER
+            self,
+            wx.ID_ANY,
+            "4cm",
+            check="length",
+            limited=True,
+            style=wx.TE_PROCESS_ENTER,
         )
 
         self.btn_create_rectangle = wxButton(self, wx.ID_ANY, _("Create"))
@@ -277,7 +288,7 @@ class HelperPanelRoller(ScrolledPanel):
 
     def __do_layout(self):
         for ctrl in (
-            self.text_position,
+            self.txt_position,
             self.text_extension,
             self.text_rotary_roller_circumference,
             self.text_rotary_object_circumference,
@@ -286,15 +297,26 @@ class HelperPanelRoller(ScrolledPanel):
         self.sizer = StaticBoxSizer(self, wx.ID_ANY, _("Setup Helper"), wx.VERTICAL)
         sizer_calculate = StaticBoxSizer(self, wx.ID_ANY, _("Calculate"), wx.VERTICAL)
         sizer_input = StaticBoxSizer(self, wx.ID_ANY, _("Circumferences"), wx.VERTICAL)
-        sizer_input = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_calculate.Add(self.radio_roller, 0, wx.EXPAND, 0)
-        label_mm1 = wxStaticText(self, wx.ID_ANY, _("Roller"))
-        sizer_input.Add(label_mm1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_input.Add(self.text_rotary_roller_circumference, 1, wx.EXPAND, 0)
+        sizer_input1 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_input2 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_offset = StaticBoxSizer(
+            self, wx.ID_ANY, _("Rotary position"), wx.HORIZONTAL
+        )
+        sizer_offset.Add(self.txt_position, 0, 0, 0)
+        sizer_offset.Add(self.btn_minus, 0, 0, 0)
+        sizer_offset.Add(self.btn_plus, 0, 0, 0)
 
-        label_mm2 = wxStaticText(self, wx.ID_ANY, _("Object"))
-        sizer_input.Add(label_mm2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_input.Add(self.text_rotary_object_circumference, 1, wx.EXPAND, 0)
+        # sizer_calculate.Add(self.radio_roller, 0, wx.EXPAND, 0)
+        sizer_calculate.Add(sizer_offset, 0, wx.EXPAND, 0)
+        label_mm1 = wxStaticText(self, wx.ID_ANY, _("Roller:"))
+        sizer_input1.Add(label_mm1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_input1.Add(self.text_rotary_roller_circumference, 1, wx.EXPAND, 0)
+
+        label_mm2 = wxStaticText(self, wx.ID_ANY, _("Object:"))
+        sizer_input2.Add(label_mm2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_input2.Add(self.text_rotary_object_circumference, 1, wx.EXPAND, 0)
+        sizer_input.Add(sizer_input1, 0, 0, 0)
+        sizer_input.Add(sizer_input2, 0, 0, 0)
         sizer_calculate.Add(sizer_input, 0, 0, 0)
         sizer_calculate.Add(self.btn_calculate, 0, 0, 0)
         label_info = wxStaticText(
@@ -310,14 +332,6 @@ class HelperPanelRoller(ScrolledPanel):
         sizer_test = StaticBoxSizer(
             self, wx.ID_ANY, _("Create alignment rectangle"), wx.VERTICAL
         )
-
-        sizer_position = wx.BoxSizer(wx.HORIZONTAL)
-        label_position = wxStaticText(
-            self, wx.ID_ANY, _("Center position of rectangle:")
-        )
-        sizer_position.Add(label_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_position.Add(self.text_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_test.Add(sizer_position, 0, wx.EXPAND, 0)
 
         sizer_extension = wx.BoxSizer(wx.HORIZONTAL)
         label_extension = wxStaticText(self, wx.ID_ANY, _("Secondary extension:"))
@@ -342,7 +356,7 @@ class HelperPanelRoller(ScrolledPanel):
         # self.Bind(wx.EVT_TEXT, self.on_text_rotary_roller_circumference, self.text_rotary_roller_circumference)
         # self.Bind(wx.EVT_TEXT, self.on_text_rotary_object_circumference, self.text_rotary_object_circumference)
         for ctrl in (
-            self.text_position,
+            self.txt_position,
             self.text_extension,
             self.text_rotary_object_circumference,
         ):
@@ -352,26 +366,59 @@ class HelperPanelRoller(ScrolledPanel):
             self.text_rotary_object_circumference,
         ):
             ctrl.SetActionRoutine(self.on_calculate)
-        is_x = self.context.device.rotary.scale_y == 1.0
-        self.radio_roller.SetSelection(0 if is_x else 1)
+        # is_x = self.context.device.rotary.rotary_roller_alignment_axis == 1.0
+        # self.radio_roller.SetSelection(0 if is_x else 1)
         self.btn_create_rectangle.Enable(False)
         self.Bind(wx.EVT_BUTTON, self.on_calculate, self.btn_calculate)
         self.Bind(wx.EVT_BUTTON, self.on_create_rectangle, self.btn_create_rectangle)
-        self.Bind(wx.EVT_RADIOBOX, self.on_radio_roller, self.radio_roller)
+        # self.Bind(wx.EVT_RADIOBOX, self.on_radio_roller, self.radio_roller)
+        self.Bind(wx.EVT_BUTTON, self.on_position(+1), self.btn_plus)
+        self.btn_plus.Bind(wx.EVT_RIGHT_DOWN, self.on_position(+10))
+        self.Bind(wx.EVT_BUTTON, self.on_position(-1), self.btn_minus)
+        self.btn_minus.Bind(wx.EVT_RIGHT_DOWN, self.on_position(-10))
 
     def pane_show(self):
         # Nothing to be done here, as the values are set in the rotary settings panel
-        return
+        service = self.context.device
+        zero_pos = Length(
+            f"{service.rotary.rotary_roller_offset * 100}%",
+            relative_length=service.view.width
+            if service.rotary.rotary_roller_alignment_axis == 0
+            else service.view.height,
+            digits=3,
+        )
+        self.txt_position.SetValue(zero_pos.length_mm)
 
     def pane_hide(self):
         # Nothing to be done here, as the values are set in the rotary settings panel
         return
 
+    def on_position(self, offset):
+        def handler(event):
+            if self.context.device.rotary.rotary_roller_offset is None:
+                return
+            current_offset = self.context.device.rotary.rotary_roller_offset
+            min_val = 0
+            max_val = float(
+                self.context.device.view.width
+                if self.context.device.rotary.rotary_roller_alignment_axis == 0
+                else self.context.device.view.height
+            )
+            l_offset = Length(f"{current_offset * 100}%", relative_length=max_val)
+            l_offset += Length(f"{offset}mm")
+            newval = max(float(l_offset), min_val)
+            newval = min(newval, max_val)
+            self.context.device.rotary.rotary_roller_offset = newval / max_val
+            self.context.signal("rotary_roller_offset", newval / max_val)
+            self.txt_position.SetValue(Length(newval, digits=3).length_mm)
+            self.context.signal("refresh_scene", "Scene")
+
+        return handler
+
     def on_rectangle_input(self, event=None):
         flag = False
-        if self.text_position.GetValue() != "" and self.text_extension.GetValue() != "":
+        if self.text_extension.GetValue() != "":
             try:
-                pos = float(Length(self.text_position.GetValue()))
                 ext1 = float(Length(self.text_extension.GetValue()))
                 ext2 = float(Length(self.text_rotary_object_circumference.GetValue()))
                 if ext1 > 0 and ext2 > 0:
@@ -382,7 +429,18 @@ class HelperPanelRoller(ScrolledPanel):
 
     def on_create_rectangle(self, event=None):
         try:
-            pos = float(Length(self.text_position.GetValue()))
+            maxval = (
+                self.context.device.view.width
+                if self.context.device.rotary.rotary_roller_alignment_axis == 0
+                else self.context.device.view.height
+            )
+            pos = float(
+                Length(
+                    f"{self.context.device.rotary.rotary_roller_offset * 100}%",
+                    relative_length=maxval,
+                )
+            )
+            # print (f"Position: {self.context.device.rotary.rotary_roller_offset * 100}% of {maxval} = {pos}")
             secondary_ext = float(Length(self.text_extension.GetValue()))
             primary_ext = float(
                 Length(self.text_rotary_object_circumference.GetValue())
@@ -394,25 +452,27 @@ class HelperPanelRoller(ScrolledPanel):
                 wx.OK | wx.ICON_ERROR,
             )
             return
-        sx = self.context.device.rotary.rotary_roller_scale_x
-        sy = self.context.device.rotary.rotary_roller_scale_y
-        obj_extent = primary_ext * sx if sx != 1.0 else primary_ext * sy
-        if sx == 1.0:
+
+        obj_extent = primary_ext
+
+        if self.context.device.rotary.rotary_roller_alignment_axis == 0:
             # X-axis is the roller
-            y1 = pos - obj_extent / 2
-            y2 = pos + obj_extent / 2
-            x1 = 0
-            x2 = secondary_ext
-            center_axis = "y"
-        else:
-            # Y-axis is the roller
-            y1 = 0
-            y2 = secondary_ext
             x1 = pos - obj_extent / 2
             x2 = pos + obj_extent / 2
+            y1 = 0
+            y2 = secondary_ext
             center_axis = "x"
+        else:
+            # Y-axis is the roller
+            x1 = 0
+            x2 = secondary_ext
+            y1 = pos - obj_extent / 2
+            y2 = pos + obj_extent / 2
+            center_axis = "y"
 
-        self.context(f"rect {x1} {y1} {x2 - x1} {y2 - y1}\n")
+        self.context(
+            f'rect {x1} {y1} {x2 - x1} {y2 - y1} label "Rotation Alignment Rectangle"\n'
+        )
         if self.check_magnets.GetValue():
             self.context(f"magnet clear x\n")
             self.context(f"magnet clear y\n")
@@ -440,7 +500,7 @@ class HelperPanelRoller(ScrolledPanel):
             )
             return
         factor = l_object / l_roller
-        if self.radio_roller.GetSelection() == 0:
+        if self.context.device.rotary.rotary_roller_alignment_axis == 0:
             self.context.device.rotary.rotary_roller_scale_x = factor
             self.context.device.rotary.rotary_roller_scale_y = 1.0
         else:
@@ -456,22 +516,27 @@ class HelperPanelRoller(ScrolledPanel):
             "rotary_roller_scale_y", self.context.device.rotary.rotary_roller_scale_y
         )
 
-    def on_radio_roller(self, event=None):
-        sx = self.context.device.rotary.rotary_roller_scale_x
-        sy = self.context.device.rotary.rotary_roller_scale_y
-        factor = sx if sx != 1.0 else sy
-        if self.radio_roller.GetSelection() == 0:
-            self.context.device.rotary.rotary_roller_scale_y = 1.0
-            self.context.device.rotary.rotary_roller_scale_x = factor
-        else:
-            self.context.device.rotary.rotary_roller_scale_y = factor
-            self.context.device.rotary.rotary_roller_scale_x = 1.0
-        self.context.signal(
-            "rotary_roller_scale_x", self.context.device.rotary.rotary_roller_scale_x
-        )
-        self.context.signal(
-            "rotary_roller_scale_y", self.context.device.rotary.rotary_roller_scale_y
-        )
+    # def on_radio_roller(self, event=None):
+    #     getsel = self.radio_roller.GetSelection()
+    #     sx = self.context.device.rotary.rotary_roller_scale_x
+    #     sy = self.context.device.rotary.rotary_roller_scale_y
+    #     factor = sx if sx != 1.0 else sy
+    #     if getsel == 0:
+    #         self.context.device.rotary.rotary_roller_scale_y = 1.0
+    #         self.context.device.rotary.rotary_roller_scale_x = factor
+    #     else:
+    #         self.context.device.rotary.rotary_roller_scale_y = factor
+    #         self.context.device.rotary.rotary_roller_scale_x = 1.0
+    #     self.context.device.rotary.rotary_roller_alignment_axis = 0 if getsel == 0 else 1
+    #     self.context.signal(
+    #         "rotary_roller_scale_x", self.context.device.rotary.rotary_roller_scale_x
+    #     )
+    #     self.context.signal(
+    #         "rotary_roller_scale_y", self.context.device.rotary.rotary_roller_scale_y
+    #     )
+    #     self.context.signal(
+    #         "rotary_roller_alignment_axis", self.context.device.rotary.rotary_roller_alignment_axis
+    #     )
 
 
 class RotarySettings(MWindow):
@@ -544,9 +609,12 @@ class RotarySettings(MWindow):
     @signal_listener("rotary_active_roller")
     @signal_listener("rotary_chuck_offset")
     @signal_listener("rotary_chuck_alignment_axis")
+    @signal_listener("rotary_roller_offset")
+    @signal_listener("rotary_roller_alignment_axis")
     def signal_rotary(self, *args, **kwargs):
         if self.has_roller:
             self.roller_panel.reload()
+            self.helper_panel_roller.pane_show()
         if self.has_chuck:
             self.chuck_panel.reload()
             self.helper_panel_chuck.pane_show()
