@@ -619,51 +619,43 @@ class Rotary:
             diam = (
                 math.pi * 0.0
                 if self.object_diameter is None
-                else float(self.object_diameter)
+                else float(Length(self.object_diameter))
             )
-            if self.rotary_chuck_alignment_axis == 0:
-                center = Length(
-                    f"{self.rotary_chuck_offset*100}%",
-                    relative_length=self.service.view.unit_width,
-                )
-                self._rotary_center_value, _ = self.service.view.position(
-                    float(center), 0.0
-                )
-                self._object_extension, _ = self.service.view.position(float(diam), 0.0)
-            else:
-                center = Length(
-                    f"{self.rotary_chuck_offset*100}%",
-                    relative_length=self.service.view.unit_height,
-                )
-                _, self._rotary_center_value = self.service.view.position(
-                    0.0, float(center)
-                )
-                _, self._object_extension = self.service.view.position(0.0, float(diam))
+            print(f"Rotary Chuck Diameter: {Length(self.object_diameter).length_mm}")
+            print(f"Expected extension: {65535 * diam / float(Length('250mm')):.2f}")
+            a0, b0 = self.service.view.position(0.0, 0.0)
+            center = Length(
+                f"{self.rotary_chuck_offset*100}%",
+                relative_length=self.service.view.unit_width
+                if self.rotary_chuck_alignment_axis == 0
+                else self.service.view.unit_height,
+            )
+            cx = float(center) if self.rotary_chuck_alignment_axis == 0 else 0.0
+            cy = float(center) if self.rotary_chuck_alignment_axis == 1 else 0.0
+            a1, b1 = self.service.view.position(cx, cy)
+            self._rotary_center_value = max(abs(a0 - a1), abs(b0 - b1))
+            a1, b1 = self.service.view.position(float(diam), 0.0)
+            self._object_extension = max(abs(a0 - a1), abs(b0 - b1))
         elif self._rotary_active_roller:
             # We need to update the center value and object extension for roller mode.
             diam = (
                 math.pi * 0.0
                 if self.object_diameter is None
-                else float(self.object_diameter)
+                else float(Length(self.object_diameter))
             )
-            if self.rotary_chuck_alignment_axis == 0:
-                center = Length(
-                    f"{self.rotary_roller_offset*100}%",
-                    relative_length=self.service.view.unit_width,
-                )
-                self._rotary_center_value, _ = self.service.view.position(
-                    float(center), 0.0
-                )
-                self._object_extension, _ = self.service.view.position(float(diam), 0.0)
-            else:
-                center = Length(
-                    f"{self.rotary_roller_offset*100}%",
-                    relative_length=self.service.view.unit_height,
-                )
-                _, self._rotary_center_value = self.service.view.position(
-                    0.0, float(center)
-                )
-                _, self._object_extension = self.service.view.position(0.0, float(diam))
+            a0, b0 = self.service.view.position(0.0, 0.0)
+            center = Length(
+                f"{self.rotary_roller_offset*100}%",
+                relative_length=self.service.view.unit_width
+                if self.rotary_roller_alignment_axis == 0
+                else self.service.view.unit_height,
+            )
+            cx = float(center) if self.rotary_roller_alignment_axis == 0 else 0.0
+            cy = float(center) if self.rotary_roller_alignment_axis == 1 else 0.0
+            a1, b1 = self.service.view.position(cx, cy)
+            self._rotary_center_value = max(abs(a0 - a1), abs(b0 - b1))
+            a1, b1 = self.service.view.position(float(diam), 0.0)
+            self._object_extension = max(abs(a0 - a1), abs(b0 - b1))
         else:
             # No rotary mode active, reset values.
             self._rotary_center_value = 0
@@ -675,11 +667,18 @@ class Rotary:
                 device.view.flip_x()
             if self.rotary_roller_flip_y:
                 device.view.flip_y()
+        print(
+            f"Rotary realized: Center Value={self._rotary_center_value:.2f}, Object Extension={self._object_extension:.2f}"
+        )
 
     def consider_rotation(self, x, y):
         # ROTATION_RESOLUTION = int(self.service.rotary_microsteps_per_revolution / 360.0) # 1 degree resolution
+        ox, oy = x, y
         obj_circumference = self._object_extension
         if not self.rotary_active_chuck or obj_circumference <= 0:
+            print(
+                f"Rotary not active or object circumference is zero. {x:.0f}, {y:.0f}"
+            )
             return x, y
         offset_pos = self._rotary_center_value
         if self.rotary_chuck_alignment_axis == 0:
@@ -687,6 +686,9 @@ class Rotary:
         else:
             axis_value = y - offset_pos
         factor = axis_value / obj_circumference
+        print(
+            f"Rotary factor: {factor:.3f} for axis value {axis_value:.2f} and circumference {obj_circumference:.2f}"
+        )
         rotation = int(self.rotary_microsteps_per_revolution * factor)
         if self.rotary_reverse:
             rotation = -rotation
@@ -698,6 +700,9 @@ class Rotary:
         else:
             y = offset_pos
 
+        print(
+            f"Have rotated to {rotation} steps, x={ox:.0f} -> {x:.0f}, y={oy:.0f} -> {y:.0f} (offset={offset_pos:.0f} )"
+        )
         return x, y
 
     def service_detach(self, *args, **kwargs):
