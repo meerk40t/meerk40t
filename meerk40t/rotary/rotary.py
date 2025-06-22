@@ -563,6 +563,24 @@ class Rotary:
         self.service.device.realize()
         self.realize()
 
+    def set_roller_alignment_axis(self, axis):
+        """
+        Set the alignment axis for the roller rotary.
+        @param axis: 0 for X-Axis, 1 for Y-Axis
+        """
+        self.rotary_roller_alignment_axis = axis
+        self.service.device.realize()
+        self.realize()
+
+    def set_chuck_alignment_axis(self, axis):
+        """
+        Set the alignment axis for the roller rotary.
+        @param axis: 0 for X-Axis, 1 for Y-Axis
+        """
+        self.rotary_chuck_alignment_axis = axis
+        self.service.device.realize()
+        self.realize()
+
     @lookup_listener("service/device/active")
     @signal_listener("rotary_roller_scale_x")
     @signal_listener("rotary_roller_scale_y")
@@ -670,6 +688,8 @@ class Rotary:
             axis_value = y - offset_pos
         factor = axis_value / obj_circumference
         rotation = int(self.rotary_microsteps_per_revolution * factor)
+        if self.rotary_reverse:
+            rotation = -rotation
         # todo: consider rotation resolution and establish the remaining gap
         if rotation != self.service.driver.connection._last_rotary:
             self.service.driver.connection.rotate_absolute(rotation)
