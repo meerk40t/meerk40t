@@ -153,8 +153,29 @@ class RotaryAxisWidget(Widget):
                     self.inform_about_updates()
                     self.scene.request_refresh()
 
+                def swap_axis(event):
+                    new_axis = 1 - self.axis
+                    self.axis = new_axis
+                    if self.rotary_mode == 1:
+                        self.scene.context.device.rotary.set_roller_alignment_axis(
+                            new_axis
+                        )
+                    else:
+                        self.scene.context.device.rotary.set_chuck_alignment_axis(
+                            new_axis
+                        )
+                    self.update_parameters()
+                    self.inform_about_updates()
+                    self.scene.request_refresh()
+
+                def set_to_left_edge(event):
+                    set_rotation_center(0)
+
                 def set_to_bed_center(event):
                     set_rotation_center(0.5)
+
+                def set_to_right_edge(event):
+                    set_rotation_center(1)
 
                 def set_to_selection_center(event):
                     bbox = self.scene.context.elements.selected_area()
@@ -202,8 +223,18 @@ class RotaryAxisWidget(Widget):
                         )
 
                 menu = wx.Menu()
+                if self.axis == 0:
+                    title_left = _("Set to left edge of bed")
+                    title_right = _("Set to right edge of bed")
+                else:
+                    title_left = _("Set to upper edge of bed")
+                    title_right = _("Set to lower edge of bed")
+                item = menu.Append(wx.ID_ANY, title_left)
+                self.scene.gui.Bind(wx.EVT_MENU, set_to_left_edge, item)
                 item = menu.Append(wx.ID_ANY, _("Set to bed center"))
                 self.scene.gui.Bind(wx.EVT_MENU, set_to_bed_center, item)
+                item = menu.Append(wx.ID_ANY, title_right)
+                self.scene.gui.Bind(wx.EVT_MENU, set_to_right_edge, item)
                 if self.scene.context.elements.has_emphasis():
                     if self.axis == 0:
                         t_lower = _("Set to left edge of selection")
@@ -217,7 +248,9 @@ class RotaryAxisWidget(Widget):
                     self.scene.gui.Bind(wx.EVT_MENU, set_to_selection_center, item)
                     item = menu.Append(wx.ID_ANY, t_upper)
                     self.scene.gui.Bind(wx.EVT_MENU, set_to_upper_edge, item)
-
+                item = menu.AppendSeparator()
+                item = menu.Append(wx.ID_ANY, _("Swap X/Y Axis"))
+                self.scene.gui.Bind(wx.EVT_MENU, swap_axis, item)
                 self.scene.gui.PopupMenu(menu, window_pos[0], window_pos[1])
                 menu.Destroy()
                 return RESPONSE_CONSUME
@@ -252,8 +285,10 @@ class RotaryAxisWidget(Widget):
     def inform_about_updates(self):
         rotary = self.scene.context.device.rotary
         if rotary.rotary_active_chuck:
+            self.scene.context.signal("rotary_chuck_alignment_axis", self.axis)
             self.scene.context.signal("rotary_chuck_offset", self.offset)
         elif rotary.rotary_active_roller:
+            self.scene.context.signal("rotary_roller_alignment_axis", self.axis)
             self.scene.context.signal("rotary_roller_offset", self.offset)
 
     def process_draw(self, gc):
