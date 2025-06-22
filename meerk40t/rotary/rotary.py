@@ -104,6 +104,9 @@ class Rotary:
         self.rotary_chuck_offset = 0.5
         self.rotary_roller_alignment_axis = 0
         self.rotary_roller_offset = 0.5
+        # Helper values for the center of the rotary / extension of the object in device units.
+        self._rotary_center_value = 0
+        self._object_extension = 0
 
         _ = service._
         choices = [
@@ -549,6 +552,7 @@ class Rotary:
         """
         self.rotary_roller_offset = pos
         self.service.device.realize()
+        self.realize()
 
     def set_chuck_center(self, pos):
         """
@@ -557,6 +561,7 @@ class Rotary:
         """
         self.rotary_chuck_offset = pos
         self.service.device.realize()
+        self.realize()
 
     @lookup_listener("service/device/active")
     @signal_listener("rotary_roller_scale_x")
@@ -581,6 +586,7 @@ class Rotary:
         if origin is not None and origin != self.service.path:
             return
         self.service.device.realize()
+        self.realize()
 
     @signal_listener("view;realized")
     def realize(self, origin=None, *args):
@@ -590,34 +596,78 @@ class Rotary:
         @param args:
         @return:
         """
-        if not self.rotary_active_roller:
-            return
-        device = self.service.device
-        device.view.scale(self.scale_x, self.scale_y)
-        if self.rotary_roller_flip_x:
-            device.view.flip_x()
-        if self.rotary_roller_flip_y:
-            device.view.flip_y()
+        if self._rotary_active_chuck:
+            # We need to update the center value and object extension for chuck mode.
+            diam = (
+                math.pi * 0.0
+                if self.object_diameter is None
+                else float(self.object_diameter)
+            )
+            if self.rotary_chuck_alignment_axis == 0:
+                center = Length(
+                    f"{self.rotary_chuck_offset*100}%",
+                    relative_length=self.service.view.unit_width,
+                )
+                self._rotary_center_value, _ = self.service.view.position(
+                    float(center), 0.0
+                )
+                self._object_extension, _ = self.service.view.position(float(diam), 0.0)
+            else:
+                center = Length(
+                    f"{self.rotary_chuck_offset*100}%",
+                    relative_length=self.service.view.unit_height,
+                )
+                _, self._rotary_center_value = self.service.view.position(
+                    0.0, float(center)
+                )
+                _, self._object_extension = self.service.view.position(0.0, float(diam))
+        elif self._rotary_active_roller:
+            # We need to update the center value and object extension for roller mode.
+            diam = (
+                math.pi * 0.0
+                if self.object_diameter is None
+                else float(self.object_diameter)
+            )
+            if self.rotary_chuck_alignment_axis == 0:
+                center = Length(
+                    f"{self.rotary_roller_offset*100}%",
+                    relative_length=self.service.view.unit_width,
+                )
+                self._rotary_center_value, _ = self.service.view.position(
+                    float(center), 0.0
+                )
+                self._object_extension, _ = self.service.view.position(float(diam), 0.0)
+            else:
+                center = Length(
+                    f"{self.rotary_roller_offset*100}%",
+                    relative_length=self.service.view.unit_height,
+                )
+                _, self._rotary_center_value = self.service.view.position(
+                    0.0, float(center)
+                )
+                _, self._object_extension = self.service.view.position(0.0, float(diam))
+        else:
+            # No rotary mode active, reset values.
+            self._rotary_center_value = 0
+            self._object_extension = 0
+        if self.rotary_active_roller:
+            device = self.service.device
+            device.view.scale(self.scale_x, self.scale_y)
+            if self.rotary_roller_flip_x:
+                device.view.flip_x()
+            if self.rotary_roller_flip_y:
+                device.view.flip_y()
 
     def consider_rotation(self, x, y):
         # ROTATION_RESOLUTION = int(self.service.rotary_microsteps_per_revolution / 360.0) # 1 degree resolution
-        diam = 0.0 if self.object_diameter is None else float(self.object_diameter)
-        if not self.rotary_active_chuck or diam <= 0:
+        obj_circumference = self._object_extension
+        if not self.rotary_active_chuck or obj_circumference <= 0:
             return x, y
-        offset_pos = (
-            self.rotary_chuck_offset * self.service.view.unit_width
-            if self.rotary_chuck_alignment_axis == 0
-            else self.rotary_chuck_offset * self.service.view.unit_height
-        )
-        relative_x, relative_y = self.service.view.iposition(x, y)
-        axis_value = (
-            relative_x - offset_pos
-            if self.rotary_chuck_alignment_axis == 0
-            else relative_y - offset_pos
-        )
-        # We do have to consider the object diameter, as given in the rotary settings.
-        # Both diameter and view.width are meerk40t units, x, y and are in device units
-        obj_circumference = diam * math.pi
+        offset_pos = self._rotary_center_value
+        if self.rotary_chuck_alignment_axis == 0:
+            axis_value = x - offset_pos
+        else:
+            axis_value = y - offset_pos
         factor = axis_value / obj_circumference
         rotation = int(self.rotary_microsteps_per_revolution * factor)
         # todo: consider rotation resolution and establish the remaining gap
