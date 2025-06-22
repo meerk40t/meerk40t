@@ -259,18 +259,18 @@ class Rotary:
                 # "conditional": (self, "rotary_active_chuck"),
                 "subsection": _("Orientation"),
             },
-            {
-                "attr": "rotary_chuck_offset",
-                "object": self,
-                "default": 0.5,
-                "type": float,
-                "label": _("Rotary position"),
-                "tip": _(
-                    "Where is the position of the rotary along the alignment axis?"
-                ),
-                # "conditional": (self, "rotary_active_chuck"),
-                "subsection": _("Orientation"),
-            },
+            # {
+            #     "attr": "rotary_chuck_offset",
+            #     "object": self,
+            #     "default": 0.5,
+            #     "type": float,
+            #     "label": _("Rotary position"),
+            #     "tip": _(
+            #         "Where is the position of the rotary along the alignment axis?"
+            #     ),
+            #     # "conditional": (self, "rotary_active_chuck"),
+            #     "subsection": _("Orientation"),
+            # },
         ]
         service.register_choices("rotary_chuck", choices)
 
