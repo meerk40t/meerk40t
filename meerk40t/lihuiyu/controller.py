@@ -662,6 +662,12 @@ class LihuiyuController:
         post_send_command = None
         default_checksum = True
 
+        if packet.startswith(b"AT"):
+            # This is as special case for the M3 only:
+            # AT command packages are padded with 0x00 and not 'F' as usal
+            c = b"\x00"
+            packet += c * (30 - len(packet))  # Padding with 0 character
+
         # find pipe commands.
         if packet.endswith(b"\n"):
             packet = packet[:-1]
@@ -709,7 +715,7 @@ class LihuiyuController:
 
         # Packet is prepared and ready to send. Open Channel.
         self.open()
-
+        # print (f"Packet: {packet!r} (len={len(packet)})"    )
         if len(packet) == 30:
             # We have a sendable packet.
             if not self.pre_ok:
