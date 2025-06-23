@@ -667,7 +667,6 @@ class LihuiyuController:
             # AT command packages are padded with 0x00 and not 'F' as usal
             c = b"\x00"
             packet += c * (30 - len(packet))  # Padding with 0 character
-
         # find pipe commands.
         if packet.endswith(b"\n"):
             packet = packet[:-1]
@@ -709,7 +708,8 @@ class LihuiyuController:
                         c = b"F"  # Packet was simply #. We can do nothing.
                     packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
                 else:
-                    packet += b"F" * (30 - len(packet))  # Padding. '\n'
+                    padder = b"\x00" if packet.startswith(b"AT") else b"F"
+                    packet += padder * (30 - len(packet))  # Padding. '\n'
         if not realtime and self.state in ("pause", "busy"):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 

@@ -163,8 +163,22 @@ class LihuiyuDevice(Service, Status):
                     "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
                 ),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("Board Setup"),
+                "subsection": _("Hardware-Laser-Power"),
                 "conditional": (self, "board", "M3"),
+            },
+            {
+                "attr": "pwm_method",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "style": "option",
+                "choices": (0, 1),
+                "display": (_("AT-PWM-Command"), _("W-Speedcode")),
+                "label": _("PWM-Method"),
+                "tip": _("PWM Method - Speedcode or AT command."),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "supports_pwm"),
             },
             {
                 "attr": "flip_x",

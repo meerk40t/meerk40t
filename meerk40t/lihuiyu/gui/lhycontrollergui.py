@@ -404,7 +404,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
         if origin != self.context.path:
             return
         try:
-            old_status = self.text_status_log.GetValue()
             if status_data is not None:
                 if isinstance(status_data, int):
                     self.text_desc.SetValue(str(status_data))
@@ -418,14 +417,21 @@ class LihuiyuControllerPanel(ScrolledPanel):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(code_string)
-                self.text_status_log.SetValue(
-                    f"{old_status}\n{status_data} - {code_string}"
-                )
+                self.add_to_status_log(f"{status_data} - {code_string}")
             self.packet_count_text.SetValue(str(self.context.packet_count))
             self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
         except RuntimeError:
             # This should be handled when the controller window is closed.
             pass
+
+    def add_to_status_log(self, string_data):
+        """Add a string to the status log."""
+        old_value = self.text_status_log.GetValue()
+        text_data = old_value.split("\n")
+        if len(text_data) > 750:
+            text_data = text_data[-750:]  # Keep only the last 500 lines
+        text_data.append(string_data)
+        self.text_status_log.SetValue("\n".join(text_data))
 
     @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):
@@ -433,6 +439,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             return
         if string_data is not None and len(string_data) != 0:
             self.text_packet_info.SetValue(str(string_data))
+            self.add_to_status_log(f">> {string_data}")
 
     @signal_listener("pipe;usb_status")
     def on_connection_status_change(self, origin, status):

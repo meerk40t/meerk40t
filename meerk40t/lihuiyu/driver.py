@@ -444,6 +444,21 @@ class LihuiyuDriver(Parameters):
         self.laser = True
         return True
 
+    def send_at_pwm_code(self, power: float = 1000.0, ms: int = 0):
+        m = int(power / 254)
+        n = int(power % 254)
+        pwm = (
+            ord("A"),
+            ord("T"),
+            ord("1"),
+            m,
+            n,
+            ms,
+        )
+        packet = bytearray(pwm)
+        self(packet)
+        self(b"\n")  # Force flush
+
     def rapid_mode(self, *values):
         """
         Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
@@ -538,12 +553,15 @@ class LihuiyuDriver(Parameters):
         else:
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
+        power_val = None
         if self.service.supports_pwm:
             power_val = self.power
             if power_val != 1000.0:
                 self(b"\n")  # Force flush
-        else:
-            power_val = None
+            if self.service.pwm_method == 0:
+                # AT method
+                self.send_at_pwm_code(power_val)
+                power_val = None  # No need for speedcode
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -601,12 +619,15 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
+        power_val = None
         if self.service.supports_pwm:
             power_val = self.power
             if power_val != 1000.0:
                 self(b"\n")  # Force flush
-        else:
-            power_val = None
+            if self.service.pwm_method == 0:
+                # AT method
+                self.send_at_pwm_code(power_val)
+                power_val = None  # No need for speedcode
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
