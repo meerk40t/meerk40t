@@ -70,6 +70,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.button_clear_stats = wxButton(self, wx.ID_ANY, _("Reset\nstatistics"))
+        self.logged_packets = []
         self.text_status_log = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
@@ -89,13 +90,15 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
+
         # Test the color combos...
         # self.Bind(wx.EVT_RIGHT_DOWN, self.debug_colors)
         # self._debug_counter = 0
+        def clear_log(event=None):
+            self.logged_packets.clear()
+            self.text_status_log.SetValue("")
 
-        self.button_clear_status_log.Bind(
-            wx.EVT_BUTTON, lambda event: self.text_status_log.SetValue("")
-        )
+        self.button_clear_status_log.Bind(wx.EVT_BUTTON, clear_log)
         self.last_control_state = None
         self.retries = 0
         self._buffer = ""
@@ -426,11 +429,24 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     def add_to_status_log(self, string_data):
         """Add a string to the status log."""
-        old_value = self.text_status_log.GetValue()
-        text_data = old_value.split("\n")
-        if len(text_data) > 750:
-            text_data = text_data[-750:]  # Keep only the last 500 lines
-        text_data.append(string_data)
+        if len(self.logged_packets) == 0:
+            self.logged_packets.append((1, string_data))
+        else:
+            count, oldstring_data = self.logged_packets[-1]
+            if oldstring_data == string_data:
+                # If the last entry is the same, just increase the count.
+                self.logged_packets[-1] = (count + 1, oldstring_data)
+            else:
+                # Otherwise, add a new entry.
+                if len(self.logged_packets) > 750:
+                    self.logged_packets = self.logged_packets[-750:]
+                self.logged_packets.append((1, string_data))
+        text_data = []
+        for count, data in self.logged_packets:
+            if count > 1:
+                text_data.append(f"{data} (x{count})")
+            else:
+                text_data.append(data)
         self.text_status_log.SetValue("\n".join(text_data))
 
     @signal_listener("pipe;packet_text")
