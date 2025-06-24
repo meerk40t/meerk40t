@@ -179,6 +179,7 @@ class LihuiyuDevice(Service, Status):
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Hardware-Laser-Power"),
                 "conditional": (self, "supports_pwm"),
+                "hidden": True,
             },
             {
                 "attr": "flip_x",
