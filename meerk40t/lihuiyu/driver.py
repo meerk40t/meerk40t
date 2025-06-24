@@ -444,20 +444,15 @@ class LihuiyuDriver(Parameters):
         self.laser = True
         return True
 
-    def send_at_pwm_code(self, power: float = 1000.0, ms: int = 0):
+    def send_at_pwm_code(self, power: float = 1000.0):
+        self(b"\n")  # flush
+
+        power = max(0.0, min(power, 1000.0))
         m = int(power / 254)
         n = int(power % 254)
-        pwm = (
-            ord("A"),
-            ord("T"),
-            ord("1"),
-            m,
-            n,
-            ms,
-        )
-        packet = bytearray(pwm)
+        # AT commands will be flushed out immediately
+        packet = bytes((ord("A"), ord("T"), ord("1"), m, n, ord("\n")))
         self(packet)
-        self(b"\n")  # Force flush
 
     def rapid_mode(self, *values):
         """
@@ -554,14 +549,6 @@ class LihuiyuDriver(Parameters):
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
         power_val = None
-        if self.service.supports_pwm:
-            power_val = self.power
-            if power_val != 1000.0:
-                self(b"\n")  # Force flush
-            if self.service.pwm_method == 0:
-                # AT method
-                self.send_at_pwm_code(power_val)
-                power_val = None  # No need for speedcode
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -620,14 +607,6 @@ class LihuiyuDriver(Parameters):
             self._topward = False
             self._horizontal_major = False
         power_val = None
-        if self.service.supports_pwm:
-            power_val = self.power
-            if power_val != 1000.0:
-                self(b"\n")  # Force flush
-            if self.service.pwm_method == 0:
-                # AT method
-                self.send_at_pwm_code(power_val)
-                power_val = None  # No need for speedcode
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -737,6 +716,7 @@ class LihuiyuDriver(Parameters):
                     self.rapid_mode()
                     self._move_absolute(start.real, start.imag)
                     self.wait_finish()
+                    self._set_power(sets.get("power", 1000.0))
                     self.dwell(sets.get("dwell_time"))
                 elif function == "wait":
                     self.plot_start()
@@ -1064,6 +1044,8 @@ class LihuiyuDriver(Parameters):
             self.power = 1000.0
         if self.power <= 0:
             self.power = 0.0
+        if self.service.supports_pwm:
+            self.send_at_pwm_code(self.power)
 
     def _set_ppi(self, power=1000.0):
         self.power = power
