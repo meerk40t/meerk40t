@@ -445,8 +445,7 @@ class LihuiyuDriver(Parameters):
         return True
 
     def send_at_pwm_code(self, power: float = 1000.0):
-        self(b"\n")  # flush
-
+        self.wait_finish()
         power = max(0.0, min(power, 1000.0))
         m = int(power / 254)
         n = int(power % 254)
