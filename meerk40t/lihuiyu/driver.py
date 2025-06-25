@@ -385,7 +385,7 @@ class LihuiyuDriver(Parameters):
         self.rapid_mode()
         self._move_relative(unit_dx, unit_dy)
 
-    def dwell(self, time_in_ms):
+    def dwell(self, time_in_ms, settings=None):
         """
         Requests that the laser fire in place for the given time period. This could be done in a series of commands,
         move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
@@ -394,9 +394,12 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
+        power = settings.get("power", None) if settings else None
         self.rapid_mode()
         self.wait_finish()
-        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.laser_on(
+            power=power
+        )  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
 
@@ -422,7 +425,7 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         return True
 
-    def laser_on(self):
+    def laser_on(self, power=None):
         """
         Turn laser on in place.
 
@@ -430,6 +433,9 @@ class LihuiyuDriver(Parameters):
         """
         if self.laser:
             return False
+        if power is not None and self.service.supports_pwm:
+            self.send_at_pwm_code(power)
+
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_ON)

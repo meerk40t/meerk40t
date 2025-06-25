@@ -575,12 +575,15 @@ class LihuiyuDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("Power level"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -596,16 +599,33 @@ class LihuiyuDevice(Service, Status):
                 except IndexError:
                     return
 
-            def timed_fire():
+            def timed_fire(withpower=None):
                 yield "wait_finish"
-                yield "laser_on"
+                if withpower is not None:
+                    yield "laser_on", withpower
+                else:
+                    yield "laser_on"
                 yield "wait", time
                 yield "laser_off"
+
+            if power is not None:
+                try:
+                    if power.endswith("%"):
+                        power = power[:-1]
+                        power = float(power) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Power must be valid value."))
+                    return
+                if not (0 <= power <= 1000):
+                    channel(_("Power must be between 0 and 1000."))
+                    return
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
                 self.spooler.laserjob(
-                    list(timed_fire()),
+                    list(timed_fire(withpower=power)),
                     label=label,
                     helper=True,
                     outline=[self.native] * 4,
