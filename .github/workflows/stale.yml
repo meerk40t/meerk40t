@@ -8,8 +8,8 @@ name: Mark stale issues and pull requests
 on:
   workflow_dispatch:
   
-  schedule:
-  - cron: '23 18 * * *'
+# schedule:
+# - cron: '23 18 * * *'
 
 jobs:
   stale:
