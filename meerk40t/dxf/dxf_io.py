@@ -132,6 +132,7 @@ class DXFProcessor:
                 # else, is within the bed dimensions correctly, change nothing.
         if self.elements.classify_new:
             self.elements.classify(self.elements_list)
+        self.elements.signal("element_property_update", self.elements_list)
         return True
 
     def check_for_attributes(self, node, entity):
@@ -156,6 +157,47 @@ class DXFProcessor:
             except Exception:
                 color = Color("black")
             node.stroke = color
+        if hasattr(entity.dxf, "layer"):
+            # For some reason, the layer is not available in the dxf entity.
+            # This happens with LibreCad 2.2.0 and 2.2.1.
+            # So we try to get it from the layer table.
+            if entity.dxf.layer in dxf.layers:
+                s_layer = entity.dxf.layer
+            else:
+                s_layer = ""
+            assign_type = ""
+            if "ENGRAVE" in s_layer.upper() or "ENGRAVE" in entity.dxf.layer.upper():
+                assign_type = "op engrave"
+            elif "CUT" in s_layer.upper() or "CUT" in entity.dxf.layer.upper():
+                assign_type = "op cut" 
+            # print (f"Layer: {s_layer} ({entity.dxf.layer}), assign_type: {assign_type}")
+            node.label = s_layer
+            if assign_type:
+                if s_layer == "":
+                    s_layer = entity.dxf.layer
+                # We look for a proper op to assign the node to it
+                first_op = None
+                found = False
+                for op in self.elements.ops():
+                    if op.type != assign_type:
+                        continue
+                    if first_op is None:
+                        first_op = op
+                    if op.color == node.stroke or op.label == s_layer:
+                        # We found an engrave op with the same color
+                        op.add_reference(node)
+                        found = True
+                        break
+                if not found:
+                    if first_op is None:
+                        first_op = self.elements.op_branch.add(
+                            type=assign_type, 
+                            color=node.stroke, 
+                            label=s_layer
+                        )
+                    # We did not find a proper match, so we assign it to the first engrave/cut op
+                    first_op.add_reference(node)
+
 
     # def debug_entity(self, entity):
     #     print (f"Entity: {entity.dxftype()}")

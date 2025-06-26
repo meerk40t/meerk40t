@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.icons import icons8_circled_right
-from meerk40t.gui.wxutils import wxStaticBitmap, dip_size
+from meerk40t.gui.wxutils import dip_size, wxStaticBitmap
 
 _ = wx.GetTranslation
 
@@ -61,7 +61,7 @@ class CustomStatusBar(wx.StatusBar):
     @property
     def available_height(self):
         sb_size = self.GetSize()
-        return sb_size[1]
+        return max(1, sb_size[1] - 2)
 
     def Clear(self):
         """

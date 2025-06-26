@@ -131,7 +131,13 @@ class ElementsWidget(Widget):
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )
-            elements.set_emphasized_by_position(space_pos, keep_old, smallest)
+            use_files = bool(self.scene.context.file_selection)
+            elements.set_emphasized_by_position(
+                space_pos,
+                keep_old_selection=keep_old,
+                use_smallest=smallest,
+                force_filenodes_too=use_files,
+            )
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP

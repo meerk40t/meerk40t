@@ -1,7 +1,7 @@
 import unittest
-from test import bootstrap
 
 from meerk40t.kernel import kernel_console_command, service_console_command
+from test import bootstrap
 
 
 def test_plugin_service(kernel, lifecycle):

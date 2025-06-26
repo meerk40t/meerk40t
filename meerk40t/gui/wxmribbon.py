@@ -678,6 +678,42 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.apply_enable_rules()
         self.redrawn()
 
+    @signal_listener("icon;label")
+    def on_label_update(self, origin, node=None, *args):
+        """
+        Signal to update the icon or label of a button.
+        This is used to update the icon or label of a button when it changes.
+        """
+        if node is None or len(args) == 0:
+            return
+        if not isinstance(node, (list, tuple)):
+            node = [node]
+        newlabel = None
+        newtooltip = None
+        if isinstance(args[0], (list, tuple)):
+            newlabel = args[0][0] if len(args[0]) > 0 else None
+            newtooltip = args[0][1] if len(args[0]) > 1 else None
+        else:
+            newlabel = args[0]  # First argument is the new label
+        if newlabel is None and newtooltip is None:
+            return
+        for page in self.pages:
+            for panel in page.panels:
+                for button in panel.buttons:
+                    if button.identifier in node:
+                        button.label = newlabel if newlabel is not None else button.label
+                        button.tip = (
+                            newtooltip if newtooltip is not None else button.tip
+                        )
+                    if "multi" in button.button_dict:
+                        for subbutton in button.button_dict["multi"]:
+                            if subbutton["identifier"] in node:
+                                if newlabel is not None:
+                                    subbutton["label"] = newlabel
+                                if newtooltip is not None:
+                                    subbutton["tip"] = newtooltip
+        self.redrawn()  
+
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
         # Signal provides a tuple with (togglegroup, id)

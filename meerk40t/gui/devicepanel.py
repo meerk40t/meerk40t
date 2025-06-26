@@ -243,9 +243,7 @@ class DevicePanel(wx.Panel):
         sizer_1.Add(sizer_3, 1, wx.EXPAND, 0)
         # All devices
         self.devices = []
-        # Active item in list
-        self.current_item = 0
-
+    
         self.button_create_device = wxButton(self, wx.ID_ANY, _("Create New Device"))
         sizer_3.Add(self.button_create_device, 0, 0, 0)
 
@@ -305,12 +303,16 @@ class DevicePanel(wx.Panel):
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit, self.devices_list)
         # end wxGlade
 
+    @property
+    def current_item(self):
+        if self.devices_list.GetSelectedItemCount() > 0:
+            return self.devices_list.GetFirstSelected()
+        return -1
+    
     def pane_show(self, *args):
         self.refresh_device_tree()
         if len(self.devices) > 0:
             self.devices_list.Select(0, 1)
-        else:
-            self.current_item = -1
         self.enable_controls()
 
     def pane_hide(self, *args):
@@ -453,17 +455,14 @@ class DevicePanel(wx.Panel):
         return label
 
     def on_item_selected(self, event):
-        if event is None:
-            self.current_item = self.devices_list.GetFirstSelected()
-        else:
-            self.current_item = event.Index
+        if event:
             event.Skip()
         self.enable_controls()
 
     def on_item_deselected(self, event):
-        self.current_item = -1
+        if event:
+            event.Skip()
         self.enable_controls()
-        event.Skip()
 
     def enable_controls(self):
         if self.current_item < 0:
@@ -522,8 +521,9 @@ class DevicePanel(wx.Panel):
 
     def on_tree_popup_rename(self, service):
         def renameit(event=None):
+            lbl = str(service.label or "")
             with wx.TextEntryDialog(
-                None, _("What do you call this device?"), _("Device Label"), ""
+                None, _("What do you call this device?"), _("Device Label"), lbl
             ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:
@@ -608,21 +608,32 @@ class DevicePanel(wx.Panel):
         self.duplicate_device(service)
 
     def on_button_activate_device(self, event):  # wxGlade: DevicePanel.<event_handler>
+        def reselect(idx):
+            def handler():
+                if idx >= 0:
+                    self.devices_list.Select(idx, 1)
+                    self.devices_list.Focus(idx)
+
+            return handler
+        
+        idx = self.current_item
+        if idx < 0:
+            return
         service = self.get_selected_device()
         if service is not None:
             service.kernel.activate_service_path("device", service.path)
             self.recolor_device_items()
+            wx.CallLater(750, reselect(idx))    
 
     def on_button_config_device(self, event):  # wxGlade: DevicePanel.<event_handler>
-        service = self.get_selected_device()
-        if service is not None:
-            service("window toggle Configuration\n")
+        self.context("window toggle Configuration\n")
 
     def on_button_rename_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
         if service is not None:
+            label = str(service.label or "")
             with wx.TextEntryDialog(
-                None, _("What do you call this device?"), _("Device Label"), ""
+                None, _("What do you call this device?"), _("Device Label"), label
             ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:

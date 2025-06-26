@@ -29,7 +29,6 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxComboBox,
-    wxStaticBitmap,
     wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -413,18 +412,20 @@ class LaserPanel(wx.Panel):
             self.power_mode = "maximum"
             self.on_slider_power(None)
         flag_speed = False
-        if hasattr(self.context.device.driver, "has_adjustable_speed"):
-            if self.context.device.driver.has_adjustable_speed:
-                flag_speed = True
-                # Let's establish the value and update the slider...
-                value = self.context.device.driver.speed_scale
-                if value != 1:
-                    override = True
-                half = self.slider_size / 2
-                sliderval = int(value * half)
-                sliderval = max(1, min(self.slider_size, sliderval))
-                self.slider_speed.SetValue(sliderval)
-                self.on_slider_speed(None)
+        if (
+            hasattr(self.context.device.driver, "has_adjustable_speed")
+            and self.context.device.driver.has_adjustable_speed
+        ):
+            flag_speed = True
+            # Let's establish the value and update the slider...
+            value = self.context.device.driver.speed_scale
+            if value != 1:
+                override = True
+            half = self.slider_size / 2
+            sliderval = int(value * half)
+            sliderval = max(1, min(self.slider_size, sliderval))
+            self.slider_speed.SetValue(sliderval)
+            self.on_slider_speed(None)
 
         self.sizer_power.Show(flag_power)
         self.sizer_power.ShowItems(flag_power)
@@ -445,18 +446,22 @@ class LaserPanel(wx.Panel):
         else:
             self.slider_power.Enable(False)
             self.slider_speed.Enable(False)
-            if hasattr(self.context.device.driver, "has_adjustable_power"):
-                if self.context.device.driver.has_adjustable_power:
-                    if event is not None:
-                        self.context.device.driver.set_power_scale(1.0)
-                    self.slider_power.SetValue(10)
-                    self.on_slider_power(None)
-            if hasattr(self.context.device.driver, "has_adjustable_speed"):
-                if self.context.device.driver.has_adjustable_speed:
-                    if event is not None:
-                        self.context.device.driver.set_speed_scale(1.0)
-                    self.slider_speed.SetValue(10)
-                    self.on_slider_speed(None)
+            if (
+                hasattr(self.context.device.driver, "has_adjustable_power")
+                and self.context.device.driver.has_adjustable_power
+            ):
+                if event is not None:
+                    self.context.device.driver.set_power_scale(1.0)
+                self.slider_power.SetValue(10)
+                self.on_slider_power(None)
+            if (
+                hasattr(self.context.device.driver, "has_adjustable_speed")
+                and self.context.device.driver.has_adjustable_speed
+            ):
+                if event is not None:
+                    self.context.device.driver.set_speed_scale(1.0)
+                self.slider_speed.SetValue(10)
+                self.on_slider_speed(None)
 
     def on_slider_speed(self, event):
         sliderval = self.slider_speed.GetValue()
@@ -687,13 +692,12 @@ class LaserPanel(wx.Panel):
         self.context.setting(bool, "laserpane_hold", False)
         if plan.plan and self.context.laserpane_hold:
             self.context("planz spool\n")
+        elif self.checkbox_optimize.GetValue():
+            self.context(
+                "planz clear copy preprocess validate blob preopt optimize spool\n"
+            )
         else:
-            if self.checkbox_optimize.GetValue():
-                self.context(
-                    "planz clear copy preprocess validate blob preopt optimize spool\n"
-                )
-            else:
-                self.context("planz clear copy preprocess validate blob spool\n")
+            self.context("planz clear copy preprocess validate blob spool\n")
         self.armed = False
         self.check_laser_arm()
         if self.context.auto_spooler:
@@ -839,10 +843,7 @@ class JobPanel(wx.Panel):
 
             if not pathname.lower().endswith(f".{extension}"):
                 pathname += f".{extension}"
-            if self.context.planner.do_optimization:
-                optpart = "preopt optimize "
-            else:
-                optpart = ""
+            optpart = "preopt optimize " if self.context.planner.do_optimization else ""
             self.context(
                 f'planz clear copy preprocess validate blob {optpart}save_job "{pathname}"\n'
             )

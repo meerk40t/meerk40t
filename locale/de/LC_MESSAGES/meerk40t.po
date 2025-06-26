@@ -22344,3 +22344,124 @@ msgstr "Laserpunkt ist nun aus."
 #: meerk40t/grbl/device.py:948
 msgid "Red light is now on."
 msgstr "Laserpunkt ist nun an."
+
+#: meerk40t/camera/plugin.py:121
+msgid "Current labels:"
+msgstr "Aktuelle Bezeichnungen:"
+
+#: meerk40t/camera/plugin.py:318
+msgid "No camera selected."
+msgstr "Keine Kamera ausgewählt"
+
+#: meerk40t/camera/gui/camerapanel.py:511 meerk40t/camera/gui/camerapanel.py:928
+msgid "Enter a new label for the camera:"
+msgstr "Geben Sie eine neue Bezeichnung für die Kamera an:"
+
+#: meerk40t/camera/gui/camerapanel.py:512 meerk40t/camera/gui/camerapanel.py:929
+msgid "Change camera label"
+msgstr "Kamera-Bezeichnung ändern"
+
+#: meerk40t/camera/gui/camerapanel.py:775
+msgid "Change Label"
+msgstr "Bezeichnung ändern"
+
+
+#: meerk40t/camera/gui/camerapanel.py:1018
+msgid "Detects cameras on the system and sets them up"
+msgstr "Erkennt angeschlossene Kameras und richtet diese ein"
+
+#: meerk40t/gui/mkdebug.py:143
+msgid "Plotter Test"
+msgstr "Plotter Test"
+
+#: meerk40t/gui/mkdebug.py:151
+msgid "Raster plotter test"
+msgstr "Rasterplotter Test"
+
+#: meerk40t/gui/mkdebug.py:707
+msgid "Raster Plotter Test Info"
+msgstr "Information"
+
+#: meerk40t/gui/mkdebug.py:720
+msgid "Raster Properties"
+msgstr "Raster-Eigenschaften"
+
+#: meerk40t/gui/wxmmain.py:1249
+msgid "Treat file selection as group selection"
+msgstr "Behandle Dateinode wie eine Gruppe bei der Element-Auswahl"
+
+#: meerk40t/gui/wxmmain.py:1252
+msgid "Active: Single click within the boundaries of the contained elements of a filenode selects all elements within the file"
+msgstr "Aktiv: Ein Click innerhalb der Grenzen der Elemente einer Dateinode selektiert alle Elemente innerhalb der Datei"
+
+#: meerk40t/gui/wxmmain.py:1254
+msgid "Inactive: filenodes will not be used for selection"
+msgstr "Inaktiv: Dateinodes werden nicht bei der Objektauswhl berücksichtigt"
+
+#: meerk40t/device/gui/defaultactions.py:50
+msgid "Move the laser head to the home position."
+msgstr "Bewegt den Laserkopf zur Home-Position."
+
+#: meerk40t/device/gui/defaultactions.py:55
+msgid "Move the laser head to the origin position."
+msgstr "Bewegt den Laserkopf zur Ausgangsposition."
+
+#: meerk40t/device/gui/defaultactions.py:61
+msgid "Move the laser head to the absolute position 0,0."
+msgstr "Bewegt den Laserkopf zu 0,0."
+
+#: meerk40t/device/gui/defaultactions.py:63
+msgid "Make audible beep."
+msgstr "Gibt ein hörbares Signal aus."
+
+#: meerk40t/device/gui/defaultactions.py:68
+msgid "Interrupt the current operation and display a message."
+msgstr "Pausiert den Laser-Vorgang und zeigt eine Meldung an."
+
+#: meerk40t/device/gui/defaultactions.py:70
+msgid "Execute a command in the console."
+msgstr "Führt ein Konsolen-Kommando aus."
+
+#: meerk40t/device/gui/defaultactions.py:71
+msgid "Turn on the coolant."
+msgstr "Air-Assist einschalten."
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Turn off the coolant."
+msgstr "Air-Assist ausschalten."
+
+#: meerk40t/device/gui/defaultactions.py:95
+msgid "Prevent the system from entering hibernation mode."
+msgstr "Verbietet dem System, in Ruhezustand zu wechseln."
+
+#: meerk40t/device/gui/defaultactions.py:101
+msgid "Allow the system to enter hibernation mode."
+msgstr "Erlaubt dem System, in Ruhezustand zu wechseln."
+
+#: meerk40t/kernel/kernel.py:2864
+msgid "Mode to set: prevent/allow"
+msgstr "Modus: prevent/allow"
+
+#: meerk40t/kernel/kernel.py:2867
+msgid "Prevent/allow system hibernation."
+msgstr "Unterdrückt/Erlaubt den System-Ruhezustand."
+
+#: meerk40t/kernel/kernel.py:2875
+msgid "Inhibitor is not available on this system."
+msgstr "Das Unterdrücken des Ruhezustands ist auf diesem System nicht verfügbar."
+
+#: meerk40t/kernel/kernel.py:2879
+msgid "Please specify 'prevent' or 'allow'."
+msgstr "Bitte geben Sie 'prevent' oder 'allow' an."
+
+#: meerk40t/kernel/kernel.py:2885
+msgid "You might need system administrator priviliges."
+msgstr "Dieser Vorgang benötigt evt. Administrator-Rechte"
+
+#: meerk40t/kernel/kernel.py:2887
+msgid "System hibernation is prevented."
+msgstr "Ruhezustand wird unterdrückt."
+
+#: meerk40t/kernel/kernel.py:2889
+msgid "System hibernation is allowed."
+msgstr "Ruhezustand wird erlaubt."

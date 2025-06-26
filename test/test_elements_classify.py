@@ -1,8 +1,8 @@
 import unittest
 from random import Random
-from test import bootstrap
 
 from meerk40t.core.elements.element_types import elem_nodes, op_nodes
+from test import bootstrap
 
 
 class TestElementClassification(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestElementClassification(unittest.TestCase):
         def random_color():
             r = random.randint(0, 4)
             if r == 0:
-                return f"#{random.randint(0,255):02X}{random.randint(0,255):02X}{random.randint(0,255):02X}"
+                return f"#{random.randint(0, 255):02X}{random.randint(0, 255):02X}{random.randint(0, 255):02X}"
             elif r == 1:
                 return f"#{random.randint(0, 16):X}{random.randint(0, 16):X}{random.randint(0, 16):X}"
             else:

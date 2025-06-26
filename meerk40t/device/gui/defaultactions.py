@@ -5,18 +5,27 @@ from meerk40t.gui.icons import (
     icon_air_on,
     icon_bell,
     icon_close_window,
+    icon_coffee,
     icon_console,
     icon_external,
     icon_internal,
     icon_return,
     icon_round_stop,
+    icon_sleep,
     icon_timer,
     icon_trash,
     icons8_down,
     icons8_home_filled,
     icons8_up,
 )
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxListCtrl, wxStaticBitmap
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxListCtrl,
+    wxStaticBitmap,
+)
 
 _ = wx.GetTranslation
 
@@ -37,16 +46,31 @@ class DefaultActionPanel(wx.Panel):
 
         self.SetHelpText("defaultactions")
 
-        self.standards = (
-            ("Home", "util home", ""),
-            ("Goto Origin", "util goto", "0,0"),
-            ("Goto 0,0", "util goto", "0,0,True"),
-            ("Beep", "util console", "beep"),
-            ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
-            ("Console", "util console", ""),
-            ("Coolant on", "util console", "coolant_on"),
-            ("Coolant off", "util console", "coolant_off"),
-        )
+        self.standards = [
+            ("Home", "util home", "", _("Move the laser head to the home position.")),
+            (
+                "Goto Origin",
+                "util goto",
+                "0,0",
+                _("Move the laser head to the origin position."),
+            ),
+            (
+                "Goto 0,0",
+                "util goto",
+                "0,0,True",
+                _("Move the laser head to the absolute position 0,0."),
+            ),
+            ("Beep", "util console", "beep", _("Make audible beep.")),
+            (
+                "Interrupt",
+                "util console",
+                'interrupt "Spooling was interrupted"',
+                _("Interrupt the current operation and display a message."),
+            ),
+            ("Console", "util console", "", _("Execute a command in the console.")),
+            ("Coolant on", "util console", "coolant_on", _("Turn on the coolant.")),
+            ("Coolant off", "util console", "coolant_off", _("Turn off the coolant.")),
+        ]
         self.default_images = [
             ["console home -f", icons8_home_filled],
             ["console move_abs", icon_return],
@@ -62,6 +86,25 @@ class DefaultActionPanel(wx.Panel):
             ["console coolant_on", icon_air_on],
             ["console coolant_off", icon_air_off],
         ]
+        if self.context.kernel.inhibitor.available:
+            self.standards += [
+                (
+                    "Hibernation off",
+                    "util console",
+                    "system_hibernate prevent",
+                    _("Prevent the system from entering hibernation mode."),
+                ),
+                (
+                    "Hibernation on",
+                    "util console",
+                    "system_hibernate allow",
+                    _("Allow the system to enter hibernation mode."),
+                ),
+            ]
+            self.default_images += [
+                ["console system_hibernate prevent", icon_coffee],
+                ["console system_hibernate allow", icon_sleep],
+            ]
         self.prepend_ops = []
         self.append_ops = []
 
@@ -71,7 +114,9 @@ class DefaultActionPanel(wx.Panel):
         sizer_middle = wx.BoxSizer(wx.VERTICAL)
 
         iconsize = dip_size(self, 30, 20)
-        bmpsize = min(iconsize[0], iconsize[1]) * self.context.root.bitmap_correction_scale
+        bmpsize = (
+            min(iconsize[0], iconsize[1]) * self.context.root.bitmap_correction_scale
+        )
         self.option_list = wxListCtrl(
             self,
             wx.ID_ANY,
@@ -84,12 +129,18 @@ class DefaultActionPanel(wx.Panel):
         self.button_add_append = wxButton(self, wx.ID_ANY, _("Add to Job End"))
 
         self.prepend_list = wxListCtrl(
-            self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL, context=self.context,
+            self,
+            wx.ID_ANY,
+            style=wx.LC_LIST | wx.LC_SINGLE_SEL,
+            context=self.context,
         )
         self.text_param_prepend = TextCtrl(self, wx.ID_ANY)
 
         self.append_list = wxListCtrl(
-            self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL, context=self.context,
+            self,
+            wx.ID_ANY,
+            style=wx.LC_LIST | wx.LC_SINGLE_SEL,
+            context=self.context,
         )
         self.text_param_append = TextCtrl(self, wx.ID_ANY)
         self.button_del_prepend = wxStaticBitmap(self, wx.ID_ANY, size=iconsize)
@@ -198,6 +249,7 @@ class DefaultActionPanel(wx.Panel):
 
         # Logic for addition of new entries
         self.option_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.option_single_click)
+        self.option_list.Bind(wx.EVT_MOTION, self.option_hover)
         self.button_add_prepend.Bind(wx.EVT_BUTTON, self.add_prepend_option)
         self.button_add_append.Bind(wx.EVT_BUTTON, self.add_append_option)
 
@@ -437,6 +489,7 @@ class DefaultActionPanel(wx.Panel):
         if idx < 0 or idx >= len(self.standards):
             active = False
             self.text_param_option.SetValue("")
+            self.option_list.SetToolTip("")
         else:
             active = True
             self.text_param_option.SetValue(self.standards[idx][2])
@@ -446,6 +499,17 @@ class DefaultActionPanel(wx.Panel):
             self.text_param_option,
         ):
             ctrl.Enable(active)
+
+    def option_hover(self, event):
+        position = event.GetPosition()
+        idx, flags = self.option_list.HitTest(position)
+        if idx < 0 or idx >= len(self.standards):
+            self.option_list.SetToolTip("")
+        else:
+            tooltip = self.standards[idx][3]
+            if tooltip is None:
+                tooltip = ""
+            self.option_list.SetToolTip(tooltip)
 
     ### Data storage / retrieval
 

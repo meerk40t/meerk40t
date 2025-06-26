@@ -15,6 +15,33 @@ USE_MY_METRICS = 1 << 9
 OVERLAP_COMPOUND = 1 << 10
 
 
+def flagname(flag):
+    if flag & ON_CURVE_POINT:
+        return "ON_CURVE_POINT"
+    elif flag & ARG_1_AND_2_ARE_WORDS:
+        return "ARG_1_AND_2_ARE_WORDS"
+    elif flag & ARGS_ARE_XY_VALUES:
+        return "ARGS_ARE_XY_VALUES"
+    elif flag & ROUND_XY_TO_GRID:
+        return "ROUND_XY_TO_GRID"
+    elif flag & WE_HAVE_A_SCALE:
+        return "WE_HAVE_A_SCALE"
+    elif flag & MORE_COMPONENTS:
+        return "MORE_COMPONENTS"
+    elif flag & WE_HAVE_AN_X_AND_Y_SCALE:
+        return "WE_HAVE_AN_X_AND_Y_SCALE"
+    elif flag & WE_HAVE_A_TWO_BY_TWO:
+        return "WE_HAVE_A_TWO_BY_TWO"
+    elif flag & WE_HAVE_INSTRUCTIONS:
+        return "WE_HAVE_INSTRUCTIONS"
+    elif flag & USE_MY_METRICS:
+        return "USE_MY_METRICS"
+    elif flag & OVERLAP_COMPOUND:
+        return "OVERLAP_COMPOUND"
+    else:
+        return f"UNKNOWN_FLAG_{flag}"
+
+
 class TTFParsingError(ValueError):
     """Parsing error"""
 
@@ -76,7 +103,7 @@ class TrueTypeFont:
             self.parse_cmap()
             self.parse_name()
         except Exception as e:
-            print (f"TTF init for {filename} crashed: {e}")
+            print(f"TTF init for {filename} crashed: {e}")
             raise TTFParsingError("Error while parsing data") from e
         self.glyph_data = list(self.parse_glyf())
         self._line_information = []
@@ -209,24 +236,16 @@ class TrueTypeFont:
                         curr = contour[-1]
                         next = contour[0]
                         if curr[2] & ON_CURVE_POINT:
-                            if self.active:
-                                path.move(
-                                    (offset_x + curr[0]) * scale,
-                                    (offset_y + curr[1]) * scale,
-                                )
+                            start_x = (offset_x + curr[0]) * scale
+                            start_y = (offset_y + curr[1]) * scale
+                        elif next[2] & ON_CURVE_POINT:
+                            start_x = (offset_x + next[0]) * scale
+                            start_y = (offset_y + next[1]) * scale
                         else:
-                            if next[2] & ON_CURVE_POINT:
-                                if self.active:
-                                    path.move(
-                                        (offset_x + next[0]) * scale,
-                                        (offset_y + next[1]) * scale,
-                                    )
-                            else:
-                                if self.active:
-                                    path.move(
-                                        (offset_x + (curr[0] + next[0]) / 2) * scale,
-                                        (offset_y + (curr[1] + next[1]) / 2) * scale,
-                                    )
+                            start_x = (offset_x + (curr[0] + next[0]) / 2) * scale
+                            start_y = (offset_y + (curr[1] + next[1]) / 2) * scale
+                        if self.active:
+                            path.move(start_x, start_y)
                         for i in range(len(contour)):
                             prev = curr
                             curr = next
@@ -242,9 +261,10 @@ class TrueTypeFont:
                             else:
                                 next2 = next
                                 if not next[2] & ON_CURVE_POINT:
-                                    next2 = (curr[0] + next[0]) / 2, (
-                                        curr[1] + next[1]
-                                    ) / 2
+                                    next2 = (
+                                        (curr[0] + next[0]) / 2,
+                                        (curr[1] + next[1]) / 2,
+                                    )
                                 if self.active:
                                     path.quad(
                                         None,
@@ -321,10 +341,7 @@ class TrueTypeFont:
                                 )
                     self._raw_tables[tag] = data
             except Exception as e:
-                raise TTFParsingError(
-                    f"invalid format: {e}"
-                ) from e
-
+                raise TTFParsingError(f"invalid format: {e}") from e
 
     def parse_head(self):
         data = self._raw_tables[b"head"]
@@ -576,71 +593,127 @@ class TrueTypeFont:
             yield from self._parse_compound_glyph(data)
 
     def _parse_compound_glyph(self, data):
+        """
+        Parses a compound glyph, which can consist of multiple components.
+        Each component can have its own transformation matrix applied to it.
+        The transformation matrix can include scaling, translation, and rotation.
+        The flags indicate how the arguments are interpreted, whether they are
+        absolute coordinates or relative offsets, and whether the glyph is
+        transformed by a scale, x and y scale, or a two-by-two matrix.
+        The glyphs are returned as a list of contours, where each contour is a
+        list of points. Each point is a tuple of (x, y, flag), where
+        x and y are the coordinates of the point, and flag indicates whether
+        the point is an on-curve point or a control point.
+
+        The flags used in the compound glyphs are defined as follows:
+        - ON_CURVE_POINT: Indicates that the point is an on-curve point.
+        - ARG_1_AND_2_ARE_WORDS: Indicates that the first two arguments are
+          16-bit signed integers instead of 8-bit unsigned integers.
+        - ARGS_ARE_XY_VALUES: Indicates that the arguments are interpreted as
+          x and y coordinates instead of relative offsets.
+        - ROUND_XY_TO_GRID: Indicates that the x and y coordinates should be
+          rounded to the nearest grid point.
+        - WE_HAVE_A_SCALE: Indicates that the glyph is transformed by a single
+          scale factor applied to both x and y coordinates.
+        - MORE_COMPONENTS: Indicates that there are more components in the
+          compound glyph. This flag is used to indicate that the glyph has
+          additional components that need to be processed.
+        - WE_HAVE_AN_X_AND_Y_SCALE: Indicates that the glyph is transformed by
+          separate scale factors for x and y coordinates.
+        - WE_HAVE_A_TWO_BY_TWO: Indicates that the glyph is transformed by a
+          two-by-two matrix, which allows for more complex transformations
+          including rotation and shearing.
+        - WE_HAVE_INSTRUCTIONS: Indicates that the glyph has instructions that
+          modify the rendering of the glyph. These instructions can include
+          additional transformations or adjustments to the glyph's shape.
+        - USE_MY_METRICS: Indicates that the glyph should use its own metrics
+          instead of the metrics defined in the font's horizontal metrics table.
+        - OVERLAP_COMPOUND: Indicates that the components of the compound glyph
+          may overlap. This flag is used to indicate that the components of the
+          compound glyph may overlap, which can affect how the glyph is rendered.
+
+        """
         flags = MORE_COMPONENTS
-        s = 1 << 14
+        scale_factor = 1 << 14  # Fixed point scale factor (16384)
+
+        # Collect all contours from all components
+        all_contours = []
+
         while flags & MORE_COMPONENTS:
-            a, b, c, d, e, f = (
-                1.0,
-                0.0,
-                0.0,
-                1.0,
-                0.0,
-                0.0,
-            )
-            dest, src = -1, -1
+            # Initialize transformation matrix as identity
+            # Matrix format: [xx, xy, yx, yy, dx, dy]
+            # Represents: [x'] = [xx xy] [x] + [dx]
+            #             [y']   [yx yy] [y]   [dy]
+            transform_xx, transform_xy, transform_yx, transform_yy = 1.0, 0.0, 0.0, 1.0
+            transform_dx, transform_dy = 0.0, 0.0
+
+            # Read component header
             flags, glyph_index = struct.unpack(">HH", data.read(4))
+
+            # Read arguments (either offsets or point indices)
+            if flags & ARG_1_AND_2_ARE_WORDS:
+                # 16-bit arguments
+                arg1, arg2 = struct.unpack(">hh", data.read(4))
+            else:
+                # 8-bit arguments
+                if flags & ARGS_ARE_XY_VALUES:
+                    # Signed bytes for offsets
+                    arg1, arg2 = struct.unpack(">bb", data.read(2))
+                else:
+                    # Unsigned bytes for point indices
+                    arg1, arg2 = struct.unpack(">BB", data.read(2))
+
+            # Interpret arguments
             if flags & ARGS_ARE_XY_VALUES:
-                if flags & ARG_1_AND_2_ARE_WORDS:
-                    args1, args2 = struct.unpack(">hh", data.read(4))
-                else:
-                    args1, args2 = struct.unpack(">bb", data.read(2))
-                e, f = args1 / s, args2 / s
+                # Arguments are x,y offsets
+                transform_dx, transform_dy = float(arg1), float(arg2)
             else:
-                if flags & ARG_1_AND_2_ARE_WORDS:
-                    args1, args2 = struct.unpack(">HH", data.read(4))
-                else:
-                    args1, args2 = struct.unpack(">BB", data.read(2))
-                dest, src = args1, args2
+                # Arguments are point indices for point matching
+                dest_point_index, src_point_index = arg1, arg2
+                # Point matching not fully implemented - would need to find
+                # matching points in already processed contours and source glyph
+                transform_dx, transform_dy = 0.0, 0.0
+
+            # Read transformation matrix components
             if flags & WE_HAVE_A_SCALE:
-                a = struct.unpack(">h", data.read(2))[0] / s
-                d = a
+                # Single scale factor for both x and y
+                scale = struct.unpack(">h", data.read(2))[0] / scale_factor
+                transform_xx = transform_yy = scale
             elif flags & WE_HAVE_AN_X_AND_Y_SCALE:
-                a, d = struct.unpack(">hh", data.read(4))
-                a, d = a / s, d / s
+                # Separate scale factors for x and y
+                scale_x, scale_y = struct.unpack(">hh", data.read(4))
+                transform_xx = scale_x / scale_factor
+                transform_yy = scale_y / scale_factor
             elif flags & WE_HAVE_A_TWO_BY_TWO:
-                a, b, c, d = struct.unpack(">hhhh", data.read(8))
-                a, b, c, d = a / s, b / s, c / s, d / s
-            original = data.tell()
-            m = max(abs(a), abs(b))
-            if abs(abs(a) - abs(c)) < 33.0 / s:
-                m *= 2
-            n = max(abs(c), abs(d))
-            if abs(abs(b) - abs(c)) < 33.0 / s:
-                n *= 2
-            contours = list(self._parse_glyph_index(glyph_index))
-            if src != -1 and dest != -1:
-                pass  # Not properly supported.
-            if flags & ROUND_XY_TO_GRID:
-                for contour in contours:
-                    yield [
-                        (
-                            round(m * (x * a / m + y * b / m + e)),
-                            round(n * (x * c / n + y * d / n + f)),
-                            flag,
-                        )
-                        for x, y, flag in contour
-                    ]
-            else:
-                for contour in contours:
-                    yield [
-                        (
-                            m * (x * a / m + y * b / m + e),
-                            n * (x * c / n + y * d / n + f),
-                            flag,
-                        )
-                        for x, y, flag in contour
-                    ]
-            data.seek(original)
+                # Full 2x2 transformation matrix
+                xx, xy, yx, yy = struct.unpack(">hhhh", data.read(8))
+                transform_xx = xx / scale_factor
+                transform_xy = xy / scale_factor
+                transform_yx = yx / scale_factor
+                transform_yy = yy / scale_factor
+
+            # Get the component glyph's contours
+            component_contours = list(self._parse_glyph_index(glyph_index))
+
+            # Apply transformation to each contour
+            for contour in component_contours:
+                transformed_contour = []
+                for x, y, flag in contour:
+                    # Apply 2D transformation matrix
+                    new_x = transform_xx * x + transform_xy * y + transform_dx
+                    new_y = transform_yx * x + transform_yy * y + transform_dy
+
+                    # Round to grid if requested
+                    if flags & ROUND_XY_TO_GRID:
+                        new_x = round(new_x)
+                        new_y = round(new_y)
+
+                    transformed_contour.append((new_x, new_y, flag))
+
+                # Add transformed contour to our collection
+                all_contours.append(transformed_contour)
+        # Yield all collected contours
+        yield from all_contours
 
     def _parse_simple_glyph(self, num_contours, data):
         end_pts = struct.unpack(f">{num_contours}H", data.read(2 * num_contours))

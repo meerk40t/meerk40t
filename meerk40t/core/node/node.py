@@ -1282,6 +1282,8 @@ class Node:
         if keep_children is None:
             keep_children = False
         parent = self._parent
+        if parent is None:
+            raise ValueError(f"Cannot replace {self.type}-node without parent.")
         index = parent._children.index(self)
         parent._children.remove(self)
         self.notify_detached(self)

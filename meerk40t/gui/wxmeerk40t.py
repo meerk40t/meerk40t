@@ -1065,6 +1065,7 @@ class wxMeerK40t(wx.App, Module):
                 register_panel_debugger,
                 register_panel_icon,
                 register_panel_window,
+                register_panel_plotter,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
@@ -1072,6 +1073,7 @@ class wxMeerK40t(wx.App, Module):
             kernel.register("wxpane/debug_icons", register_panel_icon)
             kernel.register("wxpane/debug_shutdown", register_panel_crash)
             kernel.register("wxpane/debug_window", register_panel_window)
+            kernel.register("wxpane/debug_plotter", register_panel_plotter) 
 
             from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
 

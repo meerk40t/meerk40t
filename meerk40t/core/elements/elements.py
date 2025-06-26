@@ -71,11 +71,11 @@ def plugin(kernel, lifecycle=None):
             placements,
             render,
             shapes,
+            testcases,
             trace,
             tree_commands,
             undo_redo,
             wordlist,
-            testcases,
         )
 
         return [
@@ -218,9 +218,9 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Track changes and allow undo"),
-                "tip": _(
-                    "MK will save intermediate states to undo/redo changes") + "\n" +
-                    _("This may consume a significant amount of memory"),
+                "tip": _("MK will save intermediate states to undo/redo changes")
+                + "\n"
+                + _("This may consume a significant amount of memory"),
                 "page": "Start",
                 "section": "_60_Undo",
                 "signals": "restart",
@@ -645,6 +645,7 @@ class Elemental(Service):
         self.remembered_keyhole_nodes = []
         self.setting(bool, "use_undo", True)
         self.setting(int, "undo_levels", 20)
+        self.setting(bool, "filenode_selection", False)
         undo_active = self.use_undo
         undo_levels = self.undo_levels
         self.undo = Undo(self, self._tree, active=undo_active, levels=undo_levels)
@@ -751,7 +752,7 @@ class Elemental(Service):
             self.signal(source)
 
     @contextlib.contextmanager
-    def static(self, source:str):
+    def static(self, source: str):
         try:
             self.stop_updates(source, False)
             yield self
@@ -767,7 +768,7 @@ class Elemental(Service):
             self.do_undo = True
 
     @contextlib.contextmanager
-    def undoscope(self, message:str, static:bool = True):
+    def undoscope(self, message: str, static: bool = True):
         busy = self.kernel.busyinfo
         busy.start(msg=self.kernel.translation(message))
         undo_active = self.do_undo
@@ -903,7 +904,10 @@ class Elemental(Service):
                     child = child.node
                 if getattr(child, "hidden", False):
                     continue
-                if hasattr(child, "affected_children")  and len(child.affected_children()) == 0:
+                if (
+                    hasattr(child, "affected_children")
+                    and len(child.affected_children()) == 0
+                ):
                     continue
                 canburn = True
                 break
@@ -1094,7 +1098,11 @@ class Elemental(Service):
                     for ref in list(n._references):
                         ref.remove_node()
                 op_assign.drop(n, modify=True)
-                if impose == "to_elem" and target_color is not None and hasattr(n, attrib):
+                if (
+                    impose == "to_elem"
+                    and target_color is not None
+                    and hasattr(n, attrib)
+                ):
                     setattr(n, attrib, target_color)
                     if set_fill_to_none and hasattr(n, "fill"):
                         n.fill = None
@@ -2316,10 +2324,11 @@ class Elemental(Service):
         with self.undoscope("Drag and drop"):
             for drag_node in data:
                 to_be_refreshed.extend(drag_node.flat())
-                op_treatment = (
-                    drop_node.type in op_parent_nodes and (
-                        not drag_node.has_ancestor("branch reg") or
-                        (drag_node.has_ancestor("branch reg") and self.allow_reg_to_op_dragging)
+                op_treatment = drop_node.type in op_parent_nodes and (
+                    not drag_node.has_ancestor("branch reg")
+                    or (
+                        drag_node.has_ancestor("branch reg")
+                        and self.allow_reg_to_op_dragging
                     )
                 )
                 if drop_node is drag_node:
@@ -2585,6 +2594,7 @@ class Elemental(Service):
         keep_old_selection=False,
         use_smallest=False,
         exit_over_selection=False,
+        force_filenodes_too=False,
     ):
         def contains(box, x, y=None):
             if y is None:
@@ -2607,6 +2617,8 @@ class Elemental(Service):
             for node in self.elems(emphasized=True):
                 e_list.append(node)
         for node in self.elems_nodes(emphasized=False):
+            if not force_filenodes_too and node.type == "file":
+                continue
             try:
                 bounds = node.bounds
             except AttributeError:
@@ -2614,9 +2626,8 @@ class Elemental(Service):
             if hasattr(node, "hidden") and node.hidden:
                 continue
             # Empty group / files may cause problems
-            if node.type in ("file", "group"):
-                if not node._children:
-                    bounds = None
+            if node.type in ("group", "file") and not node._children:
+                bounds = None
             if bounds is None:
                 continue
             if contains(bounds, position):
@@ -2715,7 +2726,11 @@ class Elemental(Service):
         def _get_next_auto_raster_count(operations):
             auto_raster_count = 0
             for op in operations:
-                if op.type == "op raster" and op.id is not None and op.id.startswith("AR#"):
+                if (
+                    op.type == "op raster"
+                    and op.id is not None
+                    and op.id.startswith("AR#")
+                ):
                     try:
                         used_id = int(op.id[3:])
                         auto_raster_count = max(auto_raster_count, used_id)
@@ -2749,7 +2764,6 @@ class Elemental(Service):
             if opnode.type not in debug_set:
                 debug_set[opnode.type] = 0
             debug_set[opnode.type] = debug_set[opnode.type] + 1
-
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
             has_cut = False
@@ -2796,7 +2810,7 @@ class Elemental(Service):
                 continue
             classif_info = [False, False]
             # Even for fuzzy we check first a direct hit
-            fuzzy_param = (False, True) if fuzzy else (False, )
+            fuzzy_param = (False, True) if fuzzy else (False,)
             do_stroke = True
             do_fill = True
             for tempfuzzy in fuzzy_param:
@@ -2854,24 +2868,27 @@ class Elemental(Service):
                     classified = False
                     classifying_op = None
                     if (
-                        self.classify_fill and
-                        op.type=="op raster" and
-                        hasattr(node, "fill") and node.fill is not None
+                        self.classify_fill
+                        and op.type == "op raster"
+                        and hasattr(node, "fill")
+                        and node.fill is not None
                     ):
                         # This is a special use case:
                         # Usually we don't distinguish a fill color - all non-transparent objects
                         # are assigned to a single raster operation.
                         # If the classify_fill flag is set, then we will use the fill attribute
                         # to look for / create a matching raster operation
-                        raster_candidate = _select_raster_candidate(operations, node, fuzzydistance)
+                        raster_candidate = _select_raster_candidate(
+                            operations, node, fuzzydistance
+                        )
                         if raster_candidate is None and self.classify_autogenerate:
                             # We need to create one...
                             auto_raster_count = _get_next_auto_raster_count(operations)
                             raster_candidate = RasterOpNode(
-                                id = f"AR#{auto_raster_count}",
-                                label = f"Auto-Raster #{auto_raster_count}",
-                                color = abs(node.fill),
-                                output = True,
+                                id=f"AR#{auto_raster_count}",
+                                label=f"Auto-Raster #{auto_raster_count}",
+                                color=abs(node.fill),
+                                output=True,
                             )
                             add_op_function(raster_candidate)
                             new_operations_added = True
@@ -2972,14 +2989,16 @@ class Elemental(Service):
                 default_candidates = []
                 for op in operations:
                     if (
-                        hasattr(op, "classify") and
-                        getattr(op, "default", False) and
-                        hasattr(op, "valid_node_for_reference") and
-                        op.valid_node_for_reference(node)
+                        hasattr(op, "classify")
+                        and getattr(op, "default", False)
+                        and hasattr(op, "valid_node_for_reference")
+                        and op.valid_node_for_reference(node)
                     ):
                         default_candidates.append(op)
                 if len(default_candidates) > 1 and debug:
-                    debug(f"For node {node_desc} there were {len(default_candidates)} default operations available, nb the very first will be taken!")
+                    debug(
+                        f"For node {node_desc} there were {len(default_candidates)} default operations available, nb the very first will be taken!"
+                    )
                 for op in default_candidates:
                     classified, should_break, feedback = op.classify(
                         node,
@@ -3097,7 +3116,7 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    fuzzy_param = (False, True) if fuzzy else (False, )
+                    fuzzy_param = (False, True) if fuzzy else (False,)
                     was_classified = False
                     for tempfuzzy in fuzzy_param:
                         if debug:
@@ -3179,7 +3198,7 @@ class Elemental(Service):
                             "white"
                         ) == abs(node.fill)
                     node_fill = Color("black") if is_black else abs(node.fill)
-                    fuzzy_param = (False, True) if fuzzy else (False, )
+                    fuzzy_param = (False, True) if fuzzy else (False,)
                     was_classified = False
                     for tempfuzzy in fuzzy_param:
                         if debug:
@@ -3215,14 +3234,18 @@ class Elemental(Service):
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    default_color = abs(node.fill) if self.classify_fill else Color("black")
+                    default_color = (
+                        abs(node.fill) if self.classify_fill else Color("black")
+                    )
                     default_id = "AR#1" if self.classify_fill else "R1"
-                    default_label = "Auto-Raster #1" if self.classify_fill else "Standard-Raster"
+                    default_label = (
+                        "Auto-Raster #1" if self.classify_fill else "Standard-Raster"
+                    )
                     op = RasterOpNode(
                         id=default_id,
                         label=default_label,
                         color=default_color,
-                        output = True,
+                        output=True,
                     )
                     stdops.append(op)
                     if debug:
@@ -3290,7 +3313,6 @@ class Elemental(Service):
                     if not existing:
                         op.add_reference(node)
                         update_debug_set(debug_set, op)
-
 
         self.remove_unused_default_copies()
         if debug:
