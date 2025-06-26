@@ -380,6 +380,11 @@ class LaserPanel(wx.Panel):
         self.button_start_was_clicked = False
 
     def update_override_controls(self):
+        def set_boundaries(slider, current_value, min_value, max_value):
+            slider.SetMin(min_value)
+            slider.SetMax(max_value)
+            slider.SetValue(current_value)
+
         flag_power = False
         override = False
         if (
@@ -394,9 +399,7 @@ class LaserPanel(wx.Panel):
             half = self.slider_size / 2
             sliderval = int(value * half)
             sliderval = max(1, min(self.slider_size, sliderval))
-            self.slider_power.SetMin(1)
-            self.slider_power.SetMax(self.slider_size)
-            self.slider_power.SetValue(sliderval)
+            set_boundaries(self.slider_power, sliderval, 1, self.slider_size)
             self.power_mode = "relative"
             self.on_slider_power(None)
         elif (
@@ -404,11 +407,13 @@ class LaserPanel(wx.Panel):
             and self.context.device.driver.has_adjustable_maximum_power
         ):
             flag_power = True
+            override = True
+            dev_mode = getattr(self.context.kernel.root, "developer_mode", False)
             # Let's establish the value and update the slider...
-            self.slider_power.SetMin(1)
-            self.slider_power.SetMax(100)
-            sliderval = self.context.device.driver.max_power_scale
-            self.slider_power.SetValue(sliderval)
+            min_value = 1
+            max_value = 100 if dev_mode else 50
+            sliderval = min(max_value, self.context.device.driver.max_power_scale)
+            set_boundaries(self.slider_power, sliderval, min_value, max_value)
             self.power_mode = "maximum"
             self.on_slider_power(None)
         flag_speed = False
@@ -424,7 +429,7 @@ class LaserPanel(wx.Panel):
             half = self.slider_size / 2
             sliderval = int(value * half)
             sliderval = max(1, min(self.slider_size, sliderval))
-            self.slider_speed.SetValue(sliderval)
+            set_boundaries(self.slider_speed, sliderval, 1, self.slider_size)
             self.on_slider_speed(None)
 
         self.sizer_power.Show(flag_power)
