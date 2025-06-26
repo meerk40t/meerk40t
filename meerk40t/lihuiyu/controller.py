@@ -745,7 +745,7 @@ class LihuiyuController:
                 packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
             else:
                 packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
-            self.debug_packet(packet)
+            # self.debug_packet(packet)
             self.connection.write(packet)
             self.pre_ok = False
 
