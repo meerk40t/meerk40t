@@ -124,10 +124,19 @@ def onewire_crc_lookup(line):
     @param line: line to be CRC'd
     @return: 8 bit crc of line.
     """
+
+    def hex_repr(data):
+        return " ".join(f"{x:02x}" for x in data)
+
+    def ascii_repr(data):
+        return "".join(chr(x) if 32 <= x < 127 else "." for x in data)
+
     crc = 0
     for i in range(0, 30):
         crc = line[i] ^ crc
         crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
+    # print (f"Line ({len(line)} bytes): {hex_repr(line)} {ascii_repr(line)} CRC: {hex(crc)}")
+
     return crc
 
 
@@ -618,6 +627,16 @@ class LihuiyuController:
                 self._preempt.clear()
             self.update_buffer()
 
+    def debug_packet(self, packet):
+        """
+        Debugging function to print the packet in a readable format.
+        We will output both hex and ascii representation of the packet.
+        @param packet: Packet to debug.
+        """
+        hex_packet = " ".join(f"{b:02x}" for b in packet)
+        ascii_packet = "".join(chr(b) if 32 <= b < 127 else "." for b in packet)
+        print(f"Packet: {hex_packet} | ASCII: {ascii_packet} (len={len(packet)})")
+
     def process_queue(self):
         """
         Attempts to process the buffer/queue
@@ -662,6 +681,13 @@ class LihuiyuController:
         post_send_command = None
         default_checksum = True
 
+        if packet.startswith(b"AT"):
+            # This is as special case for the M3 only:
+            # AT command packages are padded with 0x00 and not 'F' as usal
+            if packet.endswith(b"\n"):
+                packet = packet[:-1]
+            c = b"\x00"
+            packet += c * (30 - len(packet))  # Padding with 0 character
         # find pipe commands.
         if packet.endswith(b"\n"):
             packet = packet[:-1]
@@ -703,13 +729,14 @@ class LihuiyuController:
                         c = b"F"  # Packet was simply #. We can do nothing.
                     packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
                 else:
-                    packet += b"F" * (30 - len(packet))  # Padding. '\n'
+                    padder = b"\x00" if packet.startswith(b"AT") else b"F"
+                    packet += padder * (30 - len(packet))  # Padding. '\n'
         if not realtime and self.state in ("pause", "busy"):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
         # Packet is prepared and ready to send. Open Channel.
         self.open()
-
+        # print (f"Packet: {packet!r} (len={len(packet)})"    )
         if len(packet) == 30:
             # We have a sendable packet.
             if not self.pre_ok:
@@ -718,6 +745,7 @@ class LihuiyuController:
                 packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
             else:
                 packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
+            # self.debug_packet(packet)
             self.connection.write(packet)
             self.pre_ok = False
 

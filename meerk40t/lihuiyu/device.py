@@ -154,6 +154,50 @@ class LihuiyuDevice(Service, Status):
                 "subsection": _("Board Setup"),
             },
             {
+                "attr": "supports_pwm",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Hardware-PWM"),
+                "tip": _(
+                    "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "board", "M3"),
+                "signals": "pwm_mode_changed",
+            },
+            {
+                "attr": "pwm_speedcode",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Use PWM-Speedcode"),
+                "tip": _("PWM Method: set power as well in LHY-speedcodes."),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "supports_pwm"),
+                "hidden": True,
+            },
+            {
+                "attr": "power_scale",
+                "object": self,
+                "default": 30,
+                "type": int,
+                "style": "slider",
+                "min": 1,
+                "max": 100,
+                "label": _("Maximum Laser strength"),
+                "trailer": "%",
+                "tip": _(
+                    "Set the maximum laser power level, any operation power will be a fraction of this"
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "supports_pwm"),
+                "signals": "pwm_mode_changed",
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
@@ -547,12 +591,15 @@ class LihuiyuDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("Power level"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -568,16 +615,33 @@ class LihuiyuDevice(Service, Status):
                 except IndexError:
                     return
 
-            def timed_fire():
+            def timed_fire(withpower=None):
                 yield "wait_finish"
-                yield "laser_on"
+                if withpower is not None:
+                    yield "laser_on", withpower
+                else:
+                    yield "laser_on"
                 yield "wait", time
                 yield "laser_off"
+
+            if power is not None:
+                try:
+                    if power.endswith("%"):
+                        power = power[:-1]
+                        power = float(power) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Power must be valid value."))
+                    return
+                if not (0 <= power <= 1000):
+                    channel(_("Power must be between 0 and 1000."))
+                    return
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
                 self.spooler.laserjob(
-                    list(timed_fire()),
+                    list(timed_fire(withpower=power)),
                     label=label,
                     helper=True,
                     outline=[self.native] * 4,
@@ -892,6 +956,27 @@ class LihuiyuDevice(Service, Status):
                 code = b"A%s\n" % challenge
                 self.output.write(code)
 
+        def _validate_board(channel, board):
+            """
+            Validates the board type
+            """
+            if self.board != board:
+                channel(
+                    _(
+                        "This command is only available for {target} boards. This is a {board}."
+                    ).format(target=board, board=self.board)
+                )
+                return False
+            return True
+
+        @self.console_command(
+            "get_m3nano_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_m3nano_info(command, channel, _, remainder=None, **kwgs):
+            if _validate_board(channel, "M3"):
+                self.driver.get_m3_hardware_info()
+
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwgs):
             self.controller.update_state("active")
@@ -1050,6 +1135,7 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("plot_shift")
     @signal_listener("plot_phase_type")
     @signal_listener("plot_phase_value")
+    @signal_listener("supports_pwm")
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 

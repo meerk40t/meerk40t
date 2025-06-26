@@ -217,7 +217,7 @@ class GRBLDriver(Parameters):
                 (old_current[0], old_current[1], new_current[0], new_current[1]),
             )
 
-    def dwell(self, time_in_ms):
+    def dwell(self, time_in_ms, settings=None):
         """
         Requests that the laser fire in place for the given time period. This could be done in a series of commands,
         move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
@@ -226,7 +226,13 @@ class GRBLDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.laser_on()  # This can't be sent early since these are timed operations.
+        if settings is not None and "power" in settings:
+            power = settings["power"]
+        else:
+            power = self.power
+        self.laser_on(
+            power=power
+        )  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
 

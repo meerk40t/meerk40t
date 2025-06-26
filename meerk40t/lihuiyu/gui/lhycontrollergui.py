@@ -70,6 +70,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.button_clear_stats = wxButton(self, wx.ID_ANY, _("Reset\nstatistics"))
+        self.logged_packets = []
+        self.text_status_log = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
+        )
+        self.button_clear_status_log = wxButton(self, wx.ID_ANY, _("Clear Status-Log"))
+        # self.button_clear_status_log.function = lambda: self.context("clear\n")
 
         self.__set_properties()
         self.__do_layout()
@@ -84,10 +90,15 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
+
         # Test the color combos...
         # self.Bind(wx.EVT_RIGHT_DOWN, self.debug_colors)
         # self._debug_counter = 0
+        def clear_log(event=None):
+            self.logged_packets.clear()
+            self.text_status_log.SetValue("")
 
+        self.button_clear_status_log.Bind(wx.EVT_BUTTON, clear_log)
         self.last_control_state = None
         self.retries = 0
         self._buffer = ""
@@ -190,11 +201,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main_vertical = wx.BoxSizer(wx.VERTICAL)
-        sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_show_usb_log = wx.BoxSizer(wx.VERTICAL)
         packet_count = StaticBoxSizer(self, wx.ID_ANY, _("Packet Info"), wx.VERTICAL)
-        byte_data_status = StaticBoxSizer(
-            self, wx.ID_ANY, _("Byte Data Status"), wx.HORIZONTAL
+        byte_data_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Byte Data Status"), wx.VERTICAL
         )
+        byte_data_status = wx.BoxSizer(wx.HORIZONTAL)
         byte5sizer = wx.BoxSizer(wx.VERTICAL)
         byte4sizer = wx.BoxSizer(wx.VERTICAL)
         byte3sizer = wx.BoxSizer(wx.VERTICAL)
@@ -240,38 +252,43 @@ class LihuiyuControllerPanel(ScrolledPanel):
         packet_count.Add(sizer_statistics, 1, wx.EXPAND, 0)
         packet_info.Add(self.text_packet_info, 11, wx.EXPAND, 0)
         packet_count.Add(packet_info, 0, wx.EXPAND, 0)
-        byte0sizer.Add(self.text_byte_0, 0, 0, 0)
+        byte0sizer.Add(self.text_byte_0, 0, wx.EXPAND, 0)
         label_1 = wxStaticText(self, wx.ID_ANY, _("Byte 0"))
-        byte0sizer.Add(label_1, 0, 0, 0)
+        byte0sizer.Add(label_1, 0, wx.EXPAND, 0)
         byte_data_status.Add(byte0sizer, 1, wx.EXPAND, 0)
-        byte1sizer.Add(self.text_byte_1, 0, 0, 0)
+        byte1sizer.Add(self.text_byte_1, 0, wx.EXPAND, 0)
         label_2 = wxStaticText(self, wx.ID_ANY, _("Byte 1"))
-        byte1sizer.Add(label_2, 0, 0, 0)
-        byte1sizer.Add(self.text_desc, 0, 0, 0)
+        byte1sizer.Add(label_2, 0, wx.EXPAND, 0)
+        byte1sizer.Add(self.text_desc, 0, wx.EXPAND, 0)
         byte_data_status.Add(byte1sizer, 1, wx.EXPAND, 0)
-        byte2sizer.Add(self.text_byte_2, 0, 0, 0)
+        byte2sizer.Add(self.text_byte_2, 0, wx.EXPAND, 0)
         label_3 = wxStaticText(self, wx.ID_ANY, _("Byte 2"))
-        byte2sizer.Add(label_3, 0, 0, 0)
+        byte2sizer.Add(label_3, 0, wx.EXPAND, 0)
         byte_data_status.Add(byte2sizer, 1, wx.EXPAND, 0)
-        byte3sizer.Add(self.text_byte_3, 0, 0, 0)
+        byte3sizer.Add(self.text_byte_3, 0, wx.EXPAND, 0)
         label_4 = wxStaticText(self, wx.ID_ANY, _("Byte 3"))
-        byte3sizer.Add(label_4, 0, 0, 0)
+        byte3sizer.Add(label_4, 0, wx.EXPAND, 0)
         byte_data_status.Add(byte3sizer, 1, wx.EXPAND, 0)
-        byte4sizer.Add(self.text_byte_4, 0, 0, 0)
+        byte4sizer.Add(self.text_byte_4, 0, wx.EXPAND, 0)
         label_5 = wxStaticText(self, wx.ID_ANY, _("Byte 4"))
-        byte4sizer.Add(label_5, 0, 0, 0)
+        byte4sizer.Add(label_5, 0, wx.EXPAND, 0)
         byte_data_status.Add(byte4sizer, 1, wx.EXPAND, 0)
-        byte5sizer.Add(self.text_byte_5, 0, 0, 0)
+        byte5sizer.Add(self.text_byte_5, 0, wx.EXPAND, 0)
         label_18 = wxStaticText(self, wx.ID_ANY, _("Byte 5"))
-        byte5sizer.Add(label_18, 0, 0, 0)
+        byte5sizer.Add(label_18, 0, wx.EXPAND, 0)
         byte_data_status.Add(byte5sizer, 1, wx.EXPAND, 0)
-        packet_count.Add(byte_data_status, 0, wx.EXPAND, 0)
-        sizer_main_vertical.Add(packet_count, 0, 0, 0)
-        label_6 = wxStaticText(self, wx.ID_ANY, "")
-        sizer_show_usb_log.Add(label_6, 10, wx.EXPAND, 0)
-        sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
-        sizer_main_vertical.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_main_vertical, 1, 0, 0)
+
+        byte_data_sizer.Add(byte_data_status, 0, wx.EXPAND, 0)
+        byte_data_sizer.Add(self.text_status_log, 1, wx.EXPAND, 0)
+        byte_data_sizer.Add(self.button_clear_status_log, 0, wx.EXPAND, 0)
+
+        sizer_main_vertical.Add(packet_count, 0, wx.EXPAND, 0)
+        sizer_main_vertical.Add(byte_data_sizer, 1, wx.EXPAND, 0)
+        # label_6 = wxStaticText(self, wx.ID_ANY, "")
+        # sizer_show_usb_log.Add(label_6, 10, wx.EXPAND, 0)
+        sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, wx.ALIGN_RIGHT, 0)
+        sizer_main_vertical.Add(sizer_show_usb_log, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_main_vertical, 1, wx.EXPAND, 0)
         sizer_main.Add(self.text_usb_log, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -403,11 +420,34 @@ class LihuiyuControllerPanel(ScrolledPanel):
                         self.text_byte_4.SetValue(str(status_data[4]))
                         self.text_byte_5.SetValue(str(status_data[5]))
                         self.text_desc.SetValue(code_string)
+                self.add_to_status_log(f"{status_data} - {code_string}")
             self.packet_count_text.SetValue(str(self.context.packet_count))
             self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
         except RuntimeError:
             # This should be handled when the controller window is closed.
             pass
+
+    def add_to_status_log(self, string_data):
+        """Add a string to the status log."""
+        if len(self.logged_packets) == 0:
+            self.logged_packets.append((1, string_data))
+        else:
+            count, oldstring_data = self.logged_packets[-1]
+            if oldstring_data == string_data:
+                # If the last entry is the same, just increase the count.
+                self.logged_packets[-1] = (count + 1, oldstring_data)
+            else:
+                # Otherwise, add a new entry.
+                if len(self.logged_packets) > 750:
+                    self.logged_packets = self.logged_packets[-750:]
+                self.logged_packets.append((1, string_data))
+        text_data = []
+        for count, data in self.logged_packets:
+            if count > 1:
+                text_data.append(f"{data} (x{count})")
+            else:
+                text_data.append(data)
+        self.text_status_log.SetValue("\n".join(text_data))
 
     @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):
@@ -415,6 +455,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             return
         if string_data is not None and len(string_data) != 0:
             self.text_packet_info.SetValue(str(string_data))
+            self.add_to_status_log(f">> {string_data}")
 
     @signal_listener("pipe;usb_status")
     def on_connection_status_change(self, origin, status):
@@ -526,7 +567,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             except NotImplementedError:
                 dlg = wx.MessageDialog(
                     None,
-                    _("Connection Refused. See USB Log for detailed information.") + "\n" + _("You may run an incompatible version of libusb, have you tried the 32-bit version?"),
+                    _("Connection Refused. See USB Log for detailed information.")
+                    + "\n"
+                    + _(
+                        "You may run an incompatible version of libusb, have you tried the 32-bit version?"
+                    ),
                     _("Manual Connection"),
                     wx.OK | wx.ICON_WARNING,
                 )
