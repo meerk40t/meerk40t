@@ -194,6 +194,18 @@ class LihuiyuDriver(Parameters):
     def __call__(self, e):
         self.out_pipe.write(e)
 
+    @property
+    def has_adjustable_maximum_power(self):
+        return self.service.supports_pwm
+
+    @property
+    def max_power_scale(self):
+        return self.service.power_scale
+
+    @max_power_scale.setter
+    def max_power_scale(self, value):
+        self.service.power_scale = value
+
     def get_internal_queue_status(self):
         return self._queue_current, self._queue_total
 
@@ -455,7 +467,7 @@ class LihuiyuDriver(Parameters):
             self(b"\n")
         self.wait_finish()
         self.rapid_mode()
-        power = max(0.0, min(power, 1000.0))
+        power = max(0.0, min(power, 1000.0)) * self.service.power_scale / 100.0
         m = int(power / 254)
         n = int(power % 254)
         # AT commands will be flushed out immediately
@@ -556,6 +568,7 @@ class LihuiyuDriver(Parameters):
         else:
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
+        # We don't allow in situ power changes in raster mode.
         power_val = None
         speed_code = LaserSpeed(
             self.service.board,
@@ -614,7 +627,12 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
-        power_val = None
+        if self.service.supports_pwm and self.service.pwm_speedcode:
+            # If we are using PWM speedcode, we need to set the power value.
+            power_val = self.power * self.service.power_scale / 100.0
+        else:
+            # If we are not using PWM speedcode, we do not set the power value.
+            power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -1052,7 +1070,7 @@ class LihuiyuDriver(Parameters):
             self.power = 1000.0
         if self.power <= 0:
             self.power = 0.0
-        if self.service.supports_pwm and self.service.pwm_method == 0:
+        if self.service.supports_pwm:
             self.send_at_pwm_code(self.power)
 
     def _set_ppi(self, power=1000.0):
