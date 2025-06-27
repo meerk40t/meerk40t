@@ -400,6 +400,11 @@ class LaserPanel(wx.Panel):
             sliderval = int(value * half)
             sliderval = max(1, min(self.slider_size, sliderval))
             set_boundaries(self.slider_power, sliderval, 1, self.slider_size)
+            self.slider_power.SetToolTip(
+                _("Increases/decreases the regular laser power by this amount.")
+                + "\n"
+                + _("This affects running jobs, so use with care!")
+            )
             self.power_mode = "relative"
             self.on_slider_power(None)
         elif (
@@ -414,6 +419,11 @@ class LaserPanel(wx.Panel):
             max_value = 100 if dev_mode else 50
             sliderval = min(max_value, self.context.device.driver.max_power_scale)
             set_boundaries(self.slider_power, sliderval, min_value, max_value)
+            self.slider_power.SetToolTip(
+                _("Sets the maximum laser power level.")
+                + "\n"
+                + _("Setting this too high may cause damage to your laser tube!")
+            )
             self.power_mode = "maximum"
             self.on_slider_power(None)
         flag_speed = False

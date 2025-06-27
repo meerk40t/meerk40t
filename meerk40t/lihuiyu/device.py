@@ -198,7 +198,9 @@ class LihuiyuDevice(Service, Status):
                 "trailer": "%",
                 "tip": _(
                     "Set the maximum laser power level, any operation power will be a fraction of this"
-                ),
+                )
+                + "\n"
+                + _("Setting this too high may cause damage to your laser tube!"),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Hardware-Laser-Power"),
                 "conditional": (self, "supports_pwm"),
