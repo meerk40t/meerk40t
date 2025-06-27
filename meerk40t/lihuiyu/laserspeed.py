@@ -208,7 +208,7 @@ def get_code_from_speed(
         # produced a negative speed value, go ahead and set that to 0
         speed_value = 0
     encoded_speed = encode_16bit(speed_value)
-    if power_value is None or power_value >= 1000:
+    if power_value is None or power_value >= 1000 or power_value < 0:
         power_suffix = ""
     else:
         power_suffix = f"W{int(power_value):03d}"

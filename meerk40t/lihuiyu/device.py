@@ -129,6 +129,13 @@ class LihuiyuDevice(Service, Status):
         ]
         self.register_choices("bed_dim", choices)
 
+        def get_max_range():
+            """
+            Returns the maximum range of the device.
+            """
+            dev_mode = getattr(self.kernel.root, "developer_mode", False)
+            return 100 if dev_mode else 50
+
         choices = [
             {
                 "attr": "label",
@@ -186,12 +193,14 @@ class LihuiyuDevice(Service, Status):
                 "type": int,
                 "style": "slider",
                 "min": 1,
-                "max": 100,
+                "max": get_max_range,
                 "label": _("Maximum Laser strength"),
                 "trailer": "%",
                 "tip": _(
                     "Set the maximum laser power level, any operation power will be a fraction of this"
-                ),
+                )
+                + "\n"
+                + _("Setting this too high may cause damage to your laser tube!"),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Hardware-Laser-Power"),
                 "conditional": (self, "supports_pwm"),

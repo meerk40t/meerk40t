@@ -125,18 +125,20 @@ def onewire_crc_lookup(line):
     @return: 8 bit crc of line.
     """
 
+    crc = 0
+    for i in range(0, 30):
+        crc = line[i] ^ crc
+        crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
+
+    """ Print the line in hex and ascii format for debugging purposes.
     def hex_repr(data):
         return " ".join(f"{x:02x}" for x in data)
 
     def ascii_repr(data):
         return "".join(chr(x) if 32 <= x < 127 else "." for x in data)
 
-    crc = 0
-    for i in range(0, 30):
-        crc = line[i] ^ crc
-        crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
-    # print (f"Line ({len(line)} bytes): {hex_repr(line)} {ascii_repr(line)} CRC: {hex(crc)}")
-
+    print (f"Line ({len(line)} bytes): {hex_repr(line)} {ascii_repr(line)} CRC: {hex(crc)}")
+    """
     return crc
 
 
