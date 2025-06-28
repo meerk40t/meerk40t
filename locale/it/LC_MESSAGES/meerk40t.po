@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 20-06-25 16:45UTC\n"
+"PO-Revision-Date: 28-06-25 16:10UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
@@ -22786,3 +22786,79 @@ msgstr "L'ibernazione del sistema è stata impedita."
 #: meerk40t/kernel/kernel.py:2889
 msgid "System hibernation is allowed."
 msgstr "L'ibernazione del sistema è consentita."
+
+#: meerk40t/balormk/galvo_commands.py:302 meerk40t/lihuiyu/device.py:603 meerk40t/newly/device.py:647
+msgid "Power level"
+msgstr "Livello di potenza"
+
+#: meerk40t/balormk/galvo_commands.py:332 meerk40t/newly/device.py:666
+msgid "Invalid power value: {power}"
+msgstr "Valore di potenza non valido: {power}"
+
+#: meerk40t/grbl/device.py:957
+msgid "laser fire power"
+msgstr "potenza di accensione laser"
+
+#: meerk40t/grbl/device.py:988 meerk40t/lihuiyu/device.py:644
+msgid "Power must be valid value."
+msgstr "La potenza deve essere un valore valido."
+
+#: meerk40t/grbl/device.py:991 meerk40t/lihuiyu/device.py:647
+msgid "Power must be between 0 and 1000."
+msgstr "La potenza deve essere compresa tra 0 e 1000."
+
+#: meerk40t/gui/laserpanel.py:423
+msgid "Sets the maximum laser power level."
+msgstr "Imposta il livello massimo di potenza del laser."
+
+#: meerk40t/gui/laserpanel.py:425 meerk40t/lihuiyu/device.py:203
+msgid "Setting this too high may cause damage to your laser tube!"
+msgstr "Un valore troppo alto può danneggiare il tubo laser!"
+
+#: meerk40t/gui/navigationpanels.py:1883
+msgid "Set the power of the laser pulse in percent"
+msgstr "Imposta la potenza dell'impulso laser in percentuale"
+
+#: meerk40t/gui/navigationpanels.py:1888
+msgid "Set the power of the laser pulse in ppi"
+msgstr "Imposta la potenza dell'impulso laser in PPI"
+
+#: meerk40t/lihuiyu/device.py:168
+msgid "Hardware-PWM"
+msgstr "PWM hardware"
+
+#: meerk40t/lihuiyu/device.py:171
+msgid "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
+msgstr "La scheda supporta PWM hardware. Solo M3 e firmware >= 2024.01.18g supportano PWM. Le revisioni precedenti di M3 sono solo M2+."
+
+#: meerk40t/lihuiyu/device.py:173 meerk40t/lihuiyu/device.py:185 meerk40t/lihuiyu/device.py:205
+msgid "Hardware-Laser-Power"
+msgstr "Potenza laser hardware"
+
+#: meerk40t/lihuiyu/device.py:182
+msgid "Use PWM-Speedcode"
+msgstr "Usa codici di velocità PWM"
+
+#: meerk40t/lihuiyu/device.py:183
+msgid "PWM Method: set power as well in LHY-speedcodes."
+msgstr "Metodo PWM: imposta anche la potenza nei codici di velocità LHY."
+
+#: meerk40t/lihuiyu/device.py:197
+msgid "Maximum Laser strength"
+msgstr "Potenza massima del laser"
+
+#: meerk40t/lihuiyu/device.py:201
+msgid "Set the maximum laser power level, any operation power will be a fraction of this"
+msgstr "Imposta il livello massimo della potenza del laser: qualsiasi potenza operativa sarà una frazione di questo valore"
+
+#: meerk40t/lihuiyu/device.py:976
+msgid "This command is only available for {target} boards. This is a {board}."
+msgstr "Questo comando è disponibile solo per le schede {target}. Questa è una {board}."
+
+#: meerk40t/lihuiyu/device.py:983
+msgid "Request M3Nano+ board info"
+msgstr "Richiedi informazioni sulla scheda M3Nano+"
+
+#: meerk40t/lihuiyu/gui/lhycontrollergui.py:77
+msgid "Clear Status-Log"
+msgstr "Cancella registro di stato"
