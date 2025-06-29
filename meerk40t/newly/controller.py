@@ -739,9 +739,10 @@ class NewlyController:
         self(f"WU{int(round(w_position))}")
         self.close_job()
 
-    def pulse(self, pulse_time_ms):
+    def pulse(self, pulse_time_ms, power=None):
         self.realtime_job()
-        self.dwell(pulse_time_ms)
+        settings = None if power is None else {"power": power}
+        self.dwell(pulse_time_ms, settings=settings)
         self.close_job()
 
     def home(self):

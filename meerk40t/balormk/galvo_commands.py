@@ -299,12 +299,15 @@ def plugin(service, lifecycle):
         action="store_true",
         help=_("override one second laser fire pulse duration"),
     )
+    @service.console_option("power", "p", type=str, help=_("Power level"))
     @service.console_argument("time", type=float, help=_("laser fire pulse duration"))
     @service.console_command(
         "pulse",
         help=_("pulse <time>: Pulse the laser in place."),
     )
-    def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+    def pulse(
+        command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwargs
+    ):
         if time is None:
             channel(_("Must specify a pulse time in milliseconds."))
             return
@@ -319,9 +322,21 @@ def plugin(service, lifecycle):
                     return
             except IndexError:
                 return
+        if power:
+            try:
+                if power.endswith("%"):
+                    power = float(power[:-1]) * 10
+                else:
+                    power = float(power)
+            except ValueError:
+                channel(_("Invalid power value: {power}").format(power=power))
+                return
         if service.spooler.is_idle:
-            service.spooler.command("pulse", time)
-            channel(_("Pulse laser for {time} milliseconds").format(time=time))
+            service.spooler.command("pulse", time, power)
+            channel(
+                _("Pulse laser for {time} milliseconds").format(time=time)
+                + f"[{power}]"
+            )
         else:
             channel(_("Pulse laser failed: Busy"))
         return

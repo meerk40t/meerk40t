@@ -954,12 +954,15 @@ class GRBLDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("laser fire power"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -974,12 +977,25 @@ class GRBLDevice(Service, Status):
                         return
                 except IndexError:
                     return
-
+            if power is not None:
+                try:
+                    if power.endswith("%"):
+                        power = power[:-1]
+                        power = float(power) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Power must be valid value."))
+                    return
+                if not (0 <= power <= 1000):
+                    channel(_("Power must be between 0 and 1000."))
+                    return
+            power = 1000 if power is None else int(power)
             if self.spooler.is_idle:
-                self.driver.laser_on(power=1000, speed=1000)
+                self.driver.laser_on(power=power, speed=1000)
                 sleep(time / 1000)
                 self.driver.laser_off()
-                label = _("Pulse laser for {time}ms").format(time=time)
+                label = _("Pulse laser for {time}ms").format(time=time) + f" [{power}]"
                 channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -1068,6 +1084,13 @@ class GRBLDevice(Service, Status):
             return self.name
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
+
+    @property
+    def supports_pwm(self):
+        """
+        Returns whether this device supports PWM.
+        """
+        return True
 
     def _register_console_serial(self):
         _ = self.kernel.translation
