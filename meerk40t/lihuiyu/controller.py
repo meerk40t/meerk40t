@@ -719,7 +719,7 @@ class LihuiyuController:
                 self.update_state("terminate")
                 self.is_shutdown = True
                 packet = packet[:-1]
-            if packet.startswith(b"A"):
+            if packet.startswith(b"A") and not packet.startswith(b"AT"):
                 # This is a challenge code. A is only used for serial challenges.
                 post_send_command = self._confirm_serial
             if len(packet) != 0:
