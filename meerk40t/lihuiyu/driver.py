@@ -194,6 +194,18 @@ class LihuiyuDriver(Parameters):
     def __call__(self, e):
         self.out_pipe.write(e)
 
+    @property
+    def has_adjustable_maximum_power(self):
+        return self.service.supports_pwm
+
+    @property
+    def max_power_scale(self):
+        return self.service.power_scale
+
+    @max_power_scale.setter
+    def max_power_scale(self, value):
+        self.service.power_scale = value
+
     def get_internal_queue_status(self):
         return self._queue_current, self._queue_total
 
@@ -205,6 +217,7 @@ class LihuiyuDriver(Parameters):
         self.plot_planner.force_shift = self.service.plot_shift
         self.plot_planner.phase_type = self.service.plot_phase_type
         self.plot_planner.phase_value = self.service.plot_phase_value
+        self.plot_planner.set_ppi(not self.service.supports_pwm)
 
     def hold_work(self, priority):
         """
@@ -384,7 +397,7 @@ class LihuiyuDriver(Parameters):
         self.rapid_mode()
         self._move_relative(unit_dx, unit_dy)
 
-    def dwell(self, time_in_ms):
+    def dwell(self, time_in_ms, settings=None):
         """
         Requests that the laser fire in place for the given time period. This could be done in a series of commands,
         move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
@@ -393,9 +406,12 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
+        power = settings.get("power", None) if settings else None
         self.rapid_mode()
         self.wait_finish()
-        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.laser_on(
+            power=power
+        )  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
 
@@ -421,7 +437,7 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         return True
 
-    def laser_on(self):
+    def laser_on(self, power=None):
         """
         Turn laser on in place.
 
@@ -429,6 +445,9 @@ class LihuiyuDriver(Parameters):
         """
         if self.laser:
             return False
+        if power is not None and self.service.supports_pwm:
+            self.send_at_pwm_code(power, "laser_on")
+
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_ON)
@@ -442,6 +461,18 @@ class LihuiyuDriver(Parameters):
             self(b"N")
         self.laser = True
         return True
+
+    def send_at_pwm_code(self, power: float = 1000.0):
+        if len(self.out_pipe) > 0:
+            self(b"\n")
+        self.wait_finish()
+        self.rapid_mode()
+        power = max(0.0, min(power, 1000.0)) * self.service.power_scale / 100.0
+        m = int(power / 254)
+        n = int(power % 254)
+        # AT commands will be flushed out immediately
+        packet = bytes((ord("A"), ord("T"), ord("1"), m, n, ord("\n")))
+        self(packet)
 
     def rapid_mode(self, *values):
         """
@@ -537,6 +568,8 @@ class LihuiyuDriver(Parameters):
         else:
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
+        # We don't allow in situ power changes in raster mode.
+        power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -548,6 +581,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=False,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=horizontal,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -593,7 +627,12 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
-
+        if self.service.supports_pwm and self.service.pwm_speedcode:
+            # If we are using PWM speedcode, we need to set the power value.
+            power_val = self.power * self.service.power_scale / 100.0
+        else:
+            # If we are not using PWM speedcode, we do not set the power value.
+            power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -605,6 +644,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=suffix_c,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=self._horizontal_major,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -702,6 +742,7 @@ class LihuiyuDriver(Parameters):
                     self.rapid_mode()
                     self._move_absolute(start.real, start.imag)
                     self.wait_finish()
+                    self._set_power(sets.get("power", 1000.0))
                     self.dwell(sets.get("dwell_time"))
                 elif function == "wait":
                     self.plot_start()
@@ -1029,6 +1070,8 @@ class LihuiyuDriver(Parameters):
             self.power = 1000.0
         if self.power <= 0:
             self.power = 0.0
+        if self.service.supports_pwm:
+            self.send_at_pwm_code(self.power)
 
     def _set_ppi(self, power=1000.0):
         self.power = power
@@ -1463,4 +1506,18 @@ class LihuiyuDriver(Parameters):
             self._x_engaged = False
             self._y_engaged = True
             return x_dir + y_dir
-        
+
+    # def get_board_info(self):
+    #     try:
+    #         self.out_pipe.write_raw(b"\xac\x2e", 73 - 27)
+    #     except AttributeError:
+    #         pass
+
+    # def get_param_info(self):
+    #     try:
+    #         self.out_pipe.write_raw(b"\xac\xe0", 251 - 27)
+    #     except AttributeError:
+    #         pass
+
+    def get_m3_hardware_info(self):
+        self(b"AT01")

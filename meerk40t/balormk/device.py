@@ -893,6 +893,13 @@ class BalorDevice(Service, Status):
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
 
+    @property
+    def supports_pwm(self):
+        """
+        Returns whether this device supports PWM.
+        """
+        return True
+
     def service_attach(self, *args, **kwargs):
         self.realize()
 
