@@ -58,7 +58,8 @@ def plugin(kernel, lifecycle):
                 if last_stroke is None and hasattr(node, "stroke"):
                     last_stroke = node.stroke
                     last_stroke_width = node.stroke_width
-                c = linearize_path(path)
+                tolerance = 25
+                c = linearize_path(path, interp=tolerance)
                 try:
                     c = pb.Polygon(c)
                     c = pb.segments(c)
