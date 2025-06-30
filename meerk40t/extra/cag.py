@@ -31,7 +31,9 @@ def plugin(kernel, lifecycle):
                     )
                 )
                 return "elements", []
+            from time import time
 
+            start_time = time()
             elements = context.elements
             solution_path = Path(
                 stroke=elements.default_stroke,
@@ -95,7 +97,11 @@ def plugin(kernel, lifecycle):
                             node.remove_node()
                     stroke = last_stroke if last_stroke is not None else Color("blue")
                     fill = last_fill
-                    stroke_width = last_stroke_width if last_stroke_width is not None else elements.default_strokewidth
+                    stroke_width = (
+                        last_stroke_width
+                        if last_stroke_width is not None
+                        else elements.default_strokewidth
+                    )
                     new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",
@@ -106,6 +112,11 @@ def plugin(kernel, lifecycle):
                     context.signal("refresh_scene", "Scene")
                     if elements.classify_new:
                         elements.classify([new_node])
+                end_time = time()
+                elapsed_time = end_time - start_time
+                channel(
+                    f"Constructive Additive Geometry: Add completed in {elapsed_time:.2f} seconds."
+                )
                 return "elements", [node]
             else:
                 channel(_("No solution found (empty path)"))
