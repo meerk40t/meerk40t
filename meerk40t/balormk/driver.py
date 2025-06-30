@@ -721,7 +721,7 @@ class BalorDriver:
         self.connection.abort()
         self.service.signal("pause")
 
-    def dwell(self, time_in_ms):
+    def dwell(self, time_in_ms, settings=None):
         """
         Requests that the laser fire in place for the given time period. This could be done in a series of commands,
         move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
@@ -730,14 +730,20 @@ class BalorDriver:
         @param time_in_ms:
         @return:
         """
-        self.pulse(time_in_ms)
+        if settings is not None and "power" in settings:
+            power = settings.get("power")
+        else:
+            power = None
+        self.pulse(time_in_ms, power=power)
 
-    def pulse(self, pulse_time):
+    def pulse(self, pulse_time, power=None):
         self.service.laser_status = "active"
         con = self.connection
         con.program_mode()
         con.frequency(self.service.default_frequency)
-        con.power(self.service.default_power)
+        if power is None:
+            power = self.service.default_power
+        con.power(power)
         if self.service.pulse_width_enabled:
             con.list_fiber_ylpm_pulse_width(self.service.default_pulse_width)
         dwell_time = pulse_time * 100  # Dwell time in ms units in 10 us

@@ -644,15 +644,28 @@ class NewlyDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("Power level"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
+            if power:
+                try:
+                    if power.endswith("%"):
+                        power = float(power[:-1]) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Invalid power value: {power}").format(power=power))
+                    return
+
             if time > 1000.0:
                 channel(
                     _(
@@ -665,7 +678,7 @@ class NewlyDevice(Service, Status):
                 except IndexError:
                     return
             if self.spooler.is_idle:
-                self.spooler.command("pulse", time)
+                self.spooler.command("pulse", time, power)
                 channel(_("Pulse laser for {time} milliseconds").format(time=time))
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -812,6 +825,14 @@ class NewlyDevice(Service, Status):
             return self.name
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
+
+    @property
+    def supports_pwm(self):
+        """
+        Returns whether this device supports PWM.
+        :return: True if the device supports PWM, False otherwise.
+        """
+        return self.pwm_enabled
 
     def service_attach(self, *args, **kwargs):
         self.realize()

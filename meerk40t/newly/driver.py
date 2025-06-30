@@ -39,7 +39,12 @@ class NewlyDriver:
         self._queue_total = 0
 
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True, require_uniform_movement = False,
+            dict(),
+            single=True,
+            ppi=False,
+            shift=False,
+            group=True,
+            require_uniform_movement=False,
         )
         self._aborting = False
         self._list_bits = None
@@ -525,8 +530,8 @@ class NewlyDriver:
         """
         pass
 
-    def pulse(self, pulse_time):
-        self.connection.pulse(pulse_time)
+    def pulse(self, pulse_time, power=None):
+        self.connection.pulse(pulse_time, power=power)
 
     def dwell(self, time_in_ms):
         """
