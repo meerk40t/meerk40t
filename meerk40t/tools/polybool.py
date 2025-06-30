@@ -59,6 +59,22 @@ class Point:
 
     @staticmethod
     def linesIntersect(a0: TPoint, a1: TPoint, b0: TPoint, b1: TPoint):
+        # Early bounding box check for fast rejection
+        a_min_x, a_max_x = (a0.x, a1.x) if a0.x <= a1.x else (a1.x, a0.x)
+        a_min_y, a_max_y = (a0.y, a1.y) if a0.y <= a1.y else (a1.y, a0.y)
+        b_min_x, b_max_x = (b0.x, b1.x) if b0.x <= b1.x else (b1.x, b0.x)
+        b_min_y, b_max_y = (b0.y, b1.y) if b0.y <= b1.y else (b1.y, b0.y)
+
+        # Quick rejection if bounding boxes don't overlap
+        if (
+            a_max_x < b_min_x - tolerance
+            or b_max_x < a_min_x - tolerance
+            or a_max_y < b_min_y - tolerance
+            or b_max_y < a_min_y - tolerance
+        ):
+            return None
+
+        # Original intersection calculation
         adx = a1.x - a0.x
         ady = a1.y - a0.y
         bdx = b1.x - b0.x
@@ -643,118 +659,80 @@ def list_unshift(list: typing.List[T], element: T):
     list.insert(0, element)
 
 
-def segmentChainer(segments: typing.List[Segment]) -> typing.List[Region]:
-    regions: typing.List[Region] = []
-    chains: typing.List[typing.List[Point]] = []
+def segmentChainer(segments) -> typing.List[typing.List]:
+    """
+    Optimized segment chaining - O(n) instead of O(n²)
+    REPLACES the original segmentChainer function
+    """
+    from collections import defaultdict
 
-    for seg in segments:
-        pt1 = seg.start
-        pt2 = seg.end
-        if pt1 == pt2:
+    if not segments:
+        return []
+
+    # Build point-to-segment mapping for O(1) lookups
+    point_to_segments = defaultdict(list)
+
+    for i, seg in enumerate(segments):
+        if seg.start == seg.end:
             continue
 
-        scm = SegmentChainerMatcher()
+        start_key = (round(seg.start.x, 12), round(seg.start.y, 12))
+        end_key = (round(seg.end.x, 12), round(seg.end.y, 12))
 
-        for i in range(len(chains)):
-            chain = chains[i]
-            head = chain[0]
-            tail = chain[-1]
+        point_to_segments[start_key].append((i, True))  # True = start point
+        point_to_segments[end_key].append((i, False))  # False = end point
 
-            if head == pt1:
-                if scm.setMatch(i, True, True):
-                    break
-            elif head == pt2:
-                if scm.setMatch(i, True, False):
-                    break
-            elif tail == pt1:
-                if scm.setMatch(i, False, True):
-                    break
-            elif tail == pt2:
-                if scm.setMatch(i, False, False):
-                    break
+    used_segments = set()
+    regions = []
 
-        if scm.nextMatch is scm.firstMatch:
-            chains.append([pt1, pt2])
+    for i, seg in enumerate(segments):
+        if i in used_segments or seg.start == seg.end:
             continue
 
-        if scm.nextMatch is scm.secondMatch:
-            index = scm.firstMatch.index
-            pt = pt2 if scm.firstMatch.matchesPt1 else pt1
-            addToHead = scm.firstMatch.matchesHead
+        # Start a new chain
+        chain = [seg.start, seg.end]
+        used_segments.add(i)
 
-            chain = chains[index]
-            grow = chain[0] if addToHead else chain[-1]
-            grow2 = chain[1] if addToHead else chain[-2]
-            oppo = chain[-1] if addToHead else chain[0]
-            oppo2 = chain[-2] if addToHead else chain[1]
+        # Extend chain in both directions
+        _extend_chain_direction(chain, segments, point_to_segments, used_segments, True)
+        _extend_chain_direction(
+            chain, segments, point_to_segments, used_segments, False
+        )
 
-            if Point.collinear(grow2, grow, pt):
-                if addToHead:
-                    list_shift(chain)
-                else:
-                    list_pop(chain)
-                grow = grow2
-            if oppo == pt:
-                list_splice(chains, index, 1)
-                if Point.collinear(oppo2, oppo, grow):
-                    if addToHead:
-                        list_pop(chain)
-                    else:
-                        list_shift(chain)
-                regions.append(chain)
-                continue
-            if addToHead:
-                list_unshift(chain, pt)
-            else:
-                chain.append(pt)
-            continue
-
-        def reverseChain(index: int):
-            chains[index].reverse()
-
-        def appendChain(index1: int, index2: int):
-            chain1 = chains[index1]
-            chain2 = chains[index2]
-            tail = chain1[-1]
-            tail2 = chain1[-2]
-            head = chain2[0]
-            head2 = chain2[1]
-
-            if Point.collinear(tail2, tail, head):
-                list_pop(chain1)
-                tail = tail2
-            if Point.collinear(tail, head, head2):
-                list_shift(chain2)
-
-            chains[index1] = chain1 + chain2
-            list_splice(chains, index2, 1)
-
-        f = scm.firstMatch.index
-        s = scm.secondMatch.index
-
-        reverseF = len(chains[f]) < len(chains[s])
-        if scm.firstMatch.matchesHead:
-            if scm.secondMatch.matchesHead:
-                if reverseF:
-                    reverseChain(f)
-                    appendChain(f, s)
-                else:
-                    reverseChain(s)
-                    appendChain(s, f)
-            else:
-                appendChain(s, f)
-        else:
-            if scm.secondMatch.matchesHead:
-                appendChain(f, s)
-            else:
-                if reverseF:
-                    reverseChain(f)
-                    appendChain(s, f)
-                else:
-                    reverseChain(s)
-                    appendChain(f, s)
+        regions.append(chain)
 
     return regions
+
+
+def _extend_chain_direction(
+    chain, segments, point_to_segments, used_segments, forward=True
+):
+    """Helper for optimized segment chaining"""
+    while True:
+        extend_point = chain[-1] if forward else chain[0]
+        point_key = (round(extend_point.x, 12), round(extend_point.y, 12))
+
+        connected_segments = point_to_segments.get(point_key, [])
+        next_segment = None
+
+        for seg_idx, is_start in connected_segments:
+            if seg_idx not in used_segments:
+                next_segment = (seg_idx, is_start)
+                break
+
+        if next_segment is None:
+            break
+
+        seg_idx, is_start = next_segment
+        seg = segments[seg_idx]
+        used_segments.add(seg_idx)
+
+        other_point = seg.end if is_start else seg.start
+
+        if forward:
+            chain.append(other_point)
+        else:
+            chain.insert(0, other_point)
 
 
 def __select(segments: typing.List[Segment], selection: typing.List[int]):
@@ -804,12 +782,25 @@ def selectUnion(polyseg: CombinedPolySegments) -> PolySegments:
     return PolySegments(
         segments=__select(
             # fmt:off
-            polyseg.combined, [
-                0, 2, 1, 0,
-                2, 2, 0, 0,
-                1, 0, 1, 0,
-                0, 0, 0, 0,
-            ]
+            polyseg.combined,
+            [
+                0,
+                2,
+                1,
+                0,
+                2,
+                2,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ],
             # fmt:on
         ),
         isInverted=(polyseg.isInverted1 or polyseg.isInverted2),
@@ -820,12 +811,8 @@ def selectIntersect(polyseg: CombinedPolySegments) -> PolySegments:
     return PolySegments(
         segments=__select(
             # fmt:off
-            polyseg.combined, [
-                0, 0, 0, 0,
-                0, 2, 0, 2,
-                0, 0, 1, 1,
-                0, 2, 1, 0
-            ]
+            polyseg.combined,
+            [0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 1, 1, 0, 2, 1, 0],
             # fmt:on
         ),
         isInverted=(polyseg.isInverted1 and polyseg.isInverted2),
@@ -836,12 +823,8 @@ def selectDifference(polyseg: CombinedPolySegments) -> PolySegments:
     return PolySegments(
         segments=__select(
             # fmt:off
-            polyseg.combined, [
-                0, 0, 0, 0,
-                2, 0, 2, 0,
-                1, 1, 0, 0,
-                0, 1, 2, 0
-            ]
+            polyseg.combined,
+            [0, 0, 0, 0, 2, 0, 2, 0, 1, 1, 0, 0, 0, 1, 2, 0],
             # fmt:on
         ),
         isInverted=(polyseg.isInverted1 and not polyseg.isInverted2),
@@ -852,12 +835,8 @@ def selectDifferenceRev(polyseg: CombinedPolySegments) -> PolySegments:
     return PolySegments(
         segments=__select(
             # fmt:off
-            polyseg.combined, [
-                0, 2, 1, 0,
-                0, 0, 1, 1,
-                0, 2, 0, 2,
-                0, 0, 0, 0
-            ]
+            polyseg.combined,
+            [0, 2, 1, 0, 0, 0, 1, 1, 0, 2, 0, 2, 0, 0, 0, 0],
             # fmt:on
         ),
         isInverted=(not polyseg.isInverted1 and polyseg.isInverted2),
@@ -868,12 +847,8 @@ def selectXor(polyseg: CombinedPolySegments) -> PolySegments:
     return PolySegments(
         segments=__select(
             # fmt:off
-            polyseg.combined, [
-                0, 2, 1, 0,
-                2, 0, 0, 1,
-                1, 0, 0, 2,
-                0, 1, 2, 0
-            ]
+            polyseg.combined,
+            [0, 2, 1, 0, 2, 0, 0, 1, 1, 0, 0, 2, 0, 1, 2, 0],
             # fmt:on
         ),
         isInverted=(polyseg.isInverted1 != polyseg.isInverted2),
