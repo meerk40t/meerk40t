@@ -1349,8 +1349,13 @@ class TrueTypeFont:
             if vs_key in self._variation_sequences:
                 return self._variation_sequences[vs_key]
 
-        # Fall back to regular character map
-        return self._character_map.get(base_char_code, 0)
+        # Fall back to regular character map - convert code point back to character for lookup
+        try:
+            base_char_str = chr(base_char_code)
+            return self._character_map.get(base_char_str, 0)
+        except (ValueError, OverflowError):
+            # Invalid Unicode code point
+            return 0
 
     def parse_text_with_variation_sequences(self, text):
         """
