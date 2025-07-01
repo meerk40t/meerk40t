@@ -14,34 +14,25 @@ WE_HAVE_INSTRUCTIONS = 1 << 8
 USE_MY_METRICS = 1 << 9
 OVERLAP_COMPOUND = 1 << 10
 
+_FLAG_NAMES = {
+    ON_CURVE_POINT: "ON_CURVE_POINT",
+    ARG_1_AND_2_ARE_WORDS: "ARG_1_AND_2_ARE_WORDS",
+    ARGS_ARE_XY_VALUES: "ARGS_ARE_XY_VALUES",
+    ROUND_XY_TO_GRID: "ROUND_XY_TO_GRID",
+    WE_HAVE_A_SCALE: "WE_HAVE_A_SCALE",
+    MORE_COMPONENTS: "MORE_COMPONENTS",
+    WE_HAVE_AN_X_AND_Y_SCALE: "WE_HAVE_AN_X_AND_Y_SCALE",
+    WE_HAVE_A_TWO_BY_TWO: "WE_HAVE_A_TWO_BY_TWO",
+    WE_HAVE_INSTRUCTIONS: "WE_HAVE_INSTRUCTIONS",
+    USE_MY_METRICS: "USE_MY_METRICS",
+    OVERLAP_COMPOUND: "OVERLAP_COMPOUND",
+}
+
 
 def flagname(flag):
     """Return all active flag names for the given flag value."""
-    flags = []
-    if flag & ON_CURVE_POINT:
-        flags.append("ON_CURVE_POINT")
-    if flag & ARG_1_AND_2_ARE_WORDS:
-        flags.append("ARG_1_AND_2_ARE_WORDS")
-    if flag & ARGS_ARE_XY_VALUES:
-        flags.append("ARGS_ARE_XY_VALUES")
-    if flag & ROUND_XY_TO_GRID:
-        flags.append("ROUND_XY_TO_GRID")
-    if flag & WE_HAVE_A_SCALE:
-        flags.append("WE_HAVE_A_SCALE")
-    if flag & MORE_COMPONENTS:
-        flags.append("MORE_COMPONENTS")
-    if flag & WE_HAVE_AN_X_AND_Y_SCALE:
-        flags.append("WE_HAVE_AN_X_AND_Y_SCALE")
-    if flag & WE_HAVE_A_TWO_BY_TWO:
-        flags.append("WE_HAVE_A_TWO_BY_TWO")
-    if flag & WE_HAVE_INSTRUCTIONS:
-        flags.append("WE_HAVE_INSTRUCTIONS")
-    if flag & USE_MY_METRICS:
-        flags.append("USE_MY_METRICS")
-    if flag & OVERLAP_COMPOUND:
-        flags.append("OVERLAP_COMPOUND")
-
-    return " | ".join(flags) if flags else f"UNKNOWN_FLAG_{flag}"
+    names = [name for bit, name in _FLAG_NAMES.items() if flag & bit]
+    return " | ".join(names) if names else f"UNKNOWN_FLAG_{flag}"
 
 
 class TTFParsingError(ValueError):
@@ -144,10 +135,7 @@ class TrueTypeFont:
                 return string.decode("UTF-16BE")
             except UnicodeDecodeError:
                 try:
-                    if string is not None:
-                        return string.decode("UTF8")
-                    else:
-                        return ""
+                    return string.decode("UTF8") if string is not None else ""
                 except UnicodeDecodeError:
                     return string if string is not None else ""
 
@@ -205,7 +193,7 @@ class TrueTypeFont:
                     if font_family and font_subfamily and font_name:
                         break
                 return font_family, font_subfamily, font_name
-        except Exception as e:
+        except Exception:
             # Anything fishy
             return None
 
@@ -233,10 +221,12 @@ class TrueTypeFont:
                 offset_x = offs
                 # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
                 for (
-                    char,
+                    base_char_code,
                     variation_selector,
                 ) in self.parse_text_with_variation_sequences(text):
-                    index = self.lookup_glyph_with_variation(char, variation_selector)
+                    index = self.lookup_glyph_with_variation(
+                        base_char_code, variation_selector
+                    )
                     if index >= len(self.glyph_data):
                         continue
                     if index >= len(self.horizontal_metrics):
@@ -270,7 +260,6 @@ class TrueTypeFont:
                         if self.active:
                             path.move(start_x, start_y)
                         for i in range(len(contour)):
-                            prev = curr
                             curr = next
                             next = contour[(i + 1) % len(contour)]
                             if curr[2] & ON_CURVE_POINT:
@@ -348,7 +337,7 @@ class TrueTypeFont:
                     entry_selector,
                     range_shift,
                 ) = struct.unpack(">LHHHH", header)
-                for i in range(num_tables):
+                for _ in range(num_tables):
                     tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
                     p = f.tell()
                     f.seek(offset)
@@ -357,11 +346,10 @@ class TrueTypeFont:
                     if require_checksum:
                         for b, byte in enumerate(data):
                             checksum -= byte << 24 - (8 * (b % 4))
-                        if tag == b"head":
-                            if checksum % (1 << 32) != 0:
-                                error_msg = f"Invalid checksum for table {tag.decode('ascii')}: {checksum % (1 << 32)} != 0"
-                                self._logger(error_msg)
-                                raise TTFParsingError(error_msg)
+                        if tag == b"head" and checksum % (1 << 32) != 0:
+                            error_msg = f"Invalid checksum for table {tag.decode('ascii')}: {checksum % (1 << 32)} != 0"
+                            self._logger(error_msg)
+                            raise TTFParsingError(error_msg)
                     self._raw_tables[tag] = data
             except Exception as e:
                 error_msg = f"Error parsing TTF file {font_path}: {e}"
@@ -478,7 +466,7 @@ class TrueTypeFont:
 
             # Read subheaders
             subheaders = []
-            for i in range(num_subheaders):
+            for _ in range(num_subheaders):
                 first_code, entry_count, id_delta, id_range_offset = struct.unpack(
                     ">HHHH", data.read(8)
                 )
@@ -491,29 +479,26 @@ class TrueTypeFont:
             # This is primarily used for CJK encodings and requires careful handling
             # For now, we'll implement basic single-byte mapping (subheader 0)
 
-            if len(subheaders) > 0:
+            if subheaders:
                 first_code, entry_count, id_delta, id_range_offset = subheaders[0]
-
-                # Calculate glyph index array position
-                glyph_index_array_start = data.tell()
 
                 # For single-byte characters (using subheader 0)
                 for byte_val in range(256):
-                    if subheader_keys[byte_val] == 0:  # Use subheader 0
-                        if (
-                            byte_val >= first_code
-                            and byte_val < first_code + entry_count
-                        ):
-                            # This character has a mapping in subheader 0
-                            try:
-                                char_code = byte_val
-                                if 0 <= char_code <= 0x10FFFF:
-                                    # Simple mapping for basic characters
-                                    glyph_id = (char_code + id_delta) & 0xFFFF
-                                    if glyph_id != 0:  # 0 means missing glyph
-                                        self._character_map[chr(char_code)] = glyph_id
-                            except ValueError:
-                                continue
+                    if (
+                        subheader_keys[byte_val] == 0
+                        and byte_val >= first_code
+                        and byte_val < first_code + entry_count
+                    ):
+                        # This character has a mapping in subheader 0
+                        try:
+                            char_code = byte_val
+                            if 0 <= char_code <= 0x10FFFF:
+                                # Simple mapping for basic characters
+                                glyph_id = (char_code + id_delta) & 0xFFFF
+                                if glyph_id != 0:  # 0 means missing glyph
+                                    self._character_map[chr(char_code)] = glyph_id
+                        except ValueError:
+                            continue
 
             return True
         except struct.error as e:
@@ -539,7 +524,7 @@ class TrueTypeFont:
         # We need to have an even amount of bytes for unpack
         if len(data) % 2 == 1:
             data = data[:-1]
-        data = struct.unpack(f">{int(len(data)/2)}H", data)
+        data = struct.unpack(f">{len(data)//2}H", data)
         ends = data[:seg_count]
         starts = data[seg_count + 1 : seg_count * 2 + 1]
         deltas = data[seg_count * 2 + 1 : seg_count * 3 + 1]
@@ -549,7 +534,7 @@ class TrueTypeFont:
             start = starts[seg]
             delta = deltas[seg]
             offset = offsets[seg]
-            if start == end and end == 0xFFFF:
+            if start == end == 0xFFFF:
                 break
 
             for c in range(start, end + 1):
@@ -696,7 +681,7 @@ class TrueTypeFont:
             language,
             n_groups,
         ) = struct.unpack(">HIII", data.read(14))
-        for seg in range(n_groups):
+        for _ in range(n_groups):
             (start_char_code, end_char_code, start_glyph_code) = struct.unpack(
                 ">III", data.read(12)
             )
@@ -718,7 +703,7 @@ class TrueTypeFont:
             language,
             n_groups,
         ) = struct.unpack(">HIII", data.read(14))
-        for seg in range(n_groups):
+        for _ in range(n_groups):
             (start_char_code, end_char_code, glyph_code) = struct.unpack(
                 ">III", data.read(12)
             )
@@ -797,7 +782,7 @@ class TrueTypeFont:
                             num_unicode_ranges = MAX_UNICODE_RANGES
 
                         # Process each Unicode range - WITH LIMITS
-                        for range_idx in range(num_unicode_ranges):
+                        for _ in range(num_unicode_ranges):
                             if len(data.getvalue()) - data.tell() < 4:
                                 break  # Not enough data for this range
 
@@ -839,7 +824,6 @@ class TrueTypeFont:
                     except (struct.error, IndexError) as e:
                         error_msg = f"Error processing default UVS table: {e}"
                         self._logger(error_msg)
-                        pass
 
                 # Process Non-Default UVS Table (if present) - OPTIMIZED
                 if non_default_uvs_offset != 0:
@@ -856,7 +840,7 @@ class TrueTypeFont:
                             num_uvs_mappings = MAX_UVS_MAPPINGS
 
                         # Process each UVS mapping
-                        for mapping_idx in range(num_uvs_mappings):
+                        for _ in range(num_uvs_mappings):
                             if len(data.getvalue()) - data.tell() < 5:
                                 break  # Not enough data for this mapping
 
@@ -874,7 +858,6 @@ class TrueTypeFont:
                     except (struct.error, IndexError) as e:
                         error_msg = f"Error processing non-default UVS table: {e}"
                         self._logger(error_msg)
-                        pass
 
                 # Return to position after variation selector record
                 data.seek(current_pos)
@@ -1209,10 +1192,7 @@ class TrueTypeFont:
                             "Insufficient data for two byte coordinate"
                         )
                     value += struct.unpack(">h", data.read(2))[0]
-                else:
-                    # Coordinate unchanged from previous
-                    # No update needed for value
-                    pass
+                # Coordinate unchanged from previous
                 yield value
             except struct.error as e:
                 error_msg = f"Struct unpacking error in coordinates: {e}"
@@ -1354,51 +1334,89 @@ class TrueTypeFont:
         Look up a glyph ID for a character, optionally with a variation selector.
 
         Args:
-            base_char (str): The base character
+            base_char (str or int): The base character (string) or Unicode code point (int)
             variation_selector (int, optional): Unicode code point of variation selector
 
         Returns:
             int: Glyph ID for the character/variation sequence, or 0 if not found
         """
+        # Convert base_char to Unicode code point if it's a string
+        base_char_code = ord(base_char) if isinstance(base_char, str) else base_char
+
         if variation_selector is not None:
             # Check for variation sequence first
-            base_char_code = ord(base_char) if isinstance(base_char, str) else base_char
             vs_key = (base_char_code, variation_selector)
             if vs_key in self._variation_sequences:
                 return self._variation_sequences[vs_key]
 
         # Fall back to regular character map
-        return self._character_map.get(base_char, 0)
+        return self._character_map.get(base_char_code, 0)
 
     def parse_text_with_variation_sequences(self, text):
         """
         Parse text and extract base characters with their variation selectors.
 
+        This method correctly handles Unicode code points, including surrogate pairs
+        and non-BMP characters, ensuring that variation selectors are properly
+        detected even for astral-plane base characters.
+
         Args:
             text (str): Input text that may contain variation sequences
 
         Yields:
-            tuple: (base_char, variation_selector) where variation_selector is None
+            tuple: (base_char_code, variation_selector) where variation_selector is None
                    for regular characters or the Unicode code point for variation sequences
         """
+        # Convert string to list of Unicode code points to handle surrogate pairs correctly
+        code_points = []
         i = 0
         while i < len(text):
             char = text[i]
+            char_code = ord(char)
 
-            # Check if the next character is a variation selector
+            # Check if this is the start of a surrogate pair (high surrogate)
+            if 0xD800 <= char_code <= 0xDBFF and i + 1 < len(text):
+                next_char = text[i + 1]
+                next_char_code = ord(next_char)
+
+                # Check if next character is low surrogate
+                if 0xDC00 <= next_char_code <= 0xDFFF:
+                    # Combine surrogate pair into single code point
+                    combined_code_point = (
+                        0x10000
+                        + ((char_code - 0xD800) << 10)
+                        + (next_char_code - 0xDC00)
+                    )
+                    code_points.append(combined_code_point)
+                    i += 2  # Skip both surrogate characters
+                else:
+                    # High surrogate without low surrogate - treat as individual character
+                    code_points.append(char_code)
+                    i += 1
+            else:
+                # Regular BMP character or unpaired low surrogate
+                code_points.append(char_code)
+                i += 1
+
+        # Now iterate over Unicode code points
+        i = 0
+        while i < len(code_points):
+            base_char_code = code_points[i]
+
+            # Check if the next code point is a variation selector
             variation_selector = None
-            if i + 1 < len(text):
-                next_char_code = ord(text[i + 1])
+            if i + 1 < len(code_points):
+                next_code_point = code_points[i + 1]
                 # Check for standardized variation selectors (U+FE00-U+FE0F)
                 # or additional variation selectors (U+E0100-U+E01EF)
                 if (
-                    0xFE00 <= next_char_code <= 0xFE0F
-                    or 0xE0100 <= next_char_code <= 0xE01EF
+                    0xFE00 <= next_code_point <= 0xFE0F
+                    or 0xE0100 <= next_code_point <= 0xE01EF
                 ):
-                    variation_selector = next_char_code
+                    variation_selector = next_code_point
                     i += 1  # Skip the variation selector in next iteration
 
-            yield (char, variation_selector)
+            yield (base_char_code, variation_selector)
             i += 1
 
     def debug_variation_sequences(self):
