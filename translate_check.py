@@ -260,7 +260,14 @@ def compare(locale, id_strings, id_strings_source, id_usage):
             else:
                 counts[2] += 1
                 outp.write(f"{id_usage[idx]}\n")
-                outp.write(f'msgid "{key}"\n')
+                last = ""
+                lkey = ""
+                for kchar in key:
+                    if kchar == '"' and last != "\\":
+                        lkey += "\\"  # escape the quote
+                    lkey += kchar
+                    last = kchar
+                outp.write(f'msgid "{lkey}"\n')
                 outp.write('msgstr ""\n\n')
     print(
         f"Done for {locale}: examined={counts[0]}, found={counts[1]}, new={counts[2]}"
