@@ -1,0 +1,68 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t может создавать так называемый контур вокруг элемента.\nПросто выберите элемент, щелкните правой кнопкой мыши по нему, чтобы открыть контекстное меню, и выберите из меню "Контур элементов"...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t имеет обширный набор команд, которые позволяют выполнять множество скриптовых действий.\nПросто откройте окно консоли и введите 'help'.
+cmd=pane show console\nhelp
+
+tip=Пока вы перемещаете мышь при выбранном инструменте создания элементов, вы увидите отображение соседних точек интереса, которые будут подсвечены, если они могут стать целью привязки.\nПримечание: поведение привязки будет игнорироваться, если вы нажмете клавишу Shift, в этом случае будет учитываться текущая позиция мыши
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=Окно симуляции не только позволит вам предварительно просмотреть поведение вашего лазера, но также позволит поиграть с различными параметрами оптимизации и увидеть, как они влияют на результат.\nПросто нажмите на символ '<' справа и нажмите "рассчитать".
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t имеет несколько типов сеток на выбор, включая круговую...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+tip=Устали выравнивать объекты? Используйте функцию магнита, просто дважды щелкните по оси X или Y и установите магнитную линию.\nПереместите элемент близко к этой линии и посмотрите, что произойдет...\nЩелкните правой кнопкой мыши по оси, чтобы настроить дополнительные параметры.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=Нужна быстрая копия элемента? Есть несколько вариантов:\nа) Выберите объект, удерживайте клавишу Alt и перемещайте объект: и у вас есть копия\nб) Щелкните правой кнопкой мыши: выберите "Дублировать элементы" в контекстном меню\nв) Используйте кнопки копирования и вставки на панели инструментов
+
+tip=MeerK40t имеет множество часто используемых окон, называемых панелями (например, управление лазером или дерево операций и элементов).\nВы можете свободно перемещать эти панели по экрану, но также можете закреплять их по сторонам: переместите панель к краю окна MeerK40t, и оно покажет затененную область, указывающую, что окно может быть закреплено в пользовательском интерфейсе.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Щелкните правой кнопкой мыши на верхнем узле операций - верхний узел операций имеет специальное контекстное меню, которое позволяет получить доступ/установить общие свойства операций
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t имеет регистрационные метки - специальную категорию элементов, которые не будут выжигаться, но будут действовать как визуальные направляющие для размещения объектов.\nВы можете перемещать элементы в зону регистрационных меток и из неё, перетаскивая их в область регистрационных меток в дереве или из неё.\nЭлементы в области регистрационных меток действуют как фон, вы больше не можете напрямую взаимодействовать с ними на сцене.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=Хотите правильно выровнять объект на вашем лазерном столе? Почему бы не добавить камеру в вашу установку.\nMeerK40t может использовать эту камеру для отображения живого изображения на фоне сцены, значительно упрощая выравнивание.\nНажмите на кнопку камеры на панели инструментов и откалибруйте изображение с камеры.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Вы можете сохранять и повторно использовать настройки для гравировки, резки и т.д. для определенного материала (например, 4мм фанера или акрил).\nИспользуйте Менеджер материалов для управления индивидуальными настройками используемых вами материалов.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=Знаете ли вы, что можете поделиться своими идеальными настройками для материала с сообществом MeerK40t и также получить пользу от вкладов других пользователей?\nИспользуйте Менеджер материалов для обмена и получения настроек из глобальной библиотеки MeerK40t.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=Нужно преобразовать графику в векторный объект? Дважды щелкните по графике и используйте панель векторизации...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=Если вы хотите, чтобы содержимое загружаемого файла автоматически размещалось в определенной точке\n(например, выровнено по углам или в центре стола), то нажмите и удерживайте клавишу Shift при выборе файла.\nMeerK40t тогда спросит вас о желаемом расположении.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTkyMTQ0OTMsIm5iZiI6MTcxOTIxNDE5MywicGF0aCI6Ii8yNjcwNzg0LzM0MjEwOTA2OS1jODM2ZmViZC0zZWVkLTRkNWEtOTMxZS1jNGQ2NTRiZDJhNzkucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MDYyNCUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDA2MjRUMDcyOTUzWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9YjAxODA1MTcwODcwMzQwYzgyMzdlMGZlNTQ0ZWM0NTA2Y2FjMWFiYmEyZWYwZWU1MzI4OWNlMWE1NjkwNjdlNSZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmYWN0b3JfaWQ9MCZrZXlfaWQ9MCZyZXBvX2lkPTAifQ.z-4tYRGnPHAH3I5mVOkZDjD49z98BIy0QMn4nzEhDkY
+version=0.9.5

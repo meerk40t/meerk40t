@@ -275,9 +275,21 @@ def main():
     if len(args) > 0:
         locale = args
     if locale[0].lower() == "all":
-        locale = ["de", "es", "fr", "hu", "it", "ja", "nl", "pt_BR", "pt_PT", "zh"]
+        locale = [
+            "de",
+            "es",
+            "fr",
+            "hu",
+            "it",
+            "ja",
+            "nl",
+            "pt_BR",
+            "pt_PT",
+            "ru",
+            "zh",
+        ]
     print("Usage: python ./translate_check.py <locale>")
-    print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh")
+    print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh")
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locale:
