@@ -118,7 +118,7 @@ parser.add_argument(
     "--language",
     type=str,
     default=None,
-    help="force default language (en, de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh)",
+    help="force default language (en, de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh, ru)",
 )
 parser.add_argument(
     "-f",

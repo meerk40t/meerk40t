@@ -260,7 +260,14 @@ def compare(locale, id_strings, id_strings_source, id_usage):
             else:
                 counts[2] += 1
                 outp.write(f"{id_usage[idx]}\n")
-                outp.write(f'msgid "{key}"\n')
+                last = ""
+                lkey = ""
+                for kchar in key:
+                    if kchar == '"' and last != "\\":
+                        lkey += "\\"  # escape the quote
+                    lkey += kchar
+                    last = kchar
+                outp.write(f'msgid "{lkey}"\n')
                 outp.write('msgstr ""\n\n')
     print(
         f"Done for {locale}: examined={counts[0]}, found={counts[1]}, new={counts[2]}"
@@ -275,9 +282,21 @@ def main():
     if len(args) > 0:
         locale = args
     if locale[0].lower() == "all":
-        locale = ["de", "es", "fr", "hu", "it", "ja", "nl", "pt_BR", "pt_PT", "zh"]
+        locale = [
+            "de",
+            "es",
+            "fr",
+            "hu",
+            "it",
+            "ja",
+            "nl",
+            "pt_BR",
+            "pt_PT",
+            "ru",
+            "zh",
+        ]
     print("Usage: python ./translate_check.py <locale>")
-    print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh")
+    print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh")
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locale:
