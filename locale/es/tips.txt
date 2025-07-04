@@ -1,0 +1,85 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t puede crear un contorno alrededor de un elemento.
+Simplemente seleccione el elemento, haga clic derecho sobre él para abrir el menú contextual y elija la opción "Contornear elementos"...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t tiene un conjunto extenso de comandos que permiten muchas acciones automatizables.
+Simplemente abra la ventana de la consola y escriba 'help'.
+cmd=pane show console\nhelp
+
+tip=Mientras mueve el ratón con una herramienta de creación de elementos seleccionada, verá puntos de interés cercanos resaltados si pueden convertirse en objetivo de ajuste.\nNota: el comportamiento de ajuste se ignorará si mantiene presionada la tecla Shift; en ese caso se considerará la posición actual del ratón.
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=La ventana de simulación no solo le permite previsualizar el comportamiento de su láser, sino también probar las diferentes opciones de optimización y ver cómo influyen en el resultado.\n Solo haga clic en el símbolo '<' a la derecha y pulse calcular.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t tiene varios tipos de rejilla entre los que puede elegir, incluyendo una circular...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+
+tip=¿Cansado de alinear objetos? Use la función de imán: haga doble clic en el eje X o Y para establecer una línea magnética.
+Mueva un elemento cerca de esa línea y vea lo que sucede...
+Haga clic derecho en el eje para ver más opciones.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=¿Necesita una copia rápida de un elemento? Hay varias opciones:
+a) Seleccione un objeto, mantenga presionada la tecla Alt y muévalo: así obtiene una copia
+b) Haga clic derecho: elija duplicar elementos en el menú contextual
+c) Use los botones de copiar y pegar en la barra de herramientas
+
+tip=MeerK40t tiene muchas ventanas útiles llamadas paneles (por ejemplo, el control láser o el árbol de operaciones y elementos).
+Puede mover estos paneles libremente por la pantalla o acoplarlos a los lados: mueva un panel al borde de la ventana de Meerk40t y verá un área sombreada que indica que puede acoplarse a la interfaz.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Haga clic derecho en el nodo superior de operaciones: este nodo tiene un menú contextual especial que permite acceder o establecer propiedades generales de las operaciones.
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t tiene marcas de registro, una categoría especial de elementos que no se grabarán pero sirven como guía visual para la colocación de objetos.
+Puede mover elementos dentro o fuera de la zona de marcas de registro arrastrándolos en el árbol.
+Los elementos en la zona de marcas de registro actúan como fondo y ya no se pueden manipular directamente en la Escena.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=¿Quiere alinear correctamente un objeto en su cama láser? Añada una cámara a su configuración.
+MeerK40t puede usar esa cámara para mostrar la imagen en vivo como fondo de la escena, facilitando enormemente la alineación.
+Haga clic en el botón de la cámara en la barra de herramientas y calibre la imagen.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Puede guardar y reutilizar los ajustes de grabado, corte, etc. para un material específico (como contrachapado de 4mm o acrílico).
+Utilice el Gestor de Materiales para gestionar los ajustes individuales de los materiales que usa.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=¿Sabía que puede compartir sus ajustes perfectos para un material con la comunidad de MeerK40t y beneficiarse de los aportes de otros?
+Utilice el Gestor de Materiales para compartir y obtener ajustes de la Biblioteca global de MeerK40t.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=¿Necesita convertir un gráfico en un objeto vectorial? Haga doble clic en el gráfico y use el panel de vectorización...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=Si quiere que el contenido de un archivo cargado se coloque automáticamente en un punto específico
+(por ejemplo, alineado a las esquinas o al centro de la cama), mantenga presionada la tecla Shift al seleccionar el archivo.
+MeerK40t le preguntará por la ubicación deseada.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5
