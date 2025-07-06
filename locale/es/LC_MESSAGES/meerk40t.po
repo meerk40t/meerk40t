@@ -1,22 +1,3 @@
-# Spanish translations for MeerK40t Translation.
-# Copyright (C) 2021 ORGANIZATION
-# This file is distributed under the same license as the MeerK40t
-# Translation project.
-# FIRST AUTHOR Peter Cuevas <petercuevas.6@gmail.com>
-#
-"Project-Id-Version: MeerK40t Translation Project\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 23-04-21 17:41UTC\n"
-"PO-Revision-Date: 23-04-21 17:41UTC\n"
-"Last-Translator: \n"
-"Language: es\n"
-"Language-Team: Spanish\n"
-"Plural-Forms: nplurals=2; plural=n != 1\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-
-#: translate_check.py:22
 msgid "Test for a '"
 msgstr "Prueba para un '"
 
@@ -2351,10 +2332,6 @@ msgstr "Mostrar información sobre los datos encadenados"
 msgid "Operations:"
 msgstr "Operaciones:"
 
-msgid "Operations:"
-msgstr "Operaciones 2:"
-
-#: meerk40t/core/elements/branches.py:646
 msgid "Creates a new operation for each element given"
 msgstr "Crea una nueva operación para cada elemento dado"
 
@@ -9750,381 +9727,6 @@ msgstr "Si continúa moviéndose al centro, el cabezal del láser podría"
 msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr "chocar contra las paredes y dañarse. ¿Realmente desea continuar?"
 
-msgid "Execute on load"
-msgstr "Ejecutar al cargar"
-
-msgid "Execute commands"
-msgstr "Ejecutar comandos"
-
-msgid "List of commands that will be immediately executed after the file has been loaded"
-msgstr "Lista de comandos que se ejecutarán inmediatamente después de cargar el archivo"
-
-msgid "While this might be useful to immediately change a device, it can also be dangerous if you e.g. chose to start a burn."
-msgstr "Aunque esto puede ser útil para cambiar un dispositivo de inmediato, también puede ser peligroso si, por ejemplo, elige iniciar un grabado."
-
-msgid "Use with care, please!"
-msgstr "¡Utilícelo con precaución, por favor!"
-
-msgid "Tip: you can deactivate any command by starting the line with a '#'"
-msgstr "Consejo: puede desactivar cualquier comando comenzando la línea con un '#'"
-
-msgid "The autoexec content of this file will be ignored if this option is deactive"
-msgstr "El contenido autoexec de este archivo será ignorado si esta opción está desactivada"
-
-msgid "Execute the commands"
-msgstr "Ejecutar los comandos"
-
-msgid "Click to get a list of useful commands"
-msgstr "Haga clic para obtener una lista de comandos útiles"
-
-msgid "Clear console"
-msgstr "Limpiar consola"
-
-msgid "Start simulation"
-msgstr "Iniciar simulación"
-
-msgid "Burn content on current device"
-msgstr "Grabar contenido en el dispositivo actual"
-
-msgid "Activate {info}"
-msgstr "Activar {info}"
-
-msgid "Edit commands to be executed on file load"
-msgstr "Editar los comandos que se ejecutarán al cargar el archivo"
-
-msgid "Leave color"
-msgstr "Mantener color"
-
-msgid "Op inherits color"
-msgstr "La operación hereda el color"
-
-msgid "Elem inherits color"
-msgstr "El elemento hereda el color"
-
-msgid "Exclusive"
-msgstr "Exclusivo"
-
-msgid "Similar"
-msgstr "Similar"
-
-msgid "Leave - neither the color of the operation nor of the elements will be changed"
-msgstr "Mantener: ni el color de la operación ni el de los elementos se cambiarán"
-
-msgid "-> OP - the assigned operation will adopt the color of the element"
-msgstr "-> OP: la operación asignada adoptará el color del elemento"
-
-msgid "-> Elem - the elements will adopt the color of the assigned operation"
-msgstr "-> Elem: los elementos adoptarán el color de la operación asignada"
-
-msgid "Assign as well all other elements with the same stroke-color"
-msgstr "Asignar también todos los demás elementos con el mismo color de trazo"
-
-msgid "When assigning to an operation remove all assignments of the elements to other operations"
-msgstr "Al asignar a una operación, eliminar todas las asignaciones de los elementos a otras operaciones"
-
-msgid "Suppress non-used operations"
-msgstr "Ocultar operaciones no utilizadas"
-
-msgid "A: Active = toggle whether the elements assigned to this operation will be burned or not"
-msgstr "A: Activo = alternar si los elementos asignados a esta operación se grabarán o no"
-
-msgid "S: Show = if inactive then you can suppress the drawing of the assigned elements"
-msgstr "S: Mostrar = si está inactivo, puede ocultar el dibujo de los elementos asignados"
-
-msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
-msgstr "C: Refrigerante = determina si el refrigerante permanece / se encenderá / se apagará al inicio de esta operación"
-
-msgid "Power {unit}"
-msgstr "Potencia {unit}"
-
-msgid "Speed"
-msgstr "Velocidad"
-
-msgid "Assign the selected elements to the operation."
-msgstr "Asignar los elementos seleccionados a la operación."
-
-msgid "Right click: Extended options for operation"
-msgstr "Clic derecho: Opciones extendidas para la operación"
-
-msgid "Enable this operation for inclusion in Execute Job."
-msgstr "Habilitar esta operación para incluirla en Ejecutar Trabajo."
-
-msgid "Hide all contained elements on scene if not set."
-msgstr "Ocultar todos los elementos contenidos en la escena si no está configurado."
-
-msgid "Set coolant to on/off or leave unchanged (default)"
-msgstr "Configurar el refrigerante en encendido/apagado o dejar sin cambios (predeterminado)"
-
-msgid "Power ({unit})"
-msgstr "Potencia ({unit})"
-
-msgid "Speed ({unit})"
-msgstr "Velocidad ({unit})"
-
-msgid "Click to select all contained elements on the scene."
-msgstr "Haga clic para seleccionar todos los elementos contenidos en la escena."
-
-msgid "Double click to open the property dialog for the operation"
-msgstr "Doble clic para abrir el diálogo de propiedades de la operación"
-
-msgid "Could not find buffer.\n"
-msgstr "No se pudo encontrar el búfer.\n"
-
-msgid "Buffer"
-msgstr "Búfer"
-
-msgid "BufferView"
-msgstr "Vista de Búfer"
-
-msgid "Display the command flow buffer to a device"
-msgstr "Mostrar el búfer de flujo de comandos a un dispositivo"
-
-msgid "Delete this entry"
-msgstr "Eliminar esta entrada"
-
-msgid "Duplicate this entry"
-msgstr "Duplicar esta entrada"
-
-msgid "Restore defaults"
-msgstr "Restaurar valores predeterminados"
-
-msgid "No File"
-msgstr "Sin archivo"
-
-msgid "mask"
-msgstr "máscara"
-
-msgid "value"
-msgstr "valor"
-
-msgid "Console"
-msgstr "Consola"
-
-msgid "Open command interface"
-msgstr "Abrir interfaz de comandos"
-
-msgid "Clear console screen"
-msgstr "Limpiar pantalla de la consola"
-
-msgid "Sets the console font"
-msgstr "Establece la fuente de la consola"
-
-msgid "Font has been changed"
-msgstr "La fuente ha sido cambiada"
-
-msgid "Open Console Window"
-msgstr "Abrir ventana de consola"
-
-msgid "Devices"
-msgstr "Dispositivos"
-
-msgid "Manage and add devices to be used by MeerK40t"
-msgstr "Gestionar y añadir dispositivos para usar con MeerK40t"
-
-msgid "Select Device"
-msgstr "Seleccionar dispositivo"
-
-msgid "Filter"
-msgstr "Filtrar"
-
-msgid "Device:"
-msgstr "Dispositivo:"
-
-msgid "Newly CO2-Laser"
-msgstr "Nuevo láser CO2"
-
-msgid "Click on a device to see more details about it."
-msgstr "Haga clic en un dispositivo para ver más detalles sobre él."
-
-msgid "You can as well search for your device at the top of this screen."
-msgstr "También puede buscar su dispositivo en la parte superior de esta pantalla."
-
-msgid "Quicksearch for device-entry"
-msgstr "Búsqueda rápida de entrada de dispositivo"
-
-msgid "Select a matching entry for your new device"
-msgstr "Seleccione una entrada coincidente para su nuevo dispositivo"
-
-msgid "Your Devices"
-msgstr "Sus dispositivos"
-
-msgid "Paint format"
-msgstr "Formato de pintura"
-
-msgid "First select your template, then every subsequent selection will apply the templates properties to the selected elements"
-msgstr "Primero seleccione su plantilla, luego cada selección posterior aplicará las propiedades de la plantilla a los elementos seleccionados"
-
-msgid "Click again to disable the paint mode"
-msgstr "Haga clic de nuevo para desactivar el modo de pintura"
-
-msgid "There are issues with your project"
-msgstr "Hay problemas con su proyecto"
-
-msgid "Critical"
-msgstr "Crítico"
-
-msgid "Normal"
-msgstr "Normal"
-
-msgid "Low"
-msgstr "Bajo"
-
-msgid "(Would not cause the warn-icon to appear)"
-msgstr "(No haría que aparezca el icono de advertencia)"
-
-msgid "Critical: might damage your laser (e.g. laserhead bumping into rail)"
-msgstr "Crítico: podría dañar su láser (por ejemplo, el cabezal del láser chocando con el riel)"
-
-msgid "Normal: might ruin your burn (e.g. unassigned=unburnt elements)"
-msgstr "Normal: podría arruinar su grabado (por ejemplo, elementos no asignados=no grabados)"
-
-msgid "Low: I hope you know what your doing (e.g. disabled operations)"
-msgstr "Bajo: espero que sepa lo que está haciendo (por ejemplo, operaciones deshabilitadas)"
-
-msgid "- Vector operations are too fast."
-msgstr "Las operaciones vectoriales son demasiado rápidas."
-
-msgid "Could lead to erratic stepper behaviour and incomplete burns."
-msgstr "Podría provocar un comportamiento errático del motor y grabados incompletos."
-
-msgid "- Raster operations are too fast."
-msgstr "Las operaciones de trama son demasiado rápidas."
-
-msgid "- Elements are lying outside the burnable area."
-msgstr "Los elementos están fuera del área de grabado."
-
-msgid "Could lead to the laserhead bumping into the rails."
-msgstr "Podría hacer que el cabezal del láser choque con los rieles."
-
-msgid "- Raster operations get very close to the edge."
-msgstr "Las operaciones de trama se acercan mucho al borde."
-
-msgid "- Elements aren't assigned to an operation and will not be burnt"
-msgstr "Los elementos no están asignados a una operación y no se grabarán"
-
-msgid "- Some operations containing elements aren't active, so some elements will not be burnt"
-msgstr "Algunas operaciones que contienen elementos no están activas, por lo que algunos elementos no se grabarán"
-
-msgid "- Elements are hidden and will not be burnt"
-msgstr "Los elementos están ocultos y no se grabarán"
-
-msgid "- Raster/Images have a low dpi and lines will not overlap"
-msgstr "Las tramas/imágenes tienen un dpi bajo y las líneas no se superpondrán"
-
-msgid "- Raster/Images have a high dpi and lines will overlap"
-msgstr "Las tramas/imágenes tienen un dpi alto y las líneas se superpondrán"
-
-msgid "- Raster/Images have a raster method that is unsupported on this device: no optimisation will be applied in these cases"
-msgstr "Las tramas/imágenes tienen un método de trama no compatible en este dispositivo: no se aplicará optimización en estos casos"
-
-msgid "Permanently displays tooltip information"
-msgstr "Muestra permanentemente la información de la ayuda"
-
-msgid "Display control-information"
-msgstr "Mostrar información de control"
-
-msgid "Information"
-msgstr "Información"
-
-msgid "Font-Work-Directory"
-msgstr "Directorio de trabajo de fuentes"
-
-msgid "Additional directory for userdefined fonts (also used to store some cache files)"
-msgstr "Directorio adicional para fuentes definidas por el usuario (también se usa para almacenar algunos archivos de caché)"
-
-msgid "Fonts"
-msgstr "Fuentes"
-
-msgid "Laser"
-msgstr "Láser"
-
-msgid "Find center"
-msgstr "Encontrar centro"
-
-msgid "A"
-msgstr "A"
-
-msgid "Use position"
-msgstr "Usar posición"
-
-msgid "Place the laser over the desired point and click..."
-msgstr "Coloque el láser sobre el punto deseado y haga clic..."
-
-msgid "<empty>"
-msgstr "<vacío>"
-
-msgid "B"
-msgstr "B"
-
-msgid "C"
-msgstr "C"
-
-msgid "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for further processing."
-msgstr "Instrucción: coloque el láser en tres puntos de la circunferencia del círculo en la cama y confirme la posición haciendo clic en los botones de abajo.\nMK encontrará el centro por usted y colocará el láser sobre él o recreará el círculo para su posterior procesamiento."
-
-msgid "Make reference"
-msgstr "Hacer referencia"
-
-msgid "Mark Center"
-msgstr "Marcar centro"
-
-msgid "Move to center"
-msgstr "Mover al centro"
-
-msgid "Create circle"
-msgstr "Crear círculo"
-
-msgid "Place frame"
-msgstr "Colocar marco"
-
-msgid "Corner 1"
-msgstr "Esquina 1"
-
-msgid "Corner 2"
-msgstr "Esquina 2"
-
-msgid "Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for further processing."
-msgstr "Instrucción: coloque el láser en una esquina del rectángulo y confirme la posición haciendo clic en los botones de abajo. Luego elija la esquina opuesta.\nMK creará un rectángulo para su posterior procesamiento."
-
-msgid "Create frame"
-msgstr "Crear marco"
-
-msgid "Place square"
-msgstr "Colocar cuadrado"
-
-msgid "Side A 1"
-msgstr "Lado A 1"
-
-msgid "Side A 2"
-msgstr "Lado A 2"
-
-msgid "Side B"
-msgstr "Lado B"
-
-msgid "Dimension"
-msgstr "Dimensión"
-
-msgid "Extension of the square to create"
-msgstr "Extensión del cuadrado a crear"
-
-msgid "Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for further processing."
-msgstr "Instrucción: coloque el láser en dos puntos de un lado de un cuadrado en la cama y confirme la posición haciendo clic en los botones de abajo. Luego elija un punto en el otro lado de la esquina.\nMK creará un cuadrado para su posterior procesamiento."
-
-msgid "Mark Corner"
-msgstr "Marcar esquina"
-
-msgid "Create square"
-msgstr "Crear cuadrado"
-
-msgid "The circles center seems to lie outside the bed-dimensions!"
-msgstr "¡El centro del círculo parece estar fuera de las dimensiones de la cama!"
-
-msgid "If you continue to move to the center, then the laserhead might"
-msgstr "Si continúa moviéndose al centro, el cabezal del láser podría"
-
-msgid "slam into the walls and get damaged! Do you really want to proceed?"
-msgstr "chocar contra las paredes y dañarse. ¿Realmente desea continuar?"
-
 msgid "No material"
 msgstr "Sin material"
 
@@ -10892,306 +10494,6 @@ msgstr "...configuración de bisagra flexible"
 
 msgid "...material test settings"
 msgstr "...configuración de prueba de material"
-
-msgid "Dangerous coordinates"
-msgstr "Coordenadas peligrosas"
-
-msgid "Place Template"
-msgstr "Colocar plantilla"
-
-msgid "Define and use some templates for repetitive laser jobs"
-msgstr "Definir y usar plantillas para trabajos láser repetitivos"
-
-msgid "Magnet-Options"
-msgstr "Opciones de imán"
-
-msgid "Editing"
-msgstr "Edición"
-
-msgid "Edit magnet snapping options"
-msgstr "Editar opciones de ajuste magnético"
-
-msgid "Attraction areas..."
-msgstr "Áreas de atracción..."
-
-msgid "Left/Right Side"
-msgstr "Lado izquierdo/derecho"
-
-msgid "Will a magnet line attract the left/right edges of an object"
-msgstr "¿Una línea de imán atraerá los bordes izquierdo/derecho de un objeto?"
-
-msgid "Top/Bottom Side"
-msgstr "Lado superior/inferior"
-
-msgid "Will a magnet line attract the top/bottom edges of an object"
-msgstr "¿Una línea de imán atraerá los bordes superior/inferior de un objeto?"
-
-msgid "Will a magnet line attract the center of an object"
-msgstr "¿Una línea de imán atraerá el centro de un objeto?"
-
-msgid "Attraction strength..."
-msgstr "Fuerza de atracción..."
-
-msgid "Off"
-msgstr "Apagado"
-
-msgid "Weak"
-msgstr "Débil"
-
-msgid "Strong"
-msgstr "Fuerte"
-
-msgid "Very Strong"
-msgstr "Muy fuerte"
-
-msgid "Enormous"
-msgstr "Enorme"
-
-msgid "Define the attraction strength from weak (very close) to enormous (from far away)"
-msgstr "Definir la fuerza de atracción desde débil (muy cerca) hasta enorme (desde lejos)"
-
-msgid "Save/Load settings"
-msgstr "Guardar/cargar configuraciones"
-
-msgid "Name to save to / load from the current settings"
-msgstr "Nombre para guardar/cargar la configuración actual"
-
-msgid "Load an existing setting configuration"
-msgstr "Cargar una configuración existente"
-
-msgid "Save the current configuration for later reuse"
-msgstr "Guardar la configuración actual para reutilizarla después"
-
-msgid "Set single line"
-msgstr "Establecer línea única"
-
-msgid "Position:"
-msgstr "Posición:"
-
-msgid "Define the position of the magnet line"
-msgstr "Definir la posición de la línea de imán"
-
-msgid "Toggle a magnet line at the position on the X-axis"
-msgstr "Activar/desactivar una línea de imán en la posición del eje X"
-
-msgid "Toggle a magnet line at the position on the Y-axis"
-msgstr "Activar/desactivar una línea de imán en la posición del eje Y"
-
-msgid "Set around selection"
-msgstr "Establecer alrededor de la selección"
-
-msgid "Toggle a magnet line at the left edge of the selection"
-msgstr "Activar/desactivar una línea de imán en el borde izquierdo de la selección"
-
-msgid "Toggle a magnet line at the horizontal center of the selection"
-msgstr "Activar/desactivar una línea de imán en el centro horizontal de la selección"
-
-msgid "Toggle a magnet line at the right edge of the selection"
-msgstr "Activar/desactivar una línea de imán en el borde derecho de la selección"
-
-msgid "Toggle magnet lines at 1/3 and 2/3 across the horizontal extent of the selection"
-msgstr "Activar/desactivar líneas de imán en 1/3 y 2/3 del ancho de la selección"
-
-msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the horizontal extent of the selection"
-msgstr "Activar/desactivar líneas de imán en 1/4, 2/4 y 3/4 del ancho de la selección"
-
-msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the horizontal extent of the selection"
-msgstr "Activar/desactivar líneas de imán en 1/5, 2/5, 3/5 y 4/5 del ancho de la selección"
-
-msgid "Toggle a magnet line at the top edge of the selection"
-msgstr "Activar/desactivar una línea de imán en el borde superior de la selección"
-
-msgid "Toggle a magnet line at the vertical center of the selection"
-msgstr "Activar/desactivar una línea de imán en el centro vertical de la selección"
-
-msgid "Toggle a magnet line at the bottom edge of the selection"
-msgstr "Activar/desactivar una línea de imán en el borde inferior de la selección"
-
-msgid "Toggle magnet lines at 1/3 and 2/3 across the vertical extent of the selection"
-msgstr "Activar/desactivar líneas de imán en 1/3 y 2/3 de la altura de la selección"
-
-msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the vertical extent of the selection"
-msgstr "Activar/desactivar líneas de imán en 1/4, 2/4 y 3/4 de la altura de la selección"
-
-msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the vertical extent of the selection"
-msgstr "Activar/desactivar líneas de imán en 1/5, 2/5, 3/5 y 4/5 de la altura de la selección"
-
-msgid "Clears all magnet lines"
-msgstr "Borrar todas las líneas de imán"
-
-msgid "Clear X"
-msgstr "Borrar X"
-
-msgid "Clears magnet lines on X-axis"
-msgstr "Borrar líneas de imán en el eje X"
-
-msgid "Clear Y"
-msgstr "Borrar Y"
-
-msgid "Clears magnet lines on Y-axis"
-msgstr "Borrar líneas de imán en el eje Y"
-
-msgid "Actions"
-msgstr "Acciones"
-
-msgid "Consolidate same thickness for material"
-msgstr "Consolidar el mismo grosor para el material"
-
-msgid "Compensate Lens-Sizes"
-msgstr "Compensar tamaños de lente"
-
-msgid "Compensate Power-Levels"
-msgstr "Compensar niveles de potencia"
-
-msgid "File to import"
-msgstr "Archivo a importar"
-
-msgid "Different Lens-Size"
-msgstr "Tamaño de lente diferente"
-
-msgid "Old:"
-msgstr "Anterior:"
-
-msgid "New:"
-msgstr "Nuevo:"
-
-msgid "Different Laser-Power"
-msgstr "Potencia de láser diferente"
-
-msgid "Provide the full filename for material library"
-msgstr "Proporcione el nombre completo del archivo para la biblioteca de materiales"
-
-msgid "Click to select files"
-msgstr "Haga clic para seleccionar archivos"
-
-msgid "This will group entries with the same material description together"
-msgstr "Esto agrupará las entradas con la misma descripción de material"
-
-msgid "If active, power and speed values will be adjusted,\nto accommodate different lens-sizes"
-msgstr "Si está activo, los valores de potencia y velocidad se ajustarán\npara adaptarse a diferentes tamaños de lente"
-
-msgid "If active, power and speed values will be adjusted,\nto accommodate different laser power"
-msgstr "Si está activo, los valores de potencia y velocidad se ajustarán\npara adaptarse a diferentes potencias de láser"
-
-msgid "Choose a library-file"
-msgstr "Elegir un archivo de biblioteca"
-
-msgid "Filter Materials"
-msgstr "Filtrar materiales"
-
-msgid "Material"
-msgstr "Material"
-
-msgid "Thickness"
-msgstr "Grosor"
-
-msgid "<All Lasertypes>"
-msgstr "<Todos los tipos de láser>"
-
-msgid "Reset Filter"
-msgstr "Restablecer filtro"
-
-msgid "Matching library entries"
-msgstr "Entradas coincidentes en la biblioteca"
-
-msgid "Click to select / Right click for actions"
-msgstr "Haga clic para seleccionar / Clic derecho para acciones"
-
-msgid "Operation"
-msgstr "Operación"
-
-msgid "Id"
-msgstr "Id"
-
-msgid "Passes"
-msgstr "Pasadas"
-
-msgid "Title"
-msgstr "Título"
-
-msgid "Set"
-msgstr "Establecer"
-
-msgid "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
-msgstr "Cambiar el nombre / tipo de láser de la entrada actual\nClic derecho: asignar tipo de láser a todas las entradas visibles"
-
-msgid "W"
-msgstr "W"
-
-msgid "Lens-Size"
-msgstr "Tamaño de lente"
-
-msgid "Filter entries with a certain title."
-msgstr "Filtrar entradas por un título específico."
-
-msgid "Filter entries with a certain material thickness."
-msgstr "Filtrar entradas por un grosor de material específico."
-
-msgid "Filter entries of a certain laser type"
-msgstr "Filtrar entradas por un tipo de láser específico"
-
-msgid "Internal name of the library entry."
-msgstr "Nombre interno de la entrada de la biblioteca."
-
-msgid "Name of the library entry."
-msgstr "Nombre de la entrada de la biblioteca."
-
-msgid "Thickness of the material."
-msgstr "Grosor del material."
-
-msgid "Is this entry specific for a certain laser?"
-msgstr "¿Esta entrada es específica para un láser determinado?"
-
-msgid "You can add additional information here."
-msgstr "Puede agregar información adicional aquí."
-
-msgid "Add new"
-msgstr "Agregar nuevo"
-
-msgid "Add a new library entry"
-msgstr "Agregar una nueva entrada a la biblioteca"
-
-msgid "Get current"
-msgstr "Obtener actual"
-
-msgid "Use the currently defined operations"
-msgstr "Usar las operaciones definidas actualmente"
-
-msgid "Load into Tree"
-msgstr "Cargar en el árbol"
-
-msgid "Apply the current library entry to the operations branch"
-msgstr "Aplicar la entrada de biblioteca actual a la rama de operaciones"
-
-msgid "Use for statusbar"
-msgstr "Usar para la barra de estado"
-
-msgid "Use the current library entry for the statusbar icons"
-msgstr "Usar la entrada de biblioteca actual para los iconos de la barra de estado"
-
-msgid "Delete the current library entry"
-msgstr "Eliminar la entrada de biblioteca actual"
-
-msgid "Duplicate the current library entry"
-msgstr "Duplicar la entrada de biblioteca actual"
-
-msgid "Import a material library from ezcad or LightBurn"
-msgstr "Importar una biblioteca de materiales de ezcad o LightBurn"
-
-msgid "Share"
-msgstr "Compartir"
-
-msgid "Share the current library entry with the MeerK40t community"
-msgstr "Compartir la entrada de biblioteca actual con la comunidad de MeerK40t"
-
-msgid "Click to hide extended infos"
-msgstr "Haga clic para ocultar información extendida"
-
-msgid "Click to show extended infos"
-msgstr "Haga clic para mostrar información extendida"
-
-msgid "No laser"
-msgstr "Sin láser"
 
 msgid "Dangerous coordinates"
 msgstr "Coordenadas peligrosas"
@@ -13593,9 +12895,6 @@ msgstr "Ignorar interior"
 msgid "Contour simplification"
 msgstr "Simplificación de contorno"
 
-msgid "Laser Power"
-msgstr "Potencia del láser"
-
 msgid "Engraving Speed"
 msgstr "Velocidad de grabado"
 
@@ -13611,9 +12910,6 @@ msgstr "Grabado vectorial"
 msgid "Focus Height"
 msgstr "Altura de enfoque"
 
-msgid "Passes"
-msgstr "Pasadas"
-
 msgid "Material Thickness"
 msgstr "Grosor del material"
 
@@ -13625,15 +12921,6 @@ msgstr "Posición de inicio"
 
 msgid "Start Job"
 msgstr "Iniciar trabajo"
-
-msgid "Pause"
-msgstr "Pausar"
-
-msgid "Resume"
-msgstr "Reanudar"
-
-msgid "Stop"
-msgstr "Detener"
 
 msgid "Power Off"
 msgstr "Apagar"
@@ -13653,26 +12940,14 @@ msgstr "Mover al origen"
 msgid "Set Origin"
 msgstr "Establecer origen"
 
-msgid "Reset"
-msgstr "Restablecer"
-
 msgid "Import File"
 msgstr "Importar archivo"
 
 msgid "Export File"
 msgstr "Exportar archivo"
 
-msgid "Save Project"
-msgstr "Guardar proyecto"
-
 msgid "Open Project"
 msgstr "Abrir proyecto"
-
-msgid "Preview"
-msgstr "Vista previa"
-
-msgid "Simulation"
-msgstr "Simulación"
 
 msgid "Device Settings"
 msgstr "Configuración del dispositivo"
@@ -13713,41 +12988,14 @@ msgstr "Habilitar salida"
 msgid "Disable Output"
 msgstr "Deshabilitar salida"
 
-msgid "Power"
-msgstr "Potencia"
-
-msgid "Speed"
-msgstr "Velocidad"
-
-msgid "Frequency"
-msgstr "Frecuencia"
-
-msgid "DPI"
-msgstr "PPP"
-
 msgid "Interval"
 msgstr "Intervalo"
 
 msgid "Direction"
 msgstr "Dirección"
 
-msgid "Bidirectional"
-msgstr "Bidireccional"
-
-msgid "Unidirectional"
-msgstr "Unidireccional"
-
 msgid "Mirror"
 msgstr "Espejo"
-
-msgid "Rotate"
-msgstr "Rotar"
-
-msgid "Scale"
-msgstr "Escalar"
-
-msgid "Position"
-msgstr "Posición"
 
 msgid "X Position"
 msgstr "Posición X"
@@ -13755,20 +13003,11 @@ msgstr "Posición X"
 msgid "Y Position"
 msgstr "Posición Y"
 
-msgid "Width"
-msgstr "Ancho"
-
-msgid "Height"
-msgstr "Alto"
-
 msgid "Lock Aspect Ratio"
 msgstr "Bloquear relación de aspecto"
 
 msgid "Unlock Aspect Ratio"
 msgstr "Desbloquear relación de aspecto"
-
-msgid "Alignment"
-msgstr "Alineación"
 
 msgid "Align Left"
 msgstr "Alinear a la izquierda"
@@ -13794,12 +13033,6 @@ msgstr "Distribuir horizontalmente"
 msgid "Distribute Vertically"
 msgstr "Distribuir verticalmente"
 
-msgid "Group"
-msgstr "Agrupar"
-
-msgid "Ungroup"
-msgstr "Desagrupar"
-
 msgid "Combine"
 msgstr "Combinar"
 
@@ -13815,12 +13048,6 @@ msgstr "Restar"
 msgid "Intersect"
 msgstr "Intersectar"
 
-msgid "Union"
-msgstr "Unir"
-
-msgid "Difference"
-msgstr "Diferencia"
-
 msgid "Offset"
 msgstr "Desplazamiento"
 
@@ -13832,9 +13059,6 @@ msgstr "Exterior"
 
 msgid "Path"
 msgstr "Trayectoria"
-
-msgid "Convert to Path"
-msgstr "Convertir a trayectoria"
 
 msgid "Stroke"
 msgstr "Contorno"
@@ -13860,20 +13084,8 @@ msgstr "Color de relleno"
 msgid "Opacity"
 msgstr "Opacidad"
 
-msgid "Raster"
-msgstr "Trama"
-
-msgid "Vector"
-msgstr "Vector"
-
 msgid "Bitmap"
 msgstr "Mapa de bits"
-
-msgid "Image"
-msgstr "Imagen"
-
-msgid "Text"
-msgstr "Texto"
 
 msgid "Font"
 msgstr "Fuente"
@@ -13928,18 +13140,6 @@ msgstr "Configuraciones"
 
 msgid "Preferences"
 msgstr "Preferencias"
-
-msgid "Language"
-msgstr "Idioma"
-
-msgid "Help"
-msgstr "Ayuda"
-
-msgid "About"
-msgstr "Acerca de"
-
-msgid "Check for Updates"
-msgstr "Buscar actualizaciones"
 
 msgid "Report Issue"
 msgstr "Reportar problema"
@@ -14090,219 +13290,6 @@ msgstr "Escalar X - escala el elemento por este factor en la dirección X, es de
 
 msgid "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
 msgstr "Escalar Y - escala el elemento por este factor en la dirección Y, es decir, 2.0 significa 200% de la escala original. Puede ingresar este factor directamente o como porcentaje, por ejemplo, 0.5 o 50% reducirán la escala a la mitad."
-
-msgid "Rotation"
-msgstr "Rotación"
-
-msgid "Rotation in degrees"
-msgstr "Rotación en grados"
-
-msgid "Preferred Units"
-msgstr "Unidades preferidas"
-
-msgid "Set default units for positions"
-msgstr "Establecer unidades predeterminadas para posiciones"
-
-msgid "mm"
-msgstr "mm"
-
-msgid "cm"
-msgstr "cm"
-
-msgid "inch"
-msgstr "pulgada"
-
-msgid "mil"
-msgstr "mil"
-
-msgid "spool <command>"
-msgstr "spool <comando>"
-
-msgid "Spooled Plan."
-msgstr "Plan en cola."
-
-msgid "Spoolers:"
-msgstr "Spoolers:"
-
-msgid "Spooler on device {name}:"
-msgstr "Spooler en dispositivo {name}:"
-
-msgid "unlock, origin, home, etc"
-msgstr "desbloquear, origen, home, etc"
-
-msgid "send a plan-command to the spooler"
-msgstr "enviar un comando-plan al spooler"
-
-msgid "No plan command found."
-msgstr "No se encontró comando de plan."
-
-msgid "spool<?> list"
-msgstr "spool<?> lista"
-
-msgid "spooler<?> clear"
-msgstr "spooler<?> limpiar"
-
-msgid "turn laser on in place"
-msgstr "encender láser en el lugar"
-
-msgid "turn laser off in place"
-msgstr "apagar láser en el lugar"
-
-msgid "amount to move in the set direction."
-msgstr "cantidad a mover en la dirección establecida."
-
-msgid "cmd <amount>"
-msgstr "cmd <cantidad>"
-
-msgid "executes outstanding jog buffer"
-msgstr "ejecuta el buffer de jog pendiente"
-
-msgid "Position moved: {x} {y}"
-msgstr "Posición movida: {x} {y}"
-
-msgid "Busy Error"
-msgstr "Error: Ocupado"
-
-msgid "change in x"
-msgstr "cambio en x"
-
-msgid "change in y"
-msgstr "cambio en y"
-
-msgid "move <x> <y>: move to position."
-msgstr "mover <x> <y>: mover a la posición."
-
-msgid "move_relative <dx> <dy>"
-msgstr "mover_relativo <dx> <dy>"
-
-msgid "home the laser"
-msgstr "llevar el láser al origen"
-
-msgid "home the laser (goto endstops)"
-msgstr "llevar el láser al origen (ir a los finales de carrera)"
-
-msgid "unlock the rail"
-msgstr "desbloquear el riel"
-
-msgid "lock the rail"
-msgstr "bloquear el riel"
-
-msgid "SVG Viewport is Bed"
-msgstr "El área de visualización SVG es la cama"
-
-msgid "SVG files can be saved without real physical units.\nThis setting uses the SVG viewport dimensions to scale the rest of the elements in the file."
-msgstr "Los archivos SVG pueden guardarse sin unidades físicas reales.\nEsta configuración utiliza las dimensiones del área de visualización SVG para escalar el resto de los elementos en el archivo."
-
-msgid "Load hidden objects to regmarks"
-msgstr "Cargar objetos ocultos como marcas de registro"
-
-msgid "Ticked: When loading a file invisible elements will be loaded to the regmarks branch."
-msgstr "Marcado: Al cargar un archivo, los elementos invisibles se cargarán en la rama de marcas de registro."
-
-msgid "Unticked: Invisible elements will be loaded as regular elements and will be hidden."
-msgstr "Desmarcado: Los elementos invisibles se cargarán como elementos normales y estarán ocultos."
-
-msgid "File loaded"
-msgstr "Archivo cargado"
-
-msgid "Webhelp page"
-msgstr "Página de ayuda web"
-
-msgid "Launch a registered webhelp page"
-msgstr "Abrir una página de ayuda web registrada"
-
-msgid "Webhelp Registered:"
-msgstr "Ayuda web registrada:"
-
-msgid "Webhelp not found."
-msgstr "Ayuda web no encontrada."
-
-msgid "You need to provide parameters for both x and y"
-msgstr "Debe proporcionar parámetros para x e y"
-
-msgid "Invalid alignment parameter for x"
-msgstr "Parámetro de alineación inválido para x"
-
-msgid "Invalid alignment parameter for y"
-msgstr "Parámetro de alineación inválido para y"
-
-msgid "No sense in aligning an element to itself"
-msgstr "No tiene sentido alinear un elemento consigo mismo"
-
-msgid "pushes the current align mode to the stack"
-msgstr "Empuja el modo de alineación actual a la pila"
-
-msgid "New alignmode = {mode}"
-msgstr "Nuevo modo de alineación = {mode}"
-
-msgid "Align boundaries = {bound}"
-msgstr "Límites de alineación = {bound}"
-
-msgid "Set the requested alignment to treat selection as group"
-msgstr "Establecer la alineación solicitada para tratar la selección como grupo"
-
-msgid "Set the requested alignment to treat selection as individuals"
-msgstr "Establecer la alineación solicitada para tratar la selección como individuos"
-
-msgid "align within selection - all equal"
-msgstr "alinear dentro de la selección - todos iguales"
-
-msgid "Set the requested alignment to first element selected"
-msgstr "Establecer la alineación solicitada al primer elemento seleccionado"
-
-msgid "Set the requested alignment to last element selected"
-msgstr "Establecer la alineación solicitada al último elemento seleccionado"
-
-msgid "Set the requested alignment to within the bed"
-msgstr "Establecer la alineación solicitada dentro del área de trabajo"
-
-msgid "Set the requested alignment to the reference object"
-msgstr "Establecer la alineación solicitada al objeto de referencia"
-
-msgid "You need to provide the boundaries for align-mode {mode}"
-msgstr "Debe proporcionar los límites para el modo de alineación {mode}"
-
-msgid "align selected elements"
-msgstr "alinear los elementos seleccionados"
-
-msgid "One of 'min', 'center', 'max', 'none'"
-msgstr "Uno de 'min', 'center', 'max', 'none'"
-
-msgid "align elements in x and y"
-msgstr "alinear elementos en x e y"
-
-msgid "align elements at top"
-msgstr "alinear elementos en la parte superior"
-
-msgid "align elements at bottom"
-msgstr "alinear elementos en la parte inferior"
-
-msgid "align elements at left"
-msgstr "alinear elementos a la izquierda"
-
-msgid "align elements at right"
-msgstr "alinear elementos a la derecha"
-
-msgid "align elements at center"
-msgstr "alinear elementos en el centro"
-
-msgid "align elements at center horizontally"
-msgstr "alinear elementos en el centro horizontalmente"
-
-msgid "align elements at center vertically"
-msgstr "alinear elementos en el centro verticalmente"
-
-msgid "Distribute"
-msgstr "Distribuir"
-
-msgid "distribute elements across horizontal space"
-msgstr "distribuir elementos a lo largo del espacio horizontal"
-
-msgid "distribute elements across vertical space"
-msgstr "distribuir elementos a lo largo del espacio vertical"
-
-msgid "align elements within viewbox"
-msgstr "alinear elementos dentro del viewbox"
 
 msgid "Draw secondary grid"
 msgstr "Dibujar cuadrícula secundaria"
@@ -15654,156 +14641,6 @@ msgstr "Configuración de la placa"
 msgid "Hardware-PWM"
 msgstr "PWM por hardware"
 
-msgid "print this channel to the standard out"
-msgstr "imprimir este canal en la salida estándar"
-
-msgid "No longer printing Channel: {name}"
-msgstr "Ya no se imprime el canal: {name}"
-
-msgid "Printing Channel: {name}"
-msgstr "Imprimiendo canal: {name}"
-
-msgid "Use this filename rather than default"
-msgstr "Usar este nombre de archivo en lugar del predeterminado"
-
-msgid "channel name (you may comma delimit)"
-msgstr "nombre del canal (puede separar con comas)"
-
-msgid "save this channel to disk"
-msgstr "guardar este canal en el disco"
-
-msgid "Opening file: {filename}"
-msgstr "Abriendo archivo: {filename}"
-
-msgid "Recording Channel: {name} to file {filename}"
-msgstr "Grabando canal: {name} en el archivo {filename}"
-
-msgid "set [<key> <value>]"
-msgstr "establecer [<clave> <valor>]"
-
-msgid "Attempt failed. Produced a runtime error."
-msgstr "Intento fallido. Se produjo un error de ejecución."
-
-msgid "Attempt failed. Produced a value error."
-msgstr "Intento fallido. Se produjo un error de valor."
-
-msgid "Attempt failed. Produced an attribute error."
-msgstr "Intento fallido. Se produjo un error de atributo."
-
-msgid "flush current settings to disk"
-msgstr "guardar la configuración actual en el disco"
-
-msgid "Persistent settings force saved."
-msgstr "Configuración persistente guardada forzosamente."
-
-msgid "Save a copy of the current configuration"
-msgstr "Guardar una copia de la configuración actual"
-
-msgid "You need to provide a target directory: setting_export <targetdir>"
-msgstr "Debe proporcionar un directorio de destino: setting_export <directorio_destino>"
-
-msgid "Persistent settings exported to {file}."
-msgstr "Configuración persistente exportada a {file}."
-
-msgid "Restore a previously saved configuration file"
-msgstr "Restaurar un archivo de configuración guardado previamente"
-
-msgid "You need to provide a valid config-file to restore: setting_import <filename>"
-msgstr "Debe proporcionar un archivo de configuración válido para restaurar: setting_import <archivo>"
-
-msgid "Persistent settings imported from {file}."
-msgstr "Configuración persistente importada de {file}."
-
-msgid "Signal to send"
-msgstr "Señal a enviar"
-
-msgid "Signal content"
-msgstr "Contenido de la señal"
-
-msgid "sends a signal"
-msgstr "envía una señal"
-
-msgid "Please provide a signal to send, attached listeners:"
-msgstr "Por favor, proporcione una señal para enviar, listeners adjuntos:"
-
-msgid "shuts down all processes and exits"
-msgstr "cierra todos los procesos y sale"
-
-msgid "shuts down all processes, exits and restarts meerk40t"
-msgstr "cierra todos los procesos, sale y reinicia meerk40t"
-
-msgid "list directory"
-msgstr "listar directorio"
-
-msgid "change directory"
-msgstr "cambiar directorio"
-
-msgid "Working directory"
-msgstr "Directorio de trabajo"
-
-msgid "Configuration Directory: {dir}"
-msgstr "Directorio de configuración: {dir}"
-
-msgid "Internal Directory"
-msgstr "Directorio interno"
-
-msgid "No internal directory."
-msgstr "Sin directorio interno."
-
-msgid "No such directory."
-msgstr "No existe tal directorio."
-
-msgid "Connection failed."
-msgstr "Conexión fallida."
-
-msgid "No valid connection matched any given criteria."
-msgstr "Ninguna conexión válida coincidió con los criterios dados."
-
-msgid "K40 devices were found but they were rejected due to usb bus."
-msgstr "Se encontraron dispositivos K40 pero fueron rechazados por el bus USB."
-
-msgid "K40 devices were found but they were rejected due to usb address."
-msgstr "Se encontraron dispositivos K40 pero fueron rechazados por la dirección USB."
-
-msgid "K40 devices were found but they were rejected due to chip version."
-msgstr "Se encontraron dispositivos K40 pero fueron rechazados por la versión del chip."
-
-msgid "Requires serial number confirmation."
-msgstr "Requiere confirmación del número de serie."
-
-msgid "Serial number confirmed."
-msgstr "Número de serie confirmado."
-
-msgid "Laser Parameters"
-msgstr "Parámetros del láser"
-
-msgid "Bed Dimensions"
-msgstr "Dimensiones de la cama"
-
-msgid "User Scale Factor"
-msgstr "Factor de escala del usuario"
-
-msgid "Device Name"
-msgstr "Nombre del dispositivo"
-
-msgid "The internal label to be used for this device"
-msgstr "La etiqueta interna que se usará para este dispositivo"
-
-msgid "Board"
-msgstr "Placa"
-
-msgid "Select the board to use. This affects the speedcodes used."
-msgstr "Seleccione la placa a usar. Esto afecta los códigos de velocidad utilizados."
-
-msgid "Configuration"
-msgstr "Configuración"
-
-msgid "Board Setup"
-msgstr "Configuración de la placa"
-
-msgid "Hardware-PWM"
-msgstr "PWM por hardware"
-
 msgid "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
 msgstr "Corregir por velocidad inválida. Las velocidades de Lihuiyu Studios son el 92% de la velocidad nominal correcta"
 
@@ -16425,666 +15262,6 @@ msgstr "Entradas de color en el árbol"
 msgid "Active: The tree entry will be displayed in the objects color\nInactive: Standard Colors are used"
 msgstr "Activo: La entrada del árbol se mostrará en el color del objeto\nInactivo: Se usan colores estándar"
 
-msgid "Align boundaries = {bound}"
-msgstr "Límites de alineación = {bound}"
-
-msgid "Set the requested alignment to treat selection as group"
-msgstr "Establecer la alineación solicitada para tratar la selección como grupo"
-
-msgid "Set the requested alignment to treat selection as individuals"
-msgstr "Establecer la alineación solicitada para tratar la selección como individuos"
-
-msgid "align within selection - all equal"
-msgstr "alinear dentro de la selección - todos iguales"
-
-msgid "Set the requested alignment to first element selected"
-msgstr "Establecer la alineación solicitada al primer elemento seleccionado"
-
-msgid "Set the requested alignment to last element selected"
-msgstr "Establecer la alineación solicitada al último elemento seleccionado"
-
-msgid "Set the requested alignment to within the bed"
-msgstr "Establecer la alineación solicitada dentro del área de trabajo"
-
-msgid "Set the requested alignment to the reference object"
-msgstr "Establecer la alineación solicitada al objeto de referencia"
-
-msgid "You need to provide the boundaries for align-mode {mode}"
-msgstr "Debe proporcionar los límites para el modo de alineación {mode}"
-
-msgid "align selected elements"
-msgstr "alinear los elementos seleccionados"
-
-msgid "One of 'min', 'center', 'max', 'none'"
-msgstr "Uno de 'min', 'center', 'max', 'none'"
-
-msgid "align elements in x and y"
-msgstr "alinear elementos en x e y"
-
-msgid "align elements at top"
-msgstr "alinear elementos en la parte superior"
-
-msgid "align elements at bottom"
-msgstr "alinear elementos en la parte inferior"
-
-msgid "align elements at left"
-msgstr "alinear elementos a la izquierda"
-
-msgid "align elements at right"
-msgstr "alinear elementos a la derecha"
-
-msgid "align elements at center"
-msgstr "alinear elementos en el centro"
-
-msgid "align elements at center horizontally"
-msgstr "alinear elementos en el centro horizontalmente"
-
-msgid "align elements at center vertically"
-msgstr "alinear elementos en el centro verticalmente"
-
-msgid "Distribute"
-msgstr "Distribuir"
-
-msgid "distribute elements across horizontal space"
-msgstr "distribuir elementos a lo largo del espacio horizontal"
-
-msgid "distribute elements across vertical space"
-msgstr "distribuir elementos a lo largo del espacio vertical"
-
-msgid "align elements within viewbox"
-msgstr "alinear elementos dentro del viewbox"
-
-msgid "Your selection contains a locked element, that cannot be moved"
-msgstr "Su selección contiene un elemento bloqueado que no se puede mover"
-
-msgid "loads file from working directory"
-msgstr "carga el archivo desde el directorio de trabajo"
-
-msgid "No file specified."
-msgstr "No se especificó archivo."
-
-msgid "new label to set values to"
-msgstr "nueva etiqueta para asignar valores"
-
-msgid "label <label>"
-msgstr "etiqueta <etiqueta>"
-
-msgid "Label Values:"
-msgstr "Valores de etiqueta:"
-
-msgid "{index}: {name} - label = {label}"
-msgstr "{index}: {name} - etiqueta = {label}"
-
-msgid "Remove all elements from provided operations"
-msgstr "Eliminar todos los elementos de las operaciones proporcionadas"
-
-msgid "Clear operations"
-msgstr "Limpiar operaciones"
-
-msgid "Show information about the chained data"
-msgstr "Mostrar información sobre los datos encadenados"
-
-msgid "Operations:"
-msgstr "Operaciones:"
-
-msgid "Creates a new operation for each element given"
-msgstr "Crea una nueva operación para cada elemento dado"
-
-msgid "Set the operation color based on the stroke if the first stroked item added to this operation"
-msgstr "Establecer el color de la operación según el trazo si el primer elemento añadido tiene trazo"
-
-msgid "Set the operation color based on the fill if the first filled item added to this operation"
-msgstr "Establecer el color de la operación según el relleno si el primer elemento añadido tiene relleno"
-
-msgid "<cut/engrave/raster/imageop/dots/hatch> - group the elements into this operation"
-msgstr "<cut/engrave/raster/imageop/dots/hatch> - agrupar los elementos en esta operación"
-
-msgid "Time for the given wait operation."
-msgstr "Tiempo para la operación de espera dada."
-
-msgid "<waitop> - Create new utility operation"
-msgstr "<waitop> - Crear nueva operación de utilidad"
-
-msgid "binary input/output mask"
-msgstr "máscara de entrada/salida binaria"
-
-msgid "binary input/output value"
-msgstr "valor de entrada/salida binaria"
-
-msgid "<outputop, inputop> - Create new utility operation"
-msgstr "<outputop, inputop> - Crear nueva operación de utilidad"
-
-msgid "X-Coordinate of Goto?"
-msgstr "¿Coordenada X de Ir a?"
-
-msgid "Y-Coordinate of Goto?"
-msgstr "¿Coordenada Y de Ir a?"
-
-msgid "<gotoop> <x> <y> - Create new utility operation"
-msgstr "<gotoop> <x> <y> - Crear nueva operación de utilidad"
-
-msgid "<consoleop> - Create new utility operation"
-msgstr "<consoleop> - Crear nueva operación de utilidad"
-
-msgid "raster dpi"
-msgstr "dpi de ráster"
-
-msgid "dpi <raster-dpi>"
-msgstr "dpi <raster-dpi>"
-
-msgid "Step for {name} is currently: {dpi}"
-msgstr "El paso para {name} es actualmente: {dpi}"
-
-msgid "No raster operations selected."
-msgstr "No se seleccionaron operaciones de ráster."
-
-msgid "Change speed by this amount."
-msgstr "Cambiar la velocidad por esta cantidad."
-
-msgid "Change speed for each item in order"
-msgstr "Cambiar la velocidad para cada elemento en orden"
-
-msgid "operation speed in mm/s"
-msgstr "velocidad de operación en mm/s"
-
-msgid "speed <speed>"
-msgstr "velocidad <velocidad>"
-
-msgid "Speed for '{name}' is currently: {speed}"
-msgstr "La velocidad para '{name}' es actualmente: {speed}"
-
-msgid "Not a valid speed or percent."
-msgstr "No es una velocidad o porcentaje válido."
-
-msgid "Speed for '{name}' updated {old_speed} -> {speed}"
-msgstr "Velocidad para '{name}' actualizada {old_speed} -> {speed}"
-
-msgid "power in pulses per inch (ppi, 1000=max)"
-msgstr "potencia en pulsos por pulgada (ppi, 1000=máx)"
-
-msgid "Change power by this amount."
-msgstr "Cambiar la potencia por esta cantidad."
-
-msgid "Change power for each item in order"
-msgstr "Cambiar la potencia para cada elemento en orden"
-
-msgid "power <ppi>"
-msgstr "potencia <ppi>"
-
-msgid "Power for '{name}' is currently: {power}"
-msgstr "La potencia para '{name}' es actualmente: {power}"
-
-msgid "Power for '{name}' updated {old_power} -> {power}"
-msgstr "Potencia para '{name}' actualizada {old_power} -> {power}"
-
-msgid "frequency set for operation"
-msgstr "frecuencia establecida para la operación"
-
-msgid "frequency <kHz>"
-msgstr "frecuencia <kHz>"
-
-msgid "Frequency for '{name}' is currently: {frequency}"
-msgstr "La frecuencia para '{name}' es actualmente: {frequency}"
-
-msgid "Frequency for '{name}' updated {old_frequency} -> {frequency}"
-msgstr "Frecuencia para '{name}' actualizada {old_frequency} -> {frequency}"
-
-msgid "Set operation passes"
-msgstr "Establecer pasadas de la operación"
-
-msgid "passes <passes>"
-msgstr "pasadas <pasadas>"
-
-msgid "Passes for '{name}' is currently: {passes}"
-msgstr "Las pasadas para '{name}' son actualmente: {passes}"
-
-msgid "Passes for '{name}' updated {old_passes} -> {passes}"
-msgstr "Pasadas para '{name}' actualizadas {old_passes} -> {passes}"
-
-msgid "Set hatch-distance of operations"
-msgstr "Establecer la distancia de tramado de las operaciones"
-
-msgid "Change hatch-distance by this amount."
-msgstr "Cambiar la distancia de tramado por esta cantidad."
-
-msgid "Change hatch-distance for each item in order"
-msgstr "Cambiar la distancia de tramado para cada elemento en orden"
-
-msgid "hatch-distance <distance>"
-msgstr "distancia de tramado <distancia>"
-
-msgid "Hatch Distance for '{name}' is currently: {distance}"
-msgstr "La distancia de tramado para '{name}' es actualmente: {distance}"
-
-msgid "Hatch Distance for '{name}' updated {old_distance} -> {distance}"
-msgstr "Distancia de tramado para '{name}' actualizada {old_distance} -> {distance}"
-
-msgid "Set hatch-angle of operations"
-msgstr "Establecer el ángulo de tramado de las operaciones"
-
-msgid "Change hatch-angle by this amount."
-msgstr "Cambiar el ángulo de tramado por esta cantidad."
-
-msgid "Change hatch-angle for each item in order"
-msgstr "Cambiar el ángulo de tramado para cada elemento en orden"
-
-msgid "hatch-angle <angle>"
-msgstr "ángulo de tramado <ángulo>"
-
-msgid "Hatch Angle for '{name}' is currently: {angle} ({angle_degree})"
-msgstr "El ángulo de tramado para '{name}' es actualmente: {angle} ({angle_degree})"
-
-msgid "Hatch Angle for '{name}' updated {old_angle} -> {angle} ({angle_degree})"
-msgstr "Ángulo de tramado para '{name}' actualizado {old_angle} -> {angle} ({angle_degree})"
-
-msgid "Disable the given operations"
-msgstr "Desactivar las operaciones indicadas"
-
-msgid "Operation '{name}' disabled."
-msgstr "Operación '{name}' desactivada."
-
-msgid "Operation '{name}' can't be disabled."
-msgstr "No se puede desactivar la operación '{name}'."
-
-msgid "Enable the given operations"
-msgstr "Activar las operaciones indicadas"
-
-msgid "Operation '{name}' enabled."
-msgstr "Operación '{name}' activada."
-
-msgid "Operation '{name}' can't be enabled."
-msgstr "No se puede activar la operación '{name}'."
-
-msgid "Lock element (protect from manipulation)"
-msgstr "Bloquear elemento (proteger de manipulación)"
-
-msgid "Unlock element (allow manipulation)"
-msgstr "Desbloquear elemento (permitir manipulación)"
-
-msgid "copy offset x (for elems)"
-msgstr "desplazamiento de copia en x (para elementos)"
-
-msgid "copy offset y (for elems)"
-msgstr "desplazamiento de copia en y (para elementos)"
-
-msgid "amount of copies to be created"
-msgstr "cantidad de copias a crear"
-
-msgid "Duplicate elements"
-msgstr "Duplicar elementos"
-
-msgid "Delete elements"
-msgstr "Eliminar elementos"
-
-msgid "Deleting…"
-msgstr "Eliminando…"
-
-msgid "Clear all content"
-msgstr "Limpiar todo el contenido"
-
-msgid "Show information about elements"
-msgstr "Mostrar información sobre los elementos"
-
-msgid "element*, all elements"
-msgstr "element*, todos los elementos"
-
-msgid "element~, all non-selected elements"
-msgstr "element~, todos los elementos no seleccionados"
-
-msgid "element, selected elements"
-msgstr "element, elementos seleccionados"
-
-msgid "element0,3,4,5: chain a list of specific elements"
-msgstr "element0,3,4,5: encadenar una lista de elementos específicos"
-
-msgid "free, clear, add"
-msgstr "liberar, limpiar, agregar"
-
-msgid "regmark cmd"
-msgstr "comando de marca de registro"
-
-msgid "Regmarks -> Elements"
-msgstr "Marcas de registro -> Elementos"
-
-msgid "Elements -> Regmarks"
-msgstr "Elementos -> Marcas de registro"
-
-msgid "No elements to transfer"
-msgstr "No hay elementos para transferir"
-
-msgid "Invalid command, use one of add, free, clear"
-msgstr "Comando inválido, use uno de: agregar, liberar, limpiar"
-
-msgid "element step size"
-msgstr "tamaño de paso de elemento"
-
-msgid "step <element step-size>"
-msgstr "paso <tamaño de paso de elemento>"
-
-msgid "Image step for %s is currently: %s"
-msgstr "El paso de imagen para %s es actualmente: %s"
-
-msgid "No image element selected."
-msgstr "No se seleccionó ningún elemento de imagen."
-
-msgid "Graphical Elements:"
-msgstr "Elementos gráficos:"
-
-msgid "By default elements will be stitched together if they have common end/start points, this option allows to set a tolerance"
-msgstr "Por defecto, los elementos se unirán si tienen puntos de inicio/fin comunes, esta opción permite establecer una tolerancia"
-
-msgid "By default elements will be stitched together if they have a common end/start point, this option prevents that and real subpaths will be created"
-msgstr "Por defecto, los elementos se unirán si tienen un punto de inicio/fin común, esta opción lo evita y se crearán subtrayectorias reales"
-
-msgid "merge elements"
-msgstr "unir elementos"
-
-msgid "Invalid tolerance distance provided"
-msgstr "Distancia de tolerancia proporcionada no válida"
-
-msgid "No item selected."
-msgstr "Ningún elemento seleccionado."
-
-msgid "break elements"
-msgstr "separar elementos"
-
-msgid "Break elements"
-msgstr "Separar elementos"
-
-msgid "clipboard"
-msgstr "portapapeles"
-
-msgid "clipboard copy"
-msgstr "copiar al portapapeles"
-
-msgid "paste offset x"
-msgstr "desplazamiento de pegado en x"
-
-msgid "paste offset y"
-msgstr "desplazamiento de pegado en y"
-
-msgid "clipboard paste"
-msgstr "pegar desde el portapapeles"
-
-msgid "Error: clipboard empty node"
-msgstr "Error: nodo vacío en el portapapeles"
-
-msgid "Error: Clipboard Empty"
-msgstr "Error: portapapeles vacío"
-
-msgid "Clipboard paste"
-msgstr "Pegar desde el portapapeles"
-
-msgid "clipboard cut"
-msgstr "cortar al portapapeles"
-
-msgid "Clipboard cut"
-msgstr "Cortar al portapapeles"
-
-msgid "clipboard clear"
-msgstr "limpiar portapapeles"
-
-msgid "clipboard contents"
-msgstr "contenido del portapapeles"
-
-msgid "clipboard list"
-msgstr "lista del portapapeles"
-
-msgid "Clipboard-Entries: {index}"
-msgstr "Entradas del portapapeles: {index}"
-
-msgid "Don't autoload operations on empty set"
-msgstr "No cargar automáticamente operaciones en un conjunto vacío"
-
-msgid "Leave empty operations, don't load a default set"
-msgstr "Dejar operaciones vacías, no cargar un conjunto predeterminado"
-
-msgid "Classify Reversed"
-msgstr "Clasificar en orden inverso"
-
-msgid "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
-msgstr "Clasificar elementos en operaciones en orden inverso, por ejemplo, para coincidir con la lista de objetos de Inkscape"
-
-msgid "Legacy Classify"
-msgstr "Clasificación heredada"
-
-msgid "Track changes and allow undo"
-msgstr "Rastrear cambios y permitir deshacer"
-
-msgid "MK will save intermediate states to undo/redo changes"
-msgstr "MK guardará estados intermedios para deshacer/rehacer cambios"
-
-msgid "This may consume a significant amount of memory"
-msgstr "Esto puede consumir una cantidad significativa de memoria"
-
-msgid "Levels of Undo-States"
-msgstr "Niveles de estados de deshacer"
-
-msgid "How many undo-levels shall MeerK40t hold in memory"
-msgstr "Cuántos niveles de deshacer debe mantener MeerK40t en memoria"
-
-msgid "Classify elements after creation"
-msgstr "Clasificar elementos después de la creación"
-
-msgid "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
-msgstr "MK intentará clasificar (asignar automáticamente) un elemento tan pronto como se cree,"
-
-msgid "if you want to defer this to apply manual assignment, then untick this option."
-msgstr "si desea posponer esto para aplicar la asignación manual, desmarque esta opción."
-
-msgid "Fuzzy color-logic"
-msgstr "Lógica de color difusa"
-
-msgid "Unticked: Classify elements into operations with an *exact* color match"
-msgstr "No marcado: Clasificar elementos en operaciones con coincidencia de color *exacta*"
-
-msgid "Ticked: Allow a certain color-distance for classification"
-msgstr "Marcado: Permitir cierta distancia de color para la clasificación"
-
-msgid "Color distance"
-msgstr "Distancia de color"
-
-msgid "The color distance of an element to an operations that will still allow classifiation"
-msgstr "La distancia de color de un elemento a una operación que aún permitirá la clasificación"
-
-msgid "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
-msgstr "Valores: 0 Idéntico, 100 muy cercano, 200 tolerante, 400 daltónico"
-
-msgid "Treat 'Black' as raster even for basic elements (like Whisperer does)"
-msgstr "Tratar 'Negro' como ráster incluso para elementos básicos (como hace Whisperer)"
-
-msgid "Ticked: Classify will assign black elements to a raster operation"
-msgstr "Marcado: Clasificar asignará los elementos negros a una operación de ráster"
-
-msgid "Unticked: Classify will assign black elements to an engrave operation"
-msgstr "No marcado: Clasificar asignará los elementos negros a una operación de grabado"
-
-msgid "Classify elements on fill"
-msgstr "Clasificar elementos por relleno"
-
-msgid "Usually MK will use the fill attribute as an indicator for a raster and will not distinguish between individual colors."
-msgstr "Normalmente MK usará el atributo de relleno como indicador de un ráster y no distinguirá entre colores individuales."
-
-msgid "If you want to distinguish between different raster types then activate this option."
-msgstr "Si desea distinguir entre diferentes tipos de ráster, active esta opción."
-
-msgid "Assign to default operations"
-msgstr "Asignar a operaciones predeterminadas"
-
-msgid "If classification did not find a match,"
-msgstr "Si la clasificación no encontró coincidencia,"
-
-msgid "either with color matching (exact or fuzzy, see above)"
-msgstr "ya sea con coincidencia de color (exacta o difusa, ver arriba)"
-
-msgid "then it will try to assign it to matching 'default' operation"
-msgstr "entonces intentará asignarlo a la operación 'predeterminada' correspondiente"
-
-msgid "Autogenerate Operations"
-msgstr "Autogenerar operaciones"
-
-msgid "or by assigning to a default operation (see above),"
-msgstr "o asignando a una operación predeterminada (ver arriba),"
-
-msgid "then MeerK40t can create a matching operation for you."
-msgstr "entonces MeerK40t puede crear una operación correspondiente para usted."
-
-msgid "Autoinherit for empty operation"
-msgstr "Autoinherencia para operación vacía"
-
-msgid "Classify after color-change"
-msgstr "Clasificar después de cambiar el color"
-
-msgid "Whenever you change an elements color (stroke or fill),"
-msgstr "Cada vez que cambie el color de un elemento (trazo o relleno),"
-
-msgid "MK will then reclassify this element. You can turn this feature off"
-msgstr "MK volverá a clasificar este elemento. Puede desactivar esta función"
-
-msgid "by disabling this option."
-msgstr "desactivando esta opción."
-
-msgid "Remove unused default operations"
-msgstr "Eliminar operaciones predeterminadas no utilizadas"
-
-msgid "If a default operation is no longer used it will be removed from the list of active operations"
-msgstr "Si una operación predeterminada ya no se utiliza, se eliminará de la lista de operaciones activas"
-
-msgid "Locked element may move"
-msgstr "El elemento bloqueado puede moverse"
-
-msgid "Locked elements cannot be modified, but can still be moved if this option is checked."
-msgstr "Los elementos bloqueados no pueden ser modificados, pero aún pueden moverse si esta opción está activada."
-
-msgid "Display 'default' for unchanged values"
-msgstr "Mostrar 'predeterminado' para valores sin cambios"
-
-msgid "Ticked: For power and speed display a 'default' string if default values in place."
-msgstr "Marcado: Para potencia y velocidad, mostrar 'predeterminado' si los valores son los predeterminados."
-
-msgid "Unticked: Show their current value."
-msgstr "No marcado: Mostrar su valor actual."
-
-msgid "Allow dragging of regmarks to operations"
-msgstr "Permitir arrastrar marcas de registro a operaciones"
-
-msgid "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
-msgstr "Marcado: Arrastrar nodos de marcas de registro a una operación los moverá de nuevo a la rama de elementos."
-
-msgid "Unticked: A drag operation of regmark nodes to an operation will be ignored."
-msgstr "No marcado: Arrastrar nodos de marcas de registro a una operación será ignorado."
-
-msgid "Reuse existing"
-msgstr "Reutilizar existente"
-
-msgid "Ticked: When loading a file we will reuse an existing operation with the same principal properties."
-msgstr "Marcado: Al cargar un archivo, reutilizaremos una operación existente con las mismas propiedades principales."
-
-msgid "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
-msgstr "No marcado: Añadiremos otra operación junto a las existentes (siempre que las propiedades difieran)."
-
-msgid "Statusbar display"
-msgstr "Visualización en la barra de estado"
-
-msgid "As in operations tree"
-msgstr "Como en el árbol de operaciones"
-
-msgid "Group types together (CC EE RR II)"
-msgstr "Agrupar tipos juntos (CC EE RR II)"
-
-msgid "Matching (CERI CERI)"
-msgstr "Coincidente (CERI CERI)"
-
-msgid "Choose if and how you want to group together / display the default operations at the bottom of the screen"
-msgstr "Elija si y cómo desea agrupar/mostrar las operaciones predeterminadas en la parte inferior de la pantalla"
-
-msgid "Autogenerate both for fill and stroke"
-msgstr "Autogenerar tanto para relleno como para trazo"
-
-msgid "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
-msgstr "Activo: para trazo y relleno buscamos una coincidencia, si no se encuentra generamos una operación correspondiente"
-
-msgid "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
-msgstr "Inactivo: una coincidencia de trazo o relleno es suficiente para evitar la autogeneración"
-
-msgid "Copy will increase {variable} references"
-msgstr "Copiar aumentará las referencias de {variable}"
-
-msgid "Active: if you copy a text-element containing a wordlist-reference, this will be increased (effectively referencing the next entry in the wordlist)"
-msgstr "Activo: si copia un elemento de texto que contiene una referencia a una lista de palabras, esta se incrementará (referenciando la siguiente entrada en la lista)"
-
-msgid "File startup commands"
-msgstr "Comandos de inicio de archivo"
-
-msgid "Ignore"
-msgstr "Ignorar"
-
-msgid "Ask"
-msgstr "Preguntar"
-
-msgid "Allow"
-msgstr "Permitir"
-
-msgid "Choose if file startup commands are allowed in principle or will all be ignored."
-msgstr "Elija si los comandos de inicio de archivo están permitidos en principio o serán ignorados."
-
-msgid "Note: They still need to be activated on a per file basis."
-msgstr "Nota: Aún deben activarse por archivo."
-
-msgid "File is Malformed"
-msgstr "El archivo está mal formado"
-
-msgid "Operations restored"
-msgstr "Operaciones restauradas"
-
-msgid "Cut ({percent}, {speed}mm/s)"
-msgstr "Corte ({percent}, {speed}mm/s)"
-
-msgid "Engrave ({percent}, {speed}mm/s)"
-msgstr "Grabado ({percent}, {speed}mm/s)"
-
-msgid "Raster ({percent}, {speed}mm/s)"
-msgstr "Ráster ({percent}, {speed}mm/s)"
-
-msgid "Image ({percent}, {speed}mm/s)"
-msgstr "Imagen ({percent}, {speed}mm/s)"
-
-msgid "Load operations"
-msgstr "Cargar operaciones"
-
-msgid "Element altered"
-msgstr "Elemento alterado"
-
-msgid "Element modified"
-msgstr "Elemento modificado"
-
-msgid "Element shifted"
-msgstr "Elemento desplazado"
-
-msgid "Element scaled"
-msgstr "Elemento escalado"
-
-msgid "Element added"
-msgstr "Elemento añadido"
-
-msgid "Element deleted"
-msgstr "Elemento eliminado"
-
-msgid "Load default operations"
-msgstr "Cargar operaciones predeterminadas"
-
-msgid "Drag and drop"
-msgstr "Arrastrar y soltar"
-
-msgid "Load elements"
-msgstr "Cargar elementos"
-
-msgid "File is Empty"
-msgstr "El archivo está vacío"
-
-msgid "All valid types"
-msgstr "Todos los tipos válidos"
-
 msgid "Device paused"
 msgstr "Dispositivo en pausa"
 
@@ -17169,9 +15346,6 @@ msgstr "Trabajo finalizado"
 msgid "Job error"
 msgstr "Error en el trabajo"
 
-msgid "File loaded"
-msgstr "Archivo cargado"
-
 msgid "File saved"
 msgstr "Archivo guardado"
 
@@ -17228,9 +15402,6 @@ msgstr "Actualización descargada"
 
 msgid "Update installed"
 msgstr "Actualización instalada"
-
-msgid "Update failed"
-msgstr "Actualización fallida"
 
 msgid "Backup created"
 msgstr "Copia de seguridad creada"
@@ -17322,9 +15493,6 @@ msgstr "Despertar"
 msgid "Shutdown"
 msgstr "Apagar"
 
-msgid "Restart"
-msgstr "Reiniciar"
-
 msgid "Reboot required"
 msgstr "Reinicio requerido"
 
@@ -17378,9 +15546,6 @@ msgstr "Operación detenida"
 
 msgid "Operation suspended"
 msgstr "Operación suspendida"
-
-msgid "Operation resumed"
-msgstr "Operación reanudada"
 
 msgid "Operation queued"
 msgstr "Operación en cola"
@@ -17514,9 +15679,6 @@ msgstr "Configuración de velocidad"
 msgid "Frequency setting"
 msgstr "Configuración de frecuencia"
 
-msgid "Passes"
-msgstr "Pasadas"
-
 msgid "Focus height"
 msgstr "Altura de enfoque"
 
@@ -17549,9 +15711,6 @@ msgstr "Rotar 270"
 
 msgid "Flip horizontal"
 msgstr "Voltear horizontalmente"
-
-msgid "Flip vertical"
-msgstr "Voltear verticalmente"
 
 msgid "Scale up"
 msgstr "Aumentar escala"
@@ -17592,15 +15751,6 @@ msgstr "Restar formas"
 msgid "Union shapes"
 msgstr "Unir formas"
 
-msgid "Outline"
-msgstr "Contorno"
-
-msgid "Fill"
-msgstr "Relleno"
-
-msgid "Stroke"
-msgstr "Trazo"
-
 msgid "Line width"
 msgstr "Ancho de línea"
 
@@ -17609,12 +15759,6 @@ msgstr "Color de línea"
 
 msgid "Fill color"
 msgstr "Color de relleno"
-
-msgid "Opacity"
-msgstr "Opacidad"
-
-msgid "Layer"
-msgstr "Capa"
 
 msgid "Layer order"
 msgstr "Orden de capa"
@@ -17666,12 +15810,6 @@ msgstr "Corte de prueba"
 
 msgid "Test marking"
 msgstr "Marcado de prueba"
-
-msgid "Preview"
-msgstr "Vista previa"
-
-msgid "Simulation"
-msgstr "Simulación"
 
 msgid "Estimate time"
 msgstr "Estimar tiempo"
@@ -17928,12 +16066,6 @@ msgstr "Conexión ocupada"
 msgid "Connection idle"
 msgstr "Conexión inactiva"
 
-msgid "Connection lost"
-msgstr "Conexión perdida"
-
-msgid "Connection established"
-msgstr "Conexión establecida"
-
 msgid "Connection interrupted"
 msgstr "Conexión interrumpida"
 
@@ -18090,17 +16222,11 @@ msgstr "Frecuencia de conexión"
 msgid "Connection interval"
 msgstr "Intervalo de conexión"
 
-msgid "Connection timeout"
-msgstr "Tiempo de espera de conexión"
-
 msgid "Connection retry"
 msgstr "Reintento de conexión"
 
 msgid "Connection attempt"
 msgstr "Intento de conexión"
-
-msgid "Connection established"
-msgstr "Conexión establecida"
 
 msgid "Connection failed"
 msgstr "Conexión fallida"
@@ -18159,17 +16285,11 @@ msgstr "Conexión en pausa"
 msgid "Connection resumed"
 msgstr "Conexión reanudada"
 
-msgid "Connection reset"
-msgstr "Conexión restablecida"
-
 msgid "Connection initialized"
 msgstr "Conexión inicializada"
 
 msgid "Connection finalized"
 msgstr "Conexión finalizada"
-
-msgid "File not found"
-msgstr "Archivo no encontrado"
 
 msgid "File already exists"
 msgstr "El archivo ya existe"
@@ -18227,9 +16347,6 @@ msgstr "Archivo inicializado"
 
 msgid "File finalized"
 msgstr "Archivo finalizado"
-
-msgid "File error"
-msgstr "Error de archivo"
 
 msgid "File warning"
 msgstr "Advertencia de archivo"
@@ -18503,12 +16620,6 @@ msgstr "Confirmación de archivo"
 
 msgid "File prompt"
 msgstr "Mensaje de archivo"
-
-msgid "File warning"
-msgstr "Advertencia de archivo"
-
-msgid "File error"
-msgstr "Error de archivo"
 
 msgid "Default zoom margin:"
 msgstr "Margen de zoom predeterminado:"
@@ -19575,252 +17686,6 @@ msgstr "Potencia máxima del láser"
 msgid "Set the maximum laser power level, any operation power will be a fraction of this"
 msgstr "Establecer el nivel máximo de potencia láser, cualquier operación será una fracción de este valor"
 
-msgid "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\nUseful for honeycomb- or other irregular patterns that need to overlap"
-msgstr "Cada {area} alterna puede desplazarse por un porcentaje del espacio en la dirección {direction}\nÚtil para patrones tipo panal u otros patrones irregulares que necesitan solaparse"
-
-msgid "column"
-msgstr "columna"
-
-msgid "Rotate elements every other {area}\nUseful for triangular patterns."
-msgstr "Rotar elementos en cada {area} alterna\nÚtil para patrones triangulares."
-
-msgid "row"
-msgstr "fila"
-
-msgid "X-Displacement:"
-msgstr "Desplazamiento X:"
-
-msgid "Y-Displacement:"
-msgstr "Desplazamiento Y:"
-
-msgid "Orientation:"
-msgstr "Orientación:"
-
-msgid "Corner:"
-msgstr "Esquina:"
-
-msgid "Top-Left"
-msgstr "Superior izquierda"
-
-msgid "Top-Right"
-msgstr "Superior derecha"
-
-msgid "Bottom-Right"
-msgstr "Inferior derecha"
-
-msgid "Bottom-Left"
-msgstr "Inferior izquierda"
-
-msgid "The corner type establishes the placement of the bounding box\nof to be plotted elements against the defined coordinate"
-msgstr "El tipo de esquina establece la ubicación de la caja delimitadora\nde los elementos a trazar respecto a la coordenada definida"
-
-msgid "L2R (unidirectional)"
-msgstr "L2R (unidireccional)"
-
-msgid "L2R (bidirectional)"
-msgstr "L2R (bidireccional)"
-
-msgid "T2B (bidirectional)"
-msgstr "T2B (bidireccional)"
-
-msgid "Orientation defines the sequence of placement points"
-msgstr "La orientación define la secuencia de los puntos de ubicación"
-
-msgid "Left to right (unidirectional)"
-msgstr "De izquierda a derecha (unidireccional)"
-
-msgid "Left to right (bidirectional)"
-msgstr "De izquierda a derecha (bidireccional)"
-
-msgid "Top to bottom (bidirectional)"
-msgstr "De arriba a abajo (bidireccional)"
-
-msgid "Grid Helper (Tiling):"
-msgstr "Asistente de cuadrícula (Mosaico):"
-
-msgid "Quadratic"
-msgstr "Cuadrada"
-
-msgid "Side"
-msgstr "Lado"
-
-msgid "Hexagon"
-msgstr "Hexágono"
-
-msgid "Diameter"
-msgstr "Diámetro"
-
-msgid "Triangular"
-msgstr "Triangular"
-
-msgid "Please provide some data about the intended tiling"
-msgstr "Por favor, proporcione algunos datos sobre el mosaico deseado"
-
-msgid "Establishes the parameter for the selected grid-type"
-msgstr "Establece el parámetro para el tipo de cuadrícula seleccionado"
-
-msgid "If set then Define will create a matching pattern too"
-msgstr "Si se activa, Definir también creará un patrón coincidente"
-
-msgid "Create template"
-msgstr "Crear plantilla"
-
-msgid "Point Properties"
-msgstr "Propiedades del punto"
-
-msgid "Property Window"
-msgstr "Ventana de propiedades"
-
-msgid "Opens Properties Window"
-msgstr "Abre la ventana de propiedades"
-
-msgid "Display and edit the object properties"
-msgstr "Mostrar y editar las propiedades del objeto"
-
-msgid "Halftone"
-msgstr "Semitono"
-
-msgid "Enable Halftone"
-msgstr "Habilitar semitono"
-
-msgid "Halftone Reset"
-msgstr "Restablecer semitono"
-
-msgid "Use black rather than white dots"
-msgstr "Usar puntos negros en lugar de blancos"
-
-msgid "Sample size for halftone dots"
-msgstr "Tamaño de muestra para los puntos de semitono"
-
-msgid "Halftone dot size"
-msgstr "Tamaño del punto de semitono"
-
-msgid "Angle for halftone dots"
-msgstr "Ángulo para los puntos de semitono"
-
-msgid "Halftone dot angle"
-msgstr "Ángulo del punto de semitono"
-
-msgid "Oversampling amount for halftone-dots"
-msgstr "Cantidad de sobremuestreo para puntos de semitono"
-
-msgid "Halftone dot oversampling amount"
-msgstr "Cantidad de sobremuestreo de punto de semitono"
-
-msgid "Oversample"
-msgstr "Sobremuestreo"
-
-msgid "Sample"
-msgstr "Muestra"
-
-msgid "Tone"
-msgstr "Tono"
-
-msgid "Enable Tone Curve"
-msgstr "Habilitar curva de tono"
-
-msgid "Reset Tone Curve"
-msgstr "Restablecer curva de tono"
-
-msgid "Tone Curve"
-msgstr "Curva de tono"
-
-msgid "Sharpen"
-msgstr "Enfocar"
-
-msgid "Enable Sharpen"
-msgstr "Habilitar enfoque"
-
-msgid "Sharpen Reset"
-msgstr "Restablecer enfoque"
-
-msgid "Strength of sharpening in percent"
-msgstr "Intensidad de enfoque en porcentaje"
-
-msgid "amount of sharpening in %"
-msgstr "cantidad de enfoque en %"
-
-msgid "Blur radius for the sharpening operation"
-msgstr "Radio de desenfoque para la operación de enfoque"
-
-msgid "Sharpen radius amount"
-msgstr "Cantidad de radio de enfoque"
-
-msgid "Threshold controls the minimum brighteness change to be sharpened."
-msgstr "El umbral controla el cambio mínimo de brillo a enfocar."
-
-msgid "Sharpen Threshold Amount"
-msgstr "Cantidad de umbral de enfoque"
-
-msgid "Threshold"
-msgstr "Umbral"
-
-msgid "Enable Operation"
-msgstr "Habilitar operación"
-
-msgid "Loop"
-msgstr "Bucle"
-
-msgid "Wobble Radius:"
-msgstr "Radio de oscilación:"
-
-msgid "Wobble Interval:"
-msgstr "Intervalo de oscilación:"
-
-msgid "Wobble Speed:"
-msgstr "Velocidad de oscilación:"
-
-msgid "Segmentation size, the wobble pattern will be applied at every segment"
-msgstr "Tamaño de segmentación, el patrón de oscilación se aplicará en cada segmento"
-
-msgid "Wobble size, does influence the size of the wobble pattern"
-msgstr "Tamaño de oscilación, influye en el tamaño del patrón de oscilación"
-
-msgid "How quickly does the wobble pattern revolve around the path"
-msgstr "Qué tan rápido gira el patrón de oscilación alrededor de la trayectoria"
-
-msgid "The wobble pattern to be applied"
-msgstr "El patrón de oscilación a aplicar"
-
-msgid "You will create more than {:,.0f} magnet-lines! Are you really, really sure?"
-msgstr "¡Va a crear más de {:,.0f} líneas magnéticas! ¿Está realmente seguro?"
-
-msgid "Huge amount of magnet lines"
-msgstr "Gran cantidad de líneas magnéticas"
-
-msgid "Please provide the grid-size in {units}"
-msgstr "Por favor, indique el tamaño de la cuadrícula en {units}"
-
-msgid "User-defined grid-size"
-msgstr "Tamaño de cuadrícula definido por el usuario"
-
-msgid "Auto-Scale"
-msgstr "Autoescalar"
-
-msgid "User defined value: {value}"
-msgstr "Valor definido por el usuario: {value}"
-
-msgid "Draw primary grid"
-msgstr "Dibujar cuadrícula principal"
-
-msgid "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
-msgstr "¿La placa soporta PWM por hardware? Solo M3 y firmware >= 2024.01.18g soportan PWM. Revisiones M3 anteriores son solo M2+."
-
-msgid "Hardware-Laser-Power"
-msgstr "Potencia láser por hardware"
-
-msgid "Use PWM-Speedcode"
-msgstr "Usar código de velocidad PWM"
-
-msgid "PWM Method: set power as well in LHY-speedcodes."
-msgstr "Método PWM: también establece la potencia en los códigos de velocidad LHY."
-
-msgid "Maximum Laser strength"
-msgstr "Potencia máxima del láser"
-
-msgid "Set the maximum laser power level, any operation power will be a fraction of this"
-msgstr "Establecer el nivel máximo de potencia láser, cualquier operación será una fracción de este valor"
-
 msgid "Speed Code Features:"
 msgstr "Características del código de velocidad:"
 
@@ -20334,20 +18199,11 @@ msgstr "Establecer origen"
 msgid "Go to origin"
 msgstr "Ir al origen"
 
-msgid "Frame"
-msgstr "Enmarcar"
-
 msgid "Test fire"
 msgstr "Disparo de prueba"
 
 msgid "Focus"
 msgstr "Enfocar"
-
-msgid "Material"
-msgstr "Material"
-
-msgid "Thickness"
-msgstr "Grosor"
 
 msgid "Power min"
 msgstr "Potencia mínima"
@@ -20361,17 +18217,8 @@ msgstr "Velocidad mínima"
 msgid "Speed max"
 msgstr "Velocidad máxima"
 
-msgid "Open"
-msgstr "Abrir"
-
 msgid "New"
 msgstr "Nuevo"
-
-msgid "Group"
-msgstr "Agrupar"
-
-msgid "Ungroup"
-msgstr "Desagrupar"
 
 msgid "Move up"
 msgstr "Mover arriba"
@@ -20379,26 +18226,8 @@ msgstr "Mover arriba"
 msgid "Move down"
 msgstr "Mover abajo"
 
-msgid "Rotate"
-msgstr "Rotar"
-
-msgid "Mirror"
-msgstr "Reflejar"
-
-msgid "Scale"
-msgstr "Escalar"
-
-msgid "Align"
-msgstr "Alinear"
-
-msgid "Distribute"
-msgstr "Distribuir"
-
 msgid "Snap"
 msgstr "Ajustar"
-
-msgid "Grid"
-msgstr "Cuadrícula"
 
 msgid "Ruler"
 msgstr "Regla"
@@ -20417,12 +18246,6 @@ msgstr "Ajustar a pantalla"
 
 msgid "Actual size"
 msgstr "Tamaño real"
-
-msgid "Undo"
-msgstr "Deshacer"
-
-msgid "Redo"
-msgstr "Rehacer"
 
 msgid "Swap X and Y"
 msgstr "Intercambiar X e Y"
