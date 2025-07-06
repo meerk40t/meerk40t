@@ -1851,13 +1851,17 @@ class PulsePanel(wx.Panel):
                     # Convert percent to ppi
                     power = power * 10
                 power = max(0, min(1000, int(power)))
+                self.context.device.setting(int, "last_pulse_duration", 50)
                 self.context.device.setting(float, "last_pulse_power", 1000)
+                self.context.device.last_pulse_duration = value
                 self.context.device.last_pulse_power = power
                 powerstr = f" -p {power}"
         self.context(f"pulse {value}{powerstr}\n")
 
     def on_spin_pulse_duration(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
+        dval = self.spin_pulse_duration.GetValue()
+        self.context.device.setting(int, "last_pulse_duration", 50)
+        self.context.device.last_pulse_duration = dval
 
     def pane_show(self, *args):
         # Is the current device pwm pulse capable?
@@ -1877,6 +1881,10 @@ class PulsePanel(wx.Panel):
         pval = self.context.device.setting(float, "last_pulse_power", 1000)
         if pval is None:
             pval = 1000
+        dval = self.context.device.setting(float, "last_pulse_duration", 50)
+        if dval is None:
+            dval = 50
+        self.spin_pulse_duration.SetValue(dval)
         if self.context.device.setting(bool, "use_percent_for_power_display", False):
             self.text_power.SetValue(f"{pval/10.0:.1f}")
             self.text_power.set_range(0, 100)
