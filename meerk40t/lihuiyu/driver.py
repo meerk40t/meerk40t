@@ -956,6 +956,9 @@ class LihuiyuDriver(Parameters):
         # We don't know the length of a generator object
         total = 0
         current = 0
+        # Start with no power assumptions, so that power will be set by the first
+        # PLOT_SETTING command.
+        self.power = None
         for x, y, on in self.plot_data:
             current += 1
             total = current
