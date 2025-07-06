@@ -446,7 +446,7 @@ class LihuiyuDriver(Parameters):
         if self.laser:
             return False
         if power is not None and self.service.supports_pwm:
-            self.send_at_pwm_code(power, "laser_on")
+            self.send_at_pwm_code(power)
 
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
