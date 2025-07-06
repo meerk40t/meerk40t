@@ -1881,7 +1881,7 @@ class PulsePanel(wx.Panel):
         pval = self.context.device.setting(float, "last_pulse_power", 1000)
         if pval is None:
             pval = 1000
-        dval = self.context.device.setting(float, "last_pulse_duration", 50)
+        dval = self.context.device.setting(int, "last_pulse_duration", 50)
         if dval is None:
             dval = 50
         self.spin_pulse_duration.SetValue(dval)
