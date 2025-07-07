@@ -185,16 +185,34 @@ def read_source():
                     last_usage = line[3:].strip()
                     continue
                 if line.startswith("msgid "):
-                    line = line[7:].strip()
-                    if line.startswith('"') and line.endswith('"'):
-                        line = line[1:-1]
+                    id_str = ""
+                    idx = line.find('"')
+                    if idx >= 0:
+                        candidate = line[idx + 1 :]
+                        try:
+                            idx = -1
+                            while candidate[idx] != '"':
+                                idx -= 1
+                            candidate = candidate[:idx]
+                            id_str += candidate
+                        except IndexError:
+                            print(
+                                f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
+                            )
 
-                    if line not in id_strings_source:
-                        id_strings_source.append(line)
+                        # print (f"start '{line}' -> '{candidate}'")
+                    if not id_str:
+                        print(
+                            f"Stumbled across: '{line}', no id_str found, skipping this line."
+                        )
+                        continue
+                    print(f"Checking additional string: '{id_str}'")
+                    if id_str not in id_strings_source:
+                        id_strings_source.append(id_str)
                         id_usage.append(last_usage)
                         additional_new += 1
                     else:
-                        found_index = id_strings_source.index(line)
+                        found_index = id_strings_source.index(id_str)
                         id_usage[found_index] += f" {last_usage}"
                         additional_existing += 1
         print(
@@ -340,6 +358,50 @@ def compare(locale, id_strings, id_strings_source, id_usage):
 
 
 def validate_po(locale, id_strings_source, id_usage, id_pairs):
+    def write_proper_po_header(outp, locale):
+        LOCALE_LONG_NAMES = {
+            "de": "German",
+            "es": "Spanish",
+            "fr": "French",
+            "hu": "Hungarian",
+            "it": "Italian",
+            "ja": "Japanese",
+            "nl": "Dutch",
+            "pt_BR": "Portuguese (Brazil)",
+            "pt_PT": "Portuguese (Portugal)",
+            "ru": "Russian",
+            "zh": "Chinese",
+        }
+        GETTEXT_PLURAL_FORMS = {
+            "de": "nplurals=2; plural=(n != 1);",
+            "es": "nplurals=2; plural=(n != 1);",
+            "fr": "nplurals=2; plural=(n > 1);",
+            "hu": "nplurals=2; plural=(n != 1);",
+            "it": "nplurals=2; plural=(n != 1);",
+            "ja": "nplurals=1; plural=0;",
+            "nl": "nplurals=2; plural=(n != 1);",
+            "pt_BR": "nplurals=2; plural=(n > 1);",
+            "pt_PT": "nplurals=2; plural=(n != 1);",
+            "ru": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
+            "zh": "nplurals=1; plural=0;",
+        }
+        outp.write(
+            f"# {LOCALE_LONG_NAMES.get(locale, 'Unknown')} translation for Meerk40t\n"
+        )
+        outp.write("# Project-Homepage: https://github.com/meerk40t/meerk40t\n")
+        outp.write('msgid ""\n')
+        outp.write('msgstr ""\n')
+        outp.write('"Project-Id-Version: Meerk40t"\n')
+        outp.write('"Content-Type: text/plain; charset=UTF-8"\n')
+        outp.write('"Content-Transfer-Encoding: 8bit"\n')
+        outp.write('"Language-Team: Meerk40t Translation Team"\n')
+        outp.write(f'"Language: {locale}"\n')
+        outp.write('"X-Generator: translate_check.py"\n')
+        plur = GETTEXT_PLURAL_FORMS.get(locale, "")
+        if plur:
+            outp.write(f'"Plural-Forms: {plur}"\n')
+        outp.write("\n")
+
     # Write a new file with the same name as the locale
     written = 0
     ignored_empty = 0
@@ -351,6 +413,7 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
             pairs[msgid] = []
         pairs[msgid].append(msgstr)
     with open(f"./fixed_{locale}_meerk40t.po", "w", encoding="utf-8") as outp:
+        write_proper_po_header(outp, locale)
         for msgid, msgstr_list in pairs.items():
             msgstr = ""
             for m in msgstr_list:
