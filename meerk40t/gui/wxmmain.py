@@ -4837,9 +4837,12 @@ class MeerK40t(MWindow):
             if answer == wx.CANCEL:
                 return True  # VETO
         for job in self.context.device.spooler.queue:
-            print(f"{job.label} is running: {job.is_running()}")
             if job.is_running():
-                job.stop()
+                print(f"{job.label} was still running, stopping...")
+                try:
+                    job.stop()
+                except Exception as e:
+                    print(f"Error stopping job {job.label}: {e}")
         return False
 
     def window_close(self):
