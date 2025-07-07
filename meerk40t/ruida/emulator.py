@@ -161,6 +161,15 @@ class RuidaEmulator:
                 if self.channel:
                     self.channel(f"Process Failure: {str(bytes(array).hex())}")
 
+    def _home_device(self):
+        if hasattr(self.device.driver, "physical_home"):
+            # If the driver has a physical home, we can use that.
+            self.device.driver.physical_home()
+        elif hasattr(self.device.driver, "home"):
+            self.device.driver.home()
+        else:
+            self.device.driver.move_abs(0, 0)
+
     def _channel(self, text):
         if self.channel:
             self.channel(text)
@@ -357,7 +366,7 @@ class RuidaEmulator:
                 self._describe(array, "Stop Process")
                 try:
                     self.device.driver.reset()
-                    self.device.driver.home()
+                    self._home_device()
                 except AttributeError:
                     pass
                 return True
@@ -383,10 +392,7 @@ class RuidaEmulator:
                 return True
             elif array[1] == 0x2A:
                 self._describe(array, "Home XY")
-                try:
-                    self.device.driver.home()
-                except AttributeError:
-                    pass
+                self._home_device()
                 return True
             elif array[1] == 0x2E:
                 self._describe(array, "FocusZ")
@@ -637,10 +643,7 @@ class RuidaEmulator:
                         except AttributeError:
                             pass
                     else:
-                        try:
-                            self.device.driver.home()
-                        except AttributeError:
-                            pass
+                        self._home_device()
                 elif array[1] == 0x30 or array[1] == 0x70:
                     x = abscoord(array[3:8])
                     y = abscoord(array[8:13])
