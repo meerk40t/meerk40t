@@ -19857,3 +19857,323 @@ msgstr "Заполнить область шаблоном гибких шарн
 #: meerk40t/core/elements/element_treeops.py:1866
 msgid "Make Polygon regular"
 msgstr "Сделать многоугольник правильным"
+
+#: barcodes/bcode_logic.py:359 barcodes/bcode_logic.py:603 barcodes/main.py:325 build/lib/barcodes/bcode_logic.py:355 build/lib/barcodes/bcode_logic.py:599 build/lib/barcodes/main.py:325
+msgid "Invalid dimensions provided\""
+msgstr "Указаны неверные размеры\""
+
+#: barcodes/gui.py:20 build/lib/barcodes/gui.py:20
+msgid "Create a barcode\""
+msgstr "Создать штрихкод\""
+
+#: barcodes/gui.py:24 build/lib/barcodes/gui.py:24
+msgid "Text to use:\""
+msgstr "Текст для использования:\""
+
+#: barcodes/gui.py:28 build/lib/barcodes/gui.py:28
+msgid "The barcode/qrcode will be based on this content.\""
+msgstr "Штрихкод/QR-код будет основан на этом содержимом.\""
+
+#: barcodes/gui.py:30 build/lib/barcodes/gui.py:30
+msgid "Code:\""
+msgstr "Код:\""
+
+#: barcodes/gui.py:35 build/lib/barcodes/gui.py:35
+msgid "Coordinates:\""
+msgstr "Координаты:\""
+
+#: barcodes/gui.py:38 build/lib/barcodes/gui.py:38
+msgid "X:\""
+msgstr "X:\""
+
+#: barcodes/gui.py:41 build/lib/barcodes/gui.py:41
+msgid "Y:\""
+msgstr "Y:\""
+
+#: barcodes/gui.py:45 barcodes/gui.py:53 build/lib/barcodes/gui.py:45 build/lib/barcodes/gui.py:53
+msgid "Where will the barcode will be located (top left corner).\""
+msgstr "Где будет размещён штрихкод (верхний левый угол).\""
+
+#: barcodes/gui.py:61 build/lib/barcodes/gui.py:61
+msgid "QR-Code\""
+msgstr "QR-код\""
+
+#: barcodes/gui.py:62 barcodes/main.py:457 build/lib/barcodes/gui.py:62 build/lib/barcodes/main.py:457
+msgid "Barcode\""
+msgstr "Штрихкод\""
+
+#: barcodes/gui.py:66 build/lib/barcodes/gui.py:66
+msgid "QR-Code:\""
+msgstr "QR-код:\""
+
+#: barcodes/gui.py:73 build/lib/barcodes/gui.py:73
+msgid "Options\""
+msgstr "Параметры\""
+
+#: barcodes/gui.py:81 build/lib/barcodes/gui.py:81
+msgid "Width/Height:\""
+msgstr "Ширина/Высота:\""
+
+#: barcodes/gui.py:84 build/lib/barcodes/gui.py:84
+msgid "How wide/high will the resulting qr-code be?\""
+msgstr "Какой ширины/высоты будет итоговый QR-код?\""
+
+#: barcodes/gui.py:90 build/lib/barcodes/gui.py:90
+msgid "Resolution:\""
+msgstr "Разрешение:\""
+
+#: barcodes/gui.py:94 build/lib/barcodes/gui.py:94
+msgid "How big will the qr-code become (1..40, default 1)?\""
+msgstr "Какого размера будет QR-код (1..40, по умолчанию 1)?\""
+
+#: barcodes/gui.py:101 build/lib/barcodes/gui.py:101
+msgid "Border:\""
+msgstr "Граница:\""
+
+#: barcodes/gui.py:104 build/lib/barcodes/gui.py:104
+msgid "How wide is the border around the qr-code (default 4)?\""
+msgstr "Какой ширины граница вокруг QR-кода (по умолчанию 4)?\""
+
+#: barcodes/gui.py:110 build/lib/barcodes/gui.py:110
+msgid "Boxsize:\""
+msgstr "Размер ячейки:\""
+
+#: barcodes/gui.py:114 build/lib/barcodes/gui.py:114
+msgid "How big is the boxsize of the pixels (default 10)?\""
+msgstr "Какой размер пикселя (по умолчанию 10)?\""
+
+#: barcodes/gui.py:121 build/lib/barcodes/gui.py:121
+msgid "Error:\""
+msgstr "Ошибка:\""
+
+#: barcodes/gui.py:131 build/lib/barcodes/gui.py:131
+msgid "Establish the error correction used for the QR Code\""
+msgstr "Установить коррекцию ошибок для QR-кода\""
+
+#: barcodes/gui.py:146 build/lib/barcodes/gui.py:146
+msgid "WiFi\""
+msgstr "WiFi\""
+
+#: barcodes/gui.py:151 build/lib/barcodes/gui.py:151
+msgid "SSID:\""
+msgstr "SSID:\""
+
+#: barcodes/gui.py:159 build/lib/barcodes/gui.py:159
+msgid "Key:\""
+msgstr "Ключ:\""
+
+#: barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "WPA/WPA2/WPA3\""
+msgstr "WPA/WPA2/WPA3\""
+
+#: barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "WEP\""
+msgstr "WEP\""
+
+#: barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "None\""
+msgstr "Нет\""
+
+#: barcodes/gui.py:172 build/lib/barcodes/gui.py:172
+msgid "What kind of encryption does the network use?\""
+msgstr "Какой тип шифрования используется в сети?\""
+
+#: barcodes/gui.py:175 build/lib/barcodes/gui.py:175
+msgid "Encryption:\""
+msgstr "Шифрование:\""
+
+#: barcodes/gui.py:181 build/lib/barcodes/gui.py:181
+msgid "Hidden\""
+msgstr "Скрытая сеть\""
+
+#: barcodes/gui.py:182 build/lib/barcodes/gui.py:182
+msgid "Is the network hidden?\""
+msgstr "Сеть скрыта?\""
+
+#: barcodes/gui.py:190 barcodes/gui.py:250 build/lib/barcodes/gui.py:190 build/lib/barcodes/gui.py:250
+msgid "Generate Pattern\""
+msgstr "Сгенерировать шаблон\""
+
+#: barcodes/gui.py:197 build/lib/barcodes/gui.py:197
+msgid "VCard\""
+msgstr "VCard\""
+
+#: barcodes/gui.py:202 build/lib/barcodes/gui.py:202
+msgid "Provide your name as lastname,firstname\""
+msgstr "Укажите ваше имя как фамилия,имя\""
+
+#: barcodes/gui.py:203 build/lib/barcodes/gui.py:203
+msgid "Name:\""
+msgstr "Имя:\""
+
+#: barcodes/gui.py:214 build/lib/barcodes/gui.py:214
+msgid "Provide your address as:\nPO box, room number, house number, city, prefecture, zip code and country\""
+msgstr "Укажите ваш адрес:\nабонентский ящик, номер комнаты, номер дома, город, область, индекс и страна\""
+
+#: barcodes/gui.py:216 build/lib/barcodes/gui.py:216
+msgid "Address:\""
+msgstr "Адрес:\""
+
+#: barcodes/gui.py:223 build/lib/barcodes/gui.py:223
+msgid "Provide your phone-number\""
+msgstr "Укажите ваш номер телефона\""
+
+#: barcodes/gui.py:224 build/lib/barcodes/gui.py:224
+msgid "Phone:\""
+msgstr "Телефон:\""
+
+#: barcodes/gui.py:231 build/lib/barcodes/gui.py:231
+msgid "Provide your email-Address\""
+msgstr "Укажите ваш email-адрес\""
+
+#: barcodes/gui.py:232 build/lib/barcodes/gui.py:232
+msgid "email:\""
+msgstr "email:\""
+
+#: barcodes/gui.py:239 build/lib/barcodes/gui.py:239
+msgid "Provide a valid URL\""
+msgstr "Укажите корректный URL\""
+
+#: barcodes/gui.py:240 build/lib/barcodes/gui.py:240
+msgid "URL:\""
+msgstr "URL:\""
+
+#: barcodes/gui.py:257 build/lib/barcodes/gui.py:257
+msgid "Barcode:\""
+msgstr "Штрихкод:\""
+
+#: barcodes/gui.py:260 build/lib/barcodes/gui.py:260
+msgid "Options:\""
+msgstr "Параметры:\""
+
+#: barcodes/gui.py:264 build/lib/barcodes/gui.py:264
+msgid "Type:\""
+msgstr "Тип:\""
+
+#: barcodes/gui.py:272 build/lib/barcodes/gui.py:272
+msgid "What kind of barcode do you want to create?\""
+msgstr "Какой тип штрихкода вы хотите создать?\""
+
+#: barcodes/gui.py:278 build/lib/barcodes/gui.py:278
+msgid "Width:\""
+msgstr "Ширина:\""
+
+#: barcodes/gui.py:281 build/lib/barcodes/gui.py:281
+msgid "How wide will the resulting barcode be?\""
+msgstr "Какой ширины будет итоговый штрихкод?\""
+
+#: barcodes/gui.py:287 build/lib/barcodes/gui.py:287
+msgid "Height:\""
+msgstr "Высота:\""
+
+#: barcodes/gui.py:290 build/lib/barcodes/gui.py:290
+msgid "How high will the resulting barcode be?\""
+msgstr "Какой высоты будет итоговый штрихкод?\""
+
+#: barcodes/gui.py:296 build/lib/barcodes/gui.py:296
+msgid "No text:\""
+msgstr "Без текста:\""
+
+#: barcodes/gui.py:299 build/lib/barcodes/gui.py:299
+msgid "Suppress the text under the barcode?\""
+msgstr "Скрыть текст под штрихкодом?\""
+
+#: barcodes/gui.py:319 build/lib/barcodes/gui.py:319
+msgid "Create a barcode/qrcode\""
+msgstr "Создать штрихкод/QR-код\""
+
+#: barcodes/gui.py:324 build/lib/barcodes/gui.py:324
+msgid "Close without creating anything\""
+msgstr "Закрыть без создания\""
+
+#: barcodes/gui.py:551 build/lib/barcodes/gui.py:551
+msgid "Text to use for QR-Code:\""
+msgstr "Текст для QR-кода:\""
+
+#: barcodes/gui.py:623 build/lib/barcodes/gui.py:623
+msgid "Text to use for Barcode:\""
+msgstr "Текст для штрихкода:\""
+
+#: barcodes/main.py:256 build/lib/barcodes/main.py:256
+msgid "suppress text display\""
+msgstr "скрыть отображение текста\""
+
+#: barcodes/main.py:258 build/lib/barcodes/main.py:258
+msgid "X-Position of barcode\""
+msgstr "Положение X штрихкода\""
+
+#: barcodes/main.py:259 build/lib/barcodes/main.py:259
+msgid "Y-Position of barcode\""
+msgstr "Положение Y штрихкода\""
+
+#: barcodes/main.py:261 build/lib/barcodes/main.py:261
+msgid "Width of barcode, may be 'auto' to keep native width\""
+msgstr "Ширина штрихкода, можно 'auto' для исходной ширины\""
+
+#: barcodes/main.py:266 build/lib/barcodes/main.py:266
+msgid "Height of barcode, may be 'auto' to keep native height\""
+msgstr "Высота штрихкода, можно 'auto' для исходной высоты\""
+
+#: barcodes/main.py:268 build/lib/barcodes/main.py:268
+msgid "Barcode type\""
+msgstr "Тип штрихкода\""
+
+#: barcodes/main.py:269 build/lib/barcodes/main.py:269
+msgid "The code to process\""
+msgstr "Код для обработки\""
+
+#: barcodes/main.py:272 build/lib/barcodes/main.py:272
+msgid "Creates a barcode.\""
+msgstr "Создает штрихкод.\""
+
+#: barcodes/main.py:304 barcodes/main.py:396 build/lib/barcodes/main.py:304 build/lib/barcodes/main.py:396
+msgid "Please provide all parameters: {params}\""
+msgstr "Пожалуйста, укажите все параметры: {params}\""
+
+#: barcodes/main.py:306 build/lib/barcodes/main.py:306
+msgid "Supported formats: {all}\""
+msgstr "Поддерживаемые форматы: {all}\""
+
+#: barcodes/main.py:311 build/lib/barcodes/main.py:311
+msgid "Invalid format, supported: {all}\""
+msgstr "Неверный формат, поддерживаются: {all}\""
+
+#: barcodes/main.py:361 build/lib/barcodes/main.py:361
+msgid "error correction, one of L (7%), M (15%), Q (25%), H (30%)\""
+msgstr "коррекция ошибок, одна из L (7%), M (15%), Q (25%), H (30%)\""
+
+#: barcodes/main.py:363 build/lib/barcodes/main.py:363
+msgid "Boxsize (default 10)\""
+msgstr "Размер ячейки (по умолчанию 10)\""
+
+#: barcodes/main.py:365 build/lib/barcodes/main.py:365
+msgid "Border around qr-code (default 4)\""
+msgstr "Граница вокруг QR-кода (по умолчанию 4)\""
+
+#: barcodes/main.py:367 build/lib/barcodes/main.py:367
+msgid "size (1..40)\""
+msgstr "размер (1..40)\""
+
+#: barcodes/main.py:368 build/lib/barcodes/main.py:368
+msgid "X-position of qr-code\""
+msgstr "Положение X QR-кода\""
+
+#: barcodes/main.py:369 build/lib/barcodes/main.py:369
+msgid "Y-position of qr-code\""
+msgstr "Положение Y QR-кода\""
+
+#: barcodes/main.py:370 build/lib/barcodes/main.py:370
+msgid "Width/length of qr-code\""
+msgstr "Ширина/длина QR-кода\""
+
+#: barcodes/main.py:371 build/lib/barcodes/main.py:371
+msgid "Text to create qr-code from\""
+msgstr "Текст для создания QR-кода\""
+
+#: barcodes/main.py:374 build/lib/barcodes/main.py:374
+msgid "Creates a qr code.\""
+msgstr "Создает QR-код.\""
+
+#: barcodes/main.py:459 build/lib/barcodes/main.py:459
+msgid "Create an ean-barcode or a qr-code\""
+msgstr "Создать EAN-штрихкод или QR-код\""
