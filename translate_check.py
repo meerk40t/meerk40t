@@ -1,60 +1,50 @@
 """
-This module scans the complete source tree and looks for candidates
-to be translated and compares this with the existing translation of
-a given locale. It creates then a delta_{locale}.po file for review
-and integration into the translation file.
+translate_check.py
 
-poboy does something similar (and even better when recognising
-strings), but that comes at a cost, as it will at the same time
-discard translated but non-used msgid/msgstr pairs. This is not
-always the intended behaviour.
+Scans the source tree for translatable strings and compares them with the existing translation
+of a given locale. Outputs a delta_{locale}.po file for review and integration.
 
-You are supposed to call this tool from the command line
-specifying the locale as a parameter, e.g.:
-    python ./translate_check.py zh
+Usage:
+    python translate_check.py <locale>
+    python translate_check.py <locale> -v   # for validation
+
+Supported locales: de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
 """
 
 import os
 import sys
 
-# def testroutine():
-#     _ = print
-#     msg = _("Test for a '") + "-" + _('another test for "')
-#     msg = _(
-#         "part 1" +
-#         "part2"
-#         + "part3"
-#     )
+IGNORED_DIRS = [".git", ".github", "venv", ".venv"]
 
 
 def read_source():
+    """
+    Scans the source directory for translatable strings (_ ("...") ).
+    Also reads additional strings from 'additional_strings.txt' if present.
+    Returns:
+        id_strings_source: List of unique msgid strings found in the source.
+        id_usage: List of usage locations for each msgid.
+    """
     id_strings_source = []
     id_usage = []
-    # sourcedir = "./meerk40t"
     sourcedir = "./"
     linecount = 0
     filecount = 0
-    # debugit = False
-    ignoredirs = [".git", ".github", "venv", ".venv"]
+
     for root, dirs, files in os.walk(sourcedir):
-        mayignore = False
-        for s in ignoredirs:
-            if root.startswith(s) or root.startswith("./" + s):
-                mayignore = True
-                break
-        if mayignore:
+        # Skip ignored directories
+        if any(root.startswith(s) or root.startswith("./" + s) for s in IGNORED_DIRS):
             continue
         for filename in files:
             fname = os.path.join(root, filename)
             if not fname.endswith(".py"):
                 continue
-            # debugit = fname.endswith("translate_check.py")
+            pfname = os.path.normpath(fname).replace("\\", "/")
+            filecount += 1
+            localline = 0
+            msgid_mode = False
+            msgid = ""
             with open(fname, mode="r", encoding="utf-8", errors="surrogateescape") as f:
-                pfname = os.path.normpath(fname).replace("\\", "/")
-                filecount += 1
-                localline = 0
-                msgid_mode = False
-                msgid = ""
                 while True:
                     linecount += 1
                     localline += 1
@@ -63,38 +53,31 @@ def read_source():
                         break
                     while line:
                         line = line.strip()
-                        # if debugit:
-                        #     print (f"[{msgid_mode}, '{msgid}']: '{line}'")
                         if not line:
                             break
                         if msgid_mode:
+                            # End of msgid
                             if line.startswith(")"):
-                                if msgid:
-                                    #
-                                    idx = 0
-                                    while True:
-                                        idx = msgid.find('"', idx)
-                                        if idx == 0:
-                                            # Starts with a '"'
-                                            msgid = "\\" + msgid
-                                            idx += 1
-                                        elif idx > 0:
-                                            if msgid[idx - 1] != "\\":
-                                                msgid = msgid[:idx] + "\\" + msgid[idx:]
-                                                idx += 1
-                                        else:
-                                            break
+                                # Escape quotes in msgid
+                                idx = 0
+                                while True:
+                                    idx = msgid.find('"', idx)
+                                    if idx == 0:
+                                        msgid = "\\" + msgid
                                         idx += 1
-
-                                    if msgid not in id_strings_source:
-                                        id_strings_source.append(msgid)
-                                        id_usage.append(f"#: {pfname}:{localline}")
+                                    elif idx > 0:
+                                        if msgid[idx - 1] != "\\":
+                                            msgid = msgid[:idx] + "\\" + msgid[idx:]
+                                            idx += 1
                                     else:
-                                        found_index = id_strings_source.index(msgid)
-                                        id_usage[
-                                            found_index
-                                        ] += f" {pfname}:{localline}"
-                                    # print (f"'{orgline}' -> '{msgid}'")
+                                        break
+                                    idx += 1
+                                if msgid not in id_strings_source:
+                                    id_strings_source.append(msgid)
+                                    id_usage.append(f"#: {pfname}:{localline}")
+                                else:
+                                    found_index = id_strings_source.index(msgid)
+                                    id_usage[found_index] += f" {pfname}:{localline}"
                                 msgid_mode = False
                                 msgid = ""
                                 idx = 0
@@ -116,14 +99,12 @@ def read_source():
                                 while True:
                                     idx = line.find(quote, startidx)
                                     if idx < 0:
-                                        # strange
                                         msgid_mode = False
                                         line = ""
                                         break
                                     if line[idx - 1] == "\\":  # escape character
                                         startidx = idx + 1
                                     else:
-                                        # All good
                                         break
                                 msgid += line[1:idx]
                                 if idx + 1 >= len(line):
@@ -137,14 +118,12 @@ def read_source():
                                 while True:
                                     idx = line.find(quote, startidx)
                                     if idx < 0:
-                                        # strange
                                         msgid_mode = False
                                         line = ""
                                         break
                                     if line[idx - 1] == "\\":  # escape character
                                         startidx = idx + 1
                                     else:
-                                        # All good
                                         break
                                 msgid += line[1:idx]
                                 if idx + 1 >= len(line):
@@ -153,28 +132,23 @@ def read_source():
                                     line = line[idx + 1 :]
                                 continue
                             else:
-                                # strange
                                 msgid_mode = False
                                 line = ""
                                 break
                         else:
-                            # Fine so we need to look for '_('
                             idx = line.find("_(")
                             if idx >= 0:
                                 msgid_mode = True
                                 msgid = ""
                                 line = line[idx + 2 :]
                             else:
-                                # Nothing to be done here in this line
                                 line = ""
                                 break
 
-        # for dirname in dirs:
-        #     dname = os.path.join(root, dirname))
+    # Read additional strings from file if present
     if os.path.exists("additional_strings.txt"):
         additional_new = 0
         additional_existing = 0
-
         with open("additional_strings.txt", "r", encoding="utf-8") as f:
             last_usage = ""
             for line in f:
@@ -199,14 +173,11 @@ def read_source():
                             print(
                                 f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
                             )
-
-                        # print (f"start '{line}' -> '{candidate}'")
                     if not id_str:
                         print(
                             f"Stumbled across: '{line}', no id_str found, skipping this line."
                         )
                         continue
-                    print(f"Checking additional string: '{id_str}'")
                     if id_str not in id_strings_source:
                         id_strings_source.append(id_str)
                         id_usage.append(last_usage)
@@ -225,10 +196,15 @@ def read_source():
 
 
 def read_po(locale):
+    """
+    Reads all .po files for the given locale and extracts msgid/msgstr pairs.
+    Returns:
+        id_strings: List of msgid strings found in the .po files.
+        pairs: List of (msgid, msgstr) tuples.
+    """
     id_strings = []
     pairs = []
-    localedir = "./locale"
-    po_dir = localedir + "/" + locale + "/LC_MESSAGES/"
+    po_dir = f"./locale/{locale}/LC_MESSAGES/"
     if not os.path.isdir(po_dir):
         print(f"Locale directory {po_dir} does not exist or is empty.")
         return id_strings, pairs
@@ -274,8 +250,6 @@ def read_po(locale):
                             print(
                                 f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
                             )
-
-                        # print (f"start '{line}' -> '{candidate}'")
                 elif line.startswith('"'):
                     if msgid_mode or msgstr_mode:
                         candidate = line[1:]
@@ -284,7 +258,6 @@ def read_po(locale):
                             while candidate[idx] != '"':
                                 idx -= 1
                             candidate = candidate[:idx]
-                            # print (f"add '{line}' -> '{candidate}'")
                             if msgid_mode:
                                 id_str += candidate
                             elif msgstr_mode:
@@ -315,7 +288,6 @@ def read_po(locale):
                             print(
                                 f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
                             )
-
                 else:
                     pass
             if id_str:
@@ -334,9 +306,14 @@ def read_po(locale):
 
 
 def compare(locale, id_strings, id_strings_source, id_usage):
+    """
+    Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
+    """
     counts = [0, 0, 0]
     with open(f"./delta_{locale}.po", "w", encoding="utf-8") as outp:
         for idx, key in enumerate(id_strings_source):
+            if not key:
+                continue
             counts[0] += 1
             if key in id_strings:
                 counts[1] += 1
@@ -358,6 +335,10 @@ def compare(locale, id_strings, id_strings_source, id_usage):
 
 
 def validate_po(locale, id_strings_source, id_usage, id_pairs):
+    """
+    Writes a validated .po file for the locale, removing empty, duplicate, and unused entries.
+    """
+
     def write_proper_po_header(outp, locale):
         LOCALE_LONG_NAMES = {
             "de": "German",
@@ -402,24 +383,17 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
             outp.write(f'"Plural-Forms: {plur}"\n')
         outp.write("\n")
 
-    # Write a new file with the same name as the locale
     written = 0
     ignored_empty = 0
     ignored_duplicate = 0
     ignored_unused = 0
     pairs = {}
     for msgid, msgstr in id_pairs:
-        if msgid not in pairs:
-            pairs[msgid] = []
-        pairs[msgid].append(msgstr)
+        pairs.setdefault(msgid, []).append(msgstr)
     with open(f"./fixed_{locale}_meerk40t.po", "w", encoding="utf-8") as outp:
         write_proper_po_header(outp, locale)
         for msgid, msgstr_list in pairs.items():
-            msgstr = ""
-            for m in msgstr_list:
-                if m:
-                    msgstr = m
-                    break
+            msgstr = next((m for m in msgstr_list if m), "")
             to_write = True
             if len(msgstr_list) > 1:
                 ignored_duplicate += len(msgstr_list) - 1
@@ -434,7 +408,6 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
                 if orgidx < 0:
                     ignored_unused += 1
                     continue
-
                 outp.write(f"{id_usage[orgidx]}\n")
                 outp.write(f'msgid "{msgid}"\n')
                 outp.write(f'msgstr "{msgstr}"\n\n')
@@ -445,14 +418,15 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
 
 
 def main():
+    """
+    Main entry point for the script.
+    """
     args = sys.argv[1:]
-    locale = [
-        "de",
-    ]
-    if len(args) > 0:
-        locale = args
-    if locale[0].lower() == "all":
-        locale = [
+    locales = ["de"]
+    if args:
+        locales = args
+    if locales[0].lower() == "all":
+        locales = [
             "de",
             "es",
             "fr",
@@ -468,14 +442,13 @@ def main():
     validate = False
     if "-v" in args or "--validate" in args:
         validate = True
-        idx = locale.index("-v") if "-v" in locale else locale.index("--validate")
-        locale.pop(idx)
+        locales = [loc for loc in locales if loc not in ("-v", "--validate")]
 
     print("Usage: python ./translate_check.py <locale>")
     print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh")
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
-    for loc in locale:
+    for loc in locales:
         id_strings, pairs = read_po(loc)
         if validate:
             print(f"Validating locale {loc}...")
@@ -485,4 +458,5 @@ def main():
             compare(loc, id_strings, id_strings_source, id_usage)
 
 
-main()
+if __name__ == "__main__":
+    main()
