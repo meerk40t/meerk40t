@@ -1,10 +1,14 @@
-#: translate_check.py:22
-msgid "Test for a '"
-msgstr "Test pour un '"
-
-#: translate_check.py:22
-msgid "another test for \""
-msgstr "un autre test pour \""
+# French translation for Meerk40t
+# Project-Homepage: https://github.com/meerk40t/meerk40t
+msgid ""
+msgstr ""
+"Project-Id-Version: Meerk40t"
+"Content-Type: text/plain; charset=UTF-8"
+"Content-Transfer-Encoding: 8bit"
+"Language-Team: Meerk40t Translation Team"
+"Language: fr"
+"X-Generator: translate_check.py"
+"Plural-Forms: nplurals=2; plural=(n > 1);"
 
 #: meerk40t/balormk/device.py:90 meerk40t/grbl/device.py:54 meerk40t/gui/materialmanager.py:380 meerk40t/gui/wxmribbon.py:1474 meerk40t/gui/propertypanels/attributes.py:261 meerk40t/moshi/device.py:60 meerk40t/newly/device.py:118 meerk40t/ruida/device.py:49
 msgid "Label"
@@ -822,7 +826,7 @@ msgstr "Gros"
 msgid "plan<?> <command>"
 msgstr "plan<?> <commande>"
 
-#: meerk40t/core/planner.py:456 meerk40t/core/planner.py:460 meerk40t/core/planner.py:467 meerk40t/core/spoolers.py:56 meerk40t/core/spoolers.py:60 meerk40t/core/spoolers.py:64 meerk40t/core/spoolers.py:98 meerk40t/core/spoolers.py:102 meerk40t/core/spoolers.py:108 meerk40t/core/webhelp.py:26 meerk40t/core/webhelp.py:31 meerk40t/device/basedevice.py:121 meerk40t/device/basedevice.py:133 meerk40t/gui/wxmeerk40t.py:648 meerk40t/gui/wxmeerk40t.py:666 meerk40t/image/imagetools.py:564 meerk40t/image/imagetools.py:577 meerk40t/kernel/kernel.py:2686 meerk40t/kernel/kernel.py:2696 meerk40t/kernel/kernel.py:2700 meerk40t/kernel/kernel.py:2721 meerk40t/kernel/kernel.py:2772 meerk40t/kernel/kernel.py:2803 meerk40t/kernel/kernel.py:3034 meerk40t/kernel/kernel.py:3057 meerk40t/kernel/kernel.py:3091 meerk40t/kernel/kernel.py:3095 meerk40t/kernel/kernel.py:3124 meerk40t/kernel/kernel.py:3164 meerk40t/kernel/kernel.py:3168 meerk40t/kernel/kernel.py:3305 meerk40t/kernel/kernel.py:3313 meerk40t/kernel/kernel.py:3385 meerk40t/kernel/kernel.py:3402 meerk40t/kernel/kernel.py:3441
+#: meerk40t/core/planner.py:456 meerk40t/core/planner.py:460 meerk40t/core/planner.py:467 meerk40t/core/spoolers.py:56 meerk40t/core/spoolers.py:60 meerk40t/core/spoolers.py:64 meerk40t/core/spoolers.py:98 meerk40t/core/spoolers.py:102 meerk40t/core/spoolers.py:108 meerk40t/core/webhelp.py:26 meerk40t/core/webhelp.py:31 meerk40t/device/basedevice.py:121 meerk40t/device/basedevice.py:133 meerk40t/gui/wxmeerk40t.py:660 meerk40t/gui/wxmeerk40t.py:678 meerk40t/image/imagetools.py:564 meerk40t/image/imagetools.py:577 meerk40t/kernel/kernel.py:2686 meerk40t/kernel/kernel.py:2696 meerk40t/kernel/kernel.py:2700 meerk40t/kernel/kernel.py:2721 meerk40t/kernel/kernel.py:2772 meerk40t/kernel/kernel.py:2803 meerk40t/kernel/kernel.py:3034 meerk40t/kernel/kernel.py:3057 meerk40t/kernel/kernel.py:3091 meerk40t/kernel/kernel.py:3095 meerk40t/kernel/kernel.py:3124 meerk40t/kernel/kernel.py:3164 meerk40t/kernel/kernel.py:3168 meerk40t/kernel/kernel.py:3305 meerk40t/kernel/kernel.py:3313 meerk40t/kernel/kernel.py:3385 meerk40t/kernel/kernel.py:3402 meerk40t/kernel/kernel.py:3441
 msgid "----------"
 msgstr "----------"
 
@@ -1978,7 +1982,7 @@ msgstr "Allumer la lumière rouge"
 msgid "Red Dot Off"
 msgstr "Point rouge désactivé"
 
-#: meerk40t/balormk/gui/gui.py:166 meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1138 meerk40t/gui/alignment.py:1139 meerk40t/gui/hersheymanager.py:390 meerk40t/gui/magnetoptions.py:63 meerk40t/gui/magnetoptions.py:264 meerk40t/gui/magnetoptions.py:304 meerk40t/gui/wxmmain.py:5291 meerk40t/gui/wxmmain.py:5292 meerk40t/gui/propertypanels/placementproperty.py:293 meerk40t/gui/propertypanels/textproperty.py:397 meerk40t/gui/scenewidgets/guidewidget.py:332
+#: meerk40t/balormk/gui/gui.py:166 meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1138 meerk40t/gui/alignment.py:1139 meerk40t/gui/hersheymanager.py:390 meerk40t/gui/magnetoptions.py:63 meerk40t/gui/magnetoptions.py:264 meerk40t/gui/magnetoptions.py:304 meerk40t/gui/wxmmain.py:5298 meerk40t/gui/wxmmain.py:5299 meerk40t/gui/propertypanels/placementproperty.py:293 meerk40t/gui/propertypanels/textproperty.py:397 meerk40t/gui/scenewidgets/guidewidget.py:332
 msgid "Center"
 msgstr "Centrer"
 
@@ -3074,7 +3078,7 @@ msgstr "Actif : si vous copiez un élément texte contenant une référence de l
 msgid "File startup commands"
 msgstr "Commandes de démarrage de fichier"
 
-#: meerk40t/core/elements/elements.py:546 meerk40t/gui/wxmmain.py:5482
+#: meerk40t/core/elements/elements.py:546 meerk40t/gui/wxmmain.py:5489
 msgid "Ignore"
 msgstr "Ignorer"
 
@@ -3094,7 +3098,7 @@ msgstr "Choisissez si les commandes de démarrage de fichier sont globalement au
 msgid "Note: They still need to be activated on a per file basis."
 msgstr "Note : elles doivent tout de même être activées fichier par fichier."
 
-#: meerk40t/core/elements/elements.py:570 meerk40t/core/elements/elements.py:4178 meerk40t/core/elements/elements.py:4186 meerk40t/core/elements/elements.py:4188 meerk40t/gui/simpleui.py:225 meerk40t/gui/wxmmain.py:5448
+#: meerk40t/core/elements/elements.py:570 meerk40t/core/elements/elements.py:4178 meerk40t/core/elements/elements.py:4186 meerk40t/core/elements/elements.py:4188 meerk40t/gui/simpleui.py:225 meerk40t/gui/wxmmain.py:5455
 msgid "File is Malformed"
 msgstr "Le fichier est mal formé"
 
@@ -4530,7 +4534,7 @@ msgstr "Verticalement"
 msgid "Flip Vertically"
 msgstr "Retourner verticalement"
 
-#: meerk40t/core/elements/element_treeops.py:4310 meerk40t/gui/navigationpanels.py:2348 meerk40t/gui/propertypanels/attributes.py:772 meerk40t/gui/statusbarwidgets/strokewidget.py:169 meerk40t/rotary/rotary.py:61 meerk40t/rotary/rotary.py:71
+#: meerk40t/core/elements/element_treeops.py:4310 meerk40t/gui/navigationpanels.py:2356 meerk40t/gui/propertypanels/attributes.py:772 meerk40t/gui/statusbarwidgets/strokewidget.py:169 meerk40t/rotary/rotary.py:61 meerk40t/rotary/rotary.py:71
 msgid "Scale"
 msgstr "Échelle"
 
@@ -6798,7 +6802,7 @@ msgstr "Il n'y avait pas d'images intermédiaires"
 msgid "Calling inkscape..."
 msgstr "Appel d'inkscape..."
 
-#: meerk40t/extra/inkscape.py:204 meerk40t/gui/simpleui.py:211 meerk40t/gui/wxmmain.py:5384
+#: meerk40t/extra/inkscape.py:204 meerk40t/gui/simpleui.py:211 meerk40t/gui/wxmmain.py:5391
 msgid "Loading File..."
 msgstr "Chargement du fichier..."
 
@@ -7870,7 +7874,7 @@ msgstr "Origine physique"
 msgid "Send laser to physical home-position"
 msgstr "Envoyer le laser à la position d'origine physique"
 
-#: meerk40t/grbl/gui/grblcontroller.py:83 meerk40t/grbl/gui/gui.py:133 meerk40t/gui/wxmeerk40t.py:336 meerk40t/lihuiyu/gui/gui.py:109
+#: meerk40t/grbl/gui/grblcontroller.py:83 meerk40t/grbl/gui/gui.py:133 meerk40t/gui/wxmeerk40t.py:337 meerk40t/lihuiyu/gui/gui.py:109
 msgid "Home"
 msgstr "Accueil"
 
@@ -8022,7 +8026,7 @@ msgstr "Code personnalisé :"
 msgid "Any custom GRBL code that will be executed at the start of the operation"
 msgstr "Tout code GRBL personnalisé qui sera exécuté au début de l’opération"
 
-#: meerk40t/grbl/gui/gui.py:73 meerk40t/gui/laserpanel.py:211 meerk40t/gui/laserpanel.py:568 meerk40t/gui/spoolerpanel.py:121 meerk40t/gui/spoolerpanel.py:1027 meerk40t/gui/wxmeerk40t.py:372 meerk40t/kernel/kernel.py:1840 meerk40t/lihuiyu/gui/gui.py:86 meerk40t/lihuiyu/gui/lhycontrollergui.py:731 meerk40t/moshi/gui/gui.py:50
+#: meerk40t/grbl/gui/gui.py:73 meerk40t/gui/laserpanel.py:211 meerk40t/gui/laserpanel.py:568 meerk40t/gui/spoolerpanel.py:121 meerk40t/gui/spoolerpanel.py:1027 meerk40t/gui/wxmeerk40t.py:373 meerk40t/kernel/kernel.py:1840 meerk40t/lihuiyu/gui/gui.py:86 meerk40t/lihuiyu/gui/lhycontrollergui.py:731 meerk40t/moshi/gui/gui.py:50
 msgid "Pause"
 msgstr "Pause"
 
@@ -8030,7 +8034,7 @@ msgstr "Pause"
 msgid "Pause the laser"
 msgstr "Mettre le laser en pause"
 
-#: meerk40t/grbl/gui/gui.py:84 meerk40t/gui/gui_mixins.py:45 meerk40t/gui/laserpanel.py:220 meerk40t/gui/spoolerpanel.py:555 meerk40t/gui/wxmeerk40t.py:298 meerk40t/gui/propertypanels/operationpropertymain.py:128 meerk40t/lihuiyu/gui/gui.py:97 meerk40t/lihuiyu/gui/lhycontrollergui.py:733 meerk40t/moshi/gui/gui.py:60 meerk40t/moshi/gui/moshicontrollergui.py:472
+#: meerk40t/grbl/gui/gui.py:84 meerk40t/gui/gui_mixins.py:45 meerk40t/gui/laserpanel.py:220 meerk40t/gui/spoolerpanel.py:555 meerk40t/gui/wxmeerk40t.py:299 meerk40t/gui/propertypanels/operationpropertymain.py:128 meerk40t/lihuiyu/gui/gui.py:97 meerk40t/lihuiyu/gui/lhycontrollergui.py:733 meerk40t/moshi/gui/gui.py:60 meerk40t/moshi/gui/moshicontrollergui.py:472
 msgid "Stop"
 msgstr "Arrêt"
 
@@ -8378,11 +8382,11 @@ msgstr "Axe X :"
 msgid "Y-Axis:"
 msgstr "Axe Y :"
 
-#: meerk40t/gui/alignment.py:1224 meerk40t/gui/navigationpanels.py:2343 meerk40t/gui/propertypanels/attributes.py:1256 meerk40t/gui/propertypanels/placementproperty.py:72 meerk40t/tools/livinghinges.py:298
+#: meerk40t/gui/alignment.py:1224 meerk40t/gui/navigationpanels.py:2351 meerk40t/gui/propertypanels/attributes.py:1256 meerk40t/gui/propertypanels/placementproperty.py:72 meerk40t/tools/livinghinges.py:298 barcodes/gui.py:38 build/lib/barcodes/gui.py:38
 msgid "X:"
 msgstr "X :"
 
-#: meerk40t/gui/alignment.py:1229 meerk40t/gui/navigationpanels.py:2344 meerk40t/gui/propertypanels/attributes.py:1257 meerk40t/gui/propertypanels/placementproperty.py:82 meerk40t/tools/livinghinges.py:302
+#: meerk40t/gui/alignment.py:1229 meerk40t/gui/navigationpanels.py:2352 meerk40t/gui/propertypanels/attributes.py:1257 meerk40t/gui/propertypanels/placementproperty.py:82 meerk40t/tools/livinghinges.py:302 barcodes/gui.py:41 build/lib/barcodes/gui.py:41
 msgid "Y:"
 msgstr "Y :"
 
@@ -8874,7 +8878,7 @@ msgstr "Aide"
 msgid "Parameters"
 msgstr "Paramètres"
 
-#: meerk40t/gui/functionwrapper.py:85 meerk40t/gui/magnetoptions.py:501 meerk40t/gui/propertypanels/imageproperty.py:1473 meerk40t/tools/livinghinges.py:326
+#: meerk40t/gui/functionwrapper.py:85 meerk40t/gui/magnetoptions.py:501 meerk40t/gui/propertypanels/imageproperty.py:1473 meerk40t/tools/livinghinges.py:326 barcodes/gui.py:73 build/lib/barcodes/gui.py:73
 msgid "Options"
 msgstr "Options"
 
@@ -9046,7 +9050,7 @@ msgstr "Polices (double-cliquez pour utiliser)"
 msgid "Select to preview the font, double-click to apply it"
 msgstr "Sélectionnez pour prévisualiser la police, double-cliquez pour l’appliquer"
 
-#: meerk40t/gui/hersheymanager.py:722 meerk40t/gui/about.py:1697 meerk40t/gui/wxmmain.py:2247
+#: meerk40t/gui/hersheymanager.py:722 meerk40t/gui/wxmmain.py:2247
 msgid "Paste"
 msgstr "Coller"
 
@@ -9086,7 +9090,7 @@ msgstr "MeerK40t peut utiliser des polices TrueType, Hershey ou Autocad-86 conç
 msgid "Information"
 msgstr "Informations"
 
-#: meerk40t/gui/hersheymanager.py:1002 meerk40t/gui/hersheymanager.py:1105
+#: meerk40t/gui/hersheymanager.py:1002
 msgid "Font-Work-Directory"
 msgstr "Répertoire de travail des polices"
 
@@ -9175,14 +9179,8 @@ msgid "Confirm"
 msgstr "Confirmer"
 
 #: meerk40t/gui/hersheymanager.py:1312
-msgid ""
-"You will be led now to a source in the web, where you can download free fonts.\n"
-"Please respect individual property rights!\n"
-"Destination: {url}\n"
-msgstr ""
-"Vous allez maintenant être dirigé vers une ressource en ligne, où vous pouvez télécharger des polices gratuites.\n"
-"Veuillez respecter les droits de propriété individuels !\n"
-"Destination : {url}\n"
+msgid "You will be led now to a source in the web, where you can download free fonts.\nPlease respect individual property rights!\nDestination: {url}\n"
+msgstr "Vous allez maintenant être dirigé vers une ressource en ligne, où vous pouvez télécharger des polices gratuites.\nVeuillez respecter les droits de propriété individuels !\nDestination : {url}\n"
 
 #: meerk40t/gui/hersheymanager.py:1315
 msgid "Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
@@ -9316,7 +9314,7 @@ msgstr "Configurer les raccourcis clavier pour l’arsenal d’outils de MeerK40
 msgid "Laser-Control"
 msgstr "Contrôle du laser"
 
-#: meerk40t/gui/laserpanel.py:88 meerk40t/gui/laserpanel.py:92 meerk40t/gui/materialmanager.py:328 meerk40t/gui/materialmanager.py:466 meerk40t/gui/materialmanager.py:2237 meerk40t/gui/wxmeerk40t.py:280 meerk40t/gui/wxmeerk40t.py:305 meerk40t/gui/wxmeerk40t.py:343 meerk40t/gui/wxmeerk40t.py:380 meerk40t/gui/wxmmain.py:289
+#: meerk40t/gui/laserpanel.py:88 meerk40t/gui/laserpanel.py:92 meerk40t/gui/materialmanager.py:328 meerk40t/gui/materialmanager.py:466 meerk40t/gui/materialmanager.py:2237 meerk40t/gui/wxmeerk40t.py:281 meerk40t/gui/wxmeerk40t.py:306 meerk40t/gui/wxmeerk40t.py:344 meerk40t/gui/wxmeerk40t.py:381 meerk40t/gui/wxmmain.py:289
 msgid "Laser"
 msgstr "Laser"
 
@@ -9448,13 +9446,9 @@ msgstr "Désactiver l’obligation d’armement"
 msgid "Disable Arm"
 msgstr "Désactiver l’armement"
 
-#: meerk40t/gui/laserpanel.py:700 meerk40t/gui/wxmeerk40t.py:250
-msgid ""
-"We intentionally ignored a request to start a job via the keyboard.\n"
-"You need to make your intent clear by a deliberate mouse-click"
-msgstr ""
-"Nous avons volontairement ignoré une demande de démarrage de travail via le clavier.\n"
-"Vous devez confirmer votre intention par un clic de souris explicite"
+#: meerk40t/gui/laserpanel.py:700 meerk40t/gui/wxmeerk40t.py:251
+msgid "We intentionally ignored a request to start a job via the keyboard.\nYou need to make your intent clear by a deliberate mouse-click"
+msgstr "Nous avons volontairement ignoré une demande de démarrage de travail via le clavier.\nVous devez confirmer votre intention par un clic de souris explicite"
 
 #: meerk40t/gui/laserpanel.py:705 meerk40t/gui/wxmmain.py:1668
 msgid "Preparing Laserjob..."
@@ -9533,15 +9527,8 @@ msgid "C"
 msgstr "C"
 
 #: meerk40t/gui/lasertoolpanel.py:116
-msgid ""
-"Instruction: place the laser on three points on the circumference of the circle "
-"on the bed and confirm the position by clicking on the buttons below.\n"
-"MK will find the center for you and place the laser above it or will recreate "
-"the circle for further processing."
-msgstr ""
-"Instruction : placez le laser sur trois points sur la circonférence du cercle sur le plateau et "
-"confirmez la position en cliquant sur les boutons ci-dessous.\n"
-"MK trouvera le centre pour vous et y placera le laser ou recréera le cercle pour un traitement ultérieur."
+msgid "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for further processing."
+msgstr "Instruction : placez le laser sur trois points sur la circonférence du cercle sur le plateau et confirmez la position en cliquant sur les boutons ci-dessous.\nMK trouvera le centre pour vous et y placera le laser ou recréera le cercle pour un traitement ultérieur."
 
 #: meerk40t/gui/lasertoolpanel.py:123 meerk40t/gui/lasertoolpanel.py:197 meerk40t/gui/lasertoolpanel.py:295
 msgid "Make reference"
@@ -9572,15 +9559,8 @@ msgid "Corner 2"
 msgstr "Coin 2"
 
 #: meerk40t/gui/lasertoolpanel.py:190
-msgid ""
-"Instruction: place the laser on one corner of the encompassing rectangle and "
-"confirm the position by clicking on the buttons below. Then choose the opposing "
-"corner.\n"
-"MK will create a rectangle for you for further processing."
-msgstr ""
-"Instruction : placez le laser sur un coin du rectangle englobant et confirmez la position en cliquant sur "
-"les boutons ci-dessous. Ensuite, choisissez le coin opposé.\n"
-"MK créera un rectangle pour un traitement ultérieur."
+msgid "Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for further processing."
+msgstr "Instruction : placez le laser sur un coin du rectangle englobant et confirmez la position en cliquant sur les boutons ci-dessous. Ensuite, choisissez le coin opposé.\nMK créera un rectangle pour un traitement ultérieur."
 
 #: meerk40t/gui/lasertoolpanel.py:205
 msgid "Create frame"
@@ -9611,16 +9591,8 @@ msgid "Extension of the square to create"
 msgstr "Extension du carré à créer"
 
 #: meerk40t/gui/lasertoolpanel.py:288
-msgid ""
-"Instruction: place the laser on two points of one side of a square on the bed "
-"and confirm the position by clicking on the buttons below. Then choose one "
-"point on the other side of the corner.\n"
-"MK will create a square for you for further processing."
-msgstr ""
-"Instruction : placez le laser sur deux points d’un côté d’un carré sur le plateau, puis confirmez la "
-"position en cliquant sur les boutons ci-dessous. Ensuite, choisissez un point "
-"sur l’autre côté du coin.\n"
-"MK créera un carré pour un traitement ultérieur."
+msgid "Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for further processing."
+msgstr "Instruction : placez le laser sur deux points d’un côté d’un carré sur le plateau, puis confirmez la position en cliquant sur les boutons ci-dessous. Ensuite, choisissez un point sur l’autre côté du coin.\nMK créera un carré pour un traitement ultérieur."
 
 #: meerk40t/gui/lasertoolpanel.py:298
 msgid "Mark Corner"
@@ -9875,20 +9847,12 @@ msgid "This will group entries with the same material description together"
 msgstr "Cela regroupera les entrées ayant la même description de matériau"
 
 #: meerk40t/gui/materialmanager.py:153
-msgid ""
-"If active, power and speed values will be adjusted,\n"
-"to accommodate different lens-sizes"
-msgstr ""
-"Si activé, les valeurs de puissance et de vitesse seront ajustées,\n"
-"pour prendre en compte les différentes tailles de lentilles"
+msgid "If active, power and speed values will be adjusted,\nto accommodate different lens-sizes"
+msgstr "Si activé, les valeurs de puissance et de vitesse seront ajustées,\npour prendre en compte les différentes tailles de lentilles"
 
 #: meerk40t/gui/materialmanager.py:158
-msgid ""
-"If active, power and speed values will be adjusted,\n"
-"to accommodate different laser power"
-msgstr ""
-"Si activé, les valeurs de puissance et de vitesse seront ajustées,\n"
-"pour prendre en compte une puissance laser différente"
+msgid "If active, power and speed values will be adjusted,\nto accommodate different laser power"
+msgstr "Si activé, les valeurs de puissance et de vitesse seront ajustées,\npour prendre en compte une puissance laser différente"
 
 #: meerk40t/gui/materialmanager.py:170
 msgid "Choose a library-file"
@@ -9943,12 +9907,8 @@ msgid "Set"
 msgstr "Définir"
 
 #: meerk40t/gui/materialmanager.py:437
-msgid ""
-"Change the name / lasertype of the current entry\n"
-"Right-Click: assign lasertype to all visible entries"
-msgstr ""
-"Changer le nom / le type de laser pour l’entrée actuelle\n"
-"Clic droit : attribuer le type de laser à toutes les entrées visibles"
+msgid "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
+msgstr "Changer le nom / le type de laser pour l’entrée actuelle\nClic droit : attribuer le type de laser à toutes les entrées visibles"
 
 #: meerk40t/gui/materialmanager.py:500
 msgid "W"
@@ -10063,13 +10023,8 @@ msgid "No thickness"
 msgstr "Pas d’épaisseur"
 
 #: meerk40t/gui/materialmanager.py:905
-msgid ""
-"Thank you for your willingness to share your material setting with the MeerK40t "
-"community.\n"
-"Please provide a name to honor your authorship."
-msgstr ""
-"Merci pour votre volonté de partager votre configuration de matériau avec la communauté MeerK40t.\n"
-"Veuillez fournir un nom pour honorer votre contribution."
+msgid "Thank you for your willingness to share your material setting with the MeerK40t community.\nPlease provide a name to honor your authorship."
+msgstr "Merci pour votre volonté de partager votre configuration de matériau avec la communauté MeerK40t.\nVeuillez fournir un nom pour honorer votre contribution."
 
 #: meerk40t/gui/materialmanager.py:906
 msgid "Share material setting"
@@ -10079,7 +10034,7 @@ msgstr "Partager la configuration de matériau"
 msgid "We got your file. Thank you for helping\n\n"
 msgstr "Nous avons reçu votre fichier. Merci de votre aide\n\n"
 
-#: meerk40t/gui/materialmanager.py:1025 meerk40t/gui/materialmanager.py:1035 meerk40t/gui/wxmeerk40t.py:1297 meerk40t/gui/wxmeerk40t.py:1314
+#: meerk40t/gui/materialmanager.py:1025 meerk40t/gui/materialmanager.py:1035 meerk40t/gui/wxmeerk40t.py:1325 meerk40t/gui/wxmeerk40t.py:1342
 msgid "Thanks"
 msgstr "Merci"
 
@@ -10271,27 +10226,27 @@ msgstr "Afficher étiquettes / valeurs"
 msgid "First parameter (X-Axis)"
 msgstr "Premier paramètre (axe X)"
 
-#: meerk40t/gui/materialtest.py:359 meerk40t/gui/materialtest.py:425 meerk40t/gui/propertypanels/placementproperty.py:197 meerk40t/tools/kerftest.py:130
+#: meerk40t/gui/materialtest.py:359 meerk40t/gui/materialtest.py:425
 msgid "Parameter:"
 msgstr "Paramètre :"
 
-#: meerk40t/gui/materialtest.py:365 meerk40t/gui/materialtest.py:432
+#: meerk40t/gui/materialtest.py:365 meerk40t/gui/materialtest.py:432 meerk40t/gui/propertypanels/placementproperty.py:197 meerk40t/tools/kerftest.py:130
 msgid "Count:"
 msgstr "Nombre :"
 
-#: meerk40t/gui/materialtest.py:374 meerk40t/gui/materialtest.py:440
+#: meerk40t/gui/materialtest.py:374 meerk40t/gui/materialtest.py:440 meerk40t/tools/kerftest.py:138
 msgid "Minimum:"
 msgstr "Minimum :"
 
-#: meerk40t/gui/materialtest.py:381 meerk40t/gui/materialtest.py:447
+#: meerk40t/gui/materialtest.py:381 meerk40t/gui/materialtest.py:447 meerk40t/tools/kerftest.py:144
 msgid "Maximum:"
 msgstr "Maximum :"
 
-#: meerk40t/gui/materialtest.py:391 meerk40t/gui/navigationpanels.py:1913 meerk40t/gui/position.py:264 meerk40t/gui/propertypanels/attributes.py:751 meerk40t/gui/propertypanels/attributes.py:971 meerk40t/tools/livinghinges.py:313
+#: meerk40t/gui/materialtest.py:391 meerk40t/gui/navigationpanels.py:1921 meerk40t/gui/position.py:264 meerk40t/gui/propertypanels/attributes.py:751 meerk40t/gui/propertypanels/attributes.py:971 meerk40t/tools/livinghinges.py:313 barcodes/gui.py:278 build/lib/barcodes/gui.py:278
 msgid "Width:"
 msgstr "Largeur :"
 
-#: meerk40t/gui/materialtest.py:399 meerk40t/gui/materialtest.py:466
+#: meerk40t/gui/materialtest.py:399 meerk40t/gui/materialtest.py:466 meerk40t/tools/kerftest.py:156
 msgid "Delta:"
 msgstr "Delta :"
 
@@ -10303,7 +10258,7 @@ msgstr "Couleur :"
 msgid "Second parameter (Y-Axis)"
 msgstr "Deuxième paramètre (axe Y)"
 
-#: meerk40t/gui/materialtest.py:458 meerk40t/gui/navigationpanels.py:1914 meerk40t/gui/position.py:263 meerk40t/gui/propertypanels/attributes.py:970 meerk40t/tools/livinghinges.py:318
+#: meerk40t/gui/materialtest.py:458 meerk40t/gui/navigationpanels.py:1922 meerk40t/gui/position.py:263 meerk40t/gui/propertypanels/attributes.py:970 meerk40t/tools/livinghinges.py:318 barcodes/gui.py:287 build/lib/barcodes/gui.py:287
 msgid "Height:"
 msgstr "Hauteur :"
 
@@ -10407,7 +10362,7 @@ msgstr "Valeur minimum pour le 2ème paramètre"
 msgid "Maximum value for 2nd parameter"
 msgstr "Valeur maximum pour le 2ème paramètre"
 
-#: meerk40t/gui/materialtest.py:578 meerk40t/tools/kerftest.py:196
+#: meerk40t/gui/materialtest.py:580 meerk40t/tools/kerftest.py:196
 msgid "Horizontal gap between patterns"
 msgstr "Espacement horizontal entre les motifs"
 
@@ -10555,7 +10510,7 @@ msgstr "Propriétés du raster"
 msgid "Drag"
 msgstr "Glisser"
 
-#: meerk40t/gui/navigationpanels.py:98 meerk40t/gui/navigationpanels.py:124 meerk40t/gui/navigationpanels.py:145 meerk40t/gui/navigationpanels.py:164 meerk40t/gui/navigationpanels.py:227 meerk40t/gui/navigationpanels.py:2839 meerk40t/gui/navigationpanels.py:2848
+#: meerk40t/gui/navigationpanels.py:98 meerk40t/gui/navigationpanels.py:124 meerk40t/gui/navigationpanels.py:145 meerk40t/gui/navigationpanels.py:164 meerk40t/gui/navigationpanels.py:227 meerk40t/gui/navigationpanels.py:2847 meerk40t/gui/navigationpanels.py:2856
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -10618,1439 +10573,6 @@ msgstr "Déplacer le laser vers le bas de {mm} mm"
 #: meerk40t/gui/navigationpanels.py:535
 msgid "Right click: autofocus the Z-Axis"
 msgstr "Clic droit : effectuer la mise au point automatique de l’axe Z"
-
-#: meer#: meerk40t/gui/hersheymanager.py:1290
-msgid "Do you really want to delete this font: {font}"
-msgstr "Voulez-vous vraiment supprimer cette police : {font}"
-
-#: meerk40t/gui/hersheymanager.py:1293 meerk40t/gui/hersheymanager.py:1316
-msgid "Confirm"
-msgstr "Confirmer"
-
-#: meerk40t/gui/hersheymanager.py:1312
-msgid ""
-"You will be led now to a source in the web, where you can download free fonts.\n"
-"Please respect individual property rights!\n"
-"Destination: {url}\n"
-msgstr ""
-"Vous allez maintenant être dirigé vers une ressource en ligne, où vous pouvez télécharger des polices gratuites.\n"
-"Veuillez respecter les droits de propriété individuels !\n"
-"Destination : {url}\n"
-
-#: meerk40t/gui/hersheymanager.py:1315
-msgid "Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
-msgstr "Décompressez l’archive après le téléchargement et sélectionnez les fichiers extraits à l’aide du bouton 'Importer'."
-
-#: meerk40t/gui/hersheymanager.py:1404 meerk40t/gui/hersheymanager.py:1433 meerk40t/gui/wxmmain.py:926
-msgid "Font-Manager"
-msgstr "Gestionnaire de polices"
-
-#: meerk40t/gui/hersheymanager.py:1424
-msgid "Manage the fonts available to MeerK40t"
-msgstr "Gérez les polices disponibles pour MeerK40t"
-
-#: meerk40t/gui/hersheymanager.py:1435 meerk40t/gui/wxmmain.py:927
-msgid "Open the vector-font management window."
-msgstr "Ouvrez la fenêtre de gestion des polices vectorielles."
-
-#: meerk40t/gui/imagesplitter.py:190 meerk40t/gui/imagesplitter.py:338 meerk40t/gui/propertypanels/imageproperty.py:1864 meerk40t/gui/propertypanels/operationpropertymain.py:1367
-msgid "Set DPI to {value}"
-msgstr "Définir le DPI à {value}"
-
-#: meerk40t/gui/imagesplitter.py:195 meerk40t/gui/imagesplitter.py:509
-msgid "Create split images"
-msgstr "Créer des images fractionnées"
-
-#: meerk40t/gui/imagesplitter.py:202 meerk40t/gui/imagesplitter.py:351
-msgid "Image resolution:"
-msgstr "Résolution de l'image :"
-
-#: meerk40t/gui/imagesplitter.py:328
-msgid "Keyhole Object:"
-msgstr "Objet 'Keyhole' :"
-
-#: meerk40t/gui/imagesplitter.py:344
-msgid "Create keyhole image"
-msgstr "Créer une image de 'Keyhole'"
-
-#: meerk40t/gui/imagesplitter.py:358
-msgid "Invert Mask:"
-msgstr "Inverser le masque :"
-
-#: meerk40t/gui/imagesplitter.py:361
-msgid "Trace Keyhole:"
-msgstr "Tracer le 'Keyhole' :"
-
-#: meerk40t/gui/imagesplitter.py:500
-msgid "Render + Split"
-msgstr "Rendu + Fractionnement"
-
-#: meerk40t/gui/imagesplitter.py:501
-msgid "Keyhole operation"
-msgstr "Opération 'Keyhole'"
-
-#: meerk40t/gui/imagesplitter.py:530
-msgid "Image ops"
-msgstr "Opérations d'image"
-
-#: meerk40t/gui/imagesplitter.py:532
-msgid "Open create split image dialog / keyhole generation"
-msgstr "Ouvrir la boîte de dialogue pour créer une image fractionnée / génération de 'Keyhole'"
-
-#: meerk40t/gui/imagesplitter.py:555
-msgid "Split images for large jobs"
-msgstr "Fractionner les images pour les grands travaux"
-
-#: meerk40t/gui/keymap.py:27
-msgid "Add Hotkey"
-msgstr "Ajouter un raccourci clavier"
-
-#: meerk40t/gui/keymap.py:58
-msgid "What keys are bound to which actions?"
-msgstr "Quelles touches sont liées à quelles actions ?"
-
-#: meerk40t/gui/keymap.py:59
-msgid "Key"
-msgstr "Touche"
-
-#: meerk40t/gui/keymap.py:61
-msgid "Command"
-msgstr "Commande"
-
-#: meerk40t/gui/keymap.py:64
-msgid "Add a new hotkey"
-msgstr "Ajouter un nouveau raccourci clavier"
-
-#: meerk40t/gui/keymap.py:82 meerk40t/gui/keymap.py:123
-msgid "Reset Keymap to defaults"
-msgstr "Réinitialiser la carte des touches aux valeurs par défaut"
-
-#: meerk40t/gui/keymap.py:84
-msgid "Standard"
-msgstr "Standard"
-
-#: meerk40t/gui/keymap.py:113
-msgid "Remove {count} entries"
-msgstr "Supprimer {count} entrées"
-
-#: meerk40t/gui/keymap.py:183
-msgid "Missing Keystroke"
-msgstr "Touche manquante"
-
-#: meerk40t/gui/keymap.py:184
-msgid "No Keystroke for binding."
-msgstr "Aucune touche n’a été attribuée."
-
-#: meerk40t/gui/keymap.py:194
-msgid "Missing Command"
-msgstr "Commande manquante"
-
-#: meerk40t/gui/keymap.py:195
-msgid "No Command for binding."
-msgstr "Aucune commande n’a été attribuée."
-
-#: meerk40t/gui/keymap.py:326
-msgid "Keymap Settings"
-msgstr "Paramètres de la carte des touches"
-
-#: meerk40t/gui/keymap.py:334
-msgid "Keymap"
-msgstr "Carte des touches"
-
-#: meerk40t/gui/keymap.py:336 meerk40t/gui/wxmmain.py:934
-msgid "Opens Keymap Window"
-msgstr "Ouvre la fenêtre de la carte des touches"
-
-#: meerk40t/gui/keymap.py:354
-msgid "Configure key-shortcuts to MeerK40ts tool arsenal"
-msgstr "Configurer les raccourcis clavier pour l’arsenal d’outils de MeerK40t"
-
-#: meerk40t/gui/laserpanel.py:84
-msgid "Laser-Control"
-msgstr "Contrôle du laser"
-
-#: meerk40t/gui/laserpanel.py:88 meerk40t/gui/laserpanel.py:92 meerk40t/gui/materialmanager.py:328 meerk40t/gui/materialmanager.py:466 meerk40t/gui/materialmanager.py:2237 meerk40t/gui/wxmeerk40t.py:280 meerk40t/gui/wxmeerk40t.py:305 meerk40t/gui/wxmeerk40t.py:343 meerk40t/gui/wxmeerk40t.py:380 meerk40t/gui/wxmmain.py:289
-msgid "Laser"
-msgstr "Laser"
-
-#: meerk40t/gui/laserpanel.py:89
-msgid "Laser job control panel"
-msgstr "Panneau de contrôle de travaux laser"
-
-#: meerk40t/gui/laserpanel.py:93 meerk40t/gui/navigationpanels.py:111
-msgid "Jog"
-msgstr "Déplacement"
-
-#: meerk40t/gui/laserpanel.py:94
-msgid "Plan"
-msgstr "Plan"
-
-#: meerk40t/gui/laserpanel.py:96 meerk40t/gui/navigationpanels.py:138 meerk40t/gui/statusbarwidgets/selectionwidget.py:24
-msgid "Move"
-msgstr "Déplacer"
-
-#: meerk40t/gui/laserpanel.py:117
-msgid "Enable Laser Arm"
-msgstr "Activer l'armement du laser"
-
-#: meerk40t/gui/laserpanel.py:118
-msgid "Enable Laser Panel Arm/Disarm feature."
-msgstr "Activer la fonctionnalité d’armement/désarmement du panneau laser."
-
-#: meerk40t/gui/laserpanel.py:167
-msgid "Select device from list of configured devices"
-msgstr "Sélectionner le dispositif dans la liste des dispositifs configurés"
-
-#: meerk40t/gui/laserpanel.py:191
-msgid "Execute the Job"
-msgstr "Exécuter le travail"
-
-#: meerk40t/gui/laserpanel.py:212 meerk40t/gui/spoolerpanel.py:122
-msgid "Pause/Resume the laser"
-msgstr "Mettre le laser en pause/Reprendre"
-
-#: meerk40t/gui/laserpanel.py:221 meerk40t/gui/spoolerpanel.py:127
-msgid "Stop the laser"
-msgstr "Arrêter le laser"
-
-#: meerk40t/gui/laserpanel.py:243 meerk40t/gui/laserpanel.py:644 meerk40t/gui/wxmmain.py:1720
-msgid "Arm"
-msgstr "Armer"
-
-#: meerk40t/gui/laserpanel.py:244 meerk40t/gui/laserpanel.py:645 meerk40t/gui/wxmmain.py:1722
-msgid "Arm the job for execution"
-msgstr "Armer le travail pour exécution"
-
-#: meerk40t/gui/laserpanel.py:263
-msgid "Outline"
-msgstr "Contour"
-
-#: meerk40t/gui/laserpanel.py:264
-msgid "Trace the outline of the job"
-msgstr "Tracer le contour du travail"
-
-#: meerk40t/gui/laserpanel.py:272 meerk40t/gui/simulation.py:2412
-msgid "Simulate"
-msgstr "Simuler"
-
-#: meerk40t/gui/laserpanel.py:273
-msgid "Simulate the Design"
-msgstr "Simuler la conception"
-
-#: meerk40t/gui/laserpanel.py:286
-msgid "Rotary active"
-msgstr "Rotatif actif"
-
-#: meerk40t/gui/laserpanel.py:299 meerk40t/gui/laserpanel.py:907 meerk40t/gui/simulation.py:893
-msgid "Enable/Disable Optimize"
-msgstr "Activer/Désactiver l’optimisation"
-
-#: meerk40t/gui/laserpanel.py:301
-msgid "Override"
-msgstr "Remplacer"
-
-#: meerk40t/gui/laserpanel.py:303
-msgid "Allow ad-hoc adjustment of speed and power."
-msgstr "Permettre l’ajustement ad-hoc de la vitesse et de la puissance."
-
-#: meerk40t/gui/laserpanel.py:305 meerk40t/gui/laserpanel.py:326 meerk40t/gui/laserpanel.py:344 meerk40t/gui/laserpanel.py:406
-msgid "This affects running jobs, so use with care!"
-msgstr "Cela affecte les travaux en cours, utilisez avec prudence !"
-
-#: meerk40t/gui/laserpanel.py:324 meerk40t/gui/laserpanel.py:404
-msgid "Increases/decreases the regular laser power by this amount."
-msgstr "Augmente/réduit la puissance laser habituelle de ce montant."
-
-#: meerk40t/gui/laserpanel.py:342
-msgid "Increases/decreases the regular speed by this amount."
-msgstr "Augmente/réduit la vitesse habituelle de ce montant."
-
-#: meerk40t/gui/laserpanel.py:423
-msgid "Sets the maximum laser power level."
-msgstr "Définit le niveau de puissance laser maximal."
-
-#: meerk40t/gui/laserpanel.py:425 meerk40t/lihuiyu/device.py:203
-msgid "Setting this too high may cause damage to your laser tube!"
-msgstr "Définir cette valeur trop élevée peut endommager votre tube laser !"
-
-#: meerk40t/gui/laserpanel.py:573 meerk40t/gui/spoolerpanel.py:1032
-msgid "Resume"
-msgstr "Reprendre"
-
-#: meerk40t/gui/laserpanel.py:619 meerk40t/gui/wxmmain.py:1730
-msgid "Disarm"
-msgstr "Désarmer"
-
-#: meerk40t/gui/laserpanel.py:621 meerk40t/gui/wxmmain.py:1734
-msgid "Prevent the laser from accidentally executing"
-msgstr "Empêcher le laser de s’exécuter par inadvertance"
-
-#: meerk40t/gui/laserpanel.py:675
-msgid "Enable Arm Requirement"
-msgstr "Activer l’obligation d’armement"
-
-#: meerk40t/gui/laserpanel.py:675
-msgid "Enable Arm"
-msgstr "Activer l’armement"
-
-#: meerk40t/gui/laserpanel.py:681
-msgid "Disable Arm Requirement"
-msgstr "Désactiver l’obligation d’armement"
-
-#: meerk40t/gui/laserpanel.py:681
-msgid "Disable Arm"
-msgstr "Désactiver l’armement"
-
-#: meerk40t/gui/laserpanel.py:700 meerk40t/gui/wxmeerk40t.py:250
-msgid ""
-"We intentionally ignored a request to start a job via the keyboard.\n"
-"You need to make your intent clear by a deliberate mouse-click"
-msgstr ""
-"Nous avons volontairement ignoré une demande de démarrage de travail via le clavier.\n"
-"Vous devez confirmer votre intention par un clic de souris explicite"
-
-#: meerk40t/gui/laserpanel.py:705 meerk40t/gui/wxmmain.py:1668
-msgid "Preparing Laserjob..."
-msgstr "Préparation du travail laser..."
-
-#: meerk40t/gui/laserpanel.py:739 meerk40t/gui/simulation.py:1845 meerk40t/gui/simulation.py:1850 meerk40t/gui/simulation.py:2394
-msgid "Preparing simulation..."
-msgstr "Préparation de la simulation..."
-
-#: meerk40t/gui/laserpanel.py:794
-msgid "Clear locally defined plan"
-msgstr "Effacer le plan défini localement"
-
-#: meerk40t/gui/laserpanel.py:798 meerk40t/gui/propertypanels/imageproperty.py:104
-msgid "Update"
-msgstr "Mettre à jour"
-
-#: meerk40t/gui/laserpanel.py:799
-msgid "Update the Plan"
-msgstr "Mettre à jour le plan"
-
-#: meerk40t/gui/laserpanel.py:803 meerk40t/gui/magnetoptions.py:102 meerk40t/gui/materialtest.py:52 meerk40t/gui/preferences.py:154 meerk40t/gui/wxmmain.py:1863
-msgid "Save"
-msgstr "Enregistrer"
-
-#: meerk40t/gui/laserpanel.py:804
-msgid "Save the job"
-msgstr "Enregistrer le travail"
-
-#: meerk40t/gui/laserpanel.py:812 meerk40t/gui/laserpanel.py:839
-msgid "--- Empty ---"
-msgstr "--- Vide ---"
-
-#: meerk40t/gui/laserpanel.py:817
-msgid "Hold"
-msgstr "Maintenir"
-
-#: meerk40t/gui/laserpanel.py:819
-msgid "Preserve the job between running, rerunning, and execution"
-msgstr "Conserver le travail entre l'exécution, la relance et l'exécution"
-
-#: meerk40t/gui/laserpanel.py:851 meerk40t/gui/wxmmain.py:3085
-msgid "Save Project"
-msgstr "Enregistrer le projet"
-
-#: meerk40t/gui/laserpanel.py:873
-msgid "Updating Plan..."
-msgstr "Mise à jour du plan..."
-
-#: meerk40t/gui/lasertoolpanel.py:51
-msgid "Find center"
-msgstr "Trouver le centre"
-
-#: meerk40t/gui/lasertoolpanel.py:64
-msgid "A"
-msgstr "A"
-
-#: meerk40t/gui/lasertoolpanel.py:67 meerk40t/gui/lasertoolpanel.py:85 meerk40t/gui/lasertoolpanel.py:100 meerk40t/gui/lasertoolpanel.py:159 meerk40t/gui/lasertoolpanel.py:174 meerk40t/gui/lasertoolpanel.py:229 meerk40t/gui/lasertoolpanel.py:245 meerk40t/gui/lasertoolpanel.py:261
-msgid "Use position"
-msgstr "Utiliser la position"
-
-#: meerk40t/gui/lasertoolpanel.py:69 meerk40t/gui/lasertoolpanel.py:87 meerk40t/gui/lasertoolpanel.py:102 meerk40t/gui/lasertoolpanel.py:161 meerk40t/gui/lasertoolpanel.py:176 meerk40t/gui/lasertoolpanel.py:231 meerk40t/gui/lasertoolpanel.py:247 meerk40t/gui/lasertoolpanel.py:263
-msgid "Place the laser over the desired point and click..."
-msgstr "Placez le laser au-dessus du point souhaité et cliquez..."
-
-#: meerk40t/gui/lasertoolpanel.py:76 meerk40t/gui/lasertoolpanel.py:91 meerk40t/gui/lasertoolpanel.py:106 meerk40t/gui/lasertoolpanel.py:165 meerk40t/gui/lasertoolpanel.py:180 meerk40t/gui/lasertoolpanel.py:235 meerk40t/gui/lasertoolpanel.py:251 meerk40t/gui/lasertoolpanel.py:267 meerk40t/gui/lasertoolpanel.py:381 meerk40t/gui/propertypanels/textproperty.py:95
-msgid "<empty>"
-msgstr "<vide>"
-
-#: meerk40t/gui/lasertoolpanel.py:82
-msgid "B"
-msgstr "B"
-
-#: meerk40t/gui/lasertoolpanel.py:97
-msgid "C"
-msgstr "C"
-
-#: meerk40t/gui/lasertoolpanel.py:116
-msgid ""
-"Instruction: place the laser on three points on the circumference of the circle "
-"on the bed and confirm the position by clicking on the buttons below.\n"
-"MK will find the center for you and place the laser above it or will recreate "
-"the circle for further processing."
-msgstr ""
-"Instruction : placez le laser sur trois points sur la circonférence du cercle sur le plateau et "
-"confirmez la position en cliquant sur les boutons ci-dessous.\n"
-"MK trouvera le centre pour vous et y placera le laser ou recréera le cercle pour un traitement ultérieur."
-
-#: meerk40t/gui/lasertoolpanel.py:123 meerk40t/gui/lasertoolpanel.py:197 meerk40t/gui/lasertoolpanel.py:295
-msgid "Make reference"
-msgstr "Créer une référence"
-
-#: meerk40t/gui/lasertoolpanel.py:126
-msgid "Mark Center"
-msgstr "Marquer le centre"
-
-#: meerk40t/gui/lasertoolpanel.py:133
-msgid "Move to center"
-msgstr "Aller au centre"
-
-#: meerk40t/gui/lasertoolpanel.py:137 meerk40t/gui/toolwidgets/toolcircle.py:205
-msgid "Create circle"
-msgstr "Créer un cercle"
-
-#: meerk40t/gui/lasertoolpanel.py:143
-msgid "Place frame"
-msgstr "Placer le cadre"
-
-#: meerk40t/gui/lasertoolpanel.py:156
-msgid "Corner 1"
-msgstr "Coin 1"
-
-#: meerk40t/gui/lasertoolpanel.py:171
-msgid "Corner 2"
-msgstr "Coin 2"
-
-#: meerk40t/gui/lasertoolpanel.py:190
-msgid ""
-"Instruction: place the laser on one corner of the encompassing rectangle and "
-"confirm the position by clicking on the buttons below. Then choose the opposing "
-"corner.\n"
-"MK will create a rectangle for you for further processing."
-msgstr ""
-"Instruction : placez le laser sur un coin du rectangle englobant et confirmez la position en cliquant sur "
-"les boutons ci-dessous. Ensuite, choisissez le coin opposé.\n"
-"MK créera un rectangle pour un traitement ultérieur."
-
-#: meerk40t/gui/lasertoolpanel.py:205
-msgid "Create frame"
-msgstr "Créer un cadre"
-
-#: meerk40t/gui/lasertoolpanel.py:212
-msgid "Place square"
-msgstr "Placer un carré"
-
-#: meerk40t/gui/lasertoolpanel.py:225
-msgid "Side A 1"
-msgstr "Côté A 1"
-
-#: meerk40t/gui/lasertoolpanel.py:241
-msgid "Side A 2"
-msgstr "Côté A 2"
-
-#: meerk40t/gui/lasertoolpanel.py:257
-msgid "Side B"
-msgstr "Côté B"
-
-#: meerk40t/gui/lasertoolpanel.py:273 meerk40t/gui/propertypanels/placementproperty.py:350 meerk40t/gui/propertypanels/placementproperty.py:1083 meerk40t/tools/livinghinges.py:292
-msgid "Dimension"
-msgstr "Dimension"
-
-#: meerk40t/gui/lasertoolpanel.py:277
-msgid "Extension of the square to create"
-msgstr "Extension du carré à créer"
-
-#: meerk40t/gui/lasertoolpanel.py:288
-msgid ""
-"Instruction: place the laser on two points of one side of a square on the bed "
-"and confirm the position by clicking on the buttons below. Then choose one "
-"point on the other side of the corner.\n"
-"MK will create a square for you for further processing."
-msgstr ""
-"Instruction : placez le laser sur deux points d’un côté d’un carré sur le plateau, puis confirmez la "
-"position en cliquant sur les boutons ci-dessous. Ensuite, choisissez un point "
-"sur l’autre côté du coin.\n"
-"MK créera un carré pour un traitement ultérieur."
-
-#: meerk40t/gui/lasertoolpanel.py:298
-msgid "Mark Corner"
-msgstr "Marquer le coin"
-
-#: meerk40t/gui/lasertoolpanel.py:304
-msgid "Create square"
-msgstr "Créer un carré"
-
-#: meerk40t/gui/lasertoolpanel.py:648
-msgid "The circles center seems to lie outside the bed-dimensions!"
-msgstr "Le centre du cercle semble être en dehors des dimensions du plateau !"
-
-#: meerk40t/gui/lasertoolpanel.py:652
-msgid "If you continue to move to the center, then the laserhead might"
-msgstr "Si vous continuez à vous déplacer vers le centre, la tête laser pourrait"
-
-#: meerk40t/gui/lasertoolpanel.py:657
-msgid "slam into the walls and get damaged! Do you really want to proceed?"
-msgstr "heurter les parois et être endommagée ! Voulez-vous vraiment continuer ?"
-
-#: meerk40t/gui/lasertoolpanel.py:658
-msgid "Dangerous coordinates"
-msgstr "Coordonnées dangereuses"
-
-#: meerk40t/gui/lasertoolpanel.py:787
-msgid "Place Template"
-msgstr "Placer le modèle"
-
-#: meerk40t/gui/lasertoolpanel.py:805
-msgid "Define and use some templates for repetitive laser jobs"
-msgstr "Définir et utiliser des modèles pour des travaux laser répétitifs"
-
-#: meerk40t/gui/magnetoptions.py:27
-msgid "Magnet-Options"
-msgstr "Options d'aimantation"
-
-#: meerk40t/gui/magnetoptions.py:33 meerk40t/gui/navigationpanels.py:183 meerk40t/gui/navigationpanels.py:208 meerk40t/gui/position.py:33 meerk40t/gui/snapoptions.py:24 meerk40t/gui/wordlisteditor.py:930
-msgid "Editing"
-msgstr "Édition"
-
-#: meerk40t/gui/magnetoptions.py:34
-msgid "Edit magnet snapping options"
-msgstr "Modifier les options d’alignement magnétique"
-
-#: meerk40t/gui/magnetoptions.py:53 meerk40t/gui/scenewidgets/guidewidget.py:311
-msgid "Attraction areas..."
-msgstr "Zones d’attraction..."
-
-#: meerk40t/gui/magnetoptions.py:55 meerk40t/gui/scenewidgets/guidewidget.py:314
-msgid "Left/Right Side"
-msgstr "Côté gauche/droite"
-
-#: meerk40t/gui/magnetoptions.py:57
-msgid "Will a magnet line attract the left/right edges of an object"
-msgstr "Une ligne magnétique attirera-t-elle les bords gauche/droit d’un objet ?"
-
-#: meerk40t/gui/magnetoptions.py:59 meerk40t/gui/scenewidgets/guidewidget.py:323
-msgid "Top/Bottom Side"
-msgstr "Côté supérieur/inférieur"
-
-#: meerk40t/gui/magnetoptions.py:61
-msgid "Will a magnet line attract the top/bottom edges of an object"
-msgstr "Une ligne magnétique attirera-t-elle les bords supérieur/inférieur d’un objet ?"
-
-#: meerk40t/gui/magnetoptions.py:64
-msgid "Will a magnet line attract the center of an object"
-msgstr "Une ligne magnétique attirera-t-elle le centre d’un objet ?"
-
-#: meerk40t/gui/magnetoptions.py:70 meerk40t/gui/scenewidgets/guidewidget.py:241
-msgid "Attraction strength..."
-msgstr "Force d’attraction..."
-
-#: meerk40t/gui/magnetoptions.py:73 meerk40t/gui/wxmscene.py:755 meerk40t/gui/wxmscene.py:772 meerk40t/gui/wxmscene.py:784 meerk40t/gui/scenewidgets/guidewidget.py:246
-msgid "Off"
-msgstr "Désactivé"
-
-#: meerk40t/gui/magnetoptions.py:74 meerk40t/gui/scenewidgets/guidewidget.py:257
-msgid "Weak"
-msgstr "Faible"
-
-#: meerk40t/gui/magnetoptions.py:76 meerk40t/gui/scenewidgets/guidewidget.py:279
-msgid "Strong"
-msgstr "Forte"
-
-#: meerk40t/gui/magnetoptions.py:77 meerk40t/gui/scenewidgets/guidewidget.py:290
-msgid "Very Strong"
-msgstr "Très forte"
-
-#: meerk40t/gui/magnetoptions.py:78 meerk40t/gui/scenewidgets/guidewidget.py:301
-msgid "Enormous"
-msgstr "Énorme"
-
-#: meerk40t/gui/magnetoptions.py:86
-msgid "Define the attraction strength from weak (very close) to enormous (from far away)"
-msgstr "Définir la force d’attraction de faible (très proche) à énorme (de loin)"
-
-#: meerk40t/gui/magnetoptions.py:91
-msgid "Save/Load settings"
-msgstr "Enregistrer/Charger les réglages"
-
-#: meerk40t/gui/magnetoptions.py:98
-msgid "Name to save to / load from the current settings"
-msgstr "Nom utilisé pour enregistrer/charger les réglages actuels"
-
-#: meerk40t/gui/magnetoptions.py:101
-msgid "Load an existing setting configuration"
-msgstr "Charger une configuration existante"
-
-#: meerk40t/gui/magnetoptions.py:103
-msgid "Save the current configuration for later reuse"
-msgstr "Enregistrer la configuration actuelle pour une réutilisation ultérieure"
-
-#: meerk40t/gui/magnetoptions.py:236
-msgid "Set single line"
-msgstr "Définir une seule ligne"
-
-#: meerk40t/gui/magnetoptions.py:238
-msgid "Position:"
-msgstr "Position :"
-
-#: meerk40t/gui/magnetoptions.py:242
-msgid "Define the position of the magnet line"
-msgstr "Définir la position de la ligne magnétique"
-
-#: meerk40t/gui/magnetoptions.py:244
-msgid "Toggle a magnet line at the position on the X-axis"
-msgstr "Basculer une ligne magnétique à la position sur l’axe X"
-
-#: meerk40t/gui/magnetoptions.py:247
-msgid "Toggle a magnet line at the position on the Y-axis"
-msgstr "Basculer une ligne magnétique à la position sur l’axe Y"
-
-#: meerk40t/gui/magnetoptions.py:257
-msgid "Set around selection"
-msgstr "Définir autour de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:270
-msgid "Toggle a magnet line at the left edge of the selection"
-msgstr "Basculer une ligne magnétique au bord gauche de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:273
-msgid "Toggle a magnet line at the horizontal center of the selection"
-msgstr "Basculer une ligne magnétique au centre horizontal de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:276
-msgid "Toggle a magnet line at the right edge of the selection"
-msgstr "Basculer une ligne magnétique au bord droit de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:281
-msgid "Toggle magnet lines at 1/3 and 2/3 across the horizontal extent of the selection"
-msgstr "Basculer des lignes magnétiques aux 1/3 et 2/3 de l’étendue horizontale de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:286
-msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the horizontal extent of the selection"
-msgstr "Basculer des lignes magnétiques aux 1/4, 2/4 et 3/4 de l’étendue horizontale de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:291
-msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the horizontal extent of the selection"
-msgstr "Basculer des lignes magnétiques aux 1/5, 2/5, 3/5 et 4/5 de l’étendue horizontale de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:310
-msgid "Toggle a magnet line at the top edge of the selection"
-msgstr "Basculer une ligne magnétique au bord supérieur de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:313
-msgid "Toggle a magnet line at the vertical center of the selection"
-msgstr "Basculer une ligne magnétique au centre vertical de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:316
-msgid "Toggle a magnet line at the bottom edge of the selection"
-msgstr "Basculer une ligne magnétique au bord inférieur de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:321
-msgid "Toggle magnet lines at 1/3 and 2/3 across the vertical extent of the selection"
-msgstr "Basculer des lignes magnétiques aux 1/3 et 2/3 de l’étendue verticale de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:326
-msgid "Toggle magnet lines at 1/4, 2/4 and 3/4 across the vertical extent of the selection"
-msgstr "Basculer des lignes magnétiques aux 1/4, 2/4 et 3/4 de l’étendue verticale de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:331
-msgid "Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the vertical extent of the selection"
-msgstr "Basculer des lignes magnétiques aux 1/5, 2/5, 3/5 et 4/5 de l’étendue verticale de la sélection"
-
-#: meerk40t/gui/magnetoptions.py:362
-msgid "Clears all magnet lines"
-msgstr "Effacer toutes les lignes magnétiques"
-
-#: meerk40t/gui/magnetoptions.py:363
-msgid "Clear X"
-msgstr "Effacer X"
-
-#: meerk40t/gui/magnetoptions.py:364
-msgid "Clears magnet lines on X-axis"
-msgstr "Effacer les lignes magnétiques sur l’axe X"
-
-#: meerk40t/gui/magnetoptions.py:365
-msgid "Clear Y"
-msgstr "Effacer Y"
-
-#: meerk40t/gui/magnetoptions.py:366
-msgid "Clears magnet lines on Y-axis"
-msgstr "Effacer les lignes magnétiques sur l’axe Y"
-
-#: meerk40t/gui/magnetoptions.py:500
-msgid "Actions"
-msgstr "Actions"
-
-#: meerk40t/gui/materialmanager.py:56
-msgid "Consolidate same thickness for material"
-msgstr "Consolider la même épaisseur pour le matériau"
-
-#: meerk40t/gui/materialmanager.py:58
-msgid "Compensate Lens-Sizes"
-msgstr "Compenser les tailles de lentilles"
-
-#: meerk40t/gui/materialmanager.py:61
-msgid "Compensate Power-Levels"
-msgstr "Compenser les niveaux de puissance"
-
-#: meerk40t/gui/materialmanager.py:77
-msgid "File to import"
-msgstr "Fichier à importer"
-
-#: meerk40t/gui/materialmanager.py:90
-msgid "Different Lens-Size"
-msgstr "Taille de lentille différente"
-
-#: meerk40t/gui/materialmanager.py:94 meerk40t/gui/materialmanager.py:117
-msgid "Old:"
-msgstr "Ancien :"
-
-#: meerk40t/gui/materialmanager.py:96 meerk40t/gui/materialmanager.py:119
-msgid "New:"
-msgstr "Nouveau :"
-
-#: meerk40t/gui/materialmanager.py:113
-msgid "Different Laser-Power"
-msgstr "Puissance laser différente"
-
-#: meerk40t/gui/materialmanager.py:144
-msgid "Provide the full filename for material library"
-msgstr "Fournissez le nom de fichier complet pour la bibliothèque de matériaux"
-
-#: meerk40t/gui/materialmanager.py:146
-msgid "Click to select files"
-msgstr "Cliquez pour sélectionner des fichiers"
-
-#: meerk40t/gui/materialmanager.py:148
-msgid "This will group entries with the same material description together"
-msgstr "Cela regroupera les entrées ayant la même description de matériau"
-
-#: meerk40t/gui/materialmanager.py:153
-msgid ""
-"If active, power and speed values will be adjusted,\n"
-"to accommodate different lens-sizes"
-msgstr ""
-"Si activé, les valeurs de puissance et de vitesse seront ajustées,\n"
-"pour prendre en compte les différentes tailles de lentilles"
-
-#: meerk40t/gui/materialmanager.py:158
-msgid ""
-"If active, power and speed values will be adjusted,\n"
-"to accommodate different laser power"
-msgstr ""
-"Si activé, les valeurs de puissance et de vitesse seront ajustées,\n"
-"pour prendre en compte une puissance laser différente"
-
-#: meerk40t/gui/materialmanager.py:170
-msgid "Choose a library-file"
-msgstr "Choisissez un fichier de bibliothèque"
-
-#: meerk40t/gui/materialmanager.py:310
-msgid "Filter Materials"
-msgstr "Filtrer les matériaux"
-
-#: meerk40t/gui/materialmanager.py:312 meerk40t/gui/materialmanager.py:450 meerk40t/gui/materialmanager.py:2234
-msgid "Material"
-msgstr "Matériau"
-
-#: meerk40t/gui/materialmanager.py:322 meerk40t/gui/materialmanager.py:460 meerk40t/gui/materialmanager.py:2240
-msgid "Thickness"
-msgstr "Épaisseur"
-
-#: meerk40t/gui/materialmanager.py:332
-msgid "<All Lasertypes>"
-msgstr "<Tous types de laser>"
-
-#: meerk40t/gui/materialmanager.py:350
-msgid "Reset Filter"
-msgstr "Réinitialiser le filtre"
-
-#: meerk40t/gui/materialmanager.py:354
-msgid "Matching library entries"
-msgstr "Entrées de bibliothèque correspondantes"
-
-#: meerk40t/gui/materialmanager.py:363 meerk40t/gui/materialmanager.py:395
-msgid "Click to select / Right click for actions"
-msgstr "Cliquez pour sélectionner / Clic droit pour des actions"
-
-#: meerk40t/gui/materialmanager.py:374
-msgid "Operation"
-msgstr "Opération"
-
-#: meerk40t/gui/materialmanager.py:378 meerk40t/gui/materialmanager.py:479 meerk40t/gui/propertypanels/attributes.py:258
-msgid "Id"
-msgstr "Id"
-
-#: meerk40t/gui/materialmanager.py:392 meerk40t/gui/materialtest.py:739 meerk40t/gui/materialtest.py:748 meerk40t/gui/materialtest.py:755 meerk40t/gui/materialtest.py:762 meerk40t/gui/materialtest.py:771 meerk40t/gui/materialtest.py:780 meerk40t/gui/materialtest.py:800 meerk40t/gui/spoolerpanel.py:253 meerk40t/gui/spoolerpanel.py:290 meerk40t/gui/propertypanels/operationpropertymain.py:722
-msgid "Passes"
-msgstr "Passages"
-
-#: meerk40t/gui/materialmanager.py:427
-msgid "Title"
-msgstr "Titre"
-
-#: meerk40t/gui/materialmanager.py:433
-msgid "Set"
-msgstr "Définir"
-
-#: meerk40t/gui/materialmanager.py:437
-msgid ""
-"Change the name / lasertype of the current entry\n"
-"Right-Click: assign lasertype to all visible entries"
-msgstr ""
-"Changer le nom / le type de laser pour l’entrée actuelle\n"
-"Clic droit : attribuer le type de laser à toutes les entrées visibles"
-
-#: meerk40t/gui/materialmanager.py:500
-msgid "W"
-msgstr "W"
-
-#: meerk40t/gui/materialmanager.py:505
-msgid "Lens-Size"
-msgstr "Taille de lentille"
-
-#: meerk40t/gui/materialmanager.py:526
-msgid "Filter entries with a certain title."
-msgstr "Filtrer les entrées avec un certain titre."
-
-#: meerk40t/gui/materialmanager.py:528
-msgid "Filter entries with a certain material thickness."
-msgstr "Filtrer les entrées avec une certaine épaisseur de matériau."
-
-#: meerk40t/gui/materialmanager.py:530
-msgid "Filter entries of a certain laser type"
-msgstr "Filtrer les entrées d’un certain type de laser"
-
-#: meerk40t/gui/materialmanager.py:532
-msgid "Internal name of the library entry."
-msgstr "Nom interne de l’entrée de bibliothèque."
-
-#: meerk40t/gui/materialmanager.py:533
-msgid "Name of the library entry."
-msgstr "Nom de l’entrée de bibliothèque."
-
-#: meerk40t/gui/materialmanager.py:534
-msgid "Thickness of the material."
-msgstr "Épaisseur du matériau."
-
-#: meerk40t/gui/materialmanager.py:536
-msgid "Is this entry specific for a certain laser?"
-msgstr "Cette entrée est-elle spécifique à un certain laser ?"
-
-#: meerk40t/gui/materialmanager.py:538
-msgid "You can add additional information here."
-msgstr "Vous pouvez ajouter des informations supplémentaires ici."
-
-#: meerk40t/gui/materialmanager.py:542 meerk40t/gui/materialmanager.py:2139
-msgid "Add new"
-msgstr "Ajouter nouveau"
-
-#: meerk40t/gui/materialmanager.py:543
-msgid "Add a new library entry"
-msgstr "Ajouter une nouvelle entrée à la bibliothèque"
-
-#: meerk40t/gui/materialmanager.py:544 meerk40t/gui/materialmanager.py:2142
-msgid "Get current"
-msgstr "Obtenir l’actuel"
-
-#: meerk40t/gui/materialmanager.py:545
-msgid "Use the currently defined operations"
-msgstr "Utiliser les opérations actuellement définies"
-
-#: meerk40t/gui/materialmanager.py:546 meerk40t/gui/materialmanager.py:2145 meerk40t/gui/materialmanager.py:2640
-msgid "Load into Tree"
-msgstr "Charger dans l’arbre"
-
-#: meerk40t/gui/materialmanager.py:548
-msgid "Apply the current library entry to the operations branch"
-msgstr "Appliquer l’entrée de bibliothèque actuelle à la branche Opérations"
-
-#: meerk40t/gui/materialmanager.py:550 meerk40t/gui/materialmanager.py:2149 meerk40t/gui/materialmanager.py:2647
-msgid "Use for statusbar"
-msgstr "Utiliser pour la barre d’état"
-
-#: meerk40t/gui/materialmanager.py:552
-msgid "Use the current library entry for the statusbar icons"
-msgstr "Utiliser l’entrée de bibliothèque actuelle pour les icônes de la barre d’état"
-
-#: meerk40t/gui/materialmanager.py:555
-msgid "Delete the current library entry"
-msgstr "Supprimer l’entrée de bibliothèque actuelle"
-
-#: meerk40t/gui/materialmanager.py:557
-msgid "Duplicate the current library entry"
-msgstr "Dupliquer l’entrée de bibliothèque actuelle"
-
-#: meerk40t/gui/materialmanager.py:560
-msgid "Import a material library from ezcad or LightBurn"
-msgstr "Importer une bibliothèque de matériaux depuis ezcad ou LightBurn"
-
-#: meerk40t/gui/materialmanager.py:562 meerk40t/gui/materialmanager.py:2162
-msgid "Share"
-msgstr "Partager"
-
-#: meerk40t/gui/materialmanager.py:564
-msgid "Share the current library entry with the MeerK40t community"
-msgstr "Partager l’entrée de bibliothèque actuelle avec la communauté MeerK40t"
-
-#: meerk40t/gui/materialmanager.py:635
-msgid "Click to hide extended infos"
-msgstr "Cliquez pour masquer les informations détaillées"
-
-#: meerk40t/gui/materialmanager.py:638
-msgid "Click to show extended infos"
-msgstr "Cliquez pour afficher les informations détaillées"
-
-#: meerk40t/gui/materialmanager.py:805
-msgid "No laser"
-msgstr "Pas de laser"
-
-#: meerk40t/gui/materialmanager.py:806
-msgid "No material"
-msgstr "Pas de matériau"
-
-#: meerk40t/gui/materialmanager.py:807
-msgid "No thickness"
-msgstr "Pas d’épaisseur"
-
-#: meerk40t/gui/materialmanager.py:905
-msgid ""
-"Thank you for your willingness to share your material setting with the MeerK40t "
-"community.\n"
-"Please provide a name to honor your authorship."
-msgstr ""
-"Merci pour votre volonté de partager votre configuration de matériau avec la communauté MeerK40t.\n"
-"Veuillez fournir un nom pour honorer votre contribution."
-
-#: meerk40t/gui/materialmanager.py:906
-msgid "Share material setting"
-msgstr "Partager la configuration de matériau"
-
-#: meerk40t/gui/materialmanager.py:1024
-msgid "We got your file. Thank you for helping\n\n"
-msgstr "Nous avons reçu votre fichier. Merci de votre aide\n\n"
-
-#: meerk40t/gui/materialmanager.py:1025 meerk40t/gui/materialmanager.py:1035 meerk40t/gui/wxmeerk40t.py:1297 meerk40t/gui/wxmeerk40t.py:1314
-msgid "Thanks"
-msgstr "Merci"
-
-#: meerk40t/gui/materialmanager.py:1034
-msgid "We're sorry, that didn't work.\n\n"
-msgstr "Nous sommes désolés, cela n’a pas fonctionné.\n\n"
-
-#: meerk40t/gui/materialmanager.py:1088
-msgid "Do you really want to delete this entry? This can't be undone."
-msgstr "Voulez-vous vraiment supprimer cette entrée ? Cette action est irréversible."
-
-#: meerk40t/gui/materialmanager.py:1139
-msgid "Do you really want to delete all {num} visible entries? This can't be undone."
-msgstr "Voulez-vous vraiment supprimer les {num} entrées visibles ? Cette action est irréversible."
-
-#: meerk40t/gui/materialmanager.py:1144
-msgid "Do you really want to delete all {num} entries with {data}? This can't be undone."
-msgstr "Voulez-vous vraiment supprimer toutes les {num} entrées avec {data} ? Cette action est irréversible."
-
-#: meerk40t/gui/materialmanager.py:1147
-msgid "Deleting data"
-msgstr "Suppression des données"
-
-#: meerk40t/gui/materialmanager.py:1183
-msgid "Invalid file"
-msgstr "Fichier invalide"
-
-#: meerk40t/gui/materialmanager.py:1750
-msgid "Do you want to remove all existing operations before loading this set?"
-msgstr "Voulez-vous supprimer toutes les opérations existantes avant de charger cet ensemble ?"
-
-#: meerk40t/gui/materialmanager.py:1751
-msgid "Clear Operation-List"
-msgstr "Effacer la liste des opérations"
-
-#: meerk40t/gui/materialmanager.py:1775 meerk40t/gui/materialmanager.py:1841
-msgid "New material"
-msgstr "Nouveau matériau"
-
-#: meerk40t/gui/materialmanager.py:1778
-msgid "You can put additional operation instructions here."
-msgstr "Vous pouvez ajouter des instructions d’opération supplémentaires ici."
-
-#: meerk40t/gui/materialmanager.py:1812
-msgid "Do you want to use the operations in the tree for the current entry?"
-msgstr "Voulez-vous utiliser les opérations dans l’arborescence pour l’entrée actuelle ?"
-
-#: meerk40t/gui/materialmanager.py:2195
-msgid "Create minimal"
-msgstr "Créer minimal"
-
-#: meerk40t/gui/materialmanager.py:2197
-msgid "Create basic"
-msgstr "Créer basique"
-
-#: meerk40t/gui/materialmanager.py:2214
-msgid "Delete all with {data}"
-msgstr "Supprimer tout avec {data}"
-
-#: meerk40t/gui/materialmanager.py:2218
-msgid "Delete all"
-msgstr "Tout supprimer"
-
-#: meerk40t/gui/materialmanager.py:2222
-msgid "Sort by..."
-msgstr "Trier par..."
-
-#: meerk40t/gui/materialmanager.py:2260
-msgid "Expand all"
-msgstr "Tout développer"
-
-#: meerk40t/gui/materialmanager.py:2262
-msgid "Collapse all"
-msgstr "Tout réduire"
-
-#: meerk40t/gui/materialmanager.py:2659
-msgid "Color all {type}"
-msgstr "Colorer tous {type}"
-
-#: meerk40t/gui/materialmanager.py:2666
-msgid "Fill missing ids/label"
-msgstr "Remplir les ids/étiquettes manquants"
-
-#: meerk40t/gui/materialmanager.py:2832 meerk40t/gui/wordlisteditor.py:877
-msgid "How to use..."
-msgstr "Comment utiliser..."
-
-#: meerk40t/gui/materialmanager.py:2889
-msgid "Library"
-msgstr "Bibliothèque"
-
-#: meerk40t/gui/materialmanager.py:2891 meerk40t/gui/wordlisteditor.py:932
-msgid "How to use"
-msgstr "Comment utiliser"
-
-#: meerk40t/gui/materialmanager.py:2895 meerk40t/gui/materialmanager.py:2917 meerk40t/gui/statusbarwidgets/defaultoperations.py:316
-msgid "Material Library"
-msgstr "Bibliothèque de matériaux"
-
-#: meerk40t/gui/materialmanager.py:2919
-msgid "Manages Material Settings"
-msgstr "Gère les paramètres de matériau"
-
-#: meerk40t/gui/materialmanager.py:2944
-msgid "Manage and choose material specific settings"
-msgstr "Gérer et choisir les paramètres spécifiques au matériau"
-
-#: meerk40t/gui/materialtest.py:50
-msgid "Template-Name"
-msgstr "Nom du modèle"
-
-#: meerk40t/gui/materialtest.py:68
-msgid "Select an entry to reload"
-msgstr "Sélectionnez une entrée à recharger"
-
-#: meerk40t/gui/materialtest.py:190 meerk40t/gui/materialtest.py:1166 meerk40t/gui/wxmmain.py:2206
-msgid "Cut"
-msgstr "Couper"
-
-#: meerk40t/gui/materialtest.py:191 meerk40t/gui/materialtest.py:1166
-msgid "Engrave"
-msgstr "Graver"
-
-#: meerk40t/gui/materialtest.py:192 meerk40t/gui/materialtest.py:1166
-msgid "Raster"
-msgstr "Balayage"
-
-#: meerk40t/gui/materialtest.py:194 meerk40t/gui/materialtest.py:1166 meerk40t/gui/wxmmain.py:2001 meerk40t/gui/propertypanels/hatchproperty.py:14
-msgid "Hatch"
-msgstr "Hachurer"
-
-#: meerk40t/gui/materialtest.py:195 meerk40t/gui/propertypanels/wobbleproperty.py:13
-msgid "Wobble"
-msgstr "Osciller"
-
-#: meerk40t/gui/materialtest.py:236 meerk40t/gui/propertypanels/imageproperty.py:2154
-msgid "Red"
-msgstr "Rouge"
-
-#: meerk40t/gui/materialtest.py:236 meerk40t/gui/propertypanels/imageproperty.py:2152
-msgid "Green"
-msgstr "Vert"
-
-#: meerk40t/gui/materialtest.py:236 meerk40t/gui/propertypanels/imageproperty.py:2150
-msgid "Blue"
-msgstr "Bleu"
-
-#: meerk40t/gui/materialtest.py:245
-msgid "Choose image..."
-msgstr "Choisir une image..."
-
-#: meerk40t/gui/materialtest.py:270
-msgid "Choose from one of the existing images on your canvas to use as the test template"
-msgstr "Choisissez parmi les images existantes sur votre zone de travail pour l’utiliser comme modèle de test"
-
-#: meerk40t/gui/materialtest.py:273
-msgid "Labels"
-msgstr "Étiquettes"
-
-#: meerk40t/gui/materialtest.py:274
-msgid "Values"
-msgstr "Valeurs"
-
-#: meerk40t/gui/materialtest.py:287 meerk40t/gui/materialtest.py:310
-msgid "Pick values"
-msgstr "Choisir des valeurs"
-
-#: meerk40t/gui/materialtest.py:299 meerk40t/gui/materialtest.py:323
-msgid "Growing"
-msgstr "Croissant"
-
-#: meerk40t/gui/materialtest.py:325 meerk40t/tools/kerftest.py:68
-msgid "Create Pattern"
-msgstr "Créer un motif"
-
-#: meerk40t/gui/materialtest.py:334
-msgid "Operation to test"
-msgstr "Opération à tester"
-
-#: meerk40t/gui/materialtest.py:336
-msgid "Operation:"
-msgstr "Opération :"
-
-#: meerk40t/gui/materialtest.py:345
-msgid "Show Labels / Values"
-msgstr "Afficher étiquettes / valeurs"
-
-#: meerk40t/gui/materialtest.py:355
-msgid "First parameter (X-Axis)"
-msgstr "Premier paramètre (axe X)"
-
-#: meerk40t/gui/materialtest.py:359 meerk40t/gui/materialtest.py:425 meerk40t/gui/propertypanels/placementproperty.py:197 meerk40t/tools/kerftest.py:130
-msgid "Parameter:"
-msgstr "Paramètre :"
-
-#: meerk40t/gui/materialtest.py:365 meerk40t/gui/materialtest.py:432
-msgid "Count:"
-msgstr "Nombre :"
-
-#: meerk40t/gui/materialtest.py:374 meerk40t/gui/materialtest.py:440
-msgid "Minimum:"
-msgstr "Minimum :"
-
-#: meerk40t/gui/materialtest.py:381 meerk40t/gui/materialtest.py:447
-msgid "Maximum:"
-msgstr "Maximum :"
-
-#: meerk40t/gui/materialtest.py:391 meerk40t/gui/navigationpanels.py:1913 meerk40t/gui/position.py:264 meerk40t/gui/propertypanels/attributes.py:751 meerk40t/gui/propertypanels/attributes.py:971 meerk40t/tools/livinghinges.py:313
-msgid "Width:"
-msgstr "Largeur :"
-
-#: meerk40t/gui/materialtest.py:399 meerk40t/gui/materialtest.py:466
-msgid "Delta:"
-msgstr "Delta :"
-
-#: meerk40t/gui/materialtest.py:407 meerk40t/gui/materialtest.py:474
-msgid "Color:"
-msgstr "Couleur :"
-
-#: meerk40t/gui/materialtest.py:421
-msgid "Second parameter (Y-Axis)"
-msgstr "Deuxième paramètre (axe Y)"
-
-#: meerk40t/gui/materialtest.py:458 meerk40t/gui/navigationpanels.py:1914 meerk40t/gui/position.py:263 meerk40t/gui/propertypanels/attributes.py:970 meerk40t/tools/livinghinges.py:318
-msgid "Height:"
-msgstr "Hauteur :"
-
-#: meerk40t/gui/materialtest.py:494 meerk40t/tools/kerftest.py:168
-msgid "How to use it"
-msgstr "Comment l’utiliser"
-
-#: meerk40t/gui/materialtest.py:495
-msgid "To provide the best burning results, the parameters of operations"
-msgstr "Pour obtenir les meilleurs résultats de gravure, les paramètres des opérations"
-
-#: meerk40t/gui/materialtest.py:498
-msgid "need to be adjusted according to *YOUR* laser and the specific material"
-msgstr "doivent être adaptés à VOTRE laser et au matériau spécifique"
-
-#: meerk40t/gui/materialtest.py:501
-msgid "you want to work with (e.g. one batch of poplar plywood from one supplier"
-msgstr "que vous souhaitez utiliser (par ex. un lot de contreplaqué de peuplier d’un fournisseur"
-
-#: meerk40t/gui/materialtest.py:504
-msgid "may respond completely different to a batch of another supplier despite"
-msgstr "peut réagir complètement différemment d’un lot d’un autre fournisseur malgré"
-
-#: meerk40t/gui/materialtest.py:505
-msgid "having the very same specifications on paper)."
-msgstr "les mêmes spécifications sur le papier)."
-
-#: meerk40t/gui/materialtest.py:508
-msgid "E.g. for a regular CO2 laser you want to optimize the burn speed"
-msgstr "Par exemple, pour un laser CO2 ordinaire, vous voudrez optimiser la vitesse de gravure"
-
-#: meerk40t/gui/materialtest.py:511
-msgid "for a given power to reduce burn marks or decrease execution time."
-msgstr "pour une puissance donnée afin de réduire les marques de brûlure ou de diminuer le temps d’exécution."
-
-#: meerk40t/gui/materialtest.py:514
-msgid "Meerk40t simplifies this task to find out the optimal settings"
-msgstr "Meerk40t simplifie cette tâche pour déterminer les réglages optimaux"
-
-#: meerk40t/gui/materialtest.py:517
-msgid "by creating a testpattern that varies two different parameters."
-msgstr "en créant un motif de test qui varie deux paramètres différents."
-
-#: meerk40t/gui/materialtest.py:526
-msgid "Create a grid with your values"
-msgstr "Créez une grille avec vos valeurs"
-
-#: meerk40t/gui/materialtest.py:527
-msgid "Operation type for which the testpattern will be generated"
-msgstr "Type d’opération pour lequel le motif de test sera généré"
-
-#: meerk40t/gui/materialtest.py:530
-msgid "You can define the common parameters for this operation in the other tabs on top of this window"
-msgstr "Vous pouvez définir les paramètres communs pour cette opération dans les autres onglets en haut de cette fenêtre"
-
-#: meerk40t/gui/materialtest.py:533
-msgid "Choose the first parameter that you want to be tested"
-msgstr "Choisissez le premier paramètre que vous souhaitez tester"
-
-#: meerk40t/gui/materialtest.py:536
-msgid "Choose the second parameter that you want to be tested"
-msgstr "Choisissez le deuxième paramètre que vous souhaitez tester"
-
-#: meerk40t/gui/materialtest.py:541
-msgid "Choose the color aspect for the first parameter. NB: the colors for both parameters will be combined"
-msgstr "Choisissez l’aspect couleur pour le premier paramètre. NB : les couleurs pour les deux paramètres seront combinées"
-
-#: meerk40t/gui/materialtest.py:546
-msgid "Choose the color aspect for the second parameter. NB: the colors for both parameters will be combined"
-msgstr "Choisissez l’aspect couleur pour le deuxième paramètre. NB : les couleurs pour les deux paramètres seront combinées"
-
-#: meerk40t/gui/materialtest.py:551 meerk40t/gui/materialtest.py:556
-msgid "If checked, then the color aspect will grow from min to max values, if not then shrink"
-msgstr "Si coché, l’aspect couleur augmentera des valeurs min à max, sinon il diminuera"
-
-#: meerk40t/gui/materialtest.py:561 meerk40t/gui/materialtest.py:566
-msgid "Define how many values you want to test in the interval between min and max"
-msgstr "Définissez combien de valeurs vous souhaitez tester dans l’intervalle entre min et max"
-
-#: meerk40t/gui/materialtest.py:569
-msgid "Will create a descriptive label at the sides of the grid"
-msgstr "Va créer une étiquette descriptive sur les côtés de la grille"
-
-#: meerk40t/gui/materialtest.py:572
-msgid "Will create the corresponding values as labels at the sides of the grid"
-msgstr "Va créer les valeurs correspondantes comme étiquettes sur les côtés de la grille"
-
-#: meerk40t/gui/materialtest.py:574
-msgid "Minimum value for 1st parameter"
-msgstr "Valeur minimum pour le 1er paramètre"
-
-#: meerk40t/gui/materialtest.py:575
-msgid "Maximum value for 1st parameter"
-msgstr "Valeur maximum pour le 1er paramètre"
-
-#: meerk40t/gui/materialtest.py:576
-msgid "Minimum value for 2nd parameter"
-msgstr "Valeur minimum pour le 2ème paramètre"
-
-#: meerk40t/gui/materialtest.py:577
-msgid "Maximum value for 2nd parameter"
-msgstr "Valeur maximum pour le 2ème paramètre"
-
-#: meerk40t/gui/materialtest.py:578 meerk40t/tools/kerftest.py:196
-msgid "Horizontal gap between patterns"
-msgstr "Espacement horizontal entre les motifs"
-
-#: meerk40t/gui/materialtest.py:581
-msgid "Vertical gap between patterns"
-msgstr "Espacement vertical entre les motifs"
-
-#: meerk40t/gui/materialtest.py:764 meerk40t/gui/materialtest.py:773
-msgid "Overscan"
-msgstr "Surbalayage"
-
-#: meerk40t/gui/materialtest.py:825
-msgid "Wobble Speed Multiplier"
-msgstr "Multiplicateur de vitesse d’oscillation"
-
-#: meerk40t/gui/materialtest.py:838
-msgid "Wobble Type"
-msgstr "Type d’oscillation"
-
-#: meerk40t/gui/materialtest.py:853
-msgid "Rapid Speed"
-msgstr "Vitesse rapide"
-
-#: meerk40t/gui/materialtest.py:896
-msgid "Pulse Width"
-msgstr "Largeur d’impulsion"
-
-#: meerk40t/gui/materialtest.py:951 meerk40t/gui/materialtest.py:990
-msgid "Select the values you want to test for {param}"
-msgstr "Sélectionnez les valeurs que vous souhaitez tester pour {param}"
-
-#: meerk40t/gui/materialtest.py:1086 meerk40t/gui/materialtest.py:1105 meerk40t/tools/kerftest.py:308
-msgid "Every {dist}"
-msgstr "Tous les {dist}"
-
-#: meerk40t/gui/materialtest.py:1584 meerk40t/tools/kerftest.py:830
-msgid "This will delete all existing operations and elements"
-msgstr "Cela va supprimer toutes les opérations et tous les éléments existants"
-
-#: meerk40t/gui/materialtest.py:1586 meerk40t/tools/kerftest.py:832
-msgid "and replace them by the test-pattern! Are you really sure?"
-msgstr "et les remplacer par le motif de test ! Êtes-vous vraiment sûr ?"
-
-#: meerk40t/gui/materialtest.py:1588 meerk40t/tools/kerftest.py:834
-msgid "(Yes=Empty and Create, No=Keep existing)"
-msgstr "(Oui=Vider et créer, Non=Conserver existant)"
-
-#: meerk40t/gui/materialtest.py:1589 meerk40t/tools/kerftest.py:835
-msgid "Create Test-Pattern"
-msgstr "Créer le motif de test"
-
-#: meerk40t/gui/materialtest.py:1830
-msgid "Generator"
-msgstr "Générateur"
-
-#: meerk40t/gui/materialtest.py:1835
-msgid "Templates"
-msgstr "Modèles"
-
-#: meerk40t/gui/materialtest.py:1842
-msgid "Parameter-Test"
-msgstr "Test de paramètres"
-
-#: meerk40t/gui/materialtest.py:1991
-msgid "Figure out the right settings for your material"
-msgstr "Déterminer les bons réglages pour votre matériau"
-
-#: meerk40t/gui/mkdebug.py:55 meerk40t/gui/mkdebug.py:74 meerk40t/gui/mkdebug.py:93 meerk40t/gui/mkdebug.py:112 meerk40t/gui/mkdebug.py:131 meerk40t/gui/mkdebug.py:150
-msgid "Debug"
-msgstr "Débogage"
-
-#: meerk40t/gui/mkdebug.py:56
-msgid "Some internal debugging routines"
-msgstr "Quelques routines de débogage interne"
-
-#: meerk40t/gui/mkdebug.py:67
-msgid "System-Colors"
-msgstr "Couleurs système"
-
-#: meerk40t/gui/mkdebug.py:75
-msgid "Display available color information"
-msgstr "Afficher les informations de couleur disponibles"
-
-#: meerk40t/gui/mkdebug.py:86
-msgid "Icons"
-msgstr "Icônes"
-
-#: meerk40t/gui/mkdebug.py:94
-msgid "Display available icons"
-msgstr "Afficher les icônes disponibles"
-
-#: meerk40t/gui/mkdebug.py:105
-msgid "Shutdown Test"
-msgstr "Test d’arrêt"
-
-#: meerk40t/gui/mkdebug.py:113
-msgid "Try some shutdown routines to figure out exit crashes"
-msgstr "Essayez quelques routines d’arrêt pour identifier les plantages à la fermeture"
-
-#: meerk40t/gui/mkdebug.py:124
-msgid "Window Test"
-msgstr "Test de fenêtre"
-
-#: meerk40t/gui/mkdebug.py:132
-msgid "Show available windows"
-msgstr "Afficher les fenêtres disponibles"
-
-#: meerk40t/gui/mkdebug.py:143
-msgid "Plotter Test"
-msgstr "Test de traceur"
-
-#: meerk40t/gui/mkdebug.py:151
-msgid "Raster plotter test"
-msgstr "Test de traceur raster"
-
-#: meerk40t/gui/mkdebug.py:289
-msgid "Emphasized nodes"
-msgstr "Nœuds mis en évidence"
-
-#: meerk40t/gui/mkdebug.py:290
-msgid "Selected nodes"
-msgstr "Nœuds sélectionnés"
-
-#: meerk40t/gui/mkdebug.py:291
-msgid "Primus inter pares"
-msgstr "Primus inter pares"
-
-#: meerk40t/gui/mkdebug.py:297
-msgid "Selected:"
-msgstr "Sélectionné :"
-
-#: meerk40t/gui/mkdebug.py:298
-msgid "Emphasized:"
-msgstr "Mis en évidence :"
-
-#: meerk40t/gui/mkdebug.py:707
-msgid "Raster Plotter Test Info"
-msgstr "Informations sur le test de traceur raster"
-
-#: meerk40t/gui/mkdebug.py:720
-msgid "Raster Properties"
-msgstr "Propriétés du raster"
-
-#: meerk40t/gui/navigationpanels.py:85
-msgid "Drag"
-msgstr "Glisser"
-
-#: meerk40t/gui/navigationpanels.py:98 meerk40t/gui/navigationpanels.py:124 meerk40t/gui/navigationpanels.py:145 meerk40t/gui/navigationpanels.py:164 meerk40t/gui/navigationpanels.py:227 meerk40t/gui/navigationpanels.py:2839 meerk40t/gui/navigationpanels.py:2848
-msgid "Navigation"
-msgstr "Navigation"
-
-#: meerk40t/gui/navigationpanels.py:99
-msgid "Align and drag laserhead around to be burned elements"
-msgstr "Aligner et déplacer la tête laser autour des éléments à graver"
-
-#: meerk40t/gui/navigationpanels.py:125
-msgid "Display laser jogging controls"
-msgstr "Afficher les contrôles de déplacement du laser"
-
-#: meerk40t/gui/navigationpanels.py:146
-msgid "Display laser/element movement/dragging controls"
-msgstr "Afficher les contrôles de mouvement/ déplacement/ glisser d’élément/laser"
-
-#: meerk40t/gui/navigationpanels.py:158
-msgid "Pulse"
-msgstr "Impulsion"
-
-#: meerk40t/gui/navigationpanels.py:165
-msgid "Display laser pulse panel"
-msgstr "Afficher le panneau d’impulsion laser"
-
-#: meerk40t/gui/navigationpanels.py:177
-msgid "Element-Size"
-msgstr "Taille de l’élément"
-
-#: meerk40t/gui/navigationpanels.py:201
-msgid "Transform"
-msgstr "Transformer"
-
-#: meerk40t/gui/navigationpanels.py:209
-msgid "Display element transformation panel"
-msgstr "Afficher le panneau de transformation d’élément"
-
-#: meerk40t/gui/navigationpanels.py:228
-msgid "Edit default jog distance"
-msgstr "Modifier la distance de déplacement par défaut"
-
-#: meerk40t/gui/navigationpanels.py:465 meerk40t/gui/navigationpanels.py:533
-msgid "Move the laser to the defined Z-Home-Position"
-msgstr "Déplacer le laser vers la position Z d’origine définie"
 
 #: meerk40t/gui/materialtest.py:578
 msgid "Width of the to be created pattern"
@@ -12164,7 +10686,7 @@ msgstr "Limiter le mouvement du laser à la taille du plateau"
 msgid "Caution: allow laser movement outside bed size"
 msgstr "Attention: autoriser le mouvement du laser en dehors de la taille du plateau"
 
-#: meerk40t/gui/navigationpanels.py:1439 meerk40t/gui/wxmeerk40t.py:358
+#: meerk40t/gui/navigationpanels.py:1439 meerk40t/gui/wxmeerk40t.py:359
 msgid "Send laser to home position"
 msgstr "Envoyer le laser à la position d'origine"
 
@@ -12220,115 +10742,115 @@ msgstr "Impulsion courte :"
 msgid " ms"
 msgstr " ms"
 
-#: meerk40t/gui/navigationpanels.py:1883
+#: meerk40t/gui/navigationpanels.py:1891
 msgid "Set the power of the laser pulse in percent"
 msgstr "Définir la puissance de l'impulsion laser en pourcentage"
 
-#: meerk40t/gui/navigationpanels.py:1888
+#: meerk40t/gui/navigationpanels.py:1896
 msgid "Set the power of the laser pulse in ppi"
 msgstr "Définir la puissance de l'impulsion laser en ppi"
 
-#: meerk40t/gui/navigationpanels.py:1908 meerk40t/gui/position.py:258
+#: meerk40t/gui/navigationpanels.py:1916 meerk40t/gui/position.py:258
 msgid "Object Dimensions"
 msgstr "Dimensions de l'objet"
 
-#: meerk40t/gui/navigationpanels.py:1952
+#: meerk40t/gui/navigationpanels.py:1960
 msgid "Resize the object"
 msgstr "Redimensionner l'objet"
 
-#: meerk40t/gui/navigationpanels.py:1954
+#: meerk40t/gui/navigationpanels.py:1962
 msgid "Define width of selected object"
 msgstr "Définir la largeur de l'objet sélectionné"
 
-#: meerk40t/gui/navigationpanels.py:1955
+#: meerk40t/gui/navigationpanels.py:1963
 msgid "Define height of selected object"
 msgstr "Définir la hauteur de l'objet sélectionné"
 
-#: meerk40t/gui/navigationpanels.py:1958 meerk40t/gui/propertypanels/attributes.py:983
+#: meerk40t/gui/navigationpanels.py:1966 meerk40t/gui/propertypanels/attributes.py:983
 msgid "Lock the ratio of width / height to the original values"
 msgstr "Verrouiller le rapport largeur / hauteur aux valeurs initiales"
 
-#: meerk40t/gui/navigationpanels.py:2256
+#: meerk40t/gui/navigationpanels.py:2264
 msgid "Scale Down by 5% / 50% on left / right click"
 msgstr "Réduire l'échelle de 5% / 50% au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2259
+#: meerk40t/gui/navigationpanels.py:2267
 msgid "Translate Up by 1x / 10x Jog-Distance on left / right click"
 msgstr "Déplacer vers le haut de 1x / 10x la distance de jog au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2261
+#: meerk40t/gui/navigationpanels.py:2269
 msgid "Scale Up by 5% / 50% on left / right click"
 msgstr "Augmenter l'échelle de 5% / 50% au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2263
+#: meerk40t/gui/navigationpanels.py:2271
 msgid "Translate Left by 1x / 10x Jog-Distance on left / right click"
 msgstr "Déplacer vers la gauche de 1x / 10x la distance de jog au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2265
+#: meerk40t/gui/navigationpanels.py:2273
 msgid "Reset Matrix"
 msgstr "Réinitialiser la matrice"
 
-#: meerk40t/gui/navigationpanels.py:2267
+#: meerk40t/gui/navigationpanels.py:2275
 msgid "Translate Right by 1x / 10x Jog-Distance on left / right click"
 msgstr "Déplacer vers la droite de 1x / 10x la distance de jog au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2270
+#: meerk40t/gui/navigationpanels.py:2278
 msgid "Rotate Counterclockwise by 5° / by 90° on left / right click"
 msgstr "Pivoter dans le sens antihoraire de 5° / 90° au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2273
+#: meerk40t/gui/navigationpanels.py:2281
 msgid "Translate Down by 1x / 10x Jog-Distance on left / right click"
 msgstr "Déplacer vers le bas de 1x / 10x la distance de jog au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2276
+#: meerk40t/gui/navigationpanels.py:2284
 msgid "Rotate Clockwise by 5° / by 90° on left / right click"
 msgstr "Pivoter dans le sens horaire de 5° / 90° au clic gauche / droit"
 
-#: meerk40t/gui/navigationpanels.py:2283
+#: meerk40t/gui/navigationpanels.py:2291
 msgid "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
 msgstr "Échelle X - redimensionne l'élément selon ce facteur dans la direction X, par exemple 2,0 signifie 200% de l'échelle d'origine. Vous pouvez soit entrer ce facteur directement, soit indiquer l'échelle sous forme de pourcentage, par exemple 0,5 ou 50% réduira l'échelle de moitié."
 
-#: meerk40t/gui/navigationpanels.py:2290
+#: meerk40t/gui/navigationpanels.py:2298
 msgid "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
 msgstr "Échelle Y - redimensionne l'élément selon ce facteur dans la direction Y, par exemple 2,0 signifie 200% de l'échelle d'origine. Vous pouvez soit entrer ce facteur directement, soit indiquer l'échelle sous forme de pourcentage, par exemple 0,5 ou 50% réduira l'échelle de moitié."
 
-#: meerk40t/gui/navigationpanels.py:2299
+#: meerk40t/gui/navigationpanels.py:2307
 msgid "Skew X - to skew the element in X-direction by alpha° you need either \n- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n- or provide the angle as 15deg, 0.25turn, (like all other angles)\nIn any case this value will then be represented as tan(alpha)"
 msgstr "Inclinaison X - pour incliner l'élément dans la direction X de alpha°, vous devez soit \n- fournir tan(alpha), par ex. 15° = 0,2679, 30° = 0,5774, 45° = 1,0, etc.\n- ou fournir l'angle sous la forme 15deg, 0.25turn, (comme tous les autres angles)\nDans tous les cas, cette valeur sera alors représentée comme tan(alpha)"
 
-#: meerk40t/gui/navigationpanels.py:2308
+#: meerk40t/gui/navigationpanels.py:2316
 msgid "Skew Y - to skew the element in Y-direction by alpha° you need either \n- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n- or provide the angle as 15deg, 0.25turn, (like all other angles)\nIn any case this value will then be represented as tan(alpha)"
 msgstr "Inclinaison Y - pour incliner l'élément dans la direction Y de alpha°, vous devez soit \n- fournir tan(alpha), par ex. 15° = 0,2679, 30° = 0,5774, 45° = 1,0, etc.\n- ou fournir l'angle sous la forme 15deg, 0.25turn, (comme tous les autres angles)\nDans tous les cas, cette valeur sera alors représentée comme tan(alpha)"
 
-#: meerk40t/gui/navigationpanels.py:2315 meerk40t/gui/navigationpanels.py:2512
+#: meerk40t/gui/navigationpanels.py:2323 meerk40t/gui/navigationpanels.py:2520
 msgid "Translate X - moves the element by this amount of mils in the X-direction; you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
 msgstr "Translation X - déplace l'élément de ce nombre de mils dans la direction X ; vous pouvez utiliser des distances « réelles » lorsque vous modifiez ce facteur, par ex. 2in, 3cm, 50mm"
 
-#: meerk40t/gui/navigationpanels.py:2322 meerk40t/gui/navigationpanels.py:2517
+#: meerk40t/gui/navigationpanels.py:2330 meerk40t/gui/navigationpanels.py:2525
 msgid "Translate Y - moves the element by this amount of mils in the Y-direction; you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
 msgstr "Translation Y - déplace l'élément de ce nombre de mils dans la direction Y ; vous pouvez utiliser des distances « réelles » lorsque vous modifiez ce facteur, par ex. 2in, 3cm, 50mm"
 
-#: meerk40t/gui/navigationpanels.py:2353 meerk40t/gui/statusbarwidgets/selectionwidget.py:27
+#: meerk40t/gui/navigationpanels.py:2361 meerk40t/gui/statusbarwidgets/selectionwidget.py:27
 msgid "Skew"
 msgstr "Inclinaison"
 
-#: meerk40t/gui/navigationpanels.py:2358
+#: meerk40t/gui/navigationpanels.py:2366
 msgid "Translate"
 msgstr "Translation"
 
-#: meerk40t/gui/navigationpanels.py:2513 meerk40t/gui/navigationpanels.py:2518
+#: meerk40t/gui/navigationpanels.py:2521 meerk40t/gui/navigationpanels.py:2526
 msgid "Current internal value: "
 msgstr "Valeur interne actuelle : "
 
-#: meerk40t/gui/navigationpanels.py:2712
+#: meerk40t/gui/navigationpanels.py:2720
 msgid "Jog Distance:"
 msgstr "Distance de jog :"
 
-#: meerk40t/gui/navigationpanels.py:2850
+#: meerk40t/gui/navigationpanels.py:2858
 msgid "Opens Navigation Window"
 msgstr "Ouvre la fenêtre de navigation"
 
-#: meerk40t/gui/navigationpanels.py:2868
+#: meerk40t/gui/navigationpanels.py:2876
 msgid "Open a control window to move the laser around"
 msgstr "Ouvrir une fenêtre de contrôle pour déplacer le laser"
 
@@ -12868,19 +11390,19 @@ msgstr "Personnaliser les barres d'outils"
 msgid "Load Project"
 msgstr "Charger le projet"
 
-#: meerk40t/gui/simpleui.py:141 meerk40t/gui/wxmmain.py:1851 meerk40t/gui/wxmmain.py:3036 meerk40t/gui/wxmmain.py:5156
+#: meerk40t/gui/simpleui.py:141 meerk40t/gui/wxmmain.py:1851 meerk40t/gui/wxmmain.py:3036 meerk40t/gui/wxmmain.py:5163
 msgid "Open"
 msgstr "Ouvrir"
 
-#: meerk40t/gui/simpleui.py:161 meerk40t/gui/wxmmain.py:5252
+#: meerk40t/gui/simpleui.py:161 meerk40t/gui/wxmmain.py:5259
 msgid "Cleaning up..."
 msgstr "Nettoyage en cours..."
 
-#: meerk40t/gui/simpleui.py:186 meerk40t/gui/wxmmain.py:635 meerk40t/gui/wxmmain.py:5510
+#: meerk40t/gui/simpleui.py:186 meerk40t/gui/wxmmain.py:635 meerk40t/gui/wxmmain.py:5517
 msgid "Some files were unrecognized:\n{rejected_files}"
 msgstr "Certains fichiers n'ont pas été reconnus :\n{rejected_files}"
 
-#: meerk40t/gui/simpleui.py:190 meerk40t/gui/wxmmain.py:637 meerk40t/gui/wxmmain.py:5514
+#: meerk40t/gui/simpleui.py:190 meerk40t/gui/wxmmain.py:637 meerk40t/gui/wxmmain.py:5521
 msgid "Error encountered"
 msgstr "Une erreur est survenue"
 
@@ -13660,199 +12182,199 @@ msgstr "Éditeur de liste de mots"
 msgid "Configure the wordlist (text variable) entries"
 msgstr "Configurer les entrées de la liste de mots (variable texte)"
 
-#: meerk40t/gui/wxmeerk40t.py:224
+#: meerk40t/gui/wxmeerk40t.py:225
 msgid "One Touch: Send Job To Laser "
 msgstr "Une touche : envoyer la tâche au laser "
 
-#: meerk40t/gui/wxmeerk40t.py:257
+#: meerk40t/gui/wxmeerk40t.py:258
 msgid "Processing and sending..."
 msgstr "Traitement et envoi..."
 
-#: meerk40t/gui/wxmeerk40t.py:273
+#: meerk40t/gui/wxmeerk40t.py:274
 msgid "Go"
 msgstr "Aller"
 
-#: meerk40t/gui/wxmeerk40t.py:281
+#: meerk40t/gui/wxmeerk40t.py:282
 msgid "Display a laser start button"
 msgstr "Afficher un bouton de démarrage laser"
 
-#: meerk40t/gui/wxmeerk40t.py:306
+#: meerk40t/gui/wxmeerk40t.py:307
 msgid "Display a job abort button"
 msgstr "Afficher un bouton d'arrêt de tâche"
 
-#: meerk40t/gui/wxmeerk40t.py:318
+#: meerk40t/gui/wxmeerk40t.py:319
 msgid "Emergency stop/reset the controller."
 msgstr "Arrêt d'urgence / réinitialiser le contrôleur."
 
-#: meerk40t/gui/wxmeerk40t.py:344
+#: meerk40t/gui/wxmeerk40t.py:345
 msgid "Display a laser homing button"
 msgstr "Afficher un bouton de retour laser à l'origine"
 
-#: meerk40t/gui/wxmeerk40t.py:381
+#: meerk40t/gui/wxmeerk40t.py:382
 msgid "Display a job pause button"
 msgstr "Afficher un bouton de pause de la tâche"
 
-#: meerk40t/gui/wxmeerk40t.py:394
+#: meerk40t/gui/wxmeerk40t.py:395
 msgid "Pause/Resume the controller"
 msgstr "Mettre en pause/Reprendre le contrôleur"
 
-#: meerk40t/gui/wxmeerk40t.py:590
+#: meerk40t/gui/wxmeerk40t.py:602
 msgid "Context Path at which to open the window"
 msgstr "Chemin de contexte à partir duquel ouvrir la fenêtre"
 
-#: meerk40t/gui/wxmeerk40t.py:593
+#: meerk40t/gui/wxmeerk40t.py:605
 msgid "Base window command"
 msgstr "Commande de fenêtre de base"
 
-#: meerk40t/gui/wxmeerk40t.py:611
+#: meerk40t/gui/wxmeerk40t.py:623
 msgid "Loaded Windows in Context {name}:"
 msgstr "Fenêtres chargées dans le contexte {name} :"
 
-#: meerk40t/gui/wxmeerk40t.py:620 meerk40t/gui/wxmeerk40t.py:634
+#: meerk40t/gui/wxmeerk40t.py:632 meerk40t/gui/wxmeerk40t.py:646
 msgid "{index}: {name} as type of {type}"
 msgstr "{index} : {name} en tant que type de {type}"
 
-#: meerk40t/gui/wxmeerk40t.py:628
+#: meerk40t/gui/wxmeerk40t.py:640
 msgid "Loaded Windows in Path {path}:"
 msgstr "Fenêtres chargées dans le chemin {path} :"
 
-#: meerk40t/gui/wxmeerk40t.py:645
+#: meerk40t/gui/wxmeerk40t.py:657
 msgid "List available windows."
 msgstr "Lister les fenêtres disponibles."
 
-#: meerk40t/gui/wxmeerk40t.py:649
+#: meerk40t/gui/wxmeerk40t.py:661
 msgid "Windows Registered:"
 msgstr "Fenêtres enregistrées :"
 
-#: meerk40t/gui/wxmeerk40t.py:660
+#: meerk40t/gui/wxmeerk40t.py:672
 msgid "Give display info for the current opened windows"
 msgstr "Fournir les informations d'affichage pour les fenêtres actuellement ouvertes"
 
-#: meerk40t/gui/wxmeerk40t.py:683
+#: meerk40t/gui/wxmeerk40t.py:695
 msgid "Multi window flag for launching multiple copies of this window."
 msgstr "Indicateur multi-fenêtres pour lancer plusieurs copies de cette fenêtre."
 
-#: meerk40t/gui/wxmeerk40t.py:685
+#: meerk40t/gui/wxmeerk40t.py:697
 msgid "window to be opened"
 msgstr "fenêtre à ouvrir"
 
-#: meerk40t/gui/wxmeerk40t.py:689
+#: meerk40t/gui/wxmeerk40t.py:701
 msgid "open/toggle the supplied window"
 msgstr "ouvrir/basculer la fenêtre fournie"
 
-#: meerk40t/gui/wxmeerk40t.py:716
+#: meerk40t/gui/wxmeerk40t.py:728
 msgid "Window opened: {window}"
 msgstr "Fenêtre ouverte : {window}"
 
-#: meerk40t/gui/wxmeerk40t.py:720
+#: meerk40t/gui/wxmeerk40t.py:732
 msgid "Window closed: {window}"
 msgstr "Fenêtre fermée : {window}"
 
-#: meerk40t/gui/wxmeerk40t.py:731 meerk40t/gui/wxmeerk40t.py:777
+#: meerk40t/gui/wxmeerk40t.py:743 meerk40t/gui/wxmeerk40t.py:789
 msgid "No such window as {window}"
 msgstr "Aucune fenêtre nommée {window}"
 
-#: meerk40t/gui/wxmeerk40t.py:756
+#: meerk40t/gui/wxmeerk40t.py:768
 msgid "No such window as {name}"
 msgstr "Aucune fenêtre nommée {name}"
 
-#: meerk40t/gui/wxmeerk40t.py:759
+#: meerk40t/gui/wxmeerk40t.py:771
 msgid "window to be closed"
 msgstr "fenêtre à fermer"
 
-#: meerk40t/gui/wxmeerk40t.py:764
+#: meerk40t/gui/wxmeerk40t.py:776
 msgid "close the supplied window"
 msgstr "fermer la fenêtre fournie"
 
-#: meerk40t/gui/wxmeerk40t.py:775
+#: meerk40t/gui/wxmeerk40t.py:787
 msgid "Window closed."
 msgstr "Fenêtre fermée."
 
-#: meerk40t/gui/wxmeerk40t.py:781
+#: meerk40t/gui/wxmeerk40t.py:793
 msgid "window to be reset"
 msgstr "fenêtre à réinitialiser"
 
-#: meerk40t/gui/wxmeerk40t.py:786
+#: meerk40t/gui/wxmeerk40t.py:798
 msgid "reset the supplied window, or '*' for all windows"
 msgstr "réinitialiser la fenêtre fournie, ou '*' pour toutes les fenêtres"
 
-#: meerk40t/gui/wxmeerk40t.py:796
+#: meerk40t/gui/wxmeerk40t.py:808
 msgid "Refresh the main wxMeerK40 window"
 msgstr "Rafraîchir la fenêtre principale wxMeerK40"
 
-#: meerk40t/gui/wxmeerk40t.py:801
+#: meerk40t/gui/wxmeerk40t.py:813
 msgid "Refreshed."
 msgstr "Rafraîchi."
 
-#: meerk40t/gui/wxmeerk40t.py:817
+#: meerk40t/gui/wxmeerk40t.py:830
 msgid "Function to call interactively"
 msgstr "Fonction à appeler de manière interactive"
 
-#: meerk40t/gui/wxmeerk40t.py:818
+#: meerk40t/gui/wxmeerk40t.py:833
 msgid "Provides a GUI wrapper around a console command"
 msgstr "Fournit une interface graphique autour d'une commande console"
 
-#: meerk40t/gui/wxmeerk40t.py:821
+#: meerk40t/gui/wxmeerk40t.py:837
 msgid "You need to provide a function name"
 msgstr "Vous devez fournir un nom de fonction"
 
-#: meerk40t/gui/wxmeerk40t.py:824
+#: meerk40t/gui/wxmeerk40t.py:841
 msgid "It does not make sense, to run '{command}' in a GUI"
 msgstr "Il n'est pas pertinent d'exécuter '{command}' dans une interface graphique"
 
-#: meerk40t/gui/wxmeerk40t.py:831
+#: meerk40t/gui/wxmeerk40t.py:854
 msgid "Command {command}"
 msgstr "Commande {command}"
 
-#: meerk40t/gui/wxmeerk40t.py:839
+#: meerk40t/gui/wxmeerk40t.py:865
 msgid "Unit to translate"
 msgstr "Unité à convertir"
 
-#: meerk40t/gui/wxmeerk40t.py:840
+#: meerk40t/gui/wxmeerk40t.py:866
 msgid "Translate units"
 msgstr "Convertir les unités"
 
-#: meerk40t/gui/wxmeerk40t.py:843
+#: meerk40t/gui/wxmeerk40t.py:869
 msgid "You need to provide a value to translate"
 msgstr "Vous devez fournir une valeur à convertir"
 
-#: meerk40t/gui/wxmeerk40t.py:1089
+#: meerk40t/gui/wxmeerk40t.py:1114
 msgid "This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first."
 msgstr "Ceci utilise la commande 'play' fournie avec le paquet sox,\nil se peut donc que vous ayez besoin de l'installer d'abord avec 'sudo apt install sox'."
 
-#: meerk40t/gui/wxmeerk40t.py:1103
+#: meerk40t/gui/wxmeerk40t.py:1128
 msgid "Single Instance"
 msgstr "Instance unique"
 
-#: meerk40t/gui/wxmeerk40t.py:1104
+#: meerk40t/gui/wxmeerk40t.py:1129
 msgid "Allow only a single instance of MeerK40t."
 msgstr "Autoriser une seule instance de MeerK40t."
 
-#: meerk40t/gui/wxmeerk40t.py:1114
+#: meerk40t/gui/wxmeerk40t.py:1139
 msgid "Soundfile"
 msgstr "Fichier audio"
 
-#: meerk40t/gui/wxmeerk40t.py:1115
+#: meerk40t/gui/wxmeerk40t.py:1142
 msgid "Define the soundfile MeerK40t will play when the 'beep' command is issued"
 msgstr "Définir le fichier audio que MeerK40t jouera lorsque la commande 'beep' est lancée"
 
-#: meerk40t/gui/wxmeerk40t.py:1296
+#: meerk40t/gui/wxmeerk40t.py:1324
 msgid "We got your message. Thank you for helping\n\n"
 msgstr "Nous avons reçu votre message. Merci pour votre aide\n\n"
 
-#: meerk40t/gui/wxmeerk40t.py:1310
+#: meerk40t/gui/wxmeerk40t.py:1338
 msgid "We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n"
 msgstr "Désolé, cela n'a pas fonctionné. Veuillez créer un ticket sur le GitHub.\n\n Le fichier journal se trouvera dans votre répertoire de travail.\n"
 
-#: meerk40t/gui/wxmeerk40t.py:1357
+#: meerk40t/gui/wxmeerk40t.py:1385
 msgid "Quit"
 msgstr "Quitter"
 
-#: meerk40t/gui/wxmeerk40t.py:1459
+#: meerk40t/gui/wxmeerk40t.py:1487
 msgid "Only the crash details below are sent. No data from your MeerK40t project is sent. No personal information is sent either.\nSend the following data to the MeerK40t team?"
 msgstr "Seuls les détails de l'erreur ci-dessous sont envoyés. Aucune donnée de votre projet MeerK40t n'est envoyée. Aucune information personnelle n'est transmise non plus.\nEnvoyer les données suivantes à l'équipe de MeerK40t ?"
 
-#: meerk40t/gui/wxmeerk40t.py:1460
+#: meerk40t/gui/wxmeerk40t.py:1488
 msgid "Crash Detected! Send Log?"
 msgstr "Crash détecté ! Envoyer le journal ?"
 
@@ -13900,7 +12422,7 @@ msgstr "Coller une image"
 msgid "Paste text"
 msgstr "Coller du texte"
 
-#: meerk40t/gui/wxmmain.py:762 meerk40t/gui/wxmmain.py:5657
+#: meerk40t/gui/wxmmain.py:762 meerk40t/gui/wxmmain.py:5664
 msgid "&Undo\tCtrl-Z"
 msgstr "&Annuler\tCtrl-Z"
 
@@ -13908,7 +12430,7 @@ msgstr "&Annuler\tCtrl-Z"
 msgid "Undo last action"
 msgstr "Annuler la dernière action"
 
-#: meerk40t/gui/wxmmain.py:772 meerk40t/gui/wxmmain.py:5668
+#: meerk40t/gui/wxmmain.py:772 meerk40t/gui/wxmmain.py:5675
 msgid "&Redo\tCtrl-Shift-Z"
 msgstr "&Rétablir\tCtrl-Shift-Z"
 
@@ -14144,7 +12666,7 @@ msgstr "Toutes les bordures"
 msgid "Left/upper edge"
 msgstr "Bordure gauche/haute"
 
-#: meerk40t/gui/wxmmain.py:1303 meerk40t/gui/propertypanels/imageproperty.py:94
+#: meerk40t/gui/wxmmain.py:1303 meerk40t/gui/propertypanels/imageproperty.py:94 barcodes/gui.py:168 build/lib/barcodes/gui.py:168
 msgid "None"
 msgstr "Aucune"
 
@@ -14864,7 +13386,7 @@ msgstr "&Ouvrir un projet\tCtrl-O"
 msgid "Clear existing elements and notes and open a new file"
 msgstr "Effacer les éléments et notes existants et ouvrir un nouveau fichier"
 
-#: meerk40t/gui/wxmmain.py:3954 meerk40t/gui/wxmmain.py:3967 meerk40t/gui/wxmmain.py:5201
+#: meerk40t/gui/wxmmain.py:3954 meerk40t/gui/wxmmain.py:3967 meerk40t/gui/wxmmain.py:5208
 msgid " (keep the Shift-Key pressed to be asked for a target location)"
 msgstr " (maintenez la touche Majuscule enfoncée pour qu'on vous demande un emplacement cible)"
 
@@ -15276,135 +13798,135 @@ msgstr "Enregistrer les modifications du projet avant de fermer ?\n\nVos change
 msgid "Save Project..."
 msgstr "Enregistrer le projet..."
 
-#: meerk40t/gui/wxmmain.py:4948
+#: meerk40t/gui/wxmmain.py:4955
 msgid "No active device existed. Add a primary device."
 msgstr "Aucun périphérique actif n'existe. Ajoutez un périphérique principal."
 
-#: meerk40t/gui/wxmmain.py:4949
+#: meerk40t/gui/wxmmain.py:4956
 msgid "Active Device"
 msgstr "Périphérique actif"
 
-#: meerk40t/gui/wxmmain.py:4985
+#: meerk40t/gui/wxmmain.py:4992
 msgid "All attempts to connect to USB have failed."
 msgstr "Toutes les tentatives de connexion à l'USB ont échoué."
 
-#: meerk40t/gui/wxmmain.py:4986
+#: meerk40t/gui/wxmmain.py:4993
 msgid "Usb Connection Problem."
 msgstr "Problème de connexion USB."
 
-#: meerk40t/gui/wxmmain.py:4996
+#: meerk40t/gui/wxmmain.py:5003
 msgid "Cut planning failed because: {error}"
 msgstr "La planification de la découpe a échoué en raison de : {error}"
 
-#: meerk40t/gui/wxmmain.py:4997
+#: meerk40t/gui/wxmmain.py:5004
 msgid "Cut Planning Failed"
 msgstr "Échec de la planification de la découpe"
 
-#: meerk40t/gui/wxmmain.py:5019
+#: meerk40t/gui/wxmmain.py:5026
 msgid "Usb: {index}"
 msgstr "Usb : {index}"
 
-#: meerk40t/gui/wxmmain.py:5030
+#: meerk40t/gui/wxmmain.py:5037
 msgid "Controller: {state}"
 msgstr "Contrôleur : {state}"
 
-#: meerk40t/gui/wxmmain.py:5039
+#: meerk40t/gui/wxmmain.py:5046
 msgid "Spooler: {state}"
 msgstr "Spooler : {state}"
 
-#: meerk40t/gui/wxmmain.py:5076
+#: meerk40t/gui/wxmmain.py:5083
 msgid "Export image"
 msgstr "Exporter l'image"
 
-#: meerk40t/gui/wxmmain.py:5199
+#: meerk40t/gui/wxmmain.py:5206
 msgid "Load {file}..."
 msgstr "Charger {file}..."
 
-#: meerk40t/gui/wxmmain.py:5216
+#: meerk40t/gui/wxmmain.py:5223
 msgid "Clear Recent"
 msgstr "Effacer la liste"
 
-#: meerk40t/gui/wxmmain.py:5217
+#: meerk40t/gui/wxmmain.py:5224
 msgid "Delete the list of recent projects"
 msgstr "Supprimer la liste des projets récents"
 
-#: meerk40t/gui/wxmmain.py:5256
+#: meerk40t/gui/wxmmain.py:5263
 msgid "Clear Project"
 msgstr "Vider le projet"
 
-#: meerk40t/gui/wxmmain.py:5284
+#: meerk40t/gui/wxmmain.py:5291
 msgid "Place elements"
 msgstr "Placer les éléments"
 
-#: meerk40t/gui/wxmmain.py:5291 meerk40t/gui/wxmmain.py:5292 meerk40t/gui/propertypanels/operationpropertymain.py:176 meerk40t/lihuiyu/device.py:472
+#: meerk40t/gui/wxmmain.py:5298 meerk40t/gui/wxmmain.py:5299 meerk40t/gui/propertypanels/operationpropertymain.py:176 meerk40t/lihuiyu/device.py:472
 msgid "Default"
 msgstr "Défaut"
 
-#: meerk40t/gui/wxmmain.py:5291
+#: meerk40t/gui/wxmmain.py:5298
 msgid "Left Edge"
 msgstr "Bord gauche"
 
-#: meerk40t/gui/wxmmain.py:5291
+#: meerk40t/gui/wxmmain.py:5298
 msgid "Right Edge"
 msgstr "Bord droit"
 
-#: meerk40t/gui/wxmmain.py:5292
+#: meerk40t/gui/wxmmain.py:5299
 msgid "Top Edge"
 msgstr "Bord supérieur"
 
-#: meerk40t/gui/wxmmain.py:5292
+#: meerk40t/gui/wxmmain.py:5299
 msgid "Bottom Edge"
 msgstr "Bord inférieur"
 
-#: meerk40t/gui/wxmmain.py:5295
+#: meerk40t/gui/wxmmain.py:5302
 msgid "Where do you want to place the content of the file?"
 msgstr "Où souhaitez-vous placer le contenu du fichier ?"
 
-#: meerk40t/gui/wxmmain.py:5299
+#: meerk40t/gui/wxmmain.py:5306
 msgid "Horizontal:"
 msgstr "Horizontal :"
 
-#: meerk40t/gui/wxmmain.py:5307
+#: meerk40t/gui/wxmmain.py:5314
 msgid "Vertical:"
 msgstr "Vertical :"
 
-#: meerk40t/gui/wxmmain.py:5480
+#: meerk40t/gui/wxmmain.py:5487
 msgid "This file contains an active autostart sequence!\nDo you wish to execute it?"
 msgstr "Ce fichier contient une séquence d'autodémarrage active !\nSouhaitez-vous l'exécuter ?"
 
-#: meerk40t/gui/wxmmain.py:5481
+#: meerk40t/gui/wxmmain.py:5488
 msgid "Execute"
 msgstr "Exécuter"
 
-#: meerk40t/gui/wxmmain.py:5483
+#: meerk40t/gui/wxmmain.py:5490
 msgid "Startup-sequence found"
 msgstr "Séquence de démarrage détectée"
 
-#: meerk40t/gui/wxmmain.py:5718
+#: meerk40t/gui/wxmmain.py:5725
 msgid "No help text"
 msgstr "Pas de texte d'aide"
 
-#: meerk40t/gui/wxmmain.py:5754
+#: meerk40t/gui/wxmmain.py:5761
 msgid "Apparently MeerK40t did crash during the last session, we apologize for this invconvenience."
 msgstr "Apparemment, MeerK40t s'est interrompu de manière inattendue lors de la dernière session, nous vous prions de nous excuser pour ce désagrément."
 
-#: meerk40t/gui/wxmmain.py:5760
+#: meerk40t/gui/wxmmain.py:5767
 msgid "There is an autosave file ({filename}),\nthat was last saved at {filedate}."
 msgstr "Il existe un fichier de sauvegarde automatique ({filename}),\nqui a été enregistré pour la dernière fois le {filedate}."
 
-#: meerk40t/gui/wxmmain.py:5763
+#: meerk40t/gui/wxmmain.py:5770
 msgid "Do you want to load this file?"
 msgstr "Voulez-vous charger ce fichier ?"
 
-#: meerk40t/gui/wxmmain.py:5764
+#: meerk40t/gui/wxmmain.py:5771
 msgid "Crash-Recovery"
 msgstr "Récupération après incident"
 
-#: meerk40t/gui/wxmmain.py:5767
+#: meerk40t/gui/wxmmain.py:5774
 msgid "Load work"
 msgstr "Charger le travail"
 
-#: meerk40t/gui/wxmmain.py:5768
+#: meerk40t/gui/wxmmain.py:5775
 msgid "Start fresh"
 msgstr "Démarrer à neuf"
 
@@ -17560,7 +16082,7 @@ msgstr "Basculer"
 msgid "Move all back"
 msgstr "Tout déplacer en arrière"
 
-#: meerk40t/gui/propertypanels/regbranchproperties.py:30
+#: meerk40t/gui/propertypanels/regbranchproperties.py:30 barcodes/gui.py:260 build/lib/barcodes/gui.py:260
 msgid "Options:"
 msgstr "Options :"
 
@@ -17957,1482 +16479,6 @@ msgid "Set the fillstyle to non-zero (regular)"
 msgstr "Définir le style de remplissage sur non-zéro (classique)"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:234
-msgid "Set the fillstyle to even-odd (alternating areas)"
-msgstr "Définir le style de remplissage sur pair-impair (zones alternées)"
-
-#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:263
-msgid "X, Y"
-msgstr "X, Y"
-
-#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:282
-msgid "W, H"
-msgstr "L, H"
-
-#: meerk40t/gui/statusbarwidgets/statusbar.py:48
-msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
-msgstr "Clic gauche : passer au panneau suivant\nClic droit : passer au panneau précédent"
-
-#: meerk40t/gui/statusbarwidgets/strokewidget.py:46
-msgid "Clear stroke-color (right click clear fill color)"
-msgstr "Effacer la couleur de trait (clic droit pour effacer la couleur de remplissage)"
-
-#: meerk40t/gui/statusbarwidgets/strokewidget.py:49
-msgid "Set stroke-color (right click set fill color)"
-msgstr "Définir la couleur de trait (clic droit pour définir la couleur de remplissage)"
-
-#: meerk40t/gui/statusbarwidgets/strokewidget.py:120
-msgid "Stroke:"
-msgstr "Trait :"
-
-#: meerk40t/gui/toolwidgets/toolcircle.py:113 meerk40t/gui/toolwidgets/toolellipse.py:91 meerk40t/gui/toolwidgets/toolrect.py:88
-msgid " (Press Alt-Key to draw from center)"
-msgstr " (Appuyez sur la touche Alt pour dessiner depuis le centre)"
-
-#: meerk40t/gui/toolwidgets/toolcircle.py:115
-msgid " (Press Alt-Key to draw from corner)"
-msgstr " (Appuyez sur la touche Alt pour dessiner depuis le coin)"
-
-#: meerk40t/gui/toolwidgets/tooldraw.py:81 meerk40t/gui/toolwidgets/toolribbon.py:585 meerk40t/gui/toolwidgets/toolvector.py:196 meerk40t/gui/utilitywidgets/cyclocycloidwidget.py:123 meerk40t/gui/utilitywidgets/harmonograph.py:327
-msgid "Create path"
-msgstr "Créer un tracé"
-
-#: meerk40t/gui/toolwidgets/toolellipse.py:189
-msgid "Create ellipse"
-msgstr "Créer une ellipse"
-
-#: meerk40t/gui/toolwidgets/toolline.py:21
-msgid "Create line"
-msgstr "Créer une ligne"
-
-#: meerk40t/gui/toolwidgets/toollinetext_inline.py:165 meerk40t/gui/toolwidgets/tooltext.py:60
-msgid "Create text"
-msgstr "Créer un texte"
-
-#: meerk40t/gui/toolwidgets/toollinetext_inline.py:171
-msgid "Complete text-entry by pressing either Enter or Escape"
-msgstr "Terminez la saisie du texte en appuyant sur Entrée ou Échap"
-
-#: meerk40t/gui/toolwidgets/toolmeasure.py:150
-msgid "Perimeter"
-msgstr "Périmètre"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:89
-msgid "Curve"
-msgstr "Courbe"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:90 meerk40t/gui/toolwidgets/toolnodeedit.py:206
-msgid "Symmetric"
-msgstr "Symétrique"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:91 meerk40t/gui/toolwidgets/toolnodeedit.py:92 meerk40t/gui/toolwidgets/toolnodeedit.py:166
-msgid "Insert"
-msgstr "Insérer"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:93 meerk40t/gui/toolwidgets/toolnodeedit.py:174
-msgid "Append"
-msgstr "Ajouter"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:94 meerk40t/gui/toolwidgets/toolnodeedit.py:222
-msgid "Break"
-msgstr "Rompre"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:96 meerk40t/gui/toolwidgets/toolnodeedit.py:230
-msgid "Smooth"
-msgstr "Lisser"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:97
-msgid "Close path"
-msgstr "Fermer le tracé"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:98
-msgid "Smooth all"
-msgstr "Tout lisser"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:99 meerk40t/gui/toolwidgets/toolnodeedit.py:246
-msgid "Line all"
-msgstr "Tout convertir en ligne"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:100
-msgid "To path"
-msgstr "Convertir en tracé"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:165
-msgid "Insert point before"
-msgstr "Insérer un point avant"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:173
-msgid "Append point at end"
-msgstr "Ajouter un point à la fin"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:181
-msgid "Delete point"
-msgstr "Supprimer le point"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:189
-msgid "Make segment a line"
-msgstr "Convertir le segment en ligne"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:190
-msgid "> Line"
-msgstr "> Ligne"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:197
-msgid "Make segment a curve"
-msgstr "Convertir le segment en courbe"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:198
-msgid "> Curve"
-msgstr "> Courbe"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:205
-msgid "Make segment symmetrical"
-msgstr "Rendre le segment symétrique"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:213
-msgid "Join two segments"
-msgstr "Joindre deux segments"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:221
-msgid "Break segment apart"
-msgstr "Rompre le segment"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:229
-msgid "Smooth transit to adjacent segments"
-msgstr "Lisser la transition vers les segments adjacents"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:237
-msgid "Convert all lines into smooth curves"
-msgstr "Convertir toutes les lignes en courbes lissées"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:238
-msgid "Very smooth"
-msgstr "Très lisse"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:245
-msgid "Convert all segments into lines"
-msgstr "Convertir tous les segments en lignes"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:253
-msgid "Toggle closed status"
-msgstr "Basculer l'état fermé"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:254 meerk40t/gui/utilitywidgets/togglewidget.py:78 meerk40t/tools/livinghinges.py:182
-msgid "Close"
-msgstr "Fermer"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:261
-msgid "Convert polyline to a path element"
-msgstr "Convertir la polyligne en élément de tracé"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:262
-msgid "To Path"
-msgstr "En tracé"
-
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:1933
-msgid "Drag to change the curve shape (ctrl to affect the other side)"
-msgstr "Faites glisser pour modifier la forme de la courbe (Ctrl pour affecter l'autre côté)"
-
-#: meerk40t/gui/toolwidgets/toolparameter.py:268
-msgid "Pin"
-msgstr "Épingler"
-
-#: meerk40t/gui/toolwidgets/toolparameter.py:551
-msgid "Pin the parameter section to the top of the screen"
-msgstr "Épingler la section des paramètres en haut de l'écran"
-
-#: meerk40t/gui/toolwidgets/toolplacement.py:101
-msgid "Click to set the TL-corner of the job (Ctrl for BR, Shift for Center)"
-msgstr "Cliquez pour définir le coin supérieur gauche du travail (Ctrl pour le coin inférieur droit, Maj pour le centre)"
-
-#: meerk40t/gui/toolwidgets/toolpoint.py:47
-msgid "Create point"
-msgstr "Créer un point"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:68
-msgid "Freehand"
-msgstr "Main levée"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:70
-msgid "Draw a freehand polygon (f)"
-msgstr "Dessiner un polygone à main levée (f)"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:82
-msgid "Regular"
-msgstr "Régulier"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:84
-msgid "Draw a regular polygon (r)"
-msgstr "Dessiner un polygone régulier (r)"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:95
-msgid "Star 1"
-msgstr "Étoile 1"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:97
-msgid "Draw a regular star (1)"
-msgstr "Dessiner une étoile régulière (1)"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:108
-msgid "Star 2"
-msgstr "Étoile 2"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:110
-msgid "Draw a crossing star (2)"
-msgstr "Dessiner une étoile croisée (2)"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:122
-msgid "Grow"
-msgstr "Croissance"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:124
-msgid "Draw a growing polygon"
-msgstr "Dessiner un polygone en croissance"
-
-#: meerk40t/gui/toolwidgets/toolpolygon.py:261 meerk40t/gui/toolwidgets/toolpolyline.py:20
-msgid "Create polyline"
-msgstr "Créer une polyligne"
-
-#: meerk40t/gui/toolwidgets/toolrect.py:181
-msgid "Create rectangle"
-msgstr "Créer un rectangle"
-
-#: meerk40t/gui/toolwidgets/tooltabedit.py:533
-msgid "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"
-msgstr "Faites glisser les onglets existants ou ajoutez-en un en cliquant sur la forme,\nMaj+Clic/Suppr supprime l'onglet actuel, Maj+Suppr les supprime tous"
-
-#: meerk40t/gui/utilitywidgets/debugwidgets.py:15
-msgid "Show the icon scene widget"
-msgstr "Afficher le widget de scène d'icônes"
-
-#: meerk40t/gui/utilitywidgets/togglewidget.py:83
-msgid "Autohide"
-msgstr "Masquage automatique"
-
-#: meerk40t/image/imagetools.py:488
-msgid "Image DPI Scaling"
-msgstr "Mise à l'échelle DPI de l'image"
-
-#: meerk40t/image/imagetools.py:491
-msgid "Unset: Use the image as if it were 96 pixels per inch."
-msgstr "Non défini : Utiliser l'image comme si elle faisait 96 pixels par pouce."
-
-#: meerk40t/image/imagetools.py:494
-msgid "Set: Use the DPI setting saved in the image to scale the image to the correct size."
-msgstr "Défini : Utiliser le paramètre DPI enregistré dans l'image pour l'échelle à la taille correcte."
-
-#: meerk40t/image/imagetools.py:505
-msgid "Create a file-node for imported image"
-msgstr "Créer un nœud de fichier pour l'image importée"
-
-#: meerk40t/image/imagetools.py:508
-msgid "Unset: Attach the image directly to elements."
-msgstr "Non défini : Joindre l'image directement aux éléments."
-
-#: meerk40t/image/imagetools.py:509
-msgid "Set: Put the image under a file-node created for it."
-msgstr "Défini : Placer l'image sous un nœud de fichier créé pour elle."
-
-#: meerk40t/image/imagetools.py:520
-msgid "Scale oversized images"
-msgstr "Redimensionner les images surdimensionnées"
-
-#: meerk40t/image/imagetools.py:523
-msgid "Set: Will scale down large images so they will fit on the laserbed."
-msgstr "Défini : Réduira la taille des grandes images pour qu'elles tiennent sur la zone laser."
-
-#: meerk40t/image/imagetools.py:532
-msgid "Center image on import"
-msgstr "Centrer l'image à l'importation"
-
-#: meerk40t/image/imagetools.py:535
-msgid "Unset: Places the image at the left upper corner."
-msgstr "Non défini : Place l'image dans le coin supérieur gauche."
-
-#: meerk40t/image/imagetools.py:536
-msgid "Set: Places the image at the center."
-msgstr "Défini : Place l'image au centre."
-
-#: meerk40t/image/imagetools.py:555
-msgid "image <operation>*"
-msgstr "image <opération>*"
-
-#: meerk40t/image/imagetools.py:565
-msgid "Images:"
-msgstr "Images :"
-
-#: meerk40t/image/imagetools.py:581
-msgid "No selected images."
-msgstr "Aucune image sélectionnée."
-
-#: meerk40t/image/imagetools.py:592
-msgid "File was not set."
-msgstr "Le fichier n'a pas été défini."
-
-#: meerk40t/image/imagetools.py:598 meerk40t/image/imagetools.py:610
-msgid "Add image"
-msgstr "Ajouter une image"
-
-#: meerk40t/image/imagetools.py:630 meerk40t/image/imagetools.py:758 meerk40t/image/imagetools.py:1711
-msgid "Paths around images"
-msgstr "Tracés autour des images"
-
-#: meerk40t/image/imagetools.py:646
-msgid "script to apply"
-msgstr "script à appliquer"
-
-#: meerk40t/image/imagetools.py:649
-msgid "apply image wizard"
-msgstr "appliquer l'assistant d'image"
-
-#: meerk40t/image/imagetools.py:657
-msgid "Raster Script: {name}"
-msgstr "Script de trame : {name}"
-
-#: meerk40t/image/imagetools.py:659
-msgid "No Raster Scripts Found."
-msgstr "Aucun script de trame trouvé."
-
-#: meerk40t/image/imagetools.py:664
-msgid "Raster Script {name} is not registered."
-msgstr "Le script de trame {name} n'est pas enregistré."
-
-#: meerk40t/image/imagetools.py:670 meerk40t/image/imagetools.py:738 meerk40t/image/imagetools.py:783 meerk40t/image/imagetools.py:835 meerk40t/image/imagetools.py:864 meerk40t/image/imagetools.py:890 meerk40t/image/imagetools.py:912 meerk40t/image/imagetools.py:934 meerk40t/image/imagetools.py:969 meerk40t/image/imagetools.py:995 meerk40t/image/imagetools.py:1022 meerk40t/image/imagetools.py:1048 meerk40t/image/imagetools.py:1071 meerk40t/image/imagetools.py:1092 meerk40t/image/imagetools.py:1113 meerk40t/image/imagetools.py:1134 meerk40t/image/imagetools.py:1155 meerk40t/image/imagetools.py:1176 meerk40t/image/imagetools.py:1197 meerk40t/image/imagetools.py:1218 meerk40t/image/imagetools.py:1243 meerk40t/image/imagetools.py:1268 meerk40t/image/imagetools.py:1294 meerk40t/image/imagetools.py:1325 meerk40t/image/imagetools.py:1345 meerk40t/image/imagetools.py:1365 meerk40t/image/imagetools.py:1385 meerk40t/image/imagetools.py:1410 meerk40t/image/imagetools.py:1441 meerk40t/image/imagetools.py:1478 meerk40t/image/imagetools.py:1520 meerk40t/image/imagetools.py:1587 meerk40t/image/imagetools.py:1628 meerk40t/image/imagetools.py:1679 meerk40t/image/imagetools.py:1767 meerk40t/image/imagetools.py:1835
-msgid "Can't modify a locked image: {name}"
-msgstr "Impossible de modifier une image verrouillée : {name}"
-
-#: meerk40t/image/imagetools.py:674
-msgid "Disabled raster script."
-msgstr "Script de trame désactivé."
-
-#: meerk40t/image/imagetools.py:681
-msgid "unlock manipulations"
-msgstr "déverrouiller les manipulations"
-
-#: meerk40t/image/imagetools.py:686
-msgid "Unlocking Elements..."
-msgstr "Déverrouillage des éléments..."
-
-#: meerk40t/image/imagetools.py:690
-msgid "Unlocked: {name}"
-msgstr "Déverrouillé : {name}"
-
-#: meerk40t/image/imagetools.py:693 meerk40t/image/imagetools.py:695
-msgid "Element was not locked: {name}"
-msgstr "L'élément n'était pas verrouillé : {name}"
-
-#: meerk40t/image/imagetools.py:701
-msgid "lock manipulations"
-msgstr "verrouiller les manipulations"
-
-#: meerk40t/image/imagetools.py:706
-msgid "Locking Elements..."
-msgstr "Verrouillage des éléments..."
-
-#: meerk40t/image/imagetools.py:714 meerk40t/image/imagetools.py:717
-msgid "Element was not unlocked: {name}"
-msgstr "L'élément n'était pas déverrouillé : {name}"
-
-#: meerk40t/image/imagetools.py:768
-msgid "Resample image"
-msgstr "Rééchantillonner l'image"
-
-#: meerk40t/image/imagetools.py:777
-msgid "Dither to 1-bit"
-msgstr "Tramer en 1 bit"
-
-#: meerk40t/image/imagetools.py:809
-msgid "Distance from color to be removed."
-msgstr "Distance de la couleur à supprimer."
-
-#: meerk40t/image/imagetools.py:813
-msgid "Color to be removed"
-msgstr "Couleur à supprimer"
-
-#: meerk40t/image/imagetools.py:817
-msgid "Remove color from image"
-msgstr "Supprimer la couleur de l'image"
-
-#: meerk40t/image/imagetools.py:823
-msgid "Must specify a color"
-msgstr "Vous devez spécifier une couleur"
-
-#: meerk40t/image/imagetools.py:854
-msgid "Color to be added"
-msgstr "Couleur à ajouter"
-
-#: meerk40t/image/imagetools.py:858
-msgid "Must specify a color, to add."
-msgstr "Vous devez spécifier une couleur à ajouter."
-
-#: meerk40t/image/imagetools.py:895
-msgid "Requires 1-bit or grayscale image."
-msgstr "Nécessite une image en 1 bit ou en niveaux de gris."
-
-#: meerk40t/image/imagetools.py:928
-msgid "Crop image"
-msgstr "Rogner l'image"
-
-#: meerk40t/image/imagetools.py:941 meerk40t/image/imagetools.py:1687
-msgid "Right margin is to the left of the left margin."
-msgstr "La marge de droite est à gauche de la marge de gauche."
-
-#: meerk40t/image/imagetools.py:945 meerk40t/image/imagetools.py:1691
-msgid "Lower margin is higher than the upper margin."
-msgstr "La marge inférieure est plus élevée que la marge supérieure."
-
-#: meerk40t/image/imagetools.py:955 meerk40t/image/imagetools.py:984
-msgid "contrast factor"
-msgstr "facteur de contraste"
-
-#: meerk40t/image/imagetools.py:959
-msgid "increase image contrast"
-msgstr "augmenter le contraste de l'image"
-
-#: meerk40t/image/imagetools.py:978
-msgid "Image Contrast Factor: {factor}"
-msgstr "Facteur de contraste de l'image : {factor}"
-
-#: meerk40t/image/imagetools.py:980
-msgid "image contrast <factor>"
-msgstr "image contraste <facteur>"
-
-#: meerk40t/image/imagetools.py:987
-msgid "brighten image"
-msgstr "éclaircir l'image"
-
-#: meerk40t/image/imagetools.py:1005
-msgid "Image Brightness Factor: {factor}"
-msgstr "Facteur de luminosité de l'image : {factor}"
-
-#: meerk40t/image/imagetools.py:1007
-msgid "image brightness <factor>"
-msgstr "image luminosité <facteur>"
-
-#: meerk40t/image/imagetools.py:1011
-msgid "color factor"
-msgstr "facteur de couleur"
-
-#: meerk40t/image/imagetools.py:1014
-msgid "color enhance"
-msgstr "améliorer la couleur"
-
-#: meerk40t/image/imagetools.py:1031
-msgid "Image Color Factor: {factor}"
-msgstr "Facteur de couleur de l'image : {factor}"
-
-#: meerk40t/image/imagetools.py:1033
-msgid "image color <factor>"
-msgstr "image couleur <facteur>"
-
-#: meerk40t/image/imagetools.py:1037
-msgid "sharpness factor"
-msgstr "facteur de netteté"
-
-#: meerk40t/image/imagetools.py:1040
-msgid "shapen image"
-msgstr "accentuer l'image"
-
-#: meerk40t/image/imagetools.py:1057
-msgid "Image Sharpness Factor: {factor}"
-msgstr "Facteur de netteté de l'image : {factor}"
-
-#: meerk40t/image/imagetools.py:1059
-msgid "image sharpness <factor>"
-msgstr "image netteté <facteur>"
-
-#: meerk40t/image/imagetools.py:1063
-msgid "blur image"
-msgstr "flouter l'image"
-
-#: meerk40t/image/imagetools.py:1080
-msgid "Image Blurred."
-msgstr "Image floutée."
-
-#: meerk40t/image/imagetools.py:1084
-msgid "sharpen image"
-msgstr "affiner l'image"
-
-#: meerk40t/image/imagetools.py:1101
-msgid "Image Sharpened."
-msgstr "Image affinée."
-
-#: meerk40t/image/imagetools.py:1105
-msgid "enhance edges"
-msgstr "améliorer les contours"
-
-#: meerk40t/image/imagetools.py:1122
-msgid "Image Edges Enhanced."
-msgstr "Contours de l'image améliorés."
-
-#: meerk40t/image/imagetools.py:1126
-msgid "find edges"
-msgstr "détecter les contours"
-
-#: meerk40t/image/imagetools.py:1143
-msgid "Image Edges Found."
-msgstr "Contours de l'image détectés."
-
-#: meerk40t/image/imagetools.py:1147
-msgid "emboss image"
-msgstr "embosser l'image"
-
-#: meerk40t/image/imagetools.py:1164
-msgid "Image Embossed."
-msgstr "Image embossée."
-
-#: meerk40t/image/imagetools.py:1168
-msgid "smooth image"
-msgstr "lisser l'image"
-
-#: meerk40t/image/imagetools.py:1185
-msgid "Image Smoothed."
-msgstr "Image lissée."
-
-#: meerk40t/image/imagetools.py:1189
-msgid "contour image"
-msgstr "contourner l'image"
-
-#: meerk40t/image/imagetools.py:1206
-msgid "Image Contoured."
-msgstr "Contours de l'image tracés."
-
-#: meerk40t/image/imagetools.py:1210
-msgid "detail image"
-msgstr "détailler l'image"
-
-#: meerk40t/image/imagetools.py:1227
-msgid "Image Detailed."
-msgstr "Image détaillée."
-
-#: meerk40t/image/imagetools.py:1231
-msgid "colors to quantize into"
-msgstr "couleurs à quantifier"
-
-#: meerk40t/image/imagetools.py:1235
-msgid "image quantize <colors>"
-msgstr "image quantification <couleurs>"
-
-#: meerk40t/image/imagetools.py:1251
-msgid "Image Quantized to {count} colors."
-msgstr "Image quantifiée en {count} couleurs."
-
-#: meerk40t/image/imagetools.py:1257
-msgid "threshold for solarize"
-msgstr "seuil pour la solarisation"
-
-#: meerk40t/image/imagetools.py:1277
-msgid "Image Solarized at {threshold} gray."
-msgstr "Image solarisée à {threshold} gris."
-
-#: meerk40t/image/imagetools.py:1282
-msgid "image solarize <threshold>"
-msgstr "image solarisation <seuil>"
-
-#: meerk40t/image/imagetools.py:1286
-msgid "invert the image"
-msgstr "inverser l'image"
-
-#: meerk40t/image/imagetools.py:1308
-msgid "Image Inverted."
-msgstr "Image inversée."
-
-#: meerk40t/image/imagetools.py:1311
-msgid "Image type cannot be converted. {mode}"
-msgstr "Le type d'image ne peut pas être converti. {mode}"
-
-#: meerk40t/image/imagetools.py:1317
-msgid "flip image"
-msgstr "retourner l'image"
-
-#: meerk40t/image/imagetools.py:1332
-msgid "Image Flipped."
-msgstr "Image retournée."
-
-#: meerk40t/image/imagetools.py:1337
-msgid "mirror image"
-msgstr "miroir de l'image"
-
-#: meerk40t/image/imagetools.py:1352
-msgid "Image Mirrored."
-msgstr "Image mise en miroir."
-
-#: meerk40t/image/imagetools.py:1357
-msgid "rotate image ccw"
-msgstr "pivoter l'image dans le sens antihoraire"
-
-#: meerk40t/image/imagetools.py:1372
-msgid "Rotated image counterclockwise."
-msgstr "Image pivotée dans le sens antihoraire."
-
-#: meerk40t/image/imagetools.py:1377
-msgid "rotate image cw"
-msgstr "pivoter l'image dans le sens horaire"
-
-#: meerk40t/image/imagetools.py:1391
-msgid "Rotated image clockwise."
-msgstr "Image pivotée dans le sens horaire."
-
-#: meerk40t/image/imagetools.py:1396
-msgid "cutoff limit for autocontrast"
-msgstr "limite de coupure pour l'autocontraste"
-
-#: meerk40t/image/imagetools.py:1400
-msgid "autocontrast image"
-msgstr "autocontraste de l'image"
-
-#: meerk40t/image/imagetools.py:1417
-msgid "Image Auto-Contrasted."
-msgstr "Image autocontrastée."
-
-#: meerk40t/image/imagetools.py:1419
-msgid "image autocontrast <cutoff-percent>"
-msgstr "image autocontraste <pourcentage-de-coupure>"
-
-#: meerk40t/image/imagetools.py:1427
-msgid "Method of grayscale conversion: red, green, blue, alpha"
-msgstr "Méthode de conversion en niveaux de gris : red, green, blue, alpha"
-
-#: meerk40t/image/imagetools.py:1431
-msgid "convert image to grayscale"
-msgstr "convertir l'image en niveaux de gris"
-
-#: meerk40t/image/imagetools.py:1465
-msgid "Image Grayscale."
-msgstr "Image en niveaux de gris."
-
-#: meerk40t/image/imagetools.py:1470
-msgid "equalize image"
-msgstr "égaliser l'image"
-
-#: meerk40t/image/imagetools.py:1484
-msgid "Image Equalized."
-msgstr "Image égalisée."
-
-#: meerk40t/image/imagetools.py:1491 meerk40t/image/imagetools.py:1501
-msgid "X position of image cutline"
-msgstr "Position X de la ligne de coupe de l'image"
-
-#: meerk40t/image/imagetools.py:1496 meerk40t/image/imagetools.py:1506
-msgid "Y position of image cutline"
-msgstr "Position Y de la ligne de coupe de l'image"
-
-#: meerk40t/image/imagetools.py:1510
-msgid "Cuts an image with a line"
-msgstr "Couper une image avec une ligne"
-
-#: meerk40t/image/imagetools.py:1575
-msgid "X position at which to slice the image"
-msgstr "Position X à laquelle couper l'image"
-
-#: meerk40t/image/imagetools.py:1579
-msgid "Slice image cutting it vertically into two images."
-msgstr "Découper l'image verticalement en deux images."
-
-#: meerk40t/image/imagetools.py:1607
-msgid "Image sliced at position {position}"
-msgstr "Image découpée à la position {position}"
-
-#: meerk40t/image/imagetools.py:1616
-msgid "Y position at which to slash the image"
-msgstr "Position Y à laquelle fendre l'image"
-
-#: meerk40t/image/imagetools.py:1620
-msgid "Slash image cutting it horizontally into two images"
-msgstr "Fendre l'image horizontalement en deux images"
-
-#: meerk40t/image/imagetools.py:1649
-msgid "Image slashed at position {position}"
-msgstr "Image fendue à la position {position}"
-
-#: meerk40t/image/imagetools.py:1667
-msgid "Pop pixels for more efficient rastering"
-msgstr "Faire éclater les pixels pour un tramage plus efficace"
-
-#: meerk40t/image/imagetools.py:1723
-msgid "Save the processed image to disk"
-msgstr "Enregistrer l'image traitée sur le disque"
-
-#: meerk40t/image/imagetools.py:1728
-msgid "filename"
-msgstr "nom de fichier"
-
-#: meerk40t/image/imagetools.py:1731
-msgid "save image to disk"
-msgstr "enregistrer l'image sur le disque"
-
-#: meerk40t/image/imagetools.py:1743
-msgid "Saved: {filename}"
-msgstr "Enregistré : {filename}"
-
-#: meerk40t/image/imagetools.py:1745
-msgid "No file given."
-msgstr "Aucun fichier fourni."
-
-#: meerk40t/image/imagetools.py:1747
-msgid "File could not be written / created."
-msgstr "Le fichier n'a pas pu être écrit / créé."
-
-#: meerk40t/image/imagetools.py:1749
-msgid "Could not determine expected format."
-msgstr "Impossible de déterminer le format attendu."
-
-#: meerk40t/image/imagetools.py:1753
-msgid "apply flatrotary bilinear mesh"
-msgstr "appliquer un maillage bilinéaire de type flatrotary"
-
-#: meerk40t/image/imagetools.py:1792
-msgid "process scaling"
-msgstr "traiter la mise à l'échelle"
-
-#: meerk40t/image/imagetools.py:1795
-msgid "pixel oversample amount"
-msgstr "quantité de suréchantillonnage de pixels"
-
-#: meerk40t/image/imagetools.py:1798
-msgid "pixel sample size"
-msgstr "taille de l'échantillon de pixels"
-
-#: meerk40t/image/imagetools.py:1801
-msgid "half-tone angle"
-msgstr "angle de demi-teinte"
-
-#: meerk40t/image/imagetools.py:1805
-msgid "halftone the provided image"
-msgstr "demi-teinter l'image fournie"
-
-#: meerk40t/image/imagetools.py:1875 meerk40t/image/imagetools.py:1989
-msgid "minimal area (%)"
-msgstr "aire minimale (%)"
-
-#: meerk40t/image/imagetools.py:1881
-msgid "Ignore outer areas"
-msgstr "Ignorer les zones extérieures"
-
-#: meerk40t/image/imagetools.py:1888
-msgid "Display simplified outline"
-msgstr "Afficher le contour simplifié"
-
-#: meerk40t/image/imagetools.py:1895
-msgid "Show split line candidates"
-msgstr "Afficher les lignes de division candidates"
-
-#: meerk40t/image/imagetools.py:1902
-msgid "Break the image apart into slices"
-msgstr "Fractionner l'image en tranches"
-
-#: meerk40t/image/imagetools.py:1909
-msgid "Break the image apart but whiten non-used areas"
-msgstr "Fractionner l'image mais blanchir les zones non utilisées"
-
-#: meerk40t/image/imagetools.py:1914
-msgid "identify inner white areas in image"
-msgstr "identifier les zones blanches intérieures dans l'image"
-
-#: meerk40t/image/imagetools.py:1964
-msgid "Image white"
-msgstr "Image blanche"
-
-#: meerk40t/image/imagetools.py:1985
-msgid "Threshold for simplification"
-msgstr "Seuil pour la simplification"
-
-#: meerk40t/image/imagetools.py:2002
-msgid "Do not invert the image"
-msgstr "Ne pas inverser l'image"
-
-#: meerk40t/image/imagetools.py:2009
-msgid "Create minimum-area bounding rectangle instead of the contour"
-msgstr "Créer un rectangle englobant de surface minimale au lieu du contour"
-
-#: meerk40t/image/imagetools.py:2016
-msgid "Use alternative simplification method"
-msgstr "Utiliser une méthode de simplification alternative"
-
-#: meerk40t/image/imagetools.py:2021
-msgid "identify contours in image"
-msgstr "identifier les contours dans l'image"
-
-#: meerk40t/image/imagetools.py:2082
-msgid "Contour generation"
-msgstr "Génération de contours"
-
-#: meerk40t/image/imagetools.py:2149
-msgid "use the image as bed background"
-msgstr "utiliser l'image comme arrière-plan du plateau"
-
-#: meerk40t/image/imagetools.py:2186
-msgid "Create a linefill representation of the provided images"
-msgstr "Créer une représentation de type hachures pour les images fournies"
-
-#: meerk40t/kernel/kernel.py:1286
-msgid "{context}: Finalizing Module {path}: {object}"
-msgstr "{context} : Finalisation du module {path} : {object}"
-
-#: meerk40t/kernel/kernel.py:1335
-msgid "Suspended Signal: {signal} for {message}"
-msgstr "Signal suspendu : {signal} pour {message}"
-
-#: meerk40t/kernel/kernel.py:1347
-msgid "Suspended Command: {c}"
-msgstr "Commande suspendue : {c}"
-
-#: meerk40t/kernel/kernel.py:1361
-msgid "Saving Context State: '{context}'"
-msgstr "Enregistrement de l'état du contexte : '{context}'"
-
-#: meerk40t/kernel/kernel.py:1367
-msgid "Context Shutdown Finished: '{context}'"
-msgstr "Arrêt du contexte terminé : '{context}'"
-
-#: meerk40t/kernel/kernel.py:1375
-msgid "Destroying persistence object"
-msgstr "Destruction de l'objet de persistance"
-
-#: meerk40t/kernel/kernel.py:1378
-msgid "Could not destroy persistence object"
-msgstr "Impossible de détruire l'objet de persistance"
-
-#: meerk40t/kernel/kernel.py:1381
-msgid "Shutting down."
-msgstr "Fermeture en cours."
-
-#: meerk40t/kernel/kernel.py:1391
-msgid "Thread {name} exited safely"
-msgstr "Le thread {name} s'est terminé en toute sécurité"
-
-#: meerk40t/kernel/kernel.py:1399
-msgid "WARNING: Dead thread {name} still registered to {object}."
-msgstr "AVERTISSEMENT : le thread {name} décédé est toujours enregistré à {object}."
-
-#: meerk40t/kernel/kernel.py:1404
-msgid "Finishing Thread {name} for {object}"
-msgstr "Terminaison du thread {name} pour {object}"
-
-#: meerk40t/kernel/kernel.py:1412
-msgid "{name} is the current shutdown thread"
-msgstr "{name} est le thread de fermeture actuel"
-
-#: meerk40t/kernel/kernel.py:1418
-msgid "Asking thread to stop."
-msgstr "Demande d'arrêt du thread."
-
-#: meerk40t/kernel/kernel.py:1425
-msgid "Waiting for thread {name}: {object}"
-msgstr "Attente du thread {name} : {object}"
-
-#: meerk40t/kernel/kernel.py:1432
-msgid "Thread {name} has finished. {object}"
-msgstr "Le thread {name} est terminé. {object}"
-
-#: meerk40t/kernel/kernel.py:1441
-msgid "Thread {name} is daemon. It will die automatically: {object}"
-msgstr "Le thread {name} est un démon. Il s'arrêtera automatiquement : {object}"
-
-#: meerk40t/kernel/kernel.py:1445
-msgid "No threads required halting."
-msgstr "Aucun thread ne nécessite d'arrêt."
-
-#: meerk40t/kernel/kernel.py:1462
-msgid "WARNING: Listener '{listener}' still registered to {object}."
-msgstr "AVERTISSEMENT : l'écouteur '{listener}' est toujours enregistré à {object}."
-
-#: meerk40t/kernel/kernel.py:1471
-msgid "Shutdown."
-msgstr "Arrêt."
-
-#: meerk40t/kernel/kernel.py:1783
-msgid "Thread: {name} already exists. Waiting..."
-msgstr "Le thread : {name} existe déjà. En attente..."
-
-#: meerk40t/kernel/kernel.py:1792
-msgid "Thread: {name}, Initialized"
-msgstr "Thread : {name}, initialisé"
-
-#: meerk40t/kernel/kernel.py:1797
-msgid "Thread: {name}, Set"
-msgstr "Thread : {name}, défini"
-
-#: meerk40t/kernel/kernel.py:1800
-msgid "Thread: {name}, Start"
-msgstr "Thread : {name}, démarrage"
-
-#: meerk40t/kernel/kernel.py:1803
-msgid "Thread: {name}, End "
-msgstr "Thread : {name}, fin"
-
-#: meerk40t/kernel/kernel.py:1806
-msgid "Thread: {name}, Exception-End"
-msgstr "Thread : {name}, fin avec exception"
-
-#: meerk40t/kernel/kernel.py:1813
-msgid "Thread: {name}, Unset"
-msgstr "Thread : {name}, non défini"
-
-#: meerk40t/kernel/kernel.py:1818
-msgid "Thread: {name}, Result Function"
-msgstr "Thread : {name}, fonction de résultat"
-
-#: meerk40t/kernel/kernel.py:1822
-msgid "Thread: {name}, Finished"
-msgstr "Thread : {name}, terminé"
-
-#: meerk40t/kernel/kernel.py:1834
-msgid "Unstarted"
-msgstr "Non démarré"
-
-#: meerk40t/kernel/kernel.py:1838
-msgid "Finished"
-msgstr "Terminé"
-
-#: meerk40t/kernel/kernel.py:1842 meerk40t/lihuiyu/device.py:686
-msgid "Busy"
-msgstr "Occupé"
-
-#: meerk40t/kernel/kernel.py:1844
-msgid "Waiting"
-msgstr "En attente"
-
-#: meerk40t/kernel/kernel.py:1848
-msgid "Idle"
-msgstr "Inactif"
-
-#: meerk40t/kernel/kernel.py:1850
-msgid "Unknown"
-msgstr "Inconnu"
-
-#: meerk40t/kernel/kernel.py:2407
-msgid "Syntax Error ({command}): {message}"
-msgstr "Erreur de syntaxe ({command}) : {message}"
-
-#: meerk40t/kernel/kernel.py:2422
-msgid "{command} is not a registered command in this context: {context}"
-msgstr "{command} n'est pas une commande enregistrée dans ce contexte : {context}"
-
-#: meerk40t/kernel/kernel.py:2436
-msgid "Command: {command} terminated. Cannot chain remaining commands: {remainder}"
-msgstr "Commande : {command} terminée. Impossible de chaîner les commandes restantes : {remainder}"
-
-#: meerk40t/kernel/kernel.py:2491
-msgid "Print Shutdown"
-msgstr "Afficher l'arrêt"
-
-#: meerk40t/kernel/kernel.py:2492
-msgid "Print shutdown log when closed."
-msgstr "Afficher le journal d'arrêt lorsqu'il est fermé."
-
-#: meerk40t/kernel/kernel.py:2506
-msgid "Output type to match"
-msgstr "Type de sortie à faire correspondre"
-
-#: meerk40t/kernel/kernel.py:2507
-msgid "Input type to match"
-msgstr "Type d'entrée à faire correspondre"
-
-#: meerk40t/kernel/kernel.py:2509
-msgid "help <help>"
-msgstr "aide <aide>"
-
-#: meerk40t/kernel/kernel.py:2554
-msgid "\tArgument: {type} '{name}'{help}"
-msgstr "\tArgument : {type} '{name}'{help}"
-
-#: meerk40t/kernel/kernel.py:2565
-msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr "\tOption : {type} ('--{name}', '-{short}'){help}"
-
-#: meerk40t/kernel/kernel.py:2575
-msgid "No extended help for: {name}"
-msgstr "Pas d'aide étendue pour : {name}"
-
-#: meerk40t/kernel/kernel.py:2591
-msgid "Base"
-msgstr "Base"
-
-#: meerk40t/kernel/kernel.py:2593
-msgid "--- {category} Commands ---"
-msgstr "--- Commandes {category} ---"
-
-#: meerk40t/kernel/kernel.py:2605
-msgid "find <substr>"
-msgstr "trouver <sous-chaîne>"
-
-#: meerk40t/kernel/kernel.py:2666
-msgid "No commands found that contained: [red]{string}[normal]"
-msgstr "Aucune commande trouvée contenant : [red]{string}[normal]"
-
-#: meerk40t/kernel/kernel.py:2674
-msgid "If you want to have a list of all available commands, just type 'help'"
-msgstr "Si vous souhaitez obtenir la liste de toutes les commandes disponibles, tapez simplement 'help'"
-
-#: meerk40t/kernel/kernel.py:2681
-msgid "show threads"
-msgstr "afficher les threads"
-
-#: meerk40t/kernel/kernel.py:2687
-msgid "Registered Threads:"
-msgstr "Threads enregistrés :"
-
-#: meerk40t/kernel/kernel.py:2694
-msgid "is alive."
-msgstr "est en cours d'exécution."
-
-#: meerk40t/kernel/kernel.py:2698
-msgid "show scheduled events"
-msgstr "afficher les événements planifiés"
-
-#: meerk40t/kernel/kernel.py:2701
-msgid "Scheduled Processes:"
-msgstr "Processus planifiés :"
-
-#: meerk40t/kernel/kernel.py:2704
-msgid "Empty job definition..."
-msgstr "Définition de tâche vide..."
-
-#: meerk40t/kernel/kernel.py:2711 meerk40t/kernel/kernel.py:2787
-msgid "forever,"
-msgstr "pour toujours,"
-
-#: meerk40t/kernel/kernel.py:2713
-msgid "{times} times,"
-msgstr "{times} fois,"
-
-#: meerk40t/kernel/kernel.py:2715 meerk40t/kernel/kernel.py:2795
-msgid "never"
-msgstr "jamais"
-
-#: meerk40t/kernel/kernel.py:2718 meerk40t/kernel/kernel.py:2798
-msgid "each {interval} seconds"
-msgstr "toutes les {interval} secondes"
-
-#: meerk40t/kernel/kernel.py:2725
-msgid "Echo text to console"
-msgstr "Répéter le texte sur la console"
-
-#: meerk40t/kernel/kernel.py:2732
-msgid "Turn this timer off"
-msgstr "Désactiver ce minuteur"
-
-#: meerk40t/kernel/kernel.py:2735
-msgid "Run this timer in the gui-thread"
-msgstr "Exécuter ce minuteur dans le thread de l'interface graphique"
-
-#: meerk40t/kernel/kernel.py:2738
-msgid "Quiet timer notifications"
-msgstr "Notifications silencieuses du minuteur"
-
-#: meerk40t/kernel/kernel.py:2741
-msgid "Number of times this timer should execute."
-msgstr "Nombre de fois que ce minuteur doit s'exécuter."
-
-#: meerk40t/kernel/kernel.py:2746
-msgid "How long in seconds between/before should this be run."
-msgstr "Temps en secondes entre/avant chaque exécution."
-
-#: meerk40t/kernel/kernel.py:2753
-msgid "run the command a given number of times with a given duration between."
-msgstr "exécute la commande un certain nombre de fois avec un intervalle donné."
-
-#: meerk40t/kernel/kernel.py:2773
-msgid "Timers:"
-msgstr "Minuteurs :"
-
-#: meerk40t/kernel/kernel.py:2790
-msgid "{index}/{total} times,"
-msgstr "{index}/{total} fois,"
-
-#: meerk40t/kernel/kernel.py:2801
-msgid "- gui"
-msgstr "- gui"
-
-#: meerk40t/kernel/kernel.py:2826
-msgid "All timers canceled."
-msgstr "Tous les minuteurs ont été annulés."
-
-#: meerk40t/kernel/kernel.py:2828
-msgid "No timers canceled."
-msgstr "Aucun minuteur n'a été annulé."
-
-#: meerk40t/kernel/kernel.py:2836
-msgid "Timer '{name}' canceled."
-msgstr "Minuteur '{name}' annulé."
-
-#: meerk40t/kernel/kernel.py:2839
-msgid "Timer '{name}' does not exist."
-msgstr "Le minuteur '{name}' n'existe pas."
-
-#: meerk40t/kernel/kernel.py:2857
-msgid "Syntax Error: timer<name> <times> <interval> <command>"
-msgstr "Erreur de syntaxe : timer<nom> <fois> <intervalle> <commande>"
-
-#: meerk40t/kernel/kernel.py:2864
-msgid "Mode to set: prevent/allow"
-msgstr "Mode à définir : prevent/allow"
-
-#: meerk40t/kernel/kernel.py:2867
-msgid "Prevent/allow system hibernation."
-msgstr "Empêcher/autoriser la mise en veille du système."
-
-#: meerk40t/kernel/kernel.py:2875
-msgid "Inhibitor is not available on this system."
-msgstr "L'inhibiteur n'est pas disponible sur ce système."
-
-#: meerk40t/kernel/kernel.py:2879
-msgid "Please specify 'prevent' or 'allow'."
-msgstr "Veuillez préciser 'prevent' ou 'allow'."
-
-#: meerk40t/kernel/kernel.py:2885
-msgid "You might need system administrator priviliges."
-msgstr "Vous pourriez avoir besoin des privilèges d'administrateur système."
-
-#: meerk40t/kernel/kernel.py:2887
-msgid "System hibernation is prevented."
-msgstr "La mise en veille du système est empêchée."
-
-#: meerk40t/kernel/kernel.py:2889
-msgid "System hibernation is allowed."
-msgstr "La mise en veille du système est autorisée."
-
-#: meerk40t/kernel/kernel.py:2900
-msgid "System Information"
-msgstr "Informations sur le système"
-
-#: meerk40t/kernel/kernel.py:2902
-msgid "MK Kernel {version}."
-msgstr "Noyau MK {version}."
-
-#: meerk40t/kernel/kernel.py:2904
-msgid "App: {name} {version}."
-msgstr "Application : {name} {version}."
-
-#: meerk40t/kernel/kernel.py:2907
-msgid "Set/unset silent mode"
-msgstr "Activer/désactiver le mode silencieux"
-
-#: meerk40t/kernel/kernel.py:2914
-msgid "Silent mode is currently {mode}."
-msgstr "Le mode silencieux est actuellement {mode}."
-
-#: meerk40t/kernel/kernel.py:2920
-msgid "Please specify 'on' or 'off' to set silent mode."
-msgstr "Veuillez préciser 'on' ou 'off' pour régler le mode silencieux."
-
-#: meerk40t/kernel/kernel.py:2927
-msgid "Silent mode is now ON."
-msgstr "Le mode silencieux est maintenant activé."
-
-#: meerk40t/kernel/kernel.py:2929
-msgid "Silent mode is now OFF."
-msgstr "Le mode silencieux est maintenant désactivé."
-
-#: meerk40t/kernel/kernel.py:2931
-msgid "Perform beep"
-msgstr "Émettre un bip"
-
-#: meerk40t/kernel/kernel.py:2934
-msgid "Silent mode is on, no beep will be played."
-msgstr "Le mode silencieux est activé, aucun bip ne sera émis."
-
-#: meerk40t/kernel/kernel.py:2988
-msgid "Wait time in seconds"
-msgstr "Temps d'attente en secondes"
-
-#: meerk40t/kernel/kernel.py:2991
-msgid "Wait for given amount of time."
-msgstr "Attendre pendant la durée spécifiée."
-
-#: meerk40t/kernel/kernel.py:3032
-msgid "register"
-msgstr "enregistrer"
-
-#: meerk40t/kernel/kernel.py:3035
-msgid "Objects Registered:"
-msgstr "Objets enregistrés :"
-
-#: meerk40t/kernel/kernel.py:3045 meerk40t/kernel/kernel.py:3053
-msgid "{domain}, {index}: {object} type of {type}"
-msgstr "{domain}, {index} : {object} de type {type}"
-
-#: meerk40t/kernel/kernel.py:3059
-msgid "context"
-msgstr "contexte"
-
-#: meerk40t/kernel/kernel.py:3066
-msgid "list loaded plugins in kernel"
-msgstr "lister les plugins chargés dans le noyau"
-
-#: meerk40t/kernel/kernel.py:3070
-msgid "Kernel Plugins:"
-msgstr "Plugins du noyau :"
-
-#: meerk40t/kernel/kernel.py:3073
-msgid "Service Plugins:"
-msgstr "Plugins de service :"
-
-#: meerk40t/kernel/kernel.py:3078
-msgid "Module Plugins:"
-msgstr "Plugins de module :"
-
-#: meerk40t/kernel/kernel.py:3086 meerk40t/kernel/kernel.py:3562
-msgid "Path of variables to set."
-msgstr "Chemin des variables à définir."
-
-#: meerk40t/kernel/kernel.py:3088
-msgid "module [(open|close) <module_name>]"
-msgstr "module [(open|close) <nom_module>]"
-
-#: meerk40t/kernel/kernel.py:3092
-msgid "Modules Registered:"
-msgstr "Modules enregistrés :"
-
-#: meerk40t/kernel/kernel.py:3101
-msgid "Loaded Modules in Context {context}:"
-msgstr "Modules chargés dans le contexte {context} :"
-
-#: meerk40t/kernel/kernel.py:3108
-msgid "{index}: {object} type of {type}"
-msgstr "{index} : {object} de type {type}"
-
-#: meerk40t/kernel/kernel.py:3117
-msgid "    {index}.{subindex}: linked {name}:{hash:X}"
-msgstr "    {index}.{subindex} : lié à {name} : {hash:X}"
-
-#: meerk40t/kernel/kernel.py:3143 meerk40t/kernel/kernel.py:3149
-msgid "Module '{name}' not found."
-msgstr "Module '{name}' introuvable."
-
-#: meerk40t/kernel/kernel.py:3160
-msgid "Base command to manipulate services"
-msgstr "Commande de base pour manipuler les services"
-
-#: meerk40t/kernel/kernel.py:3165
-msgid "Service Providers:"
-msgstr "Fournisseurs de services :"
-
-#: meerk40t/kernel/kernel.py:3169
-msgid "Services:"
-msgstr "Services :"
-
-#: meerk40t/kernel/kernel.py:3177
-msgid "{active}{domain},{index}: {path} of {service}"
-msgstr "{active}{domain},{index} : {path} de {service}"
-
-#: meerk40t/kernel/kernel.py:3197
-msgid "Activate the service at the given index"
-msgstr "Activer le service à l'index donné"
-
-#: meerk40t/kernel/kernel.py:3209
-msgid "Destroy the service at the given index"
-msgstr "Détruire le service à l'index donné"
-
-#: meerk40t/kernel/kernel.py:3237
-msgid "Initialize a provider"
-msgstr "Initialiser un fournisseur"
-
-#: meerk40t/kernel/kernel.py:3272
-msgid "Loads a given file and executes all lines as commmands (as long as they don't start with a #)"
-msgstr "Charge un fichier donné et exécute toutes les lignes comme des commandes (tant qu'elles ne commencent pas par #)"
-
-#: meerk40t/kernel/kernel.py:3276
-msgid "You need to provide a filename to execute"
-msgstr "Vous devez fournir un nom de fichier à exécuter"
-
-#: meerk40t/kernel/kernel.py:3280 meerk40t/kernel/kernel.py:3644
-msgid "The file does not exist"
-msgstr "Le fichier n'existe pas"
-
-#: meerk40t/kernel/kernel.py:3299
-msgid "Base command to manipulate batch commands."
-msgstr "Commande de base pour manipuler les commandes groupées."
-
-#: meerk40t/kernel/kernel.py:3306
-msgid "Batch Commands:"
-msgstr "Commandes groupées :"
-
-#: meerk40t/kernel/kernel.py:3324
-msgid "add a batch command 'batch add <line>'"
-msgstr "ajouter une commande groupée 'batch add <ligne>'"
-
-#: meerk40t/kernel/kernel.py:3337
-msgid "delete line located at specific index"
-msgstr "supprimer la ligne située à un index spécifique"
-
-#: meerk40t/kernel/kernel.py:3350
-msgid "execute line located at specific index"
-msgstr "exécuter la ligne située à un index spécifique"
-
-#: meerk40t/kernel/kernel.py:3363
-msgid "disable/enable the command at the particular index"
-msgstr "désactiver/activer la commande à l'index particulier"
-
-#: meerk40t/kernel/kernel.py:3380
-msgid "channel (open|close|save|list|print) <channel_name>"
-msgstr "channel (open|close|save|list|print) <nom_canal>"
-
-#: meerk40t/kernel/kernel.py:3386 meerk40t/kernel/kernel.py:3403 meerk40t/kernel/kernel.py:3442
-msgid "Channels Active:"
-msgstr "Canaux actifs :"
-
-#: meerk40t/kernel/kernel.py:3397
-msgid "list the channels open in the kernel"
-msgstr "lister les canaux ouverts dans le noyau"
-
-#: meerk40t/kernel/kernel.py:3412
-msgid "name of the channel"
-msgstr "nom du canal"
-
-#: meerk40t/kernel/kernel.py:3416
-msgid "watch this channel in the console"
-msgstr "surveiller ce canal dans la console"
-
-#: meerk40t/kernel/kernel.py:3422 meerk40t/kernel/kernel.py:3466 meerk40t/kernel/kernel.py:3494 meerk40t/kernel/kernel.py:3530
-msgid "channel_name is not specified."
-msgstr "channel_name n'est pas spécifié."
-
-#: meerk40t/kernel/kernel.py:3435
-msgid "Infinite Loop Error."
-msgstr "Erreur de boucle infinie."
-
-#: meerk40t/kernel/kernel.py:3454
-msgid "Watching Channel: {name}"
-msgstr "Surveillance du canal : {name}"
-
-#: meerk40t/kernel/kernel.py:3457 meerk40t/kernel/kernel.py:3484
-msgid "channel name"
-msgstr "nom du canal"
-
-#: meerk40t/kernel/kernel.py:3460
-msgid "stop watching this channel in the console"
-msgstr "arrêter de surveiller ce canal dans la console"
-
-#: meerk40t/kernel/kernel.py:3478
-msgid "No Longer Watching Channel: {name}"
-msgstr "Le canal {name} n'est plus surveillé"
-
-#: meerk40t/kernel/kernel.py:3481
-msgid "Channel {name} is not opened."
-msgstr "Le canal {name} n'est pas ouvert."
-
-#: meerk40t/kernel/kernel.py:3488
-msgid "print this channel to the standard out"
-msgstr "imprimer ce canal sur la sortie standard"
-
-#: meerk40t/kernel/kernel.py:3505
-msgid "No longer printing Channel: {name}"
-msgstr "Le canal {name} n'est plus imprimé"
-
-#: meerk40t/kernel/kernel.py:3509
-msgid "Printing Channel: {name}"
-msgstr "Impression du canal : {name}"
-
-#: meerk40t/kernel/kernel.py:3514
-msgid "Use this filename rather than default"
-msgstr "Utiliser ce nom de fichier plutôt que celui par défaut"
-
-#: meerk40t/kernel/kernel.py:3517
-msgid "channel name (you may comma delimit)"
-msgstr "nom du canal (peut être délimité par des virgules)"
-
-#: meerk40t/kernel/kernel.py:3521
-msgid "save this channel to disk"
-msgstr "enregistrer ce canal sur disque"
-
-#: meerk40t/kernel/kernel.py:3541
-msgid "Opening file: {filename}"
-msgstr "Ouverture du fichier : {filename}"
-
-#: meerk40t/kernel/kernel.py:3545
-msgid "Recording Channel: {name} to file {filename}"
-msgstr "Enregistrement du canal : {name} dans le fichier {filename}"
-
-#: meerk40t/kernel/kernel.py:3564
-msgid "set [<key> <value>]"
-msgstr "set [<clé> <valeur>]"
-
-#: meerk40t/kernel/kernel.py:3594
-msgid "Attempt failed. Produced a runtime error."
-msgstr "Tentative échouée. A produit une erreur d'exécution."
-
-#: meerk40t/kernel/kernel.py:3596
-msgid "Attempt failed. Produced a value error."
-msgstr "Tentative échouée. A produit une erreur de valeur."
-
-#: meerk40t/kernel/kernel.py:3598
-msgid "Attempt failed. Produced an attribute error."
-msgstr "Tentative échouée. A produit une erreur d'attribut."
-
-#: meerk40t/kernel/kernel.py:3601
-msgid "flush current settings to disk"
-msgstr "sauvegarder les paramètres actuels sur le disque"
-
-#: meerk40t/kernel/kernel.py:3607
-msgid "Persistent settings force saved."
-msgstr "Paramètres persistants enregistrés de force."
-
-#: meerk40t/kernel/kernel.py:3610
-msgid "Save a copy of the current configuration"
-msgstr "Enregistrer une copie de la configuration actuelle"
-
-#: meerk40t/kernel/kernel.py:3618
-msgid "You need to provide a target directory: setting_export <targetdir>"
-msgstr "Vous devez fournir un répertoire cible : setting_export <répertoire_cible>"
-
-#: meerk40t/kernel/kernel.py:3629
-msgid "Persistent settings exported to {file}."
-msgstr "Paramètres persistants exportés vers {file}."
-
-#: meerk40t/kernel/kernel.py:3632
-msgid "Restore a previously saved configuration file"
-msgstr "Restaurer un fichier de configuration préalablement enregistré"
-
-#: meerk40t/kernel/kernel.py:3640
-msgid "You need to provide a valid config-file to restore: setting_import <filename>"
-msgstr "Vous devez fournir un fichier de configuration valide à restaurer : setting_import <nom_de_fichier>"
-
-#: meerk40t/kernel/kernel.py:3648
-msgid "Persistent settings imported from {file}."
-msgstr "Paramètres persistants importés depuis {file}."
-
-#: meerk40t/kernel/kernel.py:3654
-msgid "Signal to send"
-msgstr "Signal à envoyer"
-
-#: meerk40t/kernel/kernel.py:3655
-msgid "Signal content"
-msgstr "Contenu du signal"
-
-#: meerk40t/kernel/kernel.py:3656
-msgid "sends a signal"
-msgstr "envoie un signal"
-
-#: meerk40t/kernel/kernel.py:3659
-msgid "Please provide a signal to send, attached listeners:"
-msgstr "Veuillez fournir un signal à envoyer, écouteurs attachés :"
-
-#: meerk40t/kernel/kernel.py:3680
-msgid "shuts down all processes and exits"
-msgstr "arrête tous les processus et quitte"
-
-#: meerk40t/kernel/kernel.py:3693
-msgid "shuts down all processes, exits and restarts meerk40t"
-msgstr "arrête tous les processus, quitte et redémarre meerk40t"
-
-#: meerk40t/kernel/kernel.py:3705
-msgid "list directory"
-msgstr "lister le répertoire"
-
-#: meerk40t/kernel/kernel.py:3711
-msgid "change directory"
-msgstr "changer de répertoire"
-
-#: meerk40t/kernel/kernel.py:3715
-msgid "Working directory"
-msgstr "Répertoire de travail"
-
-#: meerk40t/kernel/kernel.py:3720 meerk40t/kernel/kernel.py:3728
-msgid "Configuration Directory: {dir}"
-msgstr "Répertoire de configuration : {dir}"
-
-#: meerk#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:234
 msgid "Set the fillstyle to even-odd (alternating areas)"
 msgstr "Définir le style de remplissage sur pair-impair (zones alternées)"
 
@@ -22681,23 +19727,8 @@ msgid "Cut-Operation"
 msgstr "Opération de coupe"
 
 #: meerk40t/tools/kerftest.py:177
-msgid ""
-"If you want to produce cut out shapes with *exact* dimensions after the burn, "
-"then you need to take half the width of the laserbeam into consideration (aka "
-"Kerf compensation).\n"
-"This routine will create a couple of test shapes for you to establish this "
-"value.\n"
-"After you cut these shapes out you need to try to fit the shapes with the "
-"same label together. Choose the pair that has a perfect fit and use the label "
-"as your kerf-compensation value."
-msgstr ""
-"Si vous souhaitez produire des formes découpées avec des dimensions *exactes* "
-"après la gravure, vous devez prendre en compte la moitié de la largeur du faisceau "
-"laser (appelée compensation de Kerf).\n"
-"Cette routine créera quelques formes de test pour déterminer cette valeur.\n"
-"Après avoir découpé ces formes, vous devez essayer d’assembler celles qui portent "
-"la même étiquette. Choisissez la paire qui s’emboîte parfaitement et utilisez "
-"cette étiquette comme valeur de compensation de Kerf."
+msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of test shapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
+msgstr "Si vous souhaitez produire des formes découpées avec des dimensions *exactes* après la gravure, vous devez prendre en compte la moitié de la largeur du faisceau laser (appelée compensation de Kerf).\nCette routine créera quelques formes de test pour déterminer cette valeur.\nAprès avoir découpé ces formes, vous devez essayer d’assembler celles qui portent la même étiquette. Choisissez la paire qui s’emboîte parfaitement et utilisez cette étiquette comme valeur de compensation de Kerf."
 
 #: meerk40t/tools/kerftest.py:193
 msgid "Minimum value for Kerf"
@@ -22830,3 +19861,295 @@ msgstr "Charnière"
 #: meerk40t/tools/livinghinges.py:1159
 msgid "Fill area with a living hinge pattern"
 msgstr "Remplir la zone avec un motif de charnières flexibles"
+
+#: barcodes/bcode_logic.py:359 barcodes/bcode_logic.py:603 barcodes/main.py:325 build/lib/barcodes/bcode_logic.py:355 build/lib/barcodes/bcode_logic.py:599 build/lib/barcodes/main.py:325
+msgid "Invalid dimensions provided"
+msgstr "Dimensions invalides fournies"
+
+#: barcodes/gui.py:20 build/lib/barcodes/gui.py:20
+msgid "Create a barcode"
+msgstr "Créer un code-barres"
+
+#: barcodes/gui.py:24 build/lib/barcodes/gui.py:24
+msgid "Text to use:"
+msgstr "Texte à utiliser :"
+
+#: barcodes/gui.py:28 build/lib/barcodes/gui.py:28
+msgid "The barcode/qrcode will be based on this content."
+msgstr "Le code-barres/QR code sera basé sur ce contenu."
+
+#: barcodes/gui.py:30 build/lib/barcodes/gui.py:30
+msgid "Code:"
+msgstr "Code :"
+
+#: barcodes/gui.py:35 build/lib/barcodes/gui.py:35
+msgid "Coordinates:"
+msgstr "Coordonnées :"
+
+#: barcodes/gui.py:45 barcodes/gui.py:53 build/lib/barcodes/gui.py:45 build/lib/barcodes/gui.py:53
+msgid "Where will the barcode will be located (top left corner)."
+msgstr "Où le code-barres sera-t-il placé (coin supérieur gauche)."
+
+#: barcodes/gui.py:61 build/lib/barcodes/gui.py:61
+msgid "QR-Code"
+msgstr "QR-Code"
+
+#: barcodes/gui.py:62 barcodes/main.py:457 build/lib/barcodes/gui.py:62 build/lib/barcodes/main.py:457
+msgid "Barcode"
+msgstr "Code-barres"
+
+#: barcodes/gui.py:66 build/lib/barcodes/gui.py:66
+msgid "QR-Code:"
+msgstr "QR-Code :"
+
+#: barcodes/gui.py:81 build/lib/barcodes/gui.py:81
+msgid "Width/Height:"
+msgstr "Largeur/Hauteur :"
+
+#: barcodes/gui.py:84 build/lib/barcodes/gui.py:84
+msgid "How wide/high will the resulting qr-code be?"
+msgstr "Quelle sera la largeur/hauteur du QR code généré ?"
+
+#: barcodes/gui.py:90 build/lib/barcodes/gui.py:90
+msgid "Resolution:"
+msgstr "Résolution :"
+
+#: barcodes/gui.py:94 build/lib/barcodes/gui.py:94
+msgid "How big will the qr-code become (1..40, default 1)?"
+msgstr "Quelle taille aura le QR code (1..40, par défaut 1) ?"
+
+#: barcodes/gui.py:101 build/lib/barcodes/gui.py:101
+msgid "Border:"
+msgstr "Bordure :"
+
+#: barcodes/gui.py:104 build/lib/barcodes/gui.py:104
+msgid "How wide is the border around the qr-code (default 4)?"
+msgstr "Quelle est la largeur de la bordure autour du QR code (par défaut 4) ?"
+
+#: barcodes/gui.py:110 build/lib/barcodes/gui.py:110
+msgid "Boxsize:"
+msgstr "Taille de la case :"
+
+#: barcodes/gui.py:114 build/lib/barcodes/gui.py:114
+msgid "How big is the boxsize of the pixels (default 10)?"
+msgstr "Quelle est la taille des pixels (par défaut 10) ?"
+
+#: barcodes/gui.py:121 build/lib/barcodes/gui.py:121
+msgid "Error:"
+msgstr "Erreur :"
+
+#: barcodes/gui.py:131 build/lib/barcodes/gui.py:131
+msgid "Establish the error correction used for the QR Code"
+msgstr "Définir la correction d'erreur utilisée pour le QR code"
+
+#: barcodes/gui.py:146 build/lib/barcodes/gui.py:146
+msgid "WiFi"
+msgstr "WiFi"
+
+#: barcodes/gui.py:151 build/lib/barcodes/gui.py:151
+msgid "SSID:"
+msgstr "SSID :"
+
+#: barcodes/gui.py:159 build/lib/barcodes/gui.py:159
+msgid "Key:"
+msgstr "Clé :"
+
+#: barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "WPA/WPA2/WPA3"
+msgstr "WPA/WPA2/WPA3"
+
+#: barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "WEP"
+msgstr "WEP"
+
+#: barcodes/gui.py:172 build/lib/barcodes/gui.py:172
+msgid "What kind of encryption does the network use?"
+msgstr "Quel type de chiffrement le réseau utilise-t-il ?"
+
+#: barcodes/gui.py:175 build/lib/barcodes/gui.py:175
+msgid "Encryption:"
+msgstr "Chiffrement :"
+
+#: barcodes/gui.py:181 build/lib/barcodes/gui.py:181
+msgid "Hidden"
+msgstr "Caché"
+
+#: barcodes/gui.py:182 build/lib/barcodes/gui.py:182
+msgid "Is the network hidden?"
+msgstr "Le réseau est-il caché ?"
+
+#: barcodes/gui.py:190 barcodes/gui.py:250 build/lib/barcodes/gui.py:190 build/lib/barcodes/gui.py:250
+msgid "Generate Pattern"
+msgstr "Générer le motif"
+
+#: barcodes/gui.py:197 build/lib/barcodes/gui.py:197
+msgid "VCard"
+msgstr "VCard"
+
+#: barcodes/gui.py:202 build/lib/barcodes/gui.py:202
+msgid "Provide your name as lastname,firstname"
+msgstr "Indiquez votre nom sous la forme nom,prénom"
+
+#: barcodes/gui.py:203 build/lib/barcodes/gui.py:203
+msgid "Name:"
+msgstr "Nom :"
+
+#: barcodes/gui.py:214 build/lib/barcodes/gui.py:214
+msgid "Provide your address as:\nPO box, room number, house number, city, prefecture, zip code and country"
+msgstr "Indiquez votre adresse comme suit :\nBoîte postale, numéro de chambre, numéro de maison, ville, département, code postal et pays"
+
+#: barcodes/gui.py:216 build/lib/barcodes/gui.py:216
+msgid "Address:"
+msgstr "Adresse :"
+
+#: barcodes/gui.py:223 build/lib/barcodes/gui.py:223
+msgid "Provide your phone-number"
+msgstr "Indiquez votre numéro de téléphone"
+
+#: barcodes/gui.py:224 build/lib/barcodes/gui.py:224
+msgid "Phone:"
+msgstr "Téléphone :"
+
+#: barcodes/gui.py:231 build/lib/barcodes/gui.py:231
+msgid "Provide your email-Address"
+msgstr "Indiquez votre adresse e-mail"
+
+#: barcodes/gui.py:232 build/lib/barcodes/gui.py:232
+msgid "email:"
+msgstr "email :"
+
+#: barcodes/gui.py:239 build/lib/barcodes/gui.py:239
+msgid "Provide a valid URL"
+msgstr "Indiquez une URL valide"
+
+#: barcodes/gui.py:240 build/lib/barcodes/gui.py:240
+msgid "URL:"
+msgstr "URL :"
+
+#: barcodes/gui.py:257 build/lib/barcodes/gui.py:257
+msgid "Barcode:"
+msgstr "Code-barres :"
+
+#: barcodes/gui.py:264 build/lib/barcodes/gui.py:264
+msgid "Type:"
+msgstr "Type :"
+
+#: barcodes/gui.py:272 build/lib/barcodes/gui.py:272
+msgid "What kind of barcode do you want to create?"
+msgstr "Quel type de code-barres souhaitez-vous créer ?"
+
+#: barcodes/gui.py:281 build/lib/barcodes/gui.py:281
+msgid "How wide will the resulting barcode be?"
+msgstr "Quelle sera la largeur du code-barres généré ?"
+
+#: barcodes/gui.py:290 build/lib/barcodes/gui.py:290
+msgid "How high will the resulting barcode be?"
+msgstr "Quelle sera la hauteur du code-barres généré ?"
+
+#: barcodes/gui.py:296 build/lib/barcodes/gui.py:296
+msgid "No text:"
+msgstr "Pas de texte :"
+
+#: barcodes/gui.py:299 build/lib/barcodes/gui.py:299
+msgid "Suppress the text under the barcode?"
+msgstr "Supprimer le texte sous le code-barres ?"
+
+#: barcodes/gui.py:319 build/lib/barcodes/gui.py:319
+msgid "Create a barcode/qrcode"
+msgstr "Créer un code-barres/QR code"
+
+#: barcodes/gui.py:324 build/lib/barcodes/gui.py:324
+msgid "Close without creating anything"
+msgstr "Fermer sans rien créer"
+
+#: barcodes/gui.py:551 build/lib/barcodes/gui.py:551
+msgid "Text to use for QR-Code:"
+msgstr "Texte à utiliser pour le QR-Code :"
+
+#: barcodes/gui.py:623 build/lib/barcodes/gui.py:623
+msgid "Text to use for Barcode:"
+msgstr "Texte à utiliser pour le code-barres :"
+
+#: barcodes/main.py:256 build/lib/barcodes/main.py:256
+msgid "suppress text display"
+msgstr "masquer l'affichage du texte"
+
+#: barcodes/main.py:258 build/lib/barcodes/main.py:258
+msgid "X-Position of barcode"
+msgstr "Position X du code-barres"
+
+#: barcodes/main.py:259 build/lib/barcodes/main.py:259
+msgid "Y-Position of barcode"
+msgstr "Position Y du code-barres"
+
+#: barcodes/main.py:261 build/lib/barcodes/main.py:261
+msgid "Width of barcode, may be 'auto' to keep native width"
+msgstr "Largeur du code-barres, peut être 'auto' pour conserver la largeur d'origine"
+
+#: barcodes/main.py:266 build/lib/barcodes/main.py:266
+msgid "Height of barcode, may be 'auto' to keep native height"
+msgstr "Hauteur du code-barres, peut être 'auto' pour conserver la hauteur d'origine"
+
+#: barcodes/main.py:268 build/lib/barcodes/main.py:268
+msgid "Barcode type"
+msgstr "Type de code-barres"
+
+#: barcodes/main.py:269 build/lib/barcodes/main.py:269
+msgid "The code to process"
+msgstr "Le code à traiter"
+
+#: barcodes/main.py:272 build/lib/barcodes/main.py:272
+msgid "Creates a barcode."
+msgstr "Crée un code-barres."
+
+#: barcodes/main.py:304 barcodes/main.py:396 build/lib/barcodes/main.py:304 build/lib/barcodes/main.py:396
+msgid "Please provide all parameters: {params}"
+msgstr "Veuillez fournir tous les paramètres : {params}"
+
+#: barcodes/main.py:306 build/lib/barcodes/main.py:306
+msgid "Supported formats: {all}"
+msgstr "Formats pris en charge : {all}"
+
+#: barcodes/main.py:311 build/lib/barcodes/main.py:311
+msgid "Invalid format, supported: {all}"
+msgstr "Format invalide, pris en charge : {all}"
+
+#: barcodes/main.py:361 build/lib/barcodes/main.py:361
+msgid "error correction, one of L (7%), M (15%), Q (25%), H (30%)"
+msgstr "correction d'erreur, une parmi L (7%), M (15%), Q (25%), H (30%)"
+
+#: barcodes/main.py:363 build/lib/barcodes/main.py:363
+msgid "Boxsize (default 10)"
+msgstr "Taille de la case (par défaut 10)"
+
+#: barcodes/main.py:365 build/lib/barcodes/main.py:365
+msgid "Border around qr-code (default 4)"
+msgstr "Bordure autour du QR code (par défaut 4)"
+
+#: barcodes/main.py:367 build/lib/barcodes/main.py:367
+msgid "size (1..40)"
+msgstr "taille (1..40)"
+
+#: barcodes/main.py:368 build/lib/barcodes/main.py:368
+msgid "X-position of qr-code"
+msgstr "Position X du QR code"
+
+#: barcodes/main.py:369 build/lib/barcodes/main.py:369
+msgid "Y-position of qr-code"
+msgstr "Position Y du QR code"
+
+#: barcodes/main.py:370 build/lib/barcodes/main.py:370
+msgid "Width/length of qr-code"
+msgstr "Largeur/longueur du QR code"
+
+#: barcodes/main.py:371 build/lib/barcodes/main.py:371
+msgid "Text to create qr-code from"
+msgstr "Texte à partir duquel créer le QR code"
+
+#: barcodes/main.py:374 build/lib/barcodes/main.py:374
+msgid "Creates a qr code."
+msgstr "Crée un QR code."
+
+#: barcodes/main.py:459 build/lib/barcodes/main.py:459
+msgid "Create an ean-barcode or a qr-code"
+msgstr "Créer un code-barres EAN ou un QR code"
