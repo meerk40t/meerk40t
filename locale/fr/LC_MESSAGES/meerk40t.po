@@ -1,10 +1,14 @@
-#: translate_check.py:22
-msgid "Test for a '"
-msgstr "Test pour un '"
-
-#: translate_check.py:22
-msgid "another test for \""
-msgstr "un autre test pour \""
+# French translation for Meerk40t
+# Project-Homepage: https://github.com/meerk40t/meerk40t
+msgid ""
+msgstr ""
+"Project-Id-Version: Meerk40t"
+"Content-Type: text/plain; charset=UTF-8"
+"Content-Transfer-Encoding: 8bit"
+"Language-Team: Meerk40t Translation Team"
+"Language: fr"
+"X-Generator: translate_check.py"
+"Plural-Forms: nplurals=2; plural=(n > 1);"
 
 #: meerk40t/balormk/device.py:90 meerk40t/grbl/device.py:54 meerk40t/gui/materialmanager.py:380 meerk40t/gui/wxmribbon.py:1474 meerk40t/gui/propertypanels/attributes.py:261 meerk40t/moshi/device.py:60 meerk40t/newly/device.py:118 meerk40t/ruida/device.py:49
 msgid "Label"
@@ -8378,11 +8382,11 @@ msgstr "Axe X :"
 msgid "Y-Axis:"
 msgstr "Axe Y :"
 
-#: meerk40t/gui/alignment.py:1224 meerk40t/gui/navigationpanels.py:2351 meerk40t/gui/propertypanels/attributes.py:1256 meerk40t/gui/propertypanels/placementproperty.py:72 meerk40t/tools/livinghinges.py:298
+#: meerk40t/gui/alignment.py:1224 meerk40t/gui/navigationpanels.py:2351 meerk40t/gui/propertypanels/attributes.py:1256 meerk40t/gui/propertypanels/placementproperty.py:72 meerk40t/tools/livinghinges.py:298 barcodes/gui.py:38 build/lib/barcodes/gui.py:38
 msgid "X:"
 msgstr "X :"
 
-#: meerk40t/gui/alignment.py:1229 meerk40t/gui/navigationpanels.py:2352 meerk40t/gui/propertypanels/attributes.py:1257 meerk40t/gui/propertypanels/placementproperty.py:82 meerk40t/tools/livinghinges.py:302
+#: meerk40t/gui/alignment.py:1229 meerk40t/gui/navigationpanels.py:2352 meerk40t/gui/propertypanels/attributes.py:1257 meerk40t/gui/propertypanels/placementproperty.py:82 meerk40t/tools/livinghinges.py:302 barcodes/gui.py:41 build/lib/barcodes/gui.py:41
 msgid "Y:"
 msgstr "Y :"
 
@@ -8874,7 +8878,7 @@ msgstr "Aide"
 msgid "Parameters"
 msgstr "Paramètres"
 
-#: meerk40t/gui/functionwrapper.py:85 meerk40t/gui/magnetoptions.py:501 meerk40t/gui/propertypanels/imageproperty.py:1473 meerk40t/tools/livinghinges.py:326
+#: meerk40t/gui/functionwrapper.py:85 meerk40t/gui/magnetoptions.py:501 meerk40t/gui/propertypanels/imageproperty.py:1473 meerk40t/tools/livinghinges.py:326 barcodes/gui.py:73 build/lib/barcodes/gui.py:73
 msgid "Options"
 msgstr "Options"
 
@@ -10238,7 +10242,7 @@ msgstr "Minimum :"
 msgid "Maximum:"
 msgstr "Maximum :"
 
-#: meerk40t/gui/materialtest.py:391 meerk40t/gui/navigationpanels.py:1921 meerk40t/gui/position.py:264 meerk40t/gui/propertypanels/attributes.py:751 meerk40t/gui/propertypanels/attributes.py:971 meerk40t/tools/livinghinges.py:313
+#: meerk40t/gui/materialtest.py:391 meerk40t/gui/navigationpanels.py:1921 meerk40t/gui/position.py:264 meerk40t/gui/propertypanels/attributes.py:751 meerk40t/gui/propertypanels/attributes.py:971 meerk40t/tools/livinghinges.py:313 barcodes/gui.py:278 build/lib/barcodes/gui.py:278
 msgid "Width:"
 msgstr "Largeur :"
 
@@ -10254,7 +10258,7 @@ msgstr "Couleur :"
 msgid "Second parameter (Y-Axis)"
 msgstr "Deuxième paramètre (axe Y)"
 
-#: meerk40t/gui/materialtest.py:458 meerk40t/gui/navigationpanels.py:1922 meerk40t/gui/position.py:263 meerk40t/gui/propertypanels/attributes.py:970 meerk40t/tools/livinghinges.py:318
+#: meerk40t/gui/materialtest.py:458 meerk40t/gui/navigationpanels.py:1922 meerk40t/gui/position.py:263 meerk40t/gui/propertypanels/attributes.py:970 meerk40t/tools/livinghinges.py:318 barcodes/gui.py:287 build/lib/barcodes/gui.py:287
 msgid "Height:"
 msgstr "Hauteur :"
 
@@ -12662,7 +12666,7 @@ msgstr "Toutes les bordures"
 msgid "Left/upper edge"
 msgstr "Bordure gauche/haute"
 
-#: meerk40t/gui/wxmmain.py:1303 meerk40t/gui/propertypanels/imageproperty.py:94
+#: meerk40t/gui/wxmmain.py:1303 meerk40t/gui/propertypanels/imageproperty.py:94 barcodes/gui.py:168 build/lib/barcodes/gui.py:168
 msgid "None"
 msgstr "Aucune"
 
@@ -16078,7 +16082,7 @@ msgstr "Basculer"
 msgid "Move all back"
 msgstr "Tout déplacer en arrière"
 
-#: meerk40t/gui/propertypanels/regbranchproperties.py:30
+#: meerk40t/gui/propertypanels/regbranchproperties.py:30 barcodes/gui.py:260 build/lib/barcodes/gui.py:260
 msgid "Options:"
 msgstr "Options :"
 
@@ -19857,3 +19861,295 @@ msgstr "Charnière"
 #: meerk40t/tools/livinghinges.py:1159
 msgid "Fill area with a living hinge pattern"
 msgstr "Remplir la zone avec un motif de charnières flexibles"
+
+barcodes/bcode_logic.py:359 barcodes/bcode_logic.py:603 barcodes/main.py:325 build/lib/barcodes/bcode_logic.py:355 build/lib/barcodes/bcode_logic.py:599 build/lib/barcodes/main.py:325
+msgid "Invalid dimensions provided"
+msgstr "Dimensions invalides fournies"
+
+barcodes/gui.py:20 build/lib/barcodes/gui.py:20
+msgid "Create a barcode"
+msgstr "Créer un code-barres"
+
+barcodes/gui.py:24 build/lib/barcodes/gui.py:24
+msgid "Text to use:"
+msgstr "Texte à utiliser :"
+
+barcodes/gui.py:28 build/lib/barcodes/gui.py:28
+msgid "The barcode/qrcode will be based on this content."
+msgstr "Le code-barres/QR code sera basé sur ce contenu."
+
+barcodes/gui.py:30 build/lib/barcodes/gui.py:30
+msgid "Code:"
+msgstr "Code :"
+
+barcodes/gui.py:35 build/lib/barcodes/gui.py:35
+msgid "Coordinates:"
+msgstr "Coordonnées :"
+
+barcodes/gui.py:45 barcodes/gui.py:53 build/lib/barcodes/gui.py:45 build/lib/barcodes/gui.py:53
+msgid "Where will the barcode will be located (top left corner)."
+msgstr "Où le code-barres sera-t-il placé (coin supérieur gauche)."
+
+barcodes/gui.py:61 build/lib/barcodes/gui.py:61
+msgid "QR-Code"
+msgstr "QR-Code"
+
+barcodes/gui.py:62 barcodes/main.py:457 build/lib/barcodes/gui.py:62 build/lib/barcodes/main.py:457
+msgid "Barcode"
+msgstr "Code-barres"
+
+barcodes/gui.py:66 build/lib/barcodes/gui.py:66
+msgid "QR-Code:"
+msgstr "QR-Code :"
+
+barcodes/gui.py:81 build/lib/barcodes/gui.py:81
+msgid "Width/Height:"
+msgstr "Largeur/Hauteur :"
+
+barcodes/gui.py:84 build/lib/barcodes/gui.py:84
+msgid "How wide/high will the resulting qr-code be?"
+msgstr "Quelle sera la largeur/hauteur du QR code généré ?"
+
+barcodes/gui.py:90 build/lib/barcodes/gui.py:90
+msgid "Resolution:"
+msgstr "Résolution :"
+
+barcodes/gui.py:94 build/lib/barcodes/gui.py:94
+msgid "How big will the qr-code become (1..40, default 1)?"
+msgstr "Quelle taille aura le QR code (1..40, par défaut 1) ?"
+
+barcodes/gui.py:101 build/lib/barcodes/gui.py:101
+msgid "Border:"
+msgstr "Bordure :"
+
+barcodes/gui.py:104 build/lib/barcodes/gui.py:104
+msgid "How wide is the border around the qr-code (default 4)?"
+msgstr "Quelle est la largeur de la bordure autour du QR code (par défaut 4) ?"
+
+barcodes/gui.py:110 build/lib/barcodes/gui.py:110
+msgid "Boxsize:"
+msgstr "Taille de la case :"
+
+barcodes/gui.py:114 build/lib/barcodes/gui.py:114
+msgid "How big is the boxsize of the pixels (default 10)?"
+msgstr "Quelle est la taille des pixels (par défaut 10) ?"
+
+barcodes/gui.py:121 build/lib/barcodes/gui.py:121
+msgid "Error:"
+msgstr "Erreur :"
+
+barcodes/gui.py:131 build/lib/barcodes/gui.py:131
+msgid "Establish the error correction used for the QR Code"
+msgstr "Définir la correction d'erreur utilisée pour le QR code"
+
+barcodes/gui.py:146 build/lib/barcodes/gui.py:146
+msgid "WiFi"
+msgstr "WiFi"
+
+barcodes/gui.py:151 build/lib/barcodes/gui.py:151
+msgid "SSID:"
+msgstr "SSID :"
+
+barcodes/gui.py:159 build/lib/barcodes/gui.py:159
+msgid "Key:"
+msgstr "Clé :"
+
+barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "WPA/WPA2/WPA3"
+msgstr "WPA/WPA2/WPA3"
+
+barcodes/gui.py:168 build/lib/barcodes/gui.py:168
+msgid "WEP"
+msgstr "WEP"
+
+barcodes/gui.py:172 build/lib/barcodes/gui.py:172
+msgid "What kind of encryption does the network use?"
+msgstr "Quel type de chiffrement le réseau utilise-t-il ?"
+
+barcodes/gui.py:175 build/lib/barcodes/gui.py:175
+msgid "Encryption:"
+msgstr "Chiffrement :"
+
+barcodes/gui.py:181 build/lib/barcodes/gui.py:181
+msgid "Hidden"
+msgstr "Caché"
+
+barcodes/gui.py:182 build/lib/barcodes/gui.py:182
+msgid "Is the network hidden?"
+msgstr "Le réseau est-il caché ?"
+
+barcodes/gui.py:190 barcodes/gui.py:250 build/lib/barcodes/gui.py:190 build/lib/barcodes/gui.py:250
+msgid "Generate Pattern"
+msgstr "Générer le motif"
+
+barcodes/gui.py:197 build/lib/barcodes/gui.py:197
+msgid "VCard"
+msgstr "VCard"
+
+barcodes/gui.py:202 build/lib/barcodes/gui.py:202
+msgid "Provide your name as lastname,firstname"
+msgstr "Indiquez votre nom sous la forme nom,prénom"
+
+barcodes/gui.py:203 build/lib/barcodes/gui.py:203
+msgid "Name:"
+msgstr "Nom :"
+
+barcodes/gui.py:214 build/lib/barcodes/gui.py:214
+msgid "Provide your address as:\nPO box, room number, house number, city, prefecture, zip code and country"
+msgstr "Indiquez votre adresse comme suit :\nBoîte postale, numéro de chambre, numéro de maison, ville, département, code postal et pays"
+
+barcodes/gui.py:216 build/lib/barcodes/gui.py:216
+msgid "Address:"
+msgstr "Adresse :"
+
+barcodes/gui.py:223 build/lib/barcodes/gui.py:223
+msgid "Provide your phone-number"
+msgstr "Indiquez votre numéro de téléphone"
+
+barcodes/gui.py:224 build/lib/barcodes/gui.py:224
+msgid "Phone:"
+msgstr "Téléphone :"
+
+barcodes/gui.py:231 build/lib/barcodes/gui.py:231
+msgid "Provide your email-Address"
+msgstr "Indiquez votre adresse e-mail"
+
+barcodes/gui.py:232 build/lib/barcodes/gui.py:232
+msgid "email:"
+msgstr "email :"
+
+barcodes/gui.py:239 build/lib/barcodes/gui.py:239
+msgid "Provide a valid URL"
+msgstr "Indiquez une URL valide"
+
+barcodes/gui.py:240 build/lib/barcodes/gui.py:240
+msgid "URL:"
+msgstr "URL :"
+
+barcodes/gui.py:257 build/lib/barcodes/gui.py:257
+msgid "Barcode:"
+msgstr "Code-barres :"
+
+barcodes/gui.py:264 build/lib/barcodes/gui.py:264
+msgid "Type:"
+msgstr "Type :"
+
+barcodes/gui.py:272 build/lib/barcodes/gui.py:272
+msgid "What kind of barcode do you want to create?"
+msgstr "Quel type de code-barres souhaitez-vous créer ?"
+
+barcodes/gui.py:281 build/lib/barcodes/gui.py:281
+msgid "How wide will the resulting barcode be?"
+msgstr "Quelle sera la largeur du code-barres généré ?"
+
+barcodes/gui.py:290 build/lib/barcodes/gui.py:290
+msgid "How high will the resulting barcode be?"
+msgstr "Quelle sera la hauteur du code-barres généré ?"
+
+barcodes/gui.py:296 build/lib/barcodes/gui.py:296
+msgid "No text:"
+msgstr "Pas de texte :"
+
+barcodes/gui.py:299 build/lib/barcodes/gui.py:299
+msgid "Suppress the text under the barcode?"
+msgstr "Supprimer le texte sous le code-barres ?"
+
+barcodes/gui.py:319 build/lib/barcodes/gui.py:319
+msgid "Create a barcode/qrcode"
+msgstr "Créer un code-barres/QR code"
+
+barcodes/gui.py:324 build/lib/barcodes/gui.py:324
+msgid "Close without creating anything"
+msgstr "Fermer sans rien créer"
+
+barcodes/gui.py:551 build/lib/barcodes/gui.py:551
+msgid "Text to use for QR-Code:"
+msgstr "Texte à utiliser pour le QR-Code :"
+
+barcodes/gui.py:623 build/lib/barcodes/gui.py:623
+msgid "Text to use for Barcode:"
+msgstr "Texte à utiliser pour le code-barres :"
+
+barcodes/main.py:256 build/lib/barcodes/main.py:256
+msgid "suppress text display"
+msgstr "masquer l'affichage du texte"
+
+barcodes/main.py:258 build/lib/barcodes/main.py:258
+msgid "X-Position of barcode"
+msgstr "Position X du code-barres"
+
+barcodes/main.py:259 build/lib/barcodes/main.py:259
+msgid "Y-Position of barcode"
+msgstr "Position Y du code-barres"
+
+barcodes/main.py:261 build/lib/barcodes/main.py:261
+msgid "Width of barcode, may be 'auto' to keep native width"
+msgstr "Largeur du code-barres, peut être 'auto' pour conserver la largeur d'origine"
+
+barcodes/main.py:266 build/lib/barcodes/main.py:266
+msgid "Height of barcode, may be 'auto' to keep native height"
+msgstr "Hauteur du code-barres, peut être 'auto' pour conserver la hauteur d'origine"
+
+barcodes/main.py:268 build/lib/barcodes/main.py:268
+msgid "Barcode type"
+msgstr "Type de code-barres"
+
+barcodes/main.py:269 build/lib/barcodes/main.py:269
+msgid "The code to process"
+msgstr "Le code à traiter"
+
+barcodes/main.py:272 build/lib/barcodes/main.py:272
+msgid "Creates a barcode."
+msgstr "Crée un code-barres."
+
+barcodes/main.py:304 barcodes/main.py:396 build/lib/barcodes/main.py:304 build/lib/barcodes/main.py:396
+msgid "Please provide all parameters: {params}"
+msgstr "Veuillez fournir tous les paramètres : {params}"
+
+barcodes/main.py:306 build/lib/barcodes/main.py:306
+msgid "Supported formats: {all}"
+msgstr "Formats pris en charge : {all}"
+
+barcodes/main.py:311 build/lib/barcodes/main.py:311
+msgid "Invalid format, supported: {all}"
+msgstr "Format invalide, pris en charge : {all}"
+
+barcodes/main.py:361 build/lib/barcodes/main.py:361
+msgid "error correction, one of L (7%), M (15%), Q (25%), H (30%)"
+msgstr "correction d'erreur, une parmi L (7%), M (15%), Q (25%), H (30%)"
+
+barcodes/main.py:363 build/lib/barcodes/main.py:363
+msgid "Boxsize (default 10)"
+msgstr "Taille de la case (par défaut 10)"
+
+barcodes/main.py:365 build/lib/barcodes/main.py:365
+msgid "Border around qr-code (default 4)"
+msgstr "Bordure autour du QR code (par défaut 4)"
+
+barcodes/main.py:367 build/lib/barcodes/main.py:367
+msgid "size (1..40)"
+msgstr "taille (1..40)"
+
+barcodes/main.py:368 build/lib/barcodes/main.py:368
+msgid "X-position of qr-code"
+msgstr "Position X du QR code"
+
+barcodes/main.py:369 build/lib/barcodes/main.py:369
+msgid "Y-position of qr-code"
+msgstr "Position Y du QR code"
+
+barcodes/main.py:370 build/lib/barcodes/main.py:370
+msgid "Width/length of qr-code"
+msgstr "Largeur/longueur du QR code"
+
+barcodes/main.py:371 build/lib/barcodes/main.py:371
+msgid "Text to create qr-code from"
+msgstr "Texte à partir duquel créer le QR code"
+
+barcodes/main.py:374 build/lib/barcodes/main.py:374
+msgid "Creates a qr code."
+msgstr "Crée un QR code."
+
+barcodes/main.py:459 build/lib/barcodes/main.py:459
+msgid "Create an ean-barcode or a qr-code"
+msgstr "Créer un code-barres EAN ou un QR code"
