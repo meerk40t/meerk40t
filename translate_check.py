@@ -180,7 +180,7 @@ def read_source():
                         continue
                     if id_str not in id_strings_source:
                         id_strings_source.append(id_str)
-                        id_usage.append(last_usage)
+                        id_usage.append(f"#: {last_usage}")
                         additional_new += 1
                     else:
                         found_index = id_strings_source.index(id_str)
