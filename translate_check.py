@@ -14,7 +14,50 @@ Supported locales: de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
 import os
 import sys
 
+import polib
+
 IGNORED_DIRS = [".git", ".github", "venv", ".venv"]
+LOCALE_LONG_NAMES = {
+    "de": "German",
+    "es": "Spanish",
+    "fr": "French",
+    "hu": "Hungarian",
+    "it": "Italian",
+    "ja": "Japanese",
+    "nl": "Dutch",
+    "pt_BR": "Portuguese (Brazil)",
+    "pt_PT": "Portuguese (Portugal)",
+    "ru": "Russian",
+    "zh": "Chinese",
+}
+GETTEXT_PLURAL_FORMS = {
+    "de": "nplurals=2; plural=(n != 1);",
+    "es": "nplurals=2; plural=(n != 1);",
+    "fr": "nplurals=2; plural=(n > 1);",
+    "hu": "nplurals=2; plural=(n != 1);",
+    "it": "nplurals=2; plural=(n != 1);",
+    "ja": "nplurals=1; plural=0;",
+    "nl": "nplurals=2; plural=(n != 1);",
+    "pt_BR": "nplurals=2; plural=(n > 1);",
+    "pt_PT": "nplurals=2; plural=(n != 1);",
+    "ru": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
+    "zh": "nplurals=1; plural=0;",
+}
+
+
+def lf_coded(s):
+    """
+    Converts a string to a format suitable for msgid in .po files.
+    Escapes quotes and handles newlines.
+    """
+    if not s:
+        return ""
+    s = s.replace("\\", "\\\\")  # Escape backslashes
+    s = s.replace('"', '\\"')  # Escape double quotes
+    s = s.replace("\t", "\\t")  # Escape tab
+    s = s.replace("\n", "\\n")  # Escape newlines
+    s = s.replace("\r", "\\r")  # Escape newlines
+    return s
 
 
 def read_source():
@@ -146,46 +189,25 @@ def read_source():
                                 break
 
     # Read additional strings from file if present
-    if os.path.exists("additional_strings.txt"):
+    fname = "additional_strings.txt"
+    if os.path.exists(fname):
         additional_new = 0
         additional_existing = 0
-        with open("additional_strings.txt", "r", encoding="utf-8") as f:
-            last_usage = ""
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                if line.startswith("#: "):
-                    last_usage = line[3:].strip()
-                    continue
-                if line.startswith("msgid "):
-                    id_str = ""
-                    idx = line.find('"')
-                    if idx >= 0:
-                        candidate = line[idx + 1 :]
-                        try:
-                            idx = -1
-                            while candidate[idx] != '"':
-                                idx -= 1
-                            candidate = candidate[:idx]
-                            id_str += candidate
-                        except IndexError:
-                            print(
-                                f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
-                            )
-                    if not id_str:
-                        print(
-                            f"Stumbled across: '{line}', no id_str found, skipping this line."
-                        )
-                        continue
-                    if id_str not in id_strings_source:
-                        id_strings_source.append(id_str)
-                        id_usage.append(f"#: {last_usage}")
-                        additional_new += 1
-                    else:
-                        found_index = id_strings_source.index(id_str)
-                        id_usage[found_index] += f" {last_usage}"
-                        additional_existing += 1
+        po = polib.pofile(fname, encoding="utf-8")
+        for e in po:
+            id_str = lf_coded(e.msgid)
+            if not id_str:
+                continue
+            last_usage = e.comment
+            if id_str not in id_strings_source:
+                id_strings_source.append(id_str)
+                id_usage.append(f"#: {last_usage}")
+                additional_new += 1
+            else:
+                found_index = id_strings_source.index(id_str)
+                id_usage[found_index] += f" {last_usage}"
+                additional_existing += 1
+
         print(
             f"Read additional strings from 'additional_strings.txt': {additional_new} new, {additional_existing} existing"
         )
@@ -215,93 +237,12 @@ def read_po(locale):
     except StopIteration:
         print(f"Locale directory {po_dir} does not exist or is empty.")
         return id_strings, pairs
-    linecount = 0
     for po_file in po_files:
         fname = po_dir + po_file
-        with open(fname, "r", encoding="utf-8", errors="surrogateescape") as f:
-            msgid_mode = False
-            msgstr_mode = False
-            id_str = ""
-            msg_str = ""
-            while True:
-                linecount += 1
-                line = f.readline()
-                if not line:
-                    break
-                line = line.strip()
-                if line.startswith("msgid"):
-                    if msg_str:
-                        if pairs:
-                            pairs[-1] = (pairs[-1][0], msg_str)
-                        msg_str = ""
-                    msgid_mode = True
-                    msgstr_mode = False
-                    id_str = ""
-                    idx = line.find('"')
-                    if idx >= 0:
-                        candidate = line[idx + 1 :]
-                        try:
-                            idx = -1
-                            while candidate[idx] != '"':
-                                idx -= 1
-                            candidate = candidate[:idx]
-                            id_str += candidate
-                        except IndexError:
-                            print(
-                                f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
-                            )
-                elif line.startswith('"'):
-                    if msgid_mode or msgstr_mode:
-                        candidate = line[1:]
-                        try:
-                            idx = -1
-                            while candidate[idx] != '"':
-                                idx -= 1
-                            candidate = candidate[:idx]
-                            if msgid_mode:
-                                id_str += candidate
-                            elif msgstr_mode:
-                                msg_str += candidate
-                        except IndexError:
-                            print(
-                                f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
-                            )
-                elif line.startswith("msgstr"):
-                    if id_str:
-                        if id_str not in id_strings:
-                            id_strings.append(id_str)
-                        pairs.append((id_str, ""))
-                    id_str = ""
-                    msgid_mode = False
-                    msgstr_mode = True
-                    msg_str = ""
-                    idx = line.find('"')
-                    if idx >= 0:
-                        candidate = line[idx + 1 :]
-                        try:
-                            idx = -1
-                            while candidate[idx] != '"':
-                                idx -= 1
-                            candidate = candidate[:idx]
-                            msg_str += candidate
-                        except IndexError:
-                            print(
-                                f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
-                            )
-                else:
-                    pass
-            if id_str:
-                if id_str not in id_strings:
-                    id_strings.append(id_str)
-                pairs.append((id_str, msg_str))
-                id_str = ""
-            elif msg_str:
-                if pairs:
-                    pairs[-1] = (pairs[-1][0], msg_str)
-                msg_str = ""
-    print(
-        f"Read {linecount} lines for {locale} and found {len(id_strings)} entries... (pairs: {len(pairs)})"
-    )
+        po = polib.pofile(fname, encoding="utf-8")
+        id_strings.extend([lf_coded(e.msgid) for e in po])
+        pairs.extend([(e.msgid, lf_coded(e.msgstr)) for e in po])
+
     return id_strings, pairs
 
 
@@ -334,38 +275,12 @@ def compare(locale, id_strings, id_strings_source, id_usage):
     )
 
 
-def validate_po(locale, id_strings_source, id_usage, id_pairs):
+def validate_po_old(locale, id_strings_source, id_usage, id_pairs):
     """
     Writes a validated .po file for the locale, removing empty, duplicate, and unused entries.
     """
 
     def write_proper_po_header(outp, locale):
-        LOCALE_LONG_NAMES = {
-            "de": "German",
-            "es": "Spanish",
-            "fr": "French",
-            "hu": "Hungarian",
-            "it": "Italian",
-            "ja": "Japanese",
-            "nl": "Dutch",
-            "pt_BR": "Portuguese (Brazil)",
-            "pt_PT": "Portuguese (Portugal)",
-            "ru": "Russian",
-            "zh": "Chinese",
-        }
-        GETTEXT_PLURAL_FORMS = {
-            "de": "nplurals=2; plural=(n != 1);",
-            "es": "nplurals=2; plural=(n != 1);",
-            "fr": "nplurals=2; plural=(n > 1);",
-            "hu": "nplurals=2; plural=(n != 1);",
-            "it": "nplurals=2; plural=(n != 1);",
-            "ja": "nplurals=1; plural=0;",
-            "nl": "nplurals=2; plural=(n != 1);",
-            "pt_BR": "nplurals=2; plural=(n > 1);",
-            "pt_PT": "nplurals=2; plural=(n != 1);",
-            "ru": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
-            "zh": "nplurals=1; plural=0;",
-        }
         outp.write(
             f"# {LOCALE_LONG_NAMES.get(locale, 'Unknown')} translation for Meerk40t\n"
         )
@@ -417,6 +332,47 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
     )
 
 
+def validate_po(locale, id_strings_source, id_usage, id_pairs):
+    po = polib.POFile()
+    # create header
+    po.metadata = {
+        "Project-Id-Version": "Meerk40t",
+        "Language": locale,
+        "Language-Team": "Meerk40t Translation Team",
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding": "8bit",
+        "X-Generator": "translate_check.py",
+        "Plural-Forms": GETTEXT_PLURAL_FORMS.get(locale, ""),
+        # Add any other metadata you need
+        # …
+    }
+    seen = set()
+    written = 0
+    ignored_empty = 0
+    ignored_duplicate = 0
+    ignored_unused = 0
+    for msgid, msgstr in id_pairs:
+        t_msgid = lf_coded(msgid)
+        if not msgstr or t_msgid not in id_strings_source or msgid in seen:
+            if t_msgid not in id_strings_source:
+                ignored_unused += 1
+            elif not msgstr:
+                ignored_empty += 1
+            else:
+                ignored_duplicate += 1
+            continue
+        entry = polib.POEntry(msgid=msgid, msgstr=msgstr)
+        idx = id_strings_source.index(t_msgid)
+        entry.comment = id_usage[idx]
+        po.append(entry)
+        seen.add(msgid)
+        written += 1
+    po.save(f"./fixed_{locale}_meerk40t.po")
+    print(
+        f"Validation for {locale} done: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
+    )
+
+
 def main():
     """
     Main entry point for the script.
@@ -451,10 +407,14 @@ def main():
     for loc in locales:
         id_strings, pairs = read_po(loc)
         if validate:
-            print(f"Validating locale {loc}...")
+            print(
+                f"Validating locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
+            )
             validate_po(loc, id_strings_source, id_usage, pairs)
         else:
-            print(f"Checking for new translation strings for locale {loc}...")
+            print(
+                f"Checking for new translation strings for locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
+            )
             compare(loc, id_strings, id_strings_source, id_usage)
 
 
