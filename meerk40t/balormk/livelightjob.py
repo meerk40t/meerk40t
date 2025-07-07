@@ -86,9 +86,9 @@ class LiveLightJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
+        if self.is_running() and self.time_started is not None:
             return "Running"
-        elif not self.is_running:
+        elif not self.is_running():
             return "Disabled"
         else:
             return "Queued"
@@ -233,8 +233,8 @@ class LiveLightJob:
                     # We required them in frame.
                     continue
                 # Fix them.
-                x &= 0xFFFF
-                y &= 0xFFFF
+                x = max(min(x, 0xFFFF), 0)
+                y = max(min(y, 0xFFFF), 0)
             if first:
                 first_x, first_y = x, y
                 first = False
@@ -333,7 +333,7 @@ class LiveLightJob:
         self.update()
 
     def update_crosshair(self):
-        """Update the redlight path to display crosshairs. Fallback case when nohing can be displayed"""
+        """Update the redlight path to display crosshairs. Fallback case when nothing can be displayed"""
         margin = 5000
         geometry = Geomstr.lines(
             (0x8000, 0x8000),
@@ -348,10 +348,37 @@ class LiveLightJob:
         )
         self.prepare_redlight_point(geometry, False, "crosshair")
 
+    def update_lightning(self):
+        """
+        Update the redlight path to display lightning bolts.
+        Fallback case for out of bounds paths
+        """
+        margin = float(Length("1cm"))
+        orgx = self.service.view.width // 2
+        orgy = self.service.view.height // 2
+
+        geometry = Geomstr.lines(
+            (orgx - margin, orgy - 2 * margin),  # top
+            (orgx - margin, orgy + margin),
+            (orgx + margin, orgy - margin),
+            (orgx + margin, orgy + 2 * margin),
+        )
+        geometry2 = Geomstr.lines(
+            (orgx + 0.5 * margin, orgy + 1.5 * margin),  # left
+            (orgx + 0.5 * margin, orgy + 1.5 * margin),  # left
+            (orgx + margin, orgy + 2 * margin),
+            (orgx + 1.5 * margin, orgy + 1.5 * margin),
+            (orgx + 0.5 * margin, orgy + 1.5 * margin),  # left
+        )
+        geometry.append(geometry2)
+
+        self.prepare_redlight_point(geometry, True, "lightning")
+
     def update_geometry(self):
         """Update the redlight path based on the provided geometry. Static, won't be changed."""
         if self._geometry is None:
-            self.update_crosshair()
+            # self.update_crosshair()
+            self.update_lightning()
             return
         geometry = Geomstr(self._geometry)
         self.prepare_redlight_point(geometry, not self.raw, "geometry")
@@ -363,7 +390,7 @@ class LiveLightJob:
             return
         geometry = method(elems)
         if geometry is None:
-            self.update_crosshair()
+            self.update_lightning()
             return
 
         self.prepare_redlight_point(geometry, True, source)

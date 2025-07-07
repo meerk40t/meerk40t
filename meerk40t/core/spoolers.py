@@ -370,7 +370,7 @@ class SpoolerJob:
 
         @return:
         """
-        if self.is_running:
+        if self.is_running():
             return "Running"
         else:
             return "Queued"
