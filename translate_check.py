@@ -171,6 +171,35 @@ def read_source():
 
         # for dirname in dirs:
         #     dname = os.path.join(root, dirname))
+    if os.path.exists("additional_strings.txt"):
+        additional_new = 0
+        additional_existing = 0
+
+        with open("additional_strings.txt", "r", encoding="utf-8") as f:
+            last_usage = ""
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith("#: "):
+                    last_usage = line[3:].strip()
+                    continue
+                if line.startswith("msgid "):
+                    line = line[7:].strip()
+                    if line.startswith('"') and line.endswith('"'):
+                        line = line[1:-1]
+
+                    if line not in id_strings_source:
+                        id_strings_source.append(line)
+                        id_usage.append(last_usage)
+                        additional_new += 1
+                    else:
+                        found_index = id_strings_source.index(line)
+                        id_usage[found_index] += f" {last_usage}"
+                        additional_existing += 1
+        print(
+            f"Read additional strings from 'additional_strings.txt': {additional_new} new, {additional_existing} existing"
+        )
     print(
         f"Read {filecount} files with {linecount} lines and found {len(id_strings_source)} entries..."
     )
@@ -179,24 +208,27 @@ def read_source():
 
 def read_po(locale):
     id_strings = []
+    pairs = []
     localedir = "./locale"
     po_dir = localedir + "/" + locale + "/LC_MESSAGES/"
     if not os.path.isdir(po_dir):
         print(f"Locale directory {po_dir} does not exist or is empty.")
-        return id_strings
+        return id_strings, pairs
     try:
         po_files = [
             f for f in next(os.walk(po_dir))[2] if os.path.splitext(f)[1] == ".po"
         ]
     except StopIteration:
         print(f"Locale directory {po_dir} does not exist or is empty.")
-        return id_strings
+        return id_strings, pairs
     linecount = 0
     for po_file in po_files:
         fname = po_dir + po_file
         with open(fname, "r", encoding="utf-8", errors="surrogateescape") as f:
             msgid_mode = False
+            msgstr_mode = False
             id_str = ""
+            msg_str = ""
             while True:
                 linecount += 1
                 line = f.readline()
@@ -204,7 +236,12 @@ def read_po(locale):
                     break
                 line = line.strip()
                 if line.startswith("msgid"):
+                    if msg_str:
+                        if pairs:
+                            pairs[-1] = (pairs[-1][0], msg_str)
+                        msg_str = ""
                     msgid_mode = True
+                    msgstr_mode = False
                     id_str = ""
                     idx = line.find('"')
                     if idx >= 0:
@@ -222,7 +259,7 @@ def read_po(locale):
 
                         # print (f"start '{line}' -> '{candidate}'")
                 elif line.startswith('"'):
-                    if msgid_mode:
+                    if msgid_mode or msgstr_mode:
                         candidate = line[1:]
                         try:
                             idx = -1
@@ -230,24 +267,52 @@ def read_po(locale):
                                 idx -= 1
                             candidate = candidate[:idx]
                             # print (f"add '{line}' -> '{candidate}'")
-                            id_str += candidate
+                            if msgid_mode:
+                                id_str += candidate
+                            elif msgstr_mode:
+                                msg_str += candidate
                         except IndexError:
                             print(
                                 f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
                             )
                 elif line.startswith("msgstr"):
-                    msgid_mode = False
-                    if id_str and id_str not in id_strings:
-                        id_strings.append(id_str)
+                    if id_str:
+                        if id_str not in id_strings:
+                            id_strings.append(id_str)
+                        pairs.append((id_str, ""))
                     id_str = ""
+                    msgid_mode = False
+                    msgstr_mode = True
+                    msg_str = ""
+                    idx = line.find('"')
+                    if idx >= 0:
+                        candidate = line[idx + 1 :]
+                        try:
+                            idx = -1
+                            while candidate[idx] != '"':
+                                idx -= 1
+                            candidate = candidate[:idx]
+                            msg_str += candidate
+                        except IndexError:
+                            print(
+                                f"Stumbled across: '{line}', candidate:'{candidate}', idx={idx}"
+                            )
+
                 else:
                     pass
-            if id_str and msgid_mode and id_str not in id_strings:
-                id_strings.append(id_str)
-            elif id_str and msgid_mode:
-                print(f"Duplicate entry found for {locale}: ´{id_str}´")
-    print(f"Read {linecount} lines for {locale} and found {len(id_strings)} entries...")
-    return id_strings
+            if id_str:
+                if id_str not in id_strings:
+                    id_strings.append(id_str)
+                pairs.append((id_str, msg_str))
+                id_str = ""
+            elif msg_str:
+                if pairs:
+                    pairs[-1] = (pairs[-1][0], msg_str)
+                msg_str = ""
+    print(
+        f"Read {linecount} lines for {locale} and found {len(id_strings)} entries... (pairs: {len(pairs)})"
+    )
+    return id_strings, pairs
 
 
 def compare(locale, id_strings, id_strings_source, id_usage):
@@ -274,6 +339,48 @@ def compare(locale, id_strings, id_strings_source, id_usage):
     )
 
 
+def validate_po(locale, id_strings_source, id_usage, id_pairs):
+    # Write a new file with the same name as the locale
+    written = 0
+    ignored_empty = 0
+    ignored_duplicate = 0
+    ignored_unused = 0
+    pairs = {}
+    for msgid, msgstr in id_pairs:
+        if msgid not in pairs:
+            pairs[msgid] = []
+        pairs[msgid].append(msgstr)
+    with open(f"./fixed_{locale}_meerk40t.po", "w", encoding="utf-8") as outp:
+        for msgid, msgstr_list in pairs.items():
+            msgstr = ""
+            for m in msgstr_list:
+                if m:
+                    msgstr = m
+                    break
+            to_write = True
+            if len(msgstr_list) > 1:
+                ignored_duplicate += len(msgstr_list) - 1
+            if msgstr == "":
+                ignored_empty += 1
+                to_write = False
+            if msgid not in id_strings_source:
+                ignored_unused += 1
+                to_write = False
+            if to_write:
+                orgidx = id_strings_source.index(msgid)
+                if orgidx < 0:
+                    ignored_unused += 1
+                    continue
+
+                outp.write(f"{id_usage[orgidx]}\n")
+                outp.write(f'msgid "{msgid}"\n')
+                outp.write(f'msgstr "{msgstr}"\n\n')
+                written += 1
+    print(
+        f"Validation for {locale} done: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
+    )
+
+
 def main():
     args = sys.argv[1:]
     locale = [
@@ -295,14 +402,24 @@ def main():
             "ru",
             "zh",
         ]
+    validate = False
+    if "-v" in args or "--validate" in args:
+        validate = True
+        idx = locale.index("-v") if "-v" in locale else locale.index("--validate")
+        locale.pop(idx)
+
     print("Usage: python ./translate_check.py <locale>")
     print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh")
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locale:
-        print(f"Checking translation strings for locale {loc}...")
-        id_strings = read_po(loc)
-        compare(loc, id_strings, id_strings_source, id_usage)
+        id_strings, pairs = read_po(loc)
+        if validate:
+            print(f"Validating locale {loc}...")
+            validate_po(loc, id_strings_source, id_usage, pairs)
+        else:
+            print(f"Checking for new translation strings for locale {loc}...")
+            compare(loc, id_strings, id_strings_source, id_usage)
 
 
 main()
