@@ -58,6 +58,7 @@ coverage.xml
 #*.mo
 *.pot
 delta*.po
+fixed*.po
 
 # Django stuff:
 *.log
