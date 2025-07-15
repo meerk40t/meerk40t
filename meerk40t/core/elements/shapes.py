@@ -292,7 +292,6 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
-        print(f"Start {x_pos}, {y_pos}, {width}, {height}, {rx}, {ry}")
         lensett = self.length_settings()
         try:
             # fmt:off
