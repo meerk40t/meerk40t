@@ -55,3 +55,10 @@ class TestElementLength(unittest.TestCase):
         self.assertFalse(Length("10mm") >= "1.1cm")
         self.assertRaises(ValueError, lambda: Length("20%") > "1in")
         self.assertEqual(max(Length("1in"), Length("2.5cm")), "1in")
+
+    def test_length_settings(self):
+        """Test that Length can use settings for relative lengths."""
+        lensett = {"min_x": 1, "max_x": 10, "dummy": "1mm"}
+        self.assertEqual(Length("min_x", settings=lensett), 1)
+        self.assertEqual(Length("max_x", settings=lensett), 10)
+        self.assertEqual(Length("dummy", settings=lensett).length_mm, "1.0mm")
