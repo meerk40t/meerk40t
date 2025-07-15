@@ -101,37 +101,13 @@ def init_commands(kernel):
         **kwargs,
     ):
         try:
+            # fmt: off
             lensett = self.length_settings()
-            x = (
-                0
-                if x is None
-                else float(
-                    Length(x, relative_length=self.device.view.width, settings=lensett)
-                )
-            )
-            y = (
-                x
-                if y is None
-                else float(
-                    Length(y, relative_length=self.device.view.height, settings=lensett)
-                )
-            )
-            dx = (
-                0
-                if dx is None
-                else float(
-                    Length(dx, relative_length=self.device.view.width, settings=lensett)
-                )
-            )
-            dy = (
-                0
-                if dy is None
-                else float(
-                    Length(
-                        dy, relative_length=self.device.view.height, settings=lensett
-                    )
-                )
-            )
+            x = 0 if x is None else float(Length(x, relative_length=self.device.view.width, settings=lensett))
+            y = 0 if y is None else float(Length(y, relative_length=self.device.view.height, settings=lensett))
+            dx = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+            dy = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+            # fmt: on
         except ValueError:
             channel(_("Invalid length value."))
             return

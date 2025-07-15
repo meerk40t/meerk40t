@@ -856,12 +856,11 @@ def init_commands(kernel):
     ):
         lensett = self.length_settings()
         try:
-            sx = Length(
-                x, relative_length=self.device.view.width, settings=lensett
-            ).length_mm
-            sy = Length(
-                y, relative_length=self.device.view.height, settings=lensett
-            ).length_mm
+            # fmt: off
+            # The goto operation expects x and y to be in parsable length format.
+            sx = Length(x, relative_length=self.device.view.width, settings=lensett).length_mm
+            sy = Length(y, relative_length=self.device.view.height, settings=lensett).length_mm
+            # fmt: on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         op = self.op_branch.add(type="util goto", x=sx, y=sy)
@@ -1401,26 +1400,10 @@ def init_commands(kernel):
         else:
             lensett = self.length_settings()
             try:
-                x_pos = (
-                    0
-                    if dx is None
-                    else float(
-                        Length(
-                            dx, relative_length=self.device.view.width, settings=lensett
-                        )
-                    )
-                )
-                y_pos = (
-                    0
-                    if dy is None
-                    else float(
-                        Length(
-                            dy,
-                            relative_length=self.device.view.height,
-                            settings=lensett,
-                        )
-                    )
-                )
+                # fmt: off
+                x_pos = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+                y_pos = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+                # fmt: on
             except ValueError:
                 channel(_("Invalid length value for copy offset."))
                 return

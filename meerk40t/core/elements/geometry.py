@@ -232,11 +232,11 @@ def init_commands(kernel):
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
         lensett = self.length_settings()
         try:
-            xp = Length(x_pos, relative_length=self.device.view.width, settings=lensett)
-            yp = Length(
-                y_pos, relative_length=self.device.view.height, settings=lensett
-            )
-            rp = Length(r_pos, settings=lensett)
+            # fmt: off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rp = float(Length(r_pos, settings=lensett))
+            # fmt: on
         except ValueError:
             channel(_("Invalid length value for circle."))
             return
@@ -284,33 +284,19 @@ def init_commands(kernel):
         """
         lensett = self.length_settings()
         try:
-            x_pos = Length(
-                x_pos, relative_length=self.device.view.width, settings=lensett
-            )
-            y_pos = Length(
-                y_pos, relative_length=self.device.view.height, settings=lensett
-            )
-            width = Length(
-                width, relative_length=self.device.view.width, settings=lensett
-            )
-            height = Length(
-                height, relative_length=self.device.view.height, settings=lensett
-            )
-            if rx is not None:
-                rx = Length(
-                    rx, relative_length=self.device.view.width, settings=lensett
-                )
-            if ry is not None:
-                ry = Length(
-                    ry, relative_length=self.device.view.height, settings=lensett
-                )
+            # fmt: off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            rx = 0 if rx is None else float(Length(rx, relative_length=self.device.view.width, settings=lensett))
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt: on
         except ValueError:
             channel(_("Invalid length value."))
             return
-        if rx is None:
-            rx = 0
-        if ry is None:
-            ry = 0
+        if data is None:
+            data = Geomstr()
         data.append(
             Geomstr.rect(
                 x=float(x_pos),
@@ -396,8 +382,10 @@ def init_commands(kernel):
     def element_translate(tx, ty, data: Geomstr, **kwargs):
         try:
             lensett = self.length_settings()
-            tx = Length(tx, relative_length=self.device.view.width, settings=lensett)
-            ty = Length(ty, relative_length=self.device.view.height, settings=lensett)
+            # fmt: off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett))
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett))
+            # fmt: on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         data.translate(tx, ty)
@@ -448,6 +436,8 @@ def init_commands(kernel):
     def geometry_hatch(data: Geomstr, distance: Length, angle: Angle, **kwargs):
         segments = data.segmented()
         hatch = Geomstr.hatch(segments, angle=angle.radians, distance=float(distance))
+        if data is None:
+            data = Geomstr()
         data.append(hatch)
         return "geometry", data
 

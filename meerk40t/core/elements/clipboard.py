@@ -124,20 +124,10 @@ def init_commands(kernel):
             channel(_("Error: Clipboard Empty"))
             return
         lensett = self.length_settings()
-        dx = (
-            0
-            if dx is None
-            else float(
-                Length(dx, relative_length=self.device.view.width, settings=lensett)
-            )
-        )
-        dy = (
-            0
-            if dy is None
-            else float(
-                Length(dy, relative_length=self.device.view.height, settings=lensett)
-            )
-        )
+        # fmt: off
+        dx = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+        dy = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+        # fmt: on
         if dx != 0 or dy != 0:
             matrix = Matrix.translate(dx, dy)
             for node in pasted:

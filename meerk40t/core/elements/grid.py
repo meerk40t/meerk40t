@@ -196,20 +196,11 @@ def init_commands(kernel):
         if y_distance is None:
             y_distance = "100%"
         try:
-            x_distance = float(
-                Length(
-                    x_distance,
-                    relative_length=Length(amount=width).length_mm,
-                    settings=self.length_settings(),
-                )
-            )
-            y_distance = float(
-                Length(
-                    y_distance,
-                    relative_length=Length(amount=height).length_mm,
-                    settings=self.length_settings(),
-                )
-            )
+            # fmt: off
+            lensett = self.length_settings()
+            x_distance = float(Length(x_distance, relative_length=Length(amount=width).length_mm, settings=lensett))
+            y_distance = float(Length(y_distance, relative_length=Length(amount=height).length_mm, settings=lensett))
+            # fmt: on
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
         counted = 0
@@ -314,11 +305,11 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if repeats <= 1:
             raise CommandSyntaxError(_("repeats should be greater or equal to 2"))
-        radius = (
-            0
-            if radius is None
-            else float(Length(radius, settings=self.length_settings()))
-        )
+        try:
+            # fmt: off
+            radius = 0 if radius is None else float(Length(radius, settings=self.length_settings()))
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
 
         if startangle is None:
             startangle = Angle("0deg")
@@ -442,11 +433,12 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if copies <= 0:
             copies = 1
-        radius = (
-            0
-            if radius is None
-            else float(Length(radius, settings=self.length_settings()))
-        )
+        try:
+            # fmt: off
+            radius = 0 if radius is None else float(Length(radius, settings=self.length_settings()))
+            # fmt: on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
 
         if startangle is None:
             startangle = Angle("0deg")

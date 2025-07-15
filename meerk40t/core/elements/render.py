@@ -437,12 +437,12 @@ def init_commands(kernel):
         if blacklevel is None:
             blacklevel = 0.5
         try:
+            # fmt: off
             lensett = self.length_settings()
             if offset is None:
                 offset = "5mm"
-            offset = Length(
-                offset, relative_length=self.device.view.width, settings=lensett
-            )
+            offset = float(Length(offset, relative_length=self.device.view.width, settings=lensett))
+            # fmt: on
         except ValueError:
             channel(_("Invalid length value."))
             return

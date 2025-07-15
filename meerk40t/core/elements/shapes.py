@@ -98,57 +98,23 @@ def init_commands(kernel):
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
         lensett = self.length_settings()
         try:
-            xp = Length(x_pos, relative_length=self.device.view.width, settings=lensett)
-            yp = Length(
-                y_pos, relative_length=self.device.view.height, settings=lensett
-            )
-            rp = Length(r_pos, settings=lensett)
+            # fmt:off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rp = float(Length(r_pos, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
-            cx=float(xp),
-            cy=float(yp),
-            rx=float(rp),
-            ry=float(rp),
+            cx=xp,
+            cy=yp,
+            rx=rp,
+            ry=rp,  # Secondary radius equal to primary radius for circle
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
             type="elem ellipse",
         )
-        self.set_emphasis([node])
-        node.focus()
-        if data is None:
-            data = list()
-        data.append(node)
-        # Newly created! Classification needed?
-        post.append(classify_new(data))
-        return "elements", data
-
-    @self.console_argument("r_pos", type=str, help=_("Radius of the circle"))
-    @self.console_command(
-        "circle_r",
-        help=_("circle_r <r>"),
-        input_type=("elements", None),
-        output_type="elements",
-        all_arguments_required=True,
-    )
-    def element_circle_r(channel, _, r_pos, data=None, post=None, **kwargs):
-        lensett = self.length_settings()
-        try:
-            rp = Length(r_pos, settings=lensett)
-        except ValueError:
-            raise CommandSyntaxError(_("Invalid length value."))
-        node = self.elem_branch.add(
-            cx=0,
-            cy=0,
-            rx=float(rp),
-            ry=float(rp),
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
-        node.altered()
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -178,26 +144,20 @@ def init_commands(kernel):
     ):
         lensett = self.length_settings()
         try:
-            xp = Length(x_pos, relative_length=self.device.view.width, settings=lensett)
-            yp = Length(
-                y_pos, relative_length=self.device.view.height, settings=lensett
-            )
-            rx = Length(rx, relative_length=self.device.view.width, settings=lensett)
+            # fmt:off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett))
             # If ry is not provided, use rx as the secondary radius
-            ry = (
-                rx
-                if ry is None
-                else Length(
-                    ry, relative_length=self.device.view.height, settings=lensett
-                )
-            )
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
-            cx=float(xp),
-            cy=float(yp),
-            rx=float(rx),
-            ry=float(ry),
+            cx=xp,
+            cy=yp,
+            rx=rx,
+            ry=ry,
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
@@ -251,21 +211,13 @@ def init_commands(kernel):
     ):
         lensett = self.length_settings()
         try:
-            x_pos = Length(
-                x_pos, relative_length=self.device.view.width, settings=lensett
-            )
-            y_pos = Length(
-                y_pos, relative_length=self.device.view.height, settings=lensett
-            )
-            rx = Length(rx, relative_length=self.device.view.width, settings=lensett)
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett))
             # If ry is not provided, use rx as the secondary radius
-            ry = (
-                rx
-                if ry is None
-                else Length(
-                    ry, relative_length=self.device.view.height, settings=lensett
-                )
-            )
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         if start_angle is None:
@@ -274,18 +226,14 @@ def init_commands(kernel):
             end_angle = Angle("360deg")
         if rotation is None:
             rotation = Angle("0deg")
-        rx_val = float(rx)
-        ry_val = float(ry)
-        cx = float(x_pos)
-        cy = float(y_pos)
         geom = Geomstr()
         geom.arc_as_cubics(
             start_t=start_angle.radians,
             end_t=end_angle.radians,
-            rx=rx_val,
-            ry=ry_val,
-            cx=cx,
-            cy=cy,
+            rx=rx,
+            ry=ry,
+            cx=x_pos,
+            cy=y_pos,
             rotation=rotation.radians,
         )
         node = self.elem_branch.add(
@@ -344,30 +292,17 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
+        print(f"Start {x_pos}, {y_pos}, {width}, {height}, {rx}, {ry}")
         lensett = self.length_settings()
         try:
-            x_pos = Length(
-                x_pos, relative_length=self.device.view.width, settings=lensett
-            )
-            y_pos = Length(
-                y_pos, relative_length=self.device.view.height, settings=lensett
-            )
-            width = Length(
-                width, relative_length=self.device.view.width, settings=lensett
-            )
-            height = Length(
-                height, relative_length=self.device.view.height, settings=lensett
-            )
-            rx = (
-                Length(rx, relative_length=self.device.view.width, settings=lensett)
-                if rx
-                else 0
-            )
-            ry = (
-                Length(ry, relative_length=self.device.view.height, settings=lensett)
-                if ry
-                else rx
-            )
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett)) if rx else 0
+            ry = float(Length(ry, relative_length=self.device.view.height, settings=lensett)) if ry else rx
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
@@ -408,10 +343,12 @@ def init_commands(kernel):
         """
         lensett = self.length_settings()
         try:
-            ax = Length(x0, relative_length=self.device.view.width, settings=lensett)
-            ay = Length(y0, relative_length=self.device.view.height, settings=lensett)
-            bx = Length(x1, relative_length=self.device.view.width, settings=lensett)
-            by = Length(y1, relative_length=self.device.view.height, settings=lensett)
+            # fmt:off
+            ax = float(Length(x0, relative_length=self.device.view.width, settings=lensett))
+            ay = float(Length(y0, relative_length=self.device.view.height, settings=lensett))
+            bx = float(Length(x1, relative_length=self.device.view.width, settings=lensett))
+            by = float(Length(y1, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
@@ -2085,16 +2022,10 @@ def init_commands(kernel):
         """
         lensett = self.length_settings()
         try:
-            x_offset = float(
-                Length(
-                    x_offset, relative_length=self.device.view.width, settings=lensett
-                )
-            )
-            y_offset = float(
-                Length(
-                    y_offset, relative_length=self.device.view.height, settings=lensett
-                )
-            )
+            # fmt:off
+            x_offset = float(Length(x_offset, relative_length=self.device.view.width, settings=lensett))
+            y_offset = float(Length(y_offset, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         bounds = self.selected_area()
@@ -2522,12 +2453,10 @@ def init_commands(kernel):
             return
         lensett = self.length_settings()
         try:
-            tx = float(
-                Length(tx, relative_length=self.device.view.width, settings=lensett)
-            )
-            ty = float(
-                Length(ty, relative_length=self.device.view.height, settings=lensett)
-            )
+            # fmt:off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett))
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         with self.undoscope("Position"):
@@ -2597,20 +2526,12 @@ def init_commands(kernel):
             raise CommandSyntaxError
         lensett = self.length_settings()
         try:
-            x_pos = float(
-                Length(x_pos, relative_length=self.device.view.width, settings=lensett)
-            )
-            y_pos = float(
-                Length(y_pos, relative_length=self.device.view.height, settings=lensett)
-            )
-            width = float(
-                Length(width, relative_length=self.device.view.width, settings=lensett)
-            )
-            height = float(
-                Length(
-                    height, relative_length=self.device.view.height, settings=lensett
-                )
-            )
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         if data is None:
@@ -2703,22 +2624,10 @@ def init_commands(kernel):
             return
         lensett = self.length_settings()
         try:
-            tx = (
-                float(
-                    Length(tx, relative_length=self.device.view.width, settings=lensett)
-                )
-                if tx is not None
-                else 0.0
-            )
-            ty = (
-                float(
-                    Length(
-                        ty, relative_length=self.device.view.height, settings=lensett
-                    )
-                )
-                if ty is not None
-                else 0.0
-            )
+            # fmt: off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett)) if tx is not None else 0.0
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett)) if ty is not None else 0.0
+            # fmt: on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
         with self.undoscope("Matrix"):
@@ -3040,17 +2949,12 @@ def init_commands(kernel):
             channel(_("You need to provide center-point and diameter: cross x y d"))
             return
         try:
-            xpos = Length(
-                xpos,
-                relative_length=self.device.view.width,
-                settings=self.length_settings(),
-            )
-            ypos = Length(
-                ypos,
-                relative_length=self.device.view.height,
-                settings=self.length_settings(),
-            )
-            diameter = Length(diameter, settings=self.length_settings())
+            # fmt:off
+            lensettings = self.length_settings()
+            xpos = float(Length(xpos, relative_length=self.device.view.width, settings=lensettings))
+            ypos = float(Length(ypos, relative_length=self.device.view.height, settings=lensettings))
+            diameter = float(Length(diameter, settings=lensettings))
+            # fmt:on
         except ValueError:
             channel(_("Invalid values given"))
             return
