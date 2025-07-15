@@ -124,7 +124,7 @@ class Length:
                 raise ValueError("Arguments not acceptable")
             s = str(value)
             if s in self.settings:
-                s = self.settings[s]
+                s = str(self.settings[s])
             match = REGEX_LENGTH.match(s)
             if not match:
                 raise ValueError(f"Length was not parsable: '{s}'.")
