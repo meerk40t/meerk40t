@@ -5811,7 +5811,7 @@ msgid "y offset"
 msgstr "смещение по y"
 
 #: meerk40t/core/elements/shapes.py:1976
-msgid "Draws a frame the current selected elements"
+msgid "Draws a frame around the currently selected elements"
 msgstr "Рисует рамку вокруг выбранных элементов"
 
 #: meerk40t/core/elements/shapes.py:2025

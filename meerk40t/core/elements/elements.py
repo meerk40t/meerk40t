@@ -4404,6 +4404,29 @@ class Elemental(Service):
 
         return changed, before, after
 
+    def length_settings(self):
+        settings = {}
+        bb = self.selected_area()
+        if bb is None:
+            bb = [
+                0,
+                0,
+                float(Length(self.device.view.width)),
+                float(Length(self.device.view.height)),
+            ]
+
+        settings["min_x"] = bb[0]
+        settings["min_y"] = bb[1]
+        settings["max_x"] = bb[2]
+        settings["max_y"] = bb[3]
+        settings["center_x"] = (bb[0] + bb[2]) / 2
+        settings["center_y"] = (bb[1] + bb[3]) / 2
+        settings["width"] = bb[2] - bb[0]
+        settings["height"] = bb[3] - bb[1]
+        settings["width_2"] = (bb[2] - bb[0]) / 2
+        settings["height_2"] = (bb[3] - bb[1]) / 2
+        return settings
+
 
 def linearize_path(path, interp=50, point=False):
     import numpy as np

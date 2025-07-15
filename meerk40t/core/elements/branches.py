@@ -830,13 +830,13 @@ def init_commands(kernel):
 
     @self.console_argument(
         "x",
-        type=Length,
+        type=str,
         default=0,
         help=_("X-Coordinate of Goto?"),
     )
     @self.console_argument(
         "y",
-        type=Length,
+        type=str,
         default=0,
         help=_("Y-Coordinate of Goto?"),
     )
@@ -848,11 +848,22 @@ def init_commands(kernel):
     )
     def gotoop(
         command,
+        channel,
+        _,
         x=0,
         y=0,
         **kwargs,
     ):
-        op = self.op_branch.add(type="util goto", x=str(x), y=str(y))
+        lensett = self.length_settings()
+        try:
+            # fmt: off
+            # The goto operation expects x and y to be in parsable length format.
+            sx = Length(x, relative_length=self.device.view.width, settings=lensett).length_mm
+            sy = Length(y, relative_length=self.device.view.height, settings=lensett).length_mm
+            # fmt: on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        op = self.op_branch.add(type="util goto", x=sx, y=sy)
         return "ops", [op]
 
     @self.console_command(
@@ -1326,10 +1337,10 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_option(
-        "dx", "x", help=_("copy offset x (for elems)"), type=Length, default=0
+        "dx", "x", help=_("copy offset x (for elems)"), type=str, default=0
     )
     @self.console_option(
-        "dy", "y", help=_("copy offset y (for elems)"), type=Length, default=0
+        "dy", "y", help=_("copy offset y (for elems)"), type=str, default=0
     )
     @self.console_option(
         "copies", "c", help=_("amount of copies to be created"), type=int, default=1
@@ -1341,7 +1352,16 @@ def init_commands(kernel):
         output_type=("elements", "ops"),
     )
     def e_copy(
-        data=None, data_type=None, post=None, dx=None, dy=None, copies=None, **kwargs
+        command,
+        channel,
+        _,
+        data=None,
+        data_type=None,
+        post=None,
+        dx=None,
+        dy=None,
+        copies=None,
+        **kwargs,
     ):
         if data_type is None:
             if data is None:
@@ -1378,14 +1398,15 @@ def init_commands(kernel):
             self.add_ops(add_ops)
             return "ops", add_ops
         else:
-            if dx is None:
-                x_pos = 0
-            else:
-                x_pos = float(dx)
-            if dy is None:
-                y_pos = 0
-            else:
-                y_pos = float(dy)
+            lensett = self.length_settings()
+            try:
+                # fmt: off
+                x_pos = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+                y_pos = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+                # fmt: on
+            except ValueError:
+                channel(_("Invalid length value for copy offset."))
+                return
             add_elem = list()
             shift = list()
             tx = 0

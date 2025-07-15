@@ -16787,7 +16787,7 @@ msgid "y offset"
 msgstr "y-Versatz"
 
 #: meerk40t/core/elements/shapes.py:1976
-msgid "Draws a frame the current selected elements"
+msgid "Draws a frame around the currently selected elements"
 msgstr "Zeichnet einen Rahmen um die aktuell ausgewählten Elemente"
 
 #: meerk40t/core/elements/shapes.py:2025

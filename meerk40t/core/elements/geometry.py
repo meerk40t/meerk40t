@@ -138,6 +138,7 @@ Functions:
 """
 
 from meerk40t.core.units import Angle, Length
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import BeamTable, Geomstr
 
@@ -218,9 +219,9 @@ def init_commands(kernel):
         except AssertionError:
             channel(_("Geometry was not valid."))
 
-    @self.console_argument("x_pos", type=Length)
-    @self.console_argument("y_pos", type=Length)
-    @self.console_argument("r_pos", type=Length)
+    @self.console_argument("x_pos", type=str, help=_("X position for circle center."))
+    @self.console_argument("y_pos", type=str, help=_("Y position for circle center."))
+    @self.console_argument("r_pos", type=str, help=_("Radius for circle."))
     @self.console_command(
         "circle",
         help=_("circle <x> <y> <r>"),
@@ -229,7 +230,19 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
-        data.append(Geomstr.circle(r_pos, x_pos, y_pos, slices=4))
+        lensett = self.length_settings()
+        try:
+            # fmt: off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rp = float(Length(r_pos, settings=lensett))
+            # fmt: on
+        except ValueError:
+            channel(_("Invalid length value for circle."))
+            return
+        if data is None:
+            data = Geomstr()
+        data.append(Geomstr.circle(rp, xp, yp, slices=4))
         return "geometry", data
 
     @self.console_argument(
@@ -242,10 +255,10 @@ def init_commands(kernel):
         type=Length,
         help=_("y position for top left corner of rectangle."),
     )
-    @self.console_argument("width", type=Length, help=_("width of the rectangle."))
-    @self.console_argument("height", type=Length, help=_("height of the rectangle."))
-    @self.console_option("rx", "x", type=Length, help=_("rounded rx corner value."))
-    @self.console_option("ry", "y", type=Length, help=_("rounded ry corner value."))
+    @self.console_argument("width", type=str, help=_("width of the rectangle."))
+    @self.console_argument("height", type=str, help=_("height of the rectangle."))
+    @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
+    @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
     @self.console_command(
         "rect",
         help=_("adds rectangle to geometry"),
@@ -269,10 +282,21 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
-        if rx is None:
-            rx = 0
-        if ry is None:
-            ry = 0
+        lensett = self.length_settings()
+        try:
+            # fmt: off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            rx = 0 if rx is None else float(Length(rx, relative_length=self.device.view.width, settings=lensett))
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt: on
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
+        if data is None:
+            data = Geomstr()
         data.append(
             Geomstr.rect(
                 x=float(x_pos),
@@ -347,8 +371,8 @@ def init_commands(kernel):
         data.greedy_distance(0j, flips=not no_flips)
         return "geometry", data
 
-    @self.console_argument("tx", type=Length, help=_("translate x value"))
-    @self.console_argument("ty", type=Length, help=_("translate y value"))
+    @self.console_argument("tx", type=str, help=_("translate x value"))
+    @self.console_argument("ty", type=str, help=_("translate y value"))
     @self.console_command(
         "translate",
         help=_("translate <tx> <ty>"),
@@ -356,6 +380,14 @@ def init_commands(kernel):
         output_type="geometry",
     )
     def element_translate(tx, ty, data: Geomstr, **kwargs):
+        try:
+            lensett = self.length_settings()
+            # fmt: off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett))
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett))
+            # fmt: on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         data.translate(tx, ty)
         return "geometry", data
 
@@ -404,6 +436,8 @@ def init_commands(kernel):
     def geometry_hatch(data: Geomstr, distance: Length, angle: Angle, **kwargs):
         segments = data.segmented()
         hatch = Geomstr.hatch(segments, angle=angle.radians, distance=float(distance))
+        if data is None:
+            data = Geomstr()
         data.append(hatch)
         return "geometry", data
 
