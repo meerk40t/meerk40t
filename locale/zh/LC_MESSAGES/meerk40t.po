@@ -11935,7 +11935,7 @@ msgid "y offset"
 msgstr "y 偏移"
 
 #: meerk40t/core/elements/shapes.py:1400
-msgid "Draws a frame the current selected elements"
+msgid "Draws a frame around the currently selected elements"
 msgstr "绘制当前选定元素的框架"
 
 #: meerk40t/core/elements/shapes.py:1445

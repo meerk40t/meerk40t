@@ -707,7 +707,7 @@ msgid "Set fill"
 msgstr "Imposta riempimento"
 
 #: meerk40t/core/elements/shapes.py:1976
-msgid "Draws a frame the current selected elements"
+msgid "Draws a frame around the currently selected elements"
 msgstr "Disegna una cornice con gli elementi correntemente selezionati"
 
 #: meerk40t/core/elements/shapes.py:2490
