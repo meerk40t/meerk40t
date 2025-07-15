@@ -673,7 +673,7 @@ def init_commands(kernel):
             offset = 0
         else:
             try:
-                ll = Length(offset)
+                ll = Length(offset, settings=self.length_settings())
                 offset = float(ll)
             except ValueError:
                 offset = 0
@@ -769,7 +769,7 @@ def init_commands(kernel):
             offset = 0
         else:
             try:
-                ll = Length(offset)
+                ll = Length(offset, settings=self.length_settings())
                 offset = float(ll)
             except ValueError:
                 offset = 0

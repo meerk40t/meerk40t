@@ -123,8 +123,18 @@ def init_commands(kernel):
     # GRID SUBTYPE
     # ==========
 
-    @self.console_argument("columns", type=int, help=_("Number of columns"), default=2,)
-    @self.console_argument("rows", type=int, help=_("Number of rows"), default=2,)
+    @self.console_argument(
+        "columns",
+        type=int,
+        help=_("Number of columns"),
+        default=2,
+    )
+    @self.console_argument(
+        "rows",
+        type=int,
+        help=_("Number of rows"),
+        default=2,
+    )
     @self.console_argument("x_distance", type=str, help=_("x distance"), default="100%")
     @self.console_argument("y_distance", type=str, help=_("y distance"), default="100%")
     @self.console_option(
@@ -132,7 +142,7 @@ def init_commands(kernel):
         "o",
         type=int,
         nargs=2,
-        default = (1, 1),
+        default=(1, 1),
         help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
     )
     @self.console_option(
@@ -186,8 +196,20 @@ def init_commands(kernel):
         if y_distance is None:
             y_distance = "100%"
         try:
-            x_distance = float(Length(x_distance, relative_length=Length(amount=width).length_mm))
-            y_distance = float(Length(y_distance, relative_length=Length(amount=height).length_mm))
+            x_distance = float(
+                Length(
+                    x_distance,
+                    relative_length=Length(amount=width).length_mm,
+                    settings=self.length_settings(),
+                )
+            )
+            y_distance = float(
+                Length(
+                    y_distance,
+                    relative_length=Length(amount=height).length_mm,
+                    settings=self.length_settings(),
+                )
+            )
         except ValueError:
             raise CommandSyntaxError("Length could not be parsed.")
         counted = 0
@@ -198,14 +220,16 @@ def init_commands(kernel):
                 y_distance += height
             if origin is None:
                 origin = (1, 1)
-            if isinstance(origin, (tuple, list)) and isinstance(origin[0], (tuple, list)):
+            if isinstance(origin, (tuple, list)) and isinstance(
+                origin[0], (tuple, list)
+            ):
                 origin = origin[0]
             try:
                 cx, cy = origin
             except ValueError:
                 cx = 1
                 cy = 1
-            
+
             data_out = list(data)
             if cx is None:
                 cx = 1
@@ -233,9 +257,13 @@ def init_commands(kernel):
         return "elements", data_out
 
     @self.console_argument("repeats", type=int, help=_("Number of repeats"), default=3)
-    @self.console_argument("radius", type=self.length, help=_("Radius"), default="2cm")
-    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"), default="0deg")
-    @self.console_argument("endangle", type=Angle, help=_("End-Angle"), default="360deg")
+    @self.console_argument("radius", type=str, help=_("Radius"), default="2cm")
+    @self.console_argument(
+        "startangle", type=Angle, help=_("Start-Angle"), default="0deg"
+    )
+    @self.console_argument(
+        "endangle", type=Angle, help=_("End-Angle"), default="360deg"
+    )
     @self.console_option(
         "unrotated",
         "u",
@@ -271,7 +299,7 @@ def init_commands(kernel):
     ):
         """
         Radial copy takes some parameters to create (potentially rotated) copies on a circular arc around a defined center
-        Notabene: While circ_copy is creating copies around the original elements, radial is creating all the copies 
+        Notabene: While circ_copy is creating copies around the original elements, radial is creating all the copies
         around a center just -1*radius to the left. So the original elements will be part of the circle.
         """
         if data is None:
@@ -286,8 +314,11 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if repeats <= 1:
             raise CommandSyntaxError(_("repeats should be greater or equal to 2"))
-        if radius is None:
-            radius = 0
+        radius = (
+            0
+            if radius is None
+            else float(Length(radius, settings=self.length_settings()))
+        )
 
         if startangle is None:
             startangle = Angle("0deg")
@@ -302,7 +333,9 @@ def init_commands(kernel):
             return
         data_out = list(data)
 
-        segment_len = (endangle - startangle) / repeats if deltaangle is None else deltaangle
+        segment_len = (
+            (endangle - startangle) / repeats if deltaangle is None else deltaangle
+        )
         channel(f"Angle per step: {segment_len.angle_degrees}")
 
         # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
@@ -339,9 +372,9 @@ def init_commands(kernel):
                 data_out.extend(add_elem)
 
                 currentangle += segment_len
-                while (currentangle.angle >= tau):
+                while currentangle.angle >= tau:
                     currentangle.angle -= tau
-                while (currentangle.angle <= -tau):
+                while currentangle.angle <= -tau:
                     currentangle.angle += tau
             for e in images:
                 self.do_image_update(e)
@@ -353,9 +386,13 @@ def init_commands(kernel):
         return "elements", data_out
 
     @self.console_argument("copies", type=int, help=_("Number of copies"), default=1)
-    @self.console_argument("radius", type=self.length, help=_("Radius"), default="2cm")
-    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"), default="0deg")
-    @self.console_argument("endangle", type=Angle, help=_("End-Angle"), default="360deg")
+    @self.console_argument("radius", type=str, help=_("Radius"), default="2cm")
+    @self.console_argument(
+        "startangle", type=Angle, help=_("Start-Angle"), default="0deg"
+    )
+    @self.console_argument(
+        "endangle", type=Angle, help=_("End-Angle"), default="360deg"
+    )
     @self.console_option(
         "rotate",
         "r",
@@ -392,7 +429,7 @@ def init_commands(kernel):
     ):
         """
         Circular copy takes some parameters to create (potentially rotated) copies on a circular arc around the orginal element(s)
-        Notabene: While circ_copy is creating copies around the original elements, radial is creating all the copies 
+        Notabene: While circ_copy is creating copies around the original elements, radial is creating all the copies
         around a center just -1*radius to the left. So the original elements will be part of the circle.
         """
         if data is None:
@@ -405,8 +442,11 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if copies <= 0:
             copies = 1
-        if radius is None:
-            radius = 0
+        radius = (
+            0
+            if radius is None
+            else float(Length(radius, settings=self.length_settings()))
+        )
 
         if startangle is None:
             startangle = Angle("0deg")
@@ -459,9 +499,9 @@ def init_commands(kernel):
                 counted += 1
                 data_out.extend(add_elem)
                 currentangle += segment_len
-                while (currentangle.angle >= tau):
+                while currentangle.angle >= tau:
                     currentangle.angle -= tau
-                while (currentangle.angle <= -tau):
+                while currentangle.angle <= -tau:
                     currentangle.angle += tau
             for e in images:
                 self.do_image_update(e)
