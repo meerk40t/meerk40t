@@ -4408,7 +4408,12 @@ class Elemental(Service):
         settings = {}
         bb = self.selected_area()
         if bb is None:
-            bb = [0, 0, self.device.view.height, self.device.view.width]
+            bb = [
+                0,
+                0,
+                float(Length(self.device.view.width)),
+                float(Length(self.device.view.height)),
+            ]
 
         settings["min_x"] = bb[0]
         settings["min_y"] = bb[1]
