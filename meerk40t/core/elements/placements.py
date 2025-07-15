@@ -74,10 +74,10 @@ def init_commands(kernel):
         type=int,
         help=_("How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"),
     )
-    @self.console_option("dx", "m", type=Length, help=_("Gap in x-direction"))
-    @self.console_option("dy", "n", type=Length, help=_("Gap in y-direction"))
-    @self.console_argument("x", type=Length, help=_("x coord"))
-    @self.console_argument("y", type=Length, help=_("y coord"))
+    @self.console_option("dx", "m", type=str, help=_("Gap in x-direction"))
+    @self.console_option("dy", "n", type=str, help=_("Gap in y-direction"))
+    @self.console_argument("x", type=str, help=_("x coord"))
+    @self.console_argument("y", type=str, help=_("y coord"))
     @self.console_command(
         "placement",
         help=_("Adds a placement = a fixed job start position"),
@@ -100,36 +100,55 @@ def init_commands(kernel):
         loops=None,
         **kwargs,
     ):
+        try:
+            lensett = self.length_settings()
+            x = (
+                0
+                if x is None
+                else float(
+                    Length(x, relative_length=self.device.view.width, settings=lensett)
+                )
+            )
+            y = (
+                x
+                if y is None
+                else float(
+                    Length(y, relative_length=self.device.view.height, settings=lensett)
+                )
+            )
+            dx = (
+                0
+                if dx is None
+                else float(
+                    Length(dx, relative_length=self.device.view.width, settings=lensett)
+                )
+            )
+            dy = (
+                0
+                if dy is None
+                else float(
+                    Length(
+                        dy, relative_length=self.device.view.height, settings=lensett
+                    )
+                )
+            )
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
         if loops is None:
             loops = 1
         if corner is None:
             corner = 0
         if rotation is None:
             rotation = 0
-        if x is None:
-            x = 0
-        if y is None:
-            y = x
         if nx is None:
             nx = 1
         if ny is None:
             ny = 1
-        if dx is None:
-            dx = 0
+        if dx == 0:
             nx = 1
-        if dy is None:
-            dy = 0
+        if dy == 0:
             ny = 1
-        try:
-            x = Length(x)
-            y = Length(y)
-            len_dx = Length(dx)
-            dx_val = float(len_dx)
-            len_dy = Length(dy)
-            dy_val = float(len_dy)
-        except ValueError:
-            channel(_("Invalid values given"))
-            return
         if nx < 0 or ny < 0:
             channel(_("Invalid values for nx/ny provided"))
             return

@@ -342,7 +342,7 @@ def init_commands(kernel):
         action="store_true",
         help=_("Preserve intermediary objects"),
     )
-    @self.console_argument("offset", type=Length, help="Offset distance")
+    @self.console_argument("offset", type=str, help="Offset distance")
     @self.console_command(
         "outline",
         help=_("Create an outline path at the inner and outer side of a path"),
@@ -436,10 +436,16 @@ def init_commands(kernel):
             invert = False
         if blacklevel is None:
             blacklevel = 0.5
-        if offset is None:
-            offset = self.length("5mm")
-        else:
-            offset = self.length(offset)
+        try:
+            lensett = self.length_settings()
+            if offset is None:
+                offset = "5mm"
+            offset = Length(
+                offset, relative_length=self.device.view.width, settings=lensett
+            )
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
         if steps is None or steps < 1:
             steps = 1
         if outer is None:
@@ -718,7 +724,9 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def keyhole_elements(command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs):
+    def keyhole_elements(
+        command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs
+    ):
         if data is None:
             data = list(self.elems(emphasized=True))
 
@@ -727,7 +735,12 @@ def init_commands(kernel):
         if refid is None:
             # We do look for the very first occurence of a path like object and take this...
             for node in data:
-                if node.id is not None and node.type in ("elem path", "elem ellipse", "elem rect", "elem polyline"):
+                if node.id is not None and node.type in (
+                    "elem path",
+                    "elem ellipse",
+                    "elem rect",
+                    "elem polyline",
+                ):
                     refid = node.id
                     break
 
@@ -739,9 +752,13 @@ def init_commands(kernel):
             channel(_("A node with such an ID couldn't be found"))
             return
         if not hasattr(refnode, "as_geometry"):
-            channel(_("This node can not act as a keyhole: {nodetype}").format(nodetype=refnode.type))
+            channel(
+                _("This node can not act as a keyhole: {nodetype}").format(
+                    nodetype=refnode.type
+                )
+            )
             return
-        images = list ( (e for e in data if e.type == "elem image") )
+        images = list((e for e in data if e.type == "elem image"))
         if len(images) == 0:
             channel(_("No images selected/provided"))
             return
@@ -765,11 +782,13 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def remove_keyhole_elements(command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs):
+    def remove_keyhole_elements(
+        command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs
+    ):
         if data is None:
             data = list(self.elems(emphasized=True))
 
-        images = list ( (e for e in data if e.type == "elem image") )
+        images = list((e for e in data if e.type == "elem image"))
         if len(images) == 0:
             channel(_("No images selected/provided"))
             return
