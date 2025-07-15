@@ -106,7 +106,9 @@ class Length:
         unitless=1.0,
         preferred_units=None,
         digits=None,
+        settings=None,
     ):
+        self.settings = settings if settings is not None else {}
         self._digits = digits
         self._amount = amount
         if relative_length:
@@ -121,6 +123,8 @@ class Length:
             else:
                 raise ValueError("Arguments not acceptable")
             s = str(value)
+            if s in self.settings:
+                s = self.settings[s]
             match = REGEX_LENGTH.match(s)
             if not match:
                 raise ValueError(f"Length was not parsable: '{s}'.")
