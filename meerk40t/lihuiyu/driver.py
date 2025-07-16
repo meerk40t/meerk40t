@@ -1074,6 +1074,7 @@ class LihuiyuDriver(Parameters):
         if self.power <= 0:
             self.power = 0.0
         if self.service.supports_pwm:
+            print(f"Setting pwm power to {self.power}")
             self.send_at_pwm_code(self.power)
 
     def _set_ppi(self, power=1000.0):

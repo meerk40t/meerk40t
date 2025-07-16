@@ -576,10 +576,11 @@ class GcodeJob:
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 if self.power != v:
+                    print(f"Setting power to {v}")
                     try:
                         self._driver.set("power", v)
-                    except AttributeError:
-                        pass
+                    except AttributeError as e:
+                        print(f"Error setting power: {e}")
                     self.power = v
             del gc["s"]
         if "z" in gc:
