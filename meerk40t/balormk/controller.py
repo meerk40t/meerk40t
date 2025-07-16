@@ -650,8 +650,8 @@ class GalvoController:
         frequency = float(settings.get("frequency", self.service.default_frequency))
         fpk = float(settings.get("fpk", self.service.default_fpk))
         if self.source == "fiber":
-            self.frequency(frequency)
             self.power(power)
+            self.frequency(frequency)
         elif self.source == "co2":
             self.frequency(frequency)
             self.fpk(fpk)
