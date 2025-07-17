@@ -663,6 +663,7 @@ class RDJob:
             self.x = x
             self.y = y
             ox, oy = matrix.transform_point([self.x, self.y])
+            # print (f"Will generate plotcut with power: {self.power}")
             self.plotcut = PlotCut(
                 settings={
                     "speed": self.speed,
@@ -672,9 +673,8 @@ class RDJob:
             )
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(
-            int(round(tx)), int(round(ty)), power * (self.power / 1000.0)
-        )
+        # power is not a fraction of self.power, but just denoting laser on or off.
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
         self.x = x
         self.y = y
 
@@ -1276,7 +1276,7 @@ class RDJob:
         else:
             desc = "Unknown Command!"
         if self.channel:
-            prefix = f"{offset:06x}" if offset is not None else ''
+            prefix = f"{offset:06x}" if offset is not None else ""
             self.channel(f"{prefix}-**-> {str(bytes(array).hex())}\t({desc})")
 
     def unswizzle(self, data):
@@ -1422,7 +1422,7 @@ class RDJob:
         self.laser_device_0()
         if air == 1:
             self.air_assist_on()
-        elif air==2:
+        elif air == 2:
             self.air_assist_off()
         self.speed_laser_1(speed)
         self.laser_on_delay(0)
