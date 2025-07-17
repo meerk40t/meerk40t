@@ -658,7 +658,11 @@ class Pattern:
         current = 0j
 
         for entry in pattern(a, b, *args, **kwargs):
-            if not isinstance(entry, (list, tuple)) or np.isnan(entry[0]):
+            if (
+                not isinstance(entry, (list, tuple))
+                or np.isnan(entry[1])
+                or np.isnan(entry[2])
+            ):
                 # If the entry is not a list or tuple, or if the first element is NaN, we just skip it.
                 continue
             key = entry[0].lower()
