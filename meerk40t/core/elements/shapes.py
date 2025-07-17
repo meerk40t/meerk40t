@@ -2984,7 +2984,7 @@ def init_commands(kernel):
         with self.undoscope("Create cross"):
             node = self.elem_branch.add(
                 label=_("Cross at ({xp}, {yp})").format(
-                    xp=xpos.length_mm, yp=ypos.length_mm
+                    xp=Length(xpos).length_mm, yp=Length(ypos).length_mm
                 ),
                 geometry=geom,
                 stroke=self.default_stroke,
