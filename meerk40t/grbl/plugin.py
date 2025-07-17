@@ -251,7 +251,7 @@ def plugin(kernel, lifecycle=None):
             grblcontrol = root.device.lookup("grblcontrol")
             if grblcontrol is None:
                 if quit:
-                    channel(_("No grblcontrol instance to quit."))
+                    channel(_("No control instance to stop."))
                     return
                 grblcontrol = GRBLControl(root)
                 root.device.register("grblcontrol", grblcontrol)
