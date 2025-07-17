@@ -660,6 +660,7 @@ class Pattern:
         for entry in pattern(a, b, *args, **kwargs):
             if (
                 not isinstance(entry, (list, tuple))
+                or len(entry) < 3
                 or np.isnan(entry[1])
                 or np.isnan(entry[2])
             ):
@@ -722,8 +723,12 @@ class Pattern:
         @param y1:
         @return:
         """
-        if np.isnan(x0) or np.isnan(y0) or np.isnan(x1) or np.isnan(y1):
-            # If any of the coordinates are NaN, we cannot generate a pattern.
+        try:
+            if np.isnan(x0) or np.isnan(y0) or np.isnan(x1) or np.isnan(y1):
+                # If any of the coordinates are NaN, we cannot generate a pattern.
+                return Geomstr()
+        except TypeError:
+            # If the coordinates are not numbers, we cannot generate a pattern.
             return Geomstr()
         cw = self.cell_width
         ch = self.cell_height
