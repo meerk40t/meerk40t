@@ -1068,11 +1068,8 @@ class LihuiyuDriver(Parameters):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.power = min(1000, max(0, power))
+        self.settings["power"] = self.power
         if self.service.supports_pwm:
             self.send_at_pwm_code(self.power)
 

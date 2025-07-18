@@ -59,7 +59,8 @@ class PlotCut(CutObject):
         # Default to vector settings.
         self.settings["raster_step_x"] = 0
         self.settings["raster_step_y"] = 0
-        self.settings["power"] = 1000.0
+        # We shouldn't reset power here, because it is set by the plot planner.
+        # self.settings["power"] = 1000.0
         speed = self.settings.get("speed", 0)
         if speed is None:
             return False
