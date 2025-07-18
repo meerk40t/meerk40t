@@ -502,11 +502,31 @@ class MeerK40t(MWindow):
                 default_pos = wx.Point(0, 0)
             if default_size is None:
                 default_size = wx.Size(1024, 768)
-        # Validate position
-        if pos and in_any_screen(pos[0], pos[1]):
-            self.SetPosition(wx.Point(pos[0], pos[1]))
+        # Validate position and size to ensure the window is mostly visible on a screen
+        def rect_mostly_in_screen(x, y, w, h, threshold=0.5):
+            # Returns True if at least `threshold` fraction of the window area is on any screen
+            window_rect = wx.Rect(x, y, w, h)
+            for screen in wx.Display.GetCount() and [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())] or []:
+                intersection = window_rect.Intersect(screen)
+                if intersection.IsEmpty():
+                    continue
+                visible_area = intersection.GetWidth() * intersection.GetHeight()
+                total_area = w * h
+                if total_area == 0:
+                    continue
+                if visible_area / total_area >= threshold:
+                    return True
+            return False
+
+        # Determine intended position and size
+        intended_pos = pos if pos else (default_pos.x, default_pos.y)
+        intended_size = size if size else (default_size.GetWidth(), default_size.GetHeight())
+
+        if rect_mostly_in_screen(intended_pos[0], intended_pos[1], intended_size[0], intended_size[1]):
+            self.SetPosition(wx.Point(intended_pos[0], intended_pos[1]))
         else:
             self.SetPosition(default_pos)
+
         # Validate size
         if size:
             self.SetSize(wx.Size(size[0], size[1]))
