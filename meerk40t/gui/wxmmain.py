@@ -449,11 +449,74 @@ class MeerK40t(MWindow):
         self.autosave = Autosaver(self.context)
         self.handover = GUIThread(self.context)
         kernel = self.context.kernel
-        if hasattr(kernel.args, "maximized") and kernel.args.maximized:
-            self.Maximize()
-        if hasattr(kernel.args, "minimized") and kernel.args.minimized:
-            self.Iconize()
+
+        maxit = hasattr(kernel.args, "maximized") and kernel.args.maximized
+        minit = hasattr(kernel.args, "minimized") and kernel.args.minimized 
+        remember = self.context.setting(bool, "remember_main_pos", True)
+        if remember:
+            self.RestoreWindowState(force_maximized=maxit, force_minimized=minit)
+        else:
+            self.CenterOnScreen()
+            if maxit:
+                self.Maximize()
+            elif minit:
+                self.Iconize()
         self.Bind(wx.EVT_ACTIVATE, self.on_active)
+
+
+    def SaveWindowState(self):
+        # Save window position, size, and state
+        pos = self.GetPosition()
+        size = self.GetSize()
+        maximized = self.IsMaximized()
+        minimized = self.IsIconized()
+        # Store in settings (replace with your config system)
+        self.context.mainwin_pos = (pos.x, pos.y)
+        self.context.mainwin_size = (size.x, size.y)
+        self.context.mainwin_maximized = maximized
+        self.context.mainwin_minimized = minimized
+
+    def RestoreWindowState(self, default_pos=None, default_size=None, force_minimized=False, force_maximized=False):
+        # Restore window position, size, and state
+        pos = self.context.mainwin_pos
+        size = self.context.mainwin_size
+        maximized = self.context.mainwin_maximized or force_maximized
+        minimized = self.context.mainwin_minimized or force_minimized
+        # Get all screens
+        display_count = wx.Display.GetCount()
+        screens = [wx.Display(i).GetGeometry() for i in range(display_count)]
+        def in_any_screen(x, y):
+            for rect in screens:
+                if rect.Contains(wx.Point(x, y)):
+                    return True
+            return False
+        # Default position and size: use first screen's geometry
+        if screens:
+            first_screen = screens[0]
+            if default_pos is None:
+                default_pos = wx.Point(first_screen.x, first_screen.y)
+            if default_size is None:
+                default_size = wx.Size(first_screen.width, first_screen.height)
+        else:
+            if default_pos is None:
+                default_pos = wx.Point(0, 0)
+            if default_size is None:
+                default_size = wx.Size(1024, 768)
+        # Validate position
+        if pos and in_any_screen(pos[0], pos[1]):
+            self.SetPosition(wx.Point(pos[0], pos[1]))
+        else:
+            self.SetPosition(default_pos)
+        # Validate size
+        if size:
+            self.SetSize(wx.Size(size[0], size[1]))
+        else:
+            self.SetSize(default_size)
+        # Restore state
+        if maximized:
+            self.Maximize()
+        elif minimized:
+            self.Iconize()
 
     def on_active(self, event):
         if event.GetActive():
@@ -1060,6 +1123,11 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
         context.setting(int, "zoom_margin", 4)  # 4%
+        context.setting(tuple, "mainwin_pos", None)
+        context.setting(tuple, "mainwin_size", None)
+        context.setting(bool, "mainwin_maximized", False)
+        context.setting(bool, "mainwin_minimized", False)
+        
         # Standard-Icon-Sizes
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
@@ -4847,7 +4915,7 @@ class MeerK40t(MWindow):
 
     def window_close(self):
         context = self.context
-
+        self.SaveWindowState()
         context.aui = self._mgr.SavePerspective()
         self.on_panes_closed()
         self._mgr.UnInit()
