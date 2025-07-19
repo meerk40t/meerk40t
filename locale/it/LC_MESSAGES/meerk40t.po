@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 18-07-25 22:25:10UTC\n"
+"PO-Revision-Date: 19-07-25 21:10:10UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
@@ -20210,3 +20210,15 @@ msgstr "Valore di lunghezza non valido per il cerchio."
 #: meerk40t/core/elements/shapes.py:90
 msgid "Radius of the circle"
 msgstr "Raggio del cerchio"
+
+#: meerk40t/grbl/plugin.py:254 meerk40t/ruida/plugin.py:112
+msgid "No control instance to stop."
+msgstr "Nessuna istanza di controllo da arrestare."
+
+#: meerk40t/gui/plugin.py:119
+msgid "Remember main window position"
+msgstr "Ricorda la posizione della finestra principale"
+
+#: meerk40t/gui/plugin.py:122
+msgid "Should MeerK40t remember its last position on the screen?"
+msgstr "MeerK40t dovrebbe ricordare la sua ultima posizione sullo schermo?"
