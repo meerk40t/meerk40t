@@ -968,7 +968,10 @@ class LihuiyuDriver(Parameters):
             sx = self.native_x
             sy = self.native_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
-            on = int(on)
+            if self.state == DRIVER_STATE_RASTER and on >= 0.3 and on < 1:
+                on = 1
+            else:
+                on = int(on)
             if on > 1:
                 # Special Command.
                 if on & PLOT_FINISH:  # Plot planner is ending.
