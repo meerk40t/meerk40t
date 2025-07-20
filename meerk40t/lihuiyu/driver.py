@@ -976,8 +976,7 @@ class LihuiyuDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = Parameters(self.plot_planner.settings)
-                    if p_set.power != self.power:
-                        self._set_power(p_set.power)
+                    self._set_power(p_set.power)
                     if (
                         p_set.raster_step_x != self.raster_step_x
                         or p_set.raster_step_y != self.raster_step_y
