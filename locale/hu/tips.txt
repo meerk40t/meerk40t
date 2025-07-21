@@ -1,0 +1,84 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=A MeerK40t képes körvonalat létrehozni egy elem körül.
+Csak jelölje ki az elemet, kattintson rá jobb egérgombbal a helyi menü megjelenítéséhez, és válasszon az "Elemek körvonalazása" menüből...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=A MeerK40t parancsok kiterjedt készletével rendelkezik, amelyek számos szkriptelhető műveletet tesznek lehetővé.
+Csak nyissa meg a konzolablakot, és írja be a 'help' parancsot.
+cmd=pane show console\nhelp
+
+tip=Amíg az egeret mozgatja egy elemlétrehozó eszköz kiválasztása közben, a közeli érdekes pontok megjelennek és kiemelve lesznek, ha illeszkedési céllá válnának.\nMegjegyzés: az illesztési viselkedés figyelmen kívül lesz hagyva, ha lenyomja a Shift billentyűt, ebben az esetben az aktuális egérpozíciót vesszük figyelembe.
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=A szimulációs ablak nem csak a lézer viselkedésének előnézetét teszi lehetővé, hanem azt is, hogy játsszon a különböző optimalizálási lehetőségekkel, és lássa, hogyan befolyásolják az eredményt.\nCsak kattintson a jobb oldali '<' szimbólumra, és nyomja meg a számítás gombot.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=A MeerK40t többféle rácstípussal rendelkezik, amelyek közül választhat, beleértve a kör alakúat is...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+tip=Eleged van a tárgyak igazításából? Használd a mágnes funkciót, csak kattints duplán az X- vagy Y-tengelyre, és hozz létre egy mágnesvonalat.
+Mozgass egy elemet közel a vonalhoz, és nézd meg, mi történik...
+Kattints jobb gombbal a tengelyre további opciók beállításához.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=Gyors másolatra van szükséged egy elemből? Több lehetőség is van:
+a) Válasszon ki egy objektumot, tartsa lenyomva az Alt billentyűt, és mozgassa az objektumot: máris megvan a másolat.
+b) Jobb kattintás: Válassza a "Másolás elemek" menüpontot a helyi menüből.
+c) Használja a másolás és beillesztés gombokat az eszköztáron.
+
+tip=A MeerK40t sok gyakran szükséges ablakot, úgynevezett panelokat tartalmaz (pl. a lézervezérlő vagy az operációk és elemek fája).
+Ezeket a panelokat szabadon mozgathatja a képernyőn, de dokkolhatja is őket az oldalakhoz: Mozgasson egy panelt a MeerK40t ablak széléhez, és egy árnyékolt terület fogja jelezni, hogy az ablak dokkolható a felhasználói felülethez.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Kattintson jobb gombbal a felső műveleti csomópontra - a műveletek felső csomópontja egy speciális helyi menüvel rendelkezik, amely lehetővé teszi a műveletek általános tulajdonságainak elérését/beállítását.
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=A MeerK40t rendelkezik regisztrációs jelekkel, az elemek speciális kategóriájával, amelyek nem kerülnek beégetésre, hanem vizuális iránymutatásként szolgálnak az objektumok elhelyezéséhez.
+Az elemeket a regisztrációs jel zónába be- és kimozgathatja a fában lévő regisztrációs jel területre húzva.
+A regisztrációs jel területen lévő elemek háttérként működnek, nem tud közvetlenül interakcióba lépni velük a színen.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=Szeretnéd rendesen igazítani az objektumot a lézermunkalapodon? Miért nem adsz egy kamerát a beállításodhoz?
+A MeerK40t képes ezt a kamerát használni az élő kép megjelenítésére a háttérben, ezzel óriási mértékben egyszerűsítve az igazítást.
+Kattintson a kamera ikonra az eszköztáron, és kalibrálja a kamera képét.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Tárolhatja és újra felhasználhatja a gravírozási, vágási stb. beállításokat egy adott anyaghoz (pl. 4 mm-es rétegelt lemez vagy akril).
+Használja az Anyagkezelőt a felhasznált anyagok egyedi beállításainak kezeléséhez.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=Tudtad, hogy megoszthatod a tökéletes anyagbeállításaidat a MeerK40t közösséggel, és te is profitálhatsz mások hozzájárulásaiból?
+Használd az Anyagkezelőt a beállítások megosztásához és lekéréséhez a globális MeerK40t Könyvtárból.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=Grafikát vektorobjektummá kell konvertálni? Kattintson duplán a grafikára, és használja a vektorizáló panelt...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=Ha azt szeretné, hogy egy betöltött fájl tartalma automatikusan egy adott pontra kerüljön
+(pl. a sarkokhoz igazítva vagy a munkaterület közepére), akkor a fájl kiválasztásakor tartsa lenyomva a Shift billentyűt.
+A MeerK40t ekkor megkérdezi a kívánt helyet.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5
