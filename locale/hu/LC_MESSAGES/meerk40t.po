@@ -13336,7 +13336,7 @@ msgstr "Beállítások ablak megnyitása"
 
 #: meerk40t/gui/preferences.py:884
 msgid "Pr&eferences...\tCtrl-,"
-msgstr "Be&állítások...\\tCtrl-,"
+msgstr "Be&állítások...\tCtrl-,"
 
 #: meerk40t/gui/preferences.py:888
 msgid "Show/Hide the Preferences window"
@@ -14546,7 +14546,7 @@ msgstr "Szöveg beillesztése"
 
 #: meerk40t/gui/wxmmain.py:845 meerk40t/gui/wxmmain.py:5752
 msgid "&Undo\tCtrl-Z"
-msgstr "&Visszavonás\\tCtrl-Z"
+msgstr "&Visszavonás\tCtrl-Z"
 
 #: meerk40t/gui/wxmmain.py:846
 msgid "Undo last action"
@@ -14554,7 +14554,7 @@ msgstr "Utolsó művelet visszavonása"
 
 #: meerk40t/gui/wxmmain.py:855 meerk40t/gui/wxmmain.py:5763
 msgid "&Redo\tCtrl-Shift-Z"
-msgstr "&Ismétlés\\tCtrl-Shift-Z"
+msgstr "&Ismétlés\tCtrl-Shift-Z"
 
 #: meerk40t/gui/wxmmain.py:856
 msgid "Revert last undo"
@@ -14562,7 +14562,7 @@ msgstr "Utolsó visszavonás visszaállítása"
 
 #: meerk40t/gui/wxmmain.py:870
 msgid "C&ut\tCtrl-X"
-msgstr "&Kivágás\\tCtrl-X"
+msgstr "&Kivágás\tCtrl-X"
 
 #: meerk40t/gui/wxmmain.py:871 meerk40t/gui/wxmmain.py:2296
 msgid "Cut selected elements"
@@ -14570,7 +14570,7 @@ msgstr "Kijelölt elemek kivágása"
 
 #: meerk40t/gui/wxmmain.py:879
 msgid "&Copy\tCtrl-C"
-msgstr "&Másolás\\tCtrl-C"
+msgstr "&Másolás\tCtrl-C"
 
 #: meerk40t/gui/wxmmain.py:880 meerk40t/gui/wxmmain.py:2311
 msgid "Copy selected elements to clipboard"
@@ -14578,7 +14578,7 @@ msgstr "Kijelölt elemek másolása vágólapra"
 
 #: meerk40t/gui/wxmmain.py:888
 msgid "&Paste\tCtrl-V"
-msgstr "&Beillesztés\\tCtrl-V"
+msgstr "&Beillesztés\tCtrl-V"
 
 #: meerk40t/gui/wxmmain.py:889 meerk40t/gui/wxmmain.py:2337
 msgid "Paste elements from clipboard"
@@ -14586,7 +14586,7 @@ msgstr "Elemek beillesztése a vágólapról"
 
 #: meerk40t/gui/wxmmain.py:897
 msgid "Paste from system\tShift-Ctrl-V"
-msgstr "Beillesztés a rendszerből\\tShift-Ctrl-V"
+msgstr "Beillesztés a rendszerből\tShift-Ctrl-V"
 
 #: meerk40t/gui/wxmmain.py:898
 msgid "Paste data coming from other applications"
@@ -14594,7 +14594,7 @@ msgstr "Más alkalmazásokból származó adatok beillesztése"
 
 #: meerk40t/gui/wxmmain.py:911
 msgid "&Select all\tCtrl-A"
-msgstr "&Összes kijelölése\\tCtrl-A"
+msgstr "&Összes kijelölése\tCtrl-A"
 
 #: meerk40t/gui/wxmmain.py:912
 msgid "Select all elements on scene"
@@ -14610,7 +14610,7 @@ msgstr "Minden elem kijelölésének megszüntetése a nézeten"
 
 #: meerk40t/gui/wxmmain.py:927
 msgid "&Invert selection\tCtrl-I"
-msgstr "&Kijelölés megfordítása\\tCtrl-I"
+msgstr "&Kijelölés megfordítása\tCtrl-I"
 
 #: meerk40t/gui/wxmmain.py:928
 msgid "Invert the selection status of all elements"
@@ -14662,7 +14662,7 @@ msgstr "Billentyűkiosztások"
 
 #: meerk40t/gui/wxmmain.py:1036
 msgid "Preferences\tCtrl-,"
-msgstr "Beállítások\\tCtrl-,"
+msgstr "Beállítások\tCtrl-,"
 
 #: meerk40t/gui/wxmmain.py:1037
 msgid "Edit the general preferences"
@@ -15629,7 +15629,7 @@ msgstr "Tárolt ablakpozíciók elfelejtése"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "&New\tCtrl-N"
-msgstr "&Új\\tCtrl-N"
+msgstr "&Új\tCtrl-N"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "Clear Operations, Elements and Notes"
@@ -15637,7 +15637,7 @@ msgstr "Műveletek, elemek és jegyzetek törlése"
 
 #: meerk40t/gui/wxmmain.py:4040
 msgid "&Open Project\tCtrl-O"
-msgstr "&Projekt megnyitása\\tCtrl-O"
+msgstr "&Projekt megnyitása\tCtrl-O"
 
 #: meerk40t/gui/wxmmain.py:4041
 msgid "Clear existing elements and notes and open a new file"
@@ -15662,7 +15662,7 @@ msgstr "Másik fájl importálása ugyanabba a projektbe"
 
 #: meerk40t/gui/wxmmain.py:4061
 msgid "&Save\tCtrl-S"
-msgstr "&Mentés\\tCtrl-S"
+msgstr "&Mentés\tCtrl-S"
 
 #: meerk40t/gui/wxmmain.py:4062
 msgid "Save the project as an SVG file (overwriting any existing file)"
@@ -15670,7 +15670,7 @@ msgstr "A projekt mentése SVG fájlként (felülírja a meglévő fájlt)"
 
 #: meerk40t/gui/wxmmain.py:4067
 msgid "Save &As\tCtrl-Shift-S"
-msgstr "Mentés &másként\\tCtrl-Shift-S"
+msgstr "Mentés &másként\tCtrl-Shift-S"
 
 #: meerk40t/gui/wxmmain.py:4068
 msgid "Save the project in a new SVG file"
@@ -15678,7 +15678,7 @@ msgstr "A projekt mentése új SVG fájlba"
 
 #: meerk40t/gui/wxmmain.py:4074
 msgid "&Close Window\tCtrl-W"
-msgstr "&Ablak bezárása\\tCtrl-W"
+msgstr "&Ablak bezárása\tCtrl-W"
 
 #: meerk40t/gui/wxmmain.py:4074 meerk40t/gui/wxmmain.py:4078
 msgid "Close Meerk40t"
@@ -15702,15 +15702,15 @@ msgstr "Visszahívás..."
 
 #: meerk40t/gui/wxmmain.py:4256
 msgid "Zoom &Out\tCtrl--"
-msgstr "Kicsinyíté&s\\tCtrl--"
+msgstr "Kicsinyíté&s\tCtrl--"
 
 #: meerk40t/gui/wxmmain.py:4264
 msgid "Zoom &In\tCtrl-+"
-msgstr "Nagyítá&s\\tCtrl-+"
+msgstr "Nagyítá&s\tCtrl-+"
 
 #: meerk40t/gui/wxmmain.py:4272
 msgid "Zoom to &Selected\tCtrl-Shift-B"
-msgstr "Nagyítás a kijelölé&sre\\tCtrl-Shift-B"
+msgstr "Nagyítás a kijelölé&sre\tCtrl-Shift-B"
 
 #: meerk40t/gui/wxmmain.py:4273 meerk40t/gui/wxmscene.py:1547
 msgid "Fill the scene area with the selected elements"
@@ -15718,7 +15718,7 @@ msgstr "Töltse ki a jelenet területét a kiválasztott elemekkel"
 
 #: meerk40t/gui/wxmmain.py:4281
 msgid "Zoom to &Bed\tCtrl-B"
-msgstr "Nagyítás az ágyra\\tCtrl-B"
+msgstr "Nagyítás az ágyra\tCtrl-B"
 
 #: meerk40t/gui/wxmmain.py:4294
 msgid "GUI-Elements"
@@ -15726,7 +15726,7 @@ msgstr "Grafikus felhasználói felület elemei"
 
 #: meerk40t/gui/wxmmain.py:4299
 msgid "Show/Hide UI-Panels\tCtrl-U"
-msgstr "UI-panelek megjelenítése/elrejtése\\tCtrl-U"
+msgstr "UI-panelek megjelenítése/elrejtése\tCtrl-U"
 
 #: meerk40t/gui/wxmmain.py:4300
 msgid "Show/Hide all panels/ribbon bar"
@@ -15952,7 +15952,7 @@ msgstr "A MeerK40t online wiki megnyitása"
 
 #: meerk40t/gui/wxmmain.py:4642
 msgid "&Help\tF1"
-msgstr "&Súgó\\tF1"
+msgstr "&Súgó\tF1"
 
 #: meerk40t/gui/wxmmain.py:4643 meerk40t/gui/wxmmain.py:4666
 msgid "Open the Meerk40t online wiki Beginners page"
@@ -15960,7 +15960,7 @@ msgstr "A MeerK40t online wiki kezdők oldalának megnyitása"
 
 #: meerk40t/gui/wxmmain.py:4654
 msgid "Online Reference\tF11"
-msgstr "Online referencia\\tF11"
+msgstr "Online referencia\tF11"
 
 #: meerk40t/gui/wxmmain.py:4655
 msgid "Display online reference"
@@ -19968,11 +19968,11 @@ msgstr "help <segítség>"
 
 #: meerk40t/kernel/kernel.py:2554
 msgid "\tArgument: {type} '{name}'{help}"
-msgstr "\\tArgumentum: {type} '{name}'{help}"
+msgstr "\tArgumentum: {type} '{name}'{help}"
 
 #: meerk40t/kernel/kernel.py:2565
 msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr "\\tOpció: {type} ('--{name}', '-{short}'){help}"
+msgstr "\tOpció: {type} ('--{name}', '-{short}'){help}"
 
 #: meerk40t/kernel/kernel.py:2575
 msgid "No extended help for: {name}"

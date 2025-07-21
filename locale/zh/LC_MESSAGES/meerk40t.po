@@ -4454,7 +4454,7 @@ msgstr "打开首选项窗口"
 
 #: meerk40t/gui/preferences.py:884
 msgid "Pr&eferences...\tCtrl-,"
-msgstr "首选项...\\tCtrl-,"
+msgstr "首选项...\tCtrl-,"
 
 #: meerk40t/gui/preferences.py:888
 msgid "Show/Hide the Preferences window"
@@ -5716,7 +5716,7 @@ msgstr "重置窗口"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "&New\tCtrl-N"
-msgstr "新建\\tCtrl-N"
+msgstr "新建\tCtrl-N"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "Clear Operations, Elements and Notes"
@@ -5724,7 +5724,7 @@ msgstr "清除操作、元素和注释"
 
 #: meerk40t/gui/wxmmain.py:4040
 msgid "&Open Project\tCtrl-O"
-msgstr "打开项目\\tCtrl-O"
+msgstr "打开项目\tCtrl-O"
 
 #: meerk40t/gui/wxmmain.py:4041
 msgid "Clear existing elements and notes and open a new file"
@@ -5744,7 +5744,7 @@ msgstr "将另一个文件导入到同一项目中"
 
 #: meerk40t/gui/wxmmain.py:4061
 msgid "&Save\tCtrl-S"
-msgstr "保存\\tCtrl-S"
+msgstr "保存\tCtrl-S"
 
 #: meerk40t/gui/wxmmain.py:4062
 msgid "Save the project as an SVG file (overwriting any existing file)"
@@ -5752,7 +5752,7 @@ msgstr "将项目保存为 SVG 文件（覆盖现有文件）"
 
 #: meerk40t/gui/wxmmain.py:4067
 msgid "Save &As\tCtrl-Shift-S"
-msgstr "另存为\\tCtrl-Shift-S"
+msgstr "另存为\tCtrl-Shift-S"
 
 #: meerk40t/gui/wxmmain.py:4068
 msgid "Save the project in a new SVG file"
@@ -5760,7 +5760,7 @@ msgstr "将项目保存为新的 SVG 文件"
 
 #: meerk40t/gui/wxmmain.py:4074
 msgid "&Close Window\tCtrl-W"
-msgstr "关闭窗口\\tCtrl-W"
+msgstr "关闭窗口\tCtrl-W"
 
 #: meerk40t/gui/wxmmain.py:4074 meerk40t/gui/wxmmain.py:4078
 msgid "Close Meerk40t"
@@ -5772,7 +5772,7 @@ msgstr "退出"
 
 #: meerk40t/gui/wxmmain.py:845 meerk40t/gui/wxmmain.py:5752
 msgid "&Undo\tCtrl-Z"
-msgstr "撤销\\tCtrl-Z"
+msgstr "撤销\tCtrl-Z"
 
 #: meerk40t/gui/wxmmain.py:846
 msgid "Undo last action"
@@ -5780,7 +5780,7 @@ msgstr "撤销上一个操作"
 
 #: meerk40t/gui/wxmmain.py:855 meerk40t/gui/wxmmain.py:5763
 msgid "&Redo\tCtrl-Shift-Z"
-msgstr "重做\\tCtrl-Shift-Z"
+msgstr "重做\tCtrl-Shift-Z"
 
 #: meerk40t/gui/wxmmain.py:856
 msgid "Revert last undo"
@@ -5788,19 +5788,19 @@ msgstr "还原上一个撤销"
 
 #: meerk40t/gui/wxmmain.py:870
 msgid "C&ut\tCtrl-X"
-msgstr "剪切\\tCtrl-X"
+msgstr "剪切\tCtrl-X"
 
 #: meerk40t/gui/wxmmain.py:879
 msgid "&Copy\tCtrl-C"
-msgstr "复制\\tCtrl-C"
+msgstr "复制\tCtrl-C"
 
 #: meerk40t/gui/wxmmain.py:888
 msgid "&Paste\tCtrl-V"
-msgstr "粘贴\\tCtrl-V"
+msgstr "粘贴\tCtrl-V"
 
 #: meerk40t/gui/wxmmain.py:911
 msgid "&Select all\tCtrl-A"
-msgstr "全选\\tCtrl-A"
+msgstr "全选\tCtrl-A"
 
 #: meerk40t/gui/wxmmain.py:912
 msgid "Select all elements on scene"
@@ -5816,7 +5816,7 @@ msgstr "取消选择场景上的所有元素"
 
 #: meerk40t/gui/wxmmain.py:927
 msgid "&Invert selection\tCtrl-I"
-msgstr "反选\\tCtrl-I"
+msgstr "反选\tCtrl-I"
 
 #: meerk40t/gui/wxmmain.py:928
 msgid "Invert the selection status of all elements"
@@ -5873,7 +5873,7 @@ msgstr "键绑定"
 
 #: meerk40t/gui/wxmmain.py:1036
 msgid "Preferences\tCtrl-,"
-msgstr "首选项\\tCtrl-,"
+msgstr "首选项\tCtrl-,"
 
 #: meerk40t/gui/wxmmain.py:1037
 msgid "Edit the general preferences"
@@ -5881,7 +5881,7 @@ msgstr "编辑通用首选项"
 
 #: meerk40t/gui/wxmmain.py:4256
 msgid "Zoom &Out\tCtrl--"
-msgstr "缩小\\tCtrl--"
+msgstr "缩小\tCtrl--"
 
 #: meerk40t/gui/simulation.py:1508 meerk40t/gui/wxmmain.py:4257
 #: meerk40t/gui/wxmscene.py:1519
@@ -5890,7 +5890,7 @@ msgstr "缩小场景"
 
 #: meerk40t/gui/wxmmain.py:4264
 msgid "Zoom &In\tCtrl-+"
-msgstr "放大\\tCtrl-+"
+msgstr "放大\tCtrl-+"
 
 #: meerk40t/gui/simulation.py:1517 meerk40t/gui/wxmmain.py:4265
 #: meerk40t/gui/wxmscene.py:1528
@@ -5899,7 +5899,7 @@ msgstr "放大场景"
 
 #: meerk40t/gui/wxmmain.py:4272
 msgid "Zoom to &Selected\tCtrl-Shift-B"
-msgstr "缩放到所选元素\\tCtrl-Shift-B"
+msgstr "缩放到所选元素\tCtrl-Shift-B"
 
 #: meerk40t/gui/wxmmain.py:4273 meerk40t/gui/wxmscene.py:1547
 msgid "Fill the scene area with the selected elements"
@@ -5907,7 +5907,7 @@ msgstr "使用所选元素填充场景区域"
 
 #: meerk40t/gui/wxmmain.py:4281
 msgid "Zoom to &Bed\tCtrl-B"
-msgstr "缩放到床\\tCtrl-B"
+msgstr "缩放到床\tCtrl-B"
 
 #: meerk40t/gui/wxmmain.py:4294
 msgid "GUI-Elements"
@@ -5915,7 +5915,7 @@ msgstr "界面元素"
 
 #: meerk40t/gui/wxmmain.py:4299
 msgid "Show/Hide UI-Panels\tCtrl-U"
-msgstr "显示/隐藏界面面板\\tCtrl-U"
+msgstr "显示/隐藏界面面板\tCtrl-U"
 
 #: meerk40t/gui/wxmmain.py:4300
 msgid "Show/Hide all panels/ribbon bar"
@@ -7229,11 +7229,11 @@ msgstr "帮助 <帮助>"
 
 #: meerk40t/kernel/kernel.py:2554
 msgid "\tArgument: {type} '{name}'{help}"
-msgstr "\\t参数：{type} '{name}'{help}"
+msgstr "\t参数：{type} '{name}'{help}"
 
 #: meerk40t/kernel/kernel.py:2565
 msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr "\\t选项：{type} （'--{name}'，'-{short}'）{help}"
+msgstr "\t选项：{type} （'--{name}'，'-{short}'）{help}"
 
 #: meerk40t/kernel/kernel.py:2575
 msgid "No extended help for: {name}"
