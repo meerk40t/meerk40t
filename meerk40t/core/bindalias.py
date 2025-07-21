@@ -318,7 +318,11 @@ class Bind(Service):
                         key,
                     )
 
-                channel(_("    Key                    Command"))
+                channel(
+                    "    {key} {command}".format(
+                        key=_("Key").ljust(22), command=_("Command")
+                    )
+                )
                 for i, key in enumerate(sorted(self.keymap.keys(), key=keymap_index)):
                     value = self.keymap[key]
                     channel(f"{i:2d}: {key.ljust(22)} {value}")
