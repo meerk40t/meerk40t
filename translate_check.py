@@ -251,7 +251,9 @@ def compare(locale, id_strings, id_strings_source, id_usage):
     Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
     """
     counts = [0, 0, 0]
-    with open(f"./delta_{locale}.po", "w", encoding="utf-8") as outp:
+    with open(
+        f"./delta_{locale}.po", "w", encoding="utf-8", errors="surrogateescape"
+    ) as outp:
         for idx, key in enumerate(id_strings_source):
             if not key:
                 continue
@@ -305,7 +307,9 @@ def validate_po_old(locale, id_strings_source, id_usage, id_pairs):
     pairs = {}
     for msgid, msgstr in id_pairs:
         pairs.setdefault(msgid, []).append(msgstr)
-    with open(f"./fixed_{locale}_meerk40t.po", "w", encoding="utf-8") as outp:
+    with open(
+        f"./fixed_{locale}_meerk40t.po", "w", encoding="utf-8", errors="surrogateescape"
+    ) as outp:
         write_proper_po_header(outp, locale)
         for msgid, msgstr_list in pairs.items():
             msgstr = next((m for m in msgstr_list if m), "")
