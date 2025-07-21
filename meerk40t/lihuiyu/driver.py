@@ -12,12 +12,15 @@ import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.dwellcut import DwellCut
 from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
@@ -719,12 +722,39 @@ class LihuiyuDriver(Parameters):
         """
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             if segment_type == "line":
+                plot = LineCut(
+                    start,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "end":
                 pass
             elif segment_type == "quad":
+                plot = QuadCut(
+                    start,
+                    c1,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "cubic":
+                plot = CubicCut(
+                    start,
+                    c1,
+                    c2,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "arc":
                 interp = 50
@@ -733,7 +763,15 @@ class LihuiyuDriver(Parameters):
                 g.arc(start, c1, end)
                 last = start
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    self.plot_planner.push((last, p))
+                    plot = LineCut(
+                        last,
+                        p,
+                        settings={
+                            "power": sets.get("power", 1000.0),
+                            "speed": sets.get("speed", self.speed),
+                        },
+                    )
+                    self.plot_planner.push(plot)
                     last = p
             elif segment_type == "point":
                 function = sets.get("function")
