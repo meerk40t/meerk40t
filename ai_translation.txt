@@ -7,5 +7,5 @@ One additional rule: all strings inside curly brackets should not be translated.
 
 Keep the original format when showing the results, avoiding categorizing or any
 other additional comments that are not part of the original file.
-The result should be easy to copy and pase into another file.
+The result should be easy to copy and paste into another file.
 There is no need to escape strings - neither in the response or when providing a clipboard copy.
