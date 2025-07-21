@@ -1,0 +1,84 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t 可以为元素创建轮廓。
+只需选择元素，右键单击它以获取上下文菜单，然后从“轮廓元素”菜单中选择...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t 拥有一套扩展的命令集，可以执行大量可脚本化的操作。
+只需打开控制台窗口并输入“help”。
+cmd=pane show console\nhelp
+
+tip=当您在选择了元素创建工具的情况下移动鼠标时，您会看到相邻的兴趣点被显示并高亮显示，如果它们将成为捕捉目标。\n注意：如果您按下 Shift 键，捕捉行为将被忽略，在这种情况下，将考虑当前的鼠标位置
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=模拟窗口不仅可以让您预览激光的行为，还可以让您尝试不同的优化选项，并查看它们如何影响结果。\n只需单击右侧的“<”符号并按计算。
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t 有多种网格类型可供选择，包括圆形网格...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+tip=厌倦了对齐对象？使用磁铁功能，只需双击 X 轴或 Y 轴即可建立磁力线。
+将一个元素移近该线并观察会发生什么...
+右键单击轴以设置更多选项。
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=您需要快速复制一个元素吗？有几种选择：
+a) 选择一个对象，按住 Alt 键并移动该对象：您就有了副本
+b) 右键单击：从上下文菜单中选择“复制元素”
+c) 使用工具栏中的复制和粘贴按钮
+
+tip=MeerK40t 有许多常用的窗口，称为面板（例如激光控制或操作和元素树）。
+您可以在屏幕上自由移动这些面板，也可以将它们停靠在侧面：将面板移动到 MeerK40t 窗口的侧面，它将以阴影区域指示该窗口可以停靠到用户界面。
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=右键单击顶部操作节点 - 顶部操作节点具有一个特殊的上下文菜单，允许访问/设置操作的通用属性
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t 具有校准标记，这是一种特殊类别的元素，它们不会被烧蚀，而是作为对象放置的视觉指导。
+您可以通过将元素拖入或拖出树中的校准标记区域来将其移入或移出校准标记区域。
+校准标记区域中的元素充当背景，您无法再在场景中直接与其交互。
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=您想在激光床上正确对齐对象吗？为什么不在您的设置中添加一个摄像头。
+MeerK40t 可以使用该摄像头在场景背景上显示实时图像，极大地简化了对齐。
+单击工具栏中的摄像头按钮并校准您的摄像头图像。
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=您可以存储和重用特定材料（如 4 毫米胶合板或亚克力）的雕刻、切割等设置。
+使用材料管理器管理您使用的材料的各项设置。
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=您知道吗，您可以与 MeerK40t 社区分享您的完美材料设置，并且同样可以从他人的贡献中受益？
+使用材料管理器共享和检索全球 MeerK40t 库中的设置。
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=您需要将图形转换为矢量对象吗？双击图形并使用矢量化面板...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=如果您希望加载的文件内容自动放置在特定点
+（例如，对齐到角落或在床的中心）则在选择文件时按住 Shift 键。
+MeerK40t 将会询问您所需的位置。
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5

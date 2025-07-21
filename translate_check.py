@@ -409,7 +409,11 @@ def main():
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locales:
-        id_strings, pairs = read_po(loc)
+        try:
+            id_strings, pairs = read_po(loc)
+        except Exception as e:
+            print(f"Error reading locale {loc}: {e}")
+            continue
         if validate:
             print(
                 f"Validating locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
