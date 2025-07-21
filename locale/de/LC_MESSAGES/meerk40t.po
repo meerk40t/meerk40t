@@ -20153,3 +20153,43 @@ msgstr "Ungültiges Format, unterstützt: {all}"
 #: barcodes/main.py:374 build/lib/barcodes/main.py:374
 msgid "Creates a qr code."
 msgstr "Erstellt einen QR-Code."
+
+#: meerk40t/core/elements/branches.py:865 meerk40t/core/elements/geometry.py:296 meerk40t/core/elements/geometry.py:390 meerk40t/core/elements/grid.py:312 meerk40t/core/elements/grid.py:441 meerk40t/core/elements/placements.py:112 meerk40t/core/elements/render.py:447 meerk40t/core/elements/shapes.py:107 meerk40t/core/elements/shapes.py:155 meerk40t/core/elements/shapes.py:222 meerk40t/core/elements/shapes.py:306 meerk40t/core/elements/shapes.py:352 meerk40t/core/elements/shapes.py:450 meerk40t/core/elements/shapes.py:546 meerk40t/core/elements/shapes.py:551 meerk40t/core/elements/shapes.py:2029 meerk40t/core/elements/shapes.py:2122 meerk40t/core/elements/shapes.py:2210 meerk40t/core/elements/shapes.py:2398 meerk40t/core/elements/shapes.py:2460 meerk40t/core/elements/shapes.py:2535 meerk40t/core/elements/shapes.py:2631
+msgid "Invalid length value."
+msgstr "Ungültiger Längenwert."
+
+#: meerk40t/core/elements/branches.py:1408
+msgid "Invalid length value for copy offset."
+msgstr "Ungültiger Längenwert für den Kopierversatz."
+
+#: meerk40t/core/elements/geometry.py:222
+msgid "X position for circle center."
+msgstr "X-Position für Kreismittelpunkt."
+
+#: meerk40t/core/elements/geometry.py:223
+msgid "Y position for circle center."
+msgstr "Y-Position für Kreismittelpunkt."
+
+#: meerk40t/core/elements/geometry.py:224
+msgid "Radius for circle."
+msgstr "Radius des Kreises."
+
+#: meerk40t/core/elements/geometry.py:241
+msgid "Invalid length value for circle."
+msgstr "Ungültiger Längenwert für Kreis."
+
+#: meerk40t/core/elements/shapes.py:90
+msgid "Radius of the circle"
+msgstr "Kreisradius"
+
+#: meerk40t/grbl/plugin.py:254 meerk40t/ruida/plugin.py:112
+msgid "No control instance to stop."
+msgstr "Keine Emulator-Instanz zum Stoppen."
+
+#: meerk40t/gui/plugin.py:119
+msgid "Remember main window position"
+msgstr "Hauptfensterposition merken"
+
+#: meerk40t/gui/plugin.py:122
+msgid "Should MeerK40t remember its last position on the screen?"
+msgstr "Soll sich MeerK40t seine letzte Position auf dem Bildschirm merken?"
