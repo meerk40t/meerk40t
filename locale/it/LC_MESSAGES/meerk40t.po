@@ -15704,12 +15704,16 @@ msgid "alias <alias> <console commands[;console command]*>"
 msgstr "alias <alias> <comandi console[;comando console]*>"
 
 #: meerk40t/core/bindalias.py:448
-msgid "Aliases (keybind)`:"
+msgid "Aliases (keybind):"
 msgstr "Alias (tasti rapidi):"
 
 #: meerk40t/core/bindalias.py:449
-msgid "    Alias                  Command(s)"
-msgstr "    Alias                  Comando(i)"
+msgid "Alias"
+msgstr "Alias"
+
+#: meerk40t/core/bindalias.py:449
+msgid "Command(s)"
+msgstr "Comando(i)"
 
 #: meerk40t/core/bindalias.py:478
 msgid "Aliases set to default."
@@ -16400,8 +16404,8 @@ msgid "Save handler not found: {version} {filename}"
 msgstr "Gestore di salvataggio non trovato: {version} {filename}"
 
 #: meerk40t/core/elements/files.py:98
-msgid "save_types"
-msgstr "salva_tipi"
+msgid "save_types - display save types"
+msgstr "save_types - tipi de salva"
 
 #: meerk40t/core/elements/geometry.py:162
 msgid "Convert any shapes to pathnodes"

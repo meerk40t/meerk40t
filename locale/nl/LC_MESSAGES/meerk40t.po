@@ -1315,12 +1315,16 @@ msgid "alias <alias> <console commands[;console command]*>"
 msgstr "alias <alias> <console commando's[;console commando]*>"
 
 #: meerk40t/core/bindalias.py:448
-msgid "Aliases (keybind)`:"
+msgid "Aliases (keybind):"
 msgstr "Aliassen (toetskoppeling)`:"
 
 #: meerk40t/core/bindalias.py:449
-msgid "    Alias                  Command(s)"
-msgstr "    Alias                  Commando('s)"
+msgid "Alias"
+msgstr "Alias"
+
+#: meerk40t/core/bindalias.py:449
+msgid "Command(s)"
+msgstr "Commando('s)"
 
 #: meerk40t/core/bindalias.py:478
 msgid "Aliases set to default."
@@ -4567,8 +4571,8 @@ msgid "Save handler not found: {version} {filename}"
 msgstr "Opsla-handler niet gevonden: {version} {filename}"
 
 #: meerk40t/core/elements/files.py:98
-msgid "save_types"
-msgstr "opslaan_types"
+msgid "save_types - display save types"
+msgstr "save_types - opslaan types"
 
 #: meerk40t/core/elements/files.py:104
 msgid "Execute file startup command list"
