@@ -1,0 +1,85 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t puede crear un llamado contorno alrededor de un elemento.
+Solo selecciona el elemento, haz clic derecho sobre él para abrir el menú contextual y elige la opción "Contornear elementos"...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t tiene un conjunto extenso de comandos que permiten muchas acciones automatizables.
+Simplemente abre la ventana de la consola y escribe 'help'.
+cmd=pane show console\nhelp
+
+tip=Mientras mueves el ratón al tener seleccionada una herramienta de creación de elementos, verás puntos de interés cercanos que se mostrarán y resaltarán si pueden convertirse en un objetivo de ajuste.\nNota: el comportamiento de ajuste se ignorará si mantienes presionada la tecla shift; en este caso, se considerará la posición actual del ratón.
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=La ventana de simulación no solo te permitirá previsualizar el comportamiento de tu láser, sino que también te permitirá probar las diferentes opciones de optimización y ver cómo influyen en el resultado.\nSimplemente haz clic en el símbolo '<' en el lado derecho y presiona calcular.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t tiene varios tipos de cuadrículas que puedes elegir, incluyendo una circular...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+
+tip=¿Cansado de alinear objetos? Usa la función de imán, simplemente haz doble clic en el eje X o Y y establece una línea de imán.
+Mueve un elemento cerca de esa línea y observa lo que sucede...
+Haz clic derecho en el eje para establecer más opciones.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=¿Necesitas una copia rápida de un elemento? Hay algunas opciones:
+a) Selecciona un objeto, mantén presionada la tecla Alt y mueve el objeto: y tendrás tu copia
+b) Haz clic derecho: elige duplicar elementos en el menú contextual
+c) Usa los botones de copiar y pegar en la barra de herramientas
+
+tip=MeerK40t tiene muchas ventanas frecuentemente necesarias llamadas paneles (por ejemplo, el control láser o el árbol de operaciones y elementos).
+Puedes mover estos paneles libremente por la pantalla, pero también puedes acoplarlos a los lados: mueve un panel al lado de la ventana de Meerk40t y se indicará con un área sombreada que la ventana puede acoplarse a la interfaz de usuario.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Haz clic derecho en el nodo superior de operaciones: el nodo superior de operaciones tiene un menú contextual especial que permite acceder/establecer propiedades genéricas de las operaciones.
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t tiene regmarks, una categoría especial de elementos que no se grabarán pero actuarán como una especie de guía visual para la colocación de objetos.
+Puedes mover elementos dentro o fuera de la zona de regmarks arrastrándolos dentro o fuera del área de regmarks en el árbol.
+Los elementos en el área de regmarks actúan como fondo, ya no puedes interactuar directamente con ellos en la Escena.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=¿Quieres alinear correctamente un objeto en tu cama láser? ¿Por qué no añades una cámara a tu configuración?
+MeerK40t puede usar esa cámara para mostrar la imagen en vivo en el fondo de la escena, simplificando enormemente la alineación.
+Haz clic en el botón de la cámara en la barra de herramientas y calibra la imagen de tu cámara.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Puedes guardar y reutilizar los ajustes para grabado, corte, etc. para un material determinado (como contrachapado de 4 mm o acrílico).
+Utiliza el Administrador de Materiales para gestionar los ajustes individuales de los materiales que usas.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=¿Sabías que puedes compartir tus ajustes perfectos para un material con la comunidad de MeerK40t y que también puedes beneficiarte de las contribuciones de otros?
+Utiliza el Administrador de Materiales para compartir y obtener ajustes de la Biblioteca global de MeerK40t.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=¿Necesitas convertir un gráfico en un objeto vectorial? Haz doble clic en el gráfico y usa el panel de vectorización...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=Si quieres que el contenido de un archivo que cargas se coloque automáticamente en un punto específico
+(por ejemplo, alineado a las esquinas o al centro de la cama), entonces mantén presionada la tecla Shift al seleccionar el archivo.
+MeerK40t te preguntará por la ubicación deseada.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5
