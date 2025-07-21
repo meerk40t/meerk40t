@@ -1,0 +1,86 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40tは、要素の周囲にアウトラインを作成できます。
+要素を選択し、その上で右クリックしてコンテキストメニューから「アウトライン要素」を選択してください。
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40tには、豊富なコマンドがあり、さまざまなスクリプト操作が可能です。
+コンソールウィンドウを開いて「help」と入力してください。
+cmd=pane show console\nhelp
+
+tip=要素作成ツールを選択してマウスを動かすと、近くのスナップ可能なポイントが表示され、ハイライトされます。
+※Shiftキーを押すとスナップ動作は無効になり、現在のマウス位置が使用されます。
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=シミュレーションウィンドウでは、レーザーの動作をプレビューできるだけでなく、最適化オプションを試して結果への影響を確認できます。
+右側の「<」記号をクリックし、「計算」を押してください。
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40tでは、円形グリッドなど複数のグリッドタイプを選択できます。
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+
+tip=オブジェクトの位置合わせに困ったら、マグネット機能を使いましょう。X軸またはY軸をダブルクリックしてマグネットラインを作成できます。
+要素をそのラインの近くに移動してみてください。
+軸を右クリックすると、さらにオプションを設定できます。
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=要素を素早くコピーしたい場合、いくつかの方法があります：
+a) オブジェクトを選択し、Altキーを押しながら移動するとコピーされます。
+b) 右クリックして、コンテキストメニューから「要素を複製」を選択します。
+c) ツールバーのコピー＆ペーストボタンを使用します。
+
+tip=MeerK40tには、レーザーコントロールや操作・要素ツリーなど、よく使うウィンドウ（ペイン）が多数あります。
+これらのパネルは自由に移動でき、ウィンドウの端にドラッグすると、UIにドッキングできることが表示されます。
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=操作ツリーの最上位ノードを右クリックすると、操作の一般的なプロパティを設定できる特別なコンテキストメニューが表示されます。
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40tには「レグマーク」という特殊な要素があり、焼かれることはなく、オブジェクト配置のガイドとして機能します。
+ツリー内で要素をレグマークエリアにドラッグして移動できます。
+レグマークエリアの要素は背景として扱われ、シーン上で直接操作できなくなります。
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=レーザーベッド上でオブジェクトを正確に配置したい場合は、カメラを追加してみましょう。
+MeerK40tはカメラ映像をシーンの背景に表示でき、位置合わせが簡単になります。
+ツールバーのカメラボタンをクリックし、カメラ画像をキャリブレーションしてください。
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=彫刻やカットなど、特定の材料（例：4mm合板やアクリル）の設定を保存・再利用できます。
+「マテリアルマネージャー」で材料ごとの設定を管理しましょう。
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=最適な材料設定をMeerK40tコミュニティと共有でき、他のユーザーの設定も利用できます。
+「マテリアルマネージャー」でグローバルライブラリから設定を共有・取得しましょう。
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=画像をベクターオブジェクトに変換したい場合は、画像をダブルクリックしてベクター化パネルを使用してください。
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=読み込んだファイルの内容を特定の位置（例：ベッドの隅や中央）に自動配置したい場合は、ファイル選択時にShiftキーを押し続けてください。
+MeerK40tが希望の配置場所を尋ねます。
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5
