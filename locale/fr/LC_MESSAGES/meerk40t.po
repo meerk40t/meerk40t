@@ -571,12 +571,16 @@ msgid "alias <alias> <console commands[;console command]*>"
 msgstr "alias <alias> <commandes console[;commande console]*>"
 
 #: meerk40t/core/bindalias.py:448
-msgid "Aliases (keybind)`:"
+msgid "Aliases (keybind):"
 msgstr "Alias (raccourcis) :"
 
 #: meerk40t/core/bindalias.py:449
-msgid "    Alias                  Command(s)"
-msgstr "    Alias                  Commande(s)"
+msgid "Alias"
+msgstr "Alias"
+
+#: meerk40t/core/bindalias.py:449
+msgid "Command(s)"
+msgstr "Commande(s)"
 
 #: meerk40t/core/bindalias.py:478
 msgid "Aliases set to default."
@@ -4863,8 +4867,8 @@ msgid "Save handler not found: {version} {filename}"
 msgstr "Gestionnaire d'enregistrement introuvable : {version} {filename}"
 
 #: meerk40t/core/elements/files.py:98
-msgid "save_types"
-msgstr "types_d'enregistrement"
+msgid "save_types - display save types"
+msgstr "save_types - liste de types d'enregistrement"
 
 #: meerk40t/core/elements/files.py:104
 msgid "Execute file startup command list"

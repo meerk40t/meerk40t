@@ -1595,11 +1595,15 @@ msgid "alias <alias> <console commands[;console command]*>"
 msgstr ""
 
 #: meerk40t/core/bindalias.py:448
-msgid "Aliases (keybind)`:"
+msgid "Aliases (keybind):"
 msgstr ""
 
 #: meerk40t/core/bindalias.py:449
-msgid "    Alias                  Command(s)"
+msgid "Alias"
+msgstr ""
+
+#: meerk40t/core/bindalias.py:449
+msgid "Command(s)"
 msgstr ""
 
 #: meerk40t/core/bindalias.py:478
@@ -4875,7 +4879,7 @@ msgid "Save handler not found: {version} {filename}"
 msgstr ""
 
 #: meerk40t/core/elements/files.py:98
-msgid "save_types"
+msgid "save_types - display save types"
 msgstr ""
 
 #: meerk40t/core/elements/files.py:104

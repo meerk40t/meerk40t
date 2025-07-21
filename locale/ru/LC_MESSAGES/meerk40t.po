@@ -1583,12 +1583,16 @@ msgid "alias <alias> <console commands[;console command]*>"
 msgstr "alias <псевдоним> <команды консоли[;команда консоли]*>"
 
 #: meerk40t/core/bindalias.py:448
-msgid "Aliases (keybind)`:"
+msgid "Aliases (keybind):"
 msgstr "Псевдонимы (привязки клавиш):"
 
 #: meerk40t/core/bindalias.py:449
-msgid "    Alias                  Command(s)"
-msgstr "    Псевдоним             Команда(ы)"
+msgid "Alias"
+msgstr "Псевдоним"
+
+#: meerk40t/core/bindalias.py:449
+msgid "Command(s)"
+msgstr "Команда(ы)"
 
 #: meerk40t/core/bindalias.py:478
 msgid "Aliases set to default."
@@ -4859,7 +4863,7 @@ msgid "Save handler not found: {version} {filename}"
 msgstr "Обработчик сохранения не найден: {version} {filename}"
 
 #: meerk40t/core/elements/files.py:98
-msgid "save_types"
+msgid "save_types - display save types"
 msgstr "типы_сохранения"
 
 #: meerk40t/core/elements/files.py:104
