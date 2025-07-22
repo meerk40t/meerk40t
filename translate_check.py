@@ -198,7 +198,12 @@ def read_source():
             id_str = lf_coded(e.msgid)
             if not id_str:
                 continue
-            last_usage = e.comment
+            if e.comment:
+                last_usage = e.comment
+            else:
+                last_usage = " ".join(
+                    [f"{o_fname}:{o_lineno}" for o_fname, o_lineno in e.occurrences]
+                )
             if id_str not in id_strings_source:
                 id_strings_source.append(id_str)
                 id_usage.append(f"#: {last_usage}")
@@ -367,7 +372,18 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
             continue
         entry = polib.POEntry(msgid=msgid, msgstr=msgstr)
         idx = id_strings_source.index(t_msgid)
-        entry.comment = id_usage[idx]
+        usage = id_usage[idx]
+        if usage.startswith("#: "):
+            usage = usage[3:]  # Remove the leading "#: "
+        if usage:
+            for loc in usage.split(" "):
+                if ":" in loc:
+                    file = loc.split(":")[0]  # Use only the file part
+                    line = loc.split(":")[1]
+                else:
+                    file = loc.strip()
+                    line = "1"
+                entry.occurrences.append((file, line))
         po.append(entry)
         seen.add(msgid)
         written += 1
