@@ -2,8 +2,8 @@ import itertools
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.mixins import Suppressable
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Point
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
@@ -179,8 +179,8 @@ class HatchEffectNode(Node, Suppressable):
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
         # Let's establish the angle
-        p1:Point = matrix.point_in_matrix_space((0, 0))
-        p2:Point = matrix.point_in_matrix_space((1, 0))
+        p1: Point = matrix.point_in_matrix_space((0, 0))
+        p2: Point = matrix.point_in_matrix_space((1, 0))
         angle = p1.angle_to(p2)
         self._angle -= angle
         # from math import tau
@@ -240,6 +240,8 @@ class HatchEffectNode(Node, Suppressable):
                     subs = right_types(e)
                     res.extend(subs)
                 elif e.type.startswith("elem"):
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
                     res.append(e)
             return res
 
@@ -301,7 +303,6 @@ class HatchEffectNode(Node, Suppressable):
                     angle=self._angle + p * self._angle_delta,
                 )
 
-
     def set_interim(self):
         self.empty_cache()
         self._interim = True
@@ -315,9 +316,9 @@ class HatchEffectNode(Node, Suppressable):
 
     def can_drop(self, drag_node):
         if (
-            hasattr(drag_node, "as_geometry") or
-            drag_node.type in ("effect", "file", "group", "reference") or
-            (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+            hasattr(drag_node, "as_geometry")
+            or drag_node.type in ("effect", "file", "group", "reference")
+            or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
         ):
             return True
         return False

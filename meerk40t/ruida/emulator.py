@@ -634,7 +634,7 @@ class RuidaEmulator:
                     x = abscoord(array[3:8])
                     y = abscoord(array[8:13])
                     self._describe(array, f"Move {param} XY ({x}μm, {y}μm)")
-                    if "Origin" in param:
+                    if x != 0 or y != 0:
                         try:
                             self.device.driver.move_abs(
                                 f"{x / 1000}mm",

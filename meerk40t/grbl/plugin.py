@@ -175,7 +175,9 @@ def plugin(kernel, lifecycle=None):
             {
                 "provider": "provider/device/grbl",
                 "friendly_name": _("Longer Ray5 (GRBL)"),
-                "extended_info": _("Longer-branded 5w/10w/20w grbl diode laser.\nMake sure you verify your bed size! This machine has several upgrade kits."),
+                "extended_info": _(
+                    "Longer-branded 5w/10w/20w grbl diode laser.\nMake sure you verify your bed size! This machine has several upgrade kits."
+                ),
                 "priority": 21,
                 "family": _("Longer Diode-Laser"),
                 "choices": [
@@ -229,9 +231,13 @@ def plugin(kernel, lifecycle=None):
             hidden=True,
         )
         def grblserver(
+            command,
+            channel,
+            _,
             port=23,
             verbose=False,
             quit=False,
+            remainder=None,
             **kwargs,
         ):
             """
@@ -239,10 +245,13 @@ def plugin(kernel, lifecycle=None):
             this emulates a grbl devices in order to be compatible with software that
             controls that type of device.
             """
+            if remainder and remainder.lower() in ("stop", "quit"):
+                quit = True
             root = kernel.root
             grblcontrol = root.device.lookup("grblcontrol")
             if grblcontrol is None:
                 if quit:
+                    channel(_("No control instance to stop."))
                     return
                 grblcontrol = GRBLControl(root)
                 root.device.register("grblcontrol", grblcontrol)

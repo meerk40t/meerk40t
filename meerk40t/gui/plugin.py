@@ -112,6 +112,18 @@ and a wxpython version <= 4.1.1."""
                 "section": "General",
             },
             {
+                "attr": "remember_main_pos",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Remember main window position"),
+                "tip": _(
+                    "Should MeerK40t remember its last position on the screen?"
+                ),
+                "page": "Gui",
+                "section": "General",
+            },
+            {
                 "attr": "windows_save",
                 "object": kernel.root,
                 "default": True,

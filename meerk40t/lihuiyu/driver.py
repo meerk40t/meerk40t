@@ -12,12 +12,15 @@ import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.dwellcut import DwellCut
 from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
@@ -719,12 +722,39 @@ class LihuiyuDriver(Parameters):
         """
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             if segment_type == "line":
+                plot = LineCut(
+                    start,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "end":
                 pass
             elif segment_type == "quad":
+                plot = QuadCut(
+                    start,
+                    c1,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "cubic":
+                plot = CubicCut(
+                    start,
+                    c1,
+                    c2,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "arc":
                 interp = 50
@@ -733,7 +763,15 @@ class LihuiyuDriver(Parameters):
                 g.arc(start, c1, end)
                 last = start
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    self.plot_planner.push((last, p))
+                    plot = LineCut(
+                        last,
+                        p,
+                        settings={
+                            "power": sets.get("power", 1000.0),
+                            "speed": sets.get("speed", self.speed),
+                        },
+                    )
+                    self.plot_planner.push(plot)
                     last = p
             elif segment_type == "point":
                 function = sets.get("function")
@@ -968,7 +1006,10 @@ class LihuiyuDriver(Parameters):
             sx = self.native_x
             sy = self.native_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
-            on = int(on)
+            if self.state == DRIVER_STATE_RASTER and on >= 0.3 and on < 1:
+                on = 1
+            else:
+                on = int(on)
             if on > 1:
                 # Special Command.
                 if on & PLOT_FINISH:  # Plot planner is ending.
@@ -976,8 +1017,7 @@ class LihuiyuDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = Parameters(self.plot_planner.settings)
-                    if p_set.power != self.power:
-                        self._set_power(p_set.power)
+                    self._set_power(p_set.power)
                     if (
                         p_set.raster_step_x != self.raster_step_x
                         or p_set.raster_step_y != self.raster_step_y
@@ -1068,11 +1108,8 @@ class LihuiyuDriver(Parameters):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.power = min(1000, max(0, power))
+        self.settings["power"] = self.power
         if self.service.supports_pwm:
             self.send_at_pwm_code(self.power)
 

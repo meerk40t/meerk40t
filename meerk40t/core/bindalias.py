@@ -267,7 +267,7 @@ DEFAULT_ALIAS = {
     "+left": (".timerleft 0 0.1 left 1mm",),
     "+up": (".timerup 0 0.1 up 1mm",),
     "+down": (".timerdown 0 0.1 down 1mm",),
-    "burn": ("planz clear copy preprocess validate blob preopt optimize spool", ),
+    "burn": ("planz clear copy preprocess validate blob preopt optimize spool",),
     "-scale_up": (".timerscale_up off",),
     "-scale_down": (".timerscale_down off",),
     "-rotate_cw": (".timerrotate_cw off",),
@@ -318,7 +318,11 @@ class Bind(Service):
                         key,
                     )
 
-                channel(_("    Key                    Command"))
+                channel(
+                    "    {key} {command}".format(
+                        key=_("Key").ljust(22), command=_("Command")
+                    )
+                )
                 for i, key in enumerate(sorted(self.keymap.keys(), key=keymap_index)):
                     value = self.keymap[key]
                     channel(f"{i:2d}: {key.ljust(22)} {value}")
@@ -445,8 +449,12 @@ class Alias(Service):
             _ = self._
             if alias is None:
                 reverse_keymap = {v: k for k, v in self.bind.keymap.items()}
-                channel(_("Aliases (keybind)`:"))
-                channel(_("    Alias                  Command(s)"))
+                channel(_("Aliases (keybind):"))
+                channel(
+                    "    {key} {value}".format(
+                        key=_("Alias").ljust(22), value=_("Command(s)")
+                    )
+                )
                 last = None
                 i = -1
                 for key in sorted(

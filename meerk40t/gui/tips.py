@@ -506,7 +506,9 @@ class TipPanel(wx.Panel):
         myversion = comparable_version(self.context.kernel.version)
 
         try:
-            with open(self.local_file, mode="r") as f:
+            with open(
+                self.local_file, mode="r", encoding="utf-8", errors="surrogateescape"
+            ) as f:
                 ver = ""
                 tip = ""
                 cmd = ""

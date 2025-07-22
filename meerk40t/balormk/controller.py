@@ -438,6 +438,16 @@ class GalvoController:
     # MODE SHIFTS
     #######################
 
+    def mode_shift(self, mode):
+        if self.source == "fiber":
+            self.set_fiber_mo(mode)
+        elif self.source == "uv":
+            # unclear what this does.
+            pass
+        elif self.source == "co2":
+            # unclear what this does.
+            pass
+
     def raw_mode(self):
         self.mode = DRIVER_STATE_RAW
 
@@ -452,8 +462,7 @@ class GalvoController:
         self._list_executing = False
         self._number_of_list_packets = 0
         self.wait_idle()
-        if self.source == "fiber":
-            self.set_fiber_mo(0)
+        self.mode_shift(0)
         self.port_off(bit=0)
         self.write_port()
         marktime = self.get_mark_time()
@@ -472,15 +481,13 @@ class GalvoController:
             self.light_off()
             self.port_on(bit=0)
             self.write_port()
-            if self.source == "fiber":
-                self.set_fiber_mo(1)
+            self.mode_shift(1)
         else:
             self.mode = DRIVER_STATE_PROGRAM
             self.reset_list()
             self.port_on(bit=0)
             self.write_port()
-            if self.source == "fiber":
-                self.set_fiber_mo(1)
+            self.mode_shift(1)
             self._ready = None
             self._speed = None
             self._travel_speed = None
@@ -494,8 +501,23 @@ class GalvoController:
             self._delay_poly = None
             self._delay_end = None
             self.list_ready()
-            if self.service.delay_openmo != 0 and self.source == "fiber":
-                self.list_delay_time(int(self.service.delay_openmo * 100))
+            # Type specific initialization.
+            if self.source == "fiber":
+                if self.service.delay_openmo != 0:
+                    self.list_delay_time(int(self.service.delay_openmo * 100))
+            elif self.source == "co2":
+                # unclear what this does.
+                pass
+            elif self.source == "uv":
+                """
+                According to https://discord.com/channels/910979180970278922/932730275253854209/1394709596647592006
+                self.list_mark_frequency(0x014D)  # 333
+                self.list_set_co2_fpk(0x0043, 0x0043)  # 67, 67
+                self.list_mark_power_ratio(0x00F0)  # 240
+
+                fpk, power, frequency are already done in set_settings.
+                """
+                pass
             self.list_write_port()
             self.list_jump_speed(self.service.default_rapid_speed)
 
@@ -503,8 +525,7 @@ class GalvoController:
         if self.mode == DRIVER_STATE_LIGHT:
             return
         if self.mode == DRIVER_STATE_PROGRAM:
-            if self.source == "fiber":
-                self.set_fiber_mo(0)
+            self.mode_shift(0)
             self.port_off(bit=0)
             self.port_on(self._light_bit)
             self.write_port()
@@ -635,6 +656,11 @@ class GalvoController:
             self.frequency(frequency)
             self.fpk(fpk)
             self.power(power)
+        elif self.source == "uv":
+            self.frequency(frequency)
+            self.fpk(fpk)
+            self.power(power)
+
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
 
         if str(settings.get("timing_enabled", False)).lower() == "true":
@@ -893,8 +919,11 @@ class GalvoController:
         if self.source == "co2":
             power_ratio = int(round(200 * power / self._frequency))
             self.list_mark_power_ratio(power_ratio)
-        if self.source == "fiber":
+        elif self.source == "fiber":
             self.list_mark_current(self._convert_power(power))
+        elif self.source == "uv":
+            power_ratio = int(round(200 * power / self._frequency))
+            self.list_mark_power_ratio(power_ratio)
 
     def frequency(self, frequency):
         if self._frequency == frequency:
@@ -904,6 +933,10 @@ class GalvoController:
             self.list_qswitch_period(self._convert_frequency(frequency, base=20000.0))
         elif self.source == "co2":
             self.list_mark_frequency(self._convert_frequency(frequency, base=10000.0))
+        elif self.source == "uv":
+            # UV source uses the same frequency as CO2.
+            # It is not clear if this is correct.
+            self.list_mark_frequency(self._convert_frequency(frequency, base=10000.0))
 
     def fpk(self, fpk):
         """
@@ -911,8 +944,8 @@ class GalvoController:
         @param fpk: first_pulse_killer value in percent.
         @return:
         """
-        if self.source != "co2":
-            # FPK only used for CO2 source.
+        if self.source not in ("co2", "uv"):
+            # FPK only used for CO2 and UV sources.
             return
         if self._fpk == fpk or fpk is None:
             return

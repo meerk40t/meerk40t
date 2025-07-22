@@ -210,7 +210,6 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.d3 = complex(nn3.x - pp3.x, nn3.y - pp3.y)
         self.d4 = complex(nn4.x - pp4.x, nn4.y - pp4.y)
 
-
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Warp"
@@ -229,6 +228,8 @@ class WarpEffectNode(Node, FunctionalParameter):
                     subs = right_types(e)
                     res.extend(subs)
                 elif e.type.startswith("elem"):
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
                     res.append(e)
             return res
 
@@ -297,7 +298,11 @@ class WarpEffectNode(Node, FunctionalParameter):
             self.altered()
 
     def can_drop(self, drag_node):
-        if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or (drag_node.type.startswith("op ") and drag_node.type != "op dots"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or drag_node.type in ("effect", "file", "group", "reference")
+            or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+        ):
             return True
         return False
 

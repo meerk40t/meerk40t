@@ -2,8 +2,8 @@ import math
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.mixins import Suppressable
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
@@ -225,6 +225,8 @@ class WobbleEffectNode(Node, Suppressable):
                     subs = right_types(e)
                     res.extend(subs)
                 elif e.type.startswith("elem"):
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
                     res.append(e)
             return res
 
@@ -384,7 +386,11 @@ class WobbleEffectNode(Node, Suppressable):
         self.altered()
 
     def can_drop(self, drag_node):
-        if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or (drag_node.type.startswith("op ") and drag_node.type != "op dots"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or drag_node.type in ("effect", "file", "group", "reference")
+            or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+        ):
             return True
         return False
 

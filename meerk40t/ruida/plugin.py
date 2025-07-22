@@ -93,6 +93,7 @@ def plugin(kernel, lifecycle=None):
             jogless=False,
             man_in_the_middle=None,
             bridge=False,
+            remainder=None,
             **kwargs,
         ):
             """
@@ -101,10 +102,14 @@ def plugin(kernel, lifecycle=None):
             controls that type of device. This would then be sent to the device in a
             somewhat agnostic fashion.
             """
+            if remainder and remainder.lower() in ("stop", "quit"):
+                quit = True
+
             root = kernel.root
             ruidacontrol = root.device.lookup("ruidacontrol")
             if ruidacontrol is None:
                 if quit:
+                    channel(_("No control instance to stop."))
                     return
                 ruidacontrol = RuidaControl(root)
                 root.device.register("ruidacontrol", ruidacontrol)

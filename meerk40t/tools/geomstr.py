@@ -658,6 +658,14 @@ class Pattern:
         current = 0j
 
         for entry in pattern(a, b, *args, **kwargs):
+            if (
+                not isinstance(entry, (list, tuple))
+                or len(entry) < 3
+                or np.isnan(entry[1])
+                or np.isnan(entry[2])
+            ):
+                # If the entry is not a list or tuple, or if the first element is NaN, we just skip it.
+                continue
             key = entry[0].lower()
             if key == "m":
                 current = complex(entry[1], entry[2])
@@ -715,6 +723,13 @@ class Pattern:
         @param y1:
         @return:
         """
+        try:
+            if np.isnan(x0) or np.isnan(y0) or np.isnan(x1) or np.isnan(y1):
+                # If any of the coordinates are NaN, we cannot generate a pattern.
+                return Geomstr()
+        except TypeError:
+            # If the coordinates are not numbers, we cannot generate a pattern.
+            return Geomstr()
         cw = self.cell_width
         ch = self.cell_height
         px = self.padding_x

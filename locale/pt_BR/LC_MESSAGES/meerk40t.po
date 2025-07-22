@@ -911,7 +911,7 @@ msgstr "O dispositivo falhou ao desanexar e reivindicar"
 msgid "USB Connected."
 msgstr "USB conectado."
 
-#: meerk40t/balormk/usb_connection.py:241 
+#: meerk40t/balormk/usb_connection.py:241
 msgid "Did you install the libusb driver via Zadig (https://zadig.akeo.ie/)?"
 msgstr "Você instalou o driver libusb pelo Zadig (https://zadig.akeo.ie/)?"
 
@@ -1150,7 +1150,7 @@ msgstr "Traçar limites"
 
 #: meerk40t/balormk/gui/gui.py:125
 msgid "Trace Ants"
-msgstr "Contorno animado" 
+msgstr "Contorno animado"
 
 #: meerk40t/balormk/gui/gui.py:130
 msgid "Trace Full"
@@ -19872,8 +19872,3 @@ msgstr "Dobradiça"
 #: meerk40t/tools/livinghinges.py:1159
 msgid "Fill area with a living hinge pattern"
 msgstr "Preencher área com padrão de dobradiça viva"
-
-
-
-
-

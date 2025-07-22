@@ -1,0 +1,20 @@
+Use this prompt to translate delta_es.po file (maximum chunk size 1000 lines for Google Gemini)
+-----------------------------------------------------------------------------------------------
+
+From now on I will paste text into this chat window, that will contain msgid/msgstr pairs in gnu gettext format.
+Translate all empty msgstr into Spanish (using proper terminology for a laser engraving software).
+One additional rule: all strings inside curly brackets should not be translated.
+
+Keep the original format when showing the results, avoiding categorizing or any
+other additional comments that are not part of the original file.
+The result should be easy to copy and paste into another file.
+There is no need to escape strings - neither in the response or when providing a clipboard copy.
+
+Use this prompt to translate tips.txt files:
+--------------------------------------------
+The following text contains tips that should be translated into Spanish, using the following rules:
+a) translate only the text after a "tip=" string at the start of the line
+b) translate as well the subsequent lines until they start with a "cmd=" or an "img=" or a "version=" string
+c) leave lines unchanged if they start with a "#"
+d) keep the general format
+Now the text:

@@ -571,12 +571,16 @@ msgid "alias <alias> <console commands[;console command]*>"
 msgstr "alias <alias> <commandes console[;commande console]*>"
 
 #: meerk40t/core/bindalias.py:448
-msgid "Aliases (keybind)`:"
+msgid "Aliases (keybind):"
 msgstr "Alias (raccourcis) :"
 
 #: meerk40t/core/bindalias.py:449
-msgid "    Alias                  Command(s)"
-msgstr "    Alias                  Commande(s)"
+msgid "Alias"
+msgstr "Alias"
+
+#: meerk40t/core/bindalias.py:449
+msgid "Command(s)"
+msgstr "Commande(s)"
 
 #: meerk40t/core/bindalias.py:478
 msgid "Aliases set to default."
@@ -4863,8 +4867,8 @@ msgid "Save handler not found: {version} {filename}"
 msgstr "Gestionnaire d'enregistrement introuvable : {version} {filename}"
 
 #: meerk40t/core/elements/files.py:98
-msgid "save_types"
-msgstr "types_d'enregistrement"
+msgid "save_types - display save types"
+msgstr "save_types - liste de types d'enregistrement"
 
 #: meerk40t/core/elements/files.py:104
 msgid "Execute file startup command list"
@@ -20153,3 +20157,43 @@ msgstr "Crée un QR code."
 #: barcodes/main.py:459 build/lib/barcodes/main.py:459
 msgid "Create an ean-barcode or a qr-code"
 msgstr "Créer un code-barres EAN ou un QR code"
+
+#: meerk40t/core/elements/branches.py:865 meerk40t/core/elements/geometry.py:296 meerk40t/core/elements/geometry.py:390 meerk40t/core/elements/grid.py:312 meerk40t/core/elements/grid.py:441 meerk40t/core/elements/placements.py:112 meerk40t/core/elements/render.py:447 meerk40t/core/elements/shapes.py:107 meerk40t/core/elements/shapes.py:155 meerk40t/core/elements/shapes.py:222 meerk40t/core/elements/shapes.py:306 meerk40t/core/elements/shapes.py:352 meerk40t/core/elements/shapes.py:450 meerk40t/core/elements/shapes.py:546 meerk40t/core/elements/shapes.py:551 meerk40t/core/elements/shapes.py:2029 meerk40t/core/elements/shapes.py:2122 meerk40t/core/elements/shapes.py:2210 meerk40t/core/elements/shapes.py:2398 meerk40t/core/elements/shapes.py:2460 meerk40t/core/elements/shapes.py:2535 meerk40t/core/elements/shapes.py:2631
+msgid "Invalid length value."
+msgstr "Valeur de longueur invalide."
+
+#: meerk40t/core/elements/branches.py:1408
+msgid "Invalid length value for copy offset."
+msgstr "Valeur de longueur invalide pour le décalage de copie."
+
+#: meerk40t/core/elements/geometry.py:222
+msgid "X position for circle center."
+msgstr "Position X pour le centre du cercle."
+
+#: meerk40t/core/elements/geometry.py:223
+msgid "Y position for circle center."
+msgstr "Position Y pour le centre du cercle."
+
+#: meerk40t/core/elements/geometry.py:224
+msgid "Radius for circle."
+msgstr "Rayon du cercle."
+
+#: meerk40t/core/elements/geometry.py:241
+msgid "Invalid length value for circle."
+msgstr "Valeur de longueur invalide pour le cercle."
+
+#: meerk40t/core/elements/shapes.py:90
+msgid "Radius of the circle"
+msgstr "Rayon du cercle"
+
+#: meerk40t/grbl/plugin.py:254 meerk40t/ruida/plugin.py:112
+msgid "No control instance to stop."
+msgstr "Aucune instance de contrôle à arrêter."
+
+#: meerk40t/gui/plugin.py:119
+msgid "Remember main window position"
+msgstr "Mémoriser la position de la fenêtre principale"
+
+#: meerk40t/gui/plugin.py:122
+msgid "Should MeerK40t remember its last position on the screen?"
+msgstr "MeerK40t doit-il mémoriser sa dernière position à l'écran ?"
