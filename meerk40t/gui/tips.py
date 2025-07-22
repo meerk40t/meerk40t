@@ -466,11 +466,30 @@ class TipPanel(wx.Panel):
         if successful:
             # Store the result to the local cache file
             if len(content):
-                try:
-                    with open(self.local_file, mode="w") as f:
-                        f.write(content)
-                except (OSError, RuntimeError, PermissionError, FileNotFoundError):
-                    pass
+                successful = False
+                # Try to write the content to the local file.
+                for codepage in ["utf-8", "cp1252"]:
+                    try:
+                        with open(self.local_file, mode="w", encoding=codepage) as f:
+                            f.write(content)
+                        successful = True
+                        break
+                    except (
+                        UnicodeDecodeError,
+                        OSError,
+                        RuntimeError,
+                        PermissionError,
+                        FileNotFoundError,
+                    ):
+                        pass
+                if not successful:
+                    # If we still failed, try with surrogateescape
+                    # This is a workaround for some unicode issues.
+                    try:
+                        with open(self.local_file, mode="w") as f:
+                            f.write(content)
+                    except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+                        pass
 
     def load_tips_from_local_cache(self):
         def comparable_version(version):
@@ -506,44 +525,60 @@ class TipPanel(wx.Panel):
         myversion = comparable_version(self.context.kernel.version)
 
         try:
-            with open(
-                self.local_file, mode="r", encoding="utf-8", errors="surrogateescape"
-            ) as f:
-                ver = ""
-                tip = ""
-                cmd = ""
-                img = ""
-                lastline_was_tip = False
-                for line in f:
-                    cline = line.strip()
-                    if cline.startswith("#") or len(cline) == 0:
-                        continue
-                    if cline.startswith("tip="):
-                        lastline_was_tip = True
-                        # Store previous
-                        add_tip(tip, cmd, img, ver, myversion)
-                        ver = ""
-                        tip = cline[len("tip=") :]
-                        cmd = ""
-                        img = ""
-                    elif cline.startswith("version="):
-                        lastline_was_tip = False
-                        ver = cline[len("version=") :]
-                    elif cline.startswith("cmd="):
-                        lastline_was_tip = False
-                        cmd = cline[len("cmd=") :]
-                    elif cline.startswith("image="):
-                        lastline_was_tip = False
-                        img = cline[len("image=") :]
-                    elif cline.startswith("img="):
-                        lastline_was_tip = False
-                        img = cline[len("img=") :]
-                    else:
-                        if lastline_was_tip:
-                            tip += "\n" + cline
+            content = ""
+            codepages = ["utf-8", "cp1252"]
+            for codepage in codepages:
+                try:
+                    with open(self.local_file, mode="r", encoding=codepage) as f:
+                        content = f.read()
+                    break
+                except UnicodeDecodeError:
+                    content = ""
+            if not content:
+                with open(
+                    self.local_file,
+                    mode="r",
+                    encoding="utf-8",
+                    errors="surrogateescape",
+                ) as f:
+                    content = f.read()
 
-                # Something pending?
-                add_tip(tip, cmd, img, ver, myversion)
+            lines = content.splitlines()
+            ver = ""
+            tip = ""
+            cmd = ""
+            img = ""
+            lastline_was_tip = False
+            for line in lines:
+                cline = line.strip()
+                if cline.startswith("#") or len(cline) == 0:
+                    continue
+                if cline.startswith("tip="):
+                    lastline_was_tip = True
+                    # Store previous
+                    add_tip(tip, cmd, img, ver, myversion)
+                    ver = ""
+                    tip = cline[len("tip=") :]
+                    cmd = ""
+                    img = ""
+                elif cline.startswith("version="):
+                    lastline_was_tip = False
+                    ver = cline[len("version=") :]
+                elif cline.startswith("cmd="):
+                    lastline_was_tip = False
+                    cmd = cline[len("cmd=") :]
+                elif cline.startswith("image="):
+                    lastline_was_tip = False
+                    img = cline[len("image=") :]
+                elif cline.startswith("img="):
+                    lastline_was_tip = False
+                    img = cline[len("img=") :]
+                else:
+                    if lastline_was_tip:
+                        tip += "\n" + cline
+
+            # Something pending?
+            add_tip(tip, cmd, img, ver, myversion)
 
         except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             return
