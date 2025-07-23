@@ -35,6 +35,7 @@ from meerk40t.gui.wxutils import (
     wxToggleButton,
 )
 from meerk40t.svgelements import Color
+from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -76,6 +77,23 @@ def register_panel_color(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_color", pane)
 
+def register_panel_view(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(225, 110)
+        .FloatingSize(400, 400)
+        .Caption(_("Device-View"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_view")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugViewPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Display information about device view")
+    window.on_pane_create(pane)
+    context.register("pane/debug_view", pane)
 
 def register_panel_icon(window, context):
     pane = (
@@ -340,7 +358,89 @@ class DebugTreePanel(wx.Panel):
 
         self.txt_first.SetValue(txt3)
 
+class DebugViewPanel(ScrolledPanel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        ScrolledPanel.__init__(self, *args, **kwds)
 
+        self.context = context
+        self.context.themes.set_window_colors(self)
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.info_device = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY |wx.TE_MULTILINE)
+        sizer_main.Add(self.info_device, 1, wx.EXPAND, 0)
+        pos_sizer = StaticBoxSizer(self,wx.ID_ANY, _("Test"), wx.HORIZONTAL)
+        self.text_x = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_y = wx.TextCtrl(self, wx.ID_ANY)
+        self.check_vector = wx.CheckBox(self, wx.ID_ANY, "V")
+        self.button_test = wx.Button(self, wx.ID_ANY, _("Convert"))
+        self.info_coords = wx.StaticText(self,wx.ID_ANY)
+        pos_sizer.Add(self.text_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.text_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.check_vector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.button_test, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.info_coords, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(pos_sizer, 0, wx.EXPAND, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_test, self.button_test)
+        self.SetupScrolling()
+        self.SetSizer(sizer_main)
+        self.Layout()
+        
+    def on_test(self, event):
+        try:
+            x = float(Length(self.text_x.GetValue()))
+            y = float(Length(self.text_y.GetValue()))
+        except ValueError:
+            self.info_coords.SetLabel(_("Invalid length value"))
+            return
+        from meerk40t.core.view import View
+        dview : View = self.context.device.view
+        vector = bool(self.check_vector.GetValue())
+        mx, my  = dview.position(x, y, vector=vector)
+        self.info_coords.SetLabel(f"x={mx:.2f}, y={my:.2f}")
+        
+        
+    def refresh_info(self):
+        def sc(coord):
+            return f"({coord[0]:.1f}, {coord[1]:.1f})"
+        def disp(source):
+            top_left, top_right, bottom_right, bottom_left = source
+            return f"TL: {sc(top_left)}, TR: {sc(top_right)}, BL: {sc(bottom_left)}, BR: {sc(bottom_right)}"
+
+
+        from meerk40t.core.view import View
+        infomsg = ""
+        dev = self.context.device
+        dview : View = dev.view
+        infomsg = f"{infomsg}Device  : {dev.label}\n"
+        infomsg = f"{infomsg}Offset-X: {Length(dview.margin_x).length_mm}\n"
+        infomsg = f"{infomsg}Offset-Y: {Length(dview.margin_y).length_mm}\n"
+        off_x, off_y = dview._get_offset()
+        infomsg = f"{infomsg}Native  : {off_x:.2f}, {off_y:.2f}\n"
+        
+        infomsg = f"{infomsg}Width   : {Length(dview.width).length_mm}\n"
+        infomsg = f"{infomsg}Height  : {Length(dview.height).length_mm}\n"
+        if dview._source is not None:
+            infomsg = f"{infomsg}Source     : {disp(dview._source)}\n"
+        if dview._destination is not None:
+            infomsg = f"{infomsg}Destination: {disp(dview._destination)}\n"
+            
+        # infomsg = f"{infomsg}Flipped : X:{'yes' if dview.flip_x else 'no'}, Y:{'yes' if dview.flip_y else 'no'}\n"
+        self.info_device.SetValue(infomsg)
+    
+    @signal_listener("view;realized")
+    @signal_listener("device;modified")
+    def on_view_change(self, origin, *args):
+        self.refresh_info()
+        self.on_test(None)
+        
+    def pane_show(self, *args):
+        self.refresh_info()
+
+    def pane_hide(self, *args):
+        return
+    
 class DebugColorPanel(ScrolledPanel):
     """
     Displays system defined (OS and wxpython) colors to simplify identifying / choosing them
