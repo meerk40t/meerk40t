@@ -386,3 +386,46 @@ class View:
     @property
     def unit_height(self):
         return float(Length(self.height))
+
+
+if __name__ == "__main__":
+
+    def test_position_and_iposition_and_scene_position():
+        def assertEqual(var1, var2, msg=""):
+            if isinstance(var1, (list, tuple)):
+                var1 = list(var1)
+            if isinstance(var2, (list, tuple)):
+                var2 = list(var2)
+            if var1 != var2:
+                print(f"Not equal {msg}: {var1} != {var2}")
+                return 1
+            return 0
+
+        issues = 0
+        # Arrange
+        TX = 10.0
+        TY = 20.0
+        MX = 5.0
+        MY = 10.0
+        v = View(100.0, 200.0)
+        v.set_margins(MX, MY)
+        off_x, off_y = v.calc_margins(vector=False, margins=True)
+        issues += assertEqual((off_x, off_y), (MX, MY), "calc_margins")
+        off_x, off_y = v.calc_margins(vector=True, margins=True)
+        issues += assertEqual((off_x, off_y), (0.0, 0.0), "calc_margins with vector")
+        pos = v.position(TX, TY)
+        pos_vec = v.position(TX, TY, vector=True)
+        pos_nomargin = v.position(TX, TY, margins=False)
+        scene = v.scene_position("30", "40")
+        ipos = v.iposition(TX + MX, TY + MY)
+        ipos_vec = v.iposition(TX + MX, TY + MY, vector=True)
+        # Assert
+        issues += assertEqual(pos, (TX + MX, TY + MY), "pos")
+        issues += assertEqual(pos_vec, (TX, TY), "pos_vec")
+        issues += assertEqual(ipos, (TX, TY), "ipos")
+        issues += assertEqual(ipos_vec, (TX + MX, TY + MY), "ipos_vec")
+        issues += assertEqual(pos_nomargin, (TX, TY), "pos_nomargin")
+        issues += assertEqual(scene, (30, 40), "scene")
+        print(f"Basic tests were run: {issues} issues found")
+
+    test_position_and_iposition_and_scene_position()
