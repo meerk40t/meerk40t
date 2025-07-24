@@ -272,6 +272,18 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
+    def calc_margins(self, vector=False, margins=True):
+        off_x = 0.0
+        off_y = 0.0
+        if vector or not margins:
+            return 0.0, 0.0
+        try:
+            off_x = float(Length(self.margin_x))
+            off_y = float(Length(self.margin_y))
+        except ValueError:
+            pass
+        return off_x, off_y
+
     def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
@@ -280,14 +292,7 @@ class View:
         @param vector:
         @return:
         """
-        off_x = 0
-        off_y = 0
-        if margins:
-            try:
-                off_x = float(Length(self.margin_x))
-                off_y = float(Length(self.margin_y))
-            except ValueError:
-                pass
+        off_x, off_y = self.calc_margins(vector=vector, margins=margins)
         # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
@@ -316,20 +321,14 @@ class View:
         @param vector:
         @return:
         """
-        off_x = 0
-        off_y = 0
-        try:
-            off_x = float(Length(self.margin_x))
-            off_y = float(Length(self.margin_y))
-        except ValueError:
-            pass
+        off_x, off_y = self.calc_margins(vector=vector, margins=True)
         unit_x = x
         unit_y = y
         matrix = ~self.matrix
         if vector:
             px, py = matrix.transform_vector([unit_x, unit_y])
         else:
-            px, py =  matrix.point_in_matrix_space([unit_x, unit_y])
+            px, py = matrix.point_in_matrix_space([unit_x, unit_y])
         return (px - off_x, py - off_y)
 
     @property
@@ -350,7 +349,7 @@ class View:
             dpi = int(round(oneinch_x / steps, 0))
             if dpi < 75:
                 break
-            if dpi>1000:
+            if dpi > 1000:
                 continue
             if lastdpi is None or dpi % 25 < 5 or dpi % 33 < 3:
                 lastdpi = dpi
