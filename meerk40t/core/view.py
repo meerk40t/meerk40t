@@ -399,6 +399,7 @@ if __name__ == "__main__":
             if var1 != var2:
                 print(f"Not equal {msg}: {var1} != {var2}")
                 return 1
+            print(f"Equal {msg}: {var1} == {var2}")
             return 0
 
         issues = 0

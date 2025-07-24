@@ -99,26 +99,39 @@ class TestView(unittest.TestCase):
         TY = 20
         MX = 5
         MY = 10
-        v = View(100, 200, 96)
+        SX = 2
+        SY = 3
+        v = View(100, 200, native_scale_x=SX, native_scale_y=SY)
         v.set_margins(MX, MY)
+        v.realize()
         # Act
         off_x, off_y = v.calc_margins(vector=False, margins=True)
         self.assertEqual((off_x, off_y), (MX, MY))
         off_x, off_y = v.calc_margins(vector=True, margins=True)
         self.assertEqual((off_x, off_y), (0, 0))
-        pos = v.position(TX, TY)
-        pos_vec = v.position(TX, TY, vector=True)
-        pos_nomargin = v.position(TX, TY, margins=False)
-        scene = v.scene_position("30", "40")
-        ipos = v.iposition(TX + MX, TY + MY)
-        ipos_vec = v.iposition(TX + MX, TY + MY, vector=True)
-        # Assert
-        self.assertEqual(pos, (TX + MX, TY + MY))
-        self.assertEqual(pos_vec, (TX, TY))
-        self.assertEqual(ipos, (TX, TY))
-        self.assertEqual(ipos_vec, (TX + MX, TY + MY))
-        self.assertEqual(pos_nomargin, (TX, TY))
-        self.assertEqual(scene, (30, 40))
+        pos_x, pos_y = v.position(TX, TY)
+        pos_vec_x, pos_vec_y = v.position(TX, TY, vector=True)
+        pos_nomargin_x, pos_nomargin_y = v.position(TX, TY, margins=False)
+        scene_x, scene_y = v.scene_position("30", "40")
+        ipos_x, ipos_y = v.iposition(pos_x, pos_y)
+        ipos_vec_x, ipos_vec_y = v.iposition(pos_vec_x, pos_vec_y, vector=True)
+        # print (f"\nRegular of {TX}, {TY} -> {pos_x:.2f}, {pos_y:.2f} -> {ipos_x:.2f}, {ipos_y:.2f}")
+        # print (f"Vector of {TX}, {TY} -> {pos_vec_x:.2f}, {pos_vec_y:.2f} -> {ipos_vec_x:.2f}, {ipos_vec_y:.2f}")
+        # Assert position with vector=False
+        self.assertAlmostEqual(pos_x * SX, TX + MX)        
+        self.assertAlmostEqual(pos_y * SY, TY + MY)
+        # Assert position with vector=True
+        self.assertAlmostEqual(pos_vec_x * SX, TX)        
+        self.assertAlmostEqual(pos_vec_y * SY, TY)
+        # Assert inverse position 
+        self.assertAlmostEqual(ipos_x, TX)        
+        self.assertAlmostEqual(ipos_y, TY)
+        # Assert inverse position with vector = True
+        self.assertAlmostEqual(ipos_vec_x, TX)        
+        self.assertAlmostEqual(ipos_vec_y, TY)
+
+        self.assertEqual((pos_nomargin_x * SX, pos_nomargin_y * SY), (TX, TY))
+        self.assertEqual((scene_x, scene_y), (30, 40))
 
     def test_position_invalid_margins(self):
         # Arrange
@@ -187,7 +200,3 @@ class TestView(unittest.TestCase):
         # Assert
         self.assertEqual(uw, float(Length("100mm")))
         self.assertEqual(uh, float(Length("200mm")))
-
-
-if __name__ == "__main__":
-    unittest.main()
