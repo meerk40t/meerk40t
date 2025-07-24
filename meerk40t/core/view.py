@@ -272,17 +272,6 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
-    def _get_offset(self):
-        try:
-            off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
-        except ValueError:
-            off_x = 0
-        try:
-            off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
-        except ValueError:
-            off_y = 0
-        return off_x, off_y
-
     def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
@@ -291,25 +280,24 @@ class View:
         @param vector:
         @return:
         """
+        off_x = 0
+        off_y = 0
         if margins:
-            off_x, off_y = self._get_offset()
-        else:
-            off_x = 0
-            off_y = 0
+            try:
+                off_x = float(Length(self.margin_x))
+                off_y = float(Length(self.margin_y))
+            except ValueError:
+                pass
         # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
-        unit_x, unit_y = x, y
+        unit_x, unit_y = x + off_x, y + off_y
         if vector:
             res = self.matrix.transform_vector([unit_x, unit_y])
-            res[0] = res[0] + off_x
-            res[1] = res[1] + off_y
-            return res
-        res = self.matrix.point_in_matrix_space([unit_x, unit_y])
-        res.x = res.x + off_x
-        res.y = res.y + off_y
+        else:
+            res = self.matrix.point_in_matrix_space([unit_x, unit_y])
         return res
 
     def scene_position(self, x, y):
@@ -328,13 +316,21 @@ class View:
         @param vector:
         @return:
         """
-        off_x, off_y = self._get_offset()
-        unit_x = x - off_x
-        unit_y = y - off_y
+        off_x = 0
+        off_y = 0
+        try:
+            off_x = float(Length(self.margin_x))
+            off_y = float(Length(self.margin_y))
+        except ValueError:
+            pass
+        unit_x = x
+        unit_y = y
         matrix = ~self.matrix
         if vector:
-            return matrix.transform_vector([unit_x, unit_y])
-        return matrix.point_in_matrix_space([unit_x, unit_y])
+            px, py = matrix.transform_vector([unit_x, unit_y])
+        else:
+            px, py =  matrix.point_in_matrix_space([unit_x, unit_y])
+        return (px - off_x, py - off_y)
 
     @property
     def matrix(self):

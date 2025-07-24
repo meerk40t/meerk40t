@@ -2,6 +2,9 @@
 This module contains panels that display internal developer information.
 They will become visible if you type 'set debug_mode True' in the
 console and restart the program.
+
+The module provides a set of wxPython panels for debugging, including device view, color, icon, window, and raster plotter panels.
+These panels are intended for developers to inspect internal state, test shutdown scenarios, and visualize system resources.
 """
 
 import time
@@ -35,6 +38,7 @@ from meerk40t.gui.wxutils import (
     wxToggleButton,
 )
 from meerk40t.svgelements import Color
+from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -75,6 +79,25 @@ def register_panel_color(window, context):
     pane.helptext = _("Display available color information")
     window.on_pane_create(pane)
     context.register("pane/debug_color", pane)
+
+
+def register_panel_view(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(225, 110)
+        .FloatingSize(400, 400)
+        .Caption(_("Device-View"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_view")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugViewPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Display information about device view")
+    window.on_pane_create(pane)
+    context.register("pane/debug_view", pane)
 
 
 def register_panel_icon(window, context):
@@ -339,6 +362,160 @@ class DebugTreePanel(wx.Panel):
         self.lb_emphasized.SetValue(txt2)
 
         self.txt_first.SetValue(txt3)
+
+
+class DebugViewPanel(ScrolledPanel):
+    """
+    Displays information about the device view and provides coordinate conversion tools.
+
+    This panel shows device-specific information and allows users to convert between
+    workspace and device coordinates.
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        ScrolledPanel.__init__(self, *args, **kwds)
+
+        self.context = context
+        self.context.themes.set_window_colors(self)
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.info_device = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
+        # Set teletype (monospace) font
+        mono_font = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.info_device.SetFont(mono_font)
+
+        sizer_main.Add(self.info_device, 1, wx.EXPAND, 0)
+        pos_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Coordinates to Device"), wx.HORIZONTAL
+        )
+        self.text_x = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_y = wx.TextCtrl(self, wx.ID_ANY)
+        self.check_vector = wx.CheckBox(self, wx.ID_ANY, "V")
+        self.check_vector.SetToolTip(_("Vector-mode: only transition"))
+        self.button_test = wx.Button(self, wx.ID_ANY, _("Convert"))
+        self.info_position = wx.StaticText(self, wx.ID_ANY)
+        pos_sizer.Add(self.text_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.text_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.check_vector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.button_test, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.info_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(pos_sizer, 0, wx.EXPAND, 0)
+        ipos_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Device to Coordinates"), wx.HORIZONTAL
+        )
+        self.text_ix = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_iy = wx.TextCtrl(self, wx.ID_ANY)
+        self.check_ivector = wx.CheckBox(self, wx.ID_ANY, "V")
+        self.check_ivector.SetToolTip(_("Vector-mode: only transition"))
+        self.button_itest = wx.Button(self, wx.ID_ANY, _("Convert"))
+        self.info_iposition = wx.StaticText(self, wx.ID_ANY)
+        ipos_sizer.Add(self.text_ix, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.text_iy, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.check_ivector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.button_itest, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.info_iposition, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(ipos_sizer, 0, wx.EXPAND, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_test_position, self.button_test)
+        self.Bind(wx.EVT_BUTTON, self.on_test_iposition, self.button_itest)
+        self.SetupScrolling()
+        self.SetSizer(sizer_main)
+        self.Layout()
+
+    def on_test_position(self, event):
+        try:
+            x = float(Length(self.text_x.GetValue()))
+            y = float(Length(self.text_y.GetValue()))
+        except ValueError:
+            self.info_position.SetLabel(_("Invalid length value"))
+            return
+        from meerk40t.core.view import View
+
+        dview: View = self.context.device.view
+        vector = bool(self.check_vector.GetValue())
+        mx, my = dview.position(x, y, vector=vector)
+        self.info_position.SetLabel(f"x={mx:.2f}, y={my:.2f}")
+        if event is not None:
+            self.text_ix.SetValue(str(mx))
+            self.text_iy.SetValue(str(my))
+
+    def on_test_iposition(self, event):
+        try:
+            x = float(self.text_ix.GetValue())
+            y = float(self.text_iy.GetValue())
+        except ValueError:
+            self.info_iposition.SetLabel(_("Invalid length value"))
+            return
+        from meerk40t.core.view import View
+
+        dview: View = self.context.device.view
+        vector = bool(self.check_ivector.GetValue())
+        mx, my = dview.iposition(x, y, vector=vector)
+        self.info_iposition.SetLabel(
+            f"x={Length(mx).length_mm}, y={Length(my).length_mm}"
+        )
+        if event is not None:
+            self.text_x.SetValue(Length(mx).length_mm)
+            self.text_y.SetValue(Length(my).length_mm)
+
+    def refresh_info(self):
+        def sc(coord):
+            return f"({coord[0]:.1f}, {coord[1]:.1f})"
+
+        def disp(source):
+            top_left, top_right, bottom_right, bottom_left = source
+            return f"TL: {sc(top_left)}, TR: {sc(top_right)}, BL: {sc(bottom_left)}, BR: {sc(bottom_right)}"
+
+        from meerk40t.core.view import View
+
+        infomsg = ""
+        dev = self.context.device
+        dview: View = dev.view
+        infomsg = f"{infomsg}Device     : {dev.label}\n"
+        infomsg = f"{infomsg}Offset-X   : {Length(dview.margin_x).length_mm}\n"
+        infomsg = f"{infomsg}Offset-Y   : {Length(dview.margin_y).length_mm}\n"
+
+        infomsg = f"{infomsg}Width      : {Length(dview.width).length_mm}\n"
+        infomsg = f"{infomsg}Height     : {Length(dview.height).length_mm}\n"
+        if dview._source is not None:
+            infomsg = f"{infomsg}Source     : {disp(dview._source)}\n"
+        if dview._destination is not None:
+            infomsg = f"{infomsg}Destination: {disp(dview._destination)}\n"
+            tl, tr, br, bl = dview._destination
+            if tl[0] > bl[0]:
+                infomsg = f"{infomsg}Flip-X : X-Axis appears flipped.\n"
+            if tl[1] > bl[1]:
+                infomsg = f"{infomsg}Flip-Y : Y-Axis appears flipped.\n"
+
+        def devinfo(attrib):
+            if hasattr(dev, attrib):
+                info = "yes" if getattr(dev, attrib) else "no"
+            else:
+                info = "undef"
+            return info
+
+        xflip = devinfo("flip_x")
+        yflip = devinfo("flip_y")
+        xyswap = devinfo("swap_xy")
+        infomsg = f"{infomsg}Device-Flip : X:{xflip}, Y:{yflip}, swap xy: {xyswap}\n"
+        self.info_device.SetValue(infomsg)
+
+    @signal_listener("view;realized")
+    @signal_listener("device;modified")
+    def on_view_change(self, origin, *args):
+        self.refresh_info()
+        self.on_test_position(None)
+
+    def pane_show(self, *args):
+        self.refresh_info()
+
+    def pane_hide(self, *args):
+        return
 
 
 class DebugColorPanel(ScrolledPanel):
@@ -720,7 +897,7 @@ class DebugRasterPlotterPanel(wx.Panel):
             self, wx.ID_ANY, _("Raster Properties"), wx.VERTICAL
         )
         raster_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        raster_sizer.Add(raster_type_sizer, 0, wx.EXPAND, 0)    
+        raster_sizer.Add(raster_type_sizer, 0, wx.EXPAND, 0)
         self.raster_terms = [
             (RASTER_T2B, "Top To Bottom"),
             (RASTER_B2T, "Bottom To Top"),
@@ -820,7 +997,7 @@ class DebugRasterPlotterPanel(wx.Panel):
         for key, info in self.raster_terms:
             if raster_string == info:
                 raster_direction = key
-                break   
+                break
         if raster_direction < 0:
             self.text_result.SetValue("Invalid raster direction selected.")
             return
@@ -829,7 +1006,9 @@ class DebugRasterPlotterPanel(wx.Panel):
         # Notabene: a black pixel is a non-burnt one, so we invert the logic here
         image = Image.new("RGBA", (x, y), "white")
         image = image.convert("L")
-        plotter = RasterPlotter(image.load(), x, y, direction=raster_direction, bidirectional=bidir)  
+        plotter = RasterPlotter(
+            image.load(), x, y, direction=raster_direction, bidirectional=bidir
+        )
         t = time.time()
         i = 0
         res = []
@@ -873,7 +1052,7 @@ class DebugRasterPlotterPanel(wx.Panel):
         for key, info in self.raster_terms:
             if raster_string == info:
                 raster_direction = key
-                break   
+                break
         if raster_direction < 0:
             self.text_result.SetValue("Invalid raster direction selected.")
             return
@@ -882,8 +1061,10 @@ class DebugRasterPlotterPanel(wx.Panel):
         # Notabene: a black pixel is a non-burnt one, so we invert the logic here
         image = Image.new("RGBA", (x, y), "black")
         image = image.convert("L")
-        
-        plotter = RasterPlotter(image.load(), x, y, direction=raster_direction, bidirectional=bidir)   
+
+        plotter = RasterPlotter(
+            image.load(), x, y, direction=raster_direction, bidirectional=bidir
+        )
         t = time.time()
         i = 0
         res = []
