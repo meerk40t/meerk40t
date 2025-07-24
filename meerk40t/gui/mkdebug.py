@@ -396,10 +396,10 @@ class DebugViewPanel(ScrolledPanel):
         )
         self.text_x = wx.TextCtrl(self, wx.ID_ANY)
         self.text_y = wx.TextCtrl(self, wx.ID_ANY)
-        self.check_vector = wx.CheckBox(self, wx.ID_ANY, "V")
+        self.check_vector = wxCheckBox(self, wx.ID_ANY, "V")
         self.check_vector.SetToolTip(_("Vector-mode: only transition"))
-        self.button_test = wx.Button(self, wx.ID_ANY, _("Convert"))
-        self.info_position = wx.StaticText(self, wx.ID_ANY)
+        self.button_test = wxButton(self, wx.ID_ANY, _("Convert"))
+        self.info_position = wxStaticText(self, wx.ID_ANY)
         pos_sizer.Add(self.text_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         pos_sizer.Add(self.text_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         pos_sizer.Add(self.check_vector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -411,10 +411,10 @@ class DebugViewPanel(ScrolledPanel):
         )
         self.text_ix = wx.TextCtrl(self, wx.ID_ANY)
         self.text_iy = wx.TextCtrl(self, wx.ID_ANY)
-        self.check_ivector = wx.CheckBox(self, wx.ID_ANY, "V")
+        self.check_ivector = wxCheckBox(self, wx.ID_ANY, "V")
         self.check_ivector.SetToolTip(_("Vector-mode: only transition"))
-        self.button_itest = wx.Button(self, wx.ID_ANY, _("Convert"))
-        self.info_iposition = wx.StaticText(self, wx.ID_ANY)
+        self.button_itest = wxButton(self, wx.ID_ANY, _("Convert"))
+        self.info_iposition = wxStaticText(self, wx.ID_ANY)
         ipos_sizer.Add(self.text_ix, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         ipos_sizer.Add(self.text_iy, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         ipos_sizer.Add(self.check_ivector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -441,8 +441,8 @@ class DebugViewPanel(ScrolledPanel):
         mx, my = dview.position(x, y, vector=vector)
         self.info_position.SetLabel(f"x={mx:.2f}, y={my:.2f}")
         if event is not None:
-            self.text_ix.SetValue(str(mx))
-            self.text_iy.SetValue(str(my))
+            self.text_ix.SetValue(f"{mx:.2f}")
+            self.text_iy.SetValue(f"{my:.2f}")
 
     def on_test_iposition(self, event):
         try:
@@ -457,7 +457,7 @@ class DebugViewPanel(ScrolledPanel):
         vector = bool(self.check_ivector.GetValue())
         mx, my = dview.iposition(x, y, vector=vector)
         self.info_iposition.SetLabel(
-            f"x={Length(mx).length_mm}, y={Length(my).length_mm}"
+            f"x={Length(mx, digits=2).length_mm}, y={Length(my, digits=2).length_mm}"
         )
         if event is not None:
             self.text_x.SetValue(Length(mx).length_mm)

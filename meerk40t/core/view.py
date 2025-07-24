@@ -272,6 +272,18 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
+    def calc_margins(self, vector=False, margins=True):
+        off_x = 0.0
+        off_y = 0.0
+        if vector or not margins:
+            return 0.0, 0.0
+        try:
+            off_x = float(Length(self.margin_x))
+            off_y = float(Length(self.margin_y))
+        except ValueError:
+            pass
+        return off_x, off_y
+
     def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
@@ -280,14 +292,7 @@ class View:
         @param vector:
         @return:
         """
-        off_x = 0
-        off_y = 0
-        if margins:
-            try:
-                off_x = float(Length(self.margin_x))
-                off_y = float(Length(self.margin_y))
-            except ValueError:
-                pass
+        off_x, off_y = self.calc_margins(vector=vector, margins=margins)
         # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
@@ -316,20 +321,14 @@ class View:
         @param vector:
         @return:
         """
-        off_x = 0
-        off_y = 0
-        try:
-            off_x = float(Length(self.margin_x))
-            off_y = float(Length(self.margin_y))
-        except ValueError:
-            pass
+        off_x, off_y = self.calc_margins(vector=vector, margins=True)
         unit_x = x
         unit_y = y
         matrix = ~self.matrix
         if vector:
             px, py = matrix.transform_vector([unit_x, unit_y])
         else:
-            px, py =  matrix.point_in_matrix_space([unit_x, unit_y])
+            px, py = matrix.point_in_matrix_space([unit_x, unit_y])
         return (px - off_x, py - off_y)
 
     @property
@@ -350,7 +349,7 @@ class View:
             dpi = int(round(oneinch_x / steps, 0))
             if dpi < 75:
                 break
-            if dpi>1000:
+            if dpi > 1000:
                 continue
             if lastdpi is None or dpi % 25 < 5 or dpi % 33 < 3:
                 lastdpi = dpi
@@ -387,3 +386,46 @@ class View:
     @property
     def unit_height(self):
         return float(Length(self.height))
+
+
+if __name__ == "__main__":
+
+    def test_position_and_iposition_and_scene_position():
+        def assertEqual(var1, var2, msg=""):
+            if isinstance(var1, (list, tuple)):
+                var1 = list(var1)
+            if isinstance(var2, (list, tuple)):
+                var2 = list(var2)
+            if var1 != var2:
+                print(f"Not equal {msg}: {var1} != {var2}")
+                return 1
+            return 0
+
+        issues = 0
+        # Arrange
+        TX = 10.0
+        TY = 20.0
+        MX = 5.0
+        MY = 10.0
+        v = View(100.0, 200.0)
+        v.set_margins(MX, MY)
+        off_x, off_y = v.calc_margins(vector=False, margins=True)
+        issues += assertEqual((off_x, off_y), (MX, MY), "calc_margins")
+        off_x, off_y = v.calc_margins(vector=True, margins=True)
+        issues += assertEqual((off_x, off_y), (0.0, 0.0), "calc_margins with vector")
+        pos = v.position(TX, TY)
+        pos_vec = v.position(TX, TY, vector=True)
+        pos_nomargin = v.position(TX, TY, margins=False)
+        scene = v.scene_position("30", "40")
+        ipos = v.iposition(TX + MX, TY + MY)
+        ipos_vec = v.iposition(TX + MX, TY + MY, vector=True)
+        # Assert
+        issues += assertEqual(pos, (TX + MX, TY + MY), "pos")
+        issues += assertEqual(pos_vec, (TX, TY), "pos_vec")
+        issues += assertEqual(ipos, (TX, TY), "ipos")
+        issues += assertEqual(ipos_vec, (TX + MX, TY + MY), "ipos_vec")
+        issues += assertEqual(pos_nomargin, (TX, TY), "pos_nomargin")
+        issues += assertEqual(scene, (30, 40), "scene")
+        print(f"Basic tests were run: {issues} issues found")
+
+    test_position_and_iposition_and_scene_position()
