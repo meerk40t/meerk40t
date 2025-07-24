@@ -370,36 +370,67 @@ class DebugViewPanel(ScrolledPanel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.info_device = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY |wx.TE_MULTILINE)
         sizer_main.Add(self.info_device, 1, wx.EXPAND, 0)
-        pos_sizer = StaticBoxSizer(self,wx.ID_ANY, _("Test"), wx.HORIZONTAL)
+        pos_sizer = StaticBoxSizer(self,wx.ID_ANY, _("Coordinates to Device"), wx.HORIZONTAL)
         self.text_x = wx.TextCtrl(self, wx.ID_ANY)
         self.text_y = wx.TextCtrl(self, wx.ID_ANY)
         self.check_vector = wx.CheckBox(self, wx.ID_ANY, "V")
         self.button_test = wx.Button(self, wx.ID_ANY, _("Convert"))
-        self.info_coords = wx.StaticText(self,wx.ID_ANY)
+        self.info_position = wx.StaticText(self,wx.ID_ANY)
         pos_sizer.Add(self.text_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         pos_sizer.Add(self.text_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         pos_sizer.Add(self.check_vector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         pos_sizer.Add(self.button_test, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        pos_sizer.Add(self.info_coords, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.info_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(pos_sizer, 0, wx.EXPAND, 0)
-        self.Bind(wx.EVT_BUTTON, self.on_test, self.button_test)
+        ipos_sizer = StaticBoxSizer(self,wx.ID_ANY, _("Device to Coordinates"), wx.HORIZONTAL)
+        self.text_ix = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_iy = wx.TextCtrl(self, wx.ID_ANY)
+        self.check_ivector = wx.CheckBox(self, wx.ID_ANY, "V")
+        self.button_itest = wx.Button(self, wx.ID_ANY, _("Convert"))
+        self.info_iposition = wx.StaticText(self,wx.ID_ANY)
+        ipos_sizer.Add(self.text_ix, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.text_iy, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.check_ivector, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.button_itest, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.info_iposition, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(ipos_sizer, 0, wx.EXPAND, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_test_position, self.button_test)
+        self.Bind(wx.EVT_BUTTON, self.on_test_iposition, self.button_itest)
         self.SetupScrolling()
         self.SetSizer(sizer_main)
         self.Layout()
         
-    def on_test(self, event):
+    def on_test_position(self, event):
         try:
             x = float(Length(self.text_x.GetValue()))
             y = float(Length(self.text_y.GetValue()))
         except ValueError:
-            self.info_coords.SetLabel(_("Invalid length value"))
+            self.info_position.SetLabel(_("Invalid length value"))
             return
         from meerk40t.core.view import View
         dview : View = self.context.device.view
         vector = bool(self.check_vector.GetValue())
         mx, my  = dview.position(x, y, vector=vector)
-        self.info_coords.SetLabel(f"x={mx:.2f}, y={my:.2f}")
-        
+        self.info_position.SetLabel(f"x={mx:.2f}, y={my:.2f}")
+        if event is not None:
+            self.text_ix.SetValue(str(mx)) 
+            self.text_iy.SetValue(str(my)) 
+
+    def on_test_iposition(self, event):
+        try:
+            x = float(self.text_ix.GetValue())
+            y = float(self.text_iy.GetValue())
+        except ValueError:
+            self.info_iposition.SetLabel(_("Invalid length value"))
+            return
+        from meerk40t.core.view import View
+        dview : View = self.context.device.view
+        vector = bool(self.check_ivector.GetValue())
+        mx, my  = dview.iposition(x, y, vector=vector)
+        self.info_iposition.SetLabel(f"x={Length(mx).length_mm}, y={Length(my).length_mm}")
+        if event is not None:
+            self.text_x.SetValue(Length(mx).length_mm) 
+            self.text_y.SetValue(Length(my).length_mm) 
         
     def refresh_info(self):
         def sc(coord):
@@ -416,8 +447,6 @@ class DebugViewPanel(ScrolledPanel):
         infomsg = f"{infomsg}Device  : {dev.label}\n"
         infomsg = f"{infomsg}Offset-X: {Length(dview.margin_x).length_mm}\n"
         infomsg = f"{infomsg}Offset-Y: {Length(dview.margin_y).length_mm}\n"
-        off_x, off_y = dview._get_offset()
-        infomsg = f"{infomsg}Native  : {off_x:.2f}, {off_y:.2f}\n"
         
         infomsg = f"{infomsg}Width   : {Length(dview.width).length_mm}\n"
         infomsg = f"{infomsg}Height  : {Length(dview.height).length_mm}\n"
@@ -433,7 +462,7 @@ class DebugViewPanel(ScrolledPanel):
     @signal_listener("device;modified")
     def on_view_change(self, origin, *args):
         self.refresh_info()
-        self.on_test(None)
+        self.on_test_position(None)
         
     def pane_show(self, *args):
         self.refresh_info()
