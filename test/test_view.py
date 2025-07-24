@@ -86,28 +86,39 @@ class TestView(unittest.TestCase):
             origin_y=0.2,
         )
         # Assert
-        self.assertIsNotNone(v._destination)
+        tl, tr, br, bl = v._destination
+        # print (v._destination)
+        self.assertEqual(tl, (80.0, 180.0))
+        self.assertEqual(tr, (80.0, -20.0))
+        self.assertEqual(br, (-20.0, -20.0))
+        self.assertEqual(bl, (-20.0, 180.0))
 
     def test_position_and_iposition_and_scene_position(self):
         # Arrange
-        v = View(100, 200)
-        v.set_margins(5, 10)
+        TX = 10
+        TY = 20
+        MX = 5
+        MY = 10
+        v = View(100, 200, 96)
+        v.set_margins(MX, MY)
         # Act
-        pos = v.position(10, 20)
-        self.assertEqual(pos, (15, 30))
-        pos_vec = v.position(10, 20, vector=True)
-        pos_nomargin = v.position(10, 20, margins=False)
+        off_x, off_y = v.calc_margins(vector=False, margins=True)
+        self.assertEqual((off_x, off_y), (MX, MY))
+        off_x, off_y = v.calc_margins(vector=True, margins=True)
+        self.assertEqual((off_x, off_y), (0, 0))
+        pos = v.position(TX, TY)
+        pos_vec = v.position(TX, TY, vector=True)
+        pos_nomargin = v.position(TX, TY, margins=False)
         scene = v.scene_position("30", "40")
-        ipos = v.iposition(15, 30)
-        self.assertEqual(ipos, (10, 20))
-        ipos_vec = v.iposition(10, 20, vector=True)
+        ipos = v.iposition(TX + MX, TY + MY)
+        ipos_vec = v.iposition(TX + MX, TY + MY, vector=True)
         # Assert
-        self.assertIsInstance(pos, (Point, tuple, list))
-        self.assertIsInstance(pos_vec, (Point, tuple, list))
-        self.assertIsInstance(pos_nomargin, (Point, tuple, list))
+        self.assertEqual(pos, (TX + MX, TY + MY))
+        self.assertEqual(pos_vec, (TX, TY))
+        self.assertEqual(ipos, (TX, TY))
+        self.assertEqual(ipos_vec, (TX + MX, TY + MY))
+        self.assertEqual(pos_nomargin, (TX, TY))
         self.assertEqual(scene, (30, 40))
-        self.assertIsInstance(ipos, (Point, tuple, list))
-        self.assertIsInstance(ipos_vec, (Point, tuple, list))
 
     def test_position_invalid_margins(self):
         # Arrange
