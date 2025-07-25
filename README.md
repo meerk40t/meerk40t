@@ -14,7 +14,7 @@ To get up and running, simply download Meerk40t from [here](https://github.com/m
 <summary>Release Versions (Just use the latest)</summary>
 
 
-> * 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.5.1](https://github.com/meerk40t/meerk40t/releases#latest)
+> * 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.7.5](https://github.com/meerk40t/meerk40t/releases#latest) or try a prerelease even: [release list](https://github.com/meerk40t/meerk40t/releases) 
 > * 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
 > * 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
 > * 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)
@@ -77,16 +77,24 @@ HPGL-modified laser systems produced under many different company names
 ## Support
 The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
 
-If you have a bug, feature request, or other issue raise it here. These are likely to be resolved. Squeaky wheels get the grease.
-https://github.com/meerk40t/meerk40t/issues
+If you have a bug, feature request, or other issue raise it [here](https://github.com/meerk40t/meerk40t/issues).
+These are likely to be resolved. Squeaky wheels get the grease.
+
+Please provide as much information as you can when reporting something:
+- what version did you use?
+- on which operating system?
+- what did you try to achieve? 
+- what was the outcome?
+- screenshots, video, sample files - you can't overdeliver
 
 If you need additional support, please research/ask on:
 
-*   [Facebook](https://www.facebook.com/groups/716000085655097/)
+*   [Discord](https://discord.gg/vkDD3HdQq6) - main exchange forum, try this one first 
+*   [Facebook](https://www.facebook.com/groups/716000085655097/) - less frequently visited
 *   [Maker Forums](https://forum.makerforums.info/t/about-the-meerk40t-category/79660)
 *   [YouTube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
 *   [YouTube - Some instruction videos](https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ)
-*   [Discord](https://discord.gg/vkDD3HdQq6)
+
 
 ## Assisting the Project
 
