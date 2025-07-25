@@ -479,9 +479,9 @@ class DebugViewPanel(ScrolledPanel):
         infomsg = f"{infomsg}Device     : {dev.label}\n"
         infomsg = f"{infomsg}Offset-X   : {Length(dview.margin_x).length_mm}\n"
         infomsg = f"{infomsg}Offset-Y   : {Length(dview.margin_y).length_mm}\n"
-
-        infomsg = f"{infomsg}Width      : {Length(dview.width).length_mm}\n"
-        infomsg = f"{infomsg}Height     : {Length(dview.height).length_mm}\n"
+        # infomsg = f"{infomsg} {dview.width} x {dview.height} ({type(dview.width).__name__}, {type(dview.height).__name__})\n"
+        infomsg = f"{infomsg}Width      : {Length(dview.width).length_mm} (full: {Length(dview.full_width).length_mm})\n"
+        infomsg = f"{infomsg}Height     : {Length(dview.height).length_mm} (full: {Length(dview.full_height).length_mm})\n"
         if dview._source is not None:
             infomsg = f"{infomsg}Source     : {disp(dview._source)}\n"
         if dview._destination is not None:

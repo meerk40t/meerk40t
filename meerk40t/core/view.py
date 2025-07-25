@@ -31,8 +31,8 @@ class View:
             dpi_x = dpi
         if dpi_y is None:
             dpi_y = dpi
-        self.width = width
-        self.height = height
+        self._width = width
+        self._height = height
         self.dpi_x = dpi_x
         self.dpi_y = dpi_y
         self.dpi = (dpi_x + dpi_y) / 2.0
@@ -77,8 +77,8 @@ class View:
         self.reset()
 
     def set_dims(self, width, height):
-        self.width = width
-        self.height = height
+        self._width = width
+        self._height = height
         self.reset()
 
     def set_margins(self, offset_x, offset_y):
@@ -87,8 +87,8 @@ class View:
         # print (f"Margins were set to {offset_x}, {offset_y}")
 
     def reset(self):
-        width = float(Length(self.width))
-        height = float(Length(self.height))
+        width = self.full_width
+        height = self.full_height
 
         top_left = 0, 0
         top_right = width, 0
@@ -148,6 +148,9 @@ class View:
         @return:
         """
         # This solves the AABB of the container, not the strict solution
+        off_x, off_y = self.calc_margins()
+        x += off_x
+        y += off_y
         x0, y0, x1, y1 = self.source_bbox()
         return x0 <= x <= x1 and y0 <= y <= y1
 
@@ -180,8 +183,16 @@ class View:
         )
 
     def scale(self, scale_x, scale_y):
-        width = float(Length(self.width))
-        height = float(Length(self.height))
+        """
+        Scales the destination coordinates of the view by the given x and y factors.
+        
+        This method updates the destination points to reflect the new scale and resets the transformation matrix.
+
+        @param scale_x:
+        @param scale_y:
+        """        
+        width = self.full_width
+        height = self.full_height
 
         width *= scale_x
         height *= scale_y
@@ -196,8 +207,8 @@ class View:
         self._matrix = None
 
     def origin(self, origin_x, origin_y):
-        width = float(Length(self.width) / self.native_scale_x)
-        height = float(Length(self.height) / self.native_scale_x)
+        width = self.full_width
+        height = self.full_height
 
         dx = -width * origin_x
         dy = -height * origin_y
@@ -385,8 +396,24 @@ class View:
 
     @property
     def unit_height(self):
-        return float(Length(self.height))
+        return float(Length(self.height)) 
+    @property
+    def width(self):
+        off_x, off_y = self.calc_margins(vector=False, margins=True)
+        return Length(self.full_width - off_x)       
 
+    @property
+    def height(self):
+        off_x, off_y = self.calc_margins(vector=False, margins=True)
+        return Length(self.full_height - off_y)       
+    
+    @property
+    def full_width(self):
+        return float(Length(self._width))
+    
+    @property
+    def full_height(self):
+        return float(Length(self._height))
 
 if __name__ == "__main__":
 
