@@ -3,6 +3,9 @@ from meerk40t.svgelements import Matrix
 
 
 class View:
+    
+    MARGIN_NONWORKING = True
+
     def __init__(
         self,
         width,
@@ -82,6 +85,10 @@ class View:
         self.reset()
 
     def set_margins(self, offset_x, offset_y):
+        # Not working yet, so disable
+        if self.MARGIN_NONWORKING:
+            offset_x = 0
+            offset_y = 0
         self.margin_x = offset_x
         self.margin_y = offset_y
         # print (f"Margins were set to {offset_x}, {offset_y}")
@@ -275,6 +282,8 @@ class View:
     def calc_margins(self, vector=False, margins=True):
         off_x = 0.0
         off_y = 0.0
+        if self.MARGIN_NONWORKING:
+            return 0.0, 0.0
         if vector or not margins:
             return 0.0, 0.0
         try:

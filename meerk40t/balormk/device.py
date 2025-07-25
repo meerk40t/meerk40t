@@ -212,6 +212,7 @@ class BalorDevice(Service, Status):
                 "section": "_10_Parameters",
                 # _("User Offset")
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -224,6 +225,7 @@ class BalorDevice(Service, Status):
                 ),
                 "section": "_10_Parameters",
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "interp",

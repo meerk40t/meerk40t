@@ -113,6 +113,7 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 # _("User Offset")
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -125,6 +126,7 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_30_" + _("Laser Parameters"),
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
         ]
         self.register_choices("bed_dim", choices)
