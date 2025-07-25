@@ -120,6 +120,7 @@ class RuidaDevice(Service):
                 # _("User Offset")
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -132,6 +133,7 @@ class RuidaDevice(Service):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",

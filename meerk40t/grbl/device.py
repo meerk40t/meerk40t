@@ -118,6 +118,7 @@ class GRBLDevice(Service, Status):
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
                 ),
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -129,6 +130,7 @@ class GRBLDevice(Service, Status):
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
                 "subsection": "_30_User Offset",
+                "ignore": True, # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",

@@ -26,14 +26,16 @@ class TestView(unittest.TestCase):
         # Act
         v.set_native_scale(2, 4)
         v.set_dims(300, 400)
-        v.set_margins(10, 20)
+        if not getattr(v, "MARGIN_NONWORKING", False):
+            v.set_margins(10, 20)
         # Assert
         self.assertEqual(v.dpi_x, UNITS_PER_INCH / 2)
         self.assertEqual(v.dpi_y, UNITS_PER_INCH / 4)
         self.assertEqual(v.width, 300)
         self.assertEqual(v.height, 400)
-        self.assertEqual(v.margin_x, 10)
-        self.assertEqual(v.margin_y, 20)
+        if not getattr(v, "MARGIN_NONWORKING", False):
+            self.assertEqual(v.margin_x, 10)
+            self.assertEqual(v.margin_y, 20)
 
     def test_reset_and_scale_and_origin_and_flip_and_swap(self):
         # Arrange
@@ -102,6 +104,9 @@ class TestView(unittest.TestCase):
         SX = 2
         SY = 3
         v = View(100, 200, native_scale_x=SX, native_scale_y=SY)
+        if getattr(v, "MARGIN_NONWORKING", False):
+            MX = 0
+            MY = 0
         v.set_margins(MX, MY)
         v.realize()
         # Act

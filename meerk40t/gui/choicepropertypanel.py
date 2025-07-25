@@ -91,6 +91,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             developer-mode has been set
         "enabled": Is the control enabled (default yes, so does not need to be
             provided)
+        "ignored": As the name implies...
         "conditional": if given as tuple (cond_obj, cond_prop) then the (boolean)
             value of the property cond_obj.cond_prop will decide if the element
             will be enabled or not. (If a third value then the value must equal that value).
@@ -693,6 +694,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 weight = 0
             developer_mode = self.context.root.setting(bool, "developer_mode", False)
             if not developer_mode and hidden:
+                continue
+            ignore = c.get("ignore", False)
+            ignore = (
+                bool(ignore) if ignore != "False" else False
+            )  # bool("False") = True
+            if ignore:
                 continue
             # get default value
             if hasattr(obj, attr):
