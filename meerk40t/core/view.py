@@ -400,20 +400,25 @@ class View:
     @property
     def width(self):
         off_x, off_y = self.calc_margins(vector=False, margins=True)
-        return Length(self.full_width - off_x)       
+        net_width = self.full_width - off_x
+        return self._width
+        return net_width if isinstance(self._width, float) else Length(net_width)
 
     @property
     def height(self):
         off_x, off_y = self.calc_margins(vector=False, margins=True)
-        return Length(self.full_height - off_y)       
+        net_height = self.full_height - off_y
+        print (f"Height: {float(self._height)},  {net_height}")
+        return self._height
+        return net_height if isinstance(self._height, float) else Length(net_height)
     
     @property
     def full_width(self):
-        return float(Length(self._width))
+        return float(self._width)
     
     @property
     def full_height(self):
-        return float(Length(self._height))
+        return float(self._height)
 
 if __name__ == "__main__":
 
