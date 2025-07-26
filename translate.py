@@ -172,6 +172,23 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
         )
         return
 
+    def detect_encoding(file_path: str) -> str:
+        """
+        Detects the encoding of a file using polib's detect_encoding function.
+        Returns the encoding as a string.
+        """
+        try:
+            import chardet # Ensure chardet is available for encoding detection
+            return chardet.detect(open(file_path, 'rb').read())['encoding']
+        except ImportError:
+            print("chardet missing - falling back to polib's default encoding detection")
+
+        try:
+            return polib.detect_encoding(file_path)
+        except Exception as e:
+            print(f"Error detecting encoding for {file_path}: {e}")
+            return "utf-8"
+
     data_files = []
     localedir = "./locale"
     po_dirs = []
@@ -195,13 +212,19 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
             mo_file = filename + ".mo"
             doit = True
             if os.path.exists(d + mo_file):
-                res = polib.detect_encoding(d + po_file)
-                res2 = polib.detect_encoding(d + mo_file)
+
+                source_encoding = detect_encoding(d + po_file)
+                if source_encoding not in ("utf-8", "utf8"):
+                    print(
+                        f"Warning: {d + po_file} has non-utf8 encoding ({source_encoding}), can lead to unexpected results."
+                    )
+                    source_encoding = "utf-8"
+                target_encoding = "utf-8"  # Default target encoding
                 po_date = os.path.getmtime(d + po_file)
                 mo_date = os.path.getmtime(d + mo_file)
                 if mo_date > po_date:
                     print(
-                        f"mo-File for {d}{po_file} is newer (input encoded={res}, output encoded={res2})..."
+                        f"mo-File for {d}{po_file} is newer (input encoded={source_encoding}, output encoded={target_encoding})..."
                     )
                     doit = False
             if doit or force:
@@ -209,19 +232,18 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
                     action = "Translate"
                 else:
                     action = "Forced translate"
-                res = polib.detect_encoding(d + po_file)
                 try:
-                    po = polib.pofile(d + po_file)
+                    po = polib.pofile(d + po_file, encoding=source_encoding)
                     po.save_as_mofile(d + mo_file)
                 except OSError as err:
                     print(f"Unexpected {err=}")
                     counts[2] += 1
                     continue
 
-                res2 = polib.detect_encoding(d + mo_file)
+                target_encoding = "utf-8"
 
                 print(
-                    f"{action} {d}{po_file} (input encoded={res}, output encoded={res2})"
+                    f"{action} {d}{po_file} (input encoded={source_encoding}, output encoded={target_encoding})"
                 )
                 mo_files.append(d + mo_file)
                 counts[0] += 1

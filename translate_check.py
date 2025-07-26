@@ -373,14 +373,57 @@ def check_encoding(locales: list[str]) -> None:
             print(f"Locale directory {po_dir} does not exist or is empty.")
             continue
         for po_file in po_files:
-            fname = po_dir + po_file
-            try:
-                with open(fname, "r", encoding="utf-8") as f:
-                    f.read()
-                print(f"{fname}: Encoding is valid.")
-            except Exception as e:
-                print(f"{fname}: Error - {e}")
+            source_encoding  = detect_encoding(po_dir + po_file)
+            if source_encoding not in ("utf-8", "utf8"):
+                # Create a fixed file with utf-8 encoding
+                with open(po_dir + po_file, "r", encoding=None if source_encoding == "unknown" else source_encoding) as f:
+                    content = f.read()
+                # Write the content to a temporary file with utf-8 encoding
+                try:
+                    temp_file = po_dir + "temp_" + po_file
+                    with open(temp_file, "w", encoding="utf-8") as f:
+                        f.write(content)
+                except Exception as e:
+                    print(f"{po_dir + po_file}: Error writing temporary file, please check: {e}")
+                    continue
+                source_encoding = detect_encoding(temp_file)
+                if source_encoding not in ("utf-8", "utf8"):
+                    print(
+                        f"{po_dir + po_file}: Warning: has non-utf8 encoding ({source_encoding}), cannot fix."
+                    )
+                    os.remove(temp_file)
+                else:
+                    # Rename the temporary file to the original file name
+                    try:
+                        os.remove(po_dir + po_file)  # Remove the original file
+                        os.rename(temp_file, po_dir + po_file)
+                        print(f"{po_dir + po_file}: Fixed encoding for {source_encoding} to utf-8.")
+                    except Exception as e:
+                        print(f"{po_dir + po_file}: Error renaming fixed file, please check: {e}")
+            else:
+                print(f"{po_dir + po_file}: OK.")
+                continue
 
+def detect_encoding(file_path: str) -> str:
+    """
+    Detects the encoding of a file.
+    Returns 'utf-8' if the file is encoded in UTF-8, otherwise returns the detected encoding.
+    """
+    try:
+        import chardet # Ensure chardet is available for encoding detection
+        return chardet.detect(open(file_path, 'rb').read())['encoding']
+    except ImportError:
+        #    print("chardet missing - falling back to simple default encoding detection")
+        pass
+    try:
+        with open(file_path, "rb") as f:
+            raw_data = f.read()
+        # Try to decode as UTF-8 first
+        raw_data.decode("utf-8")
+        return "utf-8"
+    except UnicodeDecodeError:
+        # If it fails, return 'unknown' or another encoding if needed
+        return "unknown"    
 
 def main():
     """
