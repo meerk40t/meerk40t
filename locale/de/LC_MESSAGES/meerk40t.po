@@ -23427,3 +23427,27 @@ msgstr "Hauptfensterposition merken"
 #: meerk40t/gui/plugin.py:125
 msgid "Should MeerK40t remember its last position on the screen?"
 msgstr "Soll sich MeerK40t seine letzte Position auf dem Bildschirm merken?"
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Geräte-View"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Informationen zum Geräte-View anzeigen"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Koordinaten -> Gerät"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Vektormodus: nur Übergang zwischen Punkten"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Gerät -> Koordinaten"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Ungültiger Längenwert"

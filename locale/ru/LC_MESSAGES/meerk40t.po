@@ -23175,3 +23175,28 @@ msgstr "Запомнить положение главного окна"
 #: meerk40t/gui/plugin.py:125
 msgid "Should MeerK40t remember its last position on the screen?"
 msgstr "Должен ли MeerK40t запоминать свое последнее положение на экране?"
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Вид устройства"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Показать информацию о виде устройства"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Координаты к устройству"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Векторный режим: только переход"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Устройство к координатам"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Недопустимое значение длины"
+

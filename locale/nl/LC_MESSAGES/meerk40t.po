@@ -20197,3 +20197,28 @@ msgstr "Hoofdvensterpositie onthouden"
 #: meerk40t/gui/plugin.py:122
 msgid "Should MeerK40t remember its last position on the screen?"
 msgstr "Moet MeerK40t de laatste positie op het scherm onthouden?"
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Apparaatweergave"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Toon informatie over apparaatweergave"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Coördinaten naar apparaat"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Vector-modus: alleen overgang"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Apparaat naar coördinaten"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Ongeldige lengtewaarde"
+

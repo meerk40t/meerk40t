@@ -21298,3 +21298,108 @@ msgstr "QRコードを作成します。"
 #:
 msgid "Create an ean-barcode or a qr-code"
 msgstr "EANバーコードまたはQRコードを作成"
+
+#: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
+msgid "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+msgstr ""
+
+
+#: meerk40t/extra/inkscape.py:221
+msgid "inkscape ... load  - load the previous conversion"
+msgstr "Inkscape ... load - 前回の変換を読み込む"
+
+
+#: meerk40t/extra/inkscape.py:239
+msgid "inkscape simplify  - convert to plain svg"
+msgstr "Inkscape simplify - プレーンSVGに変換"
+
+
+#: meerk40t/extra/inkscape.py:291
+msgid "inkscape makepng   - make a png of all elements"
+msgstr "Inkscape makepng - すべての要素をPNGにする"
+
+
+#: meerk40t/extra/inkscape.py:345
+msgid "inkscape version   - get the inkscape version"
+msgstr "Inkscape version - バージョン情報を取得"
+
+
+#: meerk40t/extra/inkscape.py:372
+msgid "inkscape locate    - set the path to inkscape on your computer"
+msgstr "Inkscape locate - のパスを設定"
+
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "デバイスビュー"
+
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "デバイスビューの情報を表示"
+
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "座標をデバイスへ送信"
+
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "ベクトルモード：移動のみ"
+
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "デバイスから座標取得"
+
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "無効な長さの値"
+
+
+#: meerk40t/gui/plugin.py:119
+msgid "Remember main window position"
+msgstr "メインウィンドウの位置を記憶する"
+
+
+#: meerk40t/gui/plugin.py:122
+msgid "Should MeerK40t remember its last position on the screen?"
+msgstr "MeerK40tが最後の画面位置を記憶しますか？"
+
+
+#: meerk40t/gui/wxmmain.py:1316
+msgid "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
+msgstr "アクティブ：クリックでカーソル下の最小要素を選択（Ctrl+クリックで最大）／非アクティブ：クリックで最大要素を選択（Ctrl+クリックで最小）"
+
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr "これは最も近い描画セグメントを選択します"
+
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+msgid "  lasering these segments with vertical lines."
+msgstr "これらのセグメントを垂直線でレーザー加工します"
+
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr "白いピクセルが多い画像では通常はるかに速いです"
+
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1788
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr "黒いピクセルが多い場合は、列を描画します"
+
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1790
+msgid "  where we have a majority."
+msgstr "多数派の場所を描画します"
+
+
+#: meerk40t/kernel/kernel.py:3117
+msgid "    {index}.{subindex}: linked {name}:{hash:X}"
+msgstr ""
+

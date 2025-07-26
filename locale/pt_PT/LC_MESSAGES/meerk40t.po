@@ -23249,3 +23249,79 @@ msgstr "Pseudónimo"
 #: meerk40t/core/bindalias.py:455
 msgid "Command(s)"
 msgstr "Comando(s)"
+
+#: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
+msgid "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+msgstr ""
+
+#: meerk40t/extra/inkscape.py:221
+msgid "inkscape ... load  - load the previous conversion"
+msgstr "inkscape ... carregar - carregar a conversão anterior"
+
+#: meerk40t/extra/inkscape.py:239
+msgid "inkscape simplify  - convert to plain svg"
+msgstr "inkscape simplificar - converter para SVG simples"
+
+#: meerk40t/extra/inkscape.py:291
+msgid "inkscape makepng   - make a png of all elements"
+msgstr "inkscape criarpng - criar um PNG de todos os elementos"
+
+#: meerk40t/extra/inkscape.py:345
+msgid "inkscape version   - get the inkscape version"
+msgstr "inkscape versão - obter a versão do inkscape"
+
+#: meerk40t/extra/inkscape.py:372
+msgid "inkscape locate    - set the path to inkscape on your computer"
+msgstr "inkscape localizar - definir o caminho para o inkscape no seu computador"
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Vista do dispositivo"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Exibir informações sobre a vista do dispositivo"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Coordenadas para o dispositivo"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Modo vetorial: apenas transição"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Dispositivo para coordenadas"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Valor de comprimento inválido"
+
+#: meerk40t/gui/wxmmain.py:1316
+msgid "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
+msgstr "Ativo: Clique seleciona o menor elemento sob o cursor (ctrl+clique seleciona o maior) / Inativo: Clique seleciona o maior elemento (ctrl+clique o menor)."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr " isto irá escolher o segmento mais próximo a ser desenhado,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+msgid "  lasering these segments with vertical lines."
+msgstr " gravando estes segmentos com linhas verticais."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr " Normalmente muito mais rápido numa imagem com muitos pixels brancos."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1788
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr " com maioria de pixels pretos e depois desenhando as colunas."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1790
+msgid "  where we have a majority."
+msgstr " onde temos maioria."
+
+#: meerk40t/kernel/kernel.py:3117
+msgid "    {index}.{subindex}: linked {name}:{hash:X}"
+msgstr ""
