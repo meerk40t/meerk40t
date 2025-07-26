@@ -1,9 +1,29 @@
+"""
+translate.py
+
+This script checks .po translation files for errors and compiles them into .mo files for Meerk40t.
+Features:
+    - Checks for mismatched curly braces and smart quotes in .po files
+    - Verifies consistency of curly-bracketed variables between msgid and msgstr
+    - Reports empty msgid/msgstr pairs
+    - Compiles valid .po files into .mo files
+    - Supports force recompilation and locale selection via CLI
+
+Usage:
+    python translate.py [--force] [locales...]
+    --force      Force recompilation of all .mo files
+    <locales>    List of locale codes to process (default: all)
+"""
+
 import os
 import re
-import sys
+import argparse
 
 
-def are_curly_brackets_matched(input_str):
+def are_curly_brackets_matched(input_str: str) -> bool:
+    """
+    Checks if curly brackets are properly matched in a string, considering escaped brackets.
+    """
     stack = []
     escaped = False
     for char in input_str:
@@ -22,15 +42,28 @@ def are_curly_brackets_matched(input_str):
     return not stack
 
 
-def contain_smart_quotes(line):
+def contain_smart_quotes(line: str) -> bool:
+    """
+    Returns True if the line contains smart quotes (e.g., ”) in msgid or msgstr.
+    """
     # Check for ”
-    l = line.strip()
+    line_str = line.strip()
     return bool(
-        l.startswith("msgid ”") or l.startswith("msgstr ”") or l.startswith("”")
+        line_str.startswith("msgid ”")
+        or line_str.startswith("msgstr ”")
+        or line_str.startswith("”")
     )
 
 
-def find_erroneous_translations(file_path):
+def find_erroneous_translations(file_path: str) -> bool:
+    """
+    Checks a .po file for translation errors:
+    - Mismatched curly braces
+    - Smart quotes
+    - Inconsistent curly-bracketed variables between msgid and msgstr
+    - Empty msgid/msgstr pairs
+    Returns True if any errors are found.
+    """
     with open(file_path, "r", encoding="utf-8", errors="surrogateescape") as file:
         file_lines = file.readlines()
 
@@ -118,14 +151,19 @@ def find_erroneous_translations(file_path):
             er_s.append(str(line))
     if erct > 0:
         print(
-            f"{erct} empty pair{'s' if erct==0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}"
+            f"{erct} empty pair{'s' if erct == 0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}"
         )
         found_error = True
     return found_error
 
 
 # Simple tool to recursively translate all .po-files into their .mo-equivalents under ./locale/LC_MESSAGES
-def create_mo_files(force: bool, locales: list):
+def create_mo_files(force: bool, locales: list[str]) -> list:
+    """
+    Recursively compiles all valid .po files into .mo files under ./locale/LC_MESSAGES.
+    Skips files with errors. If force is True, always recompiles.
+    Returns a list of tuples (locale_dir, [mo_files]).
+    """
     try:
         import polib
     except ImportError:
@@ -138,9 +176,9 @@ def create_mo_files(force: bool, locales: list):
     localedir = "./locale"
     po_dirs = []
     po_locales = []
-    for l in next(os.walk(localedir))[1]:
-        po_dirs.append(localedir + "/" + l + "/LC_MESSAGES/")
-        po_locales.append(l)
+    for locale_name in next(os.walk(localedir))[1]:
+        po_dirs.append(localedir + "/" + locale_name + "/LC_MESSAGES/")
+        po_locales.append(locale_name)
     counts = [0, 0, 0]
     for d_local, d in zip(po_locales, po_dirs):
         if len(locales) > 0 and d_local not in locales:
@@ -197,20 +235,31 @@ def create_mo_files(force: bool, locales: list):
 
 
 def main():
-    force = False
-    args = sys.argv[1:]
-    locales = []
-    if len(args) > 0:
-        locales = list(a for a in args)
-        if locales[0].lower() == "force":
-            force = True
-            locales.pop(0)
-    print("Usage: python ./translate.py <locales>")
-    if len(locales):
-        print(f"Will compile po-files for {','.join(locales)}")
+    """
+    Main entry point for the script. Parses CLI arguments and triggers compilation.
+    """
+    parser = argparse.ArgumentParser(
+        description="Check and compile Meerk40t .po translation files into .mo files."
+    )
+    parser.add_argument(
+        "locales",
+        nargs="*",
+        default=[],
+        help="Locale codes to process (default: all locales)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force recompilation of all .mo files regardless of timestamps",
+    )
+    args = parser.parse_args()
+
+    if args.locales:
+        print(f"Will compile po-files for {', '.join(args.locales)}")
     else:
         print("Will compile all po-files")
-    create_mo_files(force, locales)
+    create_mo_files(args.force, args.locales)
 
 
-main()
+if __name__ == "__main__":
+    main()
