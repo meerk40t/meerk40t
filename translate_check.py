@@ -1,19 +1,31 @@
+
 """
 translate_check.py
 
-Scans the source tree for translatable strings and compares them with the existing translation
-of a given locale. Outputs a delta_{locale}.po file for review and integration.
+This script scans the Meerk40t source tree for translatable strings and compares them with existing translations
+for the specified locale(s). It can output a delta_{locale}.po file for new strings, validate .po files, and check encoding.
+
+Features:
+    - Scans Python source files and additional_strings.txt for translatable strings
+    - Compares found strings with those in locale .po files
+    - Outputs delta_{locale}.po for new/untranslated strings
+    - Validates .po files, removing unused, empty, or duplicate entries
+    - Checks .po files for encoding issues
 
 Usage:
-    python translate_check.py <locale>
-    python translate_check.py <locale> -v   # for validation
+    python translate_check.py <locale> [options]
 
-Supported locales: de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
+Arguments:
+    <locale>         Locale code(s) to process (e.g., de, fr, ja, or 'all' for all supported)
+    -v, --validate   Validate .po files for the given locale(s)
+    -c, --check      Check encoding of .po files for the given locale(s)
+
+Supported locales:
+    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
 """
 
 import os
-import sys
-
+import argparse
 import polib
 
 IGNORED_DIRS = [".git", ".github", "venv", ".venv"]
@@ -45,7 +57,7 @@ GETTEXT_PLURAL_FORMS = {
 }
 
 
-def lf_coded(s):
+def lf_coded(s: str) -> str:
     """
     Converts a string to a format suitable for msgid in .po files.
     Escapes quotes and handles newlines.
@@ -60,7 +72,7 @@ def lf_coded(s):
     return s
 
 
-def read_source():
+def read_source() -> tuple[list[str], list[str]]:
     """
     Scans the source directory for translatable strings (_ ("...") ).
     Also reads additional strings from 'additional_strings.txt' if present.
@@ -222,7 +234,7 @@ def read_source():
     return id_strings_source, id_usage
 
 
-def read_po(locale):
+def read_po(locale: str) -> tuple[list[str], list[tuple[str, str]]]:
     """
     Reads all .po files for the given locale and extracts msgid/msgstr pairs.
     Returns:
@@ -251,7 +263,12 @@ def read_po(locale):
     return id_strings, pairs
 
 
-def compare(locale, id_strings, id_strings_source, id_usage):
+def compare(
+    locale: str,
+    id_strings: list[str],
+    id_strings_source: list[str],
+    id_usage: list[str],
+) -> None:
     """
     Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
     """
@@ -282,66 +299,12 @@ def compare(locale, id_strings, id_strings_source, id_usage):
     )
 
 
-def validate_po_old(locale, id_strings_source, id_usage, id_pairs):
-    """
-    Writes a validated .po file for the locale, removing empty, duplicate, and unused entries.
-    """
-
-    def write_proper_po_header(outp, locale):
-        outp.write(
-            f"# {LOCALE_LONG_NAMES.get(locale, 'Unknown')} translation for Meerk40t\n"
-        )
-        outp.write("# Project-Homepage: https://github.com/meerk40t/meerk40t\n")
-        outp.write('msgid ""\n')
-        outp.write('msgstr ""\n')
-        outp.write('"Project-Id-Version: Meerk40t"\n')
-        outp.write('"Content-Type: text/plain; charset=UTF-8"\n')
-        outp.write('"Content-Transfer-Encoding: 8bit"\n')
-        outp.write('"Language-Team: Meerk40t Translation Team"\n')
-        outp.write(f'"Language: {locale}"\n')
-        outp.write('"X-Generator: translate_check.py"\n')
-        plur = GETTEXT_PLURAL_FORMS.get(locale, "")
-        if plur:
-            outp.write(f'"Plural-Forms: {plur}"\n')
-        outp.write("\n")
-
-    written = 0
-    ignored_empty = 0
-    ignored_duplicate = 0
-    ignored_unused = 0
-    pairs = {}
-    for msgid, msgstr in id_pairs:
-        pairs.setdefault(msgid, []).append(msgstr)
-    with open(
-        f"./fixed_{locale}_meerk40t.po", "w", encoding="utf-8", errors="surrogateescape"
-    ) as outp:
-        write_proper_po_header(outp, locale)
-        for msgid, msgstr_list in pairs.items():
-            msgstr = next((m for m in msgstr_list if m), "")
-            to_write = True
-            if len(msgstr_list) > 1:
-                ignored_duplicate += len(msgstr_list) - 1
-            if msgstr == "":
-                ignored_empty += 1
-                to_write = False
-            if msgid not in id_strings_source:
-                ignored_unused += 1
-                to_write = False
-            if to_write:
-                orgidx = id_strings_source.index(msgid)
-                if orgidx < 0:
-                    ignored_unused += 1
-                    continue
-                outp.write(f"{id_usage[orgidx]}\n")
-                outp.write(f'msgid "{msgid}"\n')
-                outp.write(f'msgstr "{msgstr}"\n\n')
-                written += 1
-    print(
-        f"Validation for {locale} done: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
-    )
-
-
-def validate_po(locale, id_strings_source, id_usage, id_pairs):
+def validate_po(
+    locale: str,
+    id_strings_source: list[str],
+    id_usage: list[str],
+    id_pairs: list[tuple[str, str]],
+) -> None:
     po = polib.POFile()
     # create header
     po.metadata = {
@@ -393,35 +356,75 @@ def validate_po(locale, id_strings_source, id_usage, id_pairs):
     )
 
 
+def check_encoding(locales: list[str]) -> None:
+    """
+    Checks all .po files for the given locales for invalid encoding.
+    """
+    for locale in locales:
+        po_dir = f"./locale/{locale}/LC_MESSAGES/"
+        if not os.path.isdir(po_dir):
+            print(f"Locale directory {po_dir} does not exist or is empty.")
+            continue
+        try:
+            po_files = [
+                f for f in next(os.walk(po_dir))[2] if os.path.splitext(f)[1] == ".po"
+            ]
+        except StopIteration:
+            print(f"Locale directory {po_dir} does not exist or is empty.")
+            continue
+        for po_file in po_files:
+            fname = po_dir + po_file
+            try:
+                with open(fname, "r", encoding="utf-8") as f:
+                    f.read()
+                print(f"{fname}: Encoding is valid.")
+            except Exception as e:
+                print(f"{fname}: Error - {e}")
+
+
 def main():
     """
     Main entry point for the script.
     """
-    args = sys.argv[1:]
-    locales = ["de"]
-    if args:
-        locales = args
-    if locales[0].lower() == "all":
-        locales = [
-            "de",
-            "es",
-            "fr",
-            "hu",
-            "it",
-            "ja",
-            "nl",
-            "pt_BR",
-            "pt_PT",
-            "ru",
-            "zh",
-        ]
-    validate = False
-    if "-v" in args or "--validate" in args:
-        validate = True
-        locales = [loc for loc in locales if loc not in ("-v", "--validate")]
+
+    parser = argparse.ArgumentParser(
+        description="Scan and validate Meerk40t translation files."
+    )
+    supported_locales = ", ".join(LOCALE_LONG_NAMES.keys())
+    parser.add_argument(
+        "locales",
+        nargs="*",
+        default=["de"],
+        help=f"Locales to process (or 'all' for all supported locales: {supported_locales})",
+    )
+    parser.add_argument(
+        "-v", "--validate", action="store_true", help="Validate .po files"
+    )
+    parser.add_argument(
+        "-c", "--check", action="store_true", help="Check encoding of .po files"
+    )
+    args = parser.parse_args()
+
+    # Expand 'all' to all supported locales
+    locales: list[str] = []
+    for loc in args.locales:
+        loc = loc.lower()
+        if loc == "all":
+            locales.extend(list(LOCALE_LONG_NAMES.keys()))
+        elif loc in LOCALE_LONG_NAMES:
+            locales.append(loc)
+        else:
+            print(f"Unknown locale '{loc}', using 'de' as default.")
+            locales.append("de")
 
     print("Usage: python ./translate_check.py <locale>")
-    print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh")
+    print(f"<locale> one of {supported_locales}")
+
+    if args.check:
+        print("Checking for invalid encoding in po-files...")
+        check_encoding(locales)
+        return
+
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locales:
@@ -430,7 +433,7 @@ def main():
         except Exception as e:
             print(f"Error reading locale {loc}: {e}")
             continue
-        if validate:
+        if args.validate:
             print(
                 f"Validating locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
             )
