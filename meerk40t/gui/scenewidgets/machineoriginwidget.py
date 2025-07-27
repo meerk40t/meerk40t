@@ -47,13 +47,15 @@ class MachineOriginWidget(Widget):
             return
         margin = 5000
         space = self.scene.context.space
-        x, y = space.display.iposition(0, 0)
-        x_dx, x_dy = space.display.iposition(50000, 0)
-        xa1_dx, xa1_dy = space.display.iposition(45000, 5000)
-        xa2_dx, xa2_dy = space.display.iposition(45000, -5000)
-        y_dx, y_dy = space.display.iposition(0, 50000)
-        ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
-        ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
+        # Get the position of the origin in scene coordinates
+        # Space 0, 0 is origin
+        x, y = space.position(0, 0)
+        x_dx, x_dy = space.position(50000, 0)
+        xa1_dx, xa1_dy = space.position(45000, 5000)
+        xa2_dx, xa2_dy = space.position(45000, -5000)
+        y_dx, y_dy = space.position(0, 50000)
+        ya1_dx, ya1_dy = space.position(5000, 45000)
+        ya2_dx, ya2_dy = space.position(-5000, 45000)
         gc.SetBrush(self.brush)
         try:
             dev0x, dev0y = space.device.view.iposition(0, 0)
