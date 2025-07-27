@@ -12,6 +12,7 @@ import time
 import wx
 from wx import aui
 
+from meerk40t.core import space
 import meerk40t.gui.icons as mkicons
 from meerk40t.constants import (
     RASTER_B2T,
@@ -25,6 +26,8 @@ from meerk40t.constants import (
     RASTER_T2B,
 )
 from meerk40t.core.units import Angle, Length
+from meerk40t.core.view import View
+from meerk40t.core.space import CoordinateSystem
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
@@ -98,6 +101,24 @@ def register_panel_view(window, context):
     pane.helptext = _("Display information about device view")
     window.on_pane_create(pane)
     context.register("pane/debug_view", pane)
+
+def register_panel_space(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(225, 110)
+        .FloatingSize(400, 400)
+        .Caption(_("Device-Space"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_space")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugSpacePanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    pane.helptext = _("Display information about device space")
+    window.on_pane_create(pane)
+    context.register("pane/debug_space", pane)
 
 
 def register_panel_icon(window, context):
@@ -434,7 +455,6 @@ class DebugViewPanel(ScrolledPanel):
         except ValueError:
             self.info_position.SetLabel(_("Invalid length value"))
             return
-        from meerk40t.core.view import View
 
         dview: View = self.context.device.view
         vector = bool(self.check_vector.GetValue())
@@ -451,7 +471,6 @@ class DebugViewPanel(ScrolledPanel):
         except ValueError:
             self.info_iposition.SetLabel(_("Invalid length value"))
             return
-        from meerk40t.core.view import View
 
         dview: View = self.context.device.view
         vector = bool(self.check_ivector.GetValue())
@@ -470,8 +489,6 @@ class DebugViewPanel(ScrolledPanel):
         def disp(source):
             top_left, top_right, bottom_right, bottom_left = source
             return f"TL: {sc(top_left)}, TR: {sc(top_right)}, BL: {sc(bottom_left)}, BR: {sc(bottom_right)}"
-
-        from meerk40t.core.view import View
 
         infomsg = ""
         dev = self.context.device
@@ -517,6 +534,127 @@ class DebugViewPanel(ScrolledPanel):
     def pane_hide(self, *args):
         return
 
+class DebugSpacePanel(ScrolledPanel):
+    """
+    Displays information about the context space coordinate system and provides coordinate conversion tools.
+
+    This panel shows device-specific information and allows users to convert between
+    workspace and device coordinates.
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        ScrolledPanel.__init__(self, *args, **kwds)
+
+        self.context = context
+        self.context.themes.set_window_colors(self)
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.info_coordinates = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
+        # Set teletype (monospace) font
+        mono_font = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.info_coordinates.SetFont(mono_font)
+
+        sizer_main.Add(self.info_coordinates, 1, wx.EXPAND, 0)
+        pos_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Coordinates to Scene"), wx.HORIZONTAL
+        )
+        self.text_x = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_y = wx.TextCtrl(self, wx.ID_ANY)
+        self.button_test = wxButton(self, wx.ID_ANY, _("Convert"))
+        self.info_position = wxStaticText(self, wx.ID_ANY)
+        pos_sizer.Add(self.text_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.text_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.button_test, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        pos_sizer.Add(self.info_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(pos_sizer, 0, wx.EXPAND, 0)
+        ipos_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Scene to Coordinates"), wx.HORIZONTAL
+        )
+        self.text_ix = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_iy = wx.TextCtrl(self, wx.ID_ANY)
+        self.button_itest = wxButton(self, wx.ID_ANY, _("Convert"))
+        self.info_iposition = wxStaticText(self, wx.ID_ANY)
+        ipos_sizer.Add(self.text_ix, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.text_iy, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.button_itest, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        ipos_sizer.Add(self.info_iposition, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(ipos_sizer, 0, wx.EXPAND, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_test_position, self.button_test)
+        self.Bind(wx.EVT_BUTTON, self.on_test_iposition, self.button_itest)
+        self.SetupScrolling()
+        self.SetSizer(sizer_main)
+        self.Layout()
+
+    def on_test_position(self, event):
+        try:
+            x = float(Length(self.text_x.GetValue()))
+            y = float(Length(self.text_y.GetValue()))
+        except ValueError:
+            self.info_position.SetLabel(_("Invalid length value"))
+            return
+        space: CoordinateSystem = self.context.space    
+        mx, my = space.position(x, y)
+        self.info_position.SetLabel(f"x={mx:.2f}, y={my:.2f}")
+        if event is not None:
+            self.text_ix.SetValue(f"{Length(mx).length_mm}")
+            self.text_iy.SetValue(f"{Length(my).length_mm}")
+
+    def on_test_iposition(self, event):
+        try:
+            x = float(Length(self.text_ix.GetValue()))
+            y = float(Length(self.text_iy.GetValue()))
+        except ValueError:
+            self.info_iposition.SetLabel(_("Invalid length value"))
+            return
+        space: CoordinateSystem = self.context.space
+        mx, my = space.iposition(x, y)
+        self.info_iposition.SetLabel(f"x={mx:.2f}, y={my:.2f}")
+        if event is not None:
+            self.text_x.SetValue(f"{Length(mx).length_mm}")
+            self.text_y.SetValue(f"{Length(my).length_mm}")
+
+    def refresh_info(self):
+        def sc(coord):
+            return f"({coord[0]:.1f}, {coord[1]:.1f})"
+
+        def disp(source):
+            top_left, top_right, bottom_right, bottom_left = source
+            return f"TL: {sc(top_left)}, TR: {sc(top_right)}, BL: {sc(bottom_left)}, BR: {sc(bottom_right)}"
+
+        infomsg = ""
+        space: CoordinateSystem = self.context.space
+        space.update_realize(None)
+        space.display.realize()
+        dview: View = space.display
+        infomsg = f"{infomsg}X-Axis     : {space.origin_x:.2f} ({Length(space.origin_x * space.width).length_mm}) {'->' if space.right_positive else '<-' }\n"
+        infomsg = f"{infomsg}Y-Axis     : {space.origin_y:.2f} ({Length(space.origin_y * space.height).length_mm}) {'->' if space.bottom_positive else '<-' }\n"
+
+        infomsg = f"{infomsg}Underlying : (display)\n"
+        infomsg = f"{infomsg}Offset-X   : {Length(dview.margin_x).length_mm}\n"
+        infomsg = f"{infomsg}Offset-Y   : {Length(dview.margin_y).length_mm}\n"
+
+        infomsg = f"{infomsg}Width      : {Length(dview.width).length_mm}\n"
+        infomsg = f"{infomsg}Height     : {Length(dview.height).length_mm}\n"
+        
+        self.info_coordinates.SetValue(infomsg)
+
+    @signal_listener("view;realized")
+    @signal_listener("device;modified")
+    def on_view_change(self, origin, *args):
+        self.refresh_info()
+        self.on_test_position(None)
+
+    def pane_show(self, *args):
+        self.refresh_info()
+
+    def pane_hide(self, *args):
+        return
 
 class DebugColorPanel(ScrolledPanel):
     """
