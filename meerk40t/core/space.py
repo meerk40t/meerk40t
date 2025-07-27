@@ -60,35 +60,6 @@ class CoordinateSystem(Service):
                 "tip": _("Are positive values towards the bottom?"),
                 "subsection": "_20_Y-Axis",
             },
-            {
-                "attr": "swap_xy",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Swap XY"),
-                "tip": _("XY coordinates are swapped"),
-                "subsection": "_30_Misc",
-            },
-            # {
-            #     "attr": "rotation",
-            #     "object": self,
-            #     "default": 0,
-            #     "type": int,
-            #     "label": _("Rotation"),
-            #     "tip": _("Rotation in degrees"),
-            # },
-            {
-                "attr": "units",
-                "object": self,
-                "default": 0,
-                "type": int,
-                "label": _("Preferred Units"),
-                "tip": _("Set default units for positions"),
-                "style": "option",
-                "display": (_("tat"), _("mm"), _("cm"), _("inch"), _("mil")),
-                "choices": (0, 1, 2, 3, 4),
-                "subsection": "_40_Units",
-            },
         ]
         kernel.register_choices("space", choices)
         self.x = None
@@ -102,16 +73,15 @@ class CoordinateSystem(Service):
     @signal_listener("bottom_positive")
     @signal_listener("origin_x")
     @signal_listener("origin_y")
-    @signal_listener("swap_xy")
     def update(self, origin, *args):
         self.update_bounds(self.x, self.y, self.width, self.height)
 
     @signal_listener("view;realized")
     def update_realize(self, origin, *args):
         # Fallback to default if device or view is not available
-        width = getattr(getattr(self, "device", None), "view", None)
-        if width is not None:
-            self.update_bounds(0, 0, width.width, width.height)
+        view = getattr(getattr(self, "device", None), "view", None)
+        if view is not None:
+            self.update_bounds(0, 0, view.width, view.height)
         else:
             self.update_bounds(0, 0, "100mm", "100mm")
 
@@ -138,14 +108,13 @@ class CoordinateSystem(Service):
         self.display.transform(
             flip_x=not self.right_positive,
             flip_y=not self.bottom_positive,
-            swap_xy=self.swap_xy,
         )
         self.signal("refresh_scene", "Scene")
 
-    def real_to_space(self, x, y):
+    def iposition(self, x, y):
         """
         Convert real coordinates (e.g., device or view coordinates) to space coordinates
-        considering origin, axis direction, and swap_xy.
+        considering origin and axis direction.
         """
         width = self.width if self.width is not None else 100.0
         height = self.height if self.height is not None else 100.0
@@ -157,27 +126,21 @@ class CoordinateSystem(Service):
             x = -x
         if not self.bottom_positive:
             y = -y
-        # Step 3: Swap axes if needed
-        if self.swap_xy:
-            x, y = y, x
         return x, y
 
-    def space_to_real(self, x, y):
+    def position(self, x, y):
         """
         Convert space coordinates to real coordinates (e.g., device or view coordinates)
         considering origin, axis direction, and swap_xy.
         """
         width = self.width if self.width is not None else 100.0
         height = self.height if self.height is not None else 100.0
-        # Step 1: Swap axes if needed
-        if self.swap_xy:
-            x, y = y, x
-        # Step 2: Invert axes if needed
+        # Step 1: Invert axes if needed
         if not self.right_positive:
             x = -x
         if not self.bottom_positive:
             y = -y
-        # Step 3: Add origin offset
+        # Step 2: Add origin offset
         x = x + self.origin_x * width
         y = y + self.origin_y * height
         return x, y
