@@ -255,9 +255,11 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             return filetext
 
-        def on_slider(param, ctrl, obj, dtype, addsig):
+        def on_slider(param, ctrl, obj, dtype, addsig, percent_mode=False):
             def select(event=None):
                 v = dtype(ctrl.GetValue())
+                if percent_mode:
+                    v /= 100.0
                 current_value = getattr(obj, param)
                 if current_value != v:
                     setattr(obj, param, v)
@@ -269,7 +271,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         def on_radio_select(param, ctrl, obj, dtype, addsig):
             def select(event=None):
-                if dtype == int:
+                if dtype is int:
                     v = dtype(ctrl.GetSelection())
                 else:
                     v = dtype(ctrl.GetLabel())
@@ -772,7 +774,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             control = None
             control_sizer = None
-            if data_type == str and data_style == "info":
+            if data_type is str and data_style == "info":
                 # This is just an info box.
                 wants_listener = False
                 msgs = label.split("\n")
@@ -780,7 +782,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 for lbl in msgs:
                     control = wxStaticText(self, label=lbl)
                     current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == bool and data_style == "button":
+            elif data_type is bool and data_style == "button":
                 # This is just a signal to the outside world.
                 wants_listener = False
                 control = wxButton(self, label=label)
@@ -792,7 +794,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == bool:
+            elif data_type is bool:
                 # Bool type objects get a checkbox.
                 control = wxCheckBox(self, label=label)
                 control.SetValue(data)
@@ -804,7 +806,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
 
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == str and data_style == "multiline":
+            elif data_type is str and data_style == "multiline":
                 control_sizer = StaticBoxSizer(self, wx.ID_ANY, label, wx.HORIZONTAL)
                 control = TextCtrl(
                     self,
@@ -826,7 +828,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_generic_multi(attr, control, obj, data_type, additional_signal)
                 )
 
-            elif data_type == str and data_style == "file":
+            elif data_type is str and data_style == "file":
                 control_sizer = StaticBoxSizer(self, wx.ID_ANY, label, wx.HORIZONTAL)
                 control = TextCtrl(
                     self,
@@ -870,12 +872,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 minvalue = c.get("min", 0)
                 maxvalue = c.get("max", 0)
-                if data_type == float:
-                    value = float(data)
-                elif data_type == int:
+                if data_type is float:
+                    percent_mode = True
+                    value = int(float(data) * 100)
+                    minvalue = int(float(minvalue) * 100)
+                    maxvalue = int(float(maxvalue) * 100)
+                elif data_type is int:
                     value = int(data)
+                    percent_mode = False
                 else:
                     value = int(data)
+                    percent_mode = False
                 if callable(minvalue):
                     minvalue = minvalue()
                 if callable(maxvalue):
@@ -894,7 +901,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
                 control.Bind(
                     wx.EVT_SLIDER,
-                    on_slider(attr, control, obj, data_type, additional_signal),
+                    on_slider(attr, control, obj, data_type, additional_signal, percent_mode),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
@@ -912,7 +919,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
                 if data is not None:
-                    if data_type == str:
+                    if data_type is str:
                         control.SetValue(str(data))
                     else:
                         least = None
@@ -947,7 +954,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
                 )
                 if data is not None:
-                    if data_type == str:
+                    if data_type is str:
                         control.SetSelection(0)
                         for idx, _c in enumerate(choice_list):
                             if _c == data:
@@ -1026,7 +1033,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
                 if data is not None:
-                    if data_type == str:
+                    if data_type is str:
                         control.SetValue(str(data))
                     else:
                         least = None
@@ -1065,7 +1072,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     )
 
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == int and data_style == "binary":
+            elif data_type is int and data_style == "binary":
                 mask = c.get("mask")
 
                 # get default value
@@ -1139,7 +1146,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
 
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == str and data_style == "color":
+            elif data_type is str and data_style == "color":
                 # str data_type with style "color" objects do get a button with the background.
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = wxButton(self, -1)
@@ -1287,12 +1294,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                         label_text = wxStaticText(self, id=wx.ID_ANY, label=label)
                         control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-                if data_type == int:
+                if data_type is int:
                     check_flag = "int"
                     limit = True
                     lower_range = c.get("lower", None)
                     upper_range = c.get("upper", None)
-                elif data_type == float:
+                elif data_type is float:
                     check_flag = "float"
                     limit = True
                     lower_range = c.get("lower", None)
@@ -1389,7 +1396,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_angle_text(attr, control, obj, data_type, additional_signal)
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == Color:
+            elif data_type is Color:
                 # Color data_type objects are get a button with the background.
                 if label != "":
                     control_sizer = StaticBoxSizer(
@@ -1508,18 +1515,20 @@ class ChoicePropertyPanel(ScrolledPanel):
                         dummy = hasattr(ctrl, "GetValue")
                     except RuntimeError:
                         return
-                    if dtype == bool:
+                    if dtype is bool:
                         # Bool type objects get a checkbox.
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
-                    elif dtype == str and dstyle == "file":
+                    elif dtype is str and dstyle == "file":
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
                     elif dtype in (int, float) and dstyle == "slider":
+                        if dtype is float:
+                            data = int(float(data) * 100)  
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
                     elif dtype in (str, int, float) and dstyle == "combo":
-                        if dtype == str:
+                        if dtype is str:
                             ctrl.SetValue(str(data))
                         else:
                             least = None
@@ -1534,7 +1543,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if least is not None:
                                 ctrl.SetValue(least)
                     elif dtype in (str, int, float) and dstyle == "combosmall":
-                        if dtype == str:
+                        if dtype is str:
                             ctrl.SetValue(str(data))
                         else:
                             least = None
@@ -1548,9 +1557,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                                         least = entry
                             if least is not None:
                                 ctrl.SetValue(least)
-                    elif dtype == int and dstyle == "binary":
+                    elif dtype is int and dstyle == "binary":
                         pass  # not supported...
-                    elif (dtype == str and dstyle == "color") or dtype == Color:
+                    elif (dtype is str and dstyle == "color") or dtype is Color:
                         # Color dtype objects are a button with the background set to the color
                         def set_color(color: Color):
                             ctrl.SetLabel(str(color.hex))
