@@ -60,9 +60,7 @@ class GotoOperation(Node):
         @param plan: Plan value during preprocessor call
         @return:
         """
-        self.x, self.y = context.space.display.position(
-            self.x, self.y, vector=not self.absolute
-        )
+        self.x, self.y = context.space.position(self.x, self.y)
         if self.absolute:
             self.x, self.y = matrix.point_in_matrix_space((self.x, self.y))
         else:
