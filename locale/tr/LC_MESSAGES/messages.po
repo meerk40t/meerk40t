@@ -841,7 +841,7 @@ msgstr "Mock'tan bağlantıyı kesme denemek."
 #: meerk40t/balormk/mock_connection.py:46 meerk40t/newly/mock_connection.py:44
 #: meerk40t/ruida/mock_connection.py:52
 msgid "Mock Disconnection Successful.\n"
-msgstr "Mock Bağlantısı Başarılı. \\\\\\\\ N"
+msgstr "Mock Bağlantısı Başarılı. \n"
 
 #: meerk40t/balormk/plugin.py:31
 msgid "Fibre-Laser (JCZ-Controller) (Non-MOPA)"
@@ -983,7 +983,7 @@ msgid ""
 "Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
 msgstr ""
-"Yapılandırma seti: başarısız \\\\\\\\ n (İpucu: USB'nin takıldığı yerde "
+"Yapılandırma seti: başarısız \n (İpucu: USB'nin takıldığı yerde "
 "değişirseniz kurtarılabilir.)"
 
 #: meerk40t/balormk/usb_connection.py:133 meerk40t/ch341/libusb.py:159
@@ -1102,7 +1102,7 @@ msgstr "Pyusb hiçbir arka uç Libusb sürücüsü tespit etmedi."
 #: meerk40t/balormk/usb_connection.py:251 meerk40t/ch341/libusb.py:513
 #: meerk40t/ch341/windriver.py:50 meerk40t/newly/usb_connection.py:227
 msgid "Connection to USB failed.\n"
-msgstr "USB'ye bağlantı başarısız oldu. \\\\\\\\ N"
+msgstr "USB'ye bağlantı başarısız oldu. \n"
 
 #: meerk40t/balormk/usb_connection.py:258 meerk40t/ch341/libusb.py:554
 #: meerk40t/ch341/mock.py:75 meerk40t/ch341/windriver.py:77
@@ -1114,7 +1114,7 @@ msgstr "USB'den kopukluk deneme."
 #: meerk40t/ch341/mock.py:81 meerk40t/ch341/windriver.py:80
 #: meerk40t/newly/usb_connection.py:243
 msgid "USB Disconnection Successful.\n"
-msgstr "USB Bağlantısı Başarılı. \\\\\\\\ N"
+msgstr "USB Bağlantısı Başarılı. \n"
 
 #: meerk40t/balormk/gui/balorconfig.py:24
 msgid "Balor-Configuration"
@@ -1561,7 +1561,7 @@ msgid ""
 "You need to print a 9x6 checkerboard pattern from OpenCV\n"
 "It should be flat and visible in the camera."
 msgstr ""
-"Bozulmalar/Kalibrasyon tespit etmek \\\\\\\\ Nyou, kamerada düz ve görünür "
+"Bozulmalar/Kalibrasyon tespit etmek \nyou, kamerada düz ve görünür "
 "olmalıdır."
 
 #: meerk40t/camera/gui/camerapanel.py:169
@@ -1588,7 +1588,7 @@ msgstr ""
 msgid ""
 "Camera backend failure...\n"
 "Cannot attempt camera connection."
-msgstr "Kamera arka uç hatası ... \\\\\\\\ ncannot Kamera bağlantısını deneyin."
+msgstr "Kamera arka uç hatası ... \ncannot Kamera bağlantısını deneyin."
 
 #: meerk40t/camera/gui/camerapanel.py:473
 msgid "Fetching URI:{uri} Frame..."
@@ -1801,12 +1801,12 @@ msgid ""
 "Config Set: Fail\n"
 "Set Configuration is not implemented on this platform. Pass."
 msgstr ""
-"Yapılandırma Seti: Bu platformda başarısız \\\\\\\\ nset yapılandırması "
+"Yapılandırma Seti: Bu platformda başarısız \nset yapılandırması "
 "uygulanmaz.Geçmek."
 
 #: meerk40t/ch341/libusb.py:518
 msgid "Connection to USB failed: {e}.\n"
-msgstr "USB'ye bağlantı başarısız oldu: {e}. \\\\\\\\ N"
+msgstr "USB'ye bağlantı başarısız oldu: {e}. \n"
 
 #: meerk40t/ch341/libusb.py:526 meerk40t/ch341/mock.py:56
 #: meerk40t/ch341/windriver.py:58
@@ -1826,7 +1826,7 @@ msgstr "CH341 Modu EPP1.9'a geçiş: Başarısız."
 #: meerk40t/ch341/libusb.py:536 meerk40t/ch341/libusb.py:545
 #: meerk40t/ch341/mock.py:66 meerk40t/ch341/windriver.py:66
 msgid "Device Connected.\n"
-msgstr "Cihaz Bağlı. \\\\\\\\ N"
+msgstr "Cihaz Bağlı. \n"
 
 #: meerk40t/ch341/libusb.py:539
 msgid "CH341 Chip Version: {chip_version}"
@@ -1850,7 +1850,7 @@ msgstr "Bağlanmak için CH341 sürücüsünü kullanarak."
 
 #: meerk40t/ch341/windriver.py:46
 msgid "No CH341 Devices detected.\n"
-msgstr "CH341 Cihaz Algılanmadı. \\\\\\\\ N"
+msgstr "CH341 Cihaz Algılanmadı. \n"
 
 #: meerk40t/ch341/__init__.py:20
 msgid "PyUsb is not installed. Skipping."
@@ -1973,8 +1973,8 @@ msgid ""
 "but will separately process objects lying apart from each other.\n"
 "Inactive: all objects will be lasered as one single unit."
 msgstr ""
-"Ayrı örtüşmeyen raster nesneleri. \\\\\\\\ Nactive: Bu, nesneleri bir olarak"
-" kapatır (yani üst üste binen), \\\\\\\\ nbut birbirinden ayrı yatan "
+"Ayrı örtüşmeyen raster nesneleri. \nactive: Bu, nesneleri bir olarak"
+" kapatır (yani üst üste binen), \nbut birbirinden ayrı yatan "
 "nesneleri ayrı ayrı işler."
 
 #: meerk40t/core/planner.py:71
@@ -2173,7 +2173,7 @@ msgid ""
 "* If you are using multiple passes, check Merge Passes"
 msgstr ""
 "Bu seçeneği kullanmanın optimizasyon süresini önemli ölçüde artırdığını fark"
-" ederseniz, alternatifler: \\\\\\\\ n* Malzemenizi tam olarak kesmiyorsanız,"
+" ederseniz, alternatifler: \n* Malzemenizi tam olarak kesmiyorsanız,"
 " iç yolları ayrı bir önceki işlem (ler) e koymak ve birleştirme işlemlerini "
 "kullanmıyorsanız veya bir çok geçiş kullanıyorsanız, birleştirme geçişlerini"
 " kontrol etmiyorsanız, önce kesme içi kesilmiyorsanız,"
@@ -6257,14 +6257,14 @@ msgstr "Yerleştirme Köşesi (0 = TL, 1 = TR, 2 = BR, 3 = BL, 4 = Merkez)"
 msgid ""
 "How many placements on the X-Axis?\n"
 "(0 = as many as fit on the bed)"
-msgstr "X ekseninde kaç yerleşim? \\\\\\\\ N (0 = yatağa uygun kadar)"
+msgstr "X ekseninde kaç yerleşim? \n (0 = yatağa uygun kadar)"
 
 #: meerk40t/core/elements/placements.py:75
 #: meerk40t/core/elements/placements.py:170
 msgid ""
 "How many placements on the Y-Axis?\n"
 "(0 = as many as fit on the bed)"
-msgstr "Y ekseninde kaç yerleşim? \\\\\\\\ N (0 = yatağa uygun kadar)"
+msgstr "Y ekseninde kaç yerleşim? \n (0 = yatağa uygun kadar)"
 
 #: meerk40t/core/elements/placements.py:77
 #: meerk40t/core/elements/placements.py:169
@@ -6737,8 +6737,8 @@ msgid ""
 "   stroke-width = {stroke_width}\n"
 "   scaled-width = {scaled_stroke_width}"
 msgstr ""
-"{index}: {name}-{typename} \\\\\\\\ n inme-genişlik = {stroke_width} "
-"\\\\\\\\ n ölçekli genişlik = {scaled_stroke_width}"
+"{index}: {name}-{typename} \n inme-genişlik = {stroke_width} "
+"\n ölçekli genişlik = {scaled_stroke_width}"
 
 #: meerk40t/core/elements/shapes.py:1495
 msgid "Set stroke-width"
@@ -7657,7 +7657,7 @@ msgid ""
 "Active: Full power will be shown as 100%\n"
 "Inactive: Full power will be shown as 1000 ppi"
 msgstr ""
-"Aktif: Tam güç%100 olarak gösterilecektir \\\\\\\\ Ninaktif: Tam güç 1000 "
+"Aktif: Tam güç%100 olarak gösterilecektir \ninaktif: Tam güç 1000 "
 "ppi olarak gösterilecek"
 
 #: meerk40t/device/gui/formatterpanel.py:111
@@ -7669,7 +7669,7 @@ msgid ""
 "Active: Speed will be shown in mm/min\n"
 "Inactive: Speed will be shown in mm/s"
 msgstr ""
-"Aktif: Hız mm/dk \\\\\\\\ ninaktif olarak gösterilecektir: Hız mm/s olarak "
+"Aktif: Hız mm/dk \ninaktif olarak gösterilecektir: Hız mm/s olarak "
 "gösterilecek"
 
 #: meerk40t/device/gui/formatterpanel.py:159
@@ -7700,7 +7700,7 @@ msgid ""
 "It will display a warning indicator: '❌'\n"
 "in the label of the associated operation-node"
 msgstr ""
-"Meerk40T, \\\\\\\\ npower ve hız değerlerinin makineniz için çok iddialı "
+"Meerk40T, \npower ve hız değerlerinin makineniz için çok iddialı "
 "olduğuna inanıyorsa sizi uyarabilir."
 
 #: meerk40t/dxf/plugin.py:27
@@ -7980,7 +7980,7 @@ msgstr "Inkscape sürümü - Inkscape sürümünü alın"
 
 #: meerk40t/extra/inkscape.py:361
 msgid "Inkscape executable at \"{path}\" is: {version}"
-msgstr "Inkscape yürütülebilir \\\\\\\\"
+msgstr "Inkscape yürütülebilir \n"
 
 #: meerk40t/extra/inkscape.py:368
 msgid "Optional: location of inkscape executable"
@@ -8330,7 +8330,7 @@ msgid ""
 "Version: {name} v{version} ({label})\n"
 "Url: {url}\n"
 "Info: {info}"
-msgstr "Sürüm: {name} v {version} ({label}) \\\\\\\\ nurl: {url} \\\\\\\\ ninfo: {info}"
+msgstr "Sürüm: {name} v {version} ({label}) \nurl: {url} \ninfo: {info}"
 
 #: meerk40t/extra/updater.py:65
 msgid "You seem to have the latest {system} version."
@@ -8342,8 +8342,8 @@ msgid ""
 "Url: {url}\n"
 "Info: {info}"
 msgstr ""
-"GitHub'da en son sürüm: {name} v {version} ({label}) \\\\\\\\ nurl: {url} "
-"\\\\\\\\ ninfo: {info}"
+"GitHub'da en son sürüm: {name} v {version} ({label}) \nurl: {url} "
+"\ninfo: {info}"
 
 #: meerk40t/extra/updater.py:71
 msgid "Could not find any release information on github"
@@ -8747,8 +8747,8 @@ msgstr "Çizgi Sonu"
 #: meerk40t/grbl/device.py:641
 msgid "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
 msgstr ""
-"Taşıma iadesi için CR (\\\\\\\\\\\\\\\\ r), hat yemi için LF "
-"(\\\\\\\\\\\\\\\\ n), her ikisi için CRLF"
+"Taşıma iadesi için CR (\\r), hat yemi için LF "
+"(\\n), her ikisi için CRLF"
 
 #: meerk40t/grbl/device.py:648
 msgid "ms"
@@ -9347,19 +9347,19 @@ msgstr "Lazeri ev pozisyonuna gönderin (sağ tıklayın: fiziksel eve)"
 
 #: meerk40t/gui/about.py:126
 msgid "Thanks go out to...\n"
-msgstr "Teşekkürler ... \\\\\\\\ n"
+msgstr "Teşekkürler ... \n"
 
 #: meerk40t/gui/about.py:127
 msgid "* Li Huiyu for their controller.\n"
-msgstr "* Kontrolörleri için Li Huiyu. \\\\\\\\ N"
+msgstr "* Kontrolörleri için Li Huiyu. \n"
 
 #: meerk40t/gui/about.py:128
 msgid "* Scorch for lighting our path.\n"
-msgstr "* Yolumuzu aydınlatmak için kavurun. \\\\\\\\ N"
+msgstr "* Yolumuzu aydınlatmak için kavurun. \n"
 
 #: meerk40t/gui/about.py:131
 msgid "* Alois Zingl for his brilliant Bresenham curve plotting algorithms.\n"
-msgstr "* Parlak Bresenham eğrisi çizim algoritmaları için alois zingl. \\\\\\\\ N"
+msgstr "* Parlak Bresenham eğrisi çizim algoritmaları için alois zingl. \n"
 
 #: meerk40t/gui/about.py:135
 msgid ""
@@ -9367,11 +9367,11 @@ msgid ""
 "works.\n"
 msgstr ""
 "* @Joerlane, M2-Nano'nun nasıl çalıştığı konusundaki donanım araştırması "
-"sihirbazı için. \\\\\\\\ N"
+"sihirbazı için. \n"
 
 #: meerk40t/gui/about.py:136
 msgid "* All the MeerKittens, {developer}. \n"
-msgstr "* Tüm Meerkittens, {developer}.\\\\\\\\N"
+msgstr "* Tüm Meerkittens, {developer}.\n"
 
 #: meerk40t/gui/about.py:141
 msgid ""
@@ -9379,13 +9379,13 @@ msgid ""
 "things.\n"
 msgstr ""
 "* Beta testçileri ve bir şeyleri geliştirmemize yardımcı olan sorunları "
-"bildiren herkes. \\\\\\\\ N"
+"bildiren herkes. \n"
 
 #: meerk40t/gui/about.py:144
 msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
 msgstr ""
 "* Meerk40T'yi dünya çapında kullanım için uluslararasılaşmaya yardımcı olan "
-"çevirmenler. \\\\\\\\ N"
+"çevirmenler. \n"
 
 #: meerk40t/gui/about.py:147
 msgid ""
@@ -9393,7 +9393,7 @@ msgid ""
 "users.\n"
 msgstr ""
 "* Diğer kullanıcılara yardımcı olmak için wiki belgelerini ekleyen veya "
-"düzenleyen kullanıcılar. \\\\\\\\ N"
+"düzenleyen kullanıcılar. \n"
 
 #: meerk40t/gui/about.py:151
 msgid ""
@@ -9401,7 +9401,7 @@ msgid ""
 "project.\n"
 msgstr ""
 "* ICONS8 (https://icons8.com/) proje boyunca kullanılan harika simgeleri "
-"için. \\\\\\\\ N"
+"için. \n"
 
 #: meerk40t/gui/about.py:154
 msgid ""
@@ -9409,15 +9409,15 @@ msgid ""
 "internally.\n"
 msgstr ""
 "* Dahili olarak kullandığımız başka yazılımlar oluşturan sayısız "
-"geliştirici. \\\\\\\\ N"
+"geliştirici. \n"
 
 #: meerk40t/gui/about.py:155
 msgid "* Regebro for his svg.path module which inspired svgelements.\n"
-msgstr "* SVGELEMS'e ilham veren svg.path modülü için Regebro. \\\\\\\\ N"
+msgstr "* SVGELEMS'e ilham veren svg.path modülü için Regebro. \n"
 
 #: meerk40t/gui/about.py:156
 msgid "* The SVG Working Group.\n"
-msgstr "* Svg çalışma grubu. \\\\\\\\ N"
+msgstr "* Svg çalışma grubu. \n"
 
 #: meerk40t/gui/about.py:157
 msgid "* Hackers and tinkerers."
@@ -10027,7 +10027,7 @@ msgstr "İşlem için özellik iletişim kutusunu açmak için çift tıklayın"
 
 #: meerk40t/gui/bufferview.py:26
 msgid "Could not find buffer.\n"
-msgstr "Tampon bulamadım. \\\\\\\\ N"
+msgstr "Tampon bulamadım. \n"
 
 #: meerk40t/gui/bufferview.py:39 meerk40t/lihuiyu/gui/tcpcontroller.py:139
 msgid "Buffer"
@@ -10203,7 +10203,8 @@ msgstr "Hata"
 msgid ""
 "Do you really want to remove this device?\n"
 "This can not be undone!"
-msgstr "Bu cihazı gerçekten kaldırmak istiyor musunuz? \\\\\\\\ Bu geri alınamaz!"
+msgstr "Bu cihazı gerçekten kaldırmak istiyor musunuz?\n"
+"Bu geri alınamaz!"
 
 #: meerk40t/gui/devicepanel.py:683
 msgid "Opens Devices Window"
@@ -10976,8 +10977,8 @@ msgid ""
 "We intentionally ignored a request to start a job via the keyboard.\n"
 "You need to make your intent clear by a deliberate mouse-click"
 msgstr ""
-"Klavye üzerinden bir işe başlama isteğini kasıtlı olarak görmezden geldik. "
-"\\\\\\\\ Kasıtlı bir fare tıklaması ile niyetinizi netleştirmeniz gerekiyor"
+"Klavye üzerinden bir işe başlama isteğini kasıtlı olarak görmezden geldik.\n"
+"Kasıtlı bir fare tıklaması ile niyetinizi netleştirmeniz gerekiyor"
 
 #: meerk40t/gui/laserpanel.py:705 meerk40t/gui/wxmmain.py:1756
 msgid "Preparing Laserjob..."
@@ -11114,7 +11115,7 @@ msgid ""
 "MK will create a rectangle for you for further processing."
 msgstr ""
 "Öğretim: Lazeri kapsayan dikdörtgenin bir köşesine yerleştirin ve aşağıdaki "
-"düğmelere tıklayarak konumu onaylayın.Ardından karşıt köşeyi seçin. \\\\\\\\"
+"düğmelere tıklayarak konumu onaylayın.Ardından karşıt köşeyi seçin. \n"
 " NMK, daha fazla işlem için sizin için bir dikdörtgen oluşturacaktır."
 
 #: meerk40t/gui/lasertoolpanel.py:205
@@ -11155,7 +11156,7 @@ msgid ""
 msgstr ""
 "Talimat: Lazeri yatağa bir karenin bir tarafının iki noktasına yerleştirin "
 "ve aşağıdaki düğmelere tıklayarak pozisyonu onaylayın.Ardından köşenin diğer"
-" tarafında bir noktayı seçin. \\\\\\\\ NMK, daha fazla işleme için sizin "
+" tarafında bir noktayı seçin. \nMK, daha fazla işleme için sizin "
 "için bir kare oluşturacaktır."
 
 #: meerk40t/gui/lasertoolpanel.py:298
@@ -11452,7 +11453,7 @@ msgid ""
 "If active, power and speed values will be adjusted,\n"
 "to accommodate different lens-sizes"
 msgstr ""
-"Etkinse, güç ve hız değerleri ayarlanır, \\\\\\\\ farklı lens boyutlarını "
+"Etkinse, güç ve hız değerleri ayarlanır, \n farklı lens boyutlarını "
 "karşılamak için"
 
 #: meerk40t/gui/materialmanager.py:158
@@ -11460,7 +11461,7 @@ msgid ""
 "If active, power and speed values will be adjusted,\n"
 "to accommodate different laser power"
 msgstr ""
-"Aktif ise, güç ve hız değerleri ayarlanır, \\\\\\\\ farklı lazer gücünü "
+"Aktif ise, güç ve hız değerleri ayarlanır, \n farklı lazer gücünü "
 "karşılamak için"
 
 #: meerk40t/gui/materialmanager.py:170
@@ -11528,7 +11529,7 @@ msgid ""
 "Change the name / lasertype of the current entry\n"
 "Right-Click: assign lasertype to all visible entries"
 msgstr ""
-"Geçerli girişin adını / laserType'ı değiştir \\\\\\\\ nright-tıklama: Tüm "
+"Geçerli girişin adını / laserType'ı değiştir \nright-tıklama: Tüm "
 "görünür girişlere lasertype atayın"
 
 #: meerk40t/gui/materialmanager.py:500
@@ -11661,7 +11662,7 @@ msgstr "Paylaşım Malzeme Ayarı"
 msgid ""
 "We got your file. Thank you for helping\n"
 "\n"
-msgstr "Dosyasını aldık.Yardım ettiğiniz için teşekkür ederim \\\\\\\\ n \\\\\\\\ n"
+msgstr "Dosyasını aldık.Yardım ettiğiniz için teşekkür ederim \n \n"
 
 #: meerk40t/gui/materialmanager.py:1025 meerk40t/gui/materialmanager.py:1035
 #: meerk40t/gui/wxmeerk40t.py:1328 meerk40t/gui/wxmeerk40t.py:1345
@@ -11672,7 +11673,7 @@ msgstr "Teşekkürler"
 msgid ""
 "We're sorry, that didn't work.\n"
 "\n"
-msgstr "Üzgünüz, bu işe yaramadı. \\\\\\\\ N \\\\\\\\ n"
+msgstr "Üzgünüz, bu işe yaramadı. \n \n"
 
 #: meerk40t/gui/materialmanager.py:1088
 msgid "Do you really want to delete this entry? This can't be undone."
@@ -12422,7 +12423,7 @@ msgid ""
 "Left click to go to saved position\n"
 "Right click to save coordinates"
 msgstr ""
-"Kayıtlı pozisyona gitmek için sol tıklayın \\\\\\\\ nright koordinatları "
+"Kayıtlı pozisyona gitmek için sol tıklayın \nright koordinatları "
 "kaydetmek için tıklayın"
 
 #: meerk40t/gui/navigationpanels.py:1566 meerk40t/gui/navigationpanels.py:1695
@@ -12567,7 +12568,7 @@ msgid ""
 "In any case this value will then be represented as tan(alpha)"
 msgstr ""
 "SKEW X- ALPHA ° tarafından x-yönlendirmedeki elemanı eğmek için, tan (alfa) "
-"sağlamak için \\\\\\\\ n-, yani 15 ° = 0.2679, 30 ° = 0.5774, 45 ° = 1.0 vb."
+"sağlamak için \n-, yani 15 ° = 0.2679, 30 ° = 0.5774, 45 ° = 1.0 vb."
 
 #: meerk40t/gui/navigationpanels.py:2316
 msgid ""
@@ -12577,7 +12578,7 @@ msgid ""
 "In any case this value will then be represented as tan(alpha)"
 msgstr ""
 "Çarpık y- y-yönünde elementi alfa ° ile eğrildiğinde, tan (alfa) sağlamak "
-"için \\\\\\\\ n-, yani 15 ° = 0.2679, 30 ° = 0.5774, 45 ° = 1.0 vb."
+"için \n-, yani 15 ° = 0.2679, 30 ° = 0.5774, 45 ° = 1.0 vb."
 
 #: meerk40t/gui/navigationpanels.py:2323 meerk40t/gui/navigationpanels.py:2520
 msgid ""
@@ -12966,7 +12967,7 @@ msgid ""
 "Set the point of reference for the element,\n"
 "which edge/corner should be put on the given location"
 msgstr ""
-"Eleman için referans noktasını ayarlayın, \\\\\\\\ nwhich kenar/köşe verilen"
+"Eleman için referans noktasını ayarlayın, \nwhich kenar/köşe verilen"
 " konuma konmalıdır"
 
 #: meerk40t/gui/preferences.py:39
@@ -13010,7 +13011,7 @@ msgid ""
 "Please note further changes to your configuration will not be saved until the end of the program.\n"
 "So please exit MeerK40t as soon as possible."
 msgstr ""
-"Değiştirilmiş yapılandırma kaydedildi. \\\\\\\\ NLEASE Note "
+"Değiştirilmiş yapılandırma kaydedildi. \nLEASE Note "
 "Yapılandırmanızdaki diğer değişiklikler programın sonuna kadar "
 "kaydedilmeyecektir."
 
@@ -13180,7 +13181,7 @@ msgstr "Tercihler penceresini açar"
 
 #: meerk40t/gui/preferences.py:884
 msgid "Pr&eferences...\tCtrl-,"
-msgstr "Pr & eFerences ... \\\\\\\\ tctrl-,"
+msgstr "Pr & eFerences ... \n tctrl-,"
 
 #: meerk40t/gui/preferences.py:888
 msgid "Show/Hide the Preferences window"
@@ -13236,7 +13237,7 @@ msgstr "Temizlik ..."
 msgid ""
 "Some files were unrecognized:\n"
 "{rejected_files}"
-msgstr "Bazı dosyalar tanınmamıştı: \\\\\\\\ n {rejected_files}"
+msgstr "Bazı dosyalar tanınmamıştı: \n {rejected_files}"
 
 #: meerk40t/gui/simpleui.py:190 meerk40t/gui/wxmmain.py:720
 #: meerk40t/gui/wxmmain.py:5609
@@ -13789,7 +13790,7 @@ msgid ""
 "Couldn't find the cached image for this tip!\n"
 "No permissions to download from the internet."
 msgstr ""
-"Bu ipucu için önbelleğe alınmış resmi bulamadı! \\\\\\\\ Nno İnternetten "
+"Bu ipucu için önbelleğe alınmış resmi bulamadı! \nno İnternetten "
 "indirme izinleri."
 
 #: meerk40t/gui/tips.py:90
@@ -13839,8 +13840,8 @@ msgid ""
 "Look for new tips on MeerK40ts website.\n"
 "The list of tips is constantly expanded.\n"
 msgstr ""
-"Meerk40ts web sitesinde yeni ipuçları arayın. \\\\\\\\ N ipuçları listesi "
-"sürekli genişletildi. \\\\\\\\ N"
+"Meerk40ts web sitesinde yeni ipuçları arayın. \n ipuçları listesi "
+"sürekli genişletildi. \n"
 
 #: meerk40t/gui/tips.py:203
 msgid "Tip {idx}/{maxidx}"
@@ -13860,7 +13861,7 @@ msgid ""
 "You can add more devices in the Device-Manager.\n"
 "And you can even add multiple instances for the same physical device, where you can have different configuration settings (eg regular and rotary)."
 msgstr ""
-"Meerk40T, 'sadece' bir K40 lazerinden daha fazlasını destekler. \\\\\\\\ "
+"Meerk40T, 'sadece' bir K40 lazerinden daha fazlasını destekler. \n "
 "Nyo, cihaz yöneticisine daha fazla cihaz ekleyebilir."
 
 #: meerk40t/gui/tips.py:376
@@ -13869,7 +13870,7 @@ msgid ""
 "https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
 msgstr ""
 "Bazı belirli işlevlerle ilgilenen ve kullanımlarını açıklayan birkaç "
-"YouTube-Videos var: \\\\\\\\ nhttps: "
+"YouTube-Videos var: \nhttps: "
 "//www.youtube.com/channel/ucsauv23o2fykxc0hn7nkaqq"
 
 #: meerk40t/gui/tips.py:386
@@ -13878,7 +13879,7 @@ msgid ""
 "\n"
 "https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
 msgstr ""
-"Daha fazla öğretim video?Tabii, işte başka bir kanal: \\\\\\\\ n \\\\\\\\ "
+"Daha fazla öğretim video?Tabii, işte başka bir kanal: \n \n "
 "nhttps: //www.youtube.com/channel/ucmn9ggvpacxzinpzcsoecaq"
 
 #: meerk40t/gui/tips.py:395
@@ -14266,7 +14267,7 @@ msgid ""
 "This uses the 'play' command that comes with the sox package,\n"
 "so you might need to install it with 'sudo apt install sox' first."
 msgstr ""
-"Bu, Sox paketi ile birlikte gelen 'oynat' komutunu kullanır, \\\\\\\\ nso, "
+"Bu, Sox paketi ile birlikte gelen 'oynat' komutunu kullanır, \nso, "
 "önce 'sudo apt install sox' ile yüklemeniz gerekebilir."
 
 #: meerk40t/gui/wxmeerk40t.py:1131
@@ -14291,7 +14292,7 @@ msgstr ""
 msgid ""
 "We got your message. Thank you for helping\n"
 "\n"
-msgstr "Mesajınızı aldık.Yardım ettiğiniz için teşekkür ederim \\\\\\\\ n \\\\\\\\ n"
+msgstr "Mesajınızı aldık.Yardım ettiğiniz için teşekkür ederim \n \n"
 
 #: meerk40t/gui/wxmeerk40t.py:1341
 msgid ""
@@ -14299,8 +14300,8 @@ msgid ""
 "\n"
 " The log file will be in your working directory.\n"
 msgstr ""
-"Üzgünüz, bu işe yaramadı.Github'da bir sorun ortaya koyun lütfen. \\\\\\\\ N"
-" \\\\\\\\ n Günlük dosyası çalışma dizininizde olacaktır. \\\\\\\\ N"
+"Üzgünüz, bu işe yaramadı.Github'da bir sorun ortaya koyun lütfen. \n"
+" \n Günlük dosyası çalışma dizininizde olacaktır. \n"
 
 #: meerk40t/gui/wxmeerk40t.py:1388
 msgid "Quit"
@@ -14328,7 +14329,7 @@ msgid ""
 "If active then the current workspace will be saved every x minutes\n"
 "Filename: {file}"
 msgstr ""
-"Etkinse, geçerli çalışma alanı her x dakikada bir kaydedilir \\\\\\\\ "
+"Etkinse, geçerli çalışma alanı her x dakikada bir kaydedilir \n "
 "nfilename: {file}"
 
 #: meerk40t/gui/wxmmain.py:204
@@ -14369,7 +14370,7 @@ msgstr "Metni Yapıştır"
 
 #: meerk40t/gui/wxmmain.py:845 meerk40t/gui/wxmmain.py:5752
 msgid "&Undo\tCtrl-Z"
-msgstr "& Geri al \\\\\\\\ tctrl-z"
+msgstr "& Geri al \n tctrl-z"
 
 #: meerk40t/gui/wxmmain.py:846
 msgid "Undo last action"
@@ -14377,7 +14378,7 @@ msgstr "Son eylemi geri al"
 
 #: meerk40t/gui/wxmmain.py:855 meerk40t/gui/wxmmain.py:5763
 msgid "&Redo\tCtrl-Shift-Z"
-msgstr "& Redo \\\\\\\\ tctrl-shift-z"
+msgstr "& Redo \n tctrl-shift-z"
 
 #: meerk40t/gui/wxmmain.py:856
 msgid "Revert last undo"
@@ -14385,7 +14386,7 @@ msgstr "Son Geri Al"
 
 #: meerk40t/gui/wxmmain.py:870
 msgid "C&ut\tCtrl-X"
-msgstr "C & ut \\\\\\\\ tctrl-x"
+msgstr "C & ut \n tctrl-x"
 
 #: meerk40t/gui/wxmmain.py:871 meerk40t/gui/wxmmain.py:2296
 msgid "Cut selected elements"
@@ -14393,7 +14394,7 @@ msgstr "Seçilen öğeleri kesin"
 
 #: meerk40t/gui/wxmmain.py:879
 msgid "&Copy\tCtrl-C"
-msgstr "& Kopya \\\\\\\\ tctrl-c"
+msgstr "& Kopya \n tctrl-c"
 
 #: meerk40t/gui/wxmmain.py:880 meerk40t/gui/wxmmain.py:2311
 msgid "Copy selected elements to clipboard"
@@ -14401,7 +14402,7 @@ msgstr "Seçilen öğeleri panoya kopyalayın"
 
 #: meerk40t/gui/wxmmain.py:888
 msgid "&Paste\tCtrl-V"
-msgstr "& Yapıştır \\\\\\\\ tctrl-v"
+msgstr "& Yapıştır \n tctrl-v"
 
 #: meerk40t/gui/wxmmain.py:889 meerk40t/gui/wxmmain.py:2337
 msgid "Paste elements from clipboard"
@@ -14409,7 +14410,7 @@ msgstr "Panodan öğeleri yapıştırın"
 
 #: meerk40t/gui/wxmmain.py:897
 msgid "Paste from system\tShift-Ctrl-V"
-msgstr "Sistemden Yapıştır \\\\\\\\ Tshift-Ctrl-V"
+msgstr "Sistemden Yapıştır \n Tshift-Ctrl-V"
 
 #: meerk40t/gui/wxmmain.py:898
 msgid "Paste data coming from other applications"
@@ -14417,7 +14418,7 @@ msgstr "Diğer uygulamalardan gelen verileri yapıştırın"
 
 #: meerk40t/gui/wxmmain.py:911
 msgid "&Select all\tCtrl-A"
-msgstr "Tüm \\\\\\\\ ctrl-a'yı seçin"
+msgstr "Tüm \n ctrl-a'yı seçin"
 
 #: meerk40t/gui/wxmmain.py:912
 msgid "Select all elements on scene"
@@ -14433,7 +14434,7 @@ msgstr "Sahnedeki tüm unsurları seçin"
 
 #: meerk40t/gui/wxmmain.py:927
 msgid "&Invert selection\tCtrl-I"
-msgstr "& Seçimi tersine çevir \\\\\\\\ tctrl-i"
+msgstr "& Seçimi tersine çevir \n tctrl-i"
 
 #: meerk40t/gui/wxmmain.py:928
 msgid "Invert the selection status of all elements"
@@ -14485,7 +14486,7 @@ msgstr "Anahtar bağlamalar"
 
 #: meerk40t/gui/wxmmain.py:1036
 msgid "Preferences\tCtrl-,"
-msgstr "Tercihler \\\\\\\\ tctrl-,"
+msgstr "Tercihler \n tctrl-,"
 
 #: meerk40t/gui/wxmmain.py:1037
 msgid "Edit the general preferences"
@@ -14514,7 +14515,7 @@ msgid ""
 "Active: Display a miniature representation of the element in the tree\n"
 "Inactive: Use a standard icon for the element type instead"
 msgstr ""
-"Etkin: Ağaçtaki öğenin minyatür bir gösterimini görüntüleyin \\\\\\\\ "
+"Etkin: Ağaçtaki öğenin minyatür bir gösterimini görüntüleyin \n "
 "Ninaktif: Bunun yerine öğe türü için standart bir simge kullanın"
 
 #: meerk40t/gui/wxmmain.py:1213
@@ -14526,7 +14527,7 @@ msgid ""
 "Active: The tree entry will be displayed in the objects color\n"
 "Inactive: Standard Colors are used"
 msgstr ""
-"Etkin: Ağaç girişi nesnelerde görüntülenir Rengi \\\\\\\\ ninaktif: Standart"
+"Etkin: Ağaç girişi nesnelerde görüntülenir Rengi \ninaktif: Standart"
 " renkler kullanılır"
 
 #: meerk40t/gui/wxmmain.py:1248
@@ -14712,7 +14713,7 @@ msgid ""
 msgstr ""
 "Jog/drag-panellerde fare düğmesini tıklayıp basılı tutarsanız, hareket "
 "eylemi tekrarlanacaktır.Bu değer, ayrı yürütmeler arasındaki aralığı "
-"oluşturur. \\\\\\\\ Na 0 değeri bu özelliği devre dışı bırakacaktır."
+"oluşturur. \na 0 değeri bu özelliği devre dışı bırakacaktır."
 
 #: meerk40t/gui/wxmmain.py:1525
 msgid "Accelerate repeats"
@@ -14971,8 +14972,8 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Bir Polygon Elemanı Ekle \\\\\\\\ Sol tıklama: Point/Line \\\\\\\\ Çift "
-"Tıklayın: Complete \\\\\\\\ Sağ tıklayın: İptal et"
+"Bir Polygon Elemanı Ekle \n Sol tıklama: Point/Line \n Çift "
+"Tıklayın: Complete \n Sağ tıklayın: İptal et"
 
 #: meerk40t/gui/wxmmain.py:2208
 msgid "Polyline"
@@ -14985,8 +14986,8 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Bir Polyline Element Ekle \\\\\\\\ Sol tıklama: Point/Line \\\\\\\\ Çift "
-"Tıklayın: Complete \\\\\\\\ Sağ tıklayın: İptal et"
+"Bir Polyline Element Ekle \n Sol tıklama: Point/Line \n Çift "
+"Tıklayın: Complete \n Sağ tıklayın: İptal et"
 
 #: meerk40t/gui/wxmmain.py:2224
 msgid "Point"
@@ -15008,8 +15009,8 @@ msgid ""
 "Double click: complete\n"
 "Right click: end"
 msgstr ""
-"Bir şekil ekle \\\\\\\\ Sol tıklama: Point/line \\\\\\\\ tıklayın ve tutun: "
-"Curve \\\\\\\\ Çift tıklayın: Tamamla \\\\\\\\ nright Tıklayın: End"
+"Bir şekil ekle \n Sol tıklama: Point/line \n tıklayın ve tutun: "
+"Curve \n Çift tıklayın: Tamamla \nright Tıklayın: End"
 
 #: meerk40t/gui/wxmmain.py:2254
 msgid "Draw"
@@ -15075,8 +15076,8 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Ölçü Mesafesi / Çevre / Alan \\\\\\\\ Sol tıklama: Point / Line \\\\\\\\ "
-"Çift Tıklayın: Complete \\\\\\\\ Sağ Tık: İptal Et"
+"Ölçü Mesafesi / Çevre / Alan \n Sol tıklama: Point / Line \n "
+"Çift Tıklayın: Complete \n Sağ Tık: İptal Et"
 
 #: meerk40t/gui/wxmmain.py:2464
 msgid "Flip Vertical"
@@ -15448,7 +15449,7 @@ msgstr "Saklanan pencere konumlarını unutun"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "&New\tCtrl-N"
-msgstr "Yeni \\\\\\\\ ctrl-n"
+msgstr "Yeni \n ctrl-n"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "Clear Operations, Elements and Notes"
@@ -15456,7 +15457,7 @@ msgstr "Net operasyonlar, öğeler ve notlar"
 
 #: meerk40t/gui/wxmmain.py:4040
 msgid "&Open Project\tCtrl-O"
-msgstr "& Açık proje \\\\\\\\ tctrl-o"
+msgstr "& Açık proje \n tctrl-o"
 
 #: meerk40t/gui/wxmmain.py:4041
 msgid "Clear existing elements and notes and open a new file"
@@ -15481,7 +15482,7 @@ msgstr "Aynı projeye başka bir dosyayı içe aktarın"
 
 #: meerk40t/gui/wxmmain.py:4061
 msgid "&Save\tCtrl-S"
-msgstr "& Kaydet \\\\\\\\ tctrl-s"
+msgstr "& Kaydet \n tctrl-s"
 
 #: meerk40t/gui/wxmmain.py:4062
 msgid "Save the project as an SVG file (overwriting any existing file)"
@@ -15491,7 +15492,7 @@ msgstr ""
 
 #: meerk40t/gui/wxmmain.py:4067
 msgid "Save &As\tCtrl-Shift-S"
-msgstr "Kaydet & AS \\\\\\\\ tctrl-shift-s"
+msgstr "Kaydet & AS \n tctrl-shift-s"
 
 #: meerk40t/gui/wxmmain.py:4068
 msgid "Save the project in a new SVG file"
@@ -15499,7 +15500,7 @@ msgstr "Projeyi yeni bir SVG dosyasında kaydedin"
 
 #: meerk40t/gui/wxmmain.py:4074
 msgid "&Close Window\tCtrl-W"
-msgstr "& Pencereyi kapat \\\\\\\\ tctrl-w"
+msgstr "& Pencereyi kapat \n tctrl-w"
 
 #: meerk40t/gui/wxmmain.py:4074 meerk40t/gui/wxmmain.py:4078
 msgid "Close Meerk40t"
@@ -15519,15 +15520,15 @@ msgstr "Hatırlamak..."
 
 #: meerk40t/gui/wxmmain.py:4256
 msgid "Zoom &Out\tCtrl--"
-msgstr "ZOOM & OUT \\\\\\\\ TCTRL--"
+msgstr "ZOOM & OUT \n TCTRL--"
 
 #: meerk40t/gui/wxmmain.py:4264
 msgid "Zoom &In\tCtrl-+"
-msgstr "Zoom & in \\\\\\\\ tctrl-+"
+msgstr "Zoom & in \n tctrl-+"
 
 #: meerk40t/gui/wxmmain.py:4272
 msgid "Zoom to &Selected\tCtrl-Shift-B"
-msgstr "Zoom to & seçildi \\\\\\\\ tctrl-shift-b"
+msgstr "Zoom to & seçildi \n tctrl-shift-b"
 
 #: meerk40t/gui/wxmmain.py:4273 meerk40t/gui/wxmscene.py:1547
 msgid "Fill the scene area with the selected elements"
@@ -15535,7 +15536,7 @@ msgstr "Sahne alanını seçilen öğelerle doldurun"
 
 #: meerk40t/gui/wxmmain.py:4281
 msgid "Zoom to &Bed\tCtrl-B"
-msgstr "Zoom to & bed \\\\\\\\ tctrl-b"
+msgstr "Zoom to & bed \n tctrl-b"
 
 #: meerk40t/gui/wxmmain.py:4294
 msgid "GUI-Elements"
@@ -15543,7 +15544,7 @@ msgstr "Gui unsurları"
 
 #: meerk40t/gui/wxmmain.py:4299
 msgid "Show/Hide UI-Panels\tCtrl-U"
-msgstr "UI-Panelleri Göster/Gizle \\\\\\\\ Tctrl-U"
+msgstr "UI-Panelleri Göster/Gizle \n Tctrl-U"
 
 #: meerk40t/gui/wxmmain.py:4300
 msgid "Show/Hide all panels/ribbon bar"
@@ -15742,7 +15743,7 @@ msgstr "Pencere"
 
 #: meerk40t/gui/wxmmain.py:4597
 msgid "Offline help file (\"{help}\") was not found."
-msgstr "Çevrimdışı Yardım Dosyası (\\\\\\\\"
+msgstr "Çevrimdışı Yardım Dosyası (\n"
 
 #: meerk40t/gui/wxmmain.py:4600
 msgid "File Not Found"
@@ -15766,7 +15767,7 @@ msgstr "Meerk40t Online Wiki'yi açın"
 
 #: meerk40t/gui/wxmmain.py:4642
 msgid "&Help\tF1"
-msgstr "& Yardım \\\\\\\\ tf1"
+msgstr "& Yardım \n tf1"
 
 #: meerk40t/gui/wxmmain.py:4643 meerk40t/gui/wxmmain.py:4666
 msgid "Open the Meerk40t online wiki Beginners page"
@@ -15774,7 +15775,7 @@ msgstr "Meerk40t Online Wiki Yeni Başlayanlar Sayfasını Aç"
 
 #: meerk40t/gui/wxmmain.py:4654
 msgid "Online Reference\tF11"
-msgstr "Çevrimiçi Referans \\\\\\\\ TF11"
+msgstr "Çevrimiçi Referans \n TF11"
 
 #: meerk40t/gui/wxmmain.py:4655
 msgid "Display online reference"
@@ -15883,7 +15884,7 @@ msgid ""
 "\n"
 "Your changes will be lost if you do not save them."
 msgstr ""
-"Kapanmadan önce projede değişiklikleri kaydedin? \\\\\\\\ On \\\\\\\\ Onları"
+"Kapanmadan önce projede değişiklikleri kaydedin? \n On \n Onları"
 " kaydetmezseniz değişiklikleriniz kaybolur."
 
 #: meerk40t/gui/wxmmain.py:4920
@@ -16016,7 +16017,7 @@ msgid ""
 "There is an autosave file ({filename}),\n"
 "that was last saved at {filedate}."
 msgstr ""
-"Bir Autosave dosyası ({filename}) var, \\\\\\\\ nthat en son {filedate} "
+"Bir Autosave dosyası ({filename}) var, \nthat en son {filedate} "
 "adresinden kaydedildi."
 
 #: meerk40t/gui/wxmmain.py:5858
@@ -16061,7 +16062,7 @@ msgid ""
 "Active: Show the labels for ribbonbar.\n"
 "Inactive: Hide the ribbon labels."
 msgstr ""
-"Etkin: Ribbonbar etiketlerini gösterin. \\\\\\\\ Ninaktif: Şerit "
+"Etkin: Ribbonbar etiketlerini gösterin. \ninaktif: Şerit "
 "etiketlerini gizleyin."
 
 #: meerk40t/gui/wxmribbon.py:453 meerk40t/gui/wxmribbon.py:1452
@@ -16496,7 +16497,7 @@ msgid ""
 "that will be sent directly to the laser.\n"
 "Double-click to view."
 msgstr ""
-"Bu, doğrudan lazere gönderilecek veya oluşturulan ikili verilerdir. \\\\\\\\"
+"Bu, doğrudan lazere gönderilecek veya oluşturulan ikili verilerdir. \n"
 " Görüntülemek için çift tıklayın."
 
 #: meerk40t/gui/wxmtree.py:2111
@@ -16506,7 +16507,7 @@ msgid ""
 "(Usually done last)"
 msgstr ""
 "Bu, verilerin vektör yollarını takip ederek içerdiği öğeleri "
-"kazanacak/kesecektir. \\\\\\\\ N (genellikle son yapılır)"
+"kazanacak/kesecektir. \n (genellikle son yapılır)"
 
 #: meerk40t/gui/wxmtree.py:2116
 msgid ""
@@ -16520,8 +16521,8 @@ msgid ""
 "This engraves already created images pixel by pixel,\n"
 "applying the settings to the individual pictures"
 msgstr ""
-"Bu gravür zaten oluşturulmuş görüntüler piksel tarafından piksel, \\\\\\\\ "
-"Ayarları tek tek resimlere \\\\\\\\"
+"Bu gravür zaten oluşturulmuş görüntüler piksel tarafından piksel, \n "
+"Ayarları tek tek resimlere \n"
 
 #: meerk40t/gui/wxmtree.py:2127
 msgid ""
@@ -16529,8 +16530,8 @@ msgid ""
 "into an intermediary image which then will be\n"
 "engraved pixel by pixel."
 msgstr ""
-"Bu, \\\\\\\\ ninto içerdiği tüm elemanları, daha sonra piksel tarafından "
-"\\\\\\\\ nengraved piksel olacak bir aracı görüntü oluşturacaktır."
+"Bu, \ninto içerdiği tüm elemanları, daha sonra piksel tarafından "
+"\nengraved piksel olacak bir aracı görüntü oluşturacaktır."
 
 #: meerk40t/gui/wxmtree.py:2131
 msgid "This will engrave a single point for a given period of time"
@@ -16587,7 +16588,7 @@ msgid ""
 "you drag onto it and will fill the shape with a line pattern.\n"
 "To activate / deactivate this effect please use the context menu."
 msgstr ""
-"Bu, başka herhangi bir kapalı yolu tüketecek özel bir düğümdür \\\\\\\\ nyou"
+"Bu, başka herhangi bir kapalı yolu tüketecek özel bir düğümdür \nyou"
 " üzerine sürükleyin ve şekli bir çizgi deseni ile dolduracak."
 
 #: meerk40t/gui/wxmtree.py:2258
@@ -17210,7 +17211,7 @@ msgid ""
 "Apply image modification script\n"
 "Right click: append to existing script"
 msgstr ""
-"Resim Modifikasyon Komut Dosyasını Uygula \\\\\\\\ Nright Tıklayın: Mevcut "
+"Resim Modifikasyon Komut Dosyasını Uygula \nright Tıklayın: Mevcut "
 "Komut Dosyasına Ekle"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:1211
@@ -17271,9 +17272,9 @@ msgid ""
 "RANDOM: choose randomly."
 msgstr ""
 "Bu parametre, bitmap'lerin yollara ayrışması sırasında belirsizliklerin "
-"nasıl çözüleceğini belirler. \\\\\\\\ N \\\\\\\\ nblack: Siyah (ön plan) "
-"bileşenlerini bağlamayı tercih eder. \\\\\\\\ Nwhite: her zaman beyaz (arka "
-"plan) bileşenleri bağlamayı tercih eder. \\\\\\\\ Nleft: her zaman sola "
+"nasıl çözüleceğini belirler. \n \nblack: Siyah (ön plan) "
+"bileşenlerini bağlamayı tercih eder. \nwhite: her zaman beyaz (arka "
+"plan) bileşenleri bağlamayı tercih eder. \nleft: her zaman sola "
 "dönüş.Mevcut pozisyon."
 
 #: meerk40t/gui/propertypanels/imageproperty.py:1515
@@ -17309,7 +17310,7 @@ msgid ""
 "This defines the amount of error allowed in this simplification.\n"
 "Larger values tend to decrease the number of segments, at the expense of less accuracy."
 msgstr ""
-"Bu, bu basitleştirmede izin verilen hata miktarını tanımlar. \\\\\\\\ "
+"Bu, bu basitleştirmede izin verilen hata miktarını tanımlar. \n "
 "Nlarger değerleri, daha az doğruluk pahasına segment sayısını azaltma "
 "eğilimindedir."
 
@@ -17662,7 +17663,7 @@ msgstr "1000 her zaman açıktır, 500 yarı güçtür (her adımda ateş)."
 msgid ""
 "Values of 100 or have pulses > 1/10\" and are generally used only for dotted"
 " or perforated lines."
-msgstr "100 değerleri veya nabzı var> 1/10 \\\\\\\\"
+msgstr "100 değerleri veya nabzı var> 1/10 \n"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:638
 #: meerk40t/gui/propertypanels/operationpropertymain.py:640
@@ -17680,7 +17681,7 @@ msgid ""
 "Use the negative value if you are using the cutout\n"
 "as a placeholder for another part (eg inlays)."
 msgstr ""
-"Lazerbeam (Kerf) genişliğinin yarısını girin \\\\\\\\ Nif tam boyutta bir "
+"Lazerbeam (Kerf) genişliğinin yarısını girin \nif tam boyutta bir "
 "şekle sahip olmak istiyorsanız."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:704
@@ -17814,7 +17815,7 @@ msgid ""
 "1/1000\" "
 msgstr ""
 "Bir raster gravüründe, adım boyutu 1/1000'deki raster çizgileri arasındaki "
-"mesafedir \\\\\\\\"
+"mesafedir \n"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1376
 msgid "and also the number of raster dots that get combined together."
@@ -17824,7 +17825,7 @@ msgstr "ve ayrıca bir araya gelen raster noktalarının sayısı."
 msgid ""
 "Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines"
 " overlap a lot, "
-msgstr "Çünkü lazer noktası >> 1/1000 \\\\\\\\"
+msgstr "Çünkü lazer noktası >> 1/1000 \n"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1383
 msgid ""
@@ -18179,13 +18180,13 @@ msgstr "Y yönünde tekrarlar"
 msgid ""
 "How many repetitions in X-direction?\n"
 "0 = As many as possible"
-msgstr "X-yönünde kaç tekrar? \\\\\\\\ N0 = mümkün olduğunca çok"
+msgstr "X-yönünde kaç tekrar? \n0 = mümkün olduğunca çok"
 
 #: meerk40t/gui/propertypanels/placementproperty.py:175
 msgid ""
 "How many repetitions in Y-direction?\n"
 "0 = As many as possible"
-msgstr "Y yönünde kaç tekrar? \\\\\\\\ N0 = mümkün olduğunca çok"
+msgstr "Y yönünde kaç tekrar? \n0 = mümkün olduğunca çok"
 
 #: meerk40t/gui/propertypanels/placementproperty.py:177
 msgid "Gap between placements in X-direction"
@@ -18214,7 +18215,7 @@ msgid ""
 "Useful for honeycomb- or other irregular patterns that need to overlap"
 msgstr ""
 "Diğer her {area}, petek veya örtüşmesi gereken diğer düzensiz kalıplar için "
-"{direction} -rection \\\\\\\\ nusulfuldaki boşluğun bir yüzdesi ile yer "
+"{direction} -rection \nusulfuldaki boşluğun bir yüzdesi ile yer "
 "değiştirebilir."
 
 #: meerk40t/gui/propertypanels/placementproperty.py:243
@@ -18227,7 +18228,7 @@ msgstr "kolon"
 msgid ""
 "Rotate elements every other {area}\n"
 "Useful for triangular patterns."
-msgstr "Üçgen desenler için diğer her {area} \\\\\\\\ nuseful öğeleri döndürün."
+msgstr "Üçgen desenler için diğer her {area} \nuseful öğeleri döndürün."
 
 #: meerk40t/gui/propertypanels/placementproperty.py:254
 #: meerk40t/gui/propertypanels/placementproperty.py:260
@@ -18953,7 +18954,7 @@ msgid ""
 "Left Click: Move to next panel\n"
 "Right Click: Move to previous panel"
 msgstr ""
-"Sol tıklama: Sonraki Panele Taşın \\\\\\\\ Nright Tıklayın: Önceki Panele "
+"Sol tıklama: Sonraki Panele Taşın \nright Tıklayın: Önceki Panele "
 "Taşın"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:46
@@ -19205,7 +19206,7 @@ msgid ""
 "Drag existing tabs around or add one by clicking on the shape,\n"
 "Shift-Click/Delete removes current, Shift+Delete removes all"
 msgstr ""
-"Mevcut sekmeleri sürükleyin veya şekle tıklayarak bir tane ekleyin, \\\\\\\\"
+"Mevcut sekmeleri sürükleyin veya şekle tıklayarak bir tane ekleyin, \n"
 " nShift-Click/Sil akımı kaldırır, Shift+Silde Tümünü kaldırır"
 
 #: meerk40t/gui/utilitywidgets/debugwidgets.py:15
@@ -19969,11 +19970,11 @@ msgstr "Yardım <Yardım>"
 
 #: meerk40t/kernel/kernel.py:2554
 msgid "\tArgument: {type} '{name}'{help}"
-msgstr "\\\\\\\\ targument: {type} '{name}' {help}"
+msgstr "\n targument: {type} '{name}' {help}"
 
 #: meerk40t/kernel/kernel.py:2565
 msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr "\\\\\\\\ enttion: {type} ('-{name}', '-{short}') {help}"
+msgstr "\n enttion: {type} ('-{name}', '-{short}') {help}"
 
 #: meerk40t/kernel/kernel.py:2575
 msgid "No extended help for: {name}"
@@ -20727,7 +20728,7 @@ msgid ""
 "difference should not be visible even under magnification."
 msgstr ""
 "Örnek olarak, x_x_ yerine xx__ yakacak - çünkü lazer ışını örtüştüğü ve "
-"biraz en fazla 1/1000 \\\\\\\\"
+"biraz en fazla 1/1000 \n"
 
 #: meerk40t/lihuiyu/device.py:365
 msgid ""
@@ -21223,7 +21224,7 @@ msgstr "USB günlüğünü göster"
 msgid ""
 "Reset\n"
 "statistics"
-msgstr "Sıfırla \\\\\\\\ nstatistics"
+msgstr "Sıfırla \nstatistics"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:77
 msgid "Clear Status-Log"
@@ -21472,7 +21473,7 @@ msgid ""
 "-1 match anything. 0+ match exactly that value."
 msgstr ""
 "İsteğe bağlı: Aşağıdaki eşleşme kriterlerini kullanarak farklı lazerler "
-"arasında ayrım yapın. \\\\\\\\ N-1 her şeyi eşleştirin.0+ tam olarak bu "
+"arasında ayrım yapın. \n-1 her şeyi eşleştirin.0+ tam olarak bu "
 "değeri eşleştirin."
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:79
@@ -21751,7 +21752,7 @@ msgstr "23 numaralı bağlantı noktasında bir konsol_server başlatır (telnet
 
 #: meerk40t/network/console_server.py:56
 msgid "{kernel_name} {kernel_version} Telnet Console.\r\n"
-msgstr "{kernel_name} {kernel_version} Telnet Konsolu. \\\\\\\\ R \\\\\\\\ n"
+msgstr "{kernel_name} {kernel_version} Telnet Konsolu. \r \n"
 
 #: meerk40t/network/console_server.py:128
 msgid "shutdown current webserver"
@@ -22838,7 +22839,7 @@ msgid ""
 "Provide your address as:\n"
 "PO box, room number, house number, city, prefecture, zip code and country"
 msgstr ""
-"Adresinizi şu şekilde sağlayın: \\\\\\\\ npo kutusu, oda numarası, ev "
+"Adresinizi şu şekilde sağlayın: \npo kutusu, oda numarası, ev "
 "numarası, şehir, vilayet, posta kodu ve ülke"
 
 #: barcodes/gui.py:216 build/lib/barcodes/gui.py:216
