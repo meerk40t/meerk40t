@@ -211,14 +211,14 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
                 continue
             mo_file = filename + ".mo"
             doit = True
+            source_encoding = detect_encoding(d + po_file)
+            if source_encoding not in ("utf-8", "utf8"):
+                print(
+                    f"Warning: {d + po_file} has non-utf8 encoding ({source_encoding}), can lead to unexpected results."
+                )
+                source_encoding = "utf-8"
             if os.path.exists(d + mo_file):
 
-                source_encoding = detect_encoding(d + po_file)
-                if source_encoding not in ("utf-8", "utf8"):
-                    print(
-                        f"Warning: {d + po_file} has non-utf8 encoding ({source_encoding}), can lead to unexpected results."
-                    )
-                    source_encoding = "utf-8"
                 target_encoding = "utf-8"  # Default target encoding
                 po_date = os.path.getmtime(d + po_file)
                 mo_date = os.path.getmtime(d + mo_file)
