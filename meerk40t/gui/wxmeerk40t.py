@@ -412,6 +412,7 @@ supported_languages = (
     ("ja", "日本", wx.LANGUAGE_JAPANESE),
     ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
     ("ru", "русский", wx.LANGUAGE_RUSSIAN),
+    ("tr", "Türkçe", wx.LANGUAGE_TURKISH),
 )
 
 
