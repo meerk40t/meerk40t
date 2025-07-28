@@ -21,7 +21,7 @@ Arguments:
     -c, --check      Check encoding of .po files for the given locale(s)
 
 Supported locales:
-    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
+    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, tr, zh
 """
 
 import os
@@ -40,6 +40,7 @@ LOCALE_LONG_NAMES = {
     "pt_BR": "Portuguese (Brazil)",
     "pt_PT": "Portuguese (Portugal)",
     "ru": "Russian",
+    "tr": "Turkish",
     "zh": "Chinese",
 }
 GETTEXT_PLURAL_FORMS = {
@@ -53,6 +54,7 @@ GETTEXT_PLURAL_FORMS = {
     "pt_BR": "nplurals=2; plural=(n > 1);",
     "pt_PT": "nplurals=2; plural=(n != 1);",
     "ru": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
+    "tr": "nplurals=2; plural=(n != 1);",
     "zh": "nplurals=1; plural=0;",
 }
 
@@ -323,6 +325,7 @@ def validate_po(
     ignored_empty = 0
     ignored_duplicate = 0
     ignored_unused = 0
+    faulty_curly = 0
     for msgid, msgstr in id_pairs:
         t_msgid = lf_coded(msgid)
         if not msgstr or t_msgid not in id_strings_source or msgid in seen:
@@ -347,12 +350,41 @@ def validate_po(
                     file = loc.strip()
                     line = "1"
                 entry.occurrences.append((file, line))
+        # Compare the spelling of all texts with curly braces, take the value from msgid if different
+        import re
+        def extract_curly(text):
+            return re.findall(r"\{([^{}]*)\}", text)
+
+        msgid_curly = extract_curly(msgid)
+        msgstr_curly = extract_curly(msgstr)
+        # Only replace if both have the same number of curly bracketed texts
+        if msgid_curly and msgstr_curly:
+            # Replace only curly bracketed texts in msgstr whose spelling cannot be found in any curly identifier in msgid
+            def replace_if_not_found(msgstr, msgid_curly, msgstr_curly):
+                new_msgstr = msgstr
+                for i, str_val in enumerate(msgstr_curly):
+                    if str_val not in msgid_curly:
+                        # Replace the i-th curly bracketed text in msgstr with the i-th from msgid (if available)
+                        if i < len(msgid_curly):
+                            # Replace the i-th occurrence
+                            def replace_nth(text, sub, repl, n):
+                                matches = list(re.finditer(re.escape(sub), text))
+                                if len(matches) > n:
+                                    start, end = matches[n].span()
+                                    return text[:start] + repl + text[end:]
+                                return text
+                            new_msgstr = replace_nth(new_msgstr, str_val, msgid_curly[i], i)
+                return new_msgstr
+            new_msgstr = replace_if_not_found(msgstr, msgid_curly, msgstr_curly)
+            if new_msgstr != msgstr:
+                faulty_curly += 1
+                entry.msgstr = new_msgstr
         po.append(entry)
         seen.add(msgid)
         written += 1
     po.save(f"./fixed_{locale}_meerk40t.po")
     print(
-        f"Validation for {locale} done: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
+        f"Validation for {locale} done: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}, faulty_curly={faulty_curly}"
     )
 
 
