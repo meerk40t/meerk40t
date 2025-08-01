@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: ristraus@hotmail.com\n"
 "POT-Creation-Date: 21-07-25 12:00UTC\n"
-"PO-Revision-Date: 21-07-25 12:00UTC\n"
+"PO-Revision-Date: 25-07-25 12:00UTC\n"
 "Last-Translator: Richard Strauss <ristraus@hotmail.com>\n"
 "Language: pt-br\n"
 "Language-Team: Portuguese\n"
@@ -597,7 +597,7 @@ msgstr "envia comando de lista galvo bruto exatamente como composto"
 
 #: meerk40t/balormk/galvo_commands.py:655
 msgid "send laser a goto command"
-msgstr "enviar ao laser um comando goto"
+msgstr "enviar ao laser um comando ir para"
 
 #: meerk40t/balormk/galvo_commands.py:669
 msgid "Send laser rotary command info."
@@ -1658,7 +1658,7 @@ msgstr "Agrupar objetos raster"
 
 #: meerk40t/core/planner.py:61
 msgid "Separate non-overlapping raster objects.\nActive: this will raster close (i.e. overlapping) objects as one,\nbut will separately process objects lying apart from each other.\nInactive: all objects will be lasered as one single unit."
-msgstr "Separar objetos raster que não se sobrepõem.\nAtivo: objetos próximos ou sobrepostos serão rasterizados juntos,\nmas objetos distantes serão processados separadamente.\nInativo: todos os objetos serão queimados como uma única unidade."
+msgstr "Separar objetos raster que não se sobrepõem.\nAtivo: objetos próximos ou sobrepostos serão rasterizados juntos,\nmas objetos distantes serão processados separadamente.\nInativo: todos os objetos serão gravados como uma única unidade."
 
 #: meerk40t/core/planner.py:71
 msgid "Margin:"
@@ -1674,11 +1674,11 @@ msgstr "Reduzir tempo de deslocamento"
 
 #: meerk40t/core/planner.py:90
 msgid "Using this option can significantly reduce the time spent moving between elements with the laser off by optimizing the sequence that elements are burned. "
-msgstr "Usar esta opção pode reduzir significativamente o tempo gasto movendo entre elementos com o laser desligado, ao otimizar a ordem em que os elementos são queimados."
+msgstr "Usar esta opção pode reduzir significativamente o tempo gasto movendo entre elementos com o laser desligado, ao otimizar a ordem em que os elementos são gravados."
 
 #: meerk40t/core/planner.py:96
 msgid "When this option is NOT checked, elements are burned strictly in the order they appear in the Operation tree, and the Merge options will have no effect on the burn time. "
-msgstr "Quando esta opção NÃO está marcada, os elementos são queimados estritamente na ordem em que aparecem na árvore de operações, e as opções de mesclagem não terão efeito no tempo de gravação."
+msgstr "Quando esta opção NÃO está marcada, os elementos são gravados estritamente na ordem em que aparecem na árvore de operações, e as opções de mesclagem não terão efeito no tempo de gravação."
 
 #: meerk40t/core/planner.py:102
 msgid "When this option IS checked, Meerk40t will burn each subpath and then move to the nearest remaining subpath instead, reducing the time taken moving between burn items."
@@ -1690,11 +1690,11 @@ msgstr "Queimar subcaminhos completos"
 
 #: meerk40t/core/planner.py:118
 msgid "By default Reduce Travel Time optimises using SVG individual path segments, which means that non-closed subpaths can be burned in several shorter separate burns rather than one continuous burn from start to end. "
-msgstr "Por padrão, 'Reduzir tempo de deslocamento' otimiza usando segmentos individuais de caminhos SVG, o que significa que subcaminhos não fechados podem ser queimados em várias partes menores em vez de uma gravação contínua do início ao fim."
+msgstr "Por padrão, 'Reduzir Tempo de Deslocamento' otimiza usando segmentos individuais de caminhos SVG, o que significa que subcaminhos não fechados podem ser gravados em várias partes menores em vez de uma gravação contínua do início ao fim."
 
 #: meerk40t/core/planner.py:129
 msgid "This option only affects non-closed paths. When this option is checked, non-closed subpaths are always burned in one continuous burn from start to end rather than having burns start in the middle. Whilst this may create a longer travel move to the end of the subpath,it also avoids later travel moves to or from the intermediate point. The total travel time may therefore be shorter or longer. It may also avoid minor differences in total burn depth at the point the burns join. "
-msgstr "Esta opção só afeta caminhos não fechados. Quando marcada, os subcaminhos não fechados serão sempre queimados em uma única gravação contínua do início ao fim, evitando queima começando no meio. Isso pode criar um deslocamento inicial maior até o final do subcaminho, mas evita deslocamentos posteriores até ou a partir de pontos intermediários. O tempo total de deslocamento pode ficar maior ou menor. Também pode evitar pequenas diferenças na profundidade da gravação no ponto onde as gravações se encontram."
+msgstr "Esta opção só afeta caminhos não fechados. Quando marcada, os subcaminhos não fechados serão sempre gravados em uma única gravação contínua do início ao fim, evitando queima começando no meio. Isso pode criar um deslocamento inicial maior até o final do subcaminho, mas evita deslocamentos posteriores até ou a partir de pontos intermediários. O tempo total de deslocamento pode ficar maior ou menor. Também pode evitar pequenas diferenças na profundidade da gravação no ponto onde as gravações se encontram."
 
 #: meerk40t/core/planner.py:139
 msgid "Merge Passes"
@@ -2475,11 +2475,11 @@ msgstr "<outputop, inputop> - Criar nova operação utilitária"
 
 #: meerk40t/core/elements/branches.py:835 meerk40t/core/elements/element_treeops.py:2490 meerk40t/gui/propertypanels/gotoproperty.py:26
 msgid "X-Coordinate of Goto?"
-msgstr "Coordenada X do Goto?"
+msgstr "Coordenada X do Ir Para?"
 
 #: meerk40t/core/elements/branches.py:841 meerk40t/core/elements/element_treeops.py:2489 meerk40t/gui/propertypanels/gotoproperty.py:34
 msgid "Y-Coordinate of Goto?"
-msgstr "Coordenada Y do Goto?"
+msgstr "Coordenada Y do Ir Para?"
 
 #: meerk40t/core/elements/branches.py:845
 msgid "<gotoop> <x> <y> - Create new utility operation"
@@ -2607,11 +2607,11 @@ msgstr "distância-de-hachura <distância>"
 
 #: meerk40t/core/elements/branches.py:1153
 msgid "Hatch Distance for '{name}' is currently: {distance}"
-msgstr "Distância de hachura de '{name}' atualmente: {distance}"
+msgstr "Distância de Hachura de '{name}' atualmente: {distance}"
 
 #: meerk40t/core/elements/branches.py:1174
 msgid "Hatch Distance for '{name}' updated {old_distance} -> {distance}"
-msgstr "Distância de hachura de '{name}' atualizada de {old_distance} para {distance}"
+msgstr "Distância de Hachura de '{name}' atualizada de {old_distance} para {distance}"
 
 #: meerk40t/core/elements/branches.py:1179
 msgid "Set hatch-angle of operations"
@@ -2631,11 +2631,11 @@ msgstr "ângulo-de-hachura <ângulo>"
 
 #: meerk40t/core/elements/branches.py:1217
 msgid "Hatch Angle for '{name}' is currently: {angle} ({angle_degree})"
-msgstr "Ângulo de hachura de '{name}' atualmente: {angle} ({angle_degree})"
+msgstr "Ângulo de Hachura de '{name}' atualmente: {angle} ({angle_degree})"
 
 #: meerk40t/core/elements/branches.py:1242
 msgid "Hatch Angle for '{name}' updated {old_angle} -> {angle} ({angle_degree})"
-msgstr "Ângulo de hachura de '{name}' atualizado de {old_angle} para {angle} ({angle_degree})"
+msgstr "Ângulo de Hachura de '{name}' atualizado de {old_angle} para {angle} ({angle_degree})"
 
 #: meerk40t/core/elements/branches.py:1254
 msgid "Disable the given operations"
@@ -2907,7 +2907,7 @@ msgstr "Desmarcado: classificar elementos em operações apenas com correspondê
 
 #: meerk40t/core/elements/elements.py:268
 msgid "Ticked: Allow a certain color-distance for classification"
-msgstr "Marcado: permitir uma certa distância de cor para classificação"
+msgstr "Marcado: Permitir uma certa distância de cor para classificação"
 
 #: meerk40t/core/elements/elements.py:277
 msgid "Color distance"
@@ -2927,11 +2927,11 @@ msgstr "Tratar 'Preto' como raster mesmo para elementos básicos (como o Whisper
 
 #: meerk40t/core/elements/elements.py:306
 msgid "Ticked: Classify will assign black elements to a raster operation"
-msgstr "Marcado: a classificação atribuirá elementos pretos a uma operação raster"
+msgstr "Marcado: A classificação atribuirá elementos pretos a uma operação raster"
 
 #: meerk40t/core/elements/elements.py:310
 msgid "Unticked: Classify will assign black elements to an engrave operation"
-msgstr "Desmarcado: a classificação atribuirá elementos pretos a uma operação de gravação"
+msgstr "Desmarcado: A classificação atribuirá elementos pretos a uma operação de gravação"
 
 #: meerk40t/core/elements/elements.py:319
 msgid "Classify elements on fill"
@@ -3027,11 +3027,11 @@ msgstr "Permitir arrastar marcas de registro para operações"
 
 #: meerk40t/core/elements/elements.py:453
 msgid "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
-msgstr "Marcado: arrastar nós de marca de registro para uma operação os moverá de volta para o ramo de elementos."
+msgstr "Marcado: Arrastar nós de marca de registro para uma operação os moverá de volta para o ramo de elementos."
 
 #: meerk40t/core/elements/elements.py:457
 msgid "Unticked: A drag operation of regmark nodes to an operation will be ignored."
-msgstr "Desmarcado: arrastar nós de marca de registro para uma operação será ignorado."
+msgstr "Desmarcado: Arrastar nós de marca de registro para uma operação será ignorado."
 
 #: meerk40t/core/elements/elements.py:466
 msgid "Reuse existing"
@@ -3039,11 +3039,11 @@ msgstr "Reutilizar existente"
 
 #: meerk40t/core/elements/elements.py:469
 msgid "Ticked: When loading a file we will reuse an existing operation with the same principal properties."
-msgstr "Marcado: ao carregar um arquivo, reutilizaremos uma operação existente com as mesmas propriedades principais."
+msgstr "Marcado: Ao carregar um arquivo, reutilizaremos uma operação existente com as mesmas propriedades principais."
 
 #: meerk40t/core/elements/elements.py:473
 msgid "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
-msgstr "Desmarcado: adicionaremos outra operação junto com as existentes (sempre que as propriedades forem diferentes)."
+msgstr "Desmarcado: Adicionaremos outra operação junto com as existentes (sempre que as propriedades forem diferentes)."
 
 #: meerk40t/core/elements/elements.py:482
 msgid "Statusbar display"
@@ -3107,7 +3107,7 @@ msgstr "Escolha se os comandos de inicialização de arquivos são permitidos ou
 
 #: meerk40t/core/elements/elements.py:556
 msgid "Note: They still need to be activated on a per file basis."
-msgstr "Nota: eles ainda precisam ser ativados individualmente por arquivo."
+msgstr "Nota: Eles ainda precisam ser ativados individualmente por arquivo."
 
 #: meerk40t/core/elements/elements.py:570 meerk40t/core/elements/elements.py:4178 meerk40t/core/elements/elements.py:4186 meerk40t/core/elements/elements.py:4188 meerk40t/gui/simpleui.py:225 meerk40t/gui/wxmmain.py:5448
 msgid "File is Malformed"
@@ -3927,7 +3927,7 @@ msgstr "Selecionar elementos não atribuídos"
 
 #: meerk40t/core/elements/element_treeops.py:2188
 msgid "Select all elements that won't be burned"
-msgstr "Selecionar todos os elementos que não serão queimados"
+msgstr "Selecionar todos os elementos que não serão gravados"
 
 #: meerk40t/core/elements/element_treeops.py:2204
 msgid "Material Manager"
@@ -4035,7 +4035,7 @@ msgstr "Enviar laser para localização específica."
 
 #: meerk40t/core/elements/element_treeops.py:2509
 msgid "Append Beep"
-msgstr "Anexar bip"
+msgstr "Anexar bipe"
 
 #: meerk40t/core/elements/element_treeops.py:2525
 msgid "Append Interrupt"
@@ -4059,23 +4059,23 @@ msgstr "Anexar entrada"
 
 #: meerk40t/core/elements/element_treeops.py:2594
 msgid "Append Coolant On"
-msgstr "Anexar resfriamento ativado"
+msgstr "Anexar Resfriamento Ativado"
 
 #: meerk40t/core/elements/element_treeops.py:2610
 msgid "Append Coolant Off"
-msgstr "Anexar resfriamento desativado"
+msgstr "Anexar Resfriamento Desativado"
 
 #: meerk40t/core/elements/element_treeops.py:2626
 msgid "Append Home/Beep/Interrupt"
-msgstr "Anexar Início/Bip/Interrupção"
+msgstr "Anexar Início/Bipe/Interrupção"
 
 #: meerk40t/core/elements/element_treeops.py:2639
 msgid "Append Origin/Beep/Interrupt"
-msgstr "Anexar Origem/Bip/Interrupção"
+msgstr "Anexar Origem/Bipe/Interrupção"
 
 #: meerk40t/core/elements/element_treeops.py:2653
 msgid "Append Shutdown"
-msgstr "Anexar desligamento"
+msgstr "Anexar Desligamento"
 
 #: meerk40t/core/elements/element_treeops.py:2668
 msgid "Console command to append to operations?"
@@ -4155,7 +4155,7 @@ msgstr "Círculo"
 
 #: meerk40t/core/elements/element_treeops.py:2854 meerk40t/core/elements/element_treeops.py:2872 meerk40t/core/elements/element_treeops.py:2890 meerk40t/core/elements/element_treeops.py:2908
 msgid "Apply a wobble (contour follower)"
-msgstr "Aplique um wobble (seguidor de contorno)"
+msgstr "Aplique uma oscilação (seguidor de contorno)"
 
 #: meerk40t/core/elements/element_treeops.py:2905
 msgid "Meander"
@@ -4267,7 +4267,7 @@ msgstr "Adicionar Retorno à Origem"
 
 #: meerk40t/core/elements/element_treeops.py:3235
 msgid "Add Beep"
-msgstr "Adicionar Beep"
+msgstr "Adicionar Bipe"
 
 #: meerk40t/core/elements/element_treeops.py:3245
 msgid "Add Interrupt"
@@ -4295,11 +4295,11 @@ msgstr "Adicionar Resfriamento Desligado"
 
 #: meerk40t/core/elements/element_treeops.py:3308
 msgid "Add Home/Beep/Interrupt"
-msgstr "Adicionar Ponto Inicial/Beep/Interrupção"
+msgstr "Adicionar Ponto Inicial/Bipe/Interrupção"
 
 #: meerk40t/core/elements/element_treeops.py:3325
 msgid "Add Origin/Beep/Interrupt"
-msgstr "Adicionar Origem/Beep/Interrupção"
+msgstr "Adicionar Origem/Bipe/Interrupção"
 
 #: meerk40t/core/elements/element_treeops.py:3341
 msgid "Reload '{name}'"
@@ -4519,7 +4519,7 @@ msgstr "Adicionar fenda de chave"
 
 #: meerk40t/core/elements/element_treeops.py:4246
 msgid "Add a keyhole effect between the selected elements"
-msgstr "Adicionar efeito de fenda de chave entre os elementos selecionados"
+msgstr "Adicionar efeito de moldura (keyhole) entre os elementos selecionados"
 
 #: meerk40t/core/elements/element_treeops.py:4258 meerk40t/core/elements/element_treeops.py:4735 meerk40t/gui/propertypanels/imageproperty.py:751
 msgid "Remove keyhole"
@@ -5431,7 +5431,7 @@ msgstr "O ID do elemento de moldura"
 
 #: meerk40t/core/elements/render.py:717
 msgid "Set a path-like element as keyhole frame for selected images"
-msgstr "Definir um elemento tipo caminho como moldura para imagens selecionadas"
+msgstr "Definir um elemento tipo caminho como moldura (keyhole) para imagens selecionadas"
 
 #: meerk40t/core/elements/render.py:735
 msgid "You need to provide an ID of an element to act as a keyhole"
@@ -5451,7 +5451,7 @@ msgstr "Nenhuma imagem selecionada/fornecida"
 
 #: meerk40t/core/elements/render.py:764
 msgid "Removes keyhole frame for selected images"
-msgstr "Remove moldura de imagens selecionadas"
+msgstr "Remove a moldura (keyhole) das imagens selecionadas"
 
 #: meerk40t/core/elements/shapes.py:121
 msgid "circle_r <r>"
@@ -6359,7 +6359,7 @@ msgstr "Eixo Y"
 
 #: meerk40t/cylinder/gui/cylindersettings.py:22
 msgid "Cylinder-Correction"
-msgstr ""
+msgstr "Correção de Cilindro"
 
 #: meerk40t/cylinder/gui/cylindersettings.py:37
 msgid "Edit and activate planar cylinder correction"
@@ -6507,7 +6507,7 @@ msgstr "Mover o cabeçote do laser para a posição absoluta 0,0."
 
 #: meerk40t/device/gui/defaultactions.py:63
 msgid "Make audible beep."
-msgstr "Emitir um beep audível."
+msgstr "Emitir um bipe audível."
 
 #: meerk40t/device/gui/defaultactions.py:68
 msgid "Interrupt the current operation and display a message."
@@ -6587,7 +6587,7 @@ msgstr "Exibir potência como %"
 
 #: meerk40t/device/gui/formatterpanel.py:102
 msgid "Active: Full power will be shown as 100%\nInactive: Full power will be shown as 1000 ppi"
-msgstr ""
+msgstr "Ativo: A potência máxima será mostrada como 100%\nInativo: A potência máxima será mostrada como 1000 ppi"
 
 #: meerk40t/device/gui/formatterpanel.py:111
 msgid "Show speed in mm/min"
@@ -6595,7 +6595,7 @@ msgstr "Exibir velocidade em mm/min"
 
 #: meerk40t/device/gui/formatterpanel.py:116
 msgid "Active: Speed will be shown in mm/min\nInactive: Speed will be shown in mm/s"
-msgstr ""
+msgstr "Ativo: A velocidade será mostrada em mm/min\nInativo: A velocidade será mostrada em mm/s"
 
 #: meerk40t/device/gui/formatterpanel.py:159
 msgid "Do yo want to use a bespoke formatter?"
@@ -6619,7 +6619,7 @@ msgstr "Nível de aviso para máximo {unit}"
 
 #: meerk40t/device/gui/warningpanel.py:176
 msgid "Meerk40t can warn you if it believes the values for\npower and speed are too ambitious for your machine.\nIt will display a warning indicator: '❌'\nin the label of the associated operation-node"
-msgstr ""
+msgstr "O Meerk40t pode avisá-lo se ele acredita que os valores de potência e velocidade são muito ambiciosos para sua máquina.\nEle exibirá um indicador de aviso: '❌'\nno rótulo do nó de operação associado"
 
 #: meerk40t/dxf/plugin.py:27
 msgid "DXF Center and Fit"
@@ -6799,11 +6799,11 @@ msgstr "inverter máscara da imagem"
 
 #: meerk40t/extra/imageactions.py:227
 msgid "add outline of keyhole shape"
-msgstr "adicionar contorno em formato de fechadura"
+msgstr "adicionar contorno em formato de moldura (keyhole)"
 
 #: meerk40t/extra/imageactions.py:233
 msgid "render_keyhole <columns> <rows> <dpi>"
-msgstr "render_keyhole <colunas> <linhas> <dpi>"
+msgstr "renderizar_moldura (keyhole) <columns> <rows> <dpi>"
 
 #: meerk40t/extra/imageactions.py:310 meerk40t/image/imagetools.py:1548 meerk40t/image/imagetools.py:1559
 msgid "Intermediary images were none"
@@ -6887,7 +6887,7 @@ msgstr "inkscape version   - obter a versão do inkscape"
 
 #: meerk40t/extra/inkscape.py:361
 msgid "Inkscape executable at \"{path}\" is: {version}"
-msgstr ""
+msgstr "O executável do Inkscape em \"{path}\" é: {version}"
 
 #: meerk40t/extra/inkscape.py:368
 msgid "Optional: location of inkscape executable"
@@ -7199,7 +7199,7 @@ msgstr "Uma nova versão {type} está disponível ({system}):"
 
 #: meerk40t/extra/updater.py:64
 msgid "Version: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
-msgstr "Tradução de: Version: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
+msgstr "Versão: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
 
 #: meerk40t/extra/updater.py:65
 msgid "You seem to have the latest {system} version."
@@ -7207,7 +7207,7 @@ msgstr "Parece que você já tem a versão mais recente para {system}."
 
 #: meerk40t/extra/updater.py:70
 msgid "Latest version on github: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
-msgstr "Tradução de: Latest version on github: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
+msgstr "Última versão no github: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
 
 #: meerk40t/extra/updater.py:71
 msgid "Could not find any release information on github"
@@ -7331,11 +7331,11 @@ msgstr "Qual comando inicia a sequência de homing do Z"
 
 #: meerk40t/grbl/device.py:295 meerk40t/ruida/device.py:278
 msgid "What serial interface does this device connect to?"
-msgstr "Tradução de: What serial interface does this device connect to?"
+msgstr "A qual interface serial este dispositivo se conecta?"
 
 #: meerk40t/grbl/device.py:306 meerk40t/ruida/device.py:289
 msgid "Baud Rate"
-msgstr "Taxa de Baud"
+msgstr "taxa de Transmissão"
 
 #: meerk40t/grbl/device.py:307 meerk40t/ruida/device.py:290
 msgid "Baud Rate of the device"
@@ -7359,11 +7359,11 @@ msgstr "Porta TCP do dispositivo GRBL"
 
 #: meerk40t/grbl/device.py:362
 msgid "TCP Port of the device (usually 81)"
-msgstr "Tradução de: TCP Port of the device (usually 81)"
+msgstr "Porta TCP do dispositivo (geralmente 81)"
 
 #: meerk40t/grbl/device.py:374 meerk40t/grbl/gui/grblconfiguration.py:35
 msgid "Serial"
-msgstr "Serial"
+msgstr "Série"
 
 #: meerk40t/grbl/device.py:377
 msgid "TCP-Network"
@@ -7403,7 +7403,7 @@ msgstr "Também reinicia o controlador ao usar o comando 'Clear Alarm'"
 
 #: meerk40t/grbl/device.py:428 meerk40t/moshi/device.py:203
 msgid "Distance of the curve interpolation in mils"
-msgstr "Tradução de: Distance of the curve interpolation in mils"
+msgstr "Distância da interpolação da curva em mils"
 
 #: meerk40t/grbl/device.py:435
 msgid "Device has endstops"
@@ -7423,59 +7423,59 @@ msgstr "Se ativo, permite ligar o laser em potência muito baixa para indicar po
 
 #: meerk40t/grbl/device.py:462
 msgid "Reddot Laser strength"
-msgstr "Tradução de: Reddot Laser strength"
+msgstr "Força do laser Reddot"
 
 #: meerk40t/grbl/device.py:466
 msgid "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
-msgstr "Tradução de: Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
+msgstr "Forneça o nível de potência do indicador de ponto vermelho, que precisa estar abaixo da intensidade crítica do laser para não queimar o material"
 
 #: meerk40t/grbl/device.py:475
 msgid "Active during Outline"
-msgstr "Tradução de: Active during Outline"
+msgstr "Ativo durante o esboço"
 
 #: meerk40t/grbl/device.py:478
 msgid "If active then the red dot will automatically be used if you outline the burn area"
-msgstr "Tradução de: If active then the red dot will automatically be used if you outline the burn area"
+msgstr "Se ativo, o ponto vermelho será usado automaticamente se você delinear a área de queima"
 
 #: meerk40t/grbl/device.py:487 meerk40t/lihuiyu/device.py:398
 msgid "Max vector speed"
-msgstr "Tradução de: Max vector speed"
+msgstr "Velocidade máxima do vetor"
 
 #: meerk40t/grbl/device.py:492 meerk40t/lihuiyu/device.py:403
 msgid "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\nYou can finetune this in the Warning Sections of this configuration dialog."
-msgstr "Tradução de: What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\nYou can finetune this in the Warning Sections of this configuration dialog."
+msgstr "Qual é a velocidade mais confiável com que seu laser é capaz de executar operações vetoriais, ou seja, gravação ou corte?\nVocê pode ajustar isso nas Seções de Aviso desta caixa de diálogo de configuração."
 
 #: meerk40t/grbl/device.py:493 meerk40t/grbl/device.py:507
 msgid "Maximum speeds"
-msgstr "Tradução de: Maximum speeds"
+msgstr "Velocidades máximas"
 
 #: meerk40t/grbl/device.py:501 meerk40t/lihuiyu/device.py:412
 msgid "Max raster speed"
-msgstr "Tradução de: Max raster speed"
+msgstr "Velocidade máxima do raster"
 
 #: meerk40t/grbl/device.py:506 meerk40t/lihuiyu/device.py:417
 msgid "What is the highest reliable speed your laser is able to perform raster or image operations.\nYou can finetune this in the Warning Sections of this configuration dialog."
-msgstr "Tradução de: What is the highest reliable speed your laser is able to perform raster or image operations.\nYou can finetune this in the Warning Sections of this configuration dialog."
+msgstr "Qual é a velocidade mais confiável com que seu laser é capaz de executar operações de varredura ou imagem?\nVocê pode ajustar isso nas Seções de Aviso desta caixa de diálogo de configuração."
 
 #: meerk40t/grbl/device.py:515
 msgid "Travel speed"
-msgstr "Tradução de: Travel speed"
+msgstr "Velocidade de deslocamento"
 
 #: meerk40t/grbl/device.py:519
 msgid "What is the travel speed for your device to move from point to another."
-msgstr "Tradução de: What is the travel speed for your device to move from point to another."
+msgstr "Qual é a velocidade de deslocamento do seu dispositivo de um ponto a outro?"
 
 #: meerk40t/grbl/device.py:520
 msgid "Travel"
-msgstr "Tradução de: Travel"
+msgstr "Deslocamento"
 
 #: meerk40t/grbl/device.py:528
 msgid "Limit the controller buffer size"
-msgstr "Tradução de: Limit the controller buffer size"
+msgstr "Limitar o tamanho do buffer do controlador"
 
 #: meerk40t/grbl/device.py:529
 msgid "Enables the controller buffer limit."
-msgstr "Tradução de: Enables the controller buffer limit."
+msgstr "Habilita o limite do buffer do controlador."
 
 #: meerk40t/grbl/device.py:536
 msgid "lines"
@@ -7543,7 +7543,7 @@ msgstr "Final de Linha"
 
 #: meerk40t/grbl/device.py:639
 msgid "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
-msgstr "Tradução de: CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+msgstr "CR para retorno de carro (\\r), LF para avanço de linha (\\n), CRLF para ambos"
 
 #: meerk40t/grbl/device.py:646
 msgid "ms"
@@ -8555,7 +8555,7 @@ msgstr "S: Mostrar = se inativo, você pode ocultar o desenho dos elementos atri
 
 #: meerk40t/gui/basicops.py:476
 msgid "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
-msgstr "C: Refrigeração = define se o refrigerante permanece / será ligado / desligado no início desta operação"
+msgstr "C: Refrigeração = define se a refrigeração permanece / será ligada / desligada no início desta operação"
 
 #: meerk40t/gui/basicops.py:481
 msgid "Power {unit}"
@@ -8571,7 +8571,7 @@ msgstr "Atribuir os elementos selecionados à operação."
 
 #: meerk40t/gui/basicops.py:530
 msgid "Right click: Extended options for operation"
-msgstr "Clique direito: opções avançadas para a operação"
+msgstr "Clique direito: Opções avançadas para a operação"
 
 #: meerk40t/gui/basicops.py:557 meerk40t/gui/propertypanels/operationpropertymain.py:163 meerk40t/gui/propertypanels/placementproperty.py:47
 msgid "Enable this operation for inclusion in Execute Job."
@@ -8583,7 +8583,7 @@ msgstr "Ocultar todos os elementos contidos na cena se não estiver definido."
 
 #: meerk40t/gui/basicops.py:591
 msgid "Set coolant to on/off or leave unchanged (default)"
-msgstr "Definir refrigerante como ligado/desligado ou manter inalterado (padrão)"
+msgstr "Definir refrigeração como ligada/desligada ou manter inalterado (padrão)"
 
 #: meerk40t/gui/basicops.py:621
 msgid "Power ({unit})"
@@ -8935,7 +8935,7 @@ msgstr "Normal: pode estragar sua gravação (ex.: elementos não atribuídos n�
 
 #: meerk40t/gui/gui_mixins.py:352 meerk40t/gui/plugin.py:252
 msgid "Low: I hope you know what your doing (e.g. disabled operations)"
-msgstr "Baixo: espero que você saiba o que está fazendo (ex.: operações desativadas)"
+msgstr "Baixo: Espero que você saiba o que está fazendo (ex.: operações desativadas)"
 
 #: meerk40t/gui/gui_mixins.py:633
 msgid "- Vector operations are too fast."
@@ -9223,11 +9223,11 @@ msgstr "Resolução da imagem:"
 
 #: meerk40t/gui/imagesplitter.py:328
 msgid "Keyhole Object:"
-msgstr "Objeto Keyhole:"
+msgstr "Objeto Moldura (keyhole):"
 
 #: meerk40t/gui/imagesplitter.py:344
 msgid "Create keyhole image"
-msgstr "Criar imagem keyhole"
+msgstr "Criar imagem moldura (keyhole)"
 
 #: meerk40t/gui/imagesplitter.py:358
 msgid "Invert Mask:"
@@ -9243,7 +9243,7 @@ msgstr "Renderizar + Dividir"
 
 #: meerk40t/gui/imagesplitter.py:501
 msgid "Keyhole operation"
-msgstr "Operação Keyhole"
+msgstr "Operação moldura (keyhole)"
 
 #: meerk40t/gui/imagesplitter.py:530
 msgid "Image ops"
@@ -9251,7 +9251,7 @@ msgstr "Operações de imagem"
 
 #: meerk40t/gui/imagesplitter.py:532
 msgid "Open create split image dialog / keyhole generation"
-msgstr "Abrir diálogo para criar imagem dividida / gerar keyhole"
+msgstr "Abrir diálogo para criar imagem dividida / gerar moldura (keyhole)"
 
 #: meerk40t/gui/imagesplitter.py:555
 msgid "Split images for large jobs"
@@ -9503,7 +9503,7 @@ msgstr "Preservar o trabalho entre execuções e reexecuções"
 
 #: meerk40t/gui/laserpanel.py:851 meerk40t/gui/wxmmain.py:3085
 msgid "Save Project"
-msgstr "Salvar projeto"
+msgstr "Salvar Projeto"
 
 #: meerk40t/gui/laserpanel.py:873
 msgid "Updating Plan..."
@@ -10535,7 +10535,7 @@ msgstr "Navegação"
 
 #: meerk40t/gui/navigationpanels.py:99
 msgid "Align and drag laserhead around to be burned elements"
-msgstr "Alinhe e arraste o cabeçote do laser ao redor dos elementos a serem queimados"
+msgstr "Alinhe e arraste o cabeçote do laser ao redor dos elementos a serem gravados"
 
 #: meerk40t/gui/navigationpanels.py:125
 msgid "Display laser jogging controls"
@@ -11575,11 +11575,11 @@ msgstr "Estimativa de tempo: tempo de deslocamento"
 
 #: meerk40t/gui/simulation.py:1051
 msgid "Time Estimate: Extra Time (i.e. to swing around)"
-msgstr "Estimativa de tempo: tempo extra (ex. para girar)"
+msgstr "Estimativa de tempo: Tempo extra (ex. para girar)"
 
 #: meerk40t/gui/simulation.py:1053
 msgid "Time Estimate: Total Time"
-msgstr "Estimativa de tempo: tempo total"
+msgstr "Estimativa de tempo: Tempo total"
 
 #: meerk40t/gui/simulation.py:1058 meerk40t/gui/spoolerpanel.py:226
 msgid "Select the device"
@@ -12367,7 +12367,7 @@ msgstr "Arquivo de som"
 
 #: meerk40t/gui/wxmeerk40t.py:1115
 msgid "Define the soundfile MeerK40t will play when the 'beep' command is issued"
-msgstr "Definir o arquivo de som que o MeerK40t reproduzirá quando o comando 'beep' for emitido"
+msgstr "Definir o arquivo de som que o MeerK40t reproduzirá quando o comando 'bipe' for emitido"
 
 #: meerk40t/gui/wxmeerk40t.py:1296
 msgid "We got your message. Thank you for helping\n\n"
@@ -12843,11 +12843,11 @@ msgstr "Gravar o design atual"
 
 #: meerk40t/gui/wxmmain.py:1773
 msgid "Activate coolant"
-msgstr "Ativar refrigerante"
+msgstr "Ativar refrigeração"
 
 #: meerk40t/gui/wxmmain.py:1780
 msgid "Deactivate coolant"
-msgstr "Desativar refrigerante"
+msgstr "Desativar refrigeração"
 
 #: meerk40t/gui/wxmmain.py:1853
 msgid "Opens new project"
@@ -13039,11 +13039,11 @@ msgstr "Medir distância/perímetro/área\nClique esquerdo: ponto/linha\nDuplo c
 
 #: meerk40t/gui/wxmmain.py:2376
 msgid "Flip Vertical"
-msgstr "Virar verticalmente"
+msgstr "Girar verticalmente"
 
 #: meerk40t/gui/wxmmain.py:2378
 msgid "Flip the selected element vertically"
-msgstr "Virar o elemento selecionado verticalmente"
+msgstr "Girar o elemento selecionado verticalmente"
 
 #: meerk40t/gui/wxmmain.py:2391
 msgid "Mirror Horizontal"
@@ -14663,11 +14663,11 @@ msgstr "Propriedades do Console"
 
 #: meerk40t/gui/propertypanels/gotoproperty.py:27
 msgid "Set the X-Coordinate of the goto operation."
-msgstr "Defina a coordenada X da operação goto."
+msgstr "Defina a coordenada X da operação ir para."
 
 #: meerk40t/gui/propertypanels/gotoproperty.py:35
 msgid "Set the Y-Coordinate of the goto operation."
-msgstr "Defina a coordenada Y da operação goto."
+msgstr "Defina a coordenada Y da operação ir para."
 
 #: meerk40t/gui/propertypanels/gotoproperty.py:42
 msgid "Goto Absolute Position"
@@ -14675,7 +14675,7 @@ msgstr "Ir para Posição Absoluta"
 
 #: meerk40t/gui/propertypanels/gotoproperty.py:45
 msgid "This value should give exact goto locations rather than offset from device origin."
-msgstr "Este valor deve fornecer locais goto exatos em vez de deslocamento da origem do dispositivo."
+msgstr "Este valor deve fornecer locais ir para exatos em vez de deslocamento da origem do dispositivo."
 
 #: meerk40t/gui/propertypanels/groupproperties.py:31 meerk40t/gui/propertypanels/regbranchproperties.py:26
 msgid "Elements:"
@@ -14963,7 +14963,7 @@ msgstr "Olhal:"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:771
 msgid "Remove the keyhole and show the complete image"
-msgstr "Remover o olhal e mostrar a imagem completa"
+msgstr "Remover a moldura (keyhole) e mostrar a imagem completa"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:800
 msgid "Crop"
@@ -15387,7 +15387,7 @@ msgstr "Insira metade da largura do seu feixe de laser (kerf)\nse desejar uma fo
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:704
 msgid "Coolant:"
-msgstr "Refrigerante:"
+msgstr "Refrigeração:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:706
 msgid "No changes"
@@ -15403,7 +15403,7 @@ msgstr "Desligar"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:716
 msgid "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
-msgstr "Defina se o suporte de refrigerante deve ser explicitamente ligado ou desligado no início da operação, ou se deve permanecer no estado atual."
+msgstr "Defina se o suporte da refrigeração deve ser explicitamente ligada ou desligada no início da operação, ou se deve permanecer no estado atual."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:720
 msgid "Passes:"
@@ -17659,11 +17659,11 @@ msgstr "Modo silencioso está agora DESLIGADO."
 
 #: meerk40t/kernel/kernel.py:2931
 msgid "Perform beep"
-msgstr "Executar bip"
+msgstr "Executar bipe"
 
 #: meerk40t/kernel/kernel.py:2934
 msgid "Silent mode is on, no beep will be played."
-msgstr "Modo silencioso está ativo, nenhum bip será reproduzido."
+msgstr "Modo silencioso está ativo, nenhum bipe será reproduzido."
 
 #: meerk40t/kernel/kernel.py:2988
 msgid "Wait time in seconds"
@@ -20220,3 +20220,61 @@ msgstr "Cria um QR code."
 #: barcodes/main.py:459 build/lib/barcodes/main.py:459
 msgid "Create an ean-barcode or a qr-code"
 msgstr "Criar um código de barras EAN ou um QR code"
+
+msgid "Project"
+msgstr "Projeto"
+
+msgid "Settings"
+msgstr "Configurações"
+
+msgid "GUI Appearance"
+msgstr "Aparência Interface Usuário"
+
+msgid "Render-Options"
+msgstr "Opções-Renderização"
+
+msgid "Burning"
+msgstr "Gravação"
+
+msgid "Device-Control"
+msgstr "Controle-Dispositivo"
+
+msgid "Device-Settings"
+msgstr "Configuração-Dispositivo"
+
+msgid "Laser-Tools"
+msgstr "Ferramentas-Laser"
+
+msgid "Device Manager"
+msgstr "Gerenciamento Dispositivo"
+
+msgid "Sources"
+msgstr "Fontes"
+
+msgid "Operation/Element Properties"
+msgstr "Propriedades de Operação/Elemento"
+
+msgid "Jog, Move and Transform"
+msgstr "Andar, Mover e Trasnformar"
+
+msgid "Element Alignment"
+msgstr "Alinhamento do Elemento"
+
+msgid "Image Splitting"
+msgstr "Divisão de Imagem"
+
+msgid "Shape Attributes"
+msgstr "Atributos da Forma"
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -19877,3 +19877,50 @@ msgstr ""
 #: meerk40t/tools/livinghinges.py:1159
 msgid "Fill area with a living hinge pattern"
 msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "GUI Appearance"
+msgstr ""
+
+msgid "Render-Options"
+msgstr ""
+
+msgid "Burning"
+msgstr ""
+
+msgid "Device-Control"
+msgstr ""
+
+msgid "Device-Settings"
+msgstr ""
+
+msgid "Laser-Tools"
+msgstr ""
+
+msgid "Device Manager"
+msgstr ""
+
+msgid "Sources"
+msgstr ""
+
+msgid "Operation/Element Properties"
+msgstr ""
+
+msgid "Jog, Move and Transform"
+msgstr ""
+
+msgid "Element Alignment"
+msgstr ""
+
+msgid "Image Splitting"
+msgstr ""
+
+msgid "Shape Attributes"
+msgstr ""
+
+
