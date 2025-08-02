@@ -9,6 +9,7 @@ def get_effect_choices(context):
             "type": str,
             "label": _("Hatch Distance"),
             "tip": _("Default Hatch Distance"),
+            # Hint for translation _("Effect Defaults")
             "section": "Effect Defaults",
         },
         {
@@ -18,6 +19,7 @@ def get_effect_choices(context):
             "type": str,
             "label": _("Hatch Angle"),
             "tip": _("Default Hatch Angle"),
+            # Hint for translation _("Effect Defaults")
             "section": "Effect Defaults",
         },
         {
@@ -27,6 +29,7 @@ def get_effect_choices(context):
             "type": str,
             "label": _("Hatch Angle Delta"),
             "tip": _("Default Hatch Angle Delta"),
+            # Hint for translation _("Effect Defaults")
             "section": "Effect Defaults",
         },
         {
@@ -36,6 +39,7 @@ def get_effect_choices(context):
             "type": str,
             "label": _("Wobble Radius"),
             "tip": _("Default Wobble Radius"),
+            # Hint for translation _("Effect Defaults")
             "section": "Effect Defaults",
         },
         {
@@ -45,6 +49,7 @@ def get_effect_choices(context):
             "type": str,
             "label": _("Wobble Interval"),
             "tip": _("Default Wobble Interval"),
+            # Hint for translation _("Effect Defaults")
             "section": "Effect Defaults",
         },
     ]

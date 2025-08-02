@@ -722,6 +722,7 @@ def plugin(kernel, lifecycle):
                 "attr": "system_font_directories",
                 "object": context,
                 "page": "_95_Fonts",
+                # Hint for translation _("System font locations")
                 "section": "_95_System font locations",
                 "default": directories,
                 "type": list,

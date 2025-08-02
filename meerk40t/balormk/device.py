@@ -89,6 +89,13 @@ class BalorDevice(Service, Status):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                # Hint for translation _("General")
+                # Hint for translation _("General")
+                # Hint for translation _("General")
+                # Hint for translation _("General")
+                # Hint for translation _("General")
+                # Hint for translation _("General")
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "priority": "10",
                 "signals": "device;renamed",
@@ -110,7 +117,9 @@ class BalorDevice(Service, Status):
                 "type": bool,
                 "label": _("Enable"),
                 "tip": _("Use correction file?"),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Correction File")
                 "subsection": "Correction File",
             },
             {
@@ -124,7 +133,9 @@ class BalorDevice(Service, Status):
                 "label": _("File"),
                 "tip": _("Provide a correction file for the machine"),
                 "weight": 3,
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Correction File")
                 "subsection": "Correction File",
             },
             {
@@ -134,6 +145,7 @@ class BalorDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Lens Size"),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "subsection": "_00_",
                 "priority": "20",
@@ -147,6 +159,7 @@ class BalorDevice(Service, Status):
                 "type": Length,
                 "label": _("Laserspot"),
                 "tip": _("Laser spot size"),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "subsection": "_00_",
                 "priority": "20",
@@ -159,7 +172,9 @@ class BalorDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -169,7 +184,9 @@ class BalorDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -179,7 +196,9 @@ class BalorDevice(Service, Status):
                 "type": bool,
                 "label": _("Swap XY"),
                 "tip": _("Swap the X and Y axis for the device"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -197,7 +216,9 @@ class BalorDevice(Service, Status):
                 ],
                 "label": _("Rotate View"),
                 "tip": _("Rotate the device field"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -209,8 +230,10 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 # _("User Offset")
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
                 "ignore": True, # Does not work yet, so don't show
             },
@@ -223,7 +246,9 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
                 "ignore": True, # Does not work yet, so don't show
             },
@@ -233,6 +258,7 @@ class BalorDevice(Service, Status):
                 "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
             },
@@ -245,6 +271,7 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "priority": "30",
             },
@@ -257,7 +284,9 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Device Selection")
                 "subsection": "_10_Device Selection",
             },
             {
@@ -267,7 +296,9 @@ class BalorDevice(Service, Status):
                 "type": bool,
                 "label": _("Check serial no"),
                 "tip": _("Does the machine need to have a specific serial number?"),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Device Selection")
                 "subsection": "_10_Device Selection",
             },
             {
@@ -277,7 +308,9 @@ class BalorDevice(Service, Status):
                 "type": str,
                 "tip": _("Does the machine need to have a specific serial number?"),
                 "label": "",
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Device Selection")
                 "subsection": "_10_Device Selection",
                 "conditional": (self, "serial_enable"),
             },
@@ -288,7 +321,9 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Footpedal"),
                 "tip": _("What pin is your foot pedal hooked to on the GPIO"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
                 "subsection": "_30_Pin-Index",
                 "signals": "balorpin",
             },
@@ -299,7 +334,9 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Redlight laser"),
                 "tip": _("What pin is your redlight hooked to on the GPIO"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
                 "subsection": "_30_Pin-Index",
                 "signals": "balorpin",
             },
@@ -350,6 +387,7 @@ class BalorDevice(Service, Status):
                 "type": Length,
                 "label": _("X-Offset"),
                 "tip": _("Offset the redlight positions by this amount in x"),
+                # Hint for translation _("Redlight-Offset")
                 "subsection": "Redlight-Offset",
             },
             {
@@ -359,6 +397,7 @@ class BalorDevice(Service, Status):
                 "type": Length,
                 "label": _("Y-Offset"),
                 "tip": _("Offset the redlight positions by this amount in y"),
+                # Hint for translation _("Redlight-Offset")
                 "subsection": "Redlight-Offset",
             },
             {
@@ -370,6 +409,7 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "Offset the redlight positions by this angle, curving around center"
                 ),
+                # Hint for translation _("Redlight-Offset")
                 "subsection": "Redlight-Offset",
             },
             {
@@ -441,6 +481,7 @@ class BalorDevice(Service, Status):
                 "label": _("Enable"),
                 "tip": _("Enable using Pulse Width (MOPA)"),
                 # "conditional": (self, "source", "fiber"),
+                # Hint for translation _("Pulse Width")
                 "subsection": "Pulse Width",
             },
             {
@@ -471,6 +512,7 @@ class BalorDevice(Service, Status):
                 "label": _("Set Pulse Width (ns)"),
                 "trailer": "ns",
                 "tip": _("Set the MOPA pulse width setting"),
+                # Hint for translation _("Pulse Width")
                 "subsection": "Pulse Width",
             },
         ]
@@ -487,7 +529,9 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "Start delay (Start TC) at the beginning of each mark command"
                 ),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Delays")
                 "subsection": "Delays",
                 "priority": "00",
             },
@@ -501,7 +545,9 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "The delay time of the laser shutting down after marking finished"
                 ),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Delays")
                 "subsection": "Delays",
                 "priority": "10",
             },
@@ -513,7 +559,9 @@ class BalorDevice(Service, Status):
                 "label": _("Polygon Delay"),
                 "trailer": "µs",
                 "tip": _("Delay amount between different points in the path travel."),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Delays")
                 "subsection": "Delays",
                 "priority": "30",
             },
@@ -525,7 +573,9 @@ class BalorDevice(Service, Status):
                 "label": _("End Delay"),
                 "trailer": "µs",
                 "tip": _("Delay amount for the end TC"),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Delays")
                 "subsection": "Delays",
                 "priority": "20",
             },
@@ -537,7 +587,9 @@ class BalorDevice(Service, Status):
                 "label": _("Long jump delay"),
                 "trailer": "µs",
                 "tip": _("Delay for a long jump distance"),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Jump-Settings")
                 "subsection": "Jump-Settings",
             },
             {
@@ -548,7 +600,9 @@ class BalorDevice(Service, Status):
                 "label": _("Short jump delay"),
                 "trailer": "µs",
                 "tip": _("Delay for a short jump distance"),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Jump-Settings")
                 "subsection": "Jump-Settings",
             },
             {
@@ -558,7 +612,9 @@ class BalorDevice(Service, Status):
                 "type": Length,
                 "label": _("Long jump distance"),
                 "tip": _("Distance divide between long and short jump distances"),
+                # Hint for translation _("General")
                 "section": "_10_General",
+                # Hint for translation _("Jump-Settings")
                 "subsection": "Jump-Settings",
             },
             {
@@ -569,6 +625,7 @@ class BalorDevice(Service, Status):
                 "label": _("Open MO delay"),
                 "trailer": "ms",
                 "tip": _("OpenMO delay in ms"),
+                # Hint for translation _("Other")
                 "section": "_90_Other",
             },
         ]
@@ -585,6 +642,7 @@ class BalorDevice(Service, Status):
                 "tip": _(
                     "First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"
                 ),
+                # Hint for translation _("First Pulse Killer")
                 "section": "First Pulse Killer",
             },
             {
@@ -594,6 +652,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("PWM Half Period"),
                 "tip": _("Pulse Period: the frequency of the preionization signal"),
+                # Hint for translation _("Pulse-Width-Modulation")
                 "subsection": "Pulse-Width-Modulation",
             },
             {
@@ -603,6 +662,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("PWM Pulse Width"),
                 "tip": _("Pulse Width: the pulse width of the preionization signal"),
+                # Hint for translation _("Pulse-Width-Modulation")
                 "subsection": "Pulse-Width-Modulation",
             },
             {
@@ -612,6 +672,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Parameter 1"),
                 # "tip": _(""),
+                # Hint for translation _("Standby-Parameter")
                 "subsection": "Standby-Parameter",
             },
             {
@@ -621,6 +682,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Parameter 2"),
                 # "tip": _(""),
+                # Hint for translation _("Standby-Parameter")
                 "subsection": "Standby-Parameter",
             },
             {
@@ -630,6 +692,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Timing Mode"),
                 # "tip": _(""),
+                # Hint for translation _("Modes")
                 "subsection": "Modes",
             },
             {
@@ -639,6 +702,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Delay Mode"),
                 # "tip": _(""),
+                # Hint for translation _("Modes")
                 "subsection": "Modes",
             },
             {
@@ -648,6 +712,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Laser Mode"),
                 # "tip": _(""),
+                # Hint for translation _("Modes")
                 "subsection": "Modes",
             },
             {
@@ -657,6 +722,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Control Mode"),
                 # "tip": _(""),
+                # Hint for translation _("Modes")
                 "subsection": "Modes",
             },
             {
@@ -667,7 +733,9 @@ class BalorDevice(Service, Status):
                 "label": _("Max Voltage"),
                 # "tip": _(""),
                 "trailer": "V",
+                # Hint for translation _("First Pulse Killer")
                 "section": "First Pulse Killer",
+                # Hint for translation _("Parameters")
                 "subsection": "Parameters",
             },
             {
@@ -678,7 +746,9 @@ class BalorDevice(Service, Status):
                 "label": _("Min Voltage"),
                 "trailer": "V",
                 # "tip": _(""),
+                # Hint for translation _("First Pulse Killer")
                 "section": "First Pulse Killer",
+                # Hint for translation _("Parameters")
                 "subsection": "Parameters",
             },
             {
@@ -689,7 +759,9 @@ class BalorDevice(Service, Status):
                 "label": _("T1"),
                 "trailer": "µs",
                 # "tip": _(""),
+                # Hint for translation _("First Pulse Killer")
                 "section": "First Pulse Killer",
+                # Hint for translation _("Parameters")
                 "subsection": "Parameters",
             },
             {
@@ -700,7 +772,9 @@ class BalorDevice(Service, Status):
                 "label": _("T2"),
                 "trailer": "µs",
                 # "tip": _(""),
+                # Hint for translation _("First Pulse Killer")
                 "section": "First Pulse Killer",
+                # Hint for translation _("Parameters")
                 "subsection": "Parameters",
             },
             {
@@ -710,6 +784,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Param 1"),
                 # "tip": _(""),
+                # Hint for translation _("Fly Resolution")
                 "subsection": "Fly Resolution",
             },
             {
@@ -719,6 +794,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Param 2"),
                 # "tip": _(""),
+                # Hint for translation _("Fly Resolution")
                 "subsection": "Fly Resolution",
             },
             {
@@ -728,6 +804,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Param 3"),
                 # "tip": _(""),
+                # Hint for translation _("Fly Resolution")
                 "subsection": "Fly Resolution",
             },
             {
@@ -737,6 +814,7 @@ class BalorDevice(Service, Status):
                 "type": int,
                 "label": _("Param 4"),
                 # "tip": _(""),
+                # Hint for translation _("Fly Resolution")
                 "subsection": "Fly Resolution",
             },
             {

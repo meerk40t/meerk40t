@@ -495,6 +495,7 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
+            # Hint for translation _("Images")
             "section": "Images",
         },
         {
@@ -510,6 +511,7 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
+            # Hint for translation _("Images")
             "section": "Images",
         },
         {
@@ -522,6 +524,7 @@ def plugin(kernel, lifecycle=None):
                 "Set: Will scale down large images so they will fit on the laserbed."
             ),
             "page": "Input/Output",
+            # Hint for translation _("Images")
             "section": "Images",
         },
         {
@@ -537,6 +540,7 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
+            # Hint for translation _("Images")
             "section": "Images",
         },
     ]

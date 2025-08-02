@@ -50,6 +50,7 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 # _("Bed Dimensions")
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
             },
             {
@@ -61,6 +62,7 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
             },
             {
@@ -71,6 +73,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Laserspot"),
                 "tip": _("Laser spot size"),
                 "section": "_30_" + _("Laser Parameters"),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -85,6 +88,7 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_30_" + _("Laser Parameters"),
                 # _("User Scale Factor")
+                # Hint for translation _("User Scale Factor")
                 "subsection": "_20_User Scale Factor",
                 "nonzero": True,
             },
@@ -98,6 +102,7 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
+                # Hint for translation _("User Scale Factor")
                 "subsection": "_20_User Scale Factor",
                 "nonzero": True,
             },
@@ -112,6 +117,7 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_30_" + _("Laser Parameters"),
                 # _("User Offset")
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
                 "ignore": True, # Does not work yet, so don't show
             },
@@ -125,6 +131,7 @@ class LihuiyuDevice(Service, Status):
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
                 "ignore": True, # Does not work yet, so don't show
             },
@@ -216,6 +223,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -226,6 +234,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
