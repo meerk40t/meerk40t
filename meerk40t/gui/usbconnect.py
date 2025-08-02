@@ -91,6 +91,7 @@ class UsbConnect(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Control"), _("USB-Connection")
         return "Device-Control", "USB-Connection"
 
     @staticmethod

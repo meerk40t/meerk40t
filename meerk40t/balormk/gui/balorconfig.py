@@ -230,6 +230,7 @@ class BalorConfiguration(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Configuration")
         return "Device-Settings", "Configuration"
 
     @staticmethod

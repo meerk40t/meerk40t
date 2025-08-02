@@ -186,6 +186,7 @@ class NewlyController(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Control"), _("Newly-Controller")
         return "Device-Control", "Newly-Controller"
 
     @staticmethod
