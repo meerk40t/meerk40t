@@ -13181,7 +13181,7 @@ msgstr "Tercihler penceresini açar"
 
 #: meerk40t/gui/preferences.py:884
 msgid "Pr&eferences...\tCtrl-,"
-msgstr "Pr & eFerences ... \n tctrl-,"
+msgstr ""
 
 #: meerk40t/gui/preferences.py:888
 msgid "Show/Hide the Preferences window"
@@ -14370,7 +14370,7 @@ msgstr "Metni Yapıştır"
 
 #: meerk40t/gui/wxmmain.py:845 meerk40t/gui/wxmmain.py:5752
 msgid "&Undo\tCtrl-Z"
-msgstr "& Geri al \n tctrl-z"
+msgstr "&Geri al\tCtrl-Z"
 
 #: meerk40t/gui/wxmmain.py:846
 msgid "Undo last action"
@@ -14378,7 +14378,7 @@ msgstr "Son eylemi geri al"
 
 #: meerk40t/gui/wxmmain.py:855 meerk40t/gui/wxmmain.py:5763
 msgid "&Redo\tCtrl-Shift-Z"
-msgstr "& Redo \n tctrl-shift-z"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:856
 msgid "Revert last undo"
@@ -14386,7 +14386,7 @@ msgstr "Son Geri Al"
 
 #: meerk40t/gui/wxmmain.py:870
 msgid "C&ut\tCtrl-X"
-msgstr "C & ut \n tctrl-x"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:871 meerk40t/gui/wxmmain.py:2296
 msgid "Cut selected elements"
@@ -14394,7 +14394,7 @@ msgstr "Seçilen öğeleri kesin"
 
 #: meerk40t/gui/wxmmain.py:879
 msgid "&Copy\tCtrl-C"
-msgstr "& Kopya \n tctrl-c"
+msgstr "&Kopya\tCtrl-C"
 
 #: meerk40t/gui/wxmmain.py:880 meerk40t/gui/wxmmain.py:2311
 msgid "Copy selected elements to clipboard"
@@ -14402,7 +14402,7 @@ msgstr "Seçilen öğeleri panoya kopyalayın"
 
 #: meerk40t/gui/wxmmain.py:888
 msgid "&Paste\tCtrl-V"
-msgstr "& Yapıştır \n tctrl-v"
+msgstr "&Yapıştır\tCtrl-V"
 
 #: meerk40t/gui/wxmmain.py:889 meerk40t/gui/wxmmain.py:2337
 msgid "Paste elements from clipboard"
@@ -14410,7 +14410,7 @@ msgstr "Panodan öğeleri yapıştırın"
 
 #: meerk40t/gui/wxmmain.py:897
 msgid "Paste from system\tShift-Ctrl-V"
-msgstr "Sistemden Yapıştır \n Tshift-Ctrl-V"
+msgstr "Sistemden Yapıştır\tShift-Ctrl-V"
 
 #: meerk40t/gui/wxmmain.py:898
 msgid "Paste data coming from other applications"
@@ -14418,7 +14418,7 @@ msgstr "Diğer uygulamalardan gelen verileri yapıştırın"
 
 #: meerk40t/gui/wxmmain.py:911
 msgid "&Select all\tCtrl-A"
-msgstr "Tüm \n ctrl-a'yı seçin"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:912
 msgid "Select all elements on scene"
@@ -14434,7 +14434,7 @@ msgstr "Sahnedeki tüm unsurları seçin"
 
 #: meerk40t/gui/wxmmain.py:927
 msgid "&Invert selection\tCtrl-I"
-msgstr "& Seçimi tersine çevir \n tctrl-i"
+msgstr "&Seçimi tersine çevir\tCtrl-I"
 
 #: meerk40t/gui/wxmmain.py:928
 msgid "Invert the selection status of all elements"
@@ -14486,7 +14486,7 @@ msgstr "Anahtar bağlamalar"
 
 #: meerk40t/gui/wxmmain.py:1036
 msgid "Preferences\tCtrl-,"
-msgstr "Tercihler \n tctrl-,"
+msgstr "Tercihler\tCtrl-,"
 
 #: meerk40t/gui/wxmmain.py:1037
 msgid "Edit the general preferences"
@@ -15449,7 +15449,7 @@ msgstr "Saklanan pencere konumlarını unutun"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "&New\tCtrl-N"
-msgstr "Yeni \n ctrl-n"
+msgstr "Yeni\tCtrl-N"
 
 #: meerk40t/gui/wxmmain.py:4034
 msgid "Clear Operations, Elements and Notes"
@@ -15457,7 +15457,7 @@ msgstr "Net operasyonlar, öğeler ve notlar"
 
 #: meerk40t/gui/wxmmain.py:4040
 msgid "&Open Project\tCtrl-O"
-msgstr "& Açık proje \n tctrl-o"
+msgstr "& Açık proje \tCtrl-o"
 
 #: meerk40t/gui/wxmmain.py:4041
 msgid "Clear existing elements and notes and open a new file"
@@ -15482,7 +15482,7 @@ msgstr "Aynı projeye başka bir dosyayı içe aktarın"
 
 #: meerk40t/gui/wxmmain.py:4061
 msgid "&Save\tCtrl-S"
-msgstr "& Kaydet \n tctrl-s"
+msgstr "& Kaydet\tCtrl-S"
 
 #: meerk40t/gui/wxmmain.py:4062
 msgid "Save the project as an SVG file (overwriting any existing file)"
@@ -15492,7 +15492,7 @@ msgstr ""
 
 #: meerk40t/gui/wxmmain.py:4067
 msgid "Save &As\tCtrl-Shift-S"
-msgstr "Kaydet & AS \n tctrl-shift-s"
+msgstr "Kaydet &As\tCtrl-Shift-S"
 
 #: meerk40t/gui/wxmmain.py:4068
 msgid "Save the project in a new SVG file"
@@ -15500,7 +15500,7 @@ msgstr "Projeyi yeni bir SVG dosyasında kaydedin"
 
 #: meerk40t/gui/wxmmain.py:4074
 msgid "&Close Window\tCtrl-W"
-msgstr "& Pencereyi kapat \n tctrl-w"
+msgstr "&Pencereyi kapat\tCtrl-W"
 
 #: meerk40t/gui/wxmmain.py:4074 meerk40t/gui/wxmmain.py:4078
 msgid "Close Meerk40t"
@@ -15520,15 +15520,15 @@ msgstr "Hatırlamak..."
 
 #: meerk40t/gui/wxmmain.py:4256
 msgid "Zoom &Out\tCtrl--"
-msgstr "ZOOM & OUT \n TCTRL--"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:4264
 msgid "Zoom &In\tCtrl-+"
-msgstr "Zoom & in \n tctrl-+"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:4272
 msgid "Zoom to &Selected\tCtrl-Shift-B"
-msgstr "Zoom to & seçildi \n tctrl-shift-b"
+msgstr "Zoom to &seçildi\tCtrl-Shift-B"
 
 #: meerk40t/gui/wxmmain.py:4273 meerk40t/gui/wxmscene.py:1547
 msgid "Fill the scene area with the selected elements"
@@ -15536,7 +15536,7 @@ msgstr "Sahne alanını seçilen öğelerle doldurun"
 
 #: meerk40t/gui/wxmmain.py:4281
 msgid "Zoom to &Bed\tCtrl-B"
-msgstr "Zoom to & bed \n tctrl-b"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:4294
 msgid "GUI-Elements"
@@ -15544,7 +15544,7 @@ msgstr "Gui unsurları"
 
 #: meerk40t/gui/wxmmain.py:4299
 msgid "Show/Hide UI-Panels\tCtrl-U"
-msgstr "UI-Panelleri Göster/Gizle \n Tctrl-U"
+msgstr "UI-Panelleri Göster/Gizle\tCtrl-U"
 
 #: meerk40t/gui/wxmmain.py:4300
 msgid "Show/Hide all panels/ribbon bar"
@@ -15767,7 +15767,7 @@ msgstr "Meerk40t Online Wiki'yi açın"
 
 #: meerk40t/gui/wxmmain.py:4642
 msgid "&Help\tF1"
-msgstr "& Yardım \n tf1"
+msgstr "&Yardım\tF1"
 
 #: meerk40t/gui/wxmmain.py:4643 meerk40t/gui/wxmmain.py:4666
 msgid "Open the Meerk40t online wiki Beginners page"
@@ -15775,7 +15775,7 @@ msgstr "Meerk40t Online Wiki Yeni Başlayanlar Sayfasını Aç"
 
 #: meerk40t/gui/wxmmain.py:4654
 msgid "Online Reference\tF11"
-msgstr "Çevrimiçi Referans \n TF11"
+msgstr "Çevrimiçi Referans\tF11"
 
 #: meerk40t/gui/wxmmain.py:4655
 msgid "Display online reference"
@@ -19970,11 +19970,11 @@ msgstr "Yardım <Yardım>"
 
 #: meerk40t/kernel/kernel.py:2554
 msgid "\tArgument: {type} '{name}'{help}"
-msgstr "\n targument: {type} '{name}' {help}"
+msgstr "\tArgument: {type} '{name}' {help}"
 
 #: meerk40t/kernel/kernel.py:2565
 msgid "\tOption: {type} ('--{name}', '-{short}'){help}"
-msgstr "\n enttion: {type} ('-{name}', '-{short}') {help}"
+msgstr "\tEnttion: {type} ('-{name}', '-{short}') {help}"
 
 #: meerk40t/kernel/kernel.py:2575
 msgid "No extended help for: {name}"
@@ -22999,3 +22999,300 @@ msgstr "Bir QR kodu oluşturur."
 #: barcodes/main.py:459 build/lib/barcodes/main.py:459
 msgid "Create an ean-barcode or a qr-code"
 msgstr "Bir Ean-Barcode veya QR kodu oluşturun"
+
+#: meerk40t/balormk/device.py:122 meerk40t/balormk/device.py:138
+msgid "Correction File"
+msgstr "Düzeltme Dosyası"
+
+#: meerk40t/balormk/device.py:289 meerk40t/balormk/device.py:301 meerk40t/balormk/device.py:313
+msgid "Device Selection"
+msgstr "Cihaz Seçimi"
+
+#: meerk40t/balormk/device.py:326 meerk40t/balormk/device.py:339 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77
+msgid "Pin-Index"
+msgstr "Pin İndeksi"
+
+#: meerk40t/balormk/device.py:390 meerk40t/balormk/device.py:400 meerk40t/balormk/device.py:412
+msgid "Redlight-Offset"
+msgstr "Kırmızı Işık Ofseti"
+
+#: meerk40t/balormk/device.py:534 meerk40t/balormk/device.py:550 meerk40t/balormk/device.py:564 meerk40t/balormk/device.py:578
+msgid "Delays"
+msgstr "Gecikmeler"
+
+#: meerk40t/balormk/device.py:592 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:617
+msgid "Jump-Settings"
+msgstr "Sıçrama Ayarları"
+
+#: meerk40t/balormk/device.py:628
+msgid "Other"
+msgstr "Diğer"
+
+#: meerk40t/balormk/device.py:655 meerk40t/balormk/device.py:665
+msgid "Pulse-Width-Modulation"
+msgstr "Darbe Genişlik Modülasyonu"
+
+#: meerk40t/balormk/device.py:675 meerk40t/balormk/device.py:685
+msgid "Standby-Parameter"
+msgstr "Bekleme Parametresi"
+
+#: meerk40t/balormk/device.py:695 meerk40t/balormk/device.py:705 meerk40t/balormk/device.py:715 meerk40t/balormk/device.py:725
+msgid "Modes"
+msgstr "Modlar"
+
+#: meerk40t/balormk/device.py:787 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:807 meerk40t/balormk/device.py:817
+msgid "Fly Resolution"
+msgstr "Uçuş Çözünürlüğü"
+
+#: meerk40t/balormk/galvo_commands.py:316 meerk40t/grbl/device.py:1005 meerk40t/lihuiyu/device.py:630 meerk40t/newly/device.py:729
+msgid "\"{time}ms\" exceeds 1 second limit to fire a standing laser."
+msgstr "\"{time}ms\" bir lazeri ateşlemek için 1 saniyelik sınırı aşıyor."
+
+#: meerk40t/balormk/gui/balorconfig.py:47
+msgid "Redlight"
+msgstr "Kırmızı Işık"
+
+#: meerk40t/balormk/gui/balorconfig.py:49 meerk40t/newly/device.py:508 meerk40t/newly/device.py:519
+msgid "Timings"
+msgstr "Zamanlamalar"
+
+#: meerk40t/balormk/gui/balorconfig.py:50
+msgid "Extras"
+msgstr "Ekstralar"
+
+#: meerk40t/balormk/gui/balorconfig.py:51
+msgid "Correction"
+msgstr "Düzeltme"
+
+#: meerk40t/balormk/gui/balorconfig.py:237 meerk40t/cylinder/gui/cylindersettings.py:33 meerk40t/grbl/gui/grblconfiguration.py:283 meerk40t/grbl/gui/grblhardwareconfig.py:265 meerk40t/gui/devicepanel.py:698 meerk40t/lihuiyu/gui/lhyaccelgui.py:373 meerk40t/lihuiyu/gui/lhydrivergui.py:466 meerk40t/moshi/gui/moshidrivergui.py:84 meerk40t/newly/gui/newlyconfig.py:117 meerk40t/rotary/gui/rotarysettings.py:236 meerk40t/ruida/gui/ruidaconfig.py:236
+msgid "Device-Settings"
+msgstr "Cihaz Ayarları"
+
+#: meerk40t/balormk/gui/balorcontroller.py:187 meerk40t/gui/bufferview.py:73 meerk40t/gui/usbconnect.py:94 meerk40t/lihuiyu/gui/lhycontrollergui.py:782 meerk40t/lihuiyu/gui/tcpcontroller.py:222 meerk40t/moshi/gui/moshicontrollergui.py:534 meerk40t/newly/gui/newlycontroller.py:189 meerk40t/ruida/gui/ruidacontroller.py:183
+msgid "Device-Control"
+msgstr "Cihaz Kontrolü"
+
+#: meerk40t/camera/gui/camerapanel.py:1340
+msgid "Sources"
+msgstr "Kaynaklar"
+
+#: meerk40t/core/planner.py:63 meerk40t/core/planner.py:78 meerk40t/core/planner.py:110 meerk40t/core/planner.py:136 meerk40t/core/planner.py:166 meerk40t/core/planner.py:192 meerk40t/core/planner.py:301
+msgid "Reducing Movements"
+msgstr "Hareketleri Azaltma"
+
+#: meerk40t/core/planner.py:65 meerk40t/core/planner.py:80
+msgid "Splitting rasters"
+msgstr "Tarama Bölme"
+
+#: meerk40t/core/planner.py:208 meerk40t/core/planner.py:221
+msgid "Stitching"
+msgstr "Birleştirme"
+
+#: meerk40t/core/planner.py:246 meerk40t/core/planner.py:257 meerk40t/core/planner.py:287
+msgid "Burn sequence"
+msgstr "Yakma Sırası"
+
+#: meerk40t/core/svg_io.py:109 meerk40t/core/svg_io.py:126 meerk40t/dxf/plugin.py:32 meerk40t/dxf/plugin.py:45
+msgid "Input"
+msgstr "Giriş"
+
+#: meerk40t/core/elements/elements.py:188 meerk40t/core/elements/elements.py:369 meerk40t/core/elements/elements.py:536
+msgid "Auto-Generation"
+msgstr "Otomatik Oluşturma"
+
+#: meerk40t/core/elements/elements.py:201 meerk40t/core/elements/elements.py:275 meerk40t/core/elements/elements.py:300 meerk40t/core/elements/elements.py:319 meerk40t/core/elements/elements.py:336 meerk40t/core/elements/elements.py:352
+msgid "Assignment-Logic"
+msgstr "Atama Mantığı"
+
+#: meerk40t/core/elements/elements.py:260 meerk40t/core/elements/elements.py:394 meerk40t/core/elements/elements.py:411 meerk40t/core/elements/elements.py:424
+msgid "GUI-Behaviour"
+msgstr "Arayüz Davranışı"
+
+#: meerk40t/core/elements/elements.py:458
+msgid "Display"
+msgstr "Görüntüleme"
+
+#: meerk40t/core/elements/elements.py:475 meerk40t/moshi/device.py:226 meerk40t/moshi/device.py:244
+msgid "Behaviour"
+msgstr "Davranış"
+
+#: meerk40t/core/elements/elements.py:492
+msgid "Loading"
+msgstr "Yükleniyor"
+
+#: meerk40t/core/elements/elements.py:512
+msgid "Default Operations"
+msgstr "Varsayılan İşlemler"
+
+#: meerk40t/device/devicechoices.py:12 meerk40t/device/devicechoices.py:22 meerk40t/device/devicechoices.py:32 meerk40t/device/devicechoices.py:42 meerk40t/device/devicechoices.py:52
+msgid "Effect Defaults"
+msgstr "Efekt Varsayılanları"
+
+#: meerk40t/extra/hershey.py:725
+msgid "System font locations"
+msgstr "Sistem yazı tipi konumları"
+
+#: meerk40t/extra/inkscape.py:569
+msgid "Meerk40t does not support all svg-features, so you might want"
+msgstr "Meerk40t tüm svg özelliklerini desteklemez, bu yüzden isteyebilirsiniz"
+
+#: meerk40t/extra/inkscape.py:607 meerk40t/extra/inkscape.py:625
+msgid "SVG-Features"
+msgstr "SVG Özellikleri"
+
+#: meerk40t/extra/updater.py:30 meerk40t/extra/updater.py:48
+msgid "Check for updates on startup"
+msgstr "Başlangıçta güncellemeleri kontrol et"
+
+#: meerk40t/grbl/device.py:66 meerk40t/grbl/device.py:77 meerk40t/grbl/device.py:88 meerk40t/lihuiyu/device.py:53 meerk40t/lihuiyu/device.py:65 meerk40t/lihuiyu/device.py:76 meerk40t/moshi/device.py:75 meerk40t/moshi/device.py:88 meerk40t/moshi/device.py:101 meerk40t/newly/device.py:133 meerk40t/newly/device.py:147 meerk40t/newly/device.py:161 meerk40t/ruida/device.py:64 meerk40t/ruida/device.py:76 meerk40t/ruida/device.py:87
+msgid "Dimensions"
+msgstr "Boyutlar"
+
+#: meerk40t/grbl/device.py:151 meerk40t/grbl/device.py:163 meerk40t/moshi/device.py:170 meerk40t/moshi/device.py:182 meerk40t/moshi/device.py:196
+msgid "Flip Axis"
+msgstr "Eksen Çevir"
+
+#: meerk40t/grbl/device.py:204 meerk40t/grbl/device.py:220
+msgid "Z-Axis support"
+msgstr "Z-Ekseni desteği"
+
+#: meerk40t/grbl/device.py:311 meerk40t/grbl/device.py:324 meerk40t/ruida/device.py:292 meerk40t/ruida/device.py:305
+msgid "Serial Interface"
+msgstr "Seri Arayüz"
+
+#: meerk40t/grbl/device.py:470 meerk40t/grbl/device.py:487 meerk40t/grbl/device.py:500
+msgid "Red Dot"
+msgstr "Kırmızı Nokta"
+
+#: meerk40t/grbl/device.py:595 meerk40t/grbl/device.py:607 meerk40t/grbl/device.py:619 meerk40t/grbl/device.py:629 meerk40t/grbl/device.py:682 meerk40t/grbl/device.py:695
+msgid "Validation"
+msgstr "Doğrulama"
+
+#: meerk40t/gui/devicepanel.py:698
+msgid "Device Manager"
+msgstr "Cihaz Yöneticisi"
+
+#: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2445 meerk40t/gui/spoolerpanel.py:1240
+msgid "Burning"
+msgstr "Yakma"
+
+#: meerk40t/gui/imagesplitter.py:551
+msgid "Image Splitting"
+msgstr "Görüntü Bölme"
+
+#: meerk40t/gui/lasertoolpanel.py:801 meerk40t/gui/materialtest.py:1987 meerk40t/tools/kerftest.py:900 meerk40t/tools/livinghinges.py:1146
+msgid "Laser-Tools"
+msgstr "Lazer Araçları"
+
+#: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226 meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
+msgid "Tooltips"
+msgstr "Araç İpuçları"
+
+#: meerk40t/gui/plugin.py:278
+msgid "Warning-Indicator"
+msgstr "Uyarı Göstergesi"
+
+#: meerk40t/gui/simpleui.py:358
+msgid "SimpleUI"
+msgstr "BasitUI"
+
+#: meerk40t/gui/usbconnect.py:94
+msgid "USB-Connection"
+msgstr "USB Bağlantısı"
+
+#: meerk40t/gui/wxmmain.py:1008 meerk40t/gui/wxmmain.py:1016 meerk40t/gui/wxmmain.py:1024 meerk40t/gui/wxmmain.py:1038 meerk40t/gui/wxmmain.py:1047
+msgid "Settings"
+msgstr "Ayarlar"
+
+#: meerk40t/gui/wxmmain.py:1181 meerk40t/gui/wxmmain.py:1199 meerk40t/gui/wxmmain.py:1214 meerk40t/gui/wxmmain.py:1229 meerk40t/gui/wxmribbon.py:138
+msgid "Appearance"
+msgstr "Görünüm"
+
+#: meerk40t/gui/wxmmain.py:1264 meerk40t/gui/wxmmain.py:1279 meerk40t/gui/wxmmain.py:1292 meerk40t/gui/wxmmain.py:1306 meerk40t/gui/wxmmain.py:1317
+msgid "Zoom"
+msgstr "Yakınlaştır"
+
+#: meerk40t/gui/wxmmain.py:1447 meerk40t/gui/wxmmain.py:1466
+msgid "Element-Points"
+msgstr "Eleman Noktaları"
+
+#: meerk40t/gui/wxmmain.py:1515
+msgid "Magnetlines"
+msgstr "Mıknatıs Çizgileri"
+
+#: meerk40t/gui/wxmmain.py:1551 meerk40t/gui/wxmmain.py:1567
+msgid "Button-Behaviour"
+msgstr "Düğme Davranışı"
+
+#: meerk40t/gui/wxmmain.py:4160
+msgid "Undo/Redo States"
+msgstr "Geri Al/Yeniden Yap Durumları"
+
+#: meerk40t/gui/wxmmain.py:4333 meerk40t/gui/wxmmain.py:4341 meerk40t/gui/wxmmain.py:4352
+msgid "GUI Appearance"
+msgstr "Arayüz Görünümü"
+
+#: meerk40t/gui/wxmmain.py:4364 meerk40t/gui/wxmmain.py:4375 meerk40t/gui/wxmmain.py:4386 meerk40t/gui/wxmmain.py:4397 meerk40t/gui/wxmmain.py:4408 meerk40t/gui/wxmmain.py:4420 meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4442 meerk40t/gui/wxmmain.py:4453 meerk40t/gui/wxmmain.py:4464 meerk40t/gui/wxmmain.py:4475 meerk40t/gui/wxmmain.py:4486 meerk40t/gui/wxmmain.py:4498
+msgid "Scene Appearance"
+msgstr "Sahne Görünümü"
+
+#: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518 meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538 meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578 meerk40t/gui/wxmmain.py:4589
+msgid "Render-Options"
+msgstr "Render Seçenekleri"
+
+#: meerk40t/gui/wxmribbon.py:232
+msgid "Project"
+msgstr "Proje"
+
+#: meerk40t/gui/propertypanels/attributes.py:774 meerk40t/gui/statusbarwidgets/strokewidget.py:171
+msgid "Toggle the behaviour of stroke-growth."
+msgstr "Vuruş büyümesinin davranışını değiştir."
+
+#: meerk40t/gui/propertypanels/propertywindow.py:309
+msgid "Operation/Element Properties"
+msgstr "İşlem/Eleman Özellikleri"
+
+#: meerk40t/image/imagetools.py:498 meerk40t/image/imagetools.py:514 meerk40t/image/imagetools.py:527 meerk40t/image/imagetools.py:543
+msgid "Images"
+msgstr "Görseller"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:222
+msgid "TCP Controller"
+msgstr "TCP Kontrolcü"
+
+#: meerk40t/newly/device.py:295 meerk40t/newly/device.py:308
+msgid "Output"
+msgstr "Çıkış"
+
+#: meerk40t/newly/device.py:337 meerk40t/newly/device.py:349
+msgid "Axis DPI"
+msgstr "Eksen DPI"
+
+#: meerk40t/newly/device.py:445 meerk40t/newly/device.py:457
+msgid "Current"
+msgstr "Akım"
+
+#: meerk40t/newly/device.py:552 meerk40t/newly/device.py:563 meerk40t/newly/device.py:574
+msgid "Moving"
+msgstr "Hareket"
+
+#: meerk40t/newly/device.py:585 meerk40t/newly/device.py:596
+msgid "Framing"
+msgstr "Çerçeveleme"
+
+#: meerk40t/ruida/device.py:101 meerk40t/ruida/device.py:114
+msgid "User Scale"
+msgstr "Kullanıcı Ölçeği"
+
+#: meerk40t/tools/driver_to_path.py:298 meerk40t/tools/driver_to_path.py:308 meerk40t/tools/driver_to_path.py:318 meerk40t/tools/driver_to_path.py:329 meerk40t/tools/driver_to_path.py:342
+msgid "Path"
+msgstr "Yol"
+
+#: meerk40t/tools/driver_to_path.py:331 meerk40t/tools/driver_to_path.py:344
+msgid "Z-Axis"
+msgstr "Z-Ekseni"
+
+#: meerk40t/tools/driver_to_path.py:362
+msgid "Correct Orientation"
+msgstr "Doğru Yönlendirme"
+
