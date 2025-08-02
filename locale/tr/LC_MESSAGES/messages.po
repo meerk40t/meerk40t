@@ -7980,7 +7980,7 @@ msgstr "Inkscape sürümü - Inkscape sürümünü alın"
 
 #: meerk40t/extra/inkscape.py:361
 msgid "Inkscape executable at \"{path}\" is: {version}"
-msgstr "Inkscape yürütülebilir \n"
+msgstr ""
 
 #: meerk40t/extra/inkscape.py:368
 msgid "Optional: location of inkscape executable"
@@ -10697,8 +10697,6 @@ msgid ""
 "Please respect individual property rights!\n"
 "Destination: {url}\n"
 msgstr ""
-"Şimdi web'de ücretsiz yazı tipleri indirebileceğiniz bir kaynağa "
-"yönlendirileceksiniz."
 
 #: meerk40t/gui/hersheymanager.py:1315
 msgid ""
@@ -15743,7 +15741,7 @@ msgstr "Pencere"
 
 #: meerk40t/gui/wxmmain.py:4597
 msgid "Offline help file (\"{help}\") was not found."
-msgstr "Çevrimdışı Yardım Dosyası (\n"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:4600
 msgid "File Not Found"
@@ -16521,8 +16519,6 @@ msgid ""
 "This engraves already created images pixel by pixel,\n"
 "applying the settings to the individual pictures"
 msgstr ""
-"Bu gravür zaten oluşturulmuş görüntüler piksel tarafından piksel, \n "
-"Ayarları tek tek resimlere \n"
 
 #: meerk40t/gui/wxmtree.py:2127
 msgid ""
@@ -16530,8 +16526,6 @@ msgid ""
 "into an intermediary image which then will be\n"
 "engraved pixel by pixel."
 msgstr ""
-"Bu, \ninto içerdiği tüm elemanları, daha sonra piksel tarafından "
-"\nengraved piksel olacak bir aracı görüntü oluşturacaktır."
 
 #: meerk40t/gui/wxmtree.py:2131
 msgid "This will engrave a single point for a given period of time"
@@ -17663,7 +17657,7 @@ msgstr "1000 her zaman açıktır, 500 yarı güçtür (her adımda ateş)."
 msgid ""
 "Values of 100 or have pulses > 1/10\" and are generally used only for dotted"
 " or perforated lines."
-msgstr "100 değerleri veya nabzı var> 1/10 \n"
+msgstr ""
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:638
 #: meerk40t/gui/propertypanels/operationpropertymain.py:640
@@ -17814,8 +17808,7 @@ msgid ""
 "In a raster engrave, the step size is the distance between raster lines in "
 "1/1000\" "
 msgstr ""
-"Bir raster gravüründe, adım boyutu 1/1000'deki raster çizgileri arasındaki "
-"mesafedir \n"
+
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1376
 msgid "and also the number of raster dots that get combined together."
@@ -17825,7 +17818,7 @@ msgstr "ve ayrıca bir araya gelen raster noktalarının sayısı."
 msgid ""
 "Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines"
 " overlap a lot, "
-msgstr "Çünkü lazer noktası >> 1/1000 \n"
+msgstr ""
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1383
 msgid ""
@@ -20727,8 +20720,6 @@ msgid ""
 " overlapping, and because a bit is only moved at most 1/1000\", the "
 "difference should not be visible even under magnification."
 msgstr ""
-"Örnek olarak, x_x_ yerine xx__ yakacak - çünkü lazer ışını örtüştüğü ve "
-"biraz en fazla 1/1000 \n"
 
 #: meerk40t/lihuiyu/device.py:365
 msgid ""
