@@ -531,6 +531,7 @@ class MoshiControllerGui(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Control"), _("Controller")
         return "Device-Control", "Controller"
 
     @staticmethod

@@ -184,6 +184,7 @@ class BalorController(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Control"), _("Balor-Controller")
         return "Device-Control", "Balor-Controller"
 
     @staticmethod

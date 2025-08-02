@@ -709,6 +709,7 @@ class Preferences(MWindow):
                 "type": str,
                 "style": "color",  # hexa representation
                 "label": _("Object-Label"),
+                # Hint for translation _("Scene")
                 "section": "Scene",
                 "signals": ("refresh_scene", "theme"),
             }

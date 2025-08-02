@@ -897,6 +897,7 @@ class KerfTool(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Laser-Tools"), _("Kerf-Test")
         return "Laser-Tools", "Kerf-Test"
 
     @staticmethod

@@ -1143,6 +1143,7 @@ class LivingHingeTool(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Laser-Tools"), _("Living-Hinges")
         return "Laser-Tools", "Living-Hinges"
 
     @staticmethod

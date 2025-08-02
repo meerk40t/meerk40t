@@ -135,6 +135,7 @@ def register_panel_ribbon(window, context):
                 "Inactive: Hide the ribbon labels."
             ),
             "page": "Gui",
+            # Hint for translation _("Appearance")
             "section": "Appearance",
         },
     ]
@@ -228,6 +229,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
             ribbon_config = [
                 {
                     "id": "home",  # identifier
+                    # Translation hint _("Project")
                     "label": "Project",  # Label
                     "panels": [  # Panels to include
                         {

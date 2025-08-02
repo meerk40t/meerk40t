@@ -280,6 +280,7 @@ class GRBLConfiguration(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("GRBL-Configuration")
         return "Device-Settings", "GRBL-Configuration"
 
     @staticmethod

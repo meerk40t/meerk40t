@@ -100,6 +100,7 @@ class FormatterPanel(wx.Panel):
                     + "\n"
                     + "Inactive: Full power will be shown as 1000 ppi"
                 ),
+                # Hint for translation _("General")
                 "subsection": "_10_General",
                 "signals": ("rebuild_tree", "power_percent"),
             },
@@ -114,6 +115,7 @@ class FormatterPanel(wx.Panel):
                     + "\n"
                     + "Inactive: Speed will be shown in mm/s"
                 ),
+                # Hint for translation _("General")
                 "subsection": "_10_General",
                 "signals": ("rebuild_tree", "speed_min"),
             },
