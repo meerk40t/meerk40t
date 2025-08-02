@@ -60,7 +60,9 @@ def plugin(kernel, lifecycle=None):
                     "Inactive: all objects will be lasered as one single unit."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
+                # Hint for translation _("Splitting rasters")
                 "subsection": "Splitting rasters",
             },
             {
@@ -73,7 +75,9 @@ def plugin(kernel, lifecycle=None):
                     "Allowed gap between rasterable objects, to still be counted as one."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
+                # Hint for translation _("Splitting rasters")
                 "subsection": "Splitting rasters",
                 "conditional": (context, "opt_raster_optimisation"),
             },
@@ -103,6 +107,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + INNER_WARNING,
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
             },
             {
@@ -128,6 +133,7 @@ def plugin(kernel, lifecycle=None):
                     + "at the point the burns join. "
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -157,6 +163,7 @@ def plugin(kernel, lifecycle=None):
                     + "or even an increased risk of the material catching fire."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -182,6 +189,7 @@ def plugin(kernel, lifecycle=None):
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -197,6 +205,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("Only inside a single cut/engrave operation."),
                 "page": "Optimisations",
+                # Hint for translation _("Stitching")
                 "section": "_05_Stitching",
             },
             {
@@ -209,6 +218,7 @@ def plugin(kernel, lifecycle=None):
                     "Tolerance to decide whether two path segments should be joined."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Stitching")
                 "section": "_05_Stitching",
                 "conditional": (context, "opt_stitching"),
             },
@@ -233,6 +243,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + INNER_WARNING,
                 "page": "Optimisations",
+                # Hint for translation _("Burn sequence")
                 "section": "_10_Burn sequence",
             },
             {
@@ -243,6 +254,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Tolerance"),
                 "tip": _("Tolerance to decide if a shape is truly inside another one."),
                 "page": "Optimisations",
+                # Hint for translation _("Burn sequence")
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -272,6 +284,7 @@ def plugin(kernel, lifecycle=None):
                     + "in which case they may be optimised together."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Burn sequence")
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -285,6 +298,7 @@ def plugin(kernel, lifecycle=None):
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "hidden": True,
             },
@@ -302,6 +316,7 @@ def plugin(kernel, lifecycle=None):
                     )
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Effects")
                 "section": "_25_Effects",
             },
             {
@@ -316,6 +331,7 @@ def plugin(kernel, lifecycle=None):
                     + _("Inactive: hatch lines will be burnt sequentially.")
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Effects")
                 "section": "_25_Effects",
                 "conditional": (context, "opt_effect_combine"),
             },
@@ -335,6 +351,7 @@ def plugin(kernel, lifecycle=None):
                     + "compromise the quality at higher levels, so use with care and preview in simulation."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Details")
                 "section": "_30_Details",
                 "subsection": "_10_",
             },
@@ -352,6 +369,7 @@ def plugin(kernel, lifecycle=None):
                     + "compromise the quality at higher levels, so use with care and preview in simulation."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Details")
                 "section": "_30_Details",
                 "subsection": "_10_",
                 "conditional": (context, "opt_reduce_details"),

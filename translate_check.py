@@ -243,6 +243,9 @@ def read_po(locale: str) -> tuple[list[str], list[tuple[str, str]]]:
     """
     id_strings = []
     pairs = []
+    if locale == "en":
+        # For English, we create a default .po file with no translations
+        return [], []
     po_dir = f"./locale/{locale}/LC_MESSAGES/"
     if not os.path.isdir(po_dir):
         print(f"Locale directory {po_dir} does not exist or is empty.")
@@ -456,6 +459,9 @@ def main():
             locales.extend(list(LOCALE_LONG_NAMES.keys()))
         elif loc in LOCALE_LONG_NAMES:
             locales.append(loc)
+        elif loc == "en":
+            print("English is the default language, we will create the default .po file.")
+            locales.append("en")
         else:
             print(f"Unknown locale '{loc}', using 'de' as default.")
             locales.append("de")

@@ -117,6 +117,7 @@ def register_panel_laser(window, context):
             "label": _("Enable Laser Arm"),
             "tip": _("Enable Laser Panel Arm/Disarm feature."),
             "page": "Laser",
+            # Hint for translation _("General")
             "section": "General",
         },
     ]

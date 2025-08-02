@@ -1984,6 +1984,7 @@ class TemplateTool(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Laser-Tools"), _("Parameter-Test")
         return "Laser-Tools", "Parameter-Test"
 
     @staticmethod

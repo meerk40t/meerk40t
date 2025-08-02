@@ -70,6 +70,7 @@ class BufferView(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Control"), _("Buffer")
         return "Device-Control", "Buffer"
 
     @staticmethod

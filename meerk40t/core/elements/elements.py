@@ -185,6 +185,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Don't autoload operations on empty set"),
                 "tip": _("Leave empty operations, don't load a default set"),
                 "page": "Classification",
+                # Hint for translation _("Auto-Generation")
                 "section": "_90_Auto-Generation",
             },
             {
@@ -197,6 +198,7 @@ def plugin(kernel, lifecycle=None):
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
                 "page": "Classification",
+                # Hint for translation _("Assignment-Logic")
                 "section": "_10_Assignment-Logic",
             },
             # No longer used...
@@ -222,6 +224,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("This may consume a significant amount of memory"),
                 "page": "Start",
+                # Hint for translation _("Undo")
                 "section": "_60_Undo",
                 "signals": "restart",
             },
@@ -235,6 +238,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Levels of Undo-States"),
                 "tip": _("How many undo-levels shall MeerK40t hold in memory"),
                 "page": "Start",
+                # Hint for translation _("Undo")
                 "section": "_60_Undo",
                 "conditional": (elements, "use_undo"),
                 "signals": "restart",
@@ -253,6 +257,7 @@ def plugin(kernel, lifecycle=None):
                     "if you want to defer this to apply manual assignment, then untick this option."
                 ),
                 "page": "Classification",
+                # Hint for translation _("GUI-Behaviour")
                 "section": "_30_GUI-Behaviour",
             },
             {
@@ -267,6 +272,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("Ticked: Allow a certain color-distance for classification"),
                 "page": "Classification",
+                # Hint for translation _("Assignment-Logic")
                 "section": "_10_Assignment-Logic",
             },
             {
@@ -291,6 +297,7 @@ def plugin(kernel, lifecycle=None):
                     "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
                 ),
                 "page": "Classification",
+                # Hint for translation _("Assignment-Logic")
                 "section": "_10_Assignment-Logic",
             },
             {
@@ -309,6 +316,7 @@ def plugin(kernel, lifecycle=None):
                     "Unticked: Classify will assign black elements to an engrave operation"
                 ),
                 "page": "Classification",
+                # Hint for translation _("Assignment-Logic")
                 "section": "_10_Assignment-Logic",
             },
             {
@@ -325,6 +333,7 @@ def plugin(kernel, lifecycle=None):
                     "If you want to distinguish between different raster types then activate this option."
                 ),
                 "page": "Classification",
+                # Hint for translation _("Assignment-Logic")
                 "section": "_10_Assignment-Logic",
             },
             {
@@ -340,6 +349,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then it will try to assign it to matching 'default' operation"),
                 "page": "Classification",
+                # Hint for translation _("Assignment-Logic")
                 "section": "_10_Assignment-Logic",
             },
             {
@@ -356,6 +366,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then MeerK40t can create a matching operation for you."),
                 "page": "Classification",
+                # Hint for translation _("Auto-Generation")
                 "section": "_90_Auto-Generation",
             },
             # {
@@ -380,6 +391,7 @@ def plugin(kernel, lifecycle=None):
             #         "- provided no elements are assigned to it yet (i.e. works only for an empty op)!"
             #     ),
             #     "page": "Classification",
+            #     # Hint for translation _("GUI-Behaviour")
             #     "section": "_30_GUI-Behaviour",
             # },
             {
@@ -396,6 +408,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("by disabling this option."),
                 "page": "Classification",
+                # Hint for translation _("GUI-Behaviour")
                 "section": "_30_GUI-Behaviour",
             },
             {
@@ -408,6 +421,7 @@ def plugin(kernel, lifecycle=None):
                     "If a default operation is no longer used it will be removed from the list of active operations"
                 ),
                 "page": "Classification",
+                # Hint for translation _("GUI-Behaviour")
                 "section": "_30_GUI-Behaviour",
                 "hidden": True,
             },
@@ -421,6 +435,7 @@ def plugin(kernel, lifecycle=None):
                     "Locked elements cannot be modified, but can still be moved if this option is checked."
                 ),
                 "page": "Scene",
+                # Hint for translation _("General")
                 "section": "General",
             },
         ]
@@ -440,6 +455,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("Unticked: Show their current value."),
                 "page": "Operations",
+                # Hint for translation _("Display")
                 "section": "Display",
             },
             {
@@ -456,6 +472,7 @@ def plugin(kernel, lifecycle=None):
                     "Unticked: A drag operation of regmark nodes to an operation will be ignored."
                 ),
                 "page": "Operations",
+                # Hint for translation _("Behaviour")
                 "section": "Behaviour",
             },
             {
@@ -472,6 +489,7 @@ def plugin(kernel, lifecycle=None):
                     "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
                 ),
                 "page": "Operations",
+                # Hint for translation _("Loading")
                 "section": "Loading",
             },
             {
@@ -491,6 +509,7 @@ def plugin(kernel, lifecycle=None):
                     "Choose if and how you want to group together / display the default operations at the bottom of the screen"
                 ),
                 "page": "Operations",
+                # Hint for translation _("Default Operations")
                 "section": "_95_Default Operations",
                 "signals": "default_operations",
             },
@@ -514,6 +533,7 @@ def plugin(kernel, lifecycle=None):
                     "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
                 ),
                 "page": "Classification",
+                # Hint for translation _("Auto-Generation")
                 "section": "_90_Auto-Generation",
             },
         ]
@@ -529,6 +549,7 @@ def plugin(kernel, lifecycle=None):
                     "Active: if you copy a text-element containing a wordlist-reference, this will be increased (effectively referencing the next entry in the wordlist)"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Wordlist")
                 "section": "_90_Wordlist",
             },
         ]

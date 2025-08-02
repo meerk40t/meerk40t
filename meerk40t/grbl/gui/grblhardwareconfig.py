@@ -262,6 +262,7 @@ class GRBLHardwareConfig(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("GRBL Hardware Config")
         return "Device-Settings", "GRBL Hardware Config"
 
     @staticmethod

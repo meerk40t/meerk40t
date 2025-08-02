@@ -798,6 +798,7 @@ class LaserTool(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Laser-Tools"), _("Place Template")
         return "Laser-Tools", "Place Template"
 
     @staticmethod

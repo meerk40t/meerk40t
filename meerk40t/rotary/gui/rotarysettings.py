@@ -233,6 +233,7 @@ class RotarySettings(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Rotary-Settings")
         return "Device-Settings", "Rotary-Settings"
 
     @staticmethod

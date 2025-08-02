@@ -370,6 +370,7 @@ class LihuiyuAccelerationChart(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Acceleration Chart")
         return "Device-Settings", "Acceleration Chart"
 
     @staticmethod
