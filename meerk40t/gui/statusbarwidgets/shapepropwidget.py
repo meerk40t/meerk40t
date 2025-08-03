@@ -458,7 +458,10 @@ class PositionWidget(StatusBarWidget):
             self.unit_index = 0
         if self.unit_index < 0:
             self.unit_index = len(self.units) - 1
-        self.unit_lbl.SetLabel(self.units[self.unit_index])
+        new_unit = self.units[self.unit_index]
+        self.unit_lbl.SetLabel(new_unit)
+        self.context._display_unit = new_unit
+        self.context.signal("refresh_scene", "Scene")
         self.update_position(True)
 
     def on_click_units_l(self, event):
