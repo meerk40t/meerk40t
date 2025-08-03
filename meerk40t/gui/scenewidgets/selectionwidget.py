@@ -243,226 +243,172 @@ class BorderWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
+        
+        def get_length_text_and_extent(gc, value, units, secondary_units, rel_length):
+            s_txt = str(Length(amount=value, digits=2, preferred_units=units, relative_length=rel_length))
+            if units != secondary_units:
+                s_txt += "/" + str(Length(amount=value, digits=2, preferred_units=secondary_units, relative_length=rel_length))
+            t_width, t_height = gc.GetTextExtent(s_txt)
+            return s_txt, t_width, t_height
+        
         context = self.scene.context
         self.update()
-
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
 
-        # Won't be displayed when rotating...
-        if self.master.show_border:
-            # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
-            # when drawing dashed/dotted lines, so they always appear to be solid
-            # (even if they are dotted on a microscopic level)
-            # To circumvent this issue, we scale the gc back
-            gc.PushState()
-            sx, sy = get_gc_full_scale(gc)
-            gc.Scale(1 / sx, 1 / sy)
-            bed_w = self.scene.context.device.space.width
-            bed_h = self.scene.context.device.space.height
+        if not self.master.show_border:
+            # Only show angle if not showing border
+            if abs(self.master.rotated_angle) > 0.001:
+                try:
+                    font = wx.Font(
+                        0.75 * self.master.font_size,
+                        wx.FONTFAMILY_SWISS,
+                        wx.FONTSTYLE_NORMAL,
+                        wx.FONTWEIGHT_BOLD,
+                    )
+                except TypeError:
+                    font = wx.Font(
+                        int(0.75 * self.master.font_size),
+                        wx.FONTFAMILY_SWISS,
+                        wx.FONTSTYLE_NORMAL,
+                        wx.FONTWEIGHT_BOLD,
+                    )
+                gc.SetFont(font, self.scene.colors.color_manipulation)
+                symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
+                pen = wx.Pen()
+                pen.SetColour(self.scene.colors.color_manipulation)
+                pen.SetStyle(wx.PENSTYLE_SOLID)
+                gc.SetPen(pen)
+                brush = wx.Brush(wx.WHITE, wx.BRUSHSTYLE_SOLID)
+                gc.SetBrush(brush)
+                t_width, t_height = gc.GetTextExtent(symbol)
+                gc.DrawEllipse(
+                    center_x - 0.6 * t_width,
+                    center_y - 0.6 * t_height,
+                    1.2 * t_width,
+                    1.2 * t_height,
+                )
+                gc.DrawText(
+                    symbol,
+                    center_x - 0.5 * t_width,
+                    center_y - 0.5 * t_height,
+                )
+            return
 
-            # Create a copy of the pen
-            mypen = wx.Pen(self.master.selection_pen)
-            mypen.SetWidth(1)
-            mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
-            gc.SetPen(mypen)
-            # Top to upper edge, lower edge to bottom
-            # Left to left edge, right edge to right
-            if self.show_lt:
-                gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
-                gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
-            if self.show_rb:
-                gc.StrokeLine(
-                    sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h
-                )
-                gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
+        # Draw border and guides
+        gc.PushState()
+        sx, sy = get_gc_full_scale(gc)
+        gc.Scale(1 / sx, 1 / sy)
+        bed_w = self.scene.context.device.space.width
+        bed_h = self.scene.context.device.space.height
 
-            mypen.SetStyle(wx.PENSTYLE_DOT)
-            gc.SetPen(mypen)
-            gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
-            gc.StrokeLine(
-                sx * self.right, sy * self.top, sx * self.right, sy * self.bottom
-            )
-            gc.StrokeLine(
-                sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom
-            )
-            gc.StrokeLine(
-                sx * self.left, sy * self.bottom, sx * self.left, sy * self.top
-            )
-            # And back...
-            gc.PopState()
-            gc.SetPen(self.master.selection_pen)
+        mypen = wx.Pen(self.master.selection_pen)
+        mypen.SetWidth(1)
+        mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
+        gc.SetPen(mypen)
+        if self.show_lt:
+            gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
+            gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+        if self.show_rb:
+            gc.StrokeLine(sx * center_x, sy * self.bottom, sx * center_x, sy * bed_h)
+            gc.StrokeLine(sx * self.right, sy * center_y, sx * bed_w, sy * center_y)
 
-            # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
-            # if draw_mode & DRAW_MODE_SELECTION == 0:
-            units = (
-                context._display_unit if context._display_unit else context.units_name
-            )
-            secondary_units = context.units_name
-            try:
-                font = wx.Font(
-                    self.master.font_size,
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_BOLD,
-                )
-            except TypeError:
-                font = wx.Font(
-                    int(self.master.font_size),
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_BOLD,
-                )
-            gc.SetFont(font, self.scene.colors.color_manipulation)
-            if self.show_lt:
-                # Show Y-Value
-                s_txt = str(
-                    Length(
-                        amount=self.top,
-                        digits=2,
-                        preferred_units=units,
-                        relative_length=self.scene.context.device.view.height,
-                    )
-                )
-                if units != secondary_units:
-                    s_txt += "/" + str(
-                        Length(
-                            amount=self.top,
-                            digits=2,
-                            preferred_units=secondary_units,
-                            relative_length=self.scene.context.device.view.height,
-                        )
-                    )
-                (t_width, t_height) = gc.GetTextExtent(s_txt)
-                distance = (
-                    0.25 * t_height
-                )  # No text in the way, so a minimal gap suffices
-                pos = self.top / 2.0 - t_height / 2
-                if pos + t_height + distance >= self.top:
-                    pos = self.top - t_height - distance
-                gc.DrawText(s_txt, center_x - t_width / 2, pos)
+        mypen.SetStyle(wx.PENSTYLE_DOT)
+        gc.SetPen(mypen)
+        gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
+        gc.StrokeLine(sx * self.right, sy * self.top, sx * self.right, sy * self.bottom)
+        gc.StrokeLine(sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom)
+        gc.StrokeLine(sx * self.left, sy * self.bottom, sx * self.left, sy * self.top)
+        gc.PopState()
+        gc.SetPen(self.master.selection_pen)
 
-                # Display X-Coordinate from left
-                s_txt = str(
-                    Length(
-                        amount=self.left,
-                        digits=2,
-                        preferred_units=units,
-                        relative_length=self.scene.context.device.view.width,
-                    )
-                )
-                if units != secondary_units:
-                    s_txt += "/" + str(
-                        Length(
-                            amount=self.left,
-                            digits=2,
-                            preferred_units=secondary_units,
-                            relative_length=self.scene.context.device.view.width,
-                        )
-                    )
-                (t_width, t_height) = gc.GetTextExtent(s_txt)
-                pos = self.left / 2.0 - t_width / 2
-                if pos + t_width + distance >= self.left:
-                    pos = self.left - t_width - distance
-                gc.DrawText(s_txt, pos, center_y)
-            if self.show_rb:
-                rpos = bed_h - self.bottom
-                s_txt = str(
-                    Length(
-                        amount=rpos,
-                        digits=2,
-                        preferred_units=units,
-                        relative_length=self.scene.context.device.view.height,
-                    )
-                )
-                if units != secondary_units:
-                    s_txt += "/" + str(
-                        Length(
-                            amount=rpos,
-                            digits=2,
-                            preferred_units=secondary_units,
-                            relative_length=self.scene.context.device.view.height,
-                        )
-                    )
-                (t_width, t_height) = gc.GetTextExtent(s_txt)
-                distance = 1.5 * t_height  # There's text in the way
-                pos = self.bottom + rpos / 2 - t_height / 2
-                if pos - t_height - distance <= self.bottom:
-                    pos = self.bottom + distance
-                gc.DrawText(s_txt, center_x - t_width / 2, pos)
-
-                # Display X-Coordinate from right
-                rpos = bed_w - self.right
-                s_txt = str(
-                    Length(
-                        amount=rpos,
-                        digits=2,
-                        preferred_units=units,
-                        relative_length=self.scene.context.device.view.width,
-                    )
-                )
-                if units != secondary_units:
-                    s_txt += "/" + str(
-                        Length(
-                            amount=rpos,
-                            digits=2,
-                            preferred_units=secondary_units,
-                            relative_length=self.scene.context.device.view.width,
-                        )
-                    )
-                (t_width, t_height) = gc.GetTextExtent(s_txt)
-                pos = self.right + rpos / 2.0 - t_width / 2
-                if pos - distance <= self.right:
-                    pos = self.right + distance
-                gc.DrawText(s_txt, pos, center_y)
-
-            # Display height
-            s_txt = str(
-                Length(
-                    amount=(self.bottom - self.top),
-                    digits=2,
-                    preferred_units=units,
-                    relative_length=self.scene.context.device.view.height,
-                )
+        units = context._display_unit if context._display_unit else context.units_name
+        secondary_units = context.units_name
+        try:
+            font = wx.Font(
+                self.master.font_size,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_BOLD,
             )
-            if units != secondary_units:
-                s_txt += "/" + str(
-                    Length(
-                        amount=(self.bottom - self.top),
-                        digits=2,
-                        preferred_units=secondary_units,
-                        relative_length=self.scene.context.device.view.height,
-                    )
-                )
-            (t_width, t_height) = gc.GetTextExtent(s_txt)
-            gc.DrawText(
-                s_txt,
-                self.right + 0.5 * t_height,
-                center_y + 0.5 * t_width,
-                math.tau / 4,
+        except TypeError:
+            font = wx.Font(
+                int(self.master.font_size),
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_BOLD,
             )
+        gc.SetFont(font, self.scene.colors.color_manipulation)
 
-            # Display width
-            s_txt = str(
-                Length(
-                    amount=(self.right - self.left),
-                    digits=2,
-                    preferred_units=units,
-                    relative_length=self.scene.context.device.view.width,
-                )
+        # Draw coordinate labels
+        if self.show_lt:
+            # Y-Value (top)
+            s_txt, t_width, t_height = get_length_text_and_extent(
+                gc, self.top, units, secondary_units,
+                self.scene.context.device.view.height
             )
-            if units != secondary_units:
-                s_txt += "/" + str(
-                    Length(
-                        amount=(self.right - self.left),
-                        digits=2,
-                        preferred_units=secondary_units,
-                        relative_length=self.scene.context.device.view.width,
-                    )
-                )   
-            (t_width, t_height) = gc.GetTextExtent(s_txt)
-            gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
-        # But show the angle
+            distance = 0.25 * t_height
+            pos = self.top / 2.0 - t_height / 2
+            if pos + t_height + distance >= self.top:
+                pos = self.top - t_height - distance
+            gc.DrawText(s_txt, center_x - t_width / 2, pos)
+
+            # X-Coordinate (left)
+            s_txt, t_width, t_height = get_length_text_and_extent(
+                gc, self.left, units, secondary_units,
+                self.scene.context.device.view.width
+            )
+            pos = self.left / 2.0 - t_width / 2
+            if pos + t_width + distance >= self.left:
+                pos = self.left - t_width - distance
+            gc.DrawText(s_txt, pos, center_y)
+
+        if self.show_rb:
+            # Y-Value (bottom)
+            rpos = bed_h - self.bottom
+            s_txt, t_width, t_height = get_length_text_and_extent(
+                gc, rpos, units, secondary_units,
+                self.scene.context.device.view.height
+            )
+            distance = 1.5 * t_height
+            pos = self.bottom + rpos / 2 - t_height / 2
+            if pos - t_height - distance <= self.bottom:
+                pos = self.bottom + distance
+            gc.DrawText(s_txt, center_x - t_width / 2, pos)
+
+            # X-Coordinate (right)
+            rpos = bed_w - self.right
+            s_txt, t_width, t_height = get_length_text_and_extent(
+                gc, rpos, units, secondary_units,
+                self.scene.context.device.view.width
+            )
+            pos = self.right + rpos / 2.0 - t_width / 2
+            if pos - distance <= self.right:
+                pos = self.right + distance
+            gc.DrawText(s_txt, pos, center_y)
+
+        # Height label (vertical, right)
+        s_txt, t_width, t_height = get_length_text_and_extent(
+            gc, self.bottom - self.top, units, secondary_units,
+            self.scene.context.device.view.height
+        )
+        gc.DrawText(
+            s_txt,
+            self.right + 0.5 * t_height,
+            center_y + 0.5 * t_width,
+            math.tau / 4,
+        )
+
+        # Width label (horizontal, bottom)
+        s_txt, t_width, t_height = get_length_text_and_extent(
+            gc, self.right - self.left, units, secondary_units,
+            self.scene.context.device.view.width
+        )
+        gc.DrawText(
+            s_txt,
+            center_x - 0.5 * t_width, self.bottom + 0.5 * t_height
+        )
+        # Show the angle if rotated
         if abs(self.master.rotated_angle) > 0.001:
             try:
                 font = wx.Font(
@@ -486,7 +432,7 @@ class BorderWidget(Widget):
             gc.SetPen(pen)
             brush = wx.Brush(wx.WHITE, wx.BRUSHSTYLE_SOLID)
             gc.SetBrush(brush)
-            (t_width, t_height) = gc.GetTextExtent(symbol)
+            t_width, t_height = gc.GetTextExtent(symbol)
             gc.DrawEllipse(
                 center_x - 0.6 * t_width,
                 center_y - 0.6 * t_height,
@@ -498,7 +444,6 @@ class BorderWidget(Widget):
                 center_x - 0.5 * t_width,
                 center_y - 0.5 * t_height,
             )
-
 
 class RotationWidget(Widget):
     """
@@ -1175,7 +1120,7 @@ class SideWidget(Widget):
                 try:
                     scalex = (position[0] - self.master.left) / self.save_width
                 except ZeroDivisionError:
-                    scaley = 1
+                    scalex = 1
 
             if len(self.method) > 1 and self.uniform:  # from corner
                 scale = (scaley + scalex) / 2.0
