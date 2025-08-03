@@ -298,6 +298,7 @@ class BorderWidget(Widget):
             units = (
                 context._display_unit if context._display_unit else context.units_name
             )
+            secondary_units = context.units_name
             try:
                 font = wx.Font(
                     self.master.font_size,
@@ -323,6 +324,15 @@ class BorderWidget(Widget):
                         relative_length=self.scene.context.device.view.height,
                     )
                 )
+                if units != secondary_units:
+                    s_txt += "/" + str(
+                        Length(
+                            amount=self.top,
+                            digits=2,
+                            preferred_units=secondary_units,
+                            relative_length=self.scene.context.device.view.height,
+                        )
+                    )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 distance = (
                     0.25 * t_height
@@ -341,6 +351,15 @@ class BorderWidget(Widget):
                         relative_length=self.scene.context.device.view.width,
                     )
                 )
+                if units != secondary_units:
+                    s_txt += "/" + str(
+                        Length(
+                            amount=self.left,
+                            digits=2,
+                            preferred_units=secondary_units,
+                            relative_length=self.scene.context.device.view.width,
+                        )
+                    )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 pos = self.left / 2.0 - t_width / 2
                 if pos + t_width + distance >= self.left:
@@ -356,6 +375,15 @@ class BorderWidget(Widget):
                         relative_length=self.scene.context.device.view.height,
                     )
                 )
+                if units != secondary_units:
+                    s_txt += "/" + str(
+                        Length(
+                            amount=rpos,
+                            digits=2,
+                            preferred_units=secondary_units,
+                            relative_length=self.scene.context.device.view.height,
+                        )
+                    )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 distance = 1.5 * t_height  # There's text in the way
                 pos = self.bottom + rpos / 2 - t_height / 2
@@ -373,6 +401,15 @@ class BorderWidget(Widget):
                         relative_length=self.scene.context.device.view.width,
                     )
                 )
+                if units != secondary_units:
+                    s_txt += "/" + str(
+                        Length(
+                            amount=rpos,
+                            digits=2,
+                            preferred_units=secondary_units,
+                            relative_length=self.scene.context.device.view.width,
+                        )
+                    )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 pos = self.right + rpos / 2.0 - t_width / 2
                 if pos - distance <= self.right:
@@ -388,6 +425,15 @@ class BorderWidget(Widget):
                     relative_length=self.scene.context.device.view.height,
                 )
             )
+            if units != secondary_units:
+                s_txt += "/" + str(
+                    Length(
+                        amount=(self.bottom - self.top),
+                        digits=2,
+                        preferred_units=secondary_units,
+                        relative_length=self.scene.context.device.view.height,
+                    )
+                )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             gc.DrawText(
                 s_txt,
@@ -405,6 +451,15 @@ class BorderWidget(Widget):
                     relative_length=self.scene.context.device.view.width,
                 )
             )
+            if units != secondary_units:
+                s_txt += "/" + str(
+                    Length(
+                        amount=(self.right - self.left),
+                        digits=2,
+                        preferred_units=secondary_units,
+                        relative_length=self.scene.context.device.view.width,
+                    )
+                )   
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
         # But show the angle
