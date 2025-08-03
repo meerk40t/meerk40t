@@ -13,7 +13,6 @@ LockWidget: Widget to lock and unlock the given object.
 
 """
 
-
 import math
 
 import numpy as np
@@ -211,7 +210,12 @@ class BorderWidget(Widget):
             self.master.bottom,
         )
         self.update()
-        coord_display_mode = self.scene.context.root.setting(int, "coord_display", 0)
+        context = self.scene.context
+        # Make sure we have the correct display unit
+        display_unit = context.setting(str, "_display_unit", context.units_name)
+        if display_unit is None or display_unit == "":
+            context._display_unit = context.units_name
+        coord_display_mode = context.root.setting(int, "coord_display", 0)
         # 0 = all, 1 = to mk 0,0 only, 2=suppress
         self.show_lt = coord_display_mode in (0, 1)
         self.show_rb = coord_display_mode == 0
@@ -291,7 +295,9 @@ class BorderWidget(Widget):
 
             # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
             # if draw_mode & DRAW_MODE_SELECTION == 0:
-            units = context.units_name
+            units = (
+                context._display_unit if context._display_unit else context.units_name
+            )
             try:
                 font = wx.Font(
                     self.master.font_size,
@@ -309,7 +315,14 @@ class BorderWidget(Widget):
             gc.SetFont(font, self.scene.colors.color_manipulation)
             if self.show_lt:
                 # Show Y-Value
-                s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
+                s_txt = str(
+                    Length(
+                        amount=self.top,
+                        digits=2,
+                        preferred_units=units,
+                        relative_length=self.scene.context.device.view.height,
+                    )
+                )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 distance = (
                     0.25 * t_height
@@ -320,7 +333,14 @@ class BorderWidget(Widget):
                 gc.DrawText(s_txt, center_x - t_width / 2, pos)
 
                 # Display X-Coordinate from left
-                s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
+                s_txt = str(
+                    Length(
+                        amount=self.left,
+                        digits=2,
+                        preferred_units=units,
+                        relative_length=self.scene.context.device.view.width,
+                    )
+                )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 pos = self.left / 2.0 - t_width / 2
                 if pos + t_width + distance >= self.left:
@@ -328,7 +348,14 @@ class BorderWidget(Widget):
                 gc.DrawText(s_txt, pos, center_y)
             if self.show_rb:
                 rpos = bed_h - self.bottom
-                s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
+                s_txt = str(
+                    Length(
+                        amount=rpos,
+                        digits=2,
+                        preferred_units=units,
+                        relative_length=self.scene.context.device.view.height,
+                    )
+                )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 distance = 1.5 * t_height  # There's text in the way
                 pos = self.bottom + rpos / 2 - t_height / 2
@@ -338,7 +365,14 @@ class BorderWidget(Widget):
 
                 # Display X-Coordinate from right
                 rpos = bed_w - self.right
-                s_txt = str(Length(amount=rpos, digits=2, preferred_units=units))
+                s_txt = str(
+                    Length(
+                        amount=rpos,
+                        digits=2,
+                        preferred_units=units,
+                        relative_length=self.scene.context.device.view.width,
+                    )
+                )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 pos = self.right + rpos / 2.0 - t_width / 2
                 if pos - distance <= self.right:
@@ -347,7 +381,12 @@ class BorderWidget(Widget):
 
             # Display height
             s_txt = str(
-                Length(amount=(self.bottom - self.top), digits=2, preferred_units=units)
+                Length(
+                    amount=(self.bottom - self.top),
+                    digits=2,
+                    preferred_units=units,
+                    relative_length=self.scene.context.device.view.height,
+                )
             )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             gc.DrawText(
@@ -359,7 +398,12 @@ class BorderWidget(Widget):
 
             # Display width
             s_txt = str(
-                Length(amount=(self.right - self.left), digits=2, preferred_units=units)
+                Length(
+                    amount=(self.right - self.left),
+                    digits=2,
+                    preferred_units=units,
+                    relative_length=self.scene.context.device.view.width,
+                )
             )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
