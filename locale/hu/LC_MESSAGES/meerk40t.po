@@ -23317,3 +23317,67 @@ msgstr " többségében fekete pixelekkel, majd az oszlopok rajzolása."
 msgid "  where we have a majority."
 msgstr " ahol többség van."
 
+#: meerk40t/core/bindalias.py:455
+msgid "Alias"
+msgstr "Álnév"
+
+#: meerk40t/core/bindalias.py:455
+msgid "Command(s)"
+msgstr "Parancs(ok)"
+
+#: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
+msgid "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+msgstr "{index}: {name} - {typename}\n   vonalvastagság = {stroke_width}\n   skálázott vastagság = {scaled_stroke_width}"
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Eszköz nézet"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Információk megjelenítése az eszköz nézetről"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Koordináták az eszközhöz"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Vektor mód: csak átmenet"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Eszközből koordinátákba"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Érvénytelen hossz érték"
+
+#: meerk40t/gui/wxmmain.py:1316
+msgid "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
+msgstr "Aktív: Egy kattintás a kurzor alatti legkisebb elemet választja ki (ctrl+kattintás a legnagyobbat) / Inaktív: Egy kattintás a legnagyobb elemet választja ki (ctrl+kattintás a legkisebbet)."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr "  ez a legközelebbi rajzolandó szegmenst választja ki,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+msgid "  lasering these segments with vertical lines."
+msgstr "  ezeknek a szegmenseknek a lézerezése függőleges vonalakkal."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr "  Általában sokkal gyorsabb olyan képen, ahol sok a fehér pixel."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1788
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr "  ahol a fekete pixelek vannak többségben, majd az oszlopok rajzolása"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1790
+msgid "  where we have a majority."
+msgstr "  ahol többségben vagyunk."
+
+#: meerk40t/kernel/kernel.py:3117
+msgid "    {index}.{subindex}: linked {name}:{hash:X}"
+msgstr "    {index}.{subindex}: összekapcsolva {name}:{hash:X}"
+
