@@ -865,7 +865,7 @@ msgstr ""
 #: meerk40t/core/elements/elements.py:310
 msgid "Unticked: Classify will assign black elements to an engrave operation"
 msgstr ""
-"Non attiva: 'Classifica' assegnerà elementi neri a un'operazione di "
+"Inattiva: 'Classifica' assegnerà elementi neri a un'operazione di "
 "incisione"
 
 #: meerk40t/core/elements/elements.py:336
@@ -946,7 +946,7 @@ msgstr ""
 
 #: meerk40t/core/elements/elements.py:441
 msgid "Unticked: Show their current value."
-msgstr "Non attiva: visualizza il valore corrente"
+msgstr "Inattiva: visualizza il valore corrente"
 
 #: meerk40t/core/elements/elements.py:570
 #: meerk40t/core/elements/elements.py:4178
@@ -2242,7 +2242,7 @@ msgid ""
 "they appear in the Operation tree, and the Merge options will have no effect"
 " on the burn time. "
 msgstr ""
-"Non attiva: gli elementi vengono processati rigorosamente nell'ordine in "
+"Inattiva: gli elementi vengono processati rigorosamente nell'ordine in "
 "cui appaiono nell'albero dei Processi e le opzioni di unione "
 "non avranno nessun effetto sul "
 "tempo di lavorazione "
@@ -2352,7 +2352,7 @@ msgid ""
 " same passes merged. If Merge Passes is also checked, then all burns will be"
 " optimised globally."
 msgstr ""
-"Non attiva: solo i passaggi identici all'interno di Processi con più di un "
+"Inattiva: solo i passaggi identici all'interno di Processi con più di un "
 "passaggio verranno uniti.\n"
 "Attiva: tutte le lavorazioni verranno "
 "ottimizzate globalmente"
@@ -3972,7 +3972,7 @@ msgid ""
 "then shrink"
 msgstr ""
 "Attiva: l'intensità del colore aumenta da un minimo a un massimo con i "
-"valori\nNon attiva: diminuisce dal massimo al minimo"
+"valori\nInattiva: diminuisce dal massimo al minimo"
 
 #: meerk40t/gui/materialtest.py:569
 msgid "Will create a descriptive label at the sides of the grid"
@@ -4614,7 +4614,7 @@ msgstr "Comportamento della rotellina del mouse"
 
 #: meerk40t/gui/plugin.py:159
 msgid "Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
-msgstr "Non attiva: la rotellina del mouse=zoom, Shift+rotellina del mouse=scorrimento orizzontale"
+msgstr "Inattiva: la rotellina del mouse=zoom, Shift+rotellina del mouse=scorrimento orizzontale"
 
 #: meerk40t/gui/plugin.py:162
 msgid ""
@@ -4646,7 +4646,7 @@ msgstr "Disattiva i suggerimenti"
 
 #: meerk40t/gui/plugin.py:216
 msgid "Disable tooltips over tree"
-msgstr "Nessun seggerimento (tooltip) sopra il diagramma ad albero"
+msgstr "Nessun seggerimento sopra il diagramma ad albero"
 
 #: meerk40t/gui/plugin.py:219
 msgid "You can suppress the tooltips over operations and elements in the tree"
@@ -4731,7 +4731,7 @@ msgid ""
 " unchecked then the new values apply to the selection-dimensions"
 msgstr ""
 "Attiva: ogni elemento riceverà il nuovo valore del campo corrente\n"
-"Non attiva:  i nuovi valori si applicano alle dimensioni della selezione"
+"Inattiva:  i nuovi valori si applicano alle dimensioni della selezione"
 
 #: meerk40t/gui/position.py:241
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:374
@@ -5057,7 +5057,7 @@ msgid ""
 "If checked, the cursor will snap to the closest element point within the "
 "specified threshold"
 msgstr ""
-"Spuntato: il cursore salta al punto di aggancio dell'elemento "
+"Attiva: il cursore salta al punto di aggancio dell'elemento "
 "più vicino"
 
 #: meerk40t/gui/snapoptions.py:63 meerk40t/gui/wxmmain.py:1459
@@ -5076,12 +5076,12 @@ msgstr "Aggancia alla griglia"
 #: meerk40t/gui/snapoptions.py:68
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:151
 msgid "Shall the cursor snap to the next grid intersection?"
-msgstr "Spuntato: Il cursore salta al punto di intersezione della griglia più vicino"
+msgstr "Attiva: Il cursore salta al punto di intersezione della griglia più vicino"
 
 #: meerk40t/gui/wxmmain.py:1472
 msgid "If checked, the cursor will snap to the closest grid intersection"
 msgstr ""
-"Spuntato: il cursore salta al punto di intersezione della griglia più vicino."
+"Attiva: il cursore salta al punto di intersezione della griglia più vicino."
 
 #: meerk40t/gui/snapoptions.py:76 meerk40t/gui/wxmmain.py:1489
 msgid ""
@@ -5487,7 +5487,7 @@ msgid ""
 "(ctrl+click the smallest)."
 msgstr ""
 "Attiva: il click del mouse seleziona l'elemento più piccolo sotto il cursore "
-"(Ctrl+Click sul più grande)\nNon attiva: il click del mouse seleziona l'elemento "
+"(Ctrl+Click sul più grande)\nInattiva: il click del mouse seleziona l'elemento "
 "più grande sotto il cursore (Ctrl+Click sul più piccolo)"
 
 #: meerk40t/gui/wxmmain.py:1347
@@ -5516,7 +5516,7 @@ msgid ""
 " the selection."
 msgstr ""
 "Attiva: disegna gli elementi di manipolazione al di fuori del rettangolo di "
-"selezione dell'elemento\nNon attiva: disegna gli elementi di manipolazione sul "
+"selezione dell'elemento\nInattiva: disegna gli elementi di manipolazione sul "
 "rettangolo di selezione dell'elemento"
 
 #: meerk40t/gui/wxmmain.py:1427
@@ -6496,7 +6496,7 @@ msgstr "Crea un elemento 'file' per un'immagine importata"
 
 #: meerk40t/image/imagetools.py:508
 msgid "Unset: Attach the image directly to elements."
-msgstr "Non attiva: inserisce l'immagine direttamente negli elementi"
+msgstr "Inattiva: inserisce l'immagine direttamente negli elementi"
 
 #: meerk40t/image/imagetools.py:509
 msgid "Set: Put the image under a file-node created for it."
@@ -6505,7 +6505,7 @@ msgstr "Attiva: inserisce l'immagine sotto un elemento file"
 #: meerk40t/image/imagetools.py:491
 msgid "Unset: Use the image as if it were 96 pixels per inch."
 msgstr ""
-"Non attiva: tratta l'immagine come se avesse una risoluzione di 96 "
+"Inattiva: tratta l'immagine come se avesse una risoluzione di 96 "
 "pixel/pollice"
 
 #: meerk40t/image/imagetools.py:494
@@ -7357,7 +7357,7 @@ msgstr "Prevenire modifiche:"
 #: meerk40t/gui/propertypanels/attributes.py:1231
 msgid ""
 "If active then this element is effectively prevented from being modified"
-msgstr "Spuntato: l'elemento è protetto da tutte le modifiche"
+msgstr "Attiva: l'elemento è protetto da tutte le modifiche"
 
 #: meerk40t/gui/propertypanels/consoleproperty.py:22
 msgid "Console Properties"
@@ -8635,7 +8635,7 @@ msgstr "Attiva: lo spessore del contorno rimane invariato, indipendentemente dal
 #: meerk40t/gui/propertypanels/attributes.py:796
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:182
 msgid "Inactive: stroke grows/shrink with scaled element"
-msgstr "Non attiva: lo spessore del contorno cambia con le dimensioni dell'elemento"
+msgstr "Inattiva: lo spessore del contorno cambia con le dimensioni dell'elemento"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:255
 #: meerk40t/gui/utilitywidgets/togglewidget.py:79
@@ -9421,7 +9421,7 @@ msgid ""
 "Inactive: one hit of either stroke or fill is enough to prevent "
 "autogeneration"
 msgstr ""
-"Non attiva: almeno una risposta positiva per contorno o riempimento "
+"Inattiva: almeno una risposta positiva per contorno o riempimento "
 "impedisce la creazione di un altro processo"
 
 #: meerk40t/core/elements/element_treeops.py:1396
@@ -10058,7 +10058,7 @@ msgid ""
 "Inactive: Use a standard icon for the element type instead"
 msgstr ""
 "Attiva: mostra un'immagine in miniatura dell'elemento nel diagramma ad albero\n"
-"Non attiva: utilizza un simbolo standard per tutti gli elementi dello stesso tipo\n"
+"Inattiva: utilizza un simbolo standard per tutti gli elementi dello stesso tipo\n"
 "(meno dettagliato, ma molto meno dispendioso in termini di risorse)"
 
 #: meerk40t/core/elements/elements.py:527
@@ -10894,7 +10894,7 @@ msgid ""
 "or leave them in place (inactive)"
 msgstr ""
 "Attiva: File/Nuovo rimuove le linee magnetiche esistenti\n"
-"Non attiva: le linee magnetiche esistenti vengono mantenute"
+"Inattiva: le linee magnetiche esistenti vengono mantenute"
 
 #: meerk40t/gui/scenewidgets/guidewidget.py:229
 msgid "User defined value: {value}"
@@ -11052,7 +11052,7 @@ msgid ""
 "Inactive: Hide the ribbon labels."
 msgstr ""
 "Attiva: mostra i testi sotto le icone nella barra degli strumenti\n"
-"Non attiva: il testo non viene visualizzato (per risparmiare spazio)"
+"Inattiva: il testo non viene visualizzato (per risparmiare spazio)"
 
 #: meerk40t/device/gui/formatterpanel.py:98
 msgid "Show power as %"
@@ -11068,7 +11068,7 @@ msgid ""
 "Inactive: Full power will be shown as 1000 ppi"
 msgstr ""
 "Attiva: la piena potenza viene visualizzata al 100% \n"
-"Non attiva: la potenza massima viene visualizzata come 1000 ppi"
+"Inattiva: la potenza massima viene visualizzata come 1000 ppi"
 
 #: meerk40t/device/gui/formatterpanel.py:117
 msgid ""
@@ -11076,7 +11076,7 @@ msgid ""
 "Inactive: Speed will be shown in mm/s"
 msgstr ""
 "Attiva: la velocità viene visualizzata in mm/min\n"
-"Non attiva: la velocità viene visualizzata in mm/s"
+"Inattiva: la velocità viene visualizzata in mm/s"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:563
 #: meerk40t/tools/kerftest.py:220
@@ -11228,7 +11228,7 @@ msgstr "Applica"
 #: meerk40t/gui/wxmribbon.py:985
 msgid "Allow/suppress the display of labels beneath the icons in the ribbon"
 msgstr ""
-"Attiva: mostra i testi sotto le icone\nNon attiva: il testo non viene visualizzato (Visualizzazione compatta)"
+"Attiva: mostra i testi sotto le icone\nInattiva: il testo non viene visualizzato (Visualizzazione compatta)"
 
 #: meerk40t/gui/preferences.py:793
 msgid "Coordinate Space"
@@ -12020,7 +12020,7 @@ msgid ""
 "Inactive: Standard Colors are used"
 msgstr ""
 "Attiva: le voci del diagramma ad albero vengono visualizzate nel colore dell'oggetto\n"
-"Non attiva: vengono utilizzati i colori standard"
+"Inattiva: vengono utilizzati i colori standard"
 
 #: meerk40t/gui/wxmmain.py:2021
 msgid "Parametric Edit"
@@ -12632,7 +12632,7 @@ msgstr ""
 "Separa gli oggetti raster non sovrapposti\n\n"
 "Attiva: gli oggetti adiacenti (sovrapposti) vengono lavorati come un unico elemento, "
 "gli oggetti distanti vengono lavorati separatamente\n"
-"Non attiva: tutti gli oggetti vengono lavorati insieme in un "
+"Inattiva: tutti gli oggetti vengono lavorati insieme in un "
 "unico processo"
 
 #: meerk40t/core/planner.py:71
@@ -13583,7 +13583,7 @@ msgid ""
 "If inactive then no more updates will happen until you check this checkbox "
 "again"
 msgstr ""
-"Non attiva: non ci saranno più aggiornamenti fino a quando non si selezionerà nuovamente "
+"Inattiva: non ci saranno più aggiornamenti fino a quando non si selezionerà nuovamente "
 "questa casella di controllo"
 
 #: meerk40t/gui/helper.py:143
@@ -13617,7 +13617,7 @@ msgid ""
 "Ticked: A drag operation of regmark nodes to an operation will move back "
 "these nodes to the element branch."
 msgstr ""
-"Attivo: quando si trascinano + gli elementi dei crovini di registro su un'area\n"
+"Attiva: quando si trascinano + gli elementi dei crocini di registro su un'area\n"
 "processo, questo elemento viene automaticamente spostato nell'area di lavoro\n"
 "Spazio di lavoro spostato"
 
@@ -13625,7 +13625,7 @@ msgstr ""
 msgid ""
 "Unticked: A drag operation of regmark nodes to an operation will be ignored."
 msgstr ""
-"Inattivo: il trascinamento degli elementi di un processo verranno "
+"Inattiva: il trascinamento degli elementi di un processo verranno "
 "ingnorati se spostati in Riferimenti"
 
 #: meerk40t/core/elements/element_treeops.py:4081
@@ -14147,11 +14147,11 @@ msgstr "Centra l'immagine durante l'importazione"
 
 #: meerk40t/image/imagetools.py:535
 msgid "Unset: Places the image at the left upper corner."
-msgstr "Inattivo: l'immagine è posizionata nell'angolo in alto a sinistra."
+msgstr "Inattiva: l'immagine è posizionata nell'angolo in alto a sinistra."
 
 #: meerk40t/image/imagetools.py:536
 msgid "Set: Places the image at the center."
-msgstr "Attivo: l'immagine è centrata sul letto laser"
+msgstr "Attiva: l'immagine è centrata sul letto laser"
 
 #: meerk40t/image/imagetools.py:520
 msgid "Scale oversized images"
@@ -14160,7 +14160,7 @@ msgstr "Ridurre le dimensioni delle immagini di grandi dimensioni"
 #: meerk40t/image/imagetools.py:523
 msgid "Set: Will scale down large images so they will fit on the laserbed."
 msgstr ""
-"Attivo: le immagini troppo grandi vengono ridotte in modo che si adattino "
+"Attiva: le immagini troppo grandi vengono ridotte in modo che si adattino "
 "al piano di lavoro"
 
 #: meerk40t/gui/laserpanel.py:573 meerk40t/gui/spoolerpanel.py:1032
@@ -14675,11 +14675,11 @@ msgstr ""
 
 #: meerk40t/gui/wxmmain.py:2744
 msgid "Ticked: ...that was selected first"
-msgstr "Attivo: ...che è stato selezionato per primo"
+msgstr "Attiva: ...che è stato selezionato per primo"
 
 #: meerk40t/gui/wxmmain.py:2746
 msgid "Unticked: ...that was selected last"
-msgstr "Non attivo: ... che è stato selezionato per ultimo"
+msgstr "Inattiva: ... che è stato selezionato per ultimo"
 
 #: meerk40t/gui/wxmmain.py:2748
 msgid "(Requires a restart to take effect)"
@@ -14856,7 +14856,7 @@ msgstr "Ingresso richiesto"
 
 #: meerk40t/gui/plugin.py:229
 msgid "ToolTip delay"
-msgstr "Difettoso, si prega di segnalarlo"
+msgstr "Ritardo del ToolTip"
 
 #: meerk40t/gui/plugin.py:233
 msgid ""
@@ -15334,7 +15334,7 @@ msgstr ""
 #: meerk40t/gui/gui_mixins.py:355 meerk40t/gui/plugin.py:278
 msgid "Low: I hope you know what your doing (e.g. disabled operations)"
 msgstr ""
-"Basso: spero che tu sappia cosa stai facendo (ad esempio, operazioni con persone disabili)"
+"Basso: Spero tu sappia cosa stai facendo (es. operazioni disabilitate)"
 
 #: meerk40t/core/elements/elements.py:469
 msgid ""
@@ -15369,7 +15369,7 @@ msgid ""
 "Unticked: Invisible elements will be loaded as regular elements and will be "
 "hidden."
 msgstr ""
-"Non spuntato: Gli elementi invisibili saranno caricati come elementi normali e saranno "
+"Inattiva: Gli elementi invisibili saranno caricati come elementi normali e saranno "
 "nascosti"
 
 #: meerk40t/core/elements/elements.py:4177
@@ -15977,12 +15977,12 @@ msgstr "Lascia le linee di tratteggio unite"
 #: meerk40t/core/planner.py:298
 msgid "Active: effects like hatches are dealt with as a bigger shape"
 msgstr ""
-"Attivo: effetti come tratteggi sono gestiti come una forma più "
+"Attiva: effetti come tratteggi sono gestiti come una forma più "
 "grande"
 
 #: meerk40t/core/planner.py:302
 msgid "Inactive: every single line segment will be dealt with individually."
-msgstr "Inattivo: ogni singolo segmento di linea sarà gestito individualmente."
+msgstr "Inattiva: ogni singolo segmento di linea sarà gestito individualmente."
 
 #: meerk40t/core/planner.py:312
 msgid "Optimize internally"
@@ -15990,11 +15990,11 @@ msgstr "Ottimizza internamente"
 
 #: meerk40t/core/planner.py:314
 msgid "Active: hatch lines will be optimized internally"
-msgstr "Attivo: le linee di tratteggio saranno ottimizzate"
+msgstr "Attiva: le linee di tratteggio saranno ottimizzate"
 
 #: meerk40t/core/planner.py:316
 msgid "Inactive: hatch lines will be burnt sequentially."
-msgstr "Inattivo: le linee di tratteggio vengono eseguite una dopo l'altra"
+msgstr "Inattiva: le linee di tratteggio vengono eseguite una dopo l'altra"
 
 #: meerk40t/newly/gui/operationproperties.py:30
 msgid "Advanced Acceleration"
@@ -16033,7 +16033,7 @@ msgid ""
 "Active: Added children will be automatically hidden, so only the result of "
 "the effect will be seen/burned"
 msgstr ""
-"Attivo: gli elementi contenuti sono nascosti, solo il risultato dell'effetto "
+"Attiva: gli elementi contenuti sono nascosti, solo il risultato dell'effetto "
 "viene visualizzato/scoperto"
 
 #: meerk40t/gui/propertypanels/attributes.py:1461
@@ -16041,7 +16041,7 @@ msgid ""
 "Inactive: Added children remain unchanged, so both the child and the result "
 "of the effect will be seen/burned"
 msgstr ""
-"Inattivo: gli elementi contenuti rimangono inalterati, sia l'elemento che il "
+"Inattiva: gli elementi contenuti rimangono inalterati, sia l'elemento che il "
 "risultato dell'elemento vengono visualizzati/bruciati"
 
 #: meerk40t/gui/propertypanels/warpproperty.py:68
@@ -16557,12 +16557,12 @@ msgstr ""
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1414
 msgid "Active: don't burn pixels already overlapped"
-msgstr "Attivo: non bruciare i pixel già sovrapposti"
+msgstr "Attiva: non bruciare i pixel già sovrapposti"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1416
 msgid "Inactive: burn all pixels regardless of a possible overlap."
 msgstr ""
-"Inattivo: brucia tutti i pixel, indipendentemente da un'eventuale sovrapposizione"
+"Inattiva: brucia tutti i pixel, indipendentemente da un'eventuale sovrapposizione"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1422
 msgid "Override black/white image:"
@@ -16679,7 +16679,7 @@ msgid ""
 "Active: Use legacy method (seems to work better at higher speeds, but has "
 "some artifacts)"
 msgstr ""
-"Attivo: Usa il metodo tradizionale (sembra funzionare meglio a velocità più "
+"Attiva: Usa il metodo tradizionale (sembra funzionare meglio a velocità più "
 "elevate, \nma presenta alcuni artefatti)"
 
 #: meerk40t/lihuiyu/device.py:434 meerk40t/moshi/device.py:219
@@ -16687,7 +16687,7 @@ msgid ""
 "Inactive: Use regular method (no artifacts but apparently more prone to "
 "stuttering at high speeds)"
 msgstr ""
-"Non attivo: Usa il metodo normale (nessun artefatto, \nma apparentemente più incline allo stuttering "
+"Inattiva: Usa il metodo normale (nessun artefatto, \nma apparentemente più incline allo stuttering "
 "ad alta velocità)"
 
 #: meerk40t/grbl/gui/grblcontroller.py:116
@@ -18041,12 +18041,12 @@ msgid ""
 "Active: Single click within the boundaries of the contained elements of a "
 "filenode selects all elements within the file"
 msgstr ""
-"Attivo: Un singolo clic all'interno dei confini degli elementi contenuti in un nodo file "
+"Attiva: Un singolo clic all'interno dei confini degli elementi contenuti in un nodo file "
 "seleziona tutti gli elementi nel file"
 
 #: meerk40t/gui/wxmmain.py:1364
 msgid "Inactive: filenodes will not be used for selection"
-msgstr "Inattivo: i nodi file non verranno utilizzati per la selezione"
+msgstr "Inattiva: i nodi file non verranno utilizzati per la selezione"
 
 #: meerk40t/device/gui/defaultactions.py:51
 msgid "Move the laser head to the home position."
@@ -21199,7 +21199,7 @@ msgstr "Individuale"
 
 #: meerk40t/gui/preferences.py:764
 msgid "GUI"
-msgstr "Interfaccia grafica (GUI)"
+msgstr "Aspetto (GUI)"
 
 #: meerk40t/gui/simpleui.py:188 meerk40t/gui/wxmmain.py:740
 #: meerk40t/gui/wxmmain.py:5627
@@ -23693,7 +23693,7 @@ msgstr "Controlla aggiornamenti all'avvio"
 
 #: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226 meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
 msgid "Tooltips"
-msgstr "Suggerimenti"
+msgstr "ToolTips"
 
 #: meerk40t/gui/plugin.py:278
 msgid "Warning-Indicator"
