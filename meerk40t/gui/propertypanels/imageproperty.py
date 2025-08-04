@@ -402,7 +402,10 @@ class ContourPanel(wx.Panel):
             self.refresh_preview()
 
     def on_creation(self, event):
-        for idx, (geom, area) in enumerate(self.contours):
+        for idx, cont in enumerate(self.contours):
+            if cont is None or not isinstance(cont, (list, tuple)):
+                continue
+            (geom, area) = cont
             node = PathNode(
                 geometry=geom,
                 stroke=Color("blue"),
