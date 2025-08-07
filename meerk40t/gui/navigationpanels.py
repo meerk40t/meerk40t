@@ -1027,10 +1027,16 @@ class Drag(wx.Panel):
         self.context("element* trace quick\n")
         self.drag_ready(True)
 
+    def on_modified(self, *args):
+        # The selection was dragged around by the user, so let's realign the laserposition
+        if self.lockmode != 0:
+            self.align_per_pos(self.lockmode)
+
     def pane_show(self, *args):
         self.context.listen("driver;position", self.on_update)
         self.context.listen("emulator;position", self.on_update)
         self.context.listen("button-repeat", self.on_button_repeat)
+        self.context.listen("modified_by_tool", self.on_modified)
 
     # Not sure whether this is the right thing to do, if it's still locked and then
     # the pane gets hidden?! Let's call it a feature for now...
@@ -1038,6 +1044,7 @@ class Drag(wx.Panel):
         self.context.unlisten("driver;position", self.on_update)
         self.context.unlisten("emulator;position", self.on_update)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+        self.context.unlisten("modified_by_tool", self.on_modified)
 
     def set_timer_options(self):
         interval = self.context.button_repeat
