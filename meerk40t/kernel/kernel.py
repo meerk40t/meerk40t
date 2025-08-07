@@ -2096,7 +2096,10 @@ class Kernel(Settings):
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
-                    listener(origin, *message)
+                    try:
+                        listener(origin, *message)
+                    except RuntimeError as e:
+                        print(f"Listener {listener} no longer available. Error in {signal}: {e}")
                     if signal_channel and signal not in to_be_ignored:
                         signal_channel(
                             f"Signal: {origin} {signal}: "

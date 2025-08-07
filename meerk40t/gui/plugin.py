@@ -109,6 +109,7 @@ and a wxpython version <= 4.1.1."""
                 "label": _("Optimize element display"),
                 "tip": _("Suppresses the drawing of non-visible elements (disable only if you face display issues)"),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -121,6 +122,7 @@ and a wxpython version <= 4.1.1."""
                     "Should MeerK40t remember its last position on the screen?"
                 ),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -131,6 +133,7 @@ and a wxpython version <= 4.1.1."""
                 "label": _("Save Window Positions"),
                 "tip": _("Open Windows at the same place they were last closed"),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -143,6 +146,7 @@ and a wxpython version <= 4.1.1."""
                     "Open the Spooler window automatically when you Execute a Job"
                 ),
                 "page": "Laser",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -160,6 +164,7 @@ and a wxpython version <= 4.1.1."""
                     )
                 ),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -172,6 +177,7 @@ and a wxpython version <= 4.1.1."""
                     "Reverses the direction of the MouseWheel for horizontal & vertical pan"
                 ),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -182,6 +188,7 @@ and a wxpython version <= 4.1.1."""
                 "label": _("Invert MouseWheel Zoom"),
                 "tip": _("Reverses the direction of the MouseWheel for zoom"),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -202,6 +209,7 @@ and a wxpython version <= 4.1.1."""
                     )
                 ),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
             },
@@ -215,6 +223,7 @@ and a wxpython version <= 4.1.1."""
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
             },
             {
@@ -227,6 +236,7 @@ and a wxpython version <= 4.1.1."""
                 "trailer": "ms",
                 "tip": _("How long do you need to hover over a control before the tooltip appears"),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
             },
@@ -240,6 +250,7 @@ and a wxpython version <= 4.1.1."""
                 "trailer": "ms",
                 "tip": _("How long should the tooltip stay before it disappears"),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
             },
@@ -264,6 +275,7 @@ and a wxpython version <= 4.1.1."""
                     _("Low: I hope you know what your doing (e.g. disabled operations)")
                 ),
                 "page": "Gui",
+                # Hint for translation _("Warning-Indicator")
                 "section": "Warning-Indicator",
                 "signals": ("icons", "warn_state_update"),
             },

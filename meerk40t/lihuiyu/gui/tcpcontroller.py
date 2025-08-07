@@ -219,6 +219,7 @@ class TCPController(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Control"), _("TCP Controller")
         return "Device-Control", "TCP Controller"
 
     @staticmethod

@@ -29,6 +29,7 @@ def plugin(kernel, lifecycle=None):
                     "Fit (scale down if necessary) and center a DXF file within the bed"
                 ),
                 "page": "Input/Output",
+                # Hint for translation _("Input")
                 "section": "Input",
             },
             {
@@ -41,6 +42,7 @@ def plugin(kernel, lifecycle=None):
                     "Tries to use dxf 3D-polylines, disable it if the file contains meshes or other 3D data"
                 ),
                 "page": "Input/Output",
+                # Hint for translation _("Input")
                 "section": "Input",
             },
         ]

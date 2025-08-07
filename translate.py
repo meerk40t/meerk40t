@@ -15,9 +15,9 @@ Usage:
     <locales>    List of locale codes to process (default: all)
 """
 
+import argparse
 import os
 import re
-import argparse
 
 
 def are_curly_brackets_matched(input_str: str) -> bool:
@@ -178,10 +178,13 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
         Returns the encoding as a string.
         """
         try:
-            import chardet # Ensure chardet is available for encoding detection
-            return chardet.detect(open(file_path, 'rb').read())['encoding']
+            import chardet  # Ensure chardet is available for encoding detection
+
+            return chardet.detect(open(file_path, "rb").read())["encoding"]
         except ImportError:
-            print("chardet missing - falling back to polib's default encoding detection")
+            print(
+                "chardet missing - falling back to polib's default encoding detection"
+            )
 
         try:
             return polib.detect_encoding(file_path)
@@ -212,8 +215,7 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
             mo_file = filename + ".mo"
             doit = True
             if os.path.exists(d + mo_file):
-
-                source_encoding = detect_encoding(d + po_file)
+                source_encoding = detect_encoding(d + po_file).lower()
                 if source_encoding not in ("utf-8", "utf8"):
                     print(
                         f"Warning: {d + po_file} has non-utf8 encoding ({source_encoding}), can lead to unexpected results."

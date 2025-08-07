@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle):
                 "choices": (0, 1, 2),
                 "tip": _("Check for available updates on startup."),
                 "page": "Options",
+                # Hint for translation _("Check for updates on startup")
                 "section": "Check for updates on startup",
             },
             {
@@ -44,6 +45,7 @@ def plugin(kernel, lifecycle):
                 "choices": (0, 1, 2),
                 "tip": _("How often should MeerK40t look for new versions"),
                 "page": "Options",
+                # Hint for translation _("Check for updates on startup")
                 "section": "Check for updates on startup",
                 "conditional": (kernel.root, "update_check", 1, 2),
             },

@@ -20222,3 +20222,290 @@ msgstr "Apparaat naar coördinaten"
 msgid "Invalid length value"
 msgstr "Ongeldige lengtewaarde"
 
+#: meerk40t/balormk/device.py:122 meerk40t/balormk/device.py:138
+msgid "Correction File"
+msgstr "Correctiebestand"
+
+#: meerk40t/balormk/device.py:289 meerk40t/balormk/device.py:301 meerk40t/balormk/device.py:313
+msgid "Device Selection"
+msgstr "Apparaatselectie"
+
+#: meerk40t/balormk/device.py:326 meerk40t/balormk/device.py:339 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77
+msgid "Pin-Index"
+msgstr "Pin-index"
+
+#: meerk40t/balormk/device.py:390 meerk40t/balormk/device.py:400 meerk40t/balormk/device.py:412
+msgid "Redlight-Offset"
+msgstr "Roodlicht-offset"
+
+#: meerk40t/balormk/device.py:534 meerk40t/balormk/device.py:550 meerk40t/balormk/device.py:564 meerk40t/balormk/device.py:578
+msgid "Delays"
+msgstr "Vertragingen"
+
+#: meerk40t/balormk/device.py:592 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:617
+msgid "Jump-Settings"
+msgstr "Spronginstellingen"
+
+#: meerk40t/balormk/device.py:628
+msgid "Other"
+msgstr "Overig"
+
+#: meerk40t/balormk/device.py:655 meerk40t/balormk/device.py:665
+msgid "Pulse-Width-Modulation"
+msgstr "Pulsbreedtemodulatie"
+
+#: meerk40t/balormk/device.py:675 meerk40t/balormk/device.py:685
+msgid "Standby-Parameter"
+msgstr "Standby-parameter"
+
+#: meerk40t/balormk/device.py:695 meerk40t/balormk/device.py:705 meerk40t/balormk/device.py:715 meerk40t/balormk/device.py:725
+msgid "Modes"
+msgstr "Modi"
+
+#: meerk40t/balormk/device.py:787 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:807 meerk40t/balormk/device.py:817
+msgid "Fly Resolution"
+msgstr "Vliegresolutie"
+
+#: meerk40t/balormk/gui/balorconfig.py:47
+msgid "Redlight"
+msgstr "Roodlicht"
+
+#: meerk40t/balormk/gui/balorconfig.py:49 meerk40t/newly/device.py:508 meerk40t/newly/device.py:519
+msgid "Timings"
+msgstr "Tijdinstellingen"
+
+#: meerk40t/balormk/gui/balorconfig.py:50
+msgid "Extras"
+msgstr "Extra's"
+
+#: meerk40t/balormk/gui/balorconfig.py:51
+msgid "Correction"
+msgstr "Correctie"
+
+#: meerk40t/balormk/gui/balorconfig.py:237 meerk40t/cylinder/gui/cylindersettings.py:33 meerk40t/grbl/gui/grblconfiguration.py:283 meerk40t/grbl/gui/grblhardwareconfig.py:265 meerk40t/gui/devicepanel.py:698 meerk40t/lihuiyu/gui/lhyaccelgui.py:373 meerk40t/lihuiyu/gui/lhydrivergui.py:466 meerk40t/moshi/gui/moshidrivergui.py:84 meerk40t/newly/gui/newlyconfig.py:117 meerk40t/rotary/gui/rotarysettings.py:236 meerk40t/ruida/gui/ruidaconfig.py:236
+msgid "Device-Settings"
+msgstr "Apparaatinstellingen"
+
+#: meerk40t/balormk/gui/balorcontroller.py:187 meerk40t/gui/bufferview.py:73 meerk40t/gui/usbconnect.py:94 meerk40t/lihuiyu/gui/lhycontrollergui.py:782 meerk40t/lihuiyu/gui/tcpcontroller.py:222 meerk40t/moshi/gui/moshicontrollergui.py:534 meerk40t/newly/gui/newlycontroller.py:189 meerk40t/ruida/gui/ruidacontroller.py:183
+msgid "Device-Control"
+msgstr "Apparaatbediening"
+
+#: meerk40t/camera/gui/camerapanel.py:1340
+msgid "Sources"
+msgstr "Bronnen"
+
+#: meerk40t/core/planner.py:63 meerk40t/core/planner.py:78 meerk40t/core/planner.py:110 meerk40t/core/planner.py:136 meerk40t/core/planner.py:166 meerk40t/core/planner.py:192 meerk40t/core/planner.py:301
+msgid "Reducing Movements"
+msgstr "Bewegingen verminderen"
+
+#: meerk40t/core/planner.py:65 meerk40t/core/planner.py:80
+msgid "Splitting rasters"
+msgstr "Rasters splitsen"
+
+#: meerk40t/core/planner.py:208 meerk40t/core/planner.py:221
+msgid "Stitching"
+msgstr "Stikken"
+
+#: meerk40t/core/planner.py:246 meerk40t/core/planner.py:257 meerk40t/core/planner.py:287
+msgid "Burn sequence"
+msgstr "Brandvolgorde"
+
+#: meerk40t/core/svg_io.py:109 meerk40t/core/svg_io.py:126 meerk40t/dxf/plugin.py:32 meerk40t/dxf/plugin.py:45
+msgid "Input"
+msgstr "Invoer"
+
+#: meerk40t/core/elements/elements.py:188 meerk40t/core/elements/elements.py:369 meerk40t/core/elements/elements.py:536
+msgid "Auto-Generation"
+msgstr "Automatische generatie"
+
+#: meerk40t/core/elements/elements.py:201 meerk40t/core/elements/elements.py:275 meerk40t/core/elements/elements.py:300 meerk40t/core/elements/elements.py:319 meerk40t/core/elements/elements.py:336 meerk40t/core/elements/elements.py:352
+msgid "Assignment-Logic"
+msgstr "Toewijzingslogica"
+
+#: meerk40t/core/elements/elements.py:260 meerk40t/core/elements/elements.py:394 meerk40t/core/elements/elements.py:411 meerk40t/core/elements/elements.py:424
+msgid "GUI-Behaviour"
+msgstr "GUI-gedrag"
+
+#: meerk40t/core/elements/elements.py:458
+msgid "Display"
+msgstr "Weergave"
+
+#: meerk40t/core/elements/elements.py:475 meerk40t/moshi/device.py:226 meerk40t/moshi/device.py:244
+msgid "Behaviour"
+msgstr "Gedrag"
+
+#: meerk40t/core/elements/elements.py:492
+msgid "Loading"
+msgstr "Laden"
+
+#: meerk40t/core/elements/elements.py:512
+msgid "Default Operations"
+msgstr "Standaardbewerkingen"
+
+#: meerk40t/device/devicechoices.py:12 meerk40t/device/devicechoices.py:22 meerk40t/device/devicechoices.py:32 meerk40t/device/devicechoices.py:42 meerk40t/device/devicechoices.py:52
+msgid "Effect Defaults"
+msgstr "Effectstandaardwaarden"
+
+#: meerk40t/extra/hershey.py:725
+msgid "System font locations"
+msgstr "Systeemlettertype locaties"
+
+#: meerk40t/extra/inkscape.py:607 meerk40t/extra/inkscape.py:625
+msgid "SVG-Features"
+msgstr "SVG-functies"
+
+#: meerk40t/extra/updater.py:30 meerk40t/extra/updater.py:48
+msgid "Check for updates on startup"
+msgstr "Controleer op updates bij opstarten"
+
+#: meerk40t/grbl/device.py:66 meerk40t/grbl/device.py:77 meerk40t/grbl/device.py:88 meerk40t/lihuiyu/device.py:53 meerk40t/lihuiyu/device.py:65 meerk40t/lihuiyu/device.py:76 meerk40t/moshi/device.py:75 meerk40t/moshi/device.py:88 meerk40t/moshi/device.py:101 meerk40t/newly/device.py:133 meerk40t/newly/device.py:147 meerk40t/newly/device.py:161 meerk40t/ruida/device.py:64 meerk40t/ruida/device.py:76 meerk40t/ruida/device.py:87
+msgid "Dimensions"
+msgstr "Afmetingen"
+
+#: meerk40t/grbl/device.py:151 meerk40t/grbl/device.py:163 meerk40t/moshi/device.py:170 meerk40t/moshi/device.py:182 meerk40t/moshi/device.py:196
+msgid "Flip Axis"
+msgstr "As omkeren"
+
+#: meerk40t/grbl/device.py:204 meerk40t/grbl/device.py:220
+msgid "Z-Axis support"
+msgstr "Z-as ondersteuning"
+
+#: meerk40t/grbl/device.py:311 meerk40t/grbl/device.py:324 meerk40t/ruida/device.py:292 meerk40t/ruida/device.py:305
+msgid "Serial Interface"
+msgstr "Seriële interface"
+
+#: meerk40t/grbl/device.py:470 meerk40t/grbl/device.py:487 meerk40t/grbl/device.py:500
+msgid "Red Dot"
+msgstr "Rode stip"
+
+#: meerk40t/grbl/device.py:595 meerk40t/grbl/device.py:607 meerk40t/grbl/device.py:619 meerk40t/grbl/device.py:629 meerk40t/grbl/device.py:682 meerk40t/grbl/device.py:695
+msgid "Validation"
+msgstr "Validatie"
+
+#: meerk40t/gui/devicepanel.py:698
+msgid "Device Manager"
+msgstr "Apparaatbeheer"
+
+#: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2445 meerk40t/gui/spoolerpanel.py:1240
+msgid "Burning"
+msgstr "Branden"
+
+#: meerk40t/gui/imagesplitter.py:551
+msgid "Image Splitting"
+msgstr "Afbeelding splitsen"
+
+#: meerk40t/gui/lasertoolpanel.py:801 meerk40t/gui/materialtest.py:1987 meerk40t/tools/kerftest.py:900 meerk40t/tools/livinghinges.py:1146
+msgid "Laser-Tools"
+msgstr "Lasergereedschappen"
+
+#: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226 meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
+msgid "Tooltips"
+msgstr "Tooltips"
+
+#: meerk40t/gui/plugin.py:278
+msgid "Warning-Indicator"
+msgstr "Waarschuwingsindicator"
+
+#: meerk40t/gui/simpleui.py:358
+msgid "SimpleUI"
+msgstr "EenvoudigeUI"
+
+#: meerk40t/gui/usbconnect.py:94
+msgid "USB-Connection"
+msgstr "USB-verbinding"
+
+#: meerk40t/gui/wxmmain.py:1008 meerk40t/gui/wxmmain.py:1016 meerk40t/gui/wxmmain.py:1024 meerk40t/gui/wxmmain.py:1038 meerk40t/gui/wxmmain.py:1047
+msgid "Settings"
+msgstr "Instellingen"
+
+#: meerk40t/gui/wxmmain.py:1181 meerk40t/gui/wxmmain.py:1199 meerk40t/gui/wxmmain.py:1214 meerk40t/gui/wxmmain.py:1229 meerk40t/gui/wxmribbon.py:138
+msgid "Appearance"
+msgstr "Uiterlijk"
+
+#: meerk40t/gui/wxmmain.py:1264 meerk40t/gui/wxmmain.py:1279 meerk40t/gui/wxmmain.py:1292 meerk40t/gui/wxmmain.py:1306 meerk40t/gui/wxmmain.py:1317
+msgid "Zoom"
+msgstr "Zoom"
+
+#: meerk40t/gui/wxmmain.py:1447 meerk40t/gui/wxmmain.py:1466
+msgid "Element-Points"
+msgstr "Elementpunten"
+
+#: meerk40t/gui/wxmmain.py:1515
+msgid "Magnetlines"
+msgstr "Magnetlijnen"
+
+#: meerk40t/gui/wxmmain.py:1551 meerk40t/gui/wxmmain.py:1567
+msgid "Button-Behaviour"
+msgstr "Knopgedrag"
+
+#: meerk40t/gui/wxmmain.py:4333 meerk40t/gui/wxmmain.py:4341 meerk40t/gui/wxmmain.py:4352
+msgid "GUI Appearance"
+msgstr "GUI-uiterlijk"
+
+#: meerk40t/gui/wxmmain.py:4364 meerk40t/gui/wxmmain.py:4375 meerk40t/gui/wxmmain.py:4386 meerk40t/gui/wxmmain.py:4397 meerk40t/gui/wxmmain.py:4408 meerk40t/gui/wxmmain.py:4420 meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4442 meerk40t/gui/wxmmain.py:4453 meerk40t/gui/wxmmain.py:4464 meerk40t/gui/wxmmain.py:4475 meerk40t/gui/wxmmain.py:4486 meerk40t/gui/wxmmain.py:4498
+msgid "Scene Appearance"
+msgstr "Scène-uiterlijk"
+
+#: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518 meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538 meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578 meerk40t/gui/wxmmain.py:4589
+msgid "Render-Options"
+msgstr "Renderopties"
+
+#: meerk40t/gui/wxmribbon.py:232
+msgid "Project"
+msgstr "Project"
+
+#: meerk40t/gui/propertypanels/propertywindow.py:309
+msgid "Operation/Element Properties"
+msgstr "Bewerking/Element eigenschappen"
+
+#: meerk40t/image/imagetools.py:498 meerk40t/image/imagetools.py:514 meerk40t/image/imagetools.py:527 meerk40t/image/imagetools.py:543
+msgid "Images"
+msgstr "Afbeeldingen"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:222
+msgid "TCP Controller"
+msgstr "TCP-controller"
+
+#: meerk40t/newly/device.py:295 meerk40t/newly/device.py:308
+msgid "Output"
+msgstr "Uitvoer"
+
+#: meerk40t/newly/device.py:337 meerk40t/newly/device.py:349
+msgid "Axis DPI"
+msgstr "As-DPI"
+
+#: meerk40t/newly/device.py:445 meerk40t/newly/device.py:457
+msgid "Current"
+msgstr "Stroom"
+
+#: meerk40t/newly/device.py:552 meerk40t/newly/device.py:563 meerk40t/newly/device.py:574
+msgid "Moving"
+msgstr "Bewegen"
+
+#: meerk40t/newly/device.py:585 meerk40t/newly/device.py:596
+msgid "Framing"
+msgstr "Kaderen"
+
+#: meerk40t/ruida/device.py:101 meerk40t/ruida/device.py:114
+msgid "User Scale"
+msgstr "Gebruikersschaal"
+
+#: meerk40t/tools/driver_to_path.py:298 meerk40t/tools/driver_to_path.py:308 meerk40t/tools/driver_to_path.py:318 meerk40t/tools/driver_to_path.py:329 meerk40t/tools/driver_to_path.py:342
+msgid "Path"
+msgstr "Pad"
+
+#: meerk40t/tools/driver_to_path.py:331 meerk40t/tools/driver_to_path.py:344
+msgid "Z-Axis"
+msgstr "Z-as"
+
+#: meerk40t/tools/driver_to_path.py:362
+msgid "Correct Orientation"
+msgstr "Juiste oriëntatie"
+
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Elementuitlijning"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Joggen, verplaatsen en transformeren"

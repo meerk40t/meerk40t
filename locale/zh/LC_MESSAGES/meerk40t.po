@@ -22286,3 +22286,311 @@ msgstr "设备到坐标"
 #: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
 msgid "Invalid length value"
 msgstr "无效的长度值"
+
+#: meerk40t/balormk/device.py:122 meerk40t/balormk/device.py:138
+msgid "Correction File"
+msgstr "校正文件"
+
+#: meerk40t/balormk/device.py:289 meerk40t/balormk/device.py:301 meerk40t/balormk/device.py:313
+msgid "Device Selection"
+msgstr "设备选择"
+
+#: meerk40t/balormk/device.py:326 meerk40t/balormk/device.py:339 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77
+msgid "Pin-Index"
+msgstr "引脚索引"
+
+#: meerk40t/balormk/device.py:390 meerk40t/balormk/device.py:400 meerk40t/balormk/device.py:412
+msgid "Redlight-Offset"
+msgstr "红光偏移"
+
+#: meerk40t/balormk/device.py:534 meerk40t/balormk/device.py:550 meerk40t/balormk/device.py:564 meerk40t/balormk/device.py:578
+msgid "Delays"
+msgstr "延迟"
+
+#: meerk40t/balormk/device.py:592 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:617
+msgid "Jump-Settings"
+msgstr "跳转设置"
+
+#: meerk40t/balormk/device.py:628
+msgid "Other"
+msgstr "其他"
+
+#: meerk40t/balormk/device.py:655 meerk40t/balormk/device.py:665
+msgid "Pulse-Width-Modulation"
+msgstr "脉宽调制"
+
+#: meerk40t/balormk/device.py:675 meerk40t/balormk/device.py:685
+msgid "Standby-Parameter"
+msgstr "待机参数"
+
+#: meerk40t/balormk/device.py:695 meerk40t/balormk/device.py:705 meerk40t/balormk/device.py:715 meerk40t/balormk/device.py:725
+msgid "Modes"
+msgstr "模式"
+
+#: meerk40t/balormk/device.py:787 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:807 meerk40t/balormk/device.py:817
+msgid "Fly Resolution"
+msgstr "飞行分辨率"
+
+#: meerk40t/balormk/gui/balorconfig.py:47
+msgid "Redlight"
+msgstr "红光"
+
+#: meerk40t/balormk/gui/balorconfig.py:49 meerk40t/newly/device.py:508 meerk40t/newly/device.py:519
+msgid "Timings"
+msgstr "时间设置"
+
+#: meerk40t/balormk/gui/balorconfig.py:50
+msgid "Extras"
+msgstr "附加"
+
+#: meerk40t/balormk/gui/balorconfig.py:51
+msgid "Correction"
+msgstr "校正"
+
+#: meerk40t/balormk/gui/balorconfig.py:237 meerk40t/cylinder/gui/cylindersettings.py:33 meerk40t/grbl/gui/grblconfiguration.py:283 meerk40t/grbl/gui/grblhardwareconfig.py:265 meerk40t/gui/devicepanel.py:698 meerk40t/lihuiyu/gui/lhyaccelgui.py:373 meerk40t/lihuiyu/gui/lhydrivergui.py:466 meerk40t/moshi/gui/moshidrivergui.py:84 meerk40t/newly/gui/newlyconfig.py:117 meerk40t/rotary/gui/rotarysettings.py:236 meerk40t/ruida/gui/ruidaconfig.py:236
+msgid "Device-Settings"
+msgstr "设备设置"
+
+#: meerk40t/balormk/gui/balorcontroller.py:187 meerk40t/gui/bufferview.py:73 meerk40t/gui/usbconnect.py:94 meerk40t/lihuiyu/gui/lhycontrollergui.py:782 meerk40t/lihuiyu/gui/tcpcontroller.py:222 meerk40t/moshi/gui/moshicontrollergui.py:534 meerk40t/newly/gui/newlycontroller.py:189 meerk40t/ruida/gui/ruidacontroller.py:183
+msgid "Device-Control"
+msgstr "设备控制"
+
+#: meerk40t/camera/gui/camerapanel.py:1340
+msgid "Sources"
+msgstr "来源"
+
+#: meerk40t/core/planner.py:63 meerk40t/core/planner.py:78 meerk40t/core/planner.py:110 meerk40t/core/planner.py:136 meerk40t/core/planner.py:166 meerk40t/core/planner.py:192 meerk40t/core/planner.py:301
+msgid "Reducing Movements"
+msgstr "减少移动"
+
+#: meerk40t/core/planner.py:65 meerk40t/core/planner.py:80
+msgid "Splitting rasters"
+msgstr "分割栅格"
+
+#: meerk40t/core/planner.py:208 meerk40t/core/planner.py:221
+msgid "Stitching"
+msgstr "拼接"
+
+#: meerk40t/core/planner.py:246 meerk40t/core/planner.py:257 meerk40t/core/planner.py:287
+msgid "Burn sequence"
+msgstr "烧录顺序"
+
+#: meerk40t/core/svg_io.py:109 meerk40t/core/svg_io.py:126 meerk40t/dxf/plugin.py:32 meerk40t/dxf/plugin.py:45
+msgid "Input"
+msgstr "输入"
+
+#: meerk40t/core/elements/elements.py:188 meerk40t/core/elements/elements.py:369 meerk40t/core/elements/elements.py:536
+msgid "Auto-Generation"
+msgstr "自动生成"
+
+#: meerk40t/core/elements/elements.py:201 meerk40t/core/elements/elements.py:275 meerk40t/core/elements/elements.py:300 meerk40t/core/elements/elements.py:319 meerk40t/core/elements/elements.py:336 meerk40t/core/elements/elements.py:352
+msgid "Assignment-Logic"
+msgstr "分配逻辑"
+
+#: meerk40t/core/elements/elements.py:260 meerk40t/core/elements/elements.py:394 meerk40t/core/elements/elements.py:411 meerk40t/core/elements/elements.py:424
+msgid "GUI-Behaviour"
+msgstr "界面行为"
+
+#: meerk40t/core/elements/elements.py:458
+msgid "Display"
+msgstr "显示"
+
+#: meerk40t/core/elements/elements.py:475 meerk40t/moshi/device.py:226 meerk40t/moshi/device.py:244
+msgid "Behaviour"
+msgstr "行为"
+
+#: meerk40t/core/elements/elements.py:492
+msgid "Loading"
+msgstr "加载"
+
+#: meerk40t/core/elements/elements.py:512
+msgid "Default Operations"
+msgstr "默认操作"
+
+#: meerk40t/device/devicechoices.py:12 meerk40t/device/devicechoices.py:22 meerk40t/device/devicechoices.py:32 meerk40t/device/devicechoices.py:42 meerk40t/device/devicechoices.py:52
+msgid "Effect Defaults"
+msgstr "效果默认值"
+
+#: meerk40t/extra/hershey.py:725
+msgid "System font locations"
+msgstr "系统字体位置"
+
+#: meerk40t/extra/inkscape.py:607 meerk40t/extra/inkscape.py:625
+msgid "SVG-Features"
+msgstr "SVG功能"
+
+#: meerk40t/extra/updater.py:30 meerk40t/extra/updater.py:48
+msgid "Check for updates on startup"
+msgstr "启动时检查更新"
+
+#: meerk40t/grbl/device.py:66 meerk40t/grbl/device.py:77 meerk40t/grbl/device.py:88 meerk40t/lihuiyu/device.py:53 meerk40t/lihuiyu/device.py:65 meerk40t/lihuiyu/device.py:76 meerk40t/moshi/device.py:75 meerk40t/moshi/device.py:88 meerk40t/moshi/device.py:101 meerk40t/newly/device.py:133 meerk40t/newly/device.py:147 meerk40t/newly/device.py:161 meerk40t/ruida/device.py:64 meerk40t/ruida/device.py:76 meerk40t/ruida/device.py:87
+msgid "Dimensions"
+msgstr "尺寸"
+
+#: meerk40t/grbl/device.py:151 meerk40t/grbl/device.py:163 meerk40t/moshi/device.py:170 meerk40t/moshi/device.py:182 meerk40t/moshi/device.py:196
+msgid "Flip Axis"
+msgstr "翻转轴"
+
+#: meerk40t/grbl/device.py:204 meerk40t/grbl/device.py:220
+msgid "Z-Axis support"
+msgstr "支持Z轴"
+
+#: meerk40t/grbl/device.py:311 meerk40t/grbl/device.py:324 meerk40t/ruida/device.py:292 meerk40t/ruida/device.py:305
+msgid "Serial Interface"
+msgstr "串口接口"
+
+#: meerk40t/grbl/device.py:470 meerk40t/grbl/device.py:487 meerk40t/grbl/device.py:500
+msgid "Red Dot"
+msgstr "红点"
+
+#: meerk40t/grbl/device.py:595 meerk40t/grbl/device.py:607 meerk40t/grbl/device.py:619 meerk40t/grbl/device.py:629 meerk40t/grbl/device.py:682 meerk40t/grbl/device.py:695
+msgid "Validation"
+msgstr "校验"
+
+#: meerk40t/gui/devicepanel.py:698
+msgid "Device Manager"
+msgstr "设备管理器"
+
+#: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2445 meerk40t/gui/spoolerpanel.py:1240
+msgid "Burning"
+msgstr "烧录"
+
+#: meerk40t/gui/imagesplitter.py:551
+msgid "Image Splitting"
+msgstr "图像分割"
+
+#: meerk40t/gui/lasertoolpanel.py:801 meerk40t/gui/materialtest.py:1987 meerk40t/tools/kerftest.py:900 meerk40t/tools/livinghinges.py:1146
+msgid "Laser-Tools"
+msgstr "激光工具"
+
+#: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226 meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
+msgid "Tooltips"
+msgstr "工具提示"
+
+#: meerk40t/gui/plugin.py:278
+msgid "Warning-Indicator"
+msgstr "警告指示器"
+
+#: meerk40t/gui/simpleui.py:358
+msgid "SimpleUI"
+msgstr "简易界面"
+
+#: meerk40t/gui/usbconnect.py:94
+msgid "USB-Connection"
+msgstr "USB连接"
+
+#: meerk40t/gui/wxmmain.py:1008 meerk40t/gui/wxmmain.py:1016 meerk40t/gui/wxmmain.py:1024 meerk40t/gui/wxmmain.py:1038 meerk40t/gui/wxmmain.py:1047
+msgid "Settings"
+msgstr "设置"
+
+#: meerk40t/gui/wxmmain.py:1181 meerk40t/gui/wxmmain.py:1199 meerk40t/gui/wxmmain.py:1214 meerk40t/gui/wxmmain.py:1229 meerk40t/gui/wxmribbon.py:138
+msgid "Appearance"
+msgstr "外观"
+
+#: meerk40t/gui/wxmmain.py:1264 meerk40t/gui/wxmmain.py:1279 meerk40t/gui/wxmmain.py:1292 meerk40t/gui/wxmmain.py:1306 meerk40t/gui/wxmmain.py:1317
+msgid "Zoom"
+msgstr "缩放"
+
+#: meerk40t/gui/wxmmain.py:1447 meerk40t/gui/wxmmain.py:1466
+msgid "Element-Points"
+msgstr "元素点"
+
+#: meerk40t/gui/wxmmain.py:1515
+msgid "Magnetlines"
+msgstr "磁性线"
+
+#: meerk40t/gui/wxmmain.py:1551 meerk40t/gui/wxmmain.py:1567
+msgid "Button-Behaviour"
+msgstr "按钮行为"
+
+#: meerk40t/gui/wxmmain.py:4333 meerk40t/gui/wxmmain.py:4341 meerk40t/gui/wxmmain.py:4352
+msgid "GUI Appearance"
+msgstr "界面外观"
+
+#: meerk40t/gui/wxmmain.py:4364 meerk40t/gui/wxmmain.py:4375 meerk40t/gui/wxmmain.py:4386 meerk40t/gui/wxmmain.py:4397 meerk40t/gui/wxmmain.py:4408 meerk40t/gui/wxmmain.py:4420 meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4442 meerk40t/gui/wxmmain.py:4453 meerk40t/gui/wxmmain.py:4464 meerk40t/gui/wxmmain.py:4475 meerk40t/gui/wxmmain.py:4486 meerk40t/gui/wxmmain.py:4498
+msgid "Scene Appearance"
+msgstr "场景外观"
+
+#: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518 meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538 meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578 meerk40t/gui/wxmmain.py:4589
+msgid "Render-Options"
+msgstr "渲染选项"
+
+#: meerk40t/gui/wxmribbon.py:232
+msgid "Project"
+msgstr "项目"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+msgid "  lasering these segments with vertical lines."
+msgstr ""
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr ""
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1788
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr ""
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1790
+msgid "  where we have a majority."
+msgstr ""
+
+#: meerk40t/gui/propertypanels/propertywindow.py:309
+msgid "Operation/Element Properties"
+msgstr "操作/元素属性"
+
+#: meerk40t/image/imagetools.py:498 meerk40t/image/imagetools.py:514 meerk40t/image/imagetools.py:527 meerk40t/image/imagetools.py:543
+msgid "Images"
+msgstr "图像"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:222
+msgid "TCP Controller"
+msgstr "TCP控制器"
+
+#: meerk40t/newly/device.py:295 meerk40t/newly/device.py:308
+msgid "Output"
+msgstr "输出"
+
+#: meerk40t/newly/device.py:337 meerk40t/newly/device.py:349
+msgid "Axis DPI"
+msgstr "轴DPI"
+
+#: meerk40t/newly/device.py:445 meerk40t/newly/device.py:457
+msgid "Current"
+msgstr "电流"
+
+#: meerk40t/newly/device.py:552 meerk40t/newly/device.py:563 meerk40t/newly/device.py:574
+msgid "Moving"
+msgstr "移动"
+
+#: meerk40t/newly/device.py:585 meerk40t/newly/device.py:596
+msgid "Framing"
+msgstr "描边"
+
+#: meerk40t/ruida/device.py:101 meerk40t/ruida/device.py:114
+msgid "User Scale"
+msgstr "用户比例"
+
+#: meerk40t/tools/driver_to_path.py:298 meerk40t/tools/driver_to_path.py:308 meerk40t/tools/driver_to_path.py:318 meerk40t/tools/driver_to_path.py:329 meerk40t/tools/driver_to_path.py:342
+msgid "Path"
+msgstr "路径"
+
+#: meerk40t/tools/driver_to_path.py:331 meerk40t/tools/driver_to_path.py:344
+msgid "Z-Axis"
+msgstr "Z轴"
+
+#: meerk40t/tools/driver_to_path.py:362
+msgid "Correct Orientation"
+msgstr "正确方向"
+
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "元素对齐"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "点动、移动和变换"

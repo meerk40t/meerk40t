@@ -303,6 +303,7 @@ class OperationInformation(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Operations"), _("Operation Information")
         return "Operations", "Operation Information"
 
     @staticmethod

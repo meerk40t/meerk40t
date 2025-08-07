@@ -106,6 +106,7 @@ def plugin(kernel, lifecycle=None):
                     "This setting uses the SVG viewport dimensions to scale the rest of the elements in the file."
                 ),
                 "page": "Input/Output",
+                # Hint for translation _("Input")
                 "section": "Input",
             },
             {
@@ -122,6 +123,7 @@ def plugin(kernel, lifecycle=None):
                     "Unticked: Invisible elements will be loaded as regular elements and will be hidden."
                 ),
                 "page": "Input/Output",
+                # Hint for translation _("Input")
                 "section": "Input",
             },
         ]

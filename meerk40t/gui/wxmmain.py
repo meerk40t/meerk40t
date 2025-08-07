@@ -191,6 +191,7 @@ class Autosaver:
                     "If active then the current workspace will be saved every x minutes\nFilename: {file}"
                 ).format(file=self.autosave_file),
                 "page": "Options",
+                # Hint for translation _("Autosave")
                 "section": "Autosave",
             },
             {
@@ -209,6 +210,7 @@ class Autosaver:
                 "choices": (30, 60, 300, 600),
                 "tip": _("How often should MeerK40t save the current workspace"),
                 "page": "Options",
+                # Hint for translation _("Autosave")
                 "section": "Autosave",
                 "conditional": (self.context, "autosave_active"),
             },
@@ -1003,6 +1005,7 @@ class MeerK40t(MWindow):
                     "help": _("Manages Wordlist-Entries"),
                     "action": on_click_pref_wordlist,
                     "level": 2,
+                    # Hint for translation _("Settings")
                     "segment": "Settings",
                 },
                 {
@@ -1010,6 +1013,7 @@ class MeerK40t(MWindow):
                     "help": _("Open the vector-font management window."),
                     "action": on_click_pref_fonts,
                     "level": 2,
+                    # Hint for translation _("Settings")
                     "segment": "Settings",
                 },
                 {
@@ -1017,6 +1021,7 @@ class MeerK40t(MWindow):
                     "help": _("Opens Keymap Window"),
                     "action": on_click_pref_keys,
                     "level": 2,
+                    # Hint for translation _("Settings")
                     "segment": "Settings",
                 },
             ]
@@ -1030,6 +1035,7 @@ class MeerK40t(MWindow):
                     {
                         "label": "",
                         "level": 2,
+                        # Hint for translation _("Settings")
                         "segment": "Settings",
                     },
                     {
@@ -1038,6 +1044,7 @@ class MeerK40t(MWindow):
                         "action": on_click_preferences,
                         "level": 2,
                         "id": wx.ID_PREFERENCES,
+                        # Hint for translation _("Settings")
                         "segment": "Settings",
                     },
                 )
@@ -1171,6 +1178,7 @@ class MeerK40t(MWindow):
         #             "Appearance of ribbon at the top (requires a restart to take effect))"
         #         ),
         #         "page": "Gui",
+        #         # Hint for translation _("Appearance")
         #         "section": "Appearance",
         #     },
         # ]
@@ -1188,6 +1196,7 @@ class MeerK40t(MWindow):
                     "Appearance of all icons in the GUI (requires a restart to take effect)"
                 ),
                 "page": "Gui",
+                # Hint for translation _("Appearance")
                 "section": "Appearance",
                 "signals": "restart",
             },
@@ -1202,6 +1211,7 @@ class MeerK40t(MWindow):
                     + "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
+                # Hint for translation _("Appearance")
                 "section": "Appearance",
                 "signals": "rebuild_tree",
             },
@@ -1216,6 +1226,7 @@ class MeerK40t(MWindow):
                     + "Inactive: Standard Colors are used"
                 ),
                 "page": "Gui",
+                # Hint for translation _("Appearance")
                 "section": "Appearance",
                 "signals": "rebuild_tree",
             },
@@ -1250,6 +1261,7 @@ class MeerK40t(MWindow):
                     "Default zoom margin when zoom focused on a location (automatically or via Ctrl-B)"
                 ),
                 "page": "Gui",
+                # Hint for translation _("Zoom")
                 "section": "Zoom",
             },
             {
@@ -1264,6 +1276,7 @@ class MeerK40t(MWindow):
                     "Default zoom factor controls how quick or fast zooming happens."
                 ),
                 "page": "Gui",
+                # Hint for translation _("Zoom")
                 "section": "Zoom",
             },
             {
@@ -1276,6 +1289,7 @@ class MeerK40t(MWindow):
                 "label": _("Default pan factor:"),
                 "tip": _("Default pan factor controls how quick panning happens."),
                 "page": "Gui",
+                # Hint for translation _("Zoom")
                 "section": "Zoom",
             },
         ]
@@ -1289,6 +1303,7 @@ class MeerK40t(MWindow):
                 "label": _("Autofocus bed on resize"),
                 "tip": _("Autofocus bed when resizing the main window"),
                 "page": "Gui",
+                # Hint for translation _("Zoom")
                 "section": "Zoom",
             },
             {
@@ -1299,6 +1314,7 @@ class MeerK40t(MWindow):
                 "label": _("Suppress animation"),
                 "tip": _("Suppress zoom animation"),
                 "page": "Gui",
+                # Hint for translation _("Zoom")
                 "section": "Zoom",
             },
         ]
@@ -1315,6 +1331,7 @@ class MeerK40t(MWindow):
                     "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
                 ),
                 "page": "Scene",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -1327,6 +1344,7 @@ class MeerK40t(MWindow):
                     "Active: selects a newly created element (via one of the tools in the toolbar)"
                 ),
                 "page": "Scene",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -1341,6 +1359,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Inactive: filenodes will not be used for selection"),
                 "page": "Scene",
+                # Hint for translation _("General")
                 "section": "General",
             },
         ]
@@ -1357,6 +1376,7 @@ class MeerK40t(MWindow):
         #             "Enable the display of a colorbar at the bottom of the screen."
         #         ),
         #         "page": "Gui",
+        #         # Hint for translation _("General")
         #         "section": "General",
         #     },
         # ]
@@ -1373,6 +1393,7 @@ class MeerK40t(MWindow):
                     "Active: draw handles outside of / Inactive: Draw them on the bounding box of the selection."
                 ),
                 "page": "Scene",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -1385,6 +1406,7 @@ class MeerK40t(MWindow):
                     "What coordination information shall be displayed while moving: to all edges, left/upper edge or none at all"
                 ),
                 "page": "Scene",
+                # Hint for translation _("General")
                 "section": "General",
                 "style": "option",
                 "choices": (0, 1, 2),
@@ -1407,6 +1429,7 @@ class MeerK40t(MWindow):
                     "The screen distance in pixels inside which snap points will be highlighted"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Snap-Options")
                 "section": "Snap-Options",
             },
             {
@@ -1419,7 +1442,9 @@ class MeerK40t(MWindow):
                     "If checked, the cursor will snap to the closest element point within the specified threshold"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Snap-Options")
                 "section": "Snap-Options",
+                # Hint for translation _("Element-Points")
                 "subsection": "Element-Points",
             },
             {
@@ -1436,7 +1461,9 @@ class MeerK40t(MWindow):
                     "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Snap-Options")
                 "section": "Snap-Options",
+                # Hint for translation _("Element-Points")
                 "subsection": "Element-Points",
             },
             {
@@ -1449,7 +1476,9 @@ class MeerK40t(MWindow):
                     "If checked, the cursor will snap to the closest grid intersection"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Snap-Options")
                 "section": "Snap-Options",
+                # Hint for translation _("Grid")
                 "subsection": "Grid",
             },
             {
@@ -1466,7 +1495,9 @@ class MeerK40t(MWindow):
                     "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Snap-Options")
                 "section": "Snap-Options",
+                # Hint for translation _("Grid")
                 "subsection": "Grid",
             },
             {
@@ -1479,7 +1510,9 @@ class MeerK40t(MWindow):
                     "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
                 ),
                 "page": "Scene",
+                # Hint for translation _("Snap-Options")
                 "section": "Snap-Options",
+                # Hint for translation _("Magnetlines")
                 "subsection": "Magnetlines",
             },
         ]
@@ -1498,7 +1531,8 @@ class MeerK40t(MWindow):
             #     ),
             #     "page": "Gui",
             #     "hidden": True,
-            #     "section": "Scene",
+            #     # Hint for translation _("Scene")
+            #   "section": "Scene",
             # },
             {
                 "attr": "button_repeat",
@@ -1514,6 +1548,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Misc.",
+                # Hint for translation _("Button-Behaviour")
                 "subsection": "Button-Behaviour",
                 "signals": "button-repeat",
             },
@@ -1529,6 +1564,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Misc.",
+                # Hint for translation _("Button-Behaviour")
                 "subsection": "Button-Behaviour",
                 "signals": "button-repeat",
             },
@@ -2725,6 +2761,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("(Requires a restart to take effect)"),
                 "page": "Scene",
+                # Hint for translation _("Alignment")
                 "section": "Alignment",
                 "signals": "restart",
             },
@@ -4293,6 +4330,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("GUI-Elements"),
                 "level": 2,
+                # Hint for translation _("GUI Appearance")
                 "segment": "GUI Appearance",
             },
             {
@@ -4300,6 +4338,7 @@ class MeerK40t(MWindow):
                 "help": _("Show/Hide all panels/ribbon bar"),
                 "action": self.on_click_toggle_ui,
                 "level": 2,
+                # Hint for translation _("GUI Appearance")
                 "segment": "GUI Appearance",
                 "subsegment": "GUI",
             },
@@ -4310,6 +4349,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_ICONS,
                 "level": 2,
+                # Hint for translation _("GUI Appearance")
                 "segment": "GUI Appearance",
                 "subsegment": "Tree",
             },
@@ -4321,6 +4361,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_ORIGIN,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Scene",
             },
@@ -4331,6 +4372,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_GRID,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Scene",
             },
@@ -4341,6 +4383,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_BACKGROUND,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Scene",
             },
@@ -4351,6 +4394,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_GUIDES,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Scene",
             },
@@ -4361,6 +4405,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_REGMARKS,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
             },
             {
@@ -4372,6 +4417,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_LASERPATH,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
             },
             {
@@ -4383,6 +4429,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_RETICLE,
                 "level": 2,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
             },
             {
@@ -4392,6 +4439,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_ALPHABLACK,
                 "level": 3,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Display Options",
             },
@@ -4402,6 +4450,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_CACHE,
                 "level": 3,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Display Options",
             },
@@ -4412,6 +4461,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_ANIMATE,
                 "level": 3,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Display Options",
             },
@@ -4422,6 +4472,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_INVERT,
                 "level": 3,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Display Options",
             },
@@ -4432,6 +4483,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_FLIPXY,
                 "level": 3,
+                # Hint for translation _("Scene Appearance")
                 "segment": "Scene Appearance",
                 "subsegment": "Display Options",
             },
@@ -4443,6 +4495,7 @@ class MeerK40t(MWindow):
             #     "action": toggle_draw_mode,
             #     "parameter": DRAW_MODE_REFRESH,
             #     "level": 3,
+            #     # Hint for translation _("Scene Appearance")
             #     "segment": "Scene Appearance",
             #     "subsegment": "Display Options",
             # },
@@ -4453,6 +4506,7 @@ class MeerK40t(MWindow):
                 "help": _(
                     "Advanced options! Tampering with these might break your burn!"
                 ),
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "level": 2,
             },
@@ -4461,6 +4515,7 @@ class MeerK40t(MWindow):
                 "help": _(
                     "Advanced options! Tampering with these might break your burn!"
                 ),
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "level": 2,
             },
@@ -4470,6 +4525,7 @@ class MeerK40t(MWindow):
                 "criteria": self.context.draw_mode & DRAW_MODE_PATH != 0,
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_PATH,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "level": 2,
             },
@@ -4479,6 +4535,7 @@ class MeerK40t(MWindow):
                 "criteria": self.context.draw_mode & DRAW_MODE_TEXT != 0,
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_TEXT,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "level": 2,
             },
@@ -4488,6 +4545,7 @@ class MeerK40t(MWindow):
                 "criteria": self.context.draw_mode & DRAW_MODE_IMAGE != 0,
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_IMAGE,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "level": 2,
             },
@@ -4500,6 +4558,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_STROKES,
                 "level": 3,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "subsegment": "Shape-Attributes",
             },
@@ -4510,11 +4569,13 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_FILLS,
                 "level": 3,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "subsegment": "Shape-Attributes",
             },
             {
                 "level": 3,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "subsegment": "Shape-Attributes",
             },
@@ -4525,6 +4586,7 @@ class MeerK40t(MWindow):
                 "action": toggle_draw_mode,
                 "parameter": DRAW_MODE_LINEWIDTH,
                 "level": 3,
+                # Hint for translation _("Render-Options")
                 "segment": "Render-Options",
                 "subsegment": "Shape-Attributes",
             },

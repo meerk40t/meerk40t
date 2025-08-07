@@ -23317,3 +23317,354 @@ msgstr " többségében fekete pixelekkel, majd az oszlopok rajzolása."
 msgid "  where we have a majority."
 msgstr " ahol többség van."
 
+#: meerk40t/core/bindalias.py:455
+msgid "Alias"
+msgstr "Álnév"
+
+#: meerk40t/core/bindalias.py:455
+msgid "Command(s)"
+msgstr "Parancs(ok)"
+
+#: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
+msgid "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+msgstr "{index}: {name} - {typename}\n   vonalvastagság = {stroke_width}\n   skálázott vastagság = {scaled_stroke_width}"
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Eszköz nézet"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Információk megjelenítése az eszköz nézetről"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Koordináták az eszközhöz"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Vektor mód: csak átmenet"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Eszközből koordinátákba"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Érvénytelen hossz érték"
+
+#: meerk40t/gui/wxmmain.py:1316
+msgid "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
+msgstr "Aktív: Egy kattintás a kurzor alatti legkisebb elemet választja ki (ctrl+kattintás a legnagyobbat) / Inaktív: Egy kattintás a legnagyobb elemet választja ki (ctrl+kattintás a legkisebbet)."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr "  ez a legközelebbi rajzolandó szegmenst választja ki,"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+msgid "  lasering these segments with vertical lines."
+msgstr "  ezeknek a szegmenseknek a lézerezése függőleges vonalakkal."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr "  Általában sokkal gyorsabb olyan képen, ahol sok a fehér pixel."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1788
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr "  ahol a fekete pixelek vannak többségben, majd az oszlopok rajzolása"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1790
+msgid "  where we have a majority."
+msgstr "  ahol többségben vagyunk."
+
+#: meerk40t/kernel/kernel.py:3117
+msgid "    {index}.{subindex}: linked {name}:{hash:X}"
+msgstr "    {index}.{subindex}: összekapcsolva {name}:{hash:X}"
+
+#: meerk40t/balormk/device.py:122 meerk40t/balormk/device.py:138
+msgid "Correction File"
+msgstr "Korrekciós fájl"
+
+#: meerk40t/balormk/device.py:289 meerk40t/balormk/device.py:301 meerk40t/balormk/device.py:313
+msgid "Device Selection"
+msgstr "Eszköz kiválasztása"
+
+#: meerk40t/balormk/device.py:326 meerk40t/balormk/device.py:339 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77
+msgid "Pin-Index"
+msgstr "Tű index"
+
+#: meerk40t/balormk/device.py:390 meerk40t/balormk/device.py:400 meerk40t/balormk/device.py:412
+msgid "Redlight-Offset"
+msgstr "Vörös fény eltolás"
+
+#: meerk40t/balormk/device.py:534 meerk40t/balormk/device.py:550 meerk40t/balormk/device.py:564 meerk40t/balormk/device.py:578
+msgid "Delays"
+msgstr "Késleltetések"
+
+#: meerk40t/balormk/device.py:592 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:617
+msgid "Jump-Settings"
+msgstr "Ugrás beállítások"
+
+#: meerk40t/balormk/device.py:628
+msgid "Other"
+msgstr "Egyéb"
+
+#: meerk40t/balormk/device.py:655 meerk40t/balormk/device.py:665
+msgid "Pulse-Width-Modulation"
+msgstr "Impulzusszélesség-moduláció"
+
+#: meerk40t/balormk/device.py:675 meerk40t/balormk/device.py:685
+msgid "Standby-Parameter"
+msgstr "Készenléti paraméter"
+
+#: meerk40t/balormk/device.py:695 meerk40t/balormk/device.py:705 meerk40t/balormk/device.py:715 meerk40t/balormk/device.py:725
+msgid "Modes"
+msgstr "Módok"
+
+#: meerk40t/balormk/device.py:787 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:807 meerk40t/balormk/device.py:817
+msgid "Fly Resolution"
+msgstr "Repülési felbontás"
+
+#: meerk40t/balormk/gui/balorconfig.py:47
+msgid "Redlight"
+msgstr "Vörös fény"
+
+#: meerk40t/balormk/gui/balorconfig.py:49 meerk40t/newly/device.py:508 meerk40t/newly/device.py:519
+msgid "Timings"
+msgstr "Időzítések"
+
+#: meerk40t/balormk/gui/balorconfig.py:50
+msgid "Extras"
+msgstr "Extrák"
+
+#: meerk40t/balormk/gui/balorconfig.py:51
+msgid "Correction"
+msgstr "Korrekció"
+
+#: meerk40t/balormk/gui/balorconfig.py:237 meerk40t/cylinder/gui/cylindersettings.py:33 meerk40t/grbl/gui/grblconfiguration.py:283 meerk40t/grbl/gui/grblhardwareconfig.py:265 meerk40t/gui/devicepanel.py:698 meerk40t/lihuiyu/gui/lhyaccelgui.py:373 meerk40t/lihuiyu/gui/lhydrivergui.py:466 meerk40t/moshi/gui/moshidrivergui.py:84 meerk40t/newly/gui/newlyconfig.py:117 meerk40t/rotary/gui/rotarysettings.py:236 meerk40t/ruida/gui/ruidaconfig.py:236
+msgid "Device-Settings"
+msgstr "Eszköz beállítások"
+
+#: meerk40t/balormk/gui/balorcontroller.py:187 meerk40t/grbl/gui/grblcontroller.py:481 meerk40t/gui/bufferview.py:73 meerk40t/gui/usbconnect.py:94 meerk40t/lihuiyu/gui/lhycontrollergui.py:782 meerk40t/lihuiyu/gui/tcpcontroller.py:222 meerk40t/moshi/gui/moshicontrollergui.py:534 meerk40t/newly/gui/newlycontroller.py:189 meerk40t/ruida/gui/ruidacontroller.py:183
+msgid "Device-Control"
+msgstr "Eszköz vezérlés"
+
+#: meerk40t/camera/gui/camerapanel.py:1340
+msgid "Sources"
+msgstr "Források"
+
+#: meerk40t/core/planner.py:63 meerk40t/core/planner.py:78 meerk40t/core/planner.py:110 meerk40t/core/planner.py:136 meerk40t/core/planner.py:166 meerk40t/core/planner.py:192 meerk40t/core/planner.py:301
+msgid "Reducing Movements"
+msgstr "Mozgások csökkentése"
+
+#: meerk40t/core/planner.py:65 meerk40t/core/planner.py:80
+msgid "Splitting rasters"
+msgstr "Raszterek felosztása"
+
+#: meerk40t/core/planner.py:208 meerk40t/core/planner.py:221
+msgid "Stitching"
+msgstr "Összevarrás"
+
+#: meerk40t/core/planner.py:246 meerk40t/core/planner.py:257 meerk40t/core/planner.py:287
+msgid "Burn sequence"
+msgstr "Égetési sorrend"
+
+#: meerk40t/core/svg_io.py:109 meerk40t/core/svg_io.py:126 meerk40t/dxf/plugin.py:32 meerk40t/dxf/plugin.py:45
+msgid "Input"
+msgstr "Bemenet"
+
+#: meerk40t/core/elements/elements.py:188 meerk40t/core/elements/elements.py:369 meerk40t/core/elements/elements.py:536
+msgid "Auto-Generation"
+msgstr "Automatikus generálás"
+
+#: meerk40t/core/elements/elements.py:201 meerk40t/core/elements/elements.py:275 meerk40t/core/elements/elements.py:300 meerk40t/core/elements/elements.py:319 meerk40t/core/elements/elements.py:336 meerk40t/core/elements/elements.py:352
+msgid "Assignment-Logic"
+msgstr "Hozzárendelési logika"
+
+#: meerk40t/core/elements/elements.py:260 meerk40t/core/elements/elements.py:394 meerk40t/core/elements/elements.py:411 meerk40t/core/elements/elements.py:424
+msgid "GUI-Behaviour"
+msgstr "GUI viselkedés"
+
+#: meerk40t/core/elements/elements.py:458
+msgid "Display"
+msgstr "Megjelenítés"
+
+#: meerk40t/core/elements/elements.py:475 meerk40t/moshi/device.py:226 meerk40t/moshi/device.py:244
+msgid "Behaviour"
+msgstr "Viselkedés"
+
+#: meerk40t/core/elements/elements.py:492
+msgid "Loading"
+msgstr "Betöltés"
+
+#: meerk40t/core/elements/elements.py:512
+msgid "Default Operations"
+msgstr "Alapértelmezett műveletek"
+
+#: meerk40t/device/devicechoices.py:12 meerk40t/device/devicechoices.py:22 meerk40t/device/devicechoices.py:32 meerk40t/device/devicechoices.py:42 meerk40t/device/devicechoices.py:52
+msgid "Effect Defaults"
+msgstr "Effektus alapértelmezések"
+
+#: meerk40t/extra/hershey.py:725
+msgid "System font locations"
+msgstr "Rendszer betűkészlet helyek"
+
+#: meerk40t/extra/inkscape.py:607 meerk40t/extra/inkscape.py:625
+msgid "SVG-Features"
+msgstr "SVG funkciók"
+
+#: meerk40t/extra/updater.py:30 meerk40t/extra/updater.py:48
+msgid "Check for updates on startup"
+msgstr "Frissítések keresése indításkor"
+
+#: meerk40t/grbl/device.py:66 meerk40t/grbl/device.py:77 meerk40t/grbl/device.py:88 meerk40t/lihuiyu/device.py:53 meerk40t/lihuiyu/device.py:65 meerk40t/lihuiyu/device.py:76 meerk40t/moshi/device.py:75 meerk40t/moshi/device.py:88 meerk40t/moshi/device.py:101 meerk40t/newly/device.py:133 meerk40t/newly/device.py:147 meerk40t/newly/device.py:161 meerk40t/ruida/device.py:64 meerk40t/ruida/device.py:76 meerk40t/ruida/device.py:87
+msgid "Dimensions"
+msgstr "Méretek"
+
+#: meerk40t/grbl/device.py:151 meerk40t/grbl/device.py:163 meerk40t/moshi/device.py:170 meerk40t/moshi/device.py:182 meerk40t/moshi/device.py:196
+msgid "Flip Axis"
+msgstr "Tengely megfordítása"
+
+#: meerk40t/grbl/device.py:204 meerk40t/grbl/device.py:220
+msgid "Z-Axis support"
+msgstr "Z-tengely támogatás"
+
+#: meerk40t/grbl/device.py:311 meerk40t/grbl/device.py:324 meerk40t/ruida/device.py:292 meerk40t/ruida/device.py:305
+msgid "Serial Interface"
+msgstr "Soros interfész"
+
+#: meerk40t/grbl/device.py:470 meerk40t/grbl/device.py:487 meerk40t/grbl/device.py:500
+msgid "Red Dot"
+msgstr "Vörös pont"
+
+#: meerk40t/grbl/device.py:595 meerk40t/grbl/device.py:607 meerk40t/grbl/device.py:619 meerk40t/grbl/device.py:629 meerk40t/grbl/device.py:682 meerk40t/grbl/device.py:695
+msgid "Validation"
+msgstr "Érvényesítés"
+
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Elem igazítás"
+
+#: meerk40t/gui/devicepanel.py:698
+msgid "Device Manager"
+msgstr "Eszközkezelő"
+
+#: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2445 meerk40t/gui/spoolerpanel.py:1240
+msgid "Burning"
+msgstr "Égetés"
+
+#: meerk40t/gui/imagesplitter.py:551
+msgid "Image Splitting"
+msgstr "Kép felosztása"
+
+#: meerk40t/gui/lasertoolpanel.py:801 meerk40t/gui/materialtest.py:1987 meerk40t/tools/kerftest.py:900 meerk40t/tools/livinghinges.py:1146
+msgid "Laser-Tools"
+msgstr "Lézer eszközök"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Mozgatás, elmozdítás és transzformáció"
+
+#: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226 meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
+msgid "Tooltips"
+msgstr "Súgók"
+
+#: meerk40t/gui/plugin.py:278
+msgid "Warning-Indicator"
+msgstr "Figyelmeztető jelző"
+
+#: meerk40t/gui/simpleui.py:358
+msgid "SimpleUI"
+msgstr "EgyszerűUI"
+
+#: meerk40t/gui/usbconnect.py:94
+msgid "USB-Connection"
+msgstr "USB kapcsolat"
+
+#: meerk40t/gui/wxmmain.py:1008 meerk40t/gui/wxmmain.py:1016 meerk40t/gui/wxmmain.py:1024 meerk40t/gui/wxmmain.py:1038 meerk40t/gui/wxmmain.py:1047
+msgid "Settings"
+msgstr "Beállítások"
+
+#: meerk40t/gui/wxmmain.py:1181 meerk40t/gui/wxmmain.py:1199 meerk40t/gui/wxmmain.py:1214 meerk40t/gui/wxmmain.py:1229 meerk40t/gui/wxmribbon.py:138
+msgid "Appearance"
+msgstr "Megjelenés"
+
+#: meerk40t/gui/wxmmain.py:1264 meerk40t/gui/wxmmain.py:1279 meerk40t/gui/wxmmain.py:1292 meerk40t/gui/wxmmain.py:1306 meerk40t/gui/wxmmain.py:1317
+msgid "Zoom"
+msgstr "Nagyítás"
+
+#: meerk40t/gui/wxmmain.py:1447 meerk40t/gui/wxmmain.py:1466
+msgid "Element-Points"
+msgstr "Elem pontok"
+
+#: meerk40t/gui/wxmmain.py:1515
+msgid "Magnetlines"
+msgstr "Mágnesvonalak"
+
+#: meerk40t/gui/wxmmain.py:1551 meerk40t/gui/wxmmain.py:1567
+msgid "Button-Behaviour"
+msgstr "Gomb viselkedés"
+
+#: meerk40t/gui/wxmmain.py:4333 meerk40t/gui/wxmmain.py:4341 meerk40t/gui/wxmmain.py:4352
+msgid "GUI Appearance"
+msgstr "GUI megjelenés"
+
+#: meerk40t/gui/wxmmain.py:4364 meerk40t/gui/wxmmain.py:4375 meerk40t/gui/wxmmain.py:4386 meerk40t/gui/wxmmain.py:4397 meerk40t/gui/wxmmain.py:4408 meerk40t/gui/wxmmain.py:4420 meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4442 meerk40t/gui/wxmmain.py:4453 meerk40t/gui/wxmmain.py:4464 meerk40t/gui/wxmmain.py:4475 meerk40t/gui/wxmmain.py:4486 meerk40t/gui/wxmmain.py:4498
+msgid "Scene Appearance"
+msgstr "Jelenet megjelenés"
+
+#: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518 meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538 meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578 meerk40t/gui/wxmmain.py:4589
+msgid "Render-Options"
+msgstr "Renderelési opciók"
+
+#: meerk40t/gui/wxmribbon.py:232
+msgid "Project"
+msgstr "Projekt"
+
+#: meerk40t/gui/propertypanels/propertywindow.py:309
+msgid "Operation/Element Properties"
+msgstr "Művelet/elem tulajdonságok"
+
+#: meerk40t/image/imagetools.py:498 meerk40t/image/imagetools.py:514 meerk40t/image/imagetools.py:527 meerk40t/image/imagetools.py:543
+msgid "Images"
+msgstr "Képek"
+
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:222
+msgid "TCP Controller"
+msgstr "TCP vezérlő"
+
+#: meerk40t/newly/device.py:295 meerk40t/newly/device.py:308
+msgid "Output"
+msgstr "Kimenet"
+
+#: meerk40t/newly/device.py:337 meerk40t/newly/device.py:349
+msgid "Axis DPI"
+msgstr "Tengely DPI"
+
+#: meerk40t/newly/device.py:445 meerk40t/newly/device.py:457
+msgid "Current"
+msgstr "Áram"
+
+#: meerk40t/newly/device.py:552 meerk40t/newly/device.py:563 meerk40t/newly/device.py:574
+msgid "Moving"
+msgstr "Mozgásban"
+
+#: meerk40t/newly/device.py:585 meerk40t/newly/device.py:596
+msgid "Framing"
+msgstr "Keretezés"
+
+#: meerk40t/ruida/device.py:101 meerk40t/ruida/device.py:114
+msgid "User Scale"
+msgstr "Felhasználói skála"
+
+#: meerk40t/tools/driver_to_path.py:298 meerk40t/tools/driver_to_path.py:308 meerk40t/tools/driver_to_path.py:318 meerk40t/tools/driver_to_path.py:329 meerk40t/tools/driver_to_path.py:342
+msgid "Path"
+msgstr "Útvonal"
+
+#: meerk40t/tools/driver_to_path.py:331 meerk40t/tools/driver_to_path.py:344
+msgid "Z-Axis"
+msgstr "Z-tengely"
+
+#: meerk40t/tools/driver_to_path.py:362
+msgid "Correct Orientation"
+msgstr "Helyes orientáció"

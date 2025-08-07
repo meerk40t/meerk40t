@@ -424,6 +424,7 @@ def init_commands(kernel):
             "label": _("Delay hull trace"),
             "tip": _("Establish if and how an element hull trace should wait"),
             "page": "Laser",
+            # Hint for translation _("General")
             "section": "General",
             "style": "option",
             "display": (_("Immediate"), _("User confirmation"), _("Delay 5 seconds")),
