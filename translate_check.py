@@ -1,4 +1,3 @@
-
 """
 translate_check.py
 
@@ -24,8 +23,9 @@ Supported locales:
     de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
 """
 
-import os
 import argparse
+import os
+
 import polib
 
 IGNORED_DIRS = [".git", ".github", "venv", ".venv"]
@@ -297,9 +297,13 @@ def compare(
                     last = kchar
                 outp.write(f'msgid "{lkey}"\n')
                 outp.write('msgstr ""\n\n')
-    print(
-        f"Done for {locale}: examined={counts[0]}, found={counts[1]}, new={counts[2]}"
-    )
+    if counts[2] == 0:
+        print(f"No changes for {locale}, no file created.")
+        os.remove(f"./delta_{locale}.po")
+    else:
+        print(
+            f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}."
+        )
 
 
 def validate_po(
@@ -376,10 +380,14 @@ def check_encoding(locales: list[str]) -> None:
             print(f"Locale directory {po_dir} does not exist or is empty.")
             continue
         for po_file in po_files:
-            source_encoding  = detect_encoding(po_dir + po_file)
+            source_encoding = detect_encoding(po_dir + po_file)
             if source_encoding not in ("utf-8", "utf8"):
                 # Create a fixed file with utf-8 encoding
-                with open(po_dir + po_file, "r", encoding=None if source_encoding == "unknown" else source_encoding) as f:
+                with open(
+                    po_dir + po_file,
+                    "r",
+                    encoding=None if source_encoding == "unknown" else source_encoding,
+                ) as f:
                     content = f.read()
                 # Write the content to a temporary file with utf-8 encoding
                 try:
@@ -387,7 +395,9 @@ def check_encoding(locales: list[str]) -> None:
                     with open(temp_file, "w", encoding="utf-8") as f:
                         f.write(content)
                 except Exception as e:
-                    print(f"{po_dir + po_file}: Error writing temporary file, please check: {e}")
+                    print(
+                        f"{po_dir + po_file}: Error writing temporary file, please check: {e}"
+                    )
                     continue
                 source_encoding = detect_encoding(temp_file)
                 if source_encoding not in ("utf-8", "utf8"):
@@ -400,12 +410,17 @@ def check_encoding(locales: list[str]) -> None:
                     try:
                         os.remove(po_dir + po_file)  # Remove the original file
                         os.rename(temp_file, po_dir + po_file)
-                        print(f"{po_dir + po_file}: Fixed encoding for {source_encoding} to utf-8.")
+                        print(
+                            f"{po_dir + po_file}: Fixed encoding for {source_encoding} to utf-8."
+                        )
                     except Exception as e:
-                        print(f"{po_dir + po_file}: Error renaming fixed file, please check: {e}")
+                        print(
+                            f"{po_dir + po_file}: Error renaming fixed file, please check: {e}"
+                        )
             else:
                 print(f"{po_dir + po_file}: OK.")
                 continue
+
 
 def detect_encoding(file_path: str) -> str:
     """
@@ -413,8 +428,9 @@ def detect_encoding(file_path: str) -> str:
     Returns 'utf-8' if the file is encoded in UTF-8, otherwise returns the detected encoding.
     """
     try:
-        import chardet # Ensure chardet is available for encoding detection
-        return chardet.detect(open(file_path, 'rb').read())['encoding']
+        import chardet  # Ensure chardet is available for encoding detection
+
+        return chardet.detect(open(file_path, "rb").read())["encoding"]
     except ImportError:
         #    print("chardet missing - falling back to simple default encoding detection")
         pass
@@ -426,7 +442,8 @@ def detect_encoding(file_path: str) -> str:
         return "utf-8"
     except UnicodeDecodeError:
         # If it fails, return 'unknown' or another encoding if needed
-        return "unknown"    
+        return "unknown"
+
 
 def main():
     """
@@ -460,7 +477,9 @@ def main():
         elif loc in LOCALE_LONG_NAMES:
             locales.append(loc)
         elif loc == "en":
-            print("English is the default language, we will create the default .po file.")
+            print(
+                "English is the default language, we will create the default .po file."
+            )
             locales.append("en")
         else:
             print(f"Unknown locale '{loc}', using 'de' as default.")
