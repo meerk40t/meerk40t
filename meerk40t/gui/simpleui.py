@@ -356,7 +356,7 @@ class SimpleUI(MWindow):
     @staticmethod
     def submenu():
         # Hint for translation: _("Interface"), _("SimpleUI")
-        return "Interface", "SimpleUI"
+        return "Interface", "SimpleUI", True
 
     @staticmethod
     def helptext():

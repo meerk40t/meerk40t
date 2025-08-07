@@ -2869,7 +2869,7 @@ class Navigation(MWindow):
 
     @staticmethod
     def submenu():
-        # Hint for Translation: _("Editing", _("Jog, Move and Transform"))
+        # Hint for Translation: _("Editing"), _("Jog, Move and Transform")
         return "Editing", "Jog, Move and Transform"
 
     @staticmethod

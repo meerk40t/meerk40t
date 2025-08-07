@@ -243,14 +243,33 @@ class BorderWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
-        
+
         def get_length_text_and_extent(gc, value, units, secondary_units, rel_length):
-            s_txt = str(Length(amount=value, digits=2, preferred_units=units, relative_length=rel_length))
+            s_txt = str(
+                Length(
+                    amount=value,
+                    digits=2,
+                    preferred_units=units,
+                    relative_length=rel_length,
+                )
+            )
             if units != secondary_units:
-                s_txt += "/" + str(Length(amount=value, digits=2, preferred_units=secondary_units, relative_length=rel_length))
-            t_width, t_height = gc.GetTextExtent(s_txt)
+                s_txt += "/" + str(
+                    Length(
+                        amount=value,
+                        digits=2,
+                        preferred_units=secondary_units,
+                        relative_length=rel_length,
+                    )
+                )
+            try:
+                (width, height, descent, externalLeading) = gc.GetFullTextExtent(s_txt)
+                t_width = width + externalLeading
+                t_height = height + descent
+            except AttributeError:
+                t_width, t_height = gc.GetTextExtent(s_txt)
             return s_txt, t_width, t_height
-        
+
         context = self.scene.context
         self.update()
         center_x = (self.left + self.right) / 2.0
@@ -317,7 +336,9 @@ class BorderWidget(Widget):
         gc.SetPen(mypen)
         gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
         gc.StrokeLine(sx * self.right, sy * self.top, sx * self.right, sy * self.bottom)
-        gc.StrokeLine(sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom)
+        gc.StrokeLine(
+            sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom
+        )
         gc.StrokeLine(sx * self.left, sy * self.bottom, sx * self.left, sy * self.top)
         gc.PopState()
         gc.SetPen(self.master.selection_pen)
@@ -344,8 +365,11 @@ class BorderWidget(Widget):
         if self.show_lt:
             # Y-Value (top)
             s_txt, t_width, t_height = get_length_text_and_extent(
-                gc, self.top, units, secondary_units,
-                self.scene.context.device.view.height
+                gc,
+                self.top,
+                units,
+                secondary_units,
+                self.scene.context.device.view.height,
             )
             distance = 0.25 * t_height
             pos = self.top / 2.0 - t_height / 2
@@ -355,8 +379,11 @@ class BorderWidget(Widget):
 
             # X-Coordinate (left)
             s_txt, t_width, t_height = get_length_text_and_extent(
-                gc, self.left, units, secondary_units,
-                self.scene.context.device.view.width
+                gc,
+                self.left,
+                units,
+                secondary_units,
+                self.scene.context.device.view.width,
             )
             pos = self.left / 2.0 - t_width / 2
             if pos + t_width + distance >= self.left:
@@ -367,8 +394,7 @@ class BorderWidget(Widget):
             # Y-Value (bottom)
             rpos = bed_h - self.bottom
             s_txt, t_width, t_height = get_length_text_and_extent(
-                gc, rpos, units, secondary_units,
-                self.scene.context.device.view.height
+                gc, rpos, units, secondary_units, self.scene.context.device.view.height
             )
             distance = 1.5 * t_height
             pos = self.bottom + rpos / 2 - t_height / 2
@@ -379,8 +405,7 @@ class BorderWidget(Widget):
             # X-Coordinate (right)
             rpos = bed_w - self.right
             s_txt, t_width, t_height = get_length_text_and_extent(
-                gc, rpos, units, secondary_units,
-                self.scene.context.device.view.width
+                gc, rpos, units, secondary_units, self.scene.context.device.view.width
             )
             pos = self.right + rpos / 2.0 - t_width / 2
             if pos - distance <= self.right:
@@ -389,8 +414,11 @@ class BorderWidget(Widget):
 
         # Height label (vertical, right)
         s_txt, t_width, t_height = get_length_text_and_extent(
-            gc, self.bottom - self.top, units, secondary_units,
-            self.scene.context.device.view.height
+            gc,
+            self.bottom - self.top,
+            units,
+            secondary_units,
+            self.scene.context.device.view.height,
         )
         gc.DrawText(
             s_txt,
@@ -401,13 +429,13 @@ class BorderWidget(Widget):
 
         # Width label (horizontal, bottom)
         s_txt, t_width, t_height = get_length_text_and_extent(
-            gc, self.right - self.left, units, secondary_units,
-            self.scene.context.device.view.width
+            gc,
+            self.right - self.left,
+            units,
+            secondary_units,
+            self.scene.context.device.view.width,
         )
-        gc.DrawText(
-            s_txt,
-            center_x - 0.5 * t_width, self.bottom + 0.5 * t_height
-        )
+        gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
         # Show the angle if rotated
         if abs(self.master.rotated_angle) > 0.001:
             try:
@@ -444,6 +472,7 @@ class BorderWidget(Widget):
                 center_x - 0.5 * t_width,
                 center_y - 0.5 * t_height,
             )
+
 
 class RotationWidget(Widget):
     """
