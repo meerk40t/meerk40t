@@ -904,9 +904,6 @@ class Drag(wx.Panel):
 
     def align_per_pos(self, value):
         bbox = self.get_bbox()
-        print(
-            f"Aligning to position {value} with bbox {'---' if bbox is None else bbox}"
-        )
         if bbox is None:
             return
         if value == 1:
