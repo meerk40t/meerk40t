@@ -22587,3 +22587,10 @@ msgstr "Z轴"
 msgid "Correct Orientation"
 msgstr "正确方向"
 
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "元素对齐"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "点动、移动和变换"

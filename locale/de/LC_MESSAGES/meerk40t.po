@@ -23732,3 +23732,10 @@ msgstr "Szenen-Aussehen"
 msgid "Render-Options"
 msgstr "Render-Optionen"
 
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Elementausrichtung"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Fahren, bewegen und transformieren"

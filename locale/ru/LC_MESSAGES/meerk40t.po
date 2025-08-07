@@ -23480,3 +23480,10 @@ msgstr "Ось Z"
 msgid "Correct Orientation"
 msgstr "Правильная ориентация"
 
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Выравнивание элемента"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Перемещение, сдвиг и трансформация"

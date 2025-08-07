@@ -20502,3 +20502,10 @@ msgstr "Z-as"
 msgid "Correct Orientation"
 msgstr "Juiste oriëntatie"
 
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Elementuitlijning"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Joggen, verplaatsen en transformeren"

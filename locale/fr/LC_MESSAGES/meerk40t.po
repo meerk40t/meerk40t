@@ -23805,3 +23805,11 @@ msgstr "Axe Z"
 #: meerk40t/tools/driver_to_path.py:362
 msgid "Correct Orientation"
 msgstr "Orientation correcte"
+
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Alignement d'élément"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Déplacement, mouvement et transformation"
