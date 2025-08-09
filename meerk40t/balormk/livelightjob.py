@@ -354,8 +354,8 @@ class LiveLightJob:
         Fallback case for out of bounds paths
         """
         margin = float(Length("1cm"))
-        orgx = self.service.view.width // 2
-        orgy = self.service.view.height // 2
+        orgx = self.service.view.unit_width // 2
+        orgy = self.service.view.unit_height // 2
 
         geometry = Geomstr.lines(
             (orgx - margin, orgy - 2 * margin),  # top
@@ -467,14 +467,14 @@ class LiveLightJob:
         x_offset = float(
             Length(
                 self.service.redlight_offset_x,
-                relative_length=self.service.view.width,
+                relative_length=self.service.view.unit_width,
                 unitless=UNITS_PER_PIXEL,
             )
         )
         y_offset = float(
             Length(
                 self.service.redlight_offset_y,
-                relative_length=self.service.view.height,
+                relative_length=self.service.view.unit_height,
                 unitless=UNITS_PER_PIXEL,
             )
         )

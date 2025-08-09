@@ -91,7 +91,6 @@ class CoordinateSystem(Service):
         return self.origin_x * width, self.origin_y * height
 
     def update_bounds(self, x, y, width, height):
-
         def safe_float(val):
             try:
                 return float(Length(val))
@@ -111,7 +110,7 @@ class CoordinateSystem(Service):
         )
         self.signal("refresh_scene", "Scene")
 
-    def iposition(self, x, y):
+    def scene_coordinates(self, x, y):
         """
         Convert real coordinates (e.g., device or view coordinates) to space coordinates
         considering origin and axis direction.
@@ -128,7 +127,7 @@ class CoordinateSystem(Service):
             y = -y
         return x, y
 
-    def position(self, x, y):
+    def native_coordinates(self, x, y):
         """
         Convert space coordinates to real coordinates (e.g., device or view coordinates)
         considering origin, axis direction, and swap_xy.
@@ -144,4 +143,3 @@ class CoordinateSystem(Service):
         x = x + self.origin_x * width
         y = y + self.origin_y * height
         return x, y
-

@@ -4425,15 +4425,23 @@ class Elemental(Service):
 
         return changed, before, after
 
-    def length_settings(self):
+    def length_settings(self, to_native_units=None, treat_as_x=True):
+        def convert_to_native(x: float, y: float):
+            n_x, n_y = self.space.native_coordinates(x, y)
+            return n_x, n_y
+
+        def convert_to_scene(x: float, y: float):
+            n_x, n_y = self.space.scene_coordinates(x, y)
+            return n_x, n_y
+
         settings = {}
         bb = self.selected_area()
         if bb is None:
             bb = [
                 0,
                 0,
-                float(Length(self.device.view.width)),
-                float(Length(self.device.view.height)),
+                self.device.view.unit_width,
+                self.device.view.unit_height,
             ]
 
         settings["min_x"] = bb[0]
@@ -4446,6 +4454,11 @@ class Elemental(Service):
         settings["height"] = bb[3] - bb[1]
         settings["width_2"] = (bb[2] - bb[0]) / 2
         settings["height_2"] = (bb[3] - bb[1]) / 2
+        if to_native_units is not None:
+            if to_native_units:
+                settings["conversion"] = convert_to_native
+            else:
+                settings["conversion"] = convert_to_scene
         return settings
 
 

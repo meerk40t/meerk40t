@@ -1392,13 +1392,11 @@ class MeerK40tScenePanel(wx.Panel):
             background_image = image_from_bitmap(background)
 
             # Calculate scaling matrix
-            sx = float(Length(self.context.device.view.width)) / background_image.width
-            sy = (
-                float(Length(self.context.device.view.height)) / background_image.height
-            )
+            sx = self.context.device.view.unit_width / background_image.width
+            sy = self.context.device.view.unit_height / background_image.height
             matrix = Matrix(f"scale({sx},{sy})")
             # print (f"Image dimension: {background_image.width} x {background_image.height} pixel")
-            # print (f"View-Size: {float(Length(self.context.device.view.width))} x {float(Length(self.context.device.view.height))}")
+            # print (f"View-Size: {self.context.device.view.unit_width} x {self.context.device.view.unit_height}")
             # print (f"Matrix: {matrix}")
 
             node = ImageNode(

@@ -12,7 +12,6 @@ import time
 import wx
 from wx import aui
 
-from meerk40t.core import space
 import meerk40t.gui.icons as mkicons
 from meerk40t.constants import (
     RASTER_B2T,
@@ -25,9 +24,10 @@ from meerk40t.constants import (
     RASTER_SPIRAL,
     RASTER_T2B,
 )
+from meerk40t.core import space
+from meerk40t.core.space import CoordinateSystem
 from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
-from meerk40t.core.space import CoordinateSystem
 from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
@@ -40,8 +40,8 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
     wxToggleButton,
 )
-from meerk40t.svgelements import Color
 from meerk40t.kernel.kernel import signal_listener
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -101,6 +101,7 @@ def register_panel_view(window, context):
     pane.helptext = _("Display information about device view")
     window.on_pane_create(pane)
     context.register("pane/debug_view", pane)
+
 
 def register_panel_space(window, context):
     pane = (
@@ -534,6 +535,7 @@ class DebugViewPanel(ScrolledPanel):
     def pane_hide(self, *args):
         return
 
+
 class DebugSpacePanel(ScrolledPanel):
     """
     Displays information about the context space coordinate system and provides coordinate conversion tools.
@@ -598,8 +600,8 @@ class DebugSpacePanel(ScrolledPanel):
         except ValueError:
             self.info_position.SetLabel(_("Invalid length value"))
             return
-        space: CoordinateSystem = self.context.space    
-        mx, my = space.position(x, y)
+        space: CoordinateSystem = self.context.space
+        mx, my = space.native_coordinates(x, y)
         self.info_position.SetLabel(f"x={mx:.2f}, y={my:.2f}")
         if event is not None:
             self.text_ix.SetValue(f"{Length(mx).length_mm}")
@@ -613,7 +615,7 @@ class DebugSpacePanel(ScrolledPanel):
             self.info_iposition.SetLabel(_("Invalid length value"))
             return
         space: CoordinateSystem = self.context.space
-        mx, my = space.iposition(x, y)
+        mx, my = space.scene_coordinates(x, y)
         self.info_iposition.SetLabel(f"x={mx:.2f}, y={my:.2f}")
         if event is not None:
             self.text_x.SetValue(f"{Length(mx).length_mm}")
@@ -641,7 +643,7 @@ class DebugSpacePanel(ScrolledPanel):
 
         infomsg = f"{infomsg}Width      : {Length(dview.width).length_mm}\n"
         infomsg = f"{infomsg}Height     : {Length(dview.height).length_mm}\n"
-        
+
         self.info_coordinates.SetValue(infomsg)
 
     @signal_listener("view;realized")
@@ -655,6 +657,7 @@ class DebugSpacePanel(ScrolledPanel):
 
     def pane_hide(self, *args):
         return
+
 
 class DebugColorPanel(ScrolledPanel):
     """

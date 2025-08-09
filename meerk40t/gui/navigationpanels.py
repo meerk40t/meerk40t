@@ -935,9 +935,9 @@ class Drag(wx.Panel):
             return
         if self.context.confined:
             min_x = 0
-            max_x = float(Length(self.context.device.view.width))
+            max_x = self.context.device.view.unit_width
             min_y = 0
-            max_y = float(Length(self.context.device.view.height))
+            max_y = self.context.device.view.unit_height
             if x < min_x or x > max_x or y < min_y or y > max_y:
                 dlg = wx.MessageDialog(
                     None,
@@ -1395,9 +1395,9 @@ class Jog(wx.Panel):
         if not self.is_confined:
             return
         min_x = 0
-        max_x = float(Length(self.context.device.view.width))
+        max_x = self.context.device.view.unit_width
         min_y = 0
-        max_y = float(Length(self.context.device.view.height))
+        max_y = self.context.device.view.unit_height
         # Are we outside? Then let's move back to the edge...
         new_x = min(max_x, max(min_x, current_x))
         new_y = min(max_y, max(min_y, current_y))
