@@ -13097,6 +13097,10 @@ msgstr "Spool interrompu."
 msgid "Press OK to Continue."
 msgstr "Appuyez sur OK pour continuer."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Appuyez sur Annuler pour annuler le programme."
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "Interrompre"

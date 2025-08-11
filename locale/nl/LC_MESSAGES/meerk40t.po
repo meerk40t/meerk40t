@@ -13498,6 +13498,10 @@ msgstr "Spoolen onderbroken."
 msgid "Press OK to Continue."
 msgstr "Druk op OK om door te gaan."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Druk op Annuleren om het programma te stoppen."
+
 #: meerk40t/gui/plugin.py:384
 msgid "Interrupt"
 msgstr "Onderbreken"

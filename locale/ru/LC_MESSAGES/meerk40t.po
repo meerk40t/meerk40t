@@ -12965,6 +12965,10 @@ msgstr "Спулинг прерван."
 msgid "Press OK to Continue."
 msgstr "Нажмите OK, чтобы продолжить."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Нажмите Отмена, чтобы прервать программу."
+
 #: meerk40t/gui/plugin.py:412
 msgid "Interrupt"
 msgstr "Прервать"

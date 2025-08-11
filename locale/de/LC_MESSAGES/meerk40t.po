@@ -4657,6 +4657,10 @@ msgstr "Spool-Vorgang unterbrochen"
 msgid "Press OK to Continue."
 msgstr "OK zum Weitermachen"
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Abbruch, um den Brennvorgang zu stoppen"
+
 #: meerk40t/gui/plugin.py:412
 msgid "Interrupt"
 msgstr "Anhalten"

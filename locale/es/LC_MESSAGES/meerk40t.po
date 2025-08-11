@@ -11748,6 +11748,10 @@ msgstr "Cola de impresión interrumpida."
 msgid "Press OK to Continue."
 msgstr "Presione OK para continuar."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Pulsa Cancelar para abortar el programa."
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "Interrumpir"
@@ -21906,4 +21910,3 @@ msgstr "Eje Z"
 #: meerk40t/tools/driver_to_path.py:362
 msgid "Correct Orientation"
 msgstr "Orientación correcta"
-

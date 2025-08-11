@@ -12267,6 +12267,10 @@ msgstr "スプールが中断されました。"
 msgid "Press OK to Continue."
 msgstr "続行するにはOKを押してください。"
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "キャンセルを押してプログラムを中止してください"
+
 #: meerk40t/gui/plugin.py:384
 msgid "Interrupt"
 msgstr "中断"

@@ -4233,6 +4233,10 @@ msgstr "中断了打印排队。"
 msgid "Press OK to Continue."
 msgstr "按“确定”继续。"
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "按取消以中止程序"
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "中断"

@@ -13040,6 +13040,10 @@ msgstr "Spooling megszakítva."
 msgid "Press OK to Continue."
 msgstr "Nyomja meg az OK gombot a folytatáshoz."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Nyomja meg a Mégse gombot a program megszakításához."
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "Megszakítás"
