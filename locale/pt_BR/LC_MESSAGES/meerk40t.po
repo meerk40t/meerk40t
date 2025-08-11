@@ -11143,6 +11143,10 @@ msgstr "Spooling Interrompido."
 msgid "Press OK to Continue."
 msgstr "Pressione OK para Continuar."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Pressione Cancelar para abortar o programa."
+
 #: meerk40t/gui/plugin.py:384
 msgid "Interrupt"
 msgstr "Interromper"
@@ -20531,4 +20535,3 @@ msgstr "Alinhamento do Elemento"
 
 msgid "Share-Attributes"
 msgstr "Atributos de Compartilhamento"
-
