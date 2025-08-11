@@ -5,17 +5,15 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 19-07-25 21:10:10UTC\n"
+"PO-Revision-Date: 11-08-25 21:10:10UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
-"Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
+"Language-Team: Cicioni Italian translation <betaeta-AT-gmail.com>\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Poboy 0.0.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: translate_check.py"
 
 
 #: meerk40t/grbl/plugin.py:212 meerk40t/grbl/plugin.py:264
@@ -6948,7 +6946,7 @@ msgid ""
 "Camera backend failure...\n"
 "Cannot attempt camera connection."
 msgstr ""
-"Errore backend della videocamera...\n Impossibile stabilire una connessione con la videocamera 
+"Errore backend della videocamera...\n Impossibile stabilire una connessione con la videocamera
 
 #: meerk40t/camera/gui/camerapanel.py:473
 msgid "Fetching URI:{uri} Frame..."
@@ -19609,31 +19607,6 @@ msgstr "metodo da utilizzare (uno tra unione, differenza, intersezione, xor)"
 msgid "filltype to use (one of evenodd, nonzero, negative, positive)"
 msgstr "tipo di riempimento da utilizzare (***)"
 
-#: meerk40t/core/elements/offset_clpr.py:843
-msgid "keep the original elements, will be removed by default"
-msgstr "mantiene gli elementi originali, verranno rimossi per impostazione predefinita"
-
-#: meerk40t/core/elements/offset_clpr.py:847
-msgid "create a logical combination of the given elements"
-msgstr "crea una combinazione logica degli elementi dati"
-
-#: meerk40t/core/elements/offset_clpr.py:911
-msgid "Create clipper data"
-msgstr "Crea dati per il ritaglio"
-
-#: meerk40t/core/elements/offset_mk.py:873
-msgid "radial connector"
-msgstr "connettore radiale"
-
-#: meerk40t/core/elements/offset_mk.py:880
-msgid "native path offset (use at you own risk)"
-msgstr "offset del percorso nativo (usare a proprio rischio)"
-
-#: meerk40t/core/elements/offset_mk.py:887
-msgid "create an offset path for any of the given elements, old algorithm"
-msgstr ""
-"crea un percorso di offset per uno qualsiasi degli elementi dati, vecchio algoritmo"
-
 #: meerk40t/core/elements/penbox.py:124
 #: meerk40t/core/elements/penbox.py:189 meerk40t/core/elements/penbox.py:190
 #: meerk40t/core/elements/penbox.py:248 meerk40t/core/elements/penbox.py:281
@@ -23754,3 +23727,15 @@ msgstr "Aspetto Scena"
 #: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518 meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538 meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578 meerk40t/gui/wxmmain.py:4589
 msgid "Render-Options"
 msgstr "Opzioni di rendering"
+
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr "Allineamento elementi"
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr "Spostamento, movimento e trasformazione"
+
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Premi Annulla per interrompere il programma."
