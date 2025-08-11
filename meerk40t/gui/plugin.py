@@ -418,13 +418,11 @@ and a wxpython version <= 4.1.1."""
             lock.acquire(True)
 
             def message_dialog(*args):
+                msg_continue = _("Press OK to Continue.")
+                msg_abort = _("Press Cancel to abort the Program.")
                 dlg = wx.MessageDialog(
                     None,
-                    message
-                    + "\n\n"
-                    + _("Press OK to Continue.")
-                    + "\n"
-                    + _("Press Cancel to abort the Program."),
+                    f"{message}\n\n{msg_continue}\n{msg_abort}",
                     _("Interrupt"),
                     wx.OK | wx.CANCEL | wx.ICON_INFORMATION,
                 )
