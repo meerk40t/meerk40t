@@ -153,8 +153,11 @@ class LaserJob:
                 and hasattr(self._driver, "execution_direct_list")
                 and hasattr(self._driver, "execute_direct")
             ):
-                # Executing
-                for special in self._driver.execution_direct_list:
+                # Sort execution_direct_list by descending length to prioritize more specific prefixes
+                sorted_execution_direct_list = sorted(
+                    self._driver.execution_direct_list, key=len, reverse=True
+                )
+                for special in sorted_execution_direct_list:
                     if item[0] == "console" and item[1].startswith(special):
                         # Special case for console commands to ensure we are using the correct _driver.
                         # A console command will call the parents (ie device) console function
