@@ -148,10 +148,30 @@ class LaserJob:
         """
         if isinstance(item, tuple):
             attr = item[0]
-            if hasattr(self._driver, attr):
-                function = getattr(self._driver, attr)
-                function(*item[1:])
-                self.steps_done += 1
+            if (
+                item[0] == "console"
+                and hasattr(self._driver, "execution_direct_list")
+                and hasattr(self._driver, "execute_direct")
+            ):
+                # Executing
+                for special in self._driver.execution_direct_list:
+                    if item[0] == "console" and item[1].startswith(special):
+                        # Special case for console commands to ensure we are using the correct _driver.
+                        # A console command will call the parents (ie device) console function
+                        # which will eventually call device.driver which is not necessarily the same as self._driver
+                        # and correspondingly the out_pipe will be different.
+                        # Arguments is everything after the leading 'grbl' or gcode'
+                        arguments = item[1][len(special) :].strip()
+                        # print (f"Bypassed execution for {special} on {self._driver.out_pipe}.{self._driver.out_pipe.__class__.__name__}")
+
+                        self._driver.execute_direct(arguments)
+                        self.steps_done += 1
+                        return
+
+            # print (f"Will tuple execute {attr}({str(item[1])[:20]}...) on {self._driver.out_pipe}.{self._driver.out_pipe.__class__.__name__}")
+            function = getattr(self._driver, attr)
+            function(*item[1:])
+            self.steps_done += 1
             return
 
         # STRING
@@ -167,6 +187,7 @@ class LaserJob:
         # .generator is a Generator
         if hasattr(item, "generate"):
             item = getattr(item, "generate")
+            # print (f"Will generator execute on {self._driver.out_pipe}.{self._driver.out_pipe.__class__.__name__}")
 
         # Generator item
         for p in item():
