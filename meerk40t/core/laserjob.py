@@ -146,33 +146,30 @@ class LaserJob:
         @param item:
         @return:
         """
+
+        def _handle_console_direct(item):
+            # only <“console”, payload> belongs here
+            if item[0] != "console":
+                return False
+
+            sorted_execution_direct_list = sorted(
+                getattr(self._driver, "execution_direct_list", []),
+                key=len,
+                reverse=True,
+            )
+            for prefix in sorted_execution_direct_list:
+                if item[1].startswith(prefix):
+                    args = item[1][len(prefix) :].strip()
+                    self._driver.execute_direct(args)
+                    return True
+            return False
+
         if isinstance(item, tuple):
-            attr = item[0]
-            if (
-                item[0] == "console"
-                and hasattr(self._driver, "execution_direct_list")
-                and hasattr(self._driver, "execute_direct")
-            ):
-                # Sort execution_direct_list by descending length to prioritize more specific prefixes
-                sorted_execution_direct_list = sorted(
-                    self._driver.execution_direct_list, key=len, reverse=True
-                )
-                for special in sorted_execution_direct_list:
-                    if item[0] == "console" and item[1].startswith(special):
-                        # Special case for console commands to ensure we are using the correct _driver.
-                        # A console command will call the parents (ie device) console function
-                        # which will eventually call device.driver which is not necessarily the same as self._driver
-                        # and correspondingly the out_pipe will be different.
-                        # Arguments is everything after the leading 'grbl' or gcode'
-                        arguments = item[1][len(special) :].strip()
-                        # print (f"Bypassed execution for {special} on {self._driver.out_pipe}.{self._driver.out_pipe.__class__.__name__}")
+            if _handle_console_direct(item):
+                self.steps_done += 1
+                return
 
-                        self._driver.execute_direct(arguments)
-                        self.steps_done += 1
-                        return
-
-            # print (f"Will tuple execute {attr}({str(item[1])[:20]}...) on {self._driver.out_pipe}.{self._driver.out_pipe.__class__.__name__}")
-            function = getattr(self._driver, attr)
+            function = getattr(self._driver, item[0])
             function(*item[1:])
             self.steps_done += 1
             return
