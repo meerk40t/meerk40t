@@ -146,12 +146,32 @@ class LaserJob:
         @param item:
         @return:
         """
+
+        def _handle_console_direct(item):
+            # only <“console”, payload> belongs here
+            if item[0] != "console":
+                return False
+
+            sorted_execution_direct_list = sorted(
+                getattr(self._driver, "execution_direct_list", []),
+                key=len,
+                reverse=True,
+            )
+            for prefix in sorted_execution_direct_list:
+                if item[1].startswith(prefix):
+                    args = item[1][len(prefix) :].strip()
+                    self._driver.execute_direct(args)
+                    return True
+            return False
+
         if isinstance(item, tuple):
-            attr = item[0]
-            if hasattr(self._driver, attr):
-                function = getattr(self._driver, attr)
-                function(*item[1:])
+            if _handle_console_direct(item):
                 self.steps_done += 1
+                return
+
+            function = getattr(self._driver, item[0])
+            function(*item[1:])
+            self.steps_done += 1
             return
 
         # STRING
@@ -167,6 +187,7 @@ class LaserJob:
         # .generator is a Generator
         if hasattr(item, "generate"):
             item = getattr(item, "generate")
+            # print (f"Will generator execute on {self._driver.out_pipe}.{self._driver.out_pipe.__class__.__name__}")
 
         # Generator item
         for p in item():

@@ -124,7 +124,7 @@ class GRBLDevice(Service, Status):
                 ),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -137,7 +137,7 @@ class GRBLDevice(Service, Status):
                 ),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",
@@ -1046,6 +1046,7 @@ class GRBLDevice(Service, Status):
                     driver.out_pipe = f.write
                     driver.out_real = f.write
                     job.execute()
+                channel(_("Export succeeded: {filename}").format(filename=filename))
 
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
