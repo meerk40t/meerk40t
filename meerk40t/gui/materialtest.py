@@ -688,10 +688,12 @@ class TemplatePanel(wx.Panel):
             # to copy the device defaults
             if node is None or "balor" not in self.context.device.path:
                 return
-            if not node.settings["timing_enabled"]:
-                node.settings["timing_enabled"] = True
+            node.settings["timing_enabled"] = True
+            if node.settings.get("delay_laser_on", None) is None:
                 node.settings["delay_laser_on"] = self.context.device.delay_laser_on
+            if node.settings.get("delay_laser_off", None) is None:
                 node.settings["delay_laser_off"] = self.context.device.delay_laser_off
+            if node.settings.get("delay_polygon", None) is None:
                 node.settings["delay_polygon"] = self.context.device.delay_polygon
 
         opidx = self.combo_ops.GetSelection()
