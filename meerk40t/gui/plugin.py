@@ -118,6 +118,19 @@ and a wxpython version <= 4.1.1."""
                 "section": "General",
             },
             {
+                "attr": "simplify_effects",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Simplify Effects"),
+                "tip": _(
+                    "Limits the complexity of effects applied to elements during design.\nNB: all values will be honored during burning."
+                ),
+                "page": "Gui",
+                # Hint for translation _("General")
+                "section": "General",
+            },
+            {
                 "attr": "remember_main_pos",
                 "object": kernel.root,
                 "default": True,

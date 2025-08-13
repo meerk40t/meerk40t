@@ -198,6 +198,7 @@ class LaserRender:
         self.nodes_skipped = 0
         self._visible_area = None
         self.suppress_it = False
+        self.simplify_it = False
 
     def set_visible_area(self, box):
         self._visible_area = box
@@ -228,6 +229,7 @@ class LaserRender:
         # gc_mat = gc.GetTransform().Get()
         # print (f"Window handle: {gc_win}, matrix: {gc_mat}")
         self.suppress_it = self.context.setting(bool, "supress_non_visible", True)
+        self.simplify_it = self.context.setting(bool, "simplify_effects", True)
         self.context.elements.set_start_time(f"renderscene_{msg}")
         self.caches_generated = 0
         self.nodes_rendered = 0
@@ -797,7 +799,9 @@ class LaserRender:
             node._cache_matrix = copy(matrix)
         except AttributeError:
             node._cache_matrix = Matrix()
-        if hasattr(node, "final_geometry"):
+        if self.simplify_it and hasattr(node, "as_preview"):
+            geom = node.as_preview()
+        elif hasattr(node, "final_geometry"):
             geom = node.final_geometry()
         else:
             geom = node.as_geometry()

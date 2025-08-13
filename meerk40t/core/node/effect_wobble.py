@@ -233,6 +233,34 @@ class WobbleEffectNode(Node, Suppressable):
         nodes = right_types(self)
         return nodes
 
+    def as_preview(self):
+        """
+        Prepares the node for display in a preview context.
+        """
+        stored = {
+            prop: getattr(self, prop)
+            for prop in (
+                "wobble_radius",
+                "wobble_interval",
+                "wobble_speed",
+            )
+        }
+        wr = Length(self.wobble_radius)
+        if wr.mm < 1:
+            self.wobble_radius = "1mm"
+        wi = Length(self.wobble_interval)
+        if wi.mm < 0.1:
+            self.wobble_interval = "0.1mm"
+
+        self.recalculate()
+
+        result = self.as_geometry()
+        # Restore original properties
+        for key, value in stored.items():
+            setattr(self, key, value)
+        self.recalculate()
+        return result
+
     def as_geometry(self, **kws) -> Geomstr:
         """
         Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
