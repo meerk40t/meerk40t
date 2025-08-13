@@ -171,6 +171,9 @@ class TemplatePanel(wx.Panel):
     storage - an instance of kernel.Settings to store/load parameter sets
     """
 
+    DESC_X_AXIS = "Descriptions X-Axis"
+    DESC_Y_AXIS = "Descriptions Y-Axis"
+
     def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
             ctrl.SetMaxSize(dip_size(self, int(value), -1))
@@ -182,6 +185,10 @@ class TemplatePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
+        self.context.setting(float, "material_description_speed", 250)
+        self.context.setting(float, "material_description_power", 1000)
+        self.check_raster_description_parameters()
+        # Lets have a look whether we still have an operation open that fits the bill...
         self.SetHelpText("testpattern")
         self.storage = storage
         self.callback = None
@@ -633,6 +640,15 @@ class TemplatePanel(wx.Panel):
 
     def on_selection_list(self, event):
         return
+
+    def check_raster_description_parameters(self):
+        for op in self.context.elements.ops():
+            if op.type == "op raster" and op.label == self.DESC_X_AXIS:
+                self.context.material_description_power = op.power
+                self.context.material_description_speed = op.speed
+                break
+        self.description_speed = float(self.context.material_description_speed)
+        self.description_power = float(self.context.material_description_power)
 
     def set_callback(self, routine):
         self.callback = routine
@@ -1230,10 +1246,14 @@ class TemplatePanel(wx.Panel):
             if display_labels or display_values:
                 text_op_x = RasterOpNode()
                 text_op_x.color = Color("black")
-                text_op_x.label = "Descriptions X-Axis"
+                text_op_x.label = self.DESC_X_AXIS
+                text_op_x.speed = self.description_speed
+                text_op_x.power = self.description_power
                 text_op_y = RasterOpNode()
                 text_op_y.color = Color("black")
-                text_op_y.label = "Descriptions Y-Axis"
+                text_op_y.label = self.DESC_Y_AXIS
+                text_op_y.speed = self.description_speed
+                text_op_y.power = self.description_power
                 operation_branch.add_node(text_op_x)
                 operation_branch.add_node(text_op_y)
             if display_labels:
@@ -1487,6 +1507,9 @@ class TemplatePanel(wx.Panel):
                         this_op.add_reference(elemnode, 0)
                     yy = yy + gap_y + size_y
                 xx = xx + gap_x + size_x
+
+        # Remember any changes made by the user to the description operations
+        self.check_raster_description_parameters()
 
         # Read the parameters and user input
         optype = self.combo_ops.GetSelection()
