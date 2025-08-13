@@ -230,6 +230,9 @@ class LaserRender:
         # print (f"Window handle: {gc_win}, matrix: {gc_mat}")
         self.suppress_it = self.context.setting(bool, "supress_non_visible", True)
         self.simplify_it = self.context.setting(bool, "simplify_effects", True)
+        if wx.GetKeyState(wx.WXK_CAPITAL):
+            # We still render fully if CapsLock is set...
+            self.simplify_it = False
         self.context.elements.set_start_time(f"renderscene_{msg}")
         self.caches_generated = 0
         self.nodes_rendered = 0

@@ -124,7 +124,7 @@ and a wxpython version <= 4.1.1."""
                 "type": bool,
                 "label": _("Simplify Effects"),
                 "tip": _(
-                    "Limits the complexity of effects applied to elements during design.\nNB: all values will be honored during burning."
+                    "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
                 ),
                 "page": "Gui",
                 # Hint for translation _("General")
