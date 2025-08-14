@@ -66,6 +66,48 @@ class WobbleEffectNode(Node, Suppressable):
         nd["fill"] = copy(self.fill)
         return WobbleEffectNode(**nd)
 
+    def get_effect_descriptor(self):
+        """
+        Returns a string descriptor for the effect, concatenating the effect type, wobble radius, wobble interval, wobble speed, and wobble type, separated by pipe ('|') characters.
+
+        Returns:
+            str: A descriptor string in the format "<type>|<wobble_radius>|<wobble_interval>|<wobble_speed>|<wobble_type>".
+        """
+        return f"{self.type}|{self.wobble_radius}|{self.wobble_interval}|{self.wobble_speed}|{self.wobble_type}"
+
+    def set_effect_descriptor(self, descriptor):
+        """
+        Sets the effect parameters from a descriptor string.
+
+        The descriptor should be a string with five components separated by '|':
+        'typeinfo|wobbleradius|wobbleinterval|wobblespeed|wobbletype'.
+
+        If the typeinfo matches the current object's type, updates the wobble
+        parameters (radius, interval, speed, type) and triggers recalculation.
+
+        Parameters:
+            descriptor (str): The effect descriptor string.
+
+        Exceptions:
+            ValueError: Silently ignored if the descriptor cannot be split into five parts.
+        """
+        try:
+            (
+                typeinfo,
+                wobbleradius,
+                wobbleinterval,
+                wobblespeed,
+                wobbletype,
+            ) = descriptor.split("|")
+            if typeinfo == self.type:
+                self.wobble_radius = wobbleradius
+                self.wobble_interval = wobbleinterval
+                self.wobble_speed = wobblespeed
+                self.wobble_type = wobbletype
+                self.recalculate()
+        except ValueError:
+            pass
+
     def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
 

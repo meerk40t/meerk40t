@@ -87,6 +87,52 @@ class WarpEffectNode(Node, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         return WarpEffectNode(**nd)
 
+    def get_effect_descriptor(self):
+        """
+        Returns a string descriptor for the effect, concatenating the effect type, warp points, and distortions, separated by pipe ('|') characters.
+
+        Returns:
+            str: A descriptor string in the format "<type>|<p1>|<p2>|<p3>|<p4>|<d1>|<d2>|<d3>|<d4>".
+        """
+
+        def compstr(val):
+            if isinstance(val, complex):
+                return f"{val.real},{val.imag}"
+            return str(val)
+
+        return f"{self.type}|{compstr(self.p1)}|{compstr(self.p2)}|{compstr(self.p3)}|{compstr(self.p4)}|{compstr(self.d1)}|{compstr(self.d2)}|{compstr(self.d3)}|{compstr(self.d4)}"
+
+    def set_effect_descriptor(self, descriptor):
+        """
+        Sets the effect parameters from a descriptor string.
+
+        The descriptor should be a string with five components separated by '|':
+        'typeinfo|hatchtype|hatchdistance|hatchangle|hatchangledelta|loops'.
+
+        If the typeinfo matches the current object's type, updates the hatch
+        parameters (type, distance, angle, angle_delta, loops) and triggers recalculation.
+
+        Parameters:
+            descriptor (str): The effect descriptor string.
+
+        Exceptions:
+            ValueError: Silently ignored if the descriptor cannot be split into five parts.
+        """
+        try:
+            (typeinfo, p1, p2, p3, p4, d1, d2, d3, d4) = descriptor.split("|")
+            if typeinfo == self.type:
+                self.p1 = complex(*map(float, p1.split(",")))
+                self.p2 = complex(*map(float, p2.split(",")))
+                self.p3 = complex(*map(float, p3.split(",")))
+                self.p4 = complex(*map(float, p4.split(",")))
+                self.d1 = complex(*map(float, d1.split(",")))
+                self.d2 = complex(*map(float, d2.split(",")))
+                self.d3 = complex(*map(float, d3.split(",")))
+                self.d4 = complex(*map(float, d4.split(",")))
+                self.recalculate()
+        except ValueError:
+            pass
+
     def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
 
