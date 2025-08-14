@@ -486,6 +486,7 @@ class RDJob:
         self.time_submitted = time.time()
         self.time_started = None
         self.runtime = 0
+        self.label = f"RuidaJob-{self.time_submitted:.2f}"
 
         self._stopped = True
         self.enabled = True
