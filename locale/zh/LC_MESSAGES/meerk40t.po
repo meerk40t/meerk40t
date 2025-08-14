@@ -22598,3 +22598,30 @@ msgstr "元素对齐"
 #: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "点动、移动和变换"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "移除效果："
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "添加斜向填充"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "添加水平填充"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "添加垂直填充"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "添加抖动"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "简化效果"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "限制设计过程中应用于元素的效果复杂性。\n注意1：所有数值将在雕刻时生效。\n注意2：如果大写锁定键（CAPS-LOCK）处于激活状态，所有效果将不做简化地渲染。"
