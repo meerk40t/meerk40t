@@ -636,7 +636,7 @@ class TemplatePanel(wx.Panel):
                     target = source
                 if not hasattr(self.context.device, source):
                     continue
-                setattr(op, target, getattr(self.context.device, source))
+                op.settings[target] = getattr(self.context.device, source)
 
         for op in self.default_op:
             prefill_op(op)
@@ -1382,24 +1382,42 @@ class TemplatePanel(wx.Panel):
                         node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                         text_op_y.add_reference(node, 0)
                     if optype == 0:  # Cut
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
+                        master_op = copy(self.default_op[optype])
+                        if hasattr(self.default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            master_op.settings = copy(self.default_op[optype].settings)
+                        this_op = master_op
                         usefill = False
                     elif optype == 1:  # Engrave
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
+                        master_op = copy(self.default_op[optype])
+                        if hasattr(self.default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            master_op.settings = copy(self.default_op[optype].settings)
+                        this_op = master_op
                         usefill = False
                     elif optype == 2:  # Raster
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
+                        master_op = copy(self.default_op[optype])
+                        if hasattr(self.default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            master_op.settings = copy(self.default_op[optype].settings)
+                        this_op = master_op
                         usefill = True
                     elif optype == 3:  # Image
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
+                        master_op = copy(self.default_op[optype])
+                        if hasattr(self.default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            master_op.settings = copy(self.default_op[optype].settings)
+                        this_op = master_op
                         usefill = False
                     elif optype == 4:  # Hatch
                         master_op = copy(self.default_op[optype])
+                        if hasattr(self.default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            master_op.settings = copy(self.default_op[optype].settings)
                         this_op = copy(self.secondary_default_op[optype])
+                        if hasattr(self.secondary_default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            this_op.settings = copy(self.secondary_default_op[optype].settings)
                         master_op.add_node(this_op)
 
                         # We need to add a hatch node and make this the target for parameter application
@@ -1408,7 +1426,13 @@ class TemplatePanel(wx.Panel):
                         # Wobble is a special case, we need to create a master op and a secondary op
                         # We need to add a wobble node and make this the target for parameter application
                         master_op = copy(self.default_op[optype])
+                        if hasattr(self.default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            master_op.settings = copy(self.default_op[optype].settings)
                         this_op = copy(self.secondary_default_op[optype])
+                        if hasattr(self.secondary_default_op[optype], "settings"):
+                            # If we have settings, we need to copy them
+                            this_op.settings = copy(self.secondary_default_op[optype].settings)
                         master_op.add_node(this_op)
                         usefill = False
                     else:
@@ -1436,6 +1460,10 @@ class TemplatePanel(wx.Panel):
                         ):
                             value = f"{value}mm"
                         setattr(master_op, param_type_1, value)
+                        if hasattr(master_op, "setttings") and param_type_1 in master_op.settings:
+                            master_op.settings[param_type_1] = value
+                    elif hasattr(master_op, "setttings"):
+                        master_op.settings[param_type_1] = value
                     # else:  # Try setting
                     #     master_op.settings[param_type_1] = value
                     if hasattr(this_op, param_type_1):
@@ -1451,6 +1479,8 @@ class TemplatePanel(wx.Panel):
                         ):
                             value = f"{value}deg"
                         setattr(this_op, param_type_1, value)
+                        if hasattr(this_op, "settings") and param_type_1 in this_op.settings:  # Try setting
+                            this_op.settings[param_type_1] = value
                     elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_1] = value
 
@@ -1475,6 +1505,11 @@ class TemplatePanel(wx.Panel):
                         ):
                             value = f"{value}mm"
                         setattr(master_op, param_type_2, value)
+                        if hasattr(master_op, "settings") and param_type_2 in master_op.settings:
+                            master_op.settings[param_type_2] = value
+                    elif hasattr(master_op, "settings"):
+                        master_op.settings[param_type_2] = value
+
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
@@ -1487,6 +1522,8 @@ class TemplatePanel(wx.Panel):
                         ):
                             value = f"{value}deg"
                         setattr(this_op, param_type_2, value)
+                        if hasattr(this_op, "settings") and param_type_2 in this_op.settings:  # Try setting
+                            this_op.settings[param_type_2] = value
                     elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_2] = value
 
