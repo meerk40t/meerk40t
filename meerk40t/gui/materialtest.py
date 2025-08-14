@@ -3,6 +3,7 @@ from math import tau
 
 import wx
 from wx import aui
+
 from meerk40t.core.elements.element_types import op_parent_nodes
 from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.effect_wobble import WobbleEffectNode
@@ -1374,6 +1375,14 @@ class TemplatePanel(wx.Panel):
                             new_op.settings = copy(op.settings)
                         return new_op
 
+                    """
+                    0 = _("Cut"),
+                    1 = _("Engrave"),
+                    2 = _("Raster"),
+                    3 = _("Image"),
+                    4 = _("Hatch"),
+                    5 = _("Wobble"),
+                    """
                     if optype in (0, 1, 2, 3):
                         master_op = copy_op(self.default_op[optype])
                         this_op = master_op
@@ -1392,9 +1401,9 @@ class TemplatePanel(wx.Panel):
                             prepper(op)
                         v = f"{value}{unit}" if keep_unit else value
                         if ptype == "power" and self.use_percent():
-                            v = float(v) * 10.0 if not keep_unit else v
+                            v = v if keep_unit else float(v) * 10.0
                         if ptype == "speed" and self.use_mm_min():
-                            v = float(v) / 60.0 if not keep_unit else v
+                            v = v if keep_unit else float(v) / 60.0
                         if hasattr(op, ptype):
                             if ptype == "passes":
                                 v = int(v)
