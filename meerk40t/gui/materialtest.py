@@ -624,8 +624,8 @@ class TemplatePanel(wx.Panel):
                     "default_speed": "speed",
                     "rapid_enabled": "",
                     "rapid_speed": "",
-                    "timing_enabled": "",   
-                    "delay_laser_on": "",   
+                    "timing_enabled": "",
+                    "delay_laser_on": "",
                     "delay_laser_off": "",
                     "delay_polygon": "",
                     "pulse_width_enabled": "",
@@ -1213,34 +1213,17 @@ class TemplatePanel(wx.Panel):
 
         def create_operations(range1, range2):
             # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
-            count_1 = len(range1)
-            count_2 = len(range2)
-            try:
-                dimension_1 = float(self.text_dim_1.GetValue())
-            except ValueError:
-                dimension_1 = -1
-            try:
-                dimension_2 = float(self.text_dim_2.GetValue())
-            except ValueError:
-                dimension_2 = -1
-            if dimension_1 <= 0:
-                dimension_1 = 5
-            if dimension_2 <= 0:
-                dimension_2 = 5
+            def get_float(ctrl, default):
+                try:
+                    return float(ctrl.GetValue())
+                except ValueError:
+                    return default
 
-            try:
-                gap_1 = float(self.text_delta_1.GetValue())
-            except ValueError:
-                gap_1 = -1
-            try:
-                gap_2 = float(self.text_delta_2.GetValue())
-            except ValueError:
-                gap_2 = -1
-
-            if gap_1 < 0:
-                gap_1 = 0
-            if gap_2 < 0:
-                gap_2 = 5
+            count_1, count_2 = len(range1), len(range2)
+            dimension_1 = max(get_float(self.text_dim_1, -1), 5)
+            dimension_2 = max(get_float(self.text_dim_2, -1), 5)
+            gap_1 = max(get_float(self.text_delta_1, -1), 0)
+            gap_2 = max(get_float(self.text_delta_2, -1), 5)
 
             # print (f"Creating operations for {len(range1)} x {len(range2)}")
             display_labels = self.check_labels.GetValue()
@@ -1250,10 +1233,8 @@ class TemplatePanel(wx.Panel):
             color_growing_1 = self.check_color_direction_1.GetValue()
             color_growing_2 = self.check_color_direction_2.GetValue()
 
-            if optype == 3:
-                shapetype = "image"
-            else:
-                shapetype = "rect"
+            shapetype = "image" if optype == 3 else "rect"
+
             size_x = float(Length(f"{dimension_1}mm"))
             size_y = float(Length(f"{dimension_2}mm"))
             gap_x = float(Length(f"{gap_1}mm"))
@@ -1275,48 +1256,52 @@ class TemplatePanel(wx.Panel):
 
             # Make one op for text
             if display_labels or display_values:
-                text_op_x = RasterOpNode()
-                text_op_x.color = Color("black")
-                text_op_x.label = self.DESC_X_AXIS
-                text_op_x.speed = self.description_speed
-                text_op_x.power = self.description_power
-                text_op_y = RasterOpNode()
-                text_op_y.color = Color("black")
-                text_op_y.label = self.DESC_Y_AXIS
-                text_op_y.speed = self.description_speed
-                text_op_y.power = self.description_power
-                operation_branch.add_node(text_op_x)
-                operation_branch.add_node(text_op_y)
+                for axis, label in zip(
+                    ("X", "Y"), (self.DESC_X_AXIS, self.DESC_Y_AXIS)
+                ):
+                    op = RasterOpNode()
+                    op.color = Color("black")
+                    op.label = label
+                    op.speed = self.description_speed
+                    op.power = self.description_power
+                    operation_branch.add_node(op)
+                text_op_x, text_op_y = operation_branch.children[-2:]
+
             if display_labels:
+
+                def add_axis_label(text, x, y, scale, op):
+                    node = element_branch.add(
+                        text=text,
+                        matrix=Matrix(f"translate({x}, {y}) scale({scale})"),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    op.add_reference(node, 0)
+                    return node
+
                 text_x = start_x + expected_width / 2
                 text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
                 unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
-                node = element_branch.add(
-                    text=f"{param_name_1}{unit_str}",
-                    matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
-                    ),
-                    anchor="middle",
-                    fill=Color("black"),
-                    type="elem text",
+                add_axis_label(
+                    f"{param_name_1}{unit_str}",
+                    text_x,
+                    text_y,
+                    2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
+                    text_op_x,
                 )
-                text_op_x.add_reference(node, 0)
-
                 text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
                 text_y = start_y + expected_height / 2
                 unit_str = f" [{param_unit_2}]" if param_unit_2 else ""
-                node = element_branch.add(
-                    text=f"{param_name_2}{unit_str}",
-                    matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
-                    ),
-                    anchor="middle",
-                    fill=Color("black"),
-                    type="elem text",
+                node = add_axis_label(
+                    f"{param_name_2}{unit_str}",
+                    text_x,
+                    text_y,
+                    2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
+                    text_op_y,
                 )
                 node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                 node.modified()
-                text_op_y.add_reference(node, 0)
 
             xx = start_x
             for idx1, _p_value_1 in enumerate(range1):
@@ -1381,151 +1366,80 @@ class TemplatePanel(wx.Panel):
                         )
                         node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                         text_op_y.add_reference(node, 0)
-                    if optype == 0:  # Cut
-                        master_op = copy(self.default_op[optype])
-                        if hasattr(self.default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            master_op.settings = copy(self.default_op[optype].settings)
-                        this_op = master_op
-                        usefill = False
-                    elif optype == 1:  # Engrave
-                        master_op = copy(self.default_op[optype])
-                        if hasattr(self.default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            master_op.settings = copy(self.default_op[optype].settings)
-                        this_op = master_op
-                        usefill = False
-                    elif optype == 2:  # Raster
-                        master_op = copy(self.default_op[optype])
-                        if hasattr(self.default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            master_op.settings = copy(self.default_op[optype].settings)
-                        this_op = master_op
-                        usefill = True
-                    elif optype == 3:  # Image
-                        master_op = copy(self.default_op[optype])
-                        if hasattr(self.default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            master_op.settings = copy(self.default_op[optype].settings)
-                        this_op = master_op
-                        usefill = False
-                    elif optype == 4:  # Hatch
-                        master_op = copy(self.default_op[optype])
-                        if hasattr(self.default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            master_op.settings = copy(self.default_op[optype].settings)
-                        this_op = copy(self.secondary_default_op[optype])
-                        if hasattr(self.secondary_default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            this_op.settings = copy(self.secondary_default_op[optype].settings)
-                        master_op.add_node(this_op)
 
-                        # We need to add a hatch node and make this the target for parameter application
-                        usefill = False
-                    elif optype == 5:  # Wobble
-                        # Wobble is a special case, we need to create a master op and a secondary op
-                        # We need to add a wobble node and make this the target for parameter application
-                        master_op = copy(self.default_op[optype])
-                        if hasattr(self.default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            master_op.settings = copy(self.default_op[optype].settings)
-                        this_op = copy(self.secondary_default_op[optype])
-                        if hasattr(self.secondary_default_op[optype], "settings"):
-                            # If we have settings, we need to copy them
-                            this_op.settings = copy(self.secondary_default_op[optype].settings)
+                    # Create the required operations
+                    def copy_op(op):
+                        new_op = copy(op)
+                        if hasattr(op, "settings"):
+                            new_op.settings = copy(op.settings)
+                        return new_op
+
+                    if optype in (0, 1, 2, 3):
+                        master_op = copy_op(self.default_op[optype])
+                        this_op = master_op
+                        usefill = optype == 2
+                    elif optype in (4, 5):
+                        master_op = copy_op(self.default_op[optype])
+                        this_op = copy_op(self.secondary_default_op[optype])
                         master_op.add_node(this_op)
                         usefill = False
                     else:
                         return
                     this_op.label = s_lbl
 
-                    # Do we need to prep the op?
-                    if param_prepper_1 is not None:
-                        param_prepper_1(master_op)
+                    def set_param(op, ptype, value, keep_unit, unit, prepper):
+                        if prepper:
+                            prepper(op)
+                        v = f"{value}{unit}" if keep_unit else value
+                        if ptype == "power" and self.use_percent():
+                            v = float(v) * 10.0 if not keep_unit else v
+                        if ptype == "speed" and self.use_mm_min():
+                            v = float(v) / 60.0 if not keep_unit else v
+                        if hasattr(op, ptype):
+                            if ptype == "passes":
+                                v = int(v)
+                            if ptype == "hatch_distance" and not str(v).endswith("mm"):
+                                v = f"{v}mm"
+                            if ptype == "hatch_angle" and not str(v).endswith("deg"):
+                                v = f"{v}deg"
+                            setattr(op, ptype, v)
+                            if hasattr(op, "settings") and ptype in op.settings:
+                                op.settings[ptype] = v
+                        elif hasattr(op, "settings"):
+                            op.settings[ptype] = v
 
-                    if param_keep_unit_1:
-                        value = str(p_value_1) + param_unit_1
-                    else:
-                        value = p_value_1
-                    if param_type_1 == "power" and self.use_percent():
-                        value *= 10.0
-                    if param_type_1 == "speed" and self.use_mm_min():
-                        value /= 60.0
-                    if hasattr(master_op, param_type_1):
-                        # quick and dirty
-                        if param_type_1 == "passes":
-                            value = int(value)
-                        if param_type_1 == "hatch_distance" and not str(value).endswith(
-                            "mm"
-                        ):
-                            value = f"{value}mm"
-                        setattr(master_op, param_type_1, value)
-                        if hasattr(master_op, "setttings") and param_type_1 in master_op.settings:
-                            master_op.settings[param_type_1] = value
-                    elif hasattr(master_op, "setttings"):
-                        master_op.settings[param_type_1] = value
-                    # else:  # Try setting
-                    #     master_op.settings[param_type_1] = value
-                    if hasattr(this_op, param_type_1):
-                        # quick and dirty
-                        if param_type_1 == "passes":
-                            value = int(value)
-                        elif param_type_1 == "hatch_distance" and not str(
-                            value
-                        ).endswith("mm"):
-                            value = f"{value}mm"
-                        elif param_type_1 == "hatch_angle" and not str(value).endswith(
-                            "deg"
-                        ):
-                            value = f"{value}deg"
-                        setattr(this_op, param_type_1, value)
-                        if hasattr(this_op, "settings") and param_type_1 in this_op.settings:  # Try setting
-                            this_op.settings[param_type_1] = value
-                    elif hasattr(this_op, "settings"):  # Try setting
-                        this_op.settings[param_type_1] = value
-
-                    # Do we need to prep the op?
-                    if param_prepper_2 is not None:
-                        param_prepper_2(master_op)
-
-                    if param_keep_unit_2:
-                        value = str(p_value_2) + param_unit_2
-                    else:
-                        value = p_value_2
-                    if param_type_2 == "power" and self.use_percent():
-                        value *= 10.0
-                    if param_type_2 == "speed" and self.use_mm_min():
-                        value /= 60.0
-                    if hasattr(master_op, param_type_2):
-                        # quick and dirty
-                        if param_type_2 == "passes":
-                            value = int(value)
-                        if param_type_2 == "hatch_distance" and not str(value).endswith(
-                            "mm"
-                        ):
-                            value = f"{value}mm"
-                        setattr(master_op, param_type_2, value)
-                        if hasattr(master_op, "settings") and param_type_2 in master_op.settings:
-                            master_op.settings[param_type_2] = value
-                    elif hasattr(master_op, "settings"):
-                        master_op.settings[param_type_2] = value
-
-                    if hasattr(this_op, param_type_2):
-                        if param_type_2 == "passes":
-                            value = int(value)
-                        elif param_type_2 == "hatch_distance" and not str(
-                            value
-                        ).endswith("mm"):
-                            value = f"{value}mm"
-                        elif param_type_2 == "hatch_angle" and not str(value).endswith(
-                            "deg"
-                        ):
-                            value = f"{value}deg"
-                        setattr(this_op, param_type_2, value)
-                        if hasattr(this_op, "settings") and param_type_2 in this_op.settings:  # Try setting
-                            this_op.settings[param_type_2] = value
-                    elif hasattr(this_op, "settings"):  # Try setting
-                        this_op.settings[param_type_2] = value
+                    set_param(
+                        master_op,
+                        param_type_1,
+                        p_value_1,
+                        param_keep_unit_1,
+                        param_unit_1,
+                        param_prepper_1,
+                    )
+                    set_param(
+                        this_op,
+                        param_type_1,
+                        p_value_1,
+                        param_keep_unit_1,
+                        param_unit_1,
+                        None,
+                    )
+                    set_param(
+                        master_op,
+                        param_type_2,
+                        p_value_2,
+                        param_keep_unit_2,
+                        param_unit_2,
+                        param_prepper_2,
+                    )
+                    set_param(
+                        this_op,
+                        param_type_2,
+                        p_value_2,
+                        param_keep_unit_2,
+                        param_unit_2,
+                        None,
+                    )
 
                     set_color = make_color(
                         idx1,
