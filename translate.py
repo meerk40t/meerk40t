@@ -19,6 +19,8 @@ import argparse
 import os
 import re
 
+LOCALE_DIR = "./locale"
+
 
 def are_curly_brackets_matched(input_str: str) -> bool:
     """
@@ -193,11 +195,10 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
             return "utf-8"
 
     data_files = []
-    localedir = "./locale"
     po_dirs = []
     po_locales = []
-    for locale_name in next(os.walk(localedir))[1]:
-        po_dirs.append(localedir + "/" + locale_name + "/LC_MESSAGES/")
+    for locale_name in next(os.walk(LOCALE_DIR))[1]:
+        po_dirs.append(LOCALE_DIR + "/" + locale_name + "/LC_MESSAGES/")
         po_locales.append(locale_name)
     counts = [0, 0, 0]
     for d_local, d in zip(po_locales, po_dirs):
@@ -258,7 +259,25 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
     return data_files
 
 
-def main():
+def integrate_delta_files(locales: list[str]) -> None:
+    """
+    Integrates delta_xx.po files into the main .po files for the specified locales.
+    """
+    for locale in locales:
+        main_po_file = f"./locale/{locale}/LC_MESSAGES/meerk40t.po"
+        delta_po_file = f"./delta_{locale}.po"
+        if os.path.exists(delta_po_file):
+            print(f"Integrating {delta_po_file} into {main_po_file}")
+            # Append the contents of the delta file to the main file
+            with open(delta_po_file, "r", encoding="utf-8") as delta_file:
+                delta_contents = delta_file.read()
+            with open(main_po_file, "a", encoding="utf-8") as main_file:
+                main_file.write(delta_contents)
+        else:
+            print(f"No delta file found for {locale}")
+
+
+def main() -> None:
     """
     Main entry point for the script. Parses CLI arguments and triggers compilation.
     """
@@ -276,12 +295,24 @@ def main():
         action="store_true",
         help="Force recompilation of all .mo files regardless of timestamps",
     )
+    parser.add_argument(
+        "--integrate",
+        action="store_true",
+        help="Integrate delta_xx.po files into the main .po files",
+    )
     args = parser.parse_args()
 
     if args.locales:
         print(f"Will compile po-files for {', '.join(args.locales)}")
     else:
         print("Will compile all po-files")
+    if len(args.locales) == 0:
+        for locale_name in next(os.walk(LOCALE_DIR))[1]:
+            print(locale_name)
+            args.locales.append(locale_name)
+
+    if args.integrate:
+        integrate_delta_files(args.locales)
     create_mo_files(args.force, args.locales)
 
 
