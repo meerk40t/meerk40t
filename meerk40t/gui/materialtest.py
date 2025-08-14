@@ -1838,6 +1838,7 @@ class TemplatePanel(wx.Panel):
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
+        self.prefill_defaults()
         self.set_param_according_to_op(None)
 
 
