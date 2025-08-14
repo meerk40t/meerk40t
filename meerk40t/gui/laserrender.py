@@ -806,7 +806,7 @@ class LaserRender:
         if self.simplify_it and hasattr(node, "as_preview"):
             geom = node.as_preview()
         if geom is None and hasattr(node, "final_geometry"):
-            geom = node.final_geometry
+            geom = node.final_geometry()
         if geom is None:
             geom = node.as_geometry()
         cache = self.make_geomstr(gc, geom, node=node)
