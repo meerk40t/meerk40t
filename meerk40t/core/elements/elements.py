@@ -2829,6 +2829,11 @@ class Elemental(Service):
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
+            # is this a node that is under the operations tree? Then skip it
+            if node.type != "reference" and node.has_ancestor("branch ops"):
+                if debug:
+                    debug(f"Skipping {node_desc} as it is already in operations")
+                continue
             classif_info = [False, False]
             # Even for fuzzy we check first a direct hit
             fuzzy_param = (False, True) if fuzzy else (False,)
