@@ -3,7 +3,7 @@ from math import tau
 
 import wx
 from wx import aui
-
+from meerk40t.core.elements.element_types import op_parent_nodes
 from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.effect_wobble import WobbleEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
@@ -242,6 +242,7 @@ class TemplatePanel(wx.Panel):
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
 
+        self.prefill_defaults()
         LABEL_WIDTH = 115
 
         self.combo_ops = wxComboBox(
@@ -611,6 +612,36 @@ class TemplatePanel(wx.Panel):
         self.combo_ops.SetSelection(0)
         self.restore_settings()
         self.sync_fields()
+
+    def prefill_defaults(self):
+        def prefill_op(op):
+            if op is None or op.type not in op_parent_nodes:
+                return
+            fields = {}
+            if "balor" in self.context.device.path:
+                fields = {
+                    "default_power": "power",
+                    "default_speed": "speed",
+                    "rapid_enabled": "",
+                    "rapid_speed": "",
+                    "timing_enabled": "",   
+                    "delay_laser_on": "",   
+                    "delay_laser_off": "",
+                    "delay_polygon": "",
+                    "pulse_width_enabled": "",
+                    "pulse_width": "",
+                }
+            for source, target in fields.items():
+                if target is None or target == "":
+                    target = source
+                if not hasattr(self.context.device, source):
+                    continue
+                setattr(op, target, getattr(self.context.device, source))
+
+        for op in self.default_op:
+            prefill_op(op)
+        for op in self.secondary_default_op:
+            prefill_op(op)
 
     def shortened(self, value, digits):
         result = str(round(value, digits))
