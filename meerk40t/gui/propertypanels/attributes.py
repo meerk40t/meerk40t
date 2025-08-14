@@ -3,8 +3,8 @@ from math import sqrt
 import wx
 
 import meerk40t.gui.icons as mkicons
-from meerk40t.core.units import Length
 from meerk40t.core.elements.element_types import op_parent_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
@@ -162,14 +162,13 @@ class ColorPanel(wx.Panel):
     def accepts(self, node):
         flag = False
         if hasattr(node, self.attribute):
-            flag = True
-            if (
-                node
-                and node.type not in op_parent_nodes
-                and node.has_ancestor("branch ops")
-            ):
-                # We don't want to show this for direct non-operation ops children
-                flag = False
+            # We don't want to show this for direct non-operation ops children
+            flag = (
+                not node
+                or node.type in op_parent_nodes
+                or not node.has_ancestor("branch ops")
+            )
+
         return flag
 
     def set_widgets(self, node):
