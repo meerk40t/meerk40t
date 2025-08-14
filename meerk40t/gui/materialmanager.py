@@ -1407,7 +1407,7 @@ class MaterialPanel(ScrolledPanel):
         settings = self.op_data
         changed = False
         for section in settings.section_set():
-            if section.startswith("previous") and not section == "previous":
+            if section.startswith("previous") and section != "previous":
                 # Remove all invalid 'previous' sections except the main one
                 changed = True
                 settings.clear_persistent(section)
