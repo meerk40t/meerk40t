@@ -849,7 +849,7 @@ class Elemental(Service):
     @default_strokewidth.setter
     def default_strokewidth(self, width):
         if isinstance(width, str):
-            width = float(Length(width))
+            width = float(Length(width))  # type: ignore
         self._default_strokewidth = width
 
     @property
@@ -961,7 +961,7 @@ class Elemental(Service):
         return unassigned, nonburnt
 
     def length(self, v):
-        return float(Length(v))
+        return float(Length(v))  # type: ignore
 
     def length_x(self, v):
         try:
@@ -1035,14 +1035,17 @@ class Elemental(Service):
         has_a_color = False
 
         if impose == "to_elem":
-            target_color = op_assign.color
-            if attrib == "auto":
-                if "stroke" in op_assign.allowed_attributes:
-                    attrib = "stroke"
-                elif "fill" in op_assign.allowed_attributes:
-                    attrib = "fill"
-                else:
-                    attrib = "stroke"
+            if not hasattr(op_assign, "color"):
+                attrib = None
+            else:
+                target_color = op_assign.color
+                if attrib == "auto":
+                    if "stroke" in op_assign.allowed_attributes:
+                        attrib = "stroke"
+                    elif "fill" in op_assign.allowed_attributes:
+                        attrib = "fill"
+                    else:
+                        attrib = "stroke"
 
         if attrib is None:
             similar = False
@@ -1487,13 +1490,27 @@ class Elemental(Service):
 
             section = f"{name} {i:06d}"
             settings.write_persistent(section, "type", op.type)
+            effects = next(
+                (
+                    node.get_effect_descriptor()
+                    for node in op.children
+                    if node.type.startswith("effect ")
+                    and hasattr(node, "get_effect_descriptor")
+                ),
+                "",
+            )
+            if effects:
+                op.settings["effects"] = effects
             op.save(settings, section)
-            try:
-                self._save_persistent_operation_tree(
-                    section, op.children, use_settings=settings
-                )
-            except AttributeError:
-                pass
+            # We will save the effect information, ie whether an operation does contain a hatch/wobble/warp
+
+            # We need to save the children as well.
+            # try:
+            #     self._save_persistent_operation_tree(
+            #         section, op.children, use_settings=settings
+            #     )
+            # except AttributeError:
+            #     pass
         if not flush:
             return
         settings.write_configuration()
@@ -1606,6 +1623,24 @@ class Elemental(Service):
             oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
             for op in oplist:
                 operation_branch.add_node(op)
+                if not hasattr(op, "settings") or "effects" not in op.settings:
+                    continue
+                effects = op.settings.get("effects", "")
+                del op.settings["effects"]
+                if effects:
+                    parts = effects.split("|")
+                    if len(parts) > 1:
+                        label = parts[0].split()[1] if " " in parts[0] else parts[0]
+                        try:
+                            effnode = op.add(
+                                type=parts[0], label=f"Autocreated {label}"
+                            )
+                            effnode.set_effect_descriptor(effects)
+                            if hasattr(effnode, "stroke") and hasattr(op, "color"):
+                                effnode.stroke = op.color
+                        except Exception as e:
+                            print(f"Bootstrap failed for {parts[0]}: {e}")
+
             if classify is None:
                 classify = self.classify_new
             if not classify:
@@ -1781,6 +1816,28 @@ class Elemental(Service):
                 # In principle this should be covered by the check
                 # above, but you never know
                 pass
+        # Lets check whether we have an effect:
+        effects = ""
+        if hasattr(op_to_use, "settings") and "effects" in op_to_use.settings:
+            effects = op_to_use.settings.get("effects", "")
+            del op_to_use.settings["effects"]
+            for node in op.children:
+                if node.type.startswith("effect "):
+                    # Already in place, nothing to do
+                    effects = ""
+                    break
+        if effects:
+            parts = effects.split("|")
+            if len(parts) > 1:
+                label = parts[0].split()[1] if " " in parts[0] else parts[0]
+                try:
+                    effnode = op_to_use.add(type=parts[0], label=f"Autocreated {label}")
+                    effnode.set_effect_descriptor(effects)
+                    if hasattr(effnode, "stroke") and hasattr(op, "color"):
+                        effnode.stroke = op_to_use.color
+                except Exception as e:
+                    print(f"Bootstrap failed for {parts[0]}: {e}")
+
         impose = "to_elem"
         similar = False
         exclusive = True
