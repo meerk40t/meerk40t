@@ -465,11 +465,12 @@ class MeerK40t(MWindow):
                 self.Iconize()
         self.Bind(wx.EVT_ACTIVATE, self.on_active)
         # Bind the power events
-        self.Bind(wx.EVT_POWER_SUSPEND_CANCEL, self.on_power_suspend)
+        self.Bind(wx.EVT_POWER_SUSPENDING, self.on_power_suspend)
         self.Bind(wx.EVT_POWER_RESUME, self.on_power_resume)
 
     def on_power_suspend(self, event):
         # Do we have an active job? If yes, we would like to pause it
+        channel = self.context.kernel.channels["console"]
         available_devices = self.context.kernel.services("device")
         for device in available_devices:
             if hasattr(device.driver, "paused") and device.driver.paused:
@@ -485,9 +486,11 @@ class MeerK40t(MWindow):
             if active:
                 if hasattr(device.driver, "pause") and callable(device.driver.pause):
                     device.driver.pause()
-                print(f"Did need to stop {device.label} before suspend")
-        event.Allow()
+                channel(f"Did need to stop {device.label} before suspend")
         self.context.signal("system_suspended")
+        channel("Suspending...")
+        if event is not None:
+            event.Skip()
 
     def on_power_resume(self, event):
         event.Skip()  # Continue processing the event
