@@ -453,7 +453,7 @@ class MeerK40t(MWindow):
         kernel = self.context.kernel
 
         maxit = hasattr(kernel.args, "maximized") and kernel.args.maximized
-        minit = hasattr(kernel.args, "minimized") and kernel.args.minimized 
+        minit = hasattr(kernel.args, "minimized") and kernel.args.minimized
         remember = self.context.setting(bool, "remember_main_pos", True)
         if remember:
             self.RestoreWindowState(force_maximized=maxit, force_minimized=minit)
@@ -464,7 +464,37 @@ class MeerK40t(MWindow):
             elif minit:
                 self.Iconize()
         self.Bind(wx.EVT_ACTIVATE, self.on_active)
+        # Bind the power events
+        self.Bind(wx.EVT_POWER_SUSPENDING, self.on_power_suspend)
+        self.Bind(wx.EVT_POWER_RESUME, self.on_power_resume)
 
+    def on_power_suspend(self, event):
+        # Do we have an active job? If yes, we would like to pause it
+        if self.context.setting(bool, "pause_on_suspend", True):
+            channel = self.context.kernel.channels["console"]
+            available_devices = self.context.kernel.services("device")
+            for device in available_devices:
+                if hasattr(device.driver, "paused") and device.driver.paused:
+                    continue
+                if not hasattr(device, "spooler") or device.spooler is None:
+                    continue
+                active = any(
+                    hasattr(e, "is_running") and e.is_running() for e in spooler.queue
+                )
+                if active:
+                    if hasattr(device.driver, "pause") and callable(
+                        device.driver.pause
+                    ):
+                        device.driver.pause()
+                    channel(f"Did need to stop {device.label} before suspend")
+            self.context.signal("system_suspended")
+            channel("Suspending...")
+        if event is not None:
+            event.Skip()
+
+    def on_power_resume(self, event):
+        event.Skip()  # Continue processing the event
+        self.context.signal("system_resumed")
 
     def SaveWindowState(self):
         # Save window position, size, and state
@@ -478,7 +508,13 @@ class MeerK40t(MWindow):
         self.context.mainwin_maximized = maximized
         self.context.mainwin_minimized = minimized
 
-    def RestoreWindowState(self, default_pos=None, default_size=None, force_minimized=False, force_maximized=False):
+    def RestoreWindowState(
+        self,
+        default_pos=None,
+        default_size=None,
+        force_minimized=False,
+        force_maximized=False,
+    ):
         # Restore window position, size, and state
         pos = self.context.mainwin_pos
         size = self.context.mainwin_size
@@ -487,11 +523,13 @@ class MeerK40t(MWindow):
         # Get all screens
         display_count = wx.Display.GetCount()
         screens = [wx.Display(i).GetGeometry() for i in range(display_count)]
+
         def in_any_screen(x, y):
             for rect in screens:
                 if rect.Contains(wx.Point(x, y)):
                     return True
             return False
+
         # Default position and size: use first screen's geometry
         if screens:
             first_screen = screens[0]
@@ -504,11 +542,16 @@ class MeerK40t(MWindow):
                 default_pos = wx.Point(0, 0)
             if default_size is None:
                 default_size = wx.Size(1024, 768)
+
         # Validate position and size to ensure the window is mostly visible on a screen
         def rect_mostly_in_screen(x, y, w, h, threshold=0.5):
             # Returns True if at least `threshold` fraction of the window area is on any screen
             window_rect = wx.Rect(x, y, w, h)
-            for screen in wx.Display.GetCount() and [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())] or []:
+            for screen in (
+                [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())]
+                if wx.Display.GetCount()
+                else []
+            ):
                 intersection = window_rect.Intersect(screen)
                 if intersection.IsEmpty():
                     continue
@@ -522,9 +565,13 @@ class MeerK40t(MWindow):
 
         # Determine intended position and size
         intended_pos = pos if pos else (default_pos.x, default_pos.y)
-        intended_size = size if size else (default_size.GetWidth(), default_size.GetHeight())
+        intended_size = (
+            size if size else (default_size.GetWidth(), default_size.GetHeight())
+        )
 
-        if rect_mostly_in_screen(intended_pos[0], intended_pos[1], intended_size[0], intended_size[1]):
+        if rect_mostly_in_screen(
+            intended_pos[0], intended_pos[1], intended_size[0], intended_size[1]
+        ):
             self.SetPosition(wx.Point(intended_pos[0], intended_pos[1]))
         else:
             self.SetPosition(default_pos)
@@ -1154,7 +1201,7 @@ class MeerK40t(MWindow):
         context.setting(tuple, "mainwin_size", None)
         context.setting(bool, "mainwin_maximized", False)
         context.setting(bool, "mainwin_minimized", False)
-        
+
         # Standard-Icon-Sizes
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
