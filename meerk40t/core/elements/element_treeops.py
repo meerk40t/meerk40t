@@ -2950,7 +2950,16 @@ def init_tree(kernel):
             return
         operations = self._tree.get(type="branch ops").children
         with self.undoscope("Duplicate operation(s)"):
+            dealt_with = []
             for op in data:
+                flag = True
+                for d in dealt_with:
+                    if op.is_a_child_of(d):
+                        flag = False
+                        break
+                if not flag:
+                    continue
+                dealt_with.append(op)
                 try:
                     pos = operations.index(op) + 1
                 except ValueError:
@@ -2958,10 +2967,16 @@ def init_tree(kernel):
                 copy_op = copy(op)
                 self.add_op(copy_op, pos=pos)
                 for child in op.children:
-                    try:
-                        copy_op.add_reference(child.node)
-                    except AttributeError:
-                        pass
+                    if child.type.startswith("effect "):
+                        child_copy = copy(child)
+                        copy_op.append_child(child_copy)
+                        for ref in child.children:
+                            copy_op.add_reference(ref.node)
+                    else:
+                        try:
+                            copy_op.add_reference(child.node)
+                        except AttributeError:
+                            pass
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_submenu(_("Duplicate element(s)"))

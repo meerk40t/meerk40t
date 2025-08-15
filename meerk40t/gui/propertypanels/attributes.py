@@ -3,6 +3,7 @@ from math import sqrt
 import wx
 
 import meerk40t.gui.icons as mkicons
+from meerk40t.core.elements.element_types import op_parent_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import (
@@ -159,7 +160,16 @@ class ColorPanel(wx.Panel):
         pass
 
     def accepts(self, node):
-        return hasattr(node, self.attribute)
+        flag = False
+        if hasattr(node, self.attribute):
+            # We don't want to show this for direct non-operation ops children
+            flag = (
+                not node
+                or node.type in op_parent_nodes
+                or not node.has_ancestor("branch ops")
+            )
+
+        return flag
 
     def set_widgets(self, node):
         self.node = node
@@ -270,7 +280,9 @@ class IdPanel(wx.Panel):
         self.icon_hidden = wxStaticBitmap(self, wx.ID_ANY)
         self.icon_hidden.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
         self.icon_hidden.SetBitmap(
-            mkicons.icons8_ghost.GetBitmap(resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale)
+            mkicons.icons8_ghost.GetBitmap(
+                resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale
+            )
         )
         self.icon_hidden.SetToolTip(
             _("Element is hidden, so it will neither be displayed nor burnt")
@@ -436,7 +448,11 @@ class IdPanel(wx.Panel):
                 n_type = "_3d_image"
             if n_type in type_patterns:
                 icon = type_patterns[n_type]
-                bmp = icon.GetBitmap(resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale, buffer=2)
+                bmp = icon.GetBitmap(
+                    resize=mkicons.STD_ICON_SIZE
+                    * self.context.root.bitmap_correction_scale,
+                    buffer=2,
+                )
         if bmp is None:
             self.icon_display.Show(False)
         else:
@@ -455,6 +471,7 @@ class IdPanel(wx.Panel):
     def signal(self, signalstr, myargs):
         if signalstr == "nodetype":
             self.set_widgets(self.node)
+
 
 class LinePropPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -562,14 +579,24 @@ class LinePropPanel(wx.Panel):
         self.tab_length.SetActionRoutine(self.on_tab_length)
         self.combo_linestyle.SetToolTip(_("Choose the linestyle of the shape"))
         self.text_linestyle.SetToolTip(
-            _("Define the linestyle of the shape:") + "\n" +
-            _("A list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps")
+            _("Define the linestyle of the shape:")
+            + "\n"
+            + _(
+                "A list of comma and/or white space separated numbers that specify the lengths of alternating dashes and gaps"
+            )
         )
         self.tab_positions.SetToolTip(
-            _("Where do you want to place tabs:") +  "\n" +
-            _("A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers.") + "\n" +
-            _("You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs.") + "\n" +
-            _("An empty list stands for no tabs.")
+            _("Where do you want to place tabs:")
+            + "\n"
+            + _(
+                "A list of comma and/or white space separated numbers that specify the relative positions, i.e. percentage of total shape perimeter, of the tab centers."
+            )
+            + "\n"
+            + _(
+                "You may provide a placeholder for x equidistant tabs by stating '*x' e.g. '*4' for four tabs."
+            )
+            + "\n"
+            + _("An empty list stands for no tabs.")
         )
         self.tab_length.SetToolTip(_("How wide should the tab be?"))
         self.set_widgets(self.node)
@@ -944,10 +971,16 @@ class PositionSizePanel(wx.Panel):
         self.context.setting(bool, "lock_active", True)
         self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE
+            * self.context.root.bitmap_correction_scale
+            / 2,
+            use_theme=False,
         )
         self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale/ 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE
+            * self.context.root.bitmap_correction_scale
+            / 2,
+            use_theme=False,
         )
         self.btn_lock_ratio.bitmap_toggled = self.bitmap_locked
         self.btn_lock_ratio.bitmap_untoggled = self.bitmap_unlocked
@@ -1282,10 +1315,16 @@ class RoundedRectPanel(wx.Panel):
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
         # Set Bitmap
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale/ 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE
+            * self.context.root.bitmap_correction_scale
+            / 2,
+            use_theme=False,
         )
         self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
-            resize=mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale/ 2, use_theme=False
+            resize=mkicons.STD_ICON_SIZE
+            * self.context.root.bitmap_correction_scale
+            / 2,
+            use_theme=False,
         )
 
         sizer_x.Add(self.slider_x, 1, wx.EXPAND, 0)
@@ -1406,6 +1445,7 @@ class RoundedRectPanel(wx.Panel):
             self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
             self.slider_y.Enable(True)
 
+
 class AutoHidePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -1421,9 +1461,13 @@ class AutoHidePanel(wx.Panel):
         self.check_autohide.SetToolTip(
             _("Toggle the adoption behaviour of the effect.")
             + "\n"
-            + _("Active: Added children will be automatically hidden, so only the result of the effect will be seen/burned")
+            + _(
+                "Active: Added children will be automatically hidden, so only the result of the effect will be seen/burned"
+            )
             + "\n"
-            + _("Inactive: Added children remain unchanged, so both the child and the result of the effect will be seen/burned")
+            + _(
+                "Inactive: Added children remain unchanged, so both the child and the result of the effect will be seen/burned"
+            )
         )
         self.check_autohide.Bind(wx.EVT_CHECKBOX, self.on_autohide)
         self.SetSizer(main_sizer)

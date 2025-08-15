@@ -20513,3 +20513,30 @@ msgstr "Elementuitlijning"
 #: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "Joggen, verplaatsen en transformeren"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Effect verwijderen:"
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Diagonale arcering toevoegen"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Horizontale arcering toevoegen"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Verticale arcering toevoegen"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Wobble toevoegen"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Effecten vereenvoudigen"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Beperkt de complexiteit van effecten die tijdens het ontwerpen op elementen worden toegepast.\nNB1: alle waarden worden gehonoreerd tijdens het graveren.\nNB2: als de CAPS-LOCK-toets actief is, worden alle effecten zonder vereenvoudiging weergegeven."

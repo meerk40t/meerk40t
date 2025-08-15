@@ -671,7 +671,7 @@ class GalvoController:
                 settings.get("delay_laser_off", self.service.delay_laser_off)
             )
             self.list_polygon_delay(
-                settings.get("delay_laser_polygon", self.service.delay_polygon)
+                settings.get("delay_polygon", self.service.delay_polygon)
             )
         else:
             # Use globals
