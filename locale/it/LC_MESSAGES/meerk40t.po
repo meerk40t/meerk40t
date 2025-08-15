@@ -5,45 +5,21 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 11-08-25 21:10:10UTC\n"
+"PO-Revision-Date: 12-08-25 18:45:10UTC\n"
 "Last-Translator: Betaeta\n"
 "Language: it\n"
-"Language-Team: Cicioni Italian translation <betaeta-AT-gmail.com>\n"
+"Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Poboy 0.0.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
+"X-Generator: translate_check.py"
 
 #: meerk40t/grbl/plugin.py:212 meerk40t/grbl/plugin.py:264
 #: meerk40t/lihuiyu/device.py:1049 meerk40t/network/console_server.py:6
 #: meerk40t/network/console_server.py:114
-#: meerk40t/core/elements/offset_clpr.py:845
-msgid "keep the original elements, will be removed by default"
-msgstr "mantiene gli elementi originali, verranno rimossi per impostazione predefinita"
-
-#: meerk40t/core/elements/offset_clpr.py:849
-msgid "create a logical combination of the given elements"
-msgstr "crea una combinazione logica degli elementi dati"
-
-#: meerk40t/core/elements/offset_clpr.py:913
-msgid "Create clipper data"
-msgstr "Crea dati per il ritaglio"
-
-#: meerk40t/core/elements/offset_mk.py:873
-msgid "radial connector"
-msgstr "connettore radiale"
-
-#: meerk40t/core/elements/offset_mk.py:880
-msgid "native path offset (use at you own risk)"
-msgstr "offset del percorso nativo (usare a proprio rischio)"
-
-#: meerk40t/core/elements/offset_mk.py:887
-msgid "create an offset path for any of the given elements, old algorithm"
-msgstr "crea un percorso di offset per uno qualsiasi degli elementi dati, vecchio algoritmo"
-
-#: meerk40t/grbl/plugin.py:210 meerk40t/grbl/plugin.py:255 meerk40t/lihuiyu/device.py:1049 meerk40t/network/console_server.py:6 meerk40t/network/console_server.py:114
 msgid "port to listen on."
 msgstr "porta in ascoltare"
 
@@ -19607,6 +19583,31 @@ msgstr "metodo da utilizzare (uno tra unione, differenza, intersezione, xor)"
 msgid "filltype to use (one of evenodd, nonzero, negative, positive)"
 msgstr "tipo di riempimento da utilizzare (***)"
 
+#: meerk40t/core/elements/offset_clpr.py:843
+msgid "keep the original elements, will be removed by default"
+msgstr "mantiene gli elementi originali, verranno rimossi per impostazione predefinita"
+
+#: meerk40t/core/elements/offset_clpr.py:847
+msgid "create a logical combination of the given elements"
+msgstr "crea una combinazione logica degli elementi dati"
+
+#: meerk40t/core/elements/offset_clpr.py:911
+msgid "Create clipper data"
+msgstr "Crea dati per il ritaglio"
+
+#: meerk40t/core/elements/offset_mk.py:873
+msgid "radial connector"
+msgstr "connettore radiale"
+
+#: meerk40t/core/elements/offset_mk.py:880
+msgid "native path offset (use at you own risk)"
+msgstr "offset del percorso nativo (usare a proprio rischio)"
+
+#: meerk40t/core/elements/offset_mk.py:887
+msgid "create an offset path for any of the given elements, old algorithm"
+msgstr ""
+"crea un percorso di offset per uno qualsiasi degli elementi dati, vecchio algoritmo"
+
 #: meerk40t/core/elements/penbox.py:124
 #: meerk40t/core/elements/penbox.py:189 meerk40t/core/elements/penbox.py:190
 #: meerk40t/core/elements/penbox.py:248 meerk40t/core/elements/penbox.py:281
@@ -23735,7 +23736,38 @@ msgstr "Allineamento elementi"
 #: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "Spostamento, movimento e trasformazione"
+#: meerk40t/grbl/device.py:1049
+msgid "Export succeeded: {filename}"
+msgstr "Esportazione riuscita: {filename}"
 
-#: meerk40t/gui/plugin.py:422
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Rimuovi effetto:"
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Aggiungi tratteggio diagonale"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Aggiungi tratteggio orizzontale"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Aggiungi tratteggio verticale"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Aggiungi wobble"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Semplifica effetti"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Limita la complessità degli effetti applicati agli elementi durante la progettazione.\nNB1: tutti i valori saranno rispettati durante l'incisione.\nNB2: se il tasto BLOC MAIUSC è attivo, tutti gli effetti verranno visualizzati senza semplificazione."
+
+#: meerk40t/gui/plugin.py:435
 msgid "Press Cancel to abort the Program."
 msgstr "Premi Annulla per interrompere il programma."
