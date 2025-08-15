@@ -48,6 +48,7 @@ class RuidaDevice(Service):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "priority": "10",
             },
@@ -60,6 +61,7 @@ class RuidaDevice(Service):
                 "tip": _("Width of the laser bed."),
                 "nonzero": True,
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
             },
             {
@@ -71,6 +73,7 @@ class RuidaDevice(Service):
                 "tip": _("Height of the laser bed."),
                 "nonzero": True,
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
             },
             {
@@ -81,6 +84,7 @@ class RuidaDevice(Service):
                 "label": _("Laserspot"),
                 "tip": _("Laser spot size"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -94,6 +98,7 @@ class RuidaDevice(Service):
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("User Scale")
                 "subsection": "_20_User Scale",
             },
             {
@@ -106,6 +111,7 @@ class RuidaDevice(Service):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("User Scale")
                 "subsection": "_20_User Scale",
             },
             {
@@ -119,7 +125,9 @@ class RuidaDevice(Service):
                 ),
                 # _("User Offset")
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -131,7 +139,9 @@ class RuidaDevice(Service):
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",
@@ -141,6 +151,7 @@ class RuidaDevice(Service):
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_40_Axis corrections",
             },
             {
@@ -151,6 +162,7 @@ class RuidaDevice(Service):
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_40_Axis corrections",
             },
             {
@@ -191,6 +203,7 @@ class RuidaDevice(Service):
                 "type": int,
                 "trailer": "μm",
                 "label": _("Curve Interpolation"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 "tip": _("Native units interpolation points."),
             },
@@ -276,6 +289,7 @@ class RuidaDevice(Service):
                 "style": "combosmall" if is_linux else "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
+                # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
@@ -288,6 +302,7 @@ class RuidaDevice(Service):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
+                # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
             },

@@ -1145,6 +1145,7 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Camera"), _("Camera")
         return "Camera", "Camera"
 
     @staticmethod
@@ -1336,6 +1337,7 @@ class CameraURI(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Camera"), _("Sources")
         return "Camera", "Sources"
 
     @staticmethod

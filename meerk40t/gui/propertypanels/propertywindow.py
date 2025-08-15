@@ -306,6 +306,7 @@ class PropertyWindow(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Editing"), _("Operation/Element Properties")
         return "Editing", "Operation/Element Properties"
 
     @staticmethod

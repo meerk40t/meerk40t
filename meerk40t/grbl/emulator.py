@@ -368,6 +368,15 @@ class GRBLEmulator:
             else:
                 self._buffer.append(chr(c))
 
+    def _home_device(self):
+        if hasattr(self.device.driver, "physical_home"):
+            # If the driver has a physical home, we can use that.
+            self.device.driver.physical_home()
+        elif hasattr(self.device.driver, "home"):
+            self.device.driver.home()
+        else:
+            self.device.driver.move_abs(0, 0)
+
     def _grbl_special(self, data):
         """
         GRBL special commands are commands beginning with $ that do purely grbl specific things.
@@ -458,14 +467,7 @@ class GRBLEmulator:
         elif data == "$H":
             if not self.settings["homing_cycle_enable"]:
                 return 5  # Homing cycle not enabled by settings.
-            try:
-                self.device.driver.physical_home()
-            except AttributeError:
-                pass
-            try:
-                self.device.driver.move_abs(0, 0)
-            except AttributeError:
-                pass
+            self._home_device()
             return 0
         elif data.startswith("$J="):
             """

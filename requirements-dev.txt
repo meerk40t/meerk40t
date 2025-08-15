@@ -8,3 +8,4 @@ opencv-python-headless
 pytest
 flake8
 polib
+chardet

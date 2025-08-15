@@ -30,6 +30,7 @@ class CylinderSettings(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Cylinder-Correction")
         return "Device-Settings", "Cylinder-Correction"
 
     @staticmethod

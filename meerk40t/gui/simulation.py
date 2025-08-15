@@ -2442,6 +2442,7 @@ class Simulation(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Burning"), _("Simulation")
         return "Burning", "Simulation"
 
     @staticmethod

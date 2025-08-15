@@ -658,6 +658,14 @@ class Pattern:
         current = 0j
 
         for entry in pattern(a, b, *args, **kwargs):
+            if (
+                not isinstance(entry, (list, tuple))
+                or len(entry) < 3
+                or np.isnan(entry[1])
+                or np.isnan(entry[2])
+            ):
+                # If the entry is not a list or tuple, or if the first element is NaN, we just skip it.
+                continue
             key = entry[0].lower()
             if key == "m":
                 current = complex(entry[1], entry[2])
@@ -715,6 +723,13 @@ class Pattern:
         @param y1:
         @return:
         """
+        try:
+            if np.isnan(x0) or np.isnan(y0) or np.isnan(x1) or np.isnan(y1):
+                # If any of the coordinates are NaN, we cannot generate a pattern.
+                return Geomstr()
+        except TypeError:
+            # If the coordinates are not numbers, we cannot generate a pattern.
+            return Geomstr()
         cw = self.cell_width
         ch = self.cell_height
         px = self.padding_x
@@ -1156,7 +1171,7 @@ class BeamTable:
     def difference(self, *args):
         return self.cag("difference", *args)
 
-    def cag(self, cag_op, *args):
+    def cag_org(self, cag_op, *args):
         if self.geometry.index == 0:
             return Geomstr()
         if self._nb_scan is None:
@@ -1205,6 +1220,79 @@ class BeamTable:
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
         )[0]
         g.append_lines(segments)
+        return g
+
+    def cag(self, cag_op, *args):
+        """
+        Vectorized CAG function that processes all arguments at once to reduce
+        Python loop overhead.
+        """
+        if self.geometry.index == 0:
+            return Geomstr()
+        if self._nb_scan is None:
+            self.compute_beam()
+
+        g = Geomstr()
+        actives = self._nb_scan[:-1]
+        lines = self.geometry.segments[actives, 2]
+
+        # Create a 3D mask for all arguments at once. Shape: (args, events, actives)
+        # This avoids the Python loop over `args`.
+        m = (np.imag(lines)[None, :, :] == np.array(args)[:, None, None]) & (
+            actives != -1
+        )
+
+        # Perform cumsum on the 3D array and combine results.
+        # This is the most computationally expensive part.
+        qq = (np.cumsum(m, axis=2) & 1).astype(bool)
+
+        # Combine the results from all arguments based on the CAG operation.
+        if cag_op == "union":
+            cc = np.any(qq, axis=0)
+        elif cag_op == "intersection":
+            cc = np.all(qq, axis=0)
+        elif cag_op == "xor":
+            # XOR is a reduction, so we sum the boolean values and check for oddness.
+            cc = (np.sum(qq, axis=0) & 1).astype(bool)
+        elif cag_op == "difference":
+            # A \ B is equivalent to A & ~B. For multiple args: A \ B \ C -> A & ~B & ~C
+            cc = qq[0]
+            if len(args) > 1:
+                cc &= np.all(~qq[1:], axis=0)
+        else:  # "eq"
+            # Check if all rows in qq are identical for each event/active pair.
+            cc = np.all(qq == qq[0], axis=0)
+
+        # manual pad (faster than np.pad), then diff
+        hshape = (cc.shape[0], cc.shape[1] + 1)
+        yy = np.zeros(hshape, dtype=np.int8)
+        yy[:, 1:] = cc.view(np.int8)
+        hh = np.diff(yy, axis=1)
+
+        # prepare event arrays only once
+        ev0, ev1 = self._nb_events[:-1], self._nb_events[1:]
+        r0, i0 = np.real(ev0), np.imag(ev0)
+        r1, i1 = np.real(ev1), np.imag(ev1)
+
+        # compute all intercepts
+        y0 = self.geometry.y_intercept(actives, r0, i0)
+        y1 = self.geometry.y_intercept(actives, r1, i1)
+
+        # broadcast real parts to match y-shapes (views, no copy)
+        starts = r0[:, None] + y0 * 1j
+        ends = r1[:, None] + y1 * 1j
+
+        # one-shot filter
+        valid = (starts != ends) & ~np.isnan(starts) & (hh != 0)
+        if np.any(valid):
+            segs = np.empty((np.count_nonzero(valid), 5), dtype=complex)
+            segs[:, 0] = starts[valid]
+            segs[:, 1] = 0
+            segs[:, 2] = TYPE_LINE
+            segs[:, 3] = 0
+            segs[:, 4] = ends[valid]
+            g.append_lines(segs)
+
         return g
 
 

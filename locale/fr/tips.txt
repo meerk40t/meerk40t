@@ -1,0 +1,87 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t peut créer ce qu'on appelle un contour autour d'un élément.
+Sélectionnez simplement l'élément, faites un clic droit dessus pour ouvrir le menu contextuel et choisissez dans le menu "Contour des éléments"...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t dispose d'un ensemble étendu de commandes permettant de nombreuses actions scriptables.
+Ouvrez simplement la fenêtre de console et tapez 'help'.
+cmd=pane show console\nhelp
+
+tip=Lorsque vous déplacez votre souris après avoir sélectionné un outil de création d'élément, vous verrez les points d'intérêt voisins s'afficher et être mis en surbrillance s'ils deviennent une cible d'accrochage.
+NB : le comportement d'accrochage sera ignoré si vous appuyez sur la touche Maj, dans ce cas la position actuelle de la souris sera prise en compte
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=La fenêtre de simulation vous permet non seulement de prévisualiser le comportement de votre laser, mais aussi de jouer avec les différentes options d'optimisation et de voir comment elles influencent le résultat.
+ Cliquez simplement sur le symbole '<' à droite et appuyez sur calculer.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t propose plusieurs types de grilles parmi lesquels vous pouvez choisir, y compris une grille circulaire...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+
+tip=Marre d'aligner les objets ? Utilisez la fonction aimant, il suffit de double-cliquer sur l'axe X ou Y pour établir une ligne magnétique.
+Déplacez un élément près de cette ligne et voyez ce qui se passe...
+Faites un clic droit sur l'axe pour plus d'options.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=Vous avez besoin d'une copie rapide d'un élément ? Plusieurs options s'offrent à vous :
+a) Sélectionnez un objet, maintenez la touche Alt enfoncée et déplacez l'objet : vous avez votre copie
+b) Clic droit : choisissez "dupliquer les éléments" dans le menu contextuel
+c) Utilisez les boutons copier et coller dans la barre d'outils
+
+tip=MeerK40t dispose de nombreuses fenêtres fréquemment utilisées appelées panneaux (par exemple, le contrôle laser ou l'arbre des opérations et des éléments).
+Vous pouvez déplacer ces panneaux librement à l'écran, mais aussi les ancrer sur les côtés : déplacez un panneau sur le côté de la fenêtre Meerk40t et une zone ombrée indiquera que la fenêtre peut être ancrée à l'interface utilisateur.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Faites un clic droit sur le nœud supérieur des opérations - ce nœud possède un menu contextuel spécial qui permet d'accéder/régler les propriétés générales des opérations
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t possède des repères, une catégorie spéciale d'éléments qui ne seront pas gravés mais serviront de guide visuel pour le placement des objets.
+Vous pouvez déplacer des éléments dans ou hors de la zone de repères en les faisant glisser dans ou hors de la zone de repères dans l'arbre.
+Les éléments dans la zone de repères agissent comme un arrière-plan, vous ne pouvez plus interagir directement avec eux sur la scène.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=Vous souhaitez aligner correctement un objet sur votre plateau laser ? Pourquoi ne pas ajouter une caméra à votre installation.
+MeerK40t peut utiliser cette caméra pour afficher l'image en direct en arrière-plan de la scène, ce qui simplifie grandement l'alignement.
+Cliquez sur le bouton caméra dans la barre d'outils et calibrez votre image caméra.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Vous pouvez enregistrer et réutiliser les paramètres de gravure, découpe, etc. pour un certain matériau (comme du contreplaqué de 4 mm ou de l'acrylique).
+Utilisez le gestionnaire de matériaux pour gérer les paramètres individuels des matériaux que vous utilisez.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=Saviez-vous que vous pouvez partager vos réglages parfaits pour un matériau avec la communauté MeerK40t et que vous pouvez également bénéficier des contributions des autres ?
+Utilisez le gestionnaire de matériaux pour partager et récupérer des réglages depuis la bibliothèque globale MeerK40t.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=Vous devez convertir un graphique en objet vectoriel ? Double-cliquez sur le graphique et utilisez le panneau de vectorisation...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=Si vous souhaitez que le contenu d'un fichier chargé soit automatiquement placé à un endroit précis
+(par exemple, aligné sur les coins ou au centre du plateau), maintenez la touche Maj enfoncée lors de la sélection du fichier.
+MeerK40t vous demandera alors l'emplacement souhaité.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5

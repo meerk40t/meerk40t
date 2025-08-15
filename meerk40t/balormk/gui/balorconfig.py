@@ -44,11 +44,11 @@ class BalorConfiguration(MWindow):
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         options = (
             ("balor", "Balor"),
-            ("balor-redlight", "Redlight"),
-            ("balor-global", "Global"),
-            ("balor-global-timing", "Timings"),
-            ("balor-extra", "Extras"),
-#            ("balor-corfile", "Correction"),
+            ("balor-redlight", _("Redlight")),
+            ("balor-global", _("Global")),
+            ("balor-global-timing", _("Timings")),
+            ("balor-extra", _("Extras")),
+#            ("balor-corfile", _("Correction")),
         )
         self.test_bits = ""
         injector = (
@@ -60,7 +60,9 @@ class BalorConfiguration(MWindow):
                 "style": "button",
                 "label": _("Test"),
                 "tip": _("Turn red dot on for test purposes"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
                 "subsection": "_30_Pin-Index",
             },
             {
@@ -70,7 +72,9 @@ class BalorConfiguration(MWindow):
                 "type": str,
                 "enabled": False,
                 "label": _("Bits"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
                 "subsection": "_30_Pin-Index",
             },
         )
@@ -230,6 +234,7 @@ class BalorConfiguration(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Configuration")
         return "Device-Settings", "Configuration"
 
     @staticmethod

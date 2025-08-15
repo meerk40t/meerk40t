@@ -95,7 +95,7 @@ def init_commands(kernel):
         except OSError as e:
             channel(str(e))
 
-    @self.console_command("save_types", help=_("save_types"))
+    @self.console_command("save_types", help=_("save_types - display save types"))
     def file_save_types(command, channel, _, **kwargs):
         for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype, version in saver.save_types():

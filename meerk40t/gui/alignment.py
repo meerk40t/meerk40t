@@ -90,7 +90,7 @@ class InfoPanel(wx.Panel):
             c = None
             # Do we have a standard representation?
             if (
-                node.type.startswith("elem ") 
+                node.type.startswith("elem ")
                 and hasattr(node, "stroke")
                 and node.stroke is not None
                 and node.stroke.argb is not None
@@ -1637,6 +1637,7 @@ class Alignment(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for Translation: _("Editing"), _("Element Alignment")
         return "Editing", "Element Alignment"
 
     @staticmethod

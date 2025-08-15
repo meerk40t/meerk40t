@@ -117,6 +117,7 @@ def register_panel_laser(window, context):
             "label": _("Enable Laser Arm"),
             "tip": _("Enable Laser Panel Arm/Disarm feature."),
             "page": "Laser",
+            # Hint for translation _("General")
             "section": "General",
         },
     ]
@@ -331,6 +332,7 @@ class LaserPanel(wx.Panel):
         lb_speed = wxStaticText(self, wx.ID_ANY, _("Speed"))
         self.label_speed = wxStaticText(self, wx.ID_ANY, "0%")
         self.slider_size = 20
+        self.power_mode = "relative"
         self.slider_speed = wx.Slider(
             self, wx.ID_ANY, value=10, minValue=1, maxValue=20
         )
@@ -379,6 +381,11 @@ class LaserPanel(wx.Panel):
         self.button_start_was_clicked = False
 
     def update_override_controls(self):
+        def set_boundaries(slider, current_value, min_value, max_value):
+            slider.SetMin(min_value)
+            slider.SetMax(max_value)
+            slider.SetValue(current_value)
+
         flag_power = False
         override = False
         if (
@@ -393,8 +400,33 @@ class LaserPanel(wx.Panel):
             half = self.slider_size / 2
             sliderval = int(value * half)
             sliderval = max(1, min(self.slider_size, sliderval))
-            self.slider_power.SetValue(sliderval)
-            self.on_slider_speed(None)
+            set_boundaries(self.slider_power, sliderval, 1, self.slider_size)
+            self.slider_power.SetToolTip(
+                _("Increases/decreases the regular laser power by this amount.")
+                + "\n"
+                + _("This affects running jobs, so use with care!")
+            )
+            self.power_mode = "relative"
+            self.on_slider_power(None)
+        elif (
+            hasattr(self.context.device.driver, "has_adjustable_maximum_power")
+            and self.context.device.driver.has_adjustable_maximum_power
+        ):
+            flag_power = True
+            override = True
+            dev_mode = getattr(self.context.kernel.root, "developer_mode", False)
+            # Let's establish the value and update the slider...
+            min_value = 1
+            max_value = 100 if dev_mode else 50
+            sliderval = min(max_value, self.context.device.driver.max_power_scale)
+            set_boundaries(self.slider_power, sliderval, min_value, max_value)
+            self.slider_power.SetToolTip(
+                _("Sets the maximum laser power level.")
+                + "\n"
+                + _("Setting this too high may cause damage to your laser tube!")
+            )
+            self.power_mode = "maximum"
+            self.on_slider_power(None)
         flag_speed = False
         if (
             hasattr(self.context.device.driver, "has_adjustable_speed")
@@ -408,7 +440,7 @@ class LaserPanel(wx.Panel):
             half = self.slider_size / 2
             sliderval = int(value * half)
             sliderval = max(1, min(self.slider_size, sliderval))
-            self.slider_speed.SetValue(sliderval)
+            set_boundaries(self.slider_speed, sliderval, 1, self.slider_size)
             self.on_slider_speed(None)
 
         self.sizer_power.Show(flag_power)
@@ -459,12 +491,18 @@ class LaserPanel(wx.Panel):
 
     def on_slider_power(self, event):
         sliderval = self.slider_power.GetValue()
-        half = self.slider_size / 2
-        newvalue = sliderval - half  # -> -9 to +10
-        factor = 1 + newvalue / half
-        if event is not None:
-            self.context.device.driver.set_power_scale(factor)
-        msg = f"{'+' if factor > 1 else ''}{100 * (factor - 1.0):.0f}%"
+        if self.power_mode == "maximum":
+            # Maximum power mode, so we just set the value.
+            if event is not None:
+                self.context.device.driver.max_power_scale = sliderval
+            msg = f"{sliderval}%"
+        else:
+            half = self.slider_size / 2
+            newvalue = sliderval - half  # -> -9 to +10
+            factor = 1 + newvalue / half
+            if event is not None:
+                self.context.device.driver.set_power_scale(factor)
+            msg = f"{'+' if factor > 1 else ''}{100 * (factor - 1.0):.0f}%"
         self.label_power.SetLabel(msg)
 
     def on_optimize(self, event):
@@ -484,6 +522,14 @@ class LaserPanel(wx.Panel):
             self.context.planner.do_optimization = newvalue
         if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
+
+    @signal_listener("pwm_mode_changed")
+    def on_pwm_mode_changed(self, origin, *message):
+        """
+        This is called when the power scale of the device changes.
+        It updates the slider and label accordingly.
+        """
+        self.update_override_controls()
 
     @signal_listener("device;modified")
     @signal_listener("device;renamed")

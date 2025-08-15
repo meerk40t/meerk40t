@@ -117,6 +117,7 @@ class NewlyDevice(Service, Status):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "priority": "10",
             },
@@ -127,7 +128,9 @@ class NewlyDevice(Service, Status):
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
@@ -139,7 +142,9 @@ class NewlyDevice(Service, Status):
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "priority": "20",
                 "nonzero": True,
@@ -151,7 +156,9 @@ class NewlyDevice(Service, Status):
                 "type": Length,
                 "label": _("Laserspot"),
                 "tip": _("Laser spot size"),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -164,7 +171,9 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("User Offset")
                 "subsection": "_45_User Offset",
             },
             {
@@ -176,7 +185,9 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("User Offset")
                 "subsection": "_45_User Offset",
             },
             {
@@ -195,6 +206,7 @@ class NewlyDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 "subsection": "_50_" + _("Home position"),
             },
@@ -205,7 +217,9 @@ class NewlyDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -215,7 +229,9 @@ class NewlyDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -225,7 +241,9 @@ class NewlyDevice(Service, Status):
                 "type": bool,
                 "label": _("Swap XY"),
                 "tip": _("Swap the X and Y axis for the device"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -234,6 +252,7 @@ class NewlyDevice(Service, Status):
                 "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
             },
@@ -246,6 +265,7 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "priority": "30",
             },
@@ -258,6 +278,7 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
+                # Hint for translation _("General")
                 "section": "_00_General",
             },
             {
@@ -271,6 +292,7 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "File0 is default and instantly executes. The remaining files need to be sent and told to start"
                 ),
+                # Hint for translation _("Output")
                 "section": "_30_Output",
                 "signals": "newly_file_index",
             },
@@ -283,6 +305,7 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
                 ),
+                # Hint for translation _("Output")
                 "section": "_30_Output",
                 "signals": "newly_autoplay",
             },
@@ -309,7 +332,9 @@ class NewlyDevice(Service, Status):
                 "type": float,
                 "label": _("Horizontal DPI"),
                 "tip": _("The Dots-Per-Inch across the X-axis"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis DPI")
                 "subsection": "_20_Axis DPI",
             },
             {
@@ -319,7 +344,9 @@ class NewlyDevice(Service, Status):
                 "type": float,
                 "label": _("Vertical DPI"),
                 "tip": _("The Dots-Per-Inch across the Y-axis"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Axis DPI")
                 "subsection": "_20_Axis DPI",
             },
             {
@@ -330,7 +357,9 @@ class NewlyDevice(Service, Status):
                 "label": _("Horizontal Backlash"),
                 "tip": _("Backlash amount for the laser."),
                 "trailer": "mm",
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Backlash")
                 "subsection": "_30_Backlash",
             },
             {
@@ -341,7 +370,9 @@ class NewlyDevice(Service, Status):
                 "label": _("Vertical Backlash"),
                 "tip": _("Backlash amount for the laser."),
                 "trailer": "mm",
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Backlash")
                 "subsection": "_30_Backlash",
             },
             {
@@ -354,7 +385,9 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Maximum laser power, all other power will be a scale of this amount"
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Power")
                 "subsection": "_40_Power",
             },
             {
@@ -365,7 +398,9 @@ class NewlyDevice(Service, Status):
                 "label": _("Max Pulse Power"),
                 "trailer": "%",
                 "tip": _("What max power level should pulses be fired at?"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pulse")
                 "subsection": "_45_Pulse",
             },
             {
@@ -375,7 +410,9 @@ class NewlyDevice(Service, Status):
                 "type": bool,
                 "label": _("PWM Power"),
                 "tip": _("Power Width Modulation enabled for device."),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Power")
                 "subsection": "_40_Power",
             },
             {
@@ -391,7 +428,9 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Set the frequency of the PWM, how often the pulse width cycles"
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Power")
                 "subsection": "_40_Power",
             },
             {
@@ -401,7 +440,9 @@ class NewlyDevice(Service, Status):
                 "type": int,
                 "label": _("Cut DC"),
                 "tip": _("Set the current for the cut movements."),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Current")
                 "subsection": "_40_Current",
             },
             {
@@ -411,7 +452,9 @@ class NewlyDevice(Service, Status):
                 "type": int,
                 "label": _("Move DC"),
                 "tip": _("Set the current for the regular movements."),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Current")
                 "subsection": "_40_Current",
             },
             {
@@ -423,7 +466,9 @@ class NewlyDevice(Service, Status):
                 "tip": _(
                     "Maximum distance allowed to be done during a raster step/jog"
                 ),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Raster")
                 "subsection": "_50_Raster",
             },
         ]
@@ -438,6 +483,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "mm/s",
                 "label": _("Cut Speed"),
                 "tip": _("How fast do we cut?"),
+                # Hint for translation _("Cut")
                 "subsection": "_10_Cut",
             },
             {
@@ -448,6 +494,7 @@ class NewlyDevice(Service, Status):
                 "label": _("Cut Power"),
                 "trailer": "/1000",
                 "tip": _("What power level do we cut at?"),
+                # Hint for translation _("Cut")
                 "subsection": "_10_Cut",
             },
             {
@@ -458,6 +505,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "ms",
                 "label": _("On Delay"),
                 "tip": _("Delay for laser on?"),
+                # Hint for translation _("Timings")
                 "subsection": "_20_Timings",
             },
             {
@@ -468,6 +516,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "ms",
                 "label": _("Off Delay"),
                 "tip": _("Delay for laser off?"),
+                # Hint for translation _("Timings")
                 "subsection": "_20_Timings",
             },
             {
@@ -478,6 +527,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "mm/s",
                 "label": _("Raster Speed"),
                 "tip": _("How fast do we raster?"),
+                # Hint for translation _("Raster")
                 "subsection": "_30_Raster",
             },
             {
@@ -488,6 +538,7 @@ class NewlyDevice(Service, Status):
                 "label": _("Raster Power"),
                 "trailer": "%",
                 "tip": _("At what power level do we raster?"),
+                # Hint for translation _("Raster")
                 "subsection": "_30_Raster",
             },
             {
@@ -498,6 +549,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "mm/s",
                 "label": _("Moving Speed"),
                 "tip": _("Moving speed while not cutting?"),
+                # Hint for translation _("Moving")
                 "subsection": "_40_Moving",
             },
             {
@@ -508,6 +560,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "mm/s",
                 "label": _("Corner Speed"),
                 "tip": _("Speed to move from acceleration corner to corner?"),
+                # Hint for translation _("Moving")
                 "subsection": "_40_Moving",
             },
             {
@@ -518,6 +571,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "mm",
                 "label": _("Acceleration Distance"),
                 "tip": _("Distance to use to ramp up to speed for movement?"),
+                # Hint for translation _("Moving")
                 "subsection": "_40_Moving",
             },
             {
@@ -528,6 +582,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "mm/s",
                 "label": _("Rect Speed"),
                 "tip": _("Speed to perform frame trace?"),
+                # Hint for translation _("Framing")
                 "subsection": "_50_Framing",
             },
             {
@@ -538,6 +593,7 @@ class NewlyDevice(Service, Status):
                 "trailer": "/1000",
                 "label": _("Rect Power"),
                 "tip": _("Power usage for draw frame operation?"),
+                # Hint for translation _("Framing")
                 "subsection": "_50_Framing",
             },
         ]
@@ -664,15 +720,28 @@ class NewlyDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("Power level"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
+            if power:
+                try:
+                    if power.endswith("%"):
+                        power = float(power[:-1]) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Invalid power value: {power}").format(power=power))
+                    return
+
             if time > 1000.0:
                 channel(
                     _(
@@ -685,7 +754,7 @@ class NewlyDevice(Service, Status):
                 except IndexError:
                     return
             if self.spooler.is_idle:
-                self.spooler.command("pulse", time)
+                self.spooler.command("pulse", time, power)
                 channel(_("Pulse laser for {time} milliseconds").format(time=time))
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -832,6 +901,14 @@ class NewlyDevice(Service, Status):
             return self.name
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
+
+    @property
+    def supports_pwm(self):
+        """
+        Returns whether this device supports PWM.
+        :return: True if the device supports PWM, False otherwise.
+        """
+        return self.pwm_enabled
 
     def service_attach(self, *args, **kwargs):
         self.realize()

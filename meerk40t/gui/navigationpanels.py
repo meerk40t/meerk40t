@@ -1027,10 +1027,16 @@ class Drag(wx.Panel):
         self.context("element* trace quick\n")
         self.drag_ready(True)
 
+    def on_modified(self, *args):
+        # The selection was dragged around by the user, so let's realign the laserposition
+        if self.lockmode != 0:
+            self.align_per_pos(self.lockmode)
+
     def pane_show(self, *args):
         self.context.listen("driver;position", self.on_update)
         self.context.listen("emulator;position", self.on_update)
         self.context.listen("button-repeat", self.on_button_repeat)
+        self.context.listen("modified_by_tool", self.on_modified)
 
     # Not sure whether this is the right thing to do, if it's still locked and then
     # the pane gets hidden?! Let's call it a feature for now...
@@ -1038,6 +1044,7 @@ class Drag(wx.Panel):
         self.context.unlisten("driver;position", self.on_update)
         self.context.unlisten("emulator;position", self.on_update)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+        self.context.unlisten("modified_by_tool", self.on_modified)
 
     def set_timer_options(self):
         interval = self.context.button_repeat
@@ -1789,8 +1796,13 @@ class PulsePanel(wx.Panel):
         self.spin_pulse_duration = wx.SpinCtrl(
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
         )
+        self.text_power = TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1000", check="float"
+        )
+        self.label_power = wxStaticText(self, wx.ID_ANY, "ppi")
         self.__set_properties()
         self.__do_layout()
+        self.update_power_controls()
 
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_pulse, self.button_navigate_pulse
@@ -1813,13 +1825,17 @@ class PulsePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: PulsePanel.__do_layout
-        sizer_5 = StaticBoxSizer(self, wx.ID_ANY, _("Short Pulse:"), wx.HORIZONTAL)
-        sizer_5.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_5.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.main_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Short Pulse:"), wx.HORIZONTAL
+        )
+        self.main_sizer.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.main_sizer.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         label_4 = wxStaticText(self, wx.ID_ANY, _(" ms"))
-        sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.SetSizer(sizer_5)
-        sizer_5.Fit(self)
+        self.main_sizer.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.main_sizer.Add(self.text_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.main_sizer.Add(self.label_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.SetSizer(self.main_sizer)
+        self.main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
 
@@ -1827,10 +1843,67 @@ class PulsePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         value = self.spin_pulse_duration.GetValue()
-        self.context(f"pulse {value}\n")
+        powerstr = ""
+        if self.text_power.IsShown():
+            power = self.text_power.GetValue()
+            if power:
+                try:
+                    power = float(power)
+                except ValueError:
+                    power = None
+            if power:
+                if self.context.device.setting(
+                    bool, "use_percent_for_power_display", False
+                ):
+                    # Convert percent to ppi
+                    power = power * 10
+                power = max(0, min(1000, int(power)))
+                self.context.device.setting(int, "last_pulse_duration", 50)
+                self.context.device.setting(float, "last_pulse_power", 1000)
+                self.context.device.last_pulse_duration = value
+                self.context.device.last_pulse_power = power
+                powerstr = f" -p {power}"
+        self.context(f"pulse {value}{powerstr}\n")
 
     def on_spin_pulse_duration(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
+        dval = self.spin_pulse_duration.GetValue()
+        self.context.device.setting(int, "last_pulse_duration", 50)
+        self.context.device.last_pulse_duration = dval
+
+    def pane_show(self, *args):
+        # Is the current device pwm pulse capable?
+        self.context.listen("activate;device", self.on_update)
+        self.update_power_controls()
+
+    def pane_hide(self, *args):
+        self.context.unlisten("activate;device", self.on_update)
+
+    def on_update(self, origin, *args):
+        self.update_power_controls()
+
+    def update_power_controls(self):
+        show_power = getattr(self.context.device, "supports_pwm", False)
+        self.text_power.Show(show_power)
+        self.label_power.Show(show_power)
+        pval = self.context.device.setting(float, "last_pulse_power", 1000)
+        if pval is None:
+            pval = 1000
+        dval = self.context.device.setting(int, "last_pulse_duration", 50)
+        if dval is None:
+            dval = 50
+        self.spin_pulse_duration.SetValue(dval)
+        if self.context.device.setting(bool, "use_percent_for_power_display", False):
+            self.text_power.SetValue(f"{pval/10.0:.1f}")
+            self.text_power.set_range(0, 100)
+            self.text_power.SetToolTip(_("Set the power of the laser pulse in percent"))
+            self.label_power.SetLabel("%")
+        else:
+            self.text_power.SetValue(f"{pval}")
+            self.text_power.set_range(0, 1000)
+            self.text_power.SetToolTip(_("Set the power of the laser pulse in ppi"))
+            self.label_power.SetLabel("ppi")
+
+        self.main_sizer.Layout()
 
 
 # class SizePanel(wx.Panel):
@@ -2803,6 +2876,7 @@ class Navigation(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for Translation: _("Editing"), _("Jog, Move and Transform")
         return "Editing", "Jog, Move and Transform"
 
     @staticmethod

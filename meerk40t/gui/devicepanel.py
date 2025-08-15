@@ -695,6 +695,7 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Device Manager")
         return "Device-Settings", "Device Manager"
 
     @staticmethod

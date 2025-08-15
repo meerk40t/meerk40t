@@ -7,6 +7,7 @@ from datetime import datetime
 import wx
 from wx import aui
 
+from meerk40t.core.units import Length
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
@@ -24,7 +25,6 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
-from meerk40t.core.units import Length
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -35,6 +35,7 @@ from .autoexec import AutoExec
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
+from .functionwrapper import ConsoleCommandUI
 from .hersheymanager import (
     HersheyFontManager,
     HersheyFontSelector,
@@ -90,7 +91,6 @@ from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
-from .functionwrapper import ConsoleCommandUI
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -107,6 +107,7 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 """
 
 _ = wx.GetTranslation
+
 
 class ActionPanel(wx.Panel):
     def __init__(
@@ -410,6 +411,7 @@ supported_languages = (
     ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
     ("ja", "日本", wx.LANGUAGE_JAPANESE),
     ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
+    ("ru", "русский", wx.LANGUAGE_RUSSIAN),
 )
 
 
@@ -447,6 +449,8 @@ class wxMeerK40t(wx.App, Module):
                 # Potential access denied.
                 pass
         self.supported_languages = supported_languages
+        # for idx, (lang, name, wxlang) in enumerate(supported_languages):
+        #     print (f"Language #{idx:02d} : {lang} - {name}")
         import meerk40t.gui.icons as icons
 
         self.timer = wx.Timer(self, id=wx.ID_ANY)
@@ -563,7 +567,11 @@ class wxMeerK40t(wx.App, Module):
         try:
             if self.context is not None:
                 channel = self.context.kernel.channel("console")
-                self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
+                self.context.elements.load(
+                    os.path.realpath(filename),
+                    svg_ppi=self.context.elements.svg_ppi,
+                    channel=channel,
+                )
         except AttributeError:
             pass
 
@@ -572,7 +580,11 @@ class wxMeerK40t(wx.App, Module):
             if self.context is not None:
                 channel = self.context.kernel.channel("console")
                 for filename in filenames:
-                    self.context.elements.load(os.path.realpath(filename), svg_ppi=self.context.elements.svg_ppi, channel=channel)
+                    self.context.elements.load(
+                        os.path.realpath(filename),
+                        svg_ppi=self.context.elements.svg_ppi,
+                        channel=channel,
+                    )
         except AttributeError:
             pass
 
@@ -814,21 +826,35 @@ class wxMeerK40t(wx.App, Module):
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
-        @kernel.console_argument("func", type=str, help=_("Function to call interactively"))
-        @kernel.console_command("gui", help=_("Provides a GUI wrapper around a console command"))
+        @kernel.console_argument(
+            "func", type=str, help=_("Function to call interactively")
+        )
+        @kernel.console_command(
+            "gui", help=_("Provides a GUI wrapper around a console command")
+        )
         def gui_func(command, channel, _, func=None, **kwargs):
             if func is None:
                 channel(_("You need to provide a function name"))
                 return
             if func in ("gui", "help", "?", "??", "quit", "shutdown", "exit"):
-                channel (_("It does not make sense, to run '{command}' in a GUI").format(command=func))
+                channel(
+                    _("It does not make sense, to run '{command}' in a GUI").format(
+                        command=func
+                    )
+                )
                 return
             context = kernel.root
             try:
                 parent = context.gui
             except AttributeError:
                 parent = None
-            dialog: wx.Dialog = ConsoleCommandUI(parent, wx.ID_ANY, title=_("Command {command}").format(command=func), context=context, command_string=func)
+            dialog: wx.Dialog = ConsoleCommandUI(
+                parent,
+                wx.ID_ANY,
+                title=_("Command {command}").format(command=func),
+                context=context,
+                command_string=func,
+            )
             res = dialog.ShowModal()
             if res == wx.ID_OK:
                 dialog.accept_it()
@@ -859,7 +885,6 @@ class wxMeerK40t(wx.App, Module):
             channel(f"spx (screen) :  {valuex.spx}")
             channel(f"inch         :  {valuex.inches}")
             channel(f"Device units :  {float(valuex) / device.view.native_scale_x:.4f}")
-            
 
     def module_open(self, *args, **kwargs):
         context = self.context
@@ -958,9 +983,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register(
             "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
         )
-        kernel.register(
-            "property/ImageNode/ImageContour", ContourPanel
-        )
+        kernel.register("property/ImageNode/ImageContour", ContourPanel)
 
         kernel.register("window/Console", Console)
         if (
@@ -1064,8 +1087,9 @@ class wxMeerK40t(wx.App, Module):
                 register_panel_crash,
                 register_panel_debugger,
                 register_panel_icon,
-                register_panel_window,
                 register_panel_plotter,
+                register_panel_window,
+                register_panel_view,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
@@ -1073,7 +1097,8 @@ class wxMeerK40t(wx.App, Module):
             kernel.register("wxpane/debug_icons", register_panel_icon)
             kernel.register("wxpane/debug_shutdown", register_panel_crash)
             kernel.register("wxpane/debug_window", register_panel_window)
-            kernel.register("wxpane/debug_plotter", register_panel_plotter) 
+            kernel.register("wxpane/debug_plotter", register_panel_plotter)
+            kernel.register("wxpane/debug_view", register_panel_view)
 
             from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
 
@@ -1086,7 +1111,9 @@ class wxMeerK40t(wx.App, Module):
             wildcard = f"System-Sounds|*.aiff|{wildcard}"
         elif OS_NAME == "Linux":
             wildcard = f"System-Sounds|*.oga;*.wav;*.mp3|{wildcard}"
-            addon = "\n" + _("This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first.")
+            addon = "\n" + _(
+                "This uses the 'play' command that comes with the sox package,\nso you might need to install it with 'sudo apt install sox' first."
+            )
         system_sound = {
             "Windows": r"c:\Windows\Media\Alarm01.wav",
             "Darwin": "/System/Library/Sounds/Ping.aiff",
@@ -1112,9 +1139,12 @@ class wxMeerK40t(wx.App, Module):
                 "style": "file",
                 "wildcard": wildcard,
                 "label": _("Soundfile"),
-                "tip": _("Define the soundfile MeerK40t will play when the 'beep' command is issued") + addon,
+                "tip": _(
+                    "Define the soundfile MeerK40t will play when the 'beep' command is issued"
+                )
+                + addon,
                 "page": "Start",
-            }
+            },
         ]
         kernel.register_choices("preferences", choices)
 

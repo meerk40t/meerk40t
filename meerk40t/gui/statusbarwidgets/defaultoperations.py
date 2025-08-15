@@ -281,7 +281,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
         entries = []
         for material in self.context.elements.op_data.section_set():
-            if material == "previous":
+            if material.startswith("previous"):
                 continue
             opinfo = self.context.elements.load_persistent_op_info(material)
             material_name = opinfo.get("material", "")
@@ -475,7 +475,7 @@ class DefaultOperationWidget(StatusBarWidget):
         # First reset all
         for idx, node in enumerate(self.context.elements.default_operations):
             slabel = self.node_label(node)
-            if slabel:
+            if slabel and idx < len(self.assign_buttons):
                 self.assign_buttons[idx].SetToolTip(slabel)
         oplist = list(self.context.elements.ops())
         for node in oplist:
@@ -490,7 +490,7 @@ class DefaultOperationWidget(StatusBarWidget):
                         slabel = self.node_label(node)
                         if slabel:
                             for idx, op in enumerate(self.assign_operations):
-                                if op.id == opid:
+                                if op.id == opid and idx < len(self.assign_buttons):
                                     self.assign_buttons[idx].SetToolTip(slabel)
                                     break
                         break

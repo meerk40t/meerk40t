@@ -309,6 +309,7 @@ class ExecuteJob(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Burning"), _("Execute Job")
         return "Burning", "Execute Job"
 
     @staticmethod

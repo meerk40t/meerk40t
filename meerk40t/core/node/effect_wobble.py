@@ -2,8 +2,8 @@ import math
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.mixins import Suppressable
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
@@ -65,6 +65,48 @@ class WobbleEffectNode(Node, Suppressable):
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
         return WobbleEffectNode(**nd)
+
+    def get_effect_descriptor(self):
+        """
+        Returns a string descriptor for the effect, concatenating the effect type, wobble radius, wobble interval, wobble speed, and wobble type, separated by pipe ('|') characters.
+
+        Returns:
+            str: A descriptor string in the format "<type>|<wobble_radius>|<wobble_interval>|<wobble_speed>|<wobble_type>".
+        """
+        return f"{self.type}|{self.wobble_radius}|{self.wobble_interval}|{self.wobble_speed}|{self.wobble_type}"
+
+    def set_effect_descriptor(self, descriptor):
+        """
+        Sets the effect parameters from a descriptor string.
+
+        The descriptor should be a string with five components separated by '|':
+        'typeinfo|wobbleradius|wobbleinterval|wobblespeed|wobbletype'.
+
+        If the typeinfo matches the current object's type, updates the wobble
+        parameters (radius, interval, speed, type) and triggers recalculation.
+
+        Parameters:
+            descriptor (str): The effect descriptor string.
+
+        Exceptions:
+            ValueError: Silently ignored if the descriptor cannot be split into five parts.
+        """
+        try:
+            (
+                typeinfo,
+                wobbleradius,
+                wobbleinterval,
+                wobblespeed,
+                wobbletype,
+            ) = descriptor.split("|")
+            if typeinfo == self.type:
+                self.wobble_radius = wobbleradius
+                self.wobble_interval = wobbleinterval
+                self.wobble_speed = wobblespeed
+                self.wobble_type = wobbletype
+                self.recalculate()
+        except ValueError:
+            pass
 
     def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
@@ -225,11 +267,43 @@ class WobbleEffectNode(Node, Suppressable):
                     subs = right_types(e)
                     res.extend(subs)
                 elif e.type.startswith("elem"):
+                    # Is this node hidden? If we autohide, then that's still relevant, if not ignore.
+                    if hasattr(e, "hidden") and e.hidden:
+                        if not self.autohide:
+                            continue
                     res.append(e)
             return res
 
         nodes = right_types(self)
         return nodes
+
+    def as_preview(self):
+        """
+        Prepares the node for display in a preview context.
+        """
+        stored = {
+            prop: getattr(self, prop)
+            for prop in (
+                "wobble_radius",
+                "wobble_interval",
+                "wobble_speed",
+            )
+        }
+        wr = Length(self.wobble_radius)
+        if wr.mm < 1:
+            self.wobble_radius = "1mm"
+        wi = Length(self.wobble_interval)
+        if wi.mm < 0.1:
+            self.wobble_interval = "0.1mm"
+
+        self.recalculate()
+
+        result = self.as_geometry()
+        # Restore original properties
+        for key, value in stored.items():
+            setattr(self, key, value)
+        self.recalculate()
+        return result
 
     def as_geometry(self, **kws) -> Geomstr:
         """
@@ -384,7 +458,11 @@ class WobbleEffectNode(Node, Suppressable):
         self.altered()
 
     def can_drop(self, drag_node):
-        if hasattr(drag_node, "as_geometry") or drag_node.type in ("effect", "file", "group", "reference") or (drag_node.type.startswith("op ") and drag_node.type != "op dots"):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or drag_node.type in ("effect", "file", "group", "reference")
+            or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+        ):
             return True
         return False
 

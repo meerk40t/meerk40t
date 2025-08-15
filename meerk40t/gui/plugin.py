@@ -1,5 +1,6 @@
 import platform
 
+
 def plugin(kernel, lifecycle):
     _ = kernel.translation
     kernel_root = kernel.root
@@ -79,14 +80,16 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
         from meerk40t.gui.themes import Themes
+
         kernel.add_service("themes", Themes(kernel))
 
         from meerk40t.gui.guicolors import GuiColors
+
         kernel.add_service("colors", GuiColors(kernel))
 
         from meerk40t.gui.scene.scene import Scene
-        kernel.register("module/Scene", Scene)
 
+        kernel.register("module/Scene", Scene)
 
     elif lifecycle == "boot":
         kernel_root = kernel.root
@@ -107,8 +110,35 @@ and a wxpython version <= 4.1.1."""
                 "default": True,
                 "type": bool,
                 "label": _("Optimize element display"),
-                "tip": _("Suppresses the drawing of non-visible elements (disable only if you face display issues)"),
+                "tip": _(
+                    "Suppresses the drawing of non-visible elements (disable only if you face display issues)"
+                ),
                 "page": "Gui",
+                # Hint for translation _("General")
+                "section": "General",
+            },
+            {
+                "attr": "simplify_effects",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Simplify Effects"),
+                "tip": _(
+                    "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+                ),
+                "page": "Gui",
+                # Hint for translation _("General")
+                "section": "General",
+            },
+            {
+                "attr": "remember_main_pos",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Remember main window position"),
+                "tip": _("Should MeerK40t remember its last position on the screen?"),
+                "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -119,6 +149,7 @@ and a wxpython version <= 4.1.1."""
                 "label": _("Save Window Positions"),
                 "tip": _("Open Windows at the same place they were last closed"),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -131,6 +162,7 @@ and a wxpython version <= 4.1.1."""
                     "Open the Spooler window automatically when you Execute a Job"
                 ),
                 "page": "Laser",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -148,6 +180,7 @@ and a wxpython version <= 4.1.1."""
                     )
                 ),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -160,6 +193,7 @@ and a wxpython version <= 4.1.1."""
                     "Reverses the direction of the MouseWheel for horizontal & vertical pan"
                 ),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -170,6 +204,7 @@ and a wxpython version <= 4.1.1."""
                 "label": _("Invert MouseWheel Zoom"),
                 "tip": _("Reverses the direction of the MouseWheel for zoom"),
                 "page": "Gui",
+                # Hint for translation _("General")
                 "section": "General",
             },
             {
@@ -190,6 +225,7 @@ and a wxpython version <= 4.1.1."""
                     )
                 ),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
             },
@@ -203,6 +239,7 @@ and a wxpython version <= 4.1.1."""
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
             },
             {
@@ -213,8 +250,11 @@ and a wxpython version <= 4.1.1."""
                 "style": "flat",
                 "label": _("ToolTip delay"),
                 "trailer": "ms",
-                "tip": _("How long do you need to hover over a control before the tooltip appears"),
+                "tip": _(
+                    "How long do you need to hover over a control before the tooltip appears"
+                ),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
             },
@@ -228,6 +268,7 @@ and a wxpython version <= 4.1.1."""
                 "trailer": "ms",
                 "tip": _("How long should the tooltip stay before it disappears"),
                 "page": "Gui",
+                # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
             },
@@ -246,12 +287,22 @@ and a wxpython version <= 4.1.1."""
                 "choices": (1, 2, 3, 4),
                 "label": _("Level"),
                 "tip": (
-                    _("Which warning severity level do you want to recognize") + "\n" +
-                    _("Critical: might damage your laser (e.g. laserhead bumping into rail)") + "\n" +
-                    _("Normal: might ruin your burn (e.g. unassigned=unburnt elements)") + "\n" +
-                    _("Low: I hope you know what your doing (e.g. disabled operations)")
+                    _("Which warning severity level do you want to recognize")
+                    + "\n"
+                    + _(
+                        "Critical: might damage your laser (e.g. laserhead bumping into rail)"
+                    )
+                    + "\n"
+                    + _(
+                        "Normal: might ruin your burn (e.g. unassigned=unburnt elements)"
+                    )
+                    + "\n"
+                    + _(
+                        "Low: I hope you know what your doing (e.g. disabled operations)"
+                    )
                 ),
                 "page": "Gui",
+                # Hint for translation _("Warning-Indicator")
                 "section": "Warning-Indicator",
                 "signals": ("icons", "warn_state_update"),
             },
@@ -327,14 +378,16 @@ and a wxpython version <= 4.1.1."""
 
         kernel.yesno = yesno_popup
 
-        from meerk40t.gui.busy import SimpleBusyInfo, BusyInfo
+        from meerk40t.gui.busy import BusyInfo, SimpleBusyInfo
 
-        kargs = {"kernel": kernel,}
+        kargs = {
+            "kernel": kernel,
+        }
         if kernel.themes.dark:
             kargs["bgcolor"] = kernel.themes.get("win_bg")
             kargs["fgcolor"] = kernel.themes.get("win_fg")
         if kernel.os_information["OS_NAME"] != "Linux":
-            # The Linux implementation of wxWidgets 
+            # The Linux implementation of wxWidgets
             # cannot properly update controls (n idea why,
             # any hint to circumvent this would be welcome)
             kernel.busyinfo = BusyInfo(**kargs)
@@ -378,15 +431,19 @@ and a wxpython version <= 4.1.1."""
             lock.acquire(True)
 
             def message_dialog(*args):
+                msg_continue = _("Press OK to Continue.")
+                msg_abort = _("Press Cancel to abort the Program.")
                 dlg = wx.MessageDialog(
                     None,
-                    message + "\n\n" + _("Press OK to Continue."),
+                    f"{message}\n\n{msg_continue}\n{msg_abort}",
                     _("Interrupt"),
-                    wx.OK,
+                    wx.OK | wx.CANCEL | wx.ICON_INFORMATION,
                 )
-                dlg.ShowModal()
+                result = dlg.ShowModal()
                 dlg.Destroy()
                 lock.release()
+                if result == wx.ID_CANCEL:
+                    kernel.root("estop\n")
 
             if wx.IsMainThread():
                 # If we're in main thread we much call here or livelock.
@@ -400,11 +457,15 @@ and a wxpython version <= 4.1.1."""
             def detect_windows_dpi(context):
                 """Get Windows DPI scaling factor and set DPI awareness."""
                 scale = 100
-                if not (platform.system() == "Windows" and context.setting(bool, "high_dpi", True)):
+                if not (
+                    platform.system() == "Windows"
+                    and context.setting(bool, "high_dpi", True)
+                ):
                     return scale
                 try:
                     # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                     from ctypes import OleDLL
+
                     shcore = OleDLL("shcore")
                     scale = shcore.GetScaleFactorForDevice(0)
                     shcore.SetProcessDpiAwareness(1)
@@ -416,6 +477,7 @@ and a wxpython version <= 4.1.1."""
 
             def detect_bitmap_scaling(icons):
                 import wx
+
                 """
                 wxPython has unfortunately a bug of how it will deal with upscaling.
                 A user can set a scale in the windows display settings. The
@@ -439,9 +501,13 @@ and a wxpython version <= 4.1.1."""
                 return has_scaling_issue, correction
 
             import meerk40t.gui.icons as icons
+
             context = kernel.root
             context.user_scale = detect_windows_dpi(context)
-            context.faulty_bitmap_scaling, context.bitmap_correction_scale = detect_bitmap_scaling(icons)
+            (
+                context.faulty_bitmap_scaling,
+                context.bitmap_correction_scale,
+            ) = detect_bitmap_scaling(icons)
 
             flag = kernel.themes.dark
             icons.DARKMODE = flag
@@ -449,8 +515,16 @@ and a wxpython version <= 4.1.1."""
             sizeme = 150 if flag else 400
             image = icons.icon_meerk40t.GetBitmap(resize=sizeme)
             from ..main import APPLICATION_VERSION
+
             if platform.system() != "Linux":
-                kernel.busyinfo.start(msg=_("Start MeerK40t|V. {version}".format(version=APPLICATION_VERSION)), image=image)
+                kernel.busyinfo.start(
+                    msg=_(
+                        "Start MeerK40t|V. {version}".format(
+                            version=APPLICATION_VERSION
+                        )
+                    ),
+                    image=image,
+                )
                 kernel.busyinfo.change(msg=_("Loading main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
@@ -496,5 +570,5 @@ and a wxpython version <= 4.1.1."""
             except AssertionError as e:
                 # Under Darwin we have every now and then at program end a
                 # wx._core.wxAssertionError: ... in DoScreenToClient(): TopLevel Window missing
-                print (f"MeerK40t encountered an error at shutdown: {e}")
+                print(f"MeerK40t encountered an error at shutdown: {e}")
                 pass

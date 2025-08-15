@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
-from meerk40t.core.units import Length, UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
     icon_cap_butt,
     icon_cap_round,
@@ -41,38 +41,40 @@ class LinecapWidget(StatusBarWidget):
             )
         )
         self.btn_cap_butt = wxStaticBitmap(
-            self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
+            self.parent,
+            id=wx.ID_ANY,
+            size=wx.Size(self.height, -1),
+            style=wx.BORDER_RAISED,
         )
-        isize = int(max(20, self.parent.available_height - 4) * self.context.root.bitmap_correction_scale)
+        isize = int(
+            max(20, self.parent.available_height - 4)
+            * self.context.root.bitmap_correction_scale
+        )
 
-        self.btn_cap_butt.SetBitmap(
-            icon_cap_butt.GetBitmap(
-                resize=isize, buffer=1
-            )
-        )
+        self.btn_cap_butt.SetBitmap(icon_cap_butt.GetBitmap(resize=isize, buffer=1))
         self.btn_cap_butt.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_butt.SetToolTip(_("Set the end of the lines to a butt-shape"))
         self.btn_cap_butt.Bind(wx.EVT_LEFT_DOWN, self.on_cap_butt)
 
         self.btn_cap_round = wxStaticBitmap(
-            self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
+            self.parent,
+            id=wx.ID_ANY,
+            size=wx.Size(self.height, -1),
+            style=wx.BORDER_RAISED,
         )
-        self.btn_cap_round.SetBitmap(
-            icon_cap_round.GetBitmap(
-                resize=isize, buffer=1
-            )
-        )
+        self.btn_cap_round.SetBitmap(icon_cap_round.GetBitmap(resize=isize, buffer=1))
         self.btn_cap_round.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_round.SetToolTip(_("Set the end of the lines to a round-shape"))
         self.btn_cap_round.Bind(wx.EVT_LEFT_DOWN, self.on_cap_round)
 
         self.btn_cap_square = wxStaticBitmap(
-            self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
+            self.parent,
+            id=wx.ID_ANY,
+            size=wx.Size(self.height, -1),
+            style=wx.BORDER_RAISED,
         )
 
-        self.btn_cap_square.SetBitmap(
-            icon_cap_square.GetBitmap(resize=isize, buffer=1)
-        )
+        self.btn_cap_square.SetBitmap(icon_cap_square.GetBitmap(resize=isize, buffer=1))
         self.btn_cap_square.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_square.SetToolTip(_("Set the end of the lines to a square-shape"))
         self.btn_cap_square.Bind(wx.EVT_LEFT_DOWN, self.on_cap_square)
@@ -116,16 +118,14 @@ class LinejoinWidget(StatusBarWidget):
             )
         )
         isize = int(
-            max(20, self.parent.available_height - 4) *
-            self.context.root.bitmap_correction_scale
+            max(20, self.parent.available_height - 4)
+            * self.context.root.bitmap_correction_scale
         )
         self.btn_join_bevel = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
 
-        self.btn_join_bevel.SetBitmap(
-            icon_join_bevel.GetBitmap(resize=isize, buffer=1)
-        )
+        self.btn_join_bevel.SetBitmap(icon_join_bevel.GetBitmap(resize=isize, buffer=1))
         self.btn_join_bevel.SetMaxSize(wx.Size(50, -1))
         self.btn_join_bevel.SetToolTip(_("Set the join of the lines to a bevel-shape"))
         self.btn_join_bevel.Bind(wx.EVT_LEFT_DOWN, self.on_join_bevel)
@@ -133,9 +133,7 @@ class LinejoinWidget(StatusBarWidget):
         self.btn_join_round = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
-        self.btn_join_round.SetBitmap(
-            icon_join_round.GetBitmap(resize=isize, buffer=1)
-        )
+        self.btn_join_round.SetBitmap(icon_join_round.GetBitmap(resize=isize, buffer=1))
         self.btn_join_round.SetMaxSize(wx.Size(50, -1))
         self.btn_join_round.SetToolTip(_("Set the join of lines to a round-shape"))
         self.btn_join_round.Bind(wx.EVT_LEFT_DOWN, self.on_join_round)
@@ -143,9 +141,7 @@ class LinejoinWidget(StatusBarWidget):
         self.btn_join_miter = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
-        self.btn_join_miter.SetBitmap(
-            icon_join_miter.GetBitmap(resize=isize, buffer=1)
-        )
+        self.btn_join_miter.SetBitmap(icon_join_miter.GetBitmap(resize=isize, buffer=1))
         self.btn_join_miter.SetMaxSize(wx.Size(50, -1))
         self.btn_join_miter.SetToolTip(_("Set the join of lines to a miter-shape"))
         self.btn_join_miter.Bind(wx.EVT_LEFT_DOWN, self.on_join_miter)
@@ -207,12 +203,15 @@ class FillruleWidget(StatusBarWidget):
             )
         )
         isize = int(
-            max(20, self.parent.available_height - 4) *
-            self.context.root.bitmap_correction_scale
+            max(20, self.parent.available_height - 4)
+            * self.context.root.bitmap_correction_scale
         )
 
         self.btn_fill_nonzero = wxStaticBitmap(
-            self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
+            self.parent,
+            id=wx.ID_ANY,
+            size=wx.Size(self.height, -1),
+            style=wx.BORDER_RAISED,
         )
         self.btn_fill_nonzero.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_nonzero.SetBitmap(
@@ -222,7 +221,10 @@ class FillruleWidget(StatusBarWidget):
         self.btn_fill_nonzero.Bind(wx.EVT_LEFT_DOWN, self.on_fill_nonzero)
 
         self.btn_fill_evenodd = wxStaticBitmap(
-            self.parent, id=wx.ID_ANY, size=wx.Size(self.height, -1), style=wx.BORDER_RAISED
+            self.parent,
+            id=wx.ID_ANY,
+            size=wx.Size(self.height, -1),
+            style=wx.BORDER_RAISED,
         )
         self.btn_fill_evenodd.SetBitmap(
             icon_fill_evenodd.GetBitmap(resize=isize, buffer=1)
@@ -289,18 +291,27 @@ class PositionWidget(StatusBarWidget):
             self.parent, wx.ID_ANY, label=self.units[self.unit_index]
         )
         icon_size = int(
-            max(20, self.parent.available_height - 4) *
-            self.context.root.bitmap_correction_scale
+            max(20, self.parent.available_height - 8)
+            * self.context.root.bitmap_correction_scale
         )
 
-        self.button_lock_ratio = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
+        self.button_lock_ratio = wxStaticBitmap(
+            self.parent,
+            id=wx.ID_ANY,
+            size=wx.Size(icon_size, -1),
+            style=wx.BORDER_RAISED,
+        )
         self.bitmap_locked = icons8_lock.GetBitmap(resize=icon_size, use_theme=False)
-        self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=icon_size, use_theme=False)
+        self.bitmap_unlocked = icons8_unlock.GetBitmap(
+            resize=icon_size, use_theme=False
+        )
 
         self.offset_index = 0  # 0 to 8 tl tc tr cl cc cr bl bc br
         self.offset_x = 0.0
         self.offset_y = 0.0
-        self.button_param = wxStaticBitmap(self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_RAISED)
+        self.button_param = wxStaticBitmap(
+            self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_NONE
+        )
         self.pos_bitmaps = self.calculate_icons(icon_size)
         self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
 
@@ -369,8 +380,7 @@ class PositionWidget(StatusBarWidget):
         )
 
         self._lock_ratio = True
-        self.lock_ratio =  self.context.lock_active
-
+        self.lock_ratio = self.context.lock_active
 
     @property
     def units_name(self):
@@ -448,7 +458,10 @@ class PositionWidget(StatusBarWidget):
             self.unit_index = 0
         if self.unit_index < 0:
             self.unit_index = len(self.units) - 1
-        self.unit_lbl.SetLabel(self.units[self.unit_index])
+        new_unit = self.units[self.unit_index]
+        self.unit_lbl.SetLabel(new_unit)
+        self.context._display_unit = new_unit
+        self.context.signal("refresh_scene", "Scene")
         self.update_position(True)
 
     def on_click_units_l(self, event):

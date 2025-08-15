@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxButton, wxStaticText
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -99,7 +99,8 @@ class GRBLControllerPanel(wx.Panel):
             if entry[3] is not None:
                 btn.SetBitmap(
                     entry[3].GetBitmap(
-                        resize=0.5 * get_default_icon_size(self.context), use_theme=False
+                        resize=0.5 * get_default_icon_size(self.context),
+                        use_theme=False,
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
@@ -256,15 +257,21 @@ class GRBLControllerPanel(wx.Panel):
                     self.command_log.append(f"Macro {idx + 1}: {line}")
                 else:
                     self.service.driver(f"{line}{self.service.driver.line_end}")
+
         return handler
 
     def edit_macro(self, idx):
         def handler(event):
             macro = str(self.macros[idx])
             dlg = wx.TextEntryDialog(
-                self, _("Content for macro {index}").format(index = idx + 1),
+                self,
+                _("Content for macro {index}").format(index=idx + 1),
                 value=macro,
-                style=wx.TE_MULTILINE | wx.OK | wx.CANCEL | wx.CENTRE | wx.ICON_QUESTION,
+                style=wx.TE_MULTILINE
+                | wx.OK
+                | wx.CANCEL
+                | wx.CENTRE
+                | wx.ICON_QUESTION,
             )
             dlg.ShowModal()
             newmacro = dlg.GetValue()
@@ -478,6 +485,7 @@ class GRBLController(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for Translation: _("Device-Control"), _("GRBL Controller")
         return "Device-Control", "GRBL Controller"
 
     @staticmethod

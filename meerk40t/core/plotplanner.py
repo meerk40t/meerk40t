@@ -47,7 +47,7 @@ class PlotPlanner(Parameters):
         ppi=True,
         shift=True,
         group=True,
-        require_uniform_movement = True,
+        require_uniform_movement=True,
         **kwargs,
     ):
         super().__init__(settings, **kwargs)
@@ -69,16 +69,20 @@ class PlotPlanner(Parameters):
 
         if single:
             self.single = Single(self)
-        if ppi:
-            self.ppi = PPI(self)
         if shift:
             self.shift = Shift(self)
         if group:
             self.group = Group(self)
+        self.set_ppi(ppi)
 
         self.pos_x = None
         self.pos_y = None
         self.settings_then_jog = False
+
+    def set_ppi(self, ppi):
+        self.ppi = None
+        if ppi:
+            self.ppi = PPI(self)
 
     def push(self, plot):
         self.abort = False
@@ -653,4 +657,3 @@ def grouped(plot):
         group_y = y
     # There are no more plots.
     yield group_x, group_y
-    

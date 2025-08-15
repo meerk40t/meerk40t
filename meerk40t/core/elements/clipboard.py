@@ -77,8 +77,8 @@ def init_commands(kernel):
         self.signal("icons")
         return "elements", self._clipboard[destination]
 
-    @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
-    @self.console_option("dy", "y", help=_("paste offset y"), type=Length, default=0)
+    @self.console_option("dx", "x", help=_("paste offset x"), type=str, default=0)
+    @self.console_option("dy", "y", help=_("paste offset y"), type=str, default=0)
     @self.console_command(
         "paste",
         help=_("clipboard paste"),
@@ -123,15 +123,11 @@ def init_commands(kernel):
         if len(pasted) == 0:
             channel(_("Error: Clipboard Empty"))
             return
-
-        if dx is not None:
-            dx = float(dx)
-        else:
-            dx = 0
-        if dy is not None:
-            dy = float(dy)
-        else:
-            dy = 0
+        lensett = self.length_settings()
+        # fmt: off
+        dx = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+        dy = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+        # fmt: on
         if dx != 0 or dy != 0:
             matrix = Matrix.translate(dx, dy)
             for node in pasted:
@@ -139,7 +135,9 @@ def init_commands(kernel):
         # _("Clipboard paste")
         with self.undoscope("Clipboard paste"):
             if len(pasted) > 1:
-                group = self.elem_branch.add(type="group", label="Group", id="Copy", expanded=True)
+                group = self.elem_branch.add(
+                    type="group", label="Group", id="Copy", expanded=True
+                )
             else:
                 group = self.elem_branch
             target = []

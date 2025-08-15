@@ -1237,6 +1237,7 @@ class JobSpooler(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Burning"), _("Spooler")
         return "Burning", "Spooler"
 
     @staticmethod

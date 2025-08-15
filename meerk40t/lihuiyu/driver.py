@@ -12,12 +12,15 @@ import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.dwellcut import DwellCut
 from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
@@ -194,6 +197,18 @@ class LihuiyuDriver(Parameters):
     def __call__(self, e):
         self.out_pipe.write(e)
 
+    @property
+    def has_adjustable_maximum_power(self):
+        return self.service.supports_pwm
+
+    @property
+    def max_power_scale(self):
+        return self.service.power_scale
+
+    @max_power_scale.setter
+    def max_power_scale(self, value):
+        self.service.power_scale = value
+
     def get_internal_queue_status(self):
         return self._queue_current, self._queue_total
 
@@ -205,6 +220,7 @@ class LihuiyuDriver(Parameters):
         self.plot_planner.force_shift = self.service.plot_shift
         self.plot_planner.phase_type = self.service.plot_phase_type
         self.plot_planner.phase_value = self.service.plot_phase_value
+        self.plot_planner.set_ppi(not self.service.supports_pwm)
 
     def hold_work(self, priority):
         """
@@ -384,7 +400,7 @@ class LihuiyuDriver(Parameters):
         self.rapid_mode()
         self._move_relative(unit_dx, unit_dy)
 
-    def dwell(self, time_in_ms):
+    def dwell(self, time_in_ms, settings=None):
         """
         Requests that the laser fire in place for the given time period. This could be done in a series of commands,
         move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
@@ -393,9 +409,12 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
+        power = settings.get("power", None) if settings else None
         self.rapid_mode()
         self.wait_finish()
-        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.laser_on(
+            power=power
+        )  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
 
@@ -421,7 +440,7 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         return True
 
-    def laser_on(self):
+    def laser_on(self, power=None):
         """
         Turn laser on in place.
 
@@ -429,6 +448,9 @@ class LihuiyuDriver(Parameters):
         """
         if self.laser:
             return False
+        if power is not None and self.service.supports_pwm:
+            self.send_at_pwm_code(power)
+
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_ON)
@@ -442,6 +464,18 @@ class LihuiyuDriver(Parameters):
             self(b"N")
         self.laser = True
         return True
+
+    def send_at_pwm_code(self, power: float = 1000.0):
+        if len(self.out_pipe) > 0:
+            self(b"\n")
+        self.wait_finish()
+        self.rapid_mode()
+        power = max(0.0, min(power, 1000.0)) * self.service.power_scale / 100.0
+        m = int(power / 254)
+        n = int(power % 254)
+        # AT commands will be flushed out immediately
+        packet = bytes((ord("A"), ord("T"), ord("1"), m, n, ord("\n")))
+        self(packet)
 
     def rapid_mode(self, *values):
         """
@@ -537,6 +571,8 @@ class LihuiyuDriver(Parameters):
         else:
             # Unidirectional (step on forward swing - rasters only going forward)
             raster_step_value = self._raster_step_g_value, 0
+        # We don't allow in situ power changes in raster mode.
+        power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -548,6 +584,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=False,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=horizontal,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -593,7 +630,12 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
-
+        if self.service.supports_pwm and self.service.pwm_speedcode:
+            # If we are using PWM speedcode, we need to set the power value.
+            power_val = self.power * self.service.power_scale / 100.0
+        else:
+            # If we are not using PWM speedcode, we do not set the power value.
+            power_val = None
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -605,6 +647,7 @@ class LihuiyuDriver(Parameters):
             suffix_c=suffix_c,
             fix_speeds=self.service.fix_speeds,
             raster_horizontal=self._horizontal_major,
+            power_value=power_val,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
@@ -679,12 +722,39 @@ class LihuiyuDriver(Parameters):
         """
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             if segment_type == "line":
+                plot = LineCut(
+                    start,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "end":
                 pass
             elif segment_type == "quad":
+                plot = QuadCut(
+                    start,
+                    c1,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "cubic":
+                plot = CubicCut(
+                    start,
+                    c1,
+                    c2,
+                    end,
+                    settings={
+                        "power": sets.get("power", 1000.0),
+                        "speed": sets.get("speed", self.speed),
+                    },
+                )
                 self.plot_planner.push(plot)
             elif segment_type == "arc":
                 interp = 50
@@ -693,7 +763,15 @@ class LihuiyuDriver(Parameters):
                 g.arc(start, c1, end)
                 last = start
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    self.plot_planner.push((last, p))
+                    plot = LineCut(
+                        last,
+                        p,
+                        settings={
+                            "power": sets.get("power", 1000.0),
+                            "speed": sets.get("speed", self.speed),
+                        },
+                    )
+                    self.plot_planner.push(plot)
                     last = p
             elif segment_type == "point":
                 function = sets.get("function")
@@ -702,6 +780,7 @@ class LihuiyuDriver(Parameters):
                     self.rapid_mode()
                     self._move_absolute(start.real, start.imag)
                     self.wait_finish()
+                    self._set_power(sets.get("power", 1000.0))
                     self.dwell(sets.get("dwell_time"))
                 elif function == "wait":
                     self.plot_start()
@@ -915,6 +994,9 @@ class LihuiyuDriver(Parameters):
         # We don't know the length of a generator object
         total = 0
         current = 0
+        # Start with no power assumptions, so that power will be set by the first
+        # PLOT_SETTING command.
+        self.power = None
         for x, y, on in self.plot_data:
             current += 1
             total = current
@@ -924,7 +1006,10 @@ class LihuiyuDriver(Parameters):
             sx = self.native_x
             sy = self.native_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
-            on = int(on)
+            if self.state == DRIVER_STATE_RASTER and on >= 0.3 and on < 1:
+                on = 1
+            else:
+                on = int(on)
             if on > 1:
                 # Special Command.
                 if on & PLOT_FINISH:  # Plot planner is ending.
@@ -932,8 +1017,7 @@ class LihuiyuDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = Parameters(self.plot_planner.settings)
-                    if p_set.power != self.power:
-                        self._set_power(p_set.power)
+                    self._set_power(p_set.power)
                     if (
                         p_set.raster_step_x != self.raster_step_x
                         or p_set.raster_step_y != self.raster_step_y
@@ -1024,11 +1108,10 @@ class LihuiyuDriver(Parameters):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
+        self.power = min(1000, max(0, power))
+        self.settings["power"] = self.power
+        if self.service.supports_pwm:
+            self.send_at_pwm_code(self.power)
 
     def _set_ppi(self, power=1000.0):
         self.power = power
@@ -1463,4 +1546,18 @@ class LihuiyuDriver(Parameters):
             self._x_engaged = False
             self._y_engaged = True
             return x_dir + y_dir
-        
+
+    # def get_board_info(self):
+    #     try:
+    #         self.out_pipe.write_raw(b"\xac\x2e", 73 - 27)
+    #     except AttributeError:
+    #         pass
+
+    # def get_param_info(self):
+    #     try:
+    #         self.out_pipe.write_raw(b"\xac\xe0", 251 - 27)
+    #     except AttributeError:
+    #         pass
+
+    def get_m3_hardware_info(self):
+        self(b"AT01")

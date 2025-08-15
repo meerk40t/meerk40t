@@ -59,6 +59,7 @@ class MoshiDevice(Service, Status):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "signals": "device;renamed",
             },
@@ -69,7 +70,9 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -80,7 +83,9 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -91,7 +96,9 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Laserspot"),
                 "tip": _("Laser spot size"),
+                # Hint for translation _("General")
                 "section": "_00_General",
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -104,7 +111,9 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Scale")
                 "subsection": "_05_Scale",
             },
             {
@@ -116,7 +125,9 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Scale")
                 "subsection": "_05_Scale",
             },
             {
@@ -128,7 +139,9 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("User Offset")
                 "subsection": "_20_User Offset",
             },
             {
@@ -140,7 +153,9 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("User Offset")
                 "subsection": "_20_User Offset",
             },
             {
@@ -150,7 +165,9 @@ class MoshiDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Flip Axis")
                 "subsection": "_30_Flip Axis",
             },
             {
@@ -160,7 +177,9 @@ class MoshiDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Flip Axis")
                 "subsection": "_30_Flip Axis",
             },
             {
@@ -172,7 +191,9 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Flip Axis")
                 "subsection": "_30_Flip Axis",
             },
             {
@@ -191,6 +212,7 @@ class MoshiDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
                 "subsection": "_40_" + _("Home position"),
             },
@@ -201,6 +223,7 @@ class MoshiDevice(Service, Status):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+                # Hint for translation _("Behaviour")
                 "section": "_20_Behaviour",
             },
             {
@@ -218,6 +241,7 @@ class MoshiDevice(Service, Status):
                         "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
                     )
                 ),
+                # Hint for translation _("Behaviour")
                 "section": "_20_Behaviour",
             },
             {
@@ -229,6 +253,7 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                # Hint for translation _("Interface")
                 "section": "_30_Interface",
             },
             {

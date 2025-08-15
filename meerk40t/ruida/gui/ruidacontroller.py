@@ -180,7 +180,8 @@ class RuidaController(MWindow):
 
     @staticmethod
     def submenu():
-        return "Device-Control", "Balor-Controller"
+        # Hint for translation: _("Device-Control"), _("Ruida-Controller")
+        return "Device-Control", "Ruida-Controller"
 
     @staticmethod
     def helptext():

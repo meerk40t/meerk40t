@@ -85,9 +85,9 @@ def init_commands(kernel):
     # ==========
     # ELEMENT/SHAPE COMMANDS
     # ==========
-    @self.console_argument("x_pos", type=Length)
-    @self.console_argument("y_pos", type=Length)
-    @self.console_argument("r_pos", type=Length)
+    @self.console_argument("x_pos", type=str, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=str, help=_("Y-coordinate of center"))
+    @self.console_argument("r_pos", type=str, help=_("Radius of the circle"))
     @self.console_command(
         "circle",
         help=_("circle <x> <y> <r>"),
@@ -96,11 +96,20 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rp = float(Length(r_pos, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
-            cx=float(x_pos),
-            cy=float(y_pos),
-            rx=float(r_pos),
-            ry=float(r_pos),
+            cx=xp,
+            cy=yp,
+            rx=rp,
+            ry=rp,  # Secondary radius equal to primary radius for circle
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
@@ -115,39 +124,14 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("r_pos", type=Length)
-    @self.console_command(
-        "circle_r",
-        help=_("circle_r <r>"),
-        input_type=("elements", None),
-        output_type="elements",
-        all_arguments_required=True,
+    @self.console_argument("x_pos", type=str, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=str, help=_("Y-coordinate of center"))
+    @self.console_argument("rx", type=str, help=_("Primary radius of ellipse"))
+    @self.console_argument(
+        "ry",
+        type=str,
+        help=_("Secondary radius of ellipse (default equal to primary radius=circle)"),
     )
-    def element_circle_r(channel, _, r_pos, data=None, post=None, **kwargs):
-        node = self.elem_branch.add(
-            cx=0,
-            cy=0,
-            rx=float(r_pos),
-            ry=float(r_pos),
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
-        node.altered()
-        self.set_emphasis([node])
-        node.focus()
-        if data is None:
-            data = list()
-        data.append(node)
-        # Newly created! Classification needed?
-        post.append(classify_new(data))
-        return "elements", data
-
-    @self.console_argument("x_pos", type=Length)
-    @self.console_argument("y_pos", type=Length)
-    @self.console_argument("rx", type=Length)
-    @self.console_argument("ry", type=Length)
     @self.console_command(
         "ellipse",
         help=_("ellipse <cx> <cy> <rx> <ry>"),
@@ -158,11 +142,22 @@ def init_commands(kernel):
     def element_ellipse(
         channel, _, x_pos, y_pos, rx, ry, data=None, post=None, **kwargs
     ):
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett))
+            # If ry is not provided, use rx as the secondary radius
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
-            cx=float(x_pos),
-            cy=float(y_pos),
-            rx=float(rx),
-            ry=float(ry),
+            cx=xp,
+            cy=yp,
+            rx=rx,
+            ry=ry,
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
@@ -178,12 +173,12 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("x_pos", type=Length, help=_("X-coordinate of center"))
-    @self.console_argument("y_pos", type=Length, help=_("Y-coordinate of center"))
-    @self.console_argument("rx", type=Length, help=_("Primary radius of ellipse"))
+    @self.console_argument("x_pos", type=str, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=str, help=_("Y-coordinate of center"))
+    @self.console_argument("rx", type=str, help=_("Primary radius of ellipse"))
     @self.console_argument(
         "ry",
-        type=Length,
+        type=str,
         help=_("Secondary radius of ellipse (default equal to primary radius=circle)"),
     )
     @self.console_argument(
@@ -214,26 +209,31 @@ def init_commands(kernel):
         post=None,
         **kwargs,
     ):
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett))
+            # If ry is not provided, use rx as the secondary radius
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         if start_angle is None:
             start_angle = Angle("0deg")
         if end_angle is None:
             end_angle = Angle("360deg")
         if rotation is None:
             rotation = Angle("0deg")
-        if ry is None:
-            ry = rx
-        rx_val = float(rx)
-        ry_val = float(ry)
-        cx = float(x_pos)
-        cy = float(y_pos)
         geom = Geomstr()
         geom.arc_as_cubics(
             start_t=start_angle.radians,
             end_t=end_angle.radians,
-            rx=rx_val,
-            ry=ry_val,
-            cx=cx,
-            cy=cy,
+            rx=rx,
+            ry=ry,
+            cx=x_pos,
+            cy=y_pos,
             rotation=rotation.radians,
         )
         node = self.elem_branch.add(
@@ -257,26 +257,18 @@ def init_commands(kernel):
 
     @self.console_argument(
         "x_pos",
-        type=self.length_x,
+        type=str,
         help=_("x position for top left corner of rectangle."),
     )
     @self.console_argument(
         "y_pos",
-        type=self.length_y,
+        type=str,
         help=_("y position for top left corner of rectangle."),
     )
-    @self.console_argument(
-        "width", type=self.length_x, help=_("width of the rectangle.")
-    )
-    @self.console_argument(
-        "height", type=self.length_y, help=_("height of the rectangle.")
-    )
-    @self.console_option(
-        "rx", "x", type=self.length_x, help=_("rounded rx corner value.")
-    )
-    @self.console_option(
-        "ry", "y", type=self.length_y, help=_("rounded ry corner value.")
-    )
+    @self.console_argument("width", type=str, help=_("width of the rectangle."))
+    @self.console_argument("height", type=str, help=_("height of the rectangle."))
+    @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
+    @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
     @self.console_command(
         "rect",
         help=_("adds rectangle to scene"),
@@ -300,6 +292,18 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett)) if rx else 0
+            ry = float(Length(ry, relative_length=self.device.view.height, settings=lensett)) if ry else rx
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
             x=x_pos,
             y=y_pos,
@@ -321,10 +325,10 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("x0", type=self.length_x, help=_("start x position"))
-    @self.console_argument("y0", type=self.length_y, help=_("start y position"))
-    @self.console_argument("x1", type=self.length_x, help=_("end x position"))
-    @self.console_argument("y1", type=self.length_y, help=_("end y position"))
+    @self.console_argument("x0", type=str, help=_("start x position"))
+    @self.console_argument("y0", type=str, help=_("start y position"))
+    @self.console_argument("x1", type=str, help=_("end x position"))
+    @self.console_argument("y1", type=str, help=_("end y position"))
     @self.console_command(
         "line",
         help=_("adds line to scene"),
@@ -336,11 +340,21 @@ def init_commands(kernel):
         """
         Draws a svg line in the scene.
         """
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            ax = float(Length(x0, relative_length=self.device.view.width, settings=lensett))
+            ay = float(Length(y0, relative_length=self.device.view.height, settings=lensett))
+            bx = float(Length(x1, relative_length=self.device.view.width, settings=lensett))
+            by = float(Length(y1, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         node = self.elem_branch.add(
-            x1=x0,
-            y1=y0,
-            x2=x1,
-            y2=y1,
+            x1=ax,
+            y1=ay,
+            x2=bx,
+            y2=by,
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             type="elem line",
@@ -406,7 +420,7 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
 
     @self.console_option("etype", "e", type=str, default="scanline")
-    @self.console_option("distance", "d", type=Length, default=None)
+    @self.console_option("distance", "d", type=str, default=None)
     @self.console_option("angle", "a", type=Angle, default=None)
     @self.console_option("angle_delta", "b", type=Angle, default=None)
     @self.console_command(
@@ -429,7 +443,12 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
-
+        lensett = self.length_settings()
+        try:
+            distance = Length(distance, settings=lensett) if distance else None
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -477,8 +496,8 @@ def init_commands(kernel):
         node.focus()
 
     @self.console_option("wtype", "w", type=str, default="circle")
-    @self.console_option("radius", "r", type=Length, default=None)
-    @self.console_option("interval", "i", type=Length, default=None)
+    @self.console_option("radius", "r", type=str, default=None)
+    @self.console_option("interval", "i", type=str, default=None)
     @self.console_command(
         "effect-wobble",
         help=_("adds wobble-effect to selected elements"),
@@ -498,6 +517,7 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
+        lensett = self.length_settings()
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -521,14 +541,14 @@ def init_commands(kernel):
             channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
         try:
-            rlen = Length(radius)
+            rlen = Length(radius, settings=lensett)
         except ValueError:
-            channel("Invalid value for radius")
+            channel(_("Invalid length value."))
             return
         try:
-            ilen = Length(interval)
+            ilen = Length(interval, settings=lensett) if interval else None
         except ValueError:
-            channel("Invalid value for interval")
+            channel(_("Invalid length value."))
             return
         first_node = data[0]
         node = first_node.parent.add(
@@ -819,7 +839,16 @@ def init_commands(kernel):
                 return
             else:
                 try:
-                    new_value = float(Length(new_value))
+                    lensett = self.length_settings()
+                    if prop in ("x", "width"):
+                        rlen = self.device.view.width
+                    elif prop in ("y", "height"):
+                        rlen = self.device.view.height
+                    else:
+                        rlen = None
+                    new_value = float(
+                        Length(new_value, relative_length=rlen, settings=lensett)
+                    )
                     prevalidated = True
                 except ValueError:
                     channel(_("Invalid length: {value}").format(value=new_value))
@@ -1285,7 +1314,7 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
+    @self.console_argument("mlist", type=str, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
         help=_("poly(gon|line) (Length Length)*"),
@@ -1294,8 +1323,9 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_poly(command, channel, _, mlist, data=None, post=None, **kwargs):
+        lensett = self.length_settings()
         try:
-            pts = [float(Length(p)) for p in mlist]
+            pts = [float(Length(p, settings=lensett)) for p in mlist]
             if command == "polygon":
                 shape = Polygon(pts)
             else:
@@ -1965,15 +1995,11 @@ def init_commands(kernel):
                 self.signal("refresh_scene", "Scene")
         return "elements", data
 
-    @self.console_argument(
-        "x_offset", type=self.length_x, help=_("x offset."), default="0"
-    )
-    @self.console_argument(
-        "y_offset", type=self.length_y, help=_("y offset"), default="0"
-    )
+    @self.console_argument("x_offset", type=str, help=_("x offset."), default="0")
+    @self.console_argument("y_offset", type=str, help=_("y offset"), default="0")
     @self.console_command(
         "frame",
-        help=_("Draws a frame the current selected elements"),
+        help=_("Draws a frame around the currently selected elements"),
         input_type=(
             None,
             "elements",
@@ -1993,6 +2019,14 @@ def init_commands(kernel):
         """
         Draws an outline of the current shape.
         """
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_offset = float(Length(x_offset, relative_length=self.device.view.width, settings=lensett))
+            y_offset = float(Length(y_offset, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         bounds = self.selected_area()
         if bounds is None:
             channel(_("Nothing Selected"))
@@ -2023,8 +2057,8 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument("angle", type=Angle, help=_("angle to rotate by"))
-    @self.console_option("cx", "x", type=self.length_x, help=_("center x"))
-    @self.console_option("cy", "y", type=self.length_y, help=_("center y"))
+    @self.console_option("cx", "x", type=str, help=_("center x"))
+    @self.console_option("cy", "y", type=str, help=_("center y"))
     @self.console_option(
         "absolute",
         "a",
@@ -2080,7 +2114,12 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("No selected elements."))
             return
-
+        lensett = self.length_settings()
+        try:
+            cx = float(Length(cx, settings=lensett)) if cx is not None else None
+            cy = float(Length(cy, settings=lensett)) if cy is not None else None
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         if cx is None:
             cx = (bounds[2] + bounds[0]) / 2.0
         if cy is None:
@@ -2116,8 +2155,8 @@ def init_commands(kernel):
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
     @self.console_argument("scale_y", type=str, help=_("scale_y value"))
-    @self.console_option("px", "x", type=self.length_x, help=_("scale x origin point"))
-    @self.console_option("py", "y", type=self.length_y, help=_("scale y origin point"))
+    @self.console_option("px", "x", type=str, help=_("scale x origin point"))
+    @self.console_option("py", "y", type=str, help=_("scale y origin point"))
     @self.console_option(
         "absolute",
         "a",
@@ -2163,6 +2202,12 @@ def init_commands(kernel):
             channel(_("No selected elements."))
             return
         # print (f"Start: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+        lensett = self.length_settings()
+        try:
+            px = float(Length(px, settings=lensett)) if px is not None else None
+            py = float(Length(py, settings=lensett)) if py is not None else None
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         factor = 1
         if scale_x.endswith("%"):
             factor = 0.01
@@ -2308,8 +2353,8 @@ def init_commands(kernel):
         return "elements", data
         # Do we have a new value to set? If yes scale by sqrt(of the fraction)
 
-    @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
+    @self.console_argument("tx", type=str, help=_("translate x value"))
+    @self.console_argument("ty", type=str, help=_("translate y value"))
     @self.console_option(
         "absolute",
         "a",
@@ -2345,6 +2390,12 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+        lensett = self.length_settings()
+        try:
+            tx = float(Length(tx, settings=lensett)) if tx is not None else None
+            ty = float(Length(ty, settings=lensett)) if ty is not None else None
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         if tx is None:
             tx = 0
         if ty is None:
@@ -2380,8 +2431,8 @@ def init_commands(kernel):
             self.signal("modified_by_tool")
         return "elements", data
 
-    @self.console_argument("tx", type=self.length_x, help=_("New x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+    @self.console_argument("tx", type=str, help=_("New x value"))
+    @self.console_argument("ty", type=str, help=_("New y value"))
     @self.console_command(
         "position",
         help=_("position <tx> <ty>"),
@@ -2399,6 +2450,14 @@ def init_commands(kernel):
         if tx is None or ty is None:
             channel(_("You need to provide a new position."))
             return
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett))
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         with self.undoscope("Position"):
             changes = False
             dbounds = Node.union_bounds(data)
@@ -2449,16 +2508,10 @@ def init_commands(kernel):
                 raise CommandSyntaxError
         return "elements", data
 
-    @self.console_argument(
-        "x_pos", type=self.length_x, help=_("x position for top left corner")
-    )
-    @self.console_argument(
-        "y_pos", type=self.length_y, help=_("y position for top left corner")
-    )
-    @self.console_argument("width", type=self.length_x, help=_("new width of selected"))
-    @self.console_argument(
-        "height", type=self.length_y, help=_("new height of selected")
-    )
+    @self.console_argument("x_pos", type=str, help=_("x position for top left corner"))
+    @self.console_argument("y_pos", type=str, help=_("y position for top left corner"))
+    @self.console_argument("width", type=str, help=_("new width of selected"))
+    @self.console_argument("height", type=str, help=_("new height of selected"))
     @self.console_command(
         "resize",
         help=_("resize <x-pos> <y-pos> <width> <height>"),
@@ -2470,6 +2523,16 @@ def init_commands(kernel):
     ):
         if height is None:
             raise CommandSyntaxError
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -2479,6 +2542,7 @@ def init_commands(kernel):
         if area is None:
             channel(_("resize: nothing selected"))
             return
+
         x, y, x1, y1 = area
         w, h = x1 - x, y1 - y
         if w == 0 or h == 0:  # dot
@@ -2529,8 +2593,8 @@ def init_commands(kernel):
     @self.console_argument("kx", type=float, help=_("skew_x value"))
     @self.console_argument("ky", type=float, help=_("skew_y value"))
     @self.console_argument("sy", type=float, help=_("scale_y value"))
-    @self.console_argument("tx", type=self.length_x, help=_("translate_x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("translate_y value"))
+    @self.console_argument("tx", type=str, help=_("translate_x value"))
+    @self.console_argument("ty", type=str, help=_("translate_y value"))
     @self.console_command(
         "matrix",
         help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
@@ -2557,6 +2621,14 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+        lensett = self.length_settings()
+        try:
+            # fmt: off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett)) if tx is not None else 0.0
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett)) if ty is not None else 0.0
+            # fmt: on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         with self.undoscope("Matrix"):
             images = []
             try:
@@ -2772,7 +2844,9 @@ def init_commands(kernel):
                 tolerance_val = 0
             else:
                 try:
-                    tolerance_val = float(Length(tolerance))
+                    tolerance_val = float(
+                        Length(tolerance, settings=self.length_settings())
+                    )
                 except ValueError as e:
                     channel(f"Invalid tolerance value: {tolerance}")
                     return data, tolerance, keep, False
@@ -2832,9 +2906,9 @@ def init_commands(kernel):
         self.set_emphasis(data_out)
         return "elements", data_out
 
-    @self.console_argument("xpos", type=Length, help=_("X-Position of cross center"))
-    @self.console_argument("ypos", type=Length, help=_("Y-Position of cross center"))
-    @self.console_argument("diameter", type=Length, help=_("Diameter of cross"))
+    @self.console_argument("xpos", type=str, help=_("X-Position of cross center"))
+    @self.console_argument("ypos", type=str, help=_("Y-Position of cross center"))
+    @self.console_argument("diameter", type=str, help=_("Diameter of cross"))
     @self.console_option(
         "circle",
         "c",
@@ -2874,12 +2948,18 @@ def init_commands(kernel):
             channel(_("You need to provide center-point and diameter: cross x y d"))
             return
         try:
-            xp = float(xpos)
-            yp = float(ypos)
-            dia = float(diameter)
+            # fmt:off
+            lensettings = self.length_settings()
+            xpos = float(Length(xpos, relative_length=self.device.view.width, settings=lensettings))
+            ypos = float(Length(ypos, relative_length=self.device.view.height, settings=lensettings))
+            diameter = float(Length(diameter, settings=lensettings))
+            # fmt:on
         except ValueError:
             channel(_("Invalid values given"))
             return
+        xp = float(xpos)
+        yp = float(ypos)
+        dia = float(diameter)
         if circle is None:
             circle = False
         if diagonal is None:
@@ -2904,7 +2984,7 @@ def init_commands(kernel):
         with self.undoscope("Create cross"):
             node = self.elem_branch.add(
                 label=_("Cross at ({xp}, {yp})").format(
-                    xp=xpos.length_mm, yp=ypos.length_mm
+                    xp=Length(xpos).length_mm, yp=Length(ypos).length_mm
                 ),
                 geometry=geom,
                 stroke=self.default_stroke,

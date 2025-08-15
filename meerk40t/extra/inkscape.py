@@ -604,6 +604,7 @@ def plugin(kernel, lifecycle):
                     "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
                 ),
                 "page": "Input/Output",
+                # Hint for translation _("SVG-Features")
                 "section": "SVG-Features",
             },
             {
@@ -621,6 +622,7 @@ def plugin(kernel, lifecycle):
                 ),
                 "tip": stip,
                 "page": "Input/Output",
+                # Hint for translation _("SVG-Features")
                 "section": "SVG-Features",
             },
         ]

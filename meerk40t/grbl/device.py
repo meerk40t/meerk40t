@@ -63,6 +63,7 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -73,6 +74,7 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -83,6 +85,7 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Laserspot"),
                 "tip": _("Laser spot size"),
+                # Hint for translation _("Dimensions")
                 "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
@@ -95,6 +98,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                # Hint for translation _("Scale")
                 "subsection": "_20_Scale",
             },
             {
@@ -106,6 +110,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                # Hint for translation _("Scale")
                 "subsection": "_20_Scale",
             },
             {
@@ -117,7 +122,9 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
                 ),
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -128,7 +135,9 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
                 ),
+                # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",
@@ -139,6 +148,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
+                # Hint for translation _("Flip Axis")
                 "subsection": "_40_Flip Axis",
             },
             {
@@ -150,6 +160,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
+                # Hint for translation _("Flip Axis")
                 "subsection": "_40_Flip Axis",
             },
             {
@@ -161,6 +172,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_50_Axis corrections",
             },
             {
@@ -179,6 +191,7 @@ class GRBLDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
+                # Hint for translation _("Home position")
                 "subsection": "_60_Home position",
             },
             {
@@ -188,6 +201,7 @@ class GRBLDevice(Service, Status):
                 "type": bool,
                 "label": _("Supports Z-axis"),
                 "tip": _("Does this device have a Z-axis?"),
+                # Hint for translation _("Z-Axis support")
                 "subsection": "_70_Z-Axis support",
             },
             {
@@ -203,6 +217,7 @@ class GRBLDevice(Service, Status):
                 "exclusive": False,
                 "label": _("Z-Homing"),
                 "tip": _("Which command triggers the z-homing sequence"),
+                # Hint for translation _("Z-Axis support")
                 "subsection": "_70_Z-Axis support",
             },
             {
@@ -293,6 +308,7 @@ class GRBLDevice(Service, Status):
                 "style": "combosmall" if is_linux else "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
+                # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
                 "dynamic": update,
@@ -305,6 +321,7 @@ class GRBLDevice(Service, Status):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
+                # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
             },
@@ -391,6 +408,7 @@ class GRBLDevice(Service, Status):
                 "type": str,
                 "label": _("Interface Type"),
                 "tip": _("Select the interface type for the grbl device"),
+                # Hint for translation _("Protocol")
                 "section": "_20_Protocol",
                 "signals": "update_interface",
             },
@@ -449,6 +467,7 @@ class GRBLDevice(Service, Status):
                     + "of the current position to help with focusing and positioning. Use with care!"
                 ),
                 "signals": "icons",  # Update ribbonbar if needed
+                # Hint for translation _("Red Dot")
                 "section": "_10_Red Dot",
             },
             {
@@ -465,6 +484,7 @@ class GRBLDevice(Service, Status):
                     "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
                 ),
                 "conditional": (self, "use_red_dot"),
+                # Hint for translation _("Red Dot")
                 "section": "_10_Red Dot",
             },
             {
@@ -477,6 +497,7 @@ class GRBLDevice(Service, Status):
                     "If active then the red dot will automatically be used if you outline the burn area"
                 ),
                 "conditional": (self, "use_red_dot"),
+                # Hint for translation _("Red Dot")
                 "section": "_10_Red Dot",
             },
             {
@@ -527,6 +548,7 @@ class GRBLDevice(Service, Status):
                 "type": bool,
                 "label": _("Limit the controller buffer size"),
                 "tip": _("Enables the controller buffer limit."),
+                # Hint for translation _("Controller Buffer")
                 "section": "_30_Controller Buffer",
             },
             {
@@ -540,6 +562,7 @@ class GRBLDevice(Service, Status):
                     "This is the limit of the controller buffer size. Prevents full writing to the controller."
                 ),
                 "conditional": (self, "limit_buffer"),
+                # Hint for translation _("Controller Buffer")
                 "section": "_30_Controller Buffer",
             },
             {
@@ -591,6 +614,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Do not validate the connection without seeing the welcome message at start."
                 ),
+                # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
             {
@@ -602,6 +626,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
                 ),
+                # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
             {
@@ -613,6 +638,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "On connection, send the device a softreset message as soon as connection is established."
                 ),
+                # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
             {
@@ -622,6 +648,7 @@ class GRBLDevice(Service, Status):
                 "type": bool,
                 "label": _("Check sequence on connect."),
                 "tip": _("On connection, check the standard GRBL info for the device."),
+                # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
             {
@@ -635,6 +662,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
                 ),
+                # Hint for translation _("Protocol")
                 "section": "_20_Protocol",
                 "subsection": "_00_",
             },
@@ -645,6 +673,7 @@ class GRBLDevice(Service, Status):
                 "type": int,
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
+                # Hint for translation _("Protocol")
                 "section": "_20_Protocol",
                 "subsection": "_00_",
             },
@@ -659,6 +688,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
                 ),
+                # Hint for translation _("Protocol")
                 "section": "_20_Protocol",
             },
             {
@@ -671,6 +701,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
                 ),
+                # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
             {
@@ -683,6 +714,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Which commands should be sent to the device on a successful connect?"
                 ),
+                # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
         ]
@@ -976,12 +1008,15 @@ class GRBLDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("laser fire power"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -996,12 +1031,25 @@ class GRBLDevice(Service, Status):
                         return
                 except IndexError:
                     return
-
+            if power is not None:
+                try:
+                    if power.endswith("%"):
+                        power = power[:-1]
+                        power = float(power) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Power must be valid value."))
+                    return
+                if not (0 <= power <= 1000):
+                    channel(_("Power must be between 0 and 1000."))
+                    return
+            power = 1000 if power is None else int(power)
             if self.spooler.is_idle:
-                self.driver.laser_on(power=1000, speed=1000)
+                self.driver.laser_on(power=power, speed=1000)
                 sleep(time / 1000)
                 self.driver.laser_off()
-                label = _("Pulse laser for {time}ms").format(time=time)
+                label = _("Pulse laser for {time}ms").format(time=time) + f" [{power}]"
                 channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -1020,6 +1068,7 @@ class GRBLDevice(Service, Status):
                     driver.out_pipe = f.write
                     driver.out_real = f.write
                     job.execute()
+                channel(_("Export succeeded: {filename}").format(filename=filename))
 
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
@@ -1090,6 +1139,13 @@ class GRBLDevice(Service, Status):
             return self.name
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
+
+    @property
+    def supports_pwm(self):
+        """
+        Returns whether this device supports PWM.
+        """
+        return True
 
     def _register_console_serial(self):
         _ = self.kernel.translation
