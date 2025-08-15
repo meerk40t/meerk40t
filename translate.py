@@ -275,6 +275,7 @@ def integrate_delta_files(locales: list[str]) -> None:
     as needed, then removes the delta file.
     """
     for locale in locales:
+        updates_applied = False
         main_po_file = f"./locale/{locale}/LC_MESSAGES/meerk40t.po"
         delta_po_file = f"./delta_{locale}.po"
         if not os.path.exists(delta_po_file):
@@ -313,9 +314,11 @@ def integrate_delta_files(locales: list[str]) -> None:
                     conflicts.append(msgid)
                     # Prefer delta's translation, but log the conflict
                     main_entry.msgstr = delta_entry.msgstr
+                    updates_applied = True
             else:
                 # Add new entry from delta
                 main_po.append(delta_entry)
+                updates_applied = True
 
         if conflicts:
             print(f"Conflicting msgid(s) updated from delta for {locale}:")
@@ -323,8 +326,15 @@ def integrate_delta_files(locales: list[str]) -> None:
                 print(f"  - {msgid}")
 
         # Save the updated main .po file
-        main_po.save(main_po_file)
-        print(f"Integrated delta for {locale}. {len(delta_entries)} entries processed.")
+        if updates_applied:
+            main_po.save(main_po_file)
+            print(
+                f"Integrated delta for {locale}. {len(delta_entries)} entries processed."
+            )
+        else:
+            print(
+                f"No updates applied for {locale} (delta contained {len(delta_entries)} entries)."
+            )
 
         # Remove the delta file after integration
         try:
