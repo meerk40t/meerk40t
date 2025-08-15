@@ -478,12 +478,9 @@ class MeerK40t(MWindow):
                     continue
                 if not hasattr(device, "spooler") or device.spooler is None:
                     continue
-                spooler = device.spooler
-                active = False
-                for e in spooler.queue:
-                    if hasattr(e, "is_running") and e.is_running():
-                        active = True
-                        break
+                active = any(
+                    hasattr(e, "is_running") and e.is_running() for e in spooler.queue
+                )
                 if active:
                     if hasattr(device.driver, "pause") and callable(
                         device.driver.pause
@@ -551,9 +548,9 @@ class MeerK40t(MWindow):
             # Returns True if at least `threshold` fraction of the window area is on any screen
             window_rect = wx.Rect(x, y, w, h)
             for screen in (
-                wx.Display.GetCount()
-                and [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())]
-                or []
+                [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())]
+                if wx.Display.GetCount()
+                else []
             ):
                 intersection = window_rect.Intersect(screen)
                 if intersection.IsEmpty():
