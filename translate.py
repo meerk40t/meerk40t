@@ -19,6 +19,8 @@ import argparse
 import os
 import re
 
+import polib
+
 LOCALE_DIR = "./locale"
 
 
@@ -166,13 +168,6 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
     Skips files with errors. If force is True, always recompiles.
     Returns a list of tuples (locale_dir, [mo_files]).
     """
-    try:
-        import polib
-    except ImportError:
-        print(
-            "polib missing - you need to install that library, eg. 'pip install polib'"
-        )
-        return
 
     def detect_encoding(file_path: str) -> str:
         """
@@ -266,15 +261,35 @@ def integrate_delta_files(locales: list[str]) -> None:
     for locale in locales:
         main_po_file = f"./locale/{locale}/LC_MESSAGES/meerk40t.po"
         delta_po_file = f"./delta_{locale}.po"
-        if os.path.exists(delta_po_file):
-            print(f"Integrating {delta_po_file} into {main_po_file}")
-            # Append the contents of the delta file to the main file
-            with open(delta_po_file, "r", encoding="utf-8") as delta_file:
-                delta_contents = delta_file.read()
-            with open(main_po_file, "a", encoding="utf-8") as main_file:
-                main_file.write(delta_contents)
-        else:
+        if not os.path.exists(delta_po_file):
             print(f"No delta file found for {locale}")
+            continue
+        if not os.path.exists(main_po_file):
+            print(f"No main po file found for {locale}")
+            continue
+        print(f"Integrating {delta_po_file} into {main_po_file}")
+        main_po = polib.pofile(main_po_file)
+        delta_po = polib.pofile(delta_po_file)
+        main_entries = {entry.msgid: entry for entry in main_po}
+        updated = False
+        for delta_entry in delta_po:
+            msgid = delta_entry.msgid
+            if msgid in main_entries:
+                main_entry = main_entries[msgid]
+                # If the main entry's msgstr is empty, update it from delta
+                if not main_entry.msgstr and delta_entry.msgstr:
+                    main_entry.msgstr = delta_entry.msgstr
+                    updated = True
+            else:
+                # Add new entry from delta
+                main_po.append(delta_entry)
+                updated = True
+        if updated:
+            main_po.save(main_po_file)
+            print(f"Updated {main_po_file}")
+        else:
+            print(f"No changes needed for {main_po_file}")
+        os.remove(delta_po_file)
 
 
 def main() -> None:
