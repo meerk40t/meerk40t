@@ -470,25 +470,28 @@ class MeerK40t(MWindow):
 
     def on_power_suspend(self, event):
         # Do we have an active job? If yes, we would like to pause it
-        channel = self.context.kernel.channels["console"]
-        available_devices = self.context.kernel.services("device")
-        for device in available_devices:
-            if hasattr(device.driver, "paused") and device.driver.paused:
-                continue
-            if not hasattr(device, "spooler") or device.spooler is None:
-                continue
-            spooler = device.spooler
-            active = False
-            for e in spooler.queue:
-                if hasattr(e, "is_running") and e.is_running():
-                    active = True
-                    break
-            if active:
-                if hasattr(device.driver, "pause") and callable(device.driver.pause):
-                    device.driver.pause()
-                channel(f"Did need to stop {device.label} before suspend")
-        self.context.signal("system_suspended")
-        channel("Suspending...")
+        if self.context.setting(bool, "pause_on_suspend", True):
+            channel = self.context.kernel.channels["console"]
+            available_devices = self.context.kernel.services("device")
+            for device in available_devices:
+                if hasattr(device.driver, "paused") and device.driver.paused:
+                    continue
+                if not hasattr(device, "spooler") or device.spooler is None:
+                    continue
+                spooler = device.spooler
+                active = False
+                for e in spooler.queue:
+                    if hasattr(e, "is_running") and e.is_running():
+                        active = True
+                        break
+                if active:
+                    if hasattr(device.driver, "pause") and callable(
+                        device.driver.pause
+                    ):
+                        device.driver.pause()
+                    channel(f"Did need to stop {device.label} before suspend")
+            self.context.signal("system_suspended")
+            channel("Suspending...")
         if event is not None:
             event.Skip()
 
