@@ -76,6 +76,50 @@ class HatchEffectNode(Node, Suppressable):
         nd["fill"] = copy(self.fill)
         return HatchEffectNode(**nd)
 
+    def get_effect_descriptor(self):
+        """
+        Returns a string descriptor for the effect, concatenating the effect type, hatch type, hatch distance, hatch angle, hatch angle delta, and loops, separated by pipe ('|') characters.
+
+        Returns:
+            str: A descriptor string in the format "<type>|<hatch_type>|<hatch_distance>|<hatch_angle>|<hatch_angle_delta>|<loops>".
+        """
+        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}"
+
+    def set_effect_descriptor(self, descriptor):
+        """
+        Sets the effect parameters from a descriptor string.
+
+        The descriptor should be a string with five components separated by '|':
+        'typeinfo|hatchtype|hatchdistance|hatchangle|hatchangledelta|loops'.
+
+        If the typeinfo matches the current object's type, updates the hatch
+        parameters (type, distance, angle, angle_delta, loops) and triggers recalculation.
+
+        Parameters:
+            descriptor (str): The effect descriptor string.
+
+        Exceptions:
+            ValueError: Silently ignored if the descriptor cannot be split into five parts.
+        """
+        try:
+            (
+                typeinfo,
+                hatchtype,
+                hatchdistance,
+                hatchangle,
+                hatchangledelta,
+                loops,
+            ) = descriptor.split("|")
+            if typeinfo == self.type:
+                self.hatch_type = hatchtype
+                self.hatch_distance = hatchdistance
+                self.hatch_angle = hatchangle
+                self.hatch_angle_delta = hatchangledelta
+                self.loops = loops
+                self.recalculate()
+        except ValueError:
+            pass
+
     def scaled(self, sx, sy, ox, oy, interim=False):
         if interim:
             self.set_interim()
@@ -247,6 +291,37 @@ class HatchEffectNode(Node, Suppressable):
 
         nodes = right_types(self)
         return nodes
+
+    def as_preview(self, **kws) -> Geomstr:
+        """
+        Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
+        internal loops value is rotated each pass by the angle-delta.
+
+        @param kws:
+        @return:
+        """
+        stored = {
+            prop: getattr(self, prop)
+            for prop in (
+                "loops",
+                "hatch_distance",
+                "hatch_angle",
+                "hatch_angle_delta",
+            )
+        }
+        self.loops = 1
+        dist = Length(self.hatch_distance)
+        if dist.mm < 1:
+            self.hatch_distance = "1mm"
+        self.recalculate()
+        result = self.as_geometry()
+
+        # Restore old values
+        for key, value in stored.items():
+            setattr(self, key, value)
+        self.recalculate()
+
+        return result
 
     def as_geometry(self, **kws) -> Geomstr:
         """

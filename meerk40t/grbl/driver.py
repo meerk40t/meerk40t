@@ -1003,3 +1003,13 @@ class GRBLDriver(Parameters):
     @staticmethod
     def has_adjustable_speed():
         return True
+
+    @property
+    def execution_direct_list(self):
+        """
+        A list of commands the driver wants to deal with it directly.
+        """
+        return ("grbl", "gcode")
+
+    def execute_direct(self, line):
+        self(f"{line}{self.line_end}")

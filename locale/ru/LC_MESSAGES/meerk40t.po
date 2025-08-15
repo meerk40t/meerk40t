@@ -12965,6 +12965,10 @@ msgstr "Спулинг прерван."
 msgid "Press OK to Continue."
 msgstr "Нажмите OK, чтобы продолжить."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Нажмите Отмена, чтобы прервать программу."
+
 #: meerk40t/gui/plugin.py:412
 msgid "Interrupt"
 msgstr "Прервать"
@@ -23487,3 +23491,30 @@ msgstr "Выравнивание элемента"
 #: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "Перемещение, сдвиг и трансформация"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Удалить эффект:"
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Добавить диагональную штриховку"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Добавить горизонтальную штриховку"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Добавить вертикальную штриховку"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Добавить вибрацию"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Упростить эффекты"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Ограничивает сложность эффектов, применяемых к элементам при проектировании.\nПримечание 1: все значения будут учтены при гравировке.\nПримечание 2: если клавиша CAPS-LOCK активна, все эффекты будут отображаться без упрощения."

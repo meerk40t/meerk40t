@@ -13040,6 +13040,10 @@ msgstr "Spooling megszakítva."
 msgid "Press OK to Continue."
 msgstr "Nyomja meg az OK gombot a folytatáshoz."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Nyomja meg a Mégse gombot a program megszakításához."
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "Megszakítás"
@@ -23668,3 +23672,30 @@ msgstr "Z-tengely"
 #: meerk40t/tools/driver_to_path.py:362
 msgid "Correct Orientation"
 msgstr "Helyes orientáció"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Effekt eltávolítása:"
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Átlós kitöltés hozzáadása"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Vízszintes kitöltés hozzáadása"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Függőleges kitöltés hozzáadása"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Wobble hozzáadása"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Effektek egyszerűsítése"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Korlátozza a tervezés során az elemekre alkalmazott effektek összetettségét.\nNB1: minden érték érvényesül gravírozáskor.\nNB2: ha a CAPS LOCK aktív, minden effekt egyszerűsítés nélkül jelenik meg."

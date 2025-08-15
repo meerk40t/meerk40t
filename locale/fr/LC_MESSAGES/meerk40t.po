@@ -13097,6 +13097,10 @@ msgstr "Spool interrompu."
 msgid "Press OK to Continue."
 msgstr "Appuyez sur OK pour continuer."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Appuyez sur Annuler pour annuler le programme."
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "Interrompre"
@@ -23813,3 +23817,30 @@ msgstr "Alignement d'élément"
 #: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "Déplacement, mouvement et transformation"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Supprimer l'effet :"
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Ajouter un hachurage diagonal"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Ajouter un hachurage horizontal"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Ajouter un hachurage vertical"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Ajouter un Wobble"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Simplifier les effets"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Limite la complexité des effets appliqués aux éléments lors de la conception.\nNB1 : toutes les valeurs seront respectées lors de la gravure.\nNB2 : si la touche MAJUSCULE est activée, tous les effets seront rendus sans simplification."

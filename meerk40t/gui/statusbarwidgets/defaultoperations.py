@@ -281,7 +281,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
         entries = []
         for material in self.context.elements.op_data.section_set():
-            if material == "previous":
+            if material.startswith("previous"):
                 continue
             opinfo = self.context.elements.load_persistent_op_info(material)
             material_name = opinfo.get("material", "")

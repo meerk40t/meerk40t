@@ -1,5 +1,6 @@
 import os
 import platform
+
 import wx
 
 from meerk40t.core.units import Length
@@ -21,6 +22,7 @@ from meerk40t.gui.icons import (
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
+    TextCtrl,
     dip_size,
     wxButton,
     wxCheckBox,
@@ -30,7 +32,6 @@ from meerk40t.gui.wxutils import (
     wxStaticBitmap,
     wxStaticText,
     wxToggleButton,
-    TextCtrl,
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
@@ -70,7 +71,8 @@ class FontGlyphPicker(wx.Dialog):
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
-            context=self.context, list_name="list_glyphpicker"
+            context=self.context,
+            list_name="list_glyphpicker",
         )
         self.list_glyphs.AppendColumn("UC", format=wx.LIST_FORMAT_LEFT, width=75)
         self.list_glyphs.AppendColumn("ASCII", format=wx.LIST_FORMAT_LEFT, width=75)
@@ -695,7 +697,11 @@ class LineTextPropertyPanel(wx.Panel):
 
     def on_context_menu(self, event):
         def on_paste(event):
-            self.text_text.Paste()
+            # Seems to crash under Linux in certain situations
+            try:
+                self.text_text.Paste()
+            except Exception as e:
+                print(f"Paste failed: {e}")
 
         def on_glyph(event):
             mydlg = FontGlyphPicker(
@@ -725,7 +731,6 @@ class LineTextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, on_glyph, item)
         self.PopupMenu(menu)
         menu.Destroy()
-
 
     def signal(self, signalstr, myargs):
         if signalstr == "textselect" and self.IsShown():
@@ -809,9 +814,7 @@ class PanelFontSelect(wx.Panel):
         sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
 
         self.btn_align_center = wxButton(self, wx.ID_ANY)
-        self.btn_align_center.SetBitmap(
-            icon_textalign_center.GetBitmap(resize=bsize)
-        )
+        self.btn_align_center.SetBitmap(icon_textalign_center.GetBitmap(resize=bsize))
         self.btn_align_center.SetToolTip(_("Align text around the center"))
         sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
 
@@ -922,7 +925,9 @@ class HersheyFontSelector(MWindow):
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(
-            icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
+            icons8_choose_font.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
         )
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
@@ -1132,7 +1137,7 @@ class PanelFontManager(wx.Panel):
             None,
             _("Choose font directory"),
             fontdir,
-            style=wx.DD_DEFAULT_STYLE
+            style=wx.DD_DEFAULT_STYLE,
             # | wx.DD_DIR_MUST_EXIST
         )
         if dlg.ShowModal() == wx.ID_OK:
@@ -1213,7 +1218,7 @@ class PanelFontManager(wx.Panel):
             defaultDir=defdir,
             defaultFile="",
             wildcard=wildcard,
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_PREVIEW
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_PREVIEW,
             #            | wx.FD_SHOW_HIDDEN,
         )
         try:
@@ -1384,6 +1389,7 @@ class PanelFontManager(wx.Panel):
 
     def pane_hide(self):
         self.sysdirs.pane_hide()
+
 
 # end of class FontManager
 

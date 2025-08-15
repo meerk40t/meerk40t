@@ -89,6 +89,7 @@ SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
 SVG_ATTR_FILL_RULE = "fill-rule"
 SVG_ATTR_STROKE_DASH = "stroke-dasharray"
+SVG_ATTR_INKSCAPE_STROKE_WIDTH = "-inkscape-stroke"
 
 
 def plugin(kernel, lifecycle=None):
@@ -938,6 +939,11 @@ class SVGProcessor:
         lj = element.values.get(SVG_ATTR_STROKE_DASH)
         if lj not in (None, "", "none"):
             node.stroke_dash = lj
+        hairline = element.values.get(SVG_ATTR_INKSCAPE_STROKE_WIDTH)
+        if hairline is not None and str(hairline).lower() == "hairline":
+            node.stroke_width = 100  # This is a special value for hairline
+            node.stroke_scale = False
+            # print ("Hairline set")
 
     @staticmethod
     def is_dot(element):

@@ -12267,6 +12267,10 @@ msgstr "スプールが中断されました。"
 msgid "Press OK to Continue."
 msgstr "続行するにはOKを押してください。"
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "キャンセルを押してプログラムを中止してください"
+
 #: meerk40t/gui/plugin.py:384
 msgid "Interrupt"
 msgstr "中断"
@@ -21690,3 +21694,30 @@ msgstr "要素の整列"
 #: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "ジョグ、移動、変形"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "効果を削除:"
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "斜めハッチを追加"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "水平ハッチを追加"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "垂直ハッチを追加"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "ワブルを追加"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "効果を簡素化"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "デザイン中に要素に適用される効果の複雑さを制限します。\n注意1: すべての値は焼き付け時に反映されます。\n注意2: CAPS-LOCKキーが有効な場合、すべての効果は簡素化されずにレンダリングされます。"

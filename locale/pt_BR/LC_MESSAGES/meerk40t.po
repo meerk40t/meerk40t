@@ -11143,6 +11143,10 @@ msgstr "Spooling Interrompido."
 msgid "Press OK to Continue."
 msgstr "Pressione OK para Continuar."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Pressione Cancelar para abortar o programa."
+
 #: meerk40t/gui/plugin.py:384
 msgid "Interrupt"
 msgstr "Interromper"
@@ -20531,4 +20535,30 @@ msgstr "Alinhamento do Elemento"
 
 msgid "Share-Attributes"
 msgstr "Atributos de Compartilhamento"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Remover efeito:"
 
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Adicionar hachura diagonal"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Adicionar hachura horizontal"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Adicionar hachura vertical"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Adicionar wobble"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Simplificar efeitos"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Limita a complexidade dos efeitos aplicados aos elementos durante o design.\nNB1: todos os valores serão respeitados durante a gravação.\nNB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."

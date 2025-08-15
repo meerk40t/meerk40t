@@ -11748,6 +11748,10 @@ msgstr "Cola de impresión interrumpida."
 msgid "Press OK to Continue."
 msgstr "Presione OK para continuar."
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr "Pulsa Cancelar para abortar el programa."
+
 #: meerk40t/gui/plugin.py:396
 msgid "Interrupt"
 msgstr "Interrumpir"
@@ -21906,4 +21910,30 @@ msgstr "Eje Z"
 #: meerk40t/tools/driver_to_path.py:362
 msgid "Correct Orientation"
 msgstr "Orientación correcta"
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr "Eliminar efecto:"
 
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr "Agregar tramado diagonal"
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr "Agregar tramado horizontal"
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr "Agregar tramado vertical"
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr "Agregar Wobble"
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr "Simplificar efectos"
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr "Limita la complejidad de los efectos aplicados a los elementos durante el diseño.\nNB1: todos los valores se respetarán durante el grabado.\nNB2: si la tecla BLOQ MAYÚS está activa, todos los efectos se mostrarán sin simplificación."
