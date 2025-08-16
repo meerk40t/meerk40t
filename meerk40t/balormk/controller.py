@@ -596,7 +596,7 @@ class GalvoController:
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
             hexstr = " ".join(f"{x:02X}" for x in packet)
-            print(f"> {hexstr} -- {cmdstr} {v1}")
+            self.usb_log(f"> {hexstr} -- {cmdstr} {v1}")
             self._active_list[index : index + 12] = struct.pack(
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
