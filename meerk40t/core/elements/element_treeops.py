@@ -3019,7 +3019,10 @@ def init_tree(kernel):
             for i in range(len(add_nodes) - 1, -1, -1):
                 n = add_nodes[i]
                 for k in range(copies):
-                    node.add_reference(n.node, pos=i)
+                    if hasattr(n, "node"):
+                        node.add_reference(n.node, pos=i)
+                    else:
+                        node.add_reference(n, pos=i)
 
         self.signal("refresh_tree")
 
