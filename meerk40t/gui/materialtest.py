@@ -202,6 +202,8 @@ class TemplatePanel(wx.Panel):
             _("Hatch"),
             _("Wobble"),
         ]
+        # Allow the shape to be added a second time for effects, but outside the secondary operation
+
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
         self.secondary_default_op = []
@@ -331,6 +333,10 @@ class TemplatePanel(wx.Panel):
         )
         self.check_color_direction_2 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
+        self.check_duplicate_shapes = wxCheckBox(
+            self, wx.ID_ANY, _("Create boundary shape")
+        )
+
         self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
@@ -349,6 +355,7 @@ class TemplatePanel(wx.Panel):
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
         self.sizer_param_op.Add(h1, 0, wx.EXPAND, 0)
         self.sizer_param_op.Add(self.combo_images, 0, wx.EXPAND, 0)
+        self.sizer_param_op.Add(self.check_duplicate_shapes, 0, wx.EXPAND, 0)
 
         sizer_param_check = StaticBoxSizer(
             self, wx.ID_ANY, _("Show Labels / Values"), wx.HORIZONTAL
@@ -589,6 +596,10 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.SetToolTip(_("Horizontal gap between patterns"))
         self.text_delta_2.SetToolTip(_("Vertical gap between patterns"))
 
+        self.check_duplicate_shapes.SetToolTip(
+            _("Add the shape a second time around the effect")
+        )
+
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
@@ -604,6 +615,7 @@ class TemplatePanel(wx.Panel):
         self.combo_images.Bind(wx.EVT_COMBOBOX, self.on_combo_image)
         self.spin_count_1.Bind(wx.EVT_SPINCTRL, self.validate_input)
         self.spin_count_2.Bind(wx.EVT_SPINCTRL, self.validate_input)
+
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_1)
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_2)
 
@@ -765,6 +777,11 @@ class TemplatePanel(wx.Panel):
             self.combo_images.Show(self.use_image[opidx])
             self.text_dim_1.Enable(not self.use_image[opidx])
             self.text_dim_2.Enable(not self.use_image[opidx])
+        # print (f"Master vs Secondary: {type(opnode).__name__} vs {type(secondary_node).__name__}")
+        shape_option = secondary_node is not None and type(opnode) is not type(
+            secondary_node
+        )
+        self.check_duplicate_shapes.Show(shape_option)
 
         self.sizer_param_op.Layout()
         if self.callback is not None:
@@ -1496,8 +1513,17 @@ class TemplatePanel(wx.Panel):
                     if elemnode is not None:
                         elemnode.label = s_lbl
                         this_op.add_reference(elemnode, 0)
+                        if duplicate_shapes:
+                            master_op.add_reference(elemnode, ignore_effect=True)
+
                     yy = yy + gap_y + size_y
                 xx = xx + gap_x + size_x
+
+        # Do we need to check for duplicate shapes?
+        duplicate_shapes = (
+            self.check_duplicate_shapes.IsShown()
+            and self.check_duplicate_shapes.GetValue()
+        )
 
         # Remember any changes made by the user to the description operations
         self.check_raster_description_parameters()
