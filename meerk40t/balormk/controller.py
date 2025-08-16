@@ -588,15 +588,15 @@ class GalvoController:
             if self._active_list is None:
                 self._list_new()
             index = self._active_index
-            # msg = struct.pack(
-            #     "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
-            # )
-            # cmdstr = list_command_lookup.get(command, "unknown")
-            # packet = struct.pack(
-            #     "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
-            # )
-            # hexstr = " ".join(f"{x:02X}" for x in packet)
-            # print(f"> {hexstr} -- {cmdstr} {v1}")
+            msg = struct.pack(
+                "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+            )
+            cmdstr = list_command_lookup.get(command, "unknown")
+            packet = struct.pack(
+                "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+            )
+            hexstr = " ".join(f"{x:02X}" for x in packet)
+            print(f"> {hexstr} -- {cmdstr} {v1}")
             self._active_list[index : index + 12] = struct.pack(
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
