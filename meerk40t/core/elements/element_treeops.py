@@ -2974,7 +2974,7 @@ def init_tree(kernel):
                             copy_op.add_reference(ref.node)
                     else:
                         try:
-                            copy_op.add_reference(child.node)
+                            copy_op.add_reference(child.node, ignore_effect=True)
                         except AttributeError:
                             pass
 
