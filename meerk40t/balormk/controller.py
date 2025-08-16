@@ -588,6 +588,15 @@ class GalvoController:
             if self._active_list is None:
                 self._list_new()
             index = self._active_index
+            # msg = struct.pack(
+            #     "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+            # )
+            # cmdstr = list_command_lookup.get(command, "unknown")
+            # packet = struct.pack(
+            #     "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+            # )
+            # hexstr = " ".join(f"{x:02X}" for x in packet)
+            # print(f"> {hexstr} -- {cmdstr} {v1}")
             self._active_list[index : index + 12] = struct.pack(
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
@@ -1255,8 +1264,11 @@ class GalvoController:
         """
         if self._delay_poly == delay:
             return
+        self.list_delay_time(10)
         self._delay_poly = delay
-        self._list_write(listPolygonDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(
+            listPolygonDelay, int(abs(delay)), 0x0000 if delay > 0 else 0x8000
+        )
         self.usb_log(f"Polygon delay was set to {delay}")
 
     def list_write_port(self):
