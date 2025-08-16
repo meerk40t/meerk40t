@@ -1241,7 +1241,7 @@ class TemplatePanel(wx.Panel):
             dimension_1 = max(get_float(self.text_dim_1, -1), 5)
             dimension_2 = max(get_float(self.text_dim_2, -1), 5)
             gap_1 = max(get_float(self.text_delta_1, -1), 0)
-            gap_2 = max(get_float(self.text_delta_2, -1), 5)
+            gap_2 = max(get_float(self.text_delta_2, -1), 0)
 
             # print (f"Creating operations for {len(range1)} x {len(range2)}")
             display_labels = self.check_labels.GetValue()
@@ -1271,7 +1271,6 @@ class TemplatePanel(wx.Panel):
 
             text_scale_x = min(1.0, size_y / float(Length("20mm")))
             text_scale_y = min(1.0, size_x / float(Length("20mm")))
-
             # Make one op for text
             if display_labels or display_values:
                 for axis, label in zip(
@@ -1299,7 +1298,10 @@ class TemplatePanel(wx.Panel):
                     return node
 
                 text_x = start_x + expected_width / 2
-                text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
+                # maintext gap label gap shape
+                text_y = start_y - 2 * max(text_scale_x, text_scale_y) * float(
+                    Length("10mm")
+                )
                 unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
                 add_axis_label(
                     f"{param_name_1}{unit_str}",
@@ -1308,7 +1310,9 @@ class TemplatePanel(wx.Panel):
                     2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
                     text_op_x,
                 )
-                text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
+                text_x = start_x - 2 * max(text_scale_x, text_scale_y) * float(
+                    Length("10mm")
+                )
                 text_y = start_y + expected_height / 2
                 unit_str = f" [{param_unit_2}]" if param_unit_2 else ""
                 node = add_axis_label(
@@ -1341,7 +1345,9 @@ class TemplatePanel(wx.Panel):
                 if display_values:
                     # Add a text above for each column
                     text_x = xx + 0.5 * size_x
-                    text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
+                    text_y = yy - 1.25 * max(text_scale_x, text_scale_y) * float(
+                        Length("5mm")
+                    )
                     node = element_branch.add(
                         text=f"{pval1}",
                         matrix=Matrix(
@@ -1371,7 +1377,9 @@ class TemplatePanel(wx.Panel):
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
                     if display_values and idx1 == 0:  # first row, so add a text above
-                        text_x = xx - min(float(Length("5mm")), 1.5 * gap_x)
+                        text_x = xx - 1.25 * max(text_scale_x, text_scale_y) * float(
+                            Length("5mm")
+                        )
                         text_y = yy + 0.5 * size_y
                         node = element_branch.add(
                             text=f"{pval2}",
@@ -1516,8 +1524,8 @@ class TemplatePanel(wx.Panel):
                         if duplicate_shapes:
                             master_op.add_reference(elemnode, ignore_effect=True)
 
-                    yy = yy + gap_y + size_y
-                xx = xx + gap_x + size_x
+                    yy += gap_y + size_y
+                xx += gap_x + size_x
 
         # Do we need to check for duplicate shapes?
         duplicate_shapes = (
