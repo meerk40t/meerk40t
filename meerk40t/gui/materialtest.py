@@ -188,6 +188,8 @@ class TemplatePanel(wx.Panel):
         self.context.themes.set_window_colors(self)
         self.context.setting(float, "material_description_speed", 250)
         self.context.setting(float, "material_description_power", 1000)
+        self.context.setting(float, "material_operation_speed", None)
+        self.context.setting(float, "material_operation_power", None)
         self.check_raster_description_parameters()
         # Lets have a look whether we still have an operation open that fits the bill...
         self.SetHelpText("testpattern")
@@ -651,6 +653,12 @@ class TemplatePanel(wx.Panel):
                 if not hasattr(self.context.device, source):
                     continue
                 op.settings[target] = getattr(self.context.device, source)
+            p = self.context.material_operation_power
+            if p is not None:
+                op.settings["power"] = p
+            s = self.context.material_operation_speed
+            if s is not None:
+                op.settings["speed"] = s
 
         for op in self.default_op:
             prefill_op(op)
@@ -1420,6 +1428,8 @@ class TemplatePanel(wx.Panel):
                         usefill = False
                     else:
                         return
+                    self.context.material_operation_power = master_op.power
+                    self.context.material_operation_speed = master_op.speed
                     this_op.label = s_lbl
 
                     def set_param(op, ptype, value, keep_unit, unit, prepper):
