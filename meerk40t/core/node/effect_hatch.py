@@ -27,6 +27,7 @@ class HatchEffectNode(Node, Suppressable):
         self.hatch_angle = None
         self.hatch_angle_delta = None
         self.hatch_type = None
+        self.unidirectional = False
         self.loops = None
         self._interim = False
         super().__init__(
@@ -349,6 +350,7 @@ class HatchEffectNode(Node, Suppressable):
                     outlines,
                     distance=self._distance,
                     angle=self._angle + p * self._angle_delta,
+                    unidirectional=self.unidirectional,
                 )
             )
         return path
@@ -376,6 +378,7 @@ class HatchEffectNode(Node, Suppressable):
                     o,
                     distance=self._distance,
                     angle=self._angle + p * self._angle_delta,
+                    unidirectional=self.unidirectional,
                 )
 
     def set_interim(self):

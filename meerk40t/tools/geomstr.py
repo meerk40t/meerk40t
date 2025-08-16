@@ -2142,7 +2142,7 @@ class Geomstr:
         return Geomstr.lines(*star_points)
 
     @classmethod
-    def hatch(cls, outer, angle, distance):
+    def hatch(cls, outer, angle, distance, unidirectional=False):
         """
         Create a hatch geometry from an outer shape, an angle (in radians) and distance (in units).
         @param outer:
@@ -2185,7 +2185,8 @@ class Geomstr:
                         complex(right_segment_x, y), complex(left_segment_x, y)
                     )
                 geometry.end()
-            forward = not forward
+            if not unidirectional:
+                forward = not forward
         geometry.rotate(-angle)
         return geometry
 

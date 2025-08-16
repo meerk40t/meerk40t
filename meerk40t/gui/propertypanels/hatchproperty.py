@@ -122,8 +122,11 @@ class HatchPropertyPanel(ScrolledPanel):
         self.combo_fill_style = wxComboBox(
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
-
+        self.check_directional = wx.CheckBox(self, wx.ID_ANY, _("Unidirectional"))
+        style_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        style_sizer.Add(self.combo_fill_style, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        style_sizer.Add(self.check_directional, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_fill.Add(style_sizer, 0, wx.EXPAND, 0)
         self.display_panel = wx.Panel(self, wx.ID_ANY)
         sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
 
@@ -146,6 +149,7 @@ class HatchPropertyPanel(ScrolledPanel):
             wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta
         )
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
+        self.check_directional.Bind(wx.EVT_CHECKBOX, self.on_check_directional)
         # end wxGlade
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
@@ -227,7 +231,13 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle_delta.SetValue(int(h_angle))
         except ValueError:
             pass
+        flag = bool(self.node.unidirectional)
+        self.check_directional.SetValue(flag)
         self.Show()
+
+    def on_check_directional(self, event):
+        self.node.unidirectional = self.check_directional.GetValue()
+        self.update()
 
     def on_check_classify(self, event):
         self.context._auto_classify = self.check_classify.GetValue()
