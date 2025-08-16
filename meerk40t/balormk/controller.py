@@ -226,6 +226,8 @@ class GalvoController:
     single commands.
     """
 
+    DEBUG = True
+
     def __init__(
         self,
         service,
@@ -591,12 +593,16 @@ class GalvoController:
             msg = struct.pack(
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
-            cmdstr = list_command_lookup.get(command, "unknown")
-            packet = struct.pack(
-                "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
-            )
-            hexstr = " ".join(f"{x:02X}" for x in packet)
-            self.usb_log(f"> {hexstr} -- {cmdstr} {v1}")
+            if self.DEBUG:
+                cmdstr = list_command_lookup.get(command, "unknown")
+                remainder = f"{v1} {v2} {v3} {v4} {v5}"
+                while remainder.endswith(" 0"):
+                    remainder = remainder[:-2]
+                packet = struct.pack(
+                    "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+                )
+                hexstr = " ".join(f"{x:02X}" for x in packet)
+                self.usb_log(f"> {hexstr} -- {cmdstr} {remainder}")
             self._active_list[index : index + 12] = struct.pack(
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
