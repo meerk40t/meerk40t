@@ -635,6 +635,7 @@ class TemplatePanel(wx.Panel):
                 fields = {
                     "default_power": "power",
                     "default_speed": "speed",
+                    "default_frequency": "frequency",
                     "rapid_enabled": "",
                     "rapid_speed": "",
                     "timing_enabled": "",
