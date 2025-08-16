@@ -235,7 +235,7 @@ class BalorDevice(Service, Status):
                 # _("User Offset")
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -250,7 +250,7 @@ class BalorDevice(Service, Status):
                 "section": "_10_Parameters",
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "interp",
@@ -430,10 +430,10 @@ class BalorDevice(Service, Status):
             {
                 "attr": "default_power",
                 "object": self,
-                "default": 50.0,
+                "default": 500.0,
                 "type": float,
                 "label": _("Laser Power"),
-                "trailer": "%",
+                "trailer": "ppi",
                 "tip": _("What power level do we cut at?"),
             },
             {
