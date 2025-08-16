@@ -2971,10 +2971,16 @@ def init_tree(kernel):
                         child_copy = copy(child)
                         copy_op.append_child(child_copy)
                         for ref in child.children:
-                            copy_op.add_reference(ref.node)
+                            if hasattr(ref, "node"):
+                                copy_op.add_reference(ref.node)
+                            else:
+                                copy_op.add_reference(ref)
                     else:
                         try:
-                            copy_op.add_reference(child.node, ignore_effect=True)
+                            if hasattr(child, "node"):
+                                copy_op.add_reference(child.node, ignore_effect=True)
+                            else:
+                                copy_op.add_reference(child, ignore_effect=True)
                         except AttributeError:
                             pass
 
