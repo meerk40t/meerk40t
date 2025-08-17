@@ -432,8 +432,10 @@ class BalorDevice(Service, Status):
                 "object": self,
                 "default": 500.0,
                 "type": float,
-                "label": _("Laser Power"),
+                "label": _("Power"),
                 "trailer": "ppi",
+                # Translation hint: _("Cut/Engrave")
+                "subsection": "_10_Cut/Engrave",
                 "tip": _("What power level do we cut at?"),
             },
             {
@@ -442,8 +444,30 @@ class BalorDevice(Service, Status):
                 "default": 100.0,
                 "type": float,
                 "trailer": "mm/s",
-                "label": _("Cut Speed"),
+                "label": _("Speed"),
+                "subsection": "_10_Cut/Engrave",
                 "tip": _("How fast do we cut?"),
+            },
+            {
+                "attr": "default_power_raster",
+                "object": self,
+                "default": 500.0,
+                "type": float,
+                "label": _("Power"),
+                "trailer": "ppi",
+                # Translation hint: _("Raster")
+                "subsection": "_20_Raster",
+                "tip": _("What power level do we cut at?"),
+            },
+            {
+                "attr": "default_speed_raster",
+                "object": self,
+                "default": 200.0,
+                "type": float,
+                "trailer": "mm/s",
+                "label": _("Speed"),
+                "subsection": "_20_Raster",
+                "tip": _("How fast do we raster?"),
             },
             {
                 "attr": "default_frequency",
@@ -452,6 +476,8 @@ class BalorDevice(Service, Status):
                 "type": float,
                 "trailer": "kHz",
                 "label": _("Q Switch Frequency"),
+                # Hint for translation _("Miscellaneous")
+                "subsection": "_50_Miscellaneous",
                 "tip": _("QSwitch Frequency value"),
             },
             {
@@ -461,6 +487,7 @@ class BalorDevice(Service, Status):
                 "type": float,
                 "trailer": "%",
                 "label": _("First Pulse Killer"),
+                "subsection": "_50_Miscellaneous",
                 "conditional": (self, "source", "co2"),
                 "tip": _("Percent of First Pulse Killer for co2 source"),
             },
@@ -469,7 +496,9 @@ class BalorDevice(Service, Status):
                 "object": self,
                 "default": 2000.0,
                 "type": float,
-                "label": _("Travel Speed"),
+                "label": _("Speed"),
+                # Translation hint: _("Travel")
+                "subsection": "_30_Travel",
                 "trailer": "mm/s",
                 "tip": _("How fast do we travel when not cutting?"),
             },
@@ -482,7 +511,7 @@ class BalorDevice(Service, Status):
                 "tip": _("Enable using Pulse Width (MOPA)"),
                 # "conditional": (self, "source", "fiber"),
                 # Hint for translation _("Pulse Width")
-                "subsection": "Pulse Width",
+                "subsection": "_40_Pulse Width",
             },
             {
                 "attr": "default_pulse_width",
@@ -513,7 +542,7 @@ class BalorDevice(Service, Status):
                 "trailer": "ns",
                 "tip": _("Set the MOPA pulse width setting"),
                 # Hint for translation _("Pulse Width")
-                "subsection": "Pulse Width",
+                "subsection": "_40_Pulse Width",
             },
         ]
         self.register_choices("balor-global", choices)
@@ -1055,3 +1084,29 @@ class BalorDevice(Service, Status):
         If the device is in mock mode, returns 'mock', otherwise returns 'usb'.
         """
         return "mock" if self.mock else "usb"
+
+    def get_operation_defaults(self, op_type: str) -> dict:
+        """
+        Returns the default operation settings for the device.
+        """
+        settings = {}
+        if op_type in ["op cut", "op engrave"]:
+            settings = {
+                "speed": self.default_speed,
+                "power": self.default_power,
+                "frequency": self.default_frequency,
+            }
+        elif op_type in ["op image", "op raster"]:
+            settings = {
+                "speed": self.default_speed_raster,
+                "power": self.default_power_raster,
+                "frequency": self.default_frequency,
+            }
+
+        settings["timing_enabled"] = False
+        settings["delay_polygon"] = self.delay_polygon
+        settings["delay_laser_off"] = self.delay_laser_off
+        settings["delay_laser_on"] = self.delay_laser_on
+        settings["pulse_width_enabled"] = self.pulse_width_enabled
+        settings["pulse_width"] = self.default_pulse_width
+        return settings
