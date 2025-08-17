@@ -583,6 +583,8 @@ class BalorDevice(Service, Status):
                 "type": float,
                 "label": _("Polygon Delay"),
                 "trailer": "µs",
+                "lower": 0,
+                "upper": 655350,
                 "tip": _("Delay amount between different points in the path travel."),
                 # Hint for translation _("General")
                 "section": "_10_General",

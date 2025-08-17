@@ -677,7 +677,11 @@ class GalvoController:
             self.power(power)
 
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
-        # print(f"Settings: {settings}")
+        # print("Settings:")
+        # print(f"Timing enabled: {settings.get('timing_enabled', False)}")
+        # print(f"Delay on: {settings.get('delay_laser_on', None)}")
+        # print(f"Delay off: {settings.get('delay_laser_off', None)}")
+        # print(f"Polygon delay: {settings.get('delay_polygon', None)}")
         if str(settings.get("timing_enabled", False)).lower() == "true":
             self.list_laser_on_delay(
                 settings.get("delay_laser_on", self.service.delay_laser_on)
@@ -1272,13 +1276,12 @@ class GalvoController:
         @param delay:
         @return:
         """
-        if self._delay_poly == delay:
+        value = int(min(65535, max(0, delay / 10.0)))
+        if self._delay_poly == value:
             return
-        self._delay_poly = delay
-        self._list_write(
-            listPolygonDelay, int(abs(delay)), 0x0000 if delay >= 0 else 0x8000
-        )
-        self.usb_log(f"Polygon delay was set to {delay}")
+        self._delay_poly = value
+        self._list_write(listPolygonDelay, value)
+        self.usb_log(f"Polygon delay was set to {delay} -> {value}")
 
     def list_write_port(self):
         """
