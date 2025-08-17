@@ -1335,6 +1335,7 @@ def init_tree(kernel):
         if not data:
             return
         changed_ops = []
+        # Translation hint: _("Reset to device default values")
         with self.undoscope("Reset to device default values"):
             for op in data:
                 changes = False
