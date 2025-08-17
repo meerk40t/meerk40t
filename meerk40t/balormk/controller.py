@@ -677,7 +677,7 @@ class GalvoController:
             self.power(power)
 
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
-
+        # print(f"Settings: {settings}")
         if str(settings.get("timing_enabled", False)).lower() == "true":
             self.list_laser_on_delay(
                 settings.get("delay_laser_on", self.service.delay_laser_on)
@@ -1203,6 +1203,7 @@ class GalvoController:
         if self._delay_on == delay:
             return
         self._delay_on = delay
+        self.usb_log(f"Laser on delay was set to {delay}")
         self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_laser_off_delay(self, delay):
@@ -1214,6 +1215,7 @@ class GalvoController:
         if self._delay_off == delay:
             return
         self._delay_off = delay
+        self.usb_log(f"Laser off delay was set to {delay}")
         self._list_write(
             listLaserOffDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000
         )
