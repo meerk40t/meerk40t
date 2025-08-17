@@ -1158,10 +1158,9 @@ class DebugSettingsPanel(wx.Panel):
 
     def update_position(self, reset):
         def timestr(ts):
-            if ts is None:
-                return "---"
-            else:
-                return time.strftime("%H:%M:%S", time.localtime(ts))
+            return (
+                "---" if ts is None else time.strftime("%H:%M:%S", time.localtime(ts))
+            )
 
         try:
             self.info.DeleteAllItems()

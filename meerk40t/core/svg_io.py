@@ -623,10 +623,11 @@ class SVGWriter:
                         node.settings[key] = settings_value
                     if settings_value != value:
                         direction = "out"
-                        if settings_value is None or settings_value == "":
-                            direction = "in"
-                        else:
-                            direction = "out"
+                        direction = (
+                            "in"
+                            if settings_value is None or settings_value == ""
+                            else "out"
+                        )
                         # print (f"Needed to fix {key}: node-value: {value} ({type(value).__name__}), settings-value: {settings_value} ({type(settings_value).__name__}) -> {direction}")
                         if direction == "in":
                             node.settings[key] = value

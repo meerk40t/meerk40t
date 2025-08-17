@@ -94,31 +94,31 @@ def get_operation_choices(
     idx = 0
     for optype, (opname, sensible_speed) in operations.items():
         idx += 10
-        choices.append(
-            {
-                "attr": f"default_power_{optype}",
-                "object": context,
-                "default": "1000",
-                "type": float,
-                "trailer": "/1000",
-                "label": _("Power"),
-                "tip": _("Default power for {op}").format(op=opname),
-                "section": "Operation Defaults",
-                "subsection": f"_{idx}_{opname}",
-            }
-        )
-        choices.append(
-            {
-                "attr": f"default_speed_{optype}",
-                "object": context,
-                "default": sensible_speed,
-                "type": float,
-                "trailer": "mm/s",
-                "label": _("Speed"),
-                "tip": _("Default speed for {op}").format(op=opname),
-                "section": "Operation Defaults",
-                "subsection": f"_{idx}_{opname}",
-            }
+        choices.extend(
+            (
+                {
+                    "attr": f"default_power_{optype}",
+                    "object": context,
+                    "default": "1000",
+                    "type": float,
+                    "trailer": "/1000",
+                    "label": _("Power"),
+                    "tip": _("Default power for {op}").format(op=opname),
+                    "section": "Operation Defaults",
+                    "subsection": f"_{idx}_{opname}",
+                },
+                {
+                    "attr": f"default_speed_{optype}",
+                    "object": context,
+                    "default": sensible_speed,
+                    "type": float,
+                    "trailer": "mm/s",
+                    "label": _("Speed"),
+                    "tip": _("Default speed for {op}").format(op=opname),
+                    "section": "Operation Defaults",
+                    "subsection": f"_{idx}_{opname}",
+                },
+            )
         )
 
     return choices

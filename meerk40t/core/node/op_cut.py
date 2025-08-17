@@ -297,7 +297,7 @@ class CutOpNode(Node, Parameters):
         effect = self._children[0] if first_is_effect else None
         ref = self.add(node=node, type="reference", pos=pos, **kwargs)
         node._references.append(ref)
-        if first_is_effect and not "ignore_effect" in kwargs:
+        if first_is_effect and not kwargs.get("ignore_effect", False):
             effect.append_child(ref)
 
     def load(self, settings, section):
