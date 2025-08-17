@@ -25,7 +25,7 @@ from meerk40t.gui.wxutils import (
     wxListBox,
     wxStaticText,
 )
-from meerk40t.kernel import Settings, lookup_listener, signal_listener
+from meerk40t.kernel import Settings, lookup_listener, settings, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
@@ -630,19 +630,27 @@ class TemplatePanel(wx.Panel):
 
     def prefill_defaults(self):
         def prefill_op(op):
-            if op is None or op.type not in op_parent_nodes:
+            if op is None:
                 return
             fields = {}
-            if hasattr(self.context.device, "get_operation_defaults"):
-                fields.update(self.context.device.get_operation_defaults(op.type))
+            if op.type.startswith("effect "):
+                if hasattr(self.context.device, "get_effect_defaults"):
+                    fields.update(self.context.device.get_effect_defaults(op.type))
+            else:
+                if hasattr(self.context.device, "get_operation_defaults"):
+                    fields.update(self.context.device.get_operation_defaults(op.type))
             for source, value in fields.items():
-                op.settings[source] = value
-            p = self.context.material_operation_power
-            if p is not None:
-                op.settings["power"] = p
-            s = self.context.material_operation_speed
-            if s is not None:
-                op.settings["speed"] = s
+                if hasattr(op, "settings"):
+                    op.settings[source] = value
+                elif hasattr(op, source):
+                    setattr(op, source, value)
+            if op.type in op_parent_nodes:
+                p = self.context.material_operation_power
+                if p is not None:
+                    op.settings["power"] = p
+                s = self.context.material_operation_speed
+                if s is not None:
+                    op.settings["speed"] = s
 
         for op in self.default_op:
             prefill_op(op)

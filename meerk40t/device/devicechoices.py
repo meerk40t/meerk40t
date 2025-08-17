@@ -1,6 +1,10 @@
 from meerk40t.kernel import _
 
+
 def get_effect_choices(context):
+    def get_wobble_options():
+        return list(context.match("wobble", suffix=True))
+
     return [
         {
             "attr": "effect_hatch_default_distance",
@@ -33,6 +37,28 @@ def get_effect_choices(context):
             "section": "Effect Defaults",
         },
         {
+            "attr": "effect_wobble_default_type",
+            "object": context,
+            "default": "circle",
+            "type": str,
+            "style": "combo",
+            "choices": get_wobble_options(),
+            "label": _("Wobble Type"),
+            "tip": _("Default Wobble Type"),
+            # Hint for translation _("Effect Defaults")
+            "section": "Effect Defaults",
+        },
+        {
+            "attr": "effect_wobble_default_speed",
+            "object": context,
+            "default": 50,
+            "type": int,
+            "label": _("Wobble Speed"),
+            "tip": _("Default Wobble Speed"),
+            # Hint for translation _("Effect Defaults")
+            "section": "Effect Defaults",
+        },
+        {
             "attr": "effect_wobble_default_radius",
             "object": context,
             "default": "0.5mm",
@@ -45,7 +71,7 @@ def get_effect_choices(context):
         {
             "attr": "effect_wobble_default_interval",
             "object": context,
-            "default": "0.05mm",
+            "default": "0.1mm",
             "type": str,
             "label": _("Wobble Interval"),
             "tip": _("Default Wobble Interval"),

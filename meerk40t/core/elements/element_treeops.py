@@ -2359,7 +2359,10 @@ def init_tree(kernel):
     def add_hatch_to_op(node, pos=None, **kwargs):
         with self.undoscope("Add hatch"):
             old_children = list(node.children)
-            effect = node.add("effect hatch")
+            settings = {}
+            if hasattr(self.device, "get_effect_defaults"):
+                settings.update(self.device.get_effect_defaults("effect hatch"))
+            effect = node.add("effect hatch", **settings)
             effect.stroke = node.color
             for e in old_children:
                 if e is effect:
@@ -2379,7 +2382,10 @@ def init_tree(kernel):
     def add_wobble_to_op(node, pos=None, **kwargs):
         with self.undoscope("Add wobble"):
             old_children = list(node.children)
-            effect = node.add("effect wobble")
+            settings = {}
+            if hasattr(self.device, "get_effect_defaults"):
+                settings.update(self.device.get_effect_defaults("effect wobble"))
+            effect = node.add("effect wobble", **settings)
             effect.stroke = node.color
             for e in old_children:
                 if e is effect:
@@ -2463,7 +2469,10 @@ def init_tree(kernel):
             if hasattr(self.device, "get_operation_defaults"):
                 settings.update(self.device.get_operation_defaults("op engrave"))
             b = self.op_branch.add("op engrave", pos=pos, **settings)
-            b.add("effect hatch")
+            settings = {}
+            if hasattr(self.device, "get_effect_defaults"):
+                settings.update(self.device.get_effect_defaults("effect hatch"))
+            b.add("effect hatch", **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
