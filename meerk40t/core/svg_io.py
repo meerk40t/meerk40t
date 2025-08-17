@@ -610,7 +610,7 @@ class SVGWriter:
             ):
                 continue
             if hasattr(node, "settings"):
-                # Did we end up with default atributes define node.py? Remove
+                # Did we end up with default attributes defined in node.py? Remove them...
                 disallowed = ("type", "id", "label", "lock")
                 for key in disallowed:
                     if key in node.settings:
@@ -1083,7 +1083,7 @@ class SVGProcessor:
         @param e_list:
         @return:
         """
-        if len(element) < 0:
+        if len(element) == 0:
             return
 
         if element.values.get("type") == "elem polyline":
@@ -1445,8 +1445,9 @@ class SVGProcessor:
         """
 
         # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
-        tag = element.values.get(SVG_ATTR_TAG).lower()
+        tag = element.values.get(SVG_ATTR_TAG, None)
         if tag is not None:
+            tag = tag.lower()
             # We remove the name space.
             full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
             if full_ns in tag:
