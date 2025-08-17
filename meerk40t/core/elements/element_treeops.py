@@ -2399,7 +2399,10 @@ def init_tree(kernel):
     )
     def append_operation_image(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op image", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op image"))
+            self.op_branch.add("op image", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2411,7 +2414,10 @@ def init_tree(kernel):
     )
     def append_operation_raster(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op raster", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op raster"))
+            self.op_branch.add("op raster", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2423,7 +2429,10 @@ def init_tree(kernel):
     )
     def append_operation_engrave(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op engrave", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op engrave"))
+            self.op_branch.add("op engrave", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2435,7 +2444,10 @@ def init_tree(kernel):
     )
     def append_operation_cut(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op cut", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op cut"))
+            self.op_branch.add("op cut", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2447,7 +2459,10 @@ def init_tree(kernel):
     )
     def append_operation_hatch(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            b = self.op_branch.add("op engrave", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op engrave"))
+            b = self.op_branch.add("op engrave", pos=pos, **settings)
             b.add("effect hatch")
         self.signal("updateop_tree")
 
@@ -2459,7 +2474,11 @@ def init_tree(kernel):
         grouping="OPS_40_ADDITION",
     )
     def append_operation_dots(node, pos=None, **kwargs):
-        self.op_branch.add("op dots", pos=pos)
+        with self.undoscope("Append operation"):
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op dots"))
+            self.op_branch.add("op dots", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))

@@ -633,26 +633,10 @@ class TemplatePanel(wx.Panel):
             if op is None or op.type not in op_parent_nodes:
                 return
             fields = {}
-            if "balor" in self.context.device.path:
-                fields = {
-                    "default_power": "power",
-                    "default_speed": "speed",
-                    "default_frequency": "frequency",
-                    "rapid_enabled": "",
-                    "rapid_speed": "",
-                    "timing_enabled": "",
-                    "delay_laser_on": "",
-                    "delay_laser_off": "",
-                    "delay_polygon": "",
-                    "pulse_width_enabled": "",
-                    "pulse_width": "",
-                }
-            for source, target in fields.items():
-                if target is None or target == "":
-                    target = source
-                if not hasattr(self.context.device, source):
-                    continue
-                op.settings[target] = getattr(self.context.device, source)
+            if hasattr(self.context.device, "get_operation_defaults"):
+                fields.update(self.context.device.get_operation_defaults(op.type))
+            for source, value in fields.items():
+                op.settings[source] = value
             p = self.context.material_operation_power
             if p is not None:
                 op.settings["power"] = p

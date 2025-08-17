@@ -1089,24 +1089,30 @@ class BalorDevice(Service, Status):
         """
         Returns the default operation settings for the device.
         """
-        settings = {}
+        settings = {
+            "timing_enabled": False,
+            "delay_polygon": self.delay_polygon,
+            "delay_laser_off": self.delay_laser_off,
+            "delay_laser_on": self.delay_laser_on,
+            "pulse_width_enabled": self.pulse_width_enabled,
+            "pulse_width": self.default_pulse_width,
+            "rapid_enabled": False,
+            "rapid_speed": self.default_rapid_speed,
+        }
         if op_type in ["op cut", "op engrave"]:
-            settings = {
-                "speed": self.default_speed,
-                "power": self.default_power,
-                "frequency": self.default_frequency,
-            }
+            settings.update(
+                {
+                    "speed": self.default_speed,
+                    "power": self.default_power,
+                    "frequency": self.default_frequency,
+                }
+            )
         elif op_type in ["op image", "op raster"]:
-            settings = {
-                "speed": self.default_speed_raster,
-                "power": self.default_power_raster,
-                "frequency": self.default_frequency,
-            }
-
-        settings["timing_enabled"] = False
-        settings["delay_polygon"] = self.delay_polygon
-        settings["delay_laser_off"] = self.delay_laser_off
-        settings["delay_laser_on"] = self.delay_laser_on
-        settings["pulse_width_enabled"] = self.pulse_width_enabled
-        settings["pulse_width"] = self.default_pulse_width
+            settings.update(
+                {
+                    "speed": self.default_speed_raster,
+                    "power": self.default_power_raster,
+                    "frequency": self.default_frequency,
+                }
+            )
         return settings
