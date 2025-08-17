@@ -542,7 +542,7 @@ class MoshiDevice(Service, Status):
             else f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
         )
 
-    def get_operation_default_settings(self, operation_type: str) -> dict:
+    def get_operation_defaults(self, operation_type: str) -> dict:
         """
         Returns the default settings for a specific operation type.
         """

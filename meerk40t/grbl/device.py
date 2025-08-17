@@ -1288,7 +1288,7 @@ class GRBLDevice(Service, Status):
             return
         yield ("console", "red off -f")
 
-    def get_operation_default_settings(self, operation_type: str) -> dict:
+    def get_operation_defaults(self, operation_type: str) -> dict:
         """
         Returns the default settings for a specific operation type.
         """

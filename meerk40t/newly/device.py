@@ -982,7 +982,7 @@ class NewlyDevice(Service, Status):
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
 
-    def get_operation_default_settings(self, operation_type: str) -> dict:
+    def get_operation_defaults(self, operation_type: str) -> dict:
         """
         Returns the default settings for a specific operation type.
         """
