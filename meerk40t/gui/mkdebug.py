@@ -1163,7 +1163,10 @@ class DebugSettingsPanel(wx.Panel):
             else:
                 return time.strftime("%H:%M:%S", time.localtime(ts))
 
-        self.info.DeleteAllItems()
+        try:
+            self.info.DeleteAllItems()
+        except RuntimeError:
+            return  # Already deleted...
         root = self.info.AddRoot(_("Operation settings"))
         for node in self.context.elements.ops():
             nodeitem = self.info.AppendItem(root, str(node))
