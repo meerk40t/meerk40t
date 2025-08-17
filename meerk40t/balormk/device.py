@@ -433,7 +433,7 @@ class BalorDevice(Service, Status):
                 "default": 500.0,
                 "type": float,
                 "label": _("Power"),
-                "trailer": "ppi",
+                "trailer": "/1000",
                 # Translation hint: _("Cut/Engrave")
                 "subsection": "_10_Cut/Engrave",
                 "tip": _("What power level do we cut at?"),
@@ -454,7 +454,7 @@ class BalorDevice(Service, Status):
                 "default": 500.0,
                 "type": float,
                 "label": _("Power"),
-                "trailer": "ppi",
+                "trailer": "/1000",
                 # Translation hint: _("Raster")
                 "subsection": "_20_Raster",
                 "tip": _("What power level do we cut at?"),
