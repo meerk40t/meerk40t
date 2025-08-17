@@ -3033,6 +3033,8 @@ def init_tree(kernel):
                 except ValueError:
                     pos = None
                 copy_op = copy(op)
+                if hasattr(op, "settings"):
+                    copy_op.settings = copy(op.settings)
                 self.add_op(copy_op, pos=pos)
                 for child in op.children:
                     if child.type.startswith("effect "):
@@ -3746,6 +3748,8 @@ def init_tree(kernel):
                 delta_wordlist += 1
 
                 copy_node = copy(orgnode)
+                if hasattr(orgnode, "settings"):
+                    copy_node.settings = copy(orgnode.settings)
                 if hasattr(copy_node, "matrix"):
                     copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
                 # Need to add stroke and fill, as copy will take the
