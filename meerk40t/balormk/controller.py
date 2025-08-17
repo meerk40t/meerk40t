@@ -1203,7 +1203,7 @@ class GalvoController:
         if self._delay_on == delay:
             return
         self._delay_on = delay
-        self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_laser_off_delay(self, delay):
         """
@@ -1214,7 +1214,9 @@ class GalvoController:
         if self._delay_off == delay:
             return
         self._delay_off = delay
-        self._list_write(listLaserOffDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(
+            listLaserOffDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000
+        )
 
     def list_mark_frequency(self, frequency):
         """
@@ -1260,7 +1262,7 @@ class GalvoController:
         if self._delay_jump == delay:
             return
         self._delay_jump = delay
-        self._list_write(listJumpDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(listJumpDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_polygon_delay(self, delay):
         """
@@ -1336,7 +1338,7 @@ class GalvoController:
         @param delay:
         @return:
         """
-        self._list_write(listFlyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(listFlyDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_set_co2_fpk(self, fpk1, fpk2=None):
         """
@@ -1507,7 +1509,7 @@ class GalvoController:
 
     def set_max_poly_delay(self, delay):
         return self._command(
-            SetMaxPolyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000
+            SetMaxPolyDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000
         )
 
     def set_end_of_list(self, end):
