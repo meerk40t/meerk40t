@@ -89,6 +89,7 @@ Functions:
 import math
 import os.path
 from copy import copy
+from turtle import speed
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Fillrule, Node
@@ -1319,6 +1320,45 @@ def init_tree(kernel):
                 self.signal("element_property_reload", data)
                 break
 
+    @tree_operation(
+        _("Reset to device default values"),
+        node_type=op_nodes,
+        help=_(
+            "Will reset power / speed and some other properties to device default values"
+        ),
+        grouping="OPS_70_MODIFY",
+    )
+    def reset_op_properties(node, **kwargs):
+        data = list()
+        for n in list(self.ops(selected=True)):
+            data.append(n)
+        if not data:
+            return
+        changed_ops = []
+        # Translation hint: _("Reset to device default values")
+        with self.undoscope("Reset to device default values"):
+            for op in data:
+                changes = False
+                fields = {}
+                if op.type.startswith("effect "):
+                    if hasattr(self.device, "get_effect_defaults"):
+                        fields.update(self.device.get_effect_defaults(op.type))
+                else:
+                    if hasattr(self.device, "get_operation_defaults"):
+                        fields.update(self.device.get_operation_defaults(op.type))
+                for source, value in fields.items():
+                    if hasattr(op, "settings"):
+                        if op.settings.get(source, None) != value:
+                            op.settings[source] = value
+                            changes = True
+                    elif hasattr(op, source):
+                        if getattr(op, source, None) != value:
+                            setattr(op, source, value)
+                            changes = True
+                if changes:
+                    changed_ops.append(op)
+        self.signal("element_property_reload", changed_ops)
+
     def selected_active_ops():
         result = 0
         selected = 0
@@ -2239,7 +2279,7 @@ def init_tree(kernel):
         entries = list()
         self.op_data.read_configuration()
         for material in self.op_data.section_set():
-            if material == "previous":
+            if material.startswith("previous"):
                 was_previous = True
                 continue
             opinfo = self.load_persistent_op_info(material)
@@ -2279,7 +2319,7 @@ def init_tree(kernel):
         was_previous = False
         entries = list()
         for material in self.op_data.section_set():
-            if material == "previous":
+            if material.startswith("previous"):
                 was_previous = True
                 continue
             opinfo = self.load_persistent_op_info(material)
@@ -2359,7 +2399,10 @@ def init_tree(kernel):
     def add_hatch_to_op(node, pos=None, **kwargs):
         with self.undoscope("Add hatch"):
             old_children = list(node.children)
-            effect = node.add("effect hatch")
+            settings = {}
+            if hasattr(self.device, "get_effect_defaults"):
+                settings.update(self.device.get_effect_defaults("effect hatch"))
+            effect = node.add("effect hatch", **settings)
             effect.stroke = node.color
             for e in old_children:
                 if e is effect:
@@ -2379,7 +2422,10 @@ def init_tree(kernel):
     def add_wobble_to_op(node, pos=None, **kwargs):
         with self.undoscope("Add wobble"):
             old_children = list(node.children)
-            effect = node.add("effect wobble")
+            settings = {}
+            if hasattr(self.device, "get_effect_defaults"):
+                settings.update(self.device.get_effect_defaults("effect wobble"))
+            effect = node.add("effect wobble", **settings)
             effect.stroke = node.color
             for e in old_children:
                 if e is effect:
@@ -2399,7 +2445,10 @@ def init_tree(kernel):
     )
     def append_operation_image(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op image", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op image"))
+            self.op_branch.add("op image", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2411,7 +2460,10 @@ def init_tree(kernel):
     )
     def append_operation_raster(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op raster", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op raster"))
+            self.op_branch.add("op raster", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2423,7 +2475,10 @@ def init_tree(kernel):
     )
     def append_operation_engrave(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op engrave", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op engrave"))
+            self.op_branch.add("op engrave", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2435,7 +2490,10 @@ def init_tree(kernel):
     )
     def append_operation_cut(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add("op cut", pos=pos)
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op cut"))
+            self.op_branch.add("op cut", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2447,8 +2505,14 @@ def init_tree(kernel):
     )
     def append_operation_hatch(node, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            b = self.op_branch.add("op engrave", pos=pos)
-            b.add("effect hatch")
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op engrave"))
+            b = self.op_branch.add("op engrave", pos=pos, **settings)
+            settings = {}
+            if hasattr(self.device, "get_effect_defaults"):
+                settings.update(self.device.get_effect_defaults("effect hatch"))
+            b.add("effect hatch", **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -2459,7 +2523,11 @@ def init_tree(kernel):
         grouping="OPS_40_ADDITION",
     )
     def append_operation_dots(node, pos=None, **kwargs):
-        self.op_branch.add("op dots", pos=pos)
+        with self.undoscope("Append operation"):
+            settings = {}
+            if hasattr(self.device, "get_operation_defaults"):
+                settings.update(self.device.get_operation_defaults("op dots"))
+            self.op_branch.add("op dots", pos=pos, **settings)
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
@@ -2965,16 +3033,24 @@ def init_tree(kernel):
                 except ValueError:
                     pos = None
                 copy_op = copy(op)
+                if hasattr(op, "settings"):
+                    copy_op.settings = copy(op.settings)
                 self.add_op(copy_op, pos=pos)
                 for child in op.children:
                     if child.type.startswith("effect "):
                         child_copy = copy(child)
                         copy_op.append_child(child_copy)
                         for ref in child.children:
-                            copy_op.add_reference(ref.node)
+                            if hasattr(ref, "node"):
+                                copy_op.add_reference(ref.node)
+                            else:
+                                copy_op.add_reference(ref)
                     else:
                         try:
-                            copy_op.add_reference(child.node)
+                            if hasattr(child, "node"):
+                                copy_op.add_reference(child.node, ignore_effect=True)
+                            else:
+                                copy_op.add_reference(child, ignore_effect=True)
                         except AttributeError:
                             pass
 
@@ -3013,7 +3089,10 @@ def init_tree(kernel):
             for i in range(len(add_nodes) - 1, -1, -1):
                 n = add_nodes[i]
                 for k in range(copies):
-                    node.add_reference(n.node, pos=i)
+                    if hasattr(n, "node"):
+                        node.add_reference(n.node, pos=i)
+                    else:
+                        node.add_reference(n, pos=i)
 
         self.signal("refresh_tree")
 
@@ -3669,6 +3748,8 @@ def init_tree(kernel):
                 delta_wordlist += 1
 
                 copy_node = copy(orgnode)
+                if hasattr(orgnode, "settings"):
+                    copy_node.settings = copy(orgnode.settings)
                 if hasattr(copy_node, "matrix"):
                     copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
                 # Need to add stroke and fill, as copy will take the

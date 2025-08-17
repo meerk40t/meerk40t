@@ -356,7 +356,6 @@ def init_commands(kernel):
         type=bool,
         action="store_true",
         help=_("Do not allow segment flips"),
-        default=10,
     )
     @self.console_command(
         "greedy",
@@ -425,17 +424,36 @@ def init_commands(kernel):
         data.rotate(angle.radians)
         return "geometry", data
 
-    @self.console_option("distance", "d", type=Length, default="1mm")
+    @self.console_option(
+        "unidirectional",
+        "u",
+        type=bool,
+        action="store_true",
+        help=_("Use unidirectional hatch lines"),
+        default=False,
+    )
     @self.console_option("angle", "a", type=Angle, default="0deg")
+    @self.console_argument(
+        "distance", type=Length, help=_("Distance between hatch lines"), default="0.5mm"
+    )
     @self.console_command(
         "hatch",
         help=_("Add hatch geometry"),
         input_type="geometry",
         output_type="geometry",
     )
-    def geometry_hatch(data: Geomstr, distance: Length, angle: Angle, **kwargs):
+    def geometry_hatch(
+        data: Geomstr, distance: Length, angle: Angle, unidirectional: bool, **kwargs
+    ):
         segments = data.segmented()
-        hatch = Geomstr.hatch(segments, angle=angle.radians, distance=float(distance))
+        if unidirectional is None:
+            unidirectional = False
+        hatch = Geomstr.hatch(
+            segments,
+            angle=angle.radians,
+            distance=float(distance),
+            unidirectional=unidirectional,
+        )
         if data is None:
             data = Geomstr()
         data.append(hatch)

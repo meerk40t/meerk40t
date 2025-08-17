@@ -13,7 +13,7 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import UNITS_PER_MIL, Length
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
@@ -119,7 +119,7 @@ class LihuiyuDevice(Service, Status):
                 # _("User Offset")
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -133,7 +133,7 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -451,6 +451,15 @@ class LihuiyuDevice(Service, Status):
         self.register_choices("lhy-general", choices)
 
         self.register_choices("lhy-effects", get_effect_choices(self))
+        self.register_choices(
+            "lhy-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         choices = [
             {
@@ -1303,3 +1312,11 @@ class LihuiyuDevice(Service, Status):
         if self.networked:
             return f"tcp {self.address}:{self.port}"
         return f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

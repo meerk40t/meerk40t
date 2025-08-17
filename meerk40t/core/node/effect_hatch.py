@@ -27,6 +27,7 @@ class HatchEffectNode(Node, Suppressable):
         self.hatch_angle = None
         self.hatch_angle_delta = None
         self.hatch_type = None
+        self.unidirectional = False
         self.loops = None
         self._interim = False
         super().__init__(
@@ -83,7 +84,7 @@ class HatchEffectNode(Node, Suppressable):
         Returns:
             str: A descriptor string in the format "<type>|<hatch_type>|<hatch_distance>|<hatch_angle>|<hatch_angle_delta>|<loops>".
         """
-        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}"
+        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}"
 
     def set_effect_descriptor(self, descriptor):
         """
@@ -102,6 +103,9 @@ class HatchEffectNode(Node, Suppressable):
             ValueError: Silently ignored if the descriptor cannot be split into five parts.
         """
         try:
+            pattern = descriptor.split("|")
+            if len(pattern) == 6:  # Old format
+                pattern.append("0")  # Default unidirectional to False
             (
                 typeinfo,
                 hatchtype,
@@ -109,13 +113,15 @@ class HatchEffectNode(Node, Suppressable):
                 hatchangle,
                 hatchangledelta,
                 loops,
-            ) = descriptor.split("|")
+                unidirectional,
+            ) = pattern
             if typeinfo == self.type:
                 self.hatch_type = hatchtype
                 self.hatch_distance = hatchdistance
                 self.hatch_angle = hatchangle
                 self.hatch_angle_delta = hatchangledelta
                 self.loops = loops
+                self.unidirectional = unidirectional == "1"
                 self.recalculate()
         except ValueError:
             pass
@@ -349,6 +355,7 @@ class HatchEffectNode(Node, Suppressable):
                     outlines,
                     distance=self._distance,
                     angle=self._angle + p * self._angle_delta,
+                    unidirectional=self.unidirectional,
                 )
             )
         return path
@@ -376,6 +383,7 @@ class HatchEffectNode(Node, Suppressable):
                     o,
                     distance=self._distance,
                     angle=self._angle + p * self._angle_delta,
+                    unidirectional=self.unidirectional,
                 )
 
     def set_interim(self):

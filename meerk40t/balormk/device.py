@@ -8,7 +8,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import Service, signal_listener
 
@@ -235,7 +235,7 @@ class BalorDevice(Service, Status):
                 # _("User Offset")
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -250,7 +250,7 @@ class BalorDevice(Service, Status):
                 "section": "_10_Parameters",
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "interp",
@@ -370,6 +370,15 @@ class BalorDevice(Service, Status):
         self.register_choices("balor", choices)
 
         self.register_choices("balor-effects", get_effect_choices(self))
+        self.register_choices(
+            "balor-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=150,
+                default_engrave_speed=250,
+                default_raster_speed=500,
+            ),
+        )
 
         choices = [
             {
@@ -430,11 +439,17 @@ class BalorDevice(Service, Status):
             {
                 "attr": "default_power",
                 "object": self,
-                "default": 50.0,
+                "default": 500.0,
                 "type": float,
-                "label": _("Laser Power"),
-                "trailer": "%",
-                "tip": _("What power level do we cut at?"),
+                "label": _("Power"),
+                "trailer": "/1000",
+                # Translation hint: _("Cut/Engrave")
+                "subsection": "_10_Cut/Engrave",
+                "tip": _("What power level do we cut at?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
             },
             {
                 "attr": "default_speed",
@@ -442,8 +457,13 @@ class BalorDevice(Service, Status):
                 "default": 100.0,
                 "type": float,
                 "trailer": "mm/s",
-                "label": _("Cut Speed"),
-                "tip": _("How fast do we cut?"),
+                "label": _("Speed"),
+                "subsection": "_10_Cut/Engrave",
+                "tip": _("How fast do we cut?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
             },
             {
                 "attr": "default_frequency",
@@ -452,6 +472,8 @@ class BalorDevice(Service, Status):
                 "type": float,
                 "trailer": "kHz",
                 "label": _("Q Switch Frequency"),
+                # Hint for translation _("Miscellaneous")
+                "subsection": "_50_Miscellaneous",
                 "tip": _("QSwitch Frequency value"),
             },
             {
@@ -461,6 +483,7 @@ class BalorDevice(Service, Status):
                 "type": float,
                 "trailer": "%",
                 "label": _("First Pulse Killer"),
+                "subsection": "_50_Miscellaneous",
                 "conditional": (self, "source", "co2"),
                 "tip": _("Percent of First Pulse Killer for co2 source"),
             },
@@ -469,7 +492,9 @@ class BalorDevice(Service, Status):
                 "object": self,
                 "default": 2000.0,
                 "type": float,
-                "label": _("Travel Speed"),
+                "label": _("Speed"),
+                # Translation hint: _("Travel")
+                "subsection": "_30_Travel",
                 "trailer": "mm/s",
                 "tip": _("How fast do we travel when not cutting?"),
             },
@@ -482,7 +507,7 @@ class BalorDevice(Service, Status):
                 "tip": _("Enable using Pulse Width (MOPA)"),
                 # "conditional": (self, "source", "fiber"),
                 # Hint for translation _("Pulse Width")
-                "subsection": "Pulse Width",
+                "subsection": "_40_Pulse Width",
             },
             {
                 "attr": "default_pulse_width",
@@ -513,7 +538,7 @@ class BalorDevice(Service, Status):
                 "trailer": "ns",
                 "tip": _("Set the MOPA pulse width setting"),
                 # Hint for translation _("Pulse Width")
-                "subsection": "Pulse Width",
+                "subsection": "_40_Pulse Width",
             },
         ]
         self.register_choices("balor-global", choices)
@@ -558,6 +583,8 @@ class BalorDevice(Service, Status):
                 "type": float,
                 "label": _("Polygon Delay"),
                 "trailer": "µs",
+                "lower": 0,
+                "upper": 655350,
                 "tip": _("Delay amount between different points in the path travel."),
                 # Hint for translation _("General")
                 "section": "_10_General",
@@ -1055,3 +1082,22 @@ class BalorDevice(Service, Status):
         If the device is in mock mode, returns 'mock', otherwise returns 'usb'.
         """
         return "mock" if self.mock else "usb"
+
+    def get_operation_defaults(self, op_type: str) -> dict:
+        """
+        Returns the default operation settings for the device.
+        """
+        settings = {
+            "timing_enabled": False,
+            "delay_polygon": self.delay_polygon,
+            "delay_laser_off": self.delay_laser_off,
+            "delay_laser_on": self.delay_laser_on,
+            "pulse_width_enabled": self.pulse_width_enabled,
+            "pulse_width": self.default_pulse_width,
+            "rapid_enabled": False,
+            "rapid_speed": self.default_rapid_speed,
+            "frequency": self.default_frequency,
+        }
+        ps_settings = self.get_operation_power_speed_defaults(op_type)
+        settings.update(ps_settings)
+        return settings

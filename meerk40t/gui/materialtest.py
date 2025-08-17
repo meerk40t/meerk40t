@@ -25,7 +25,7 @@ from meerk40t.gui.wxutils import (
     wxListBox,
     wxStaticText,
 )
-from meerk40t.kernel import Settings, lookup_listener, signal_listener
+from meerk40t.kernel import Settings, lookup_listener, settings, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
@@ -188,6 +188,8 @@ class TemplatePanel(wx.Panel):
         self.context.themes.set_window_colors(self)
         self.context.setting(float, "material_description_speed", 250)
         self.context.setting(float, "material_description_power", 1000)
+        self.context.setting(float, "material_operation_speed", None)
+        self.context.setting(float, "material_operation_power", None)
         self.check_raster_description_parameters()
         # Lets have a look whether we still have an operation open that fits the bill...
         self.SetHelpText("testpattern")
@@ -202,6 +204,8 @@ class TemplatePanel(wx.Panel):
             _("Hatch"),
             _("Wobble"),
         ]
+        # Allow the shape to be added a second time for effects, but outside the secondary operation
+
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
         self.secondary_default_op = []
@@ -331,6 +335,10 @@ class TemplatePanel(wx.Panel):
         )
         self.check_color_direction_2 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
+        self.check_duplicate_shapes = wxCheckBox(
+            self, wx.ID_ANY, _("Create boundary shape")
+        )
+
         self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
@@ -349,6 +357,7 @@ class TemplatePanel(wx.Panel):
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
         self.sizer_param_op.Add(h1, 0, wx.EXPAND, 0)
         self.sizer_param_op.Add(self.combo_images, 0, wx.EXPAND, 0)
+        self.sizer_param_op.Add(self.check_duplicate_shapes, 0, wx.EXPAND, 0)
 
         sizer_param_check = StaticBoxSizer(
             self, wx.ID_ANY, _("Show Labels / Values"), wx.HORIZONTAL
@@ -589,6 +598,10 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.SetToolTip(_("Horizontal gap between patterns"))
         self.text_delta_2.SetToolTip(_("Vertical gap between patterns"))
 
+        self.check_duplicate_shapes.SetToolTip(
+            _("Add the shape a second time around the effect")
+        )
+
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
@@ -604,6 +617,7 @@ class TemplatePanel(wx.Panel):
         self.combo_images.Bind(wx.EVT_COMBOBOX, self.on_combo_image)
         self.spin_count_1.Bind(wx.EVT_SPINCTRL, self.validate_input)
         self.spin_count_2.Bind(wx.EVT_SPINCTRL, self.validate_input)
+
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_1)
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_2)
 
@@ -616,28 +630,27 @@ class TemplatePanel(wx.Panel):
 
     def prefill_defaults(self):
         def prefill_op(op):
-            if op is None or op.type not in op_parent_nodes:
+            if op is None:
                 return
             fields = {}
-            if "balor" in self.context.device.path:
-                fields = {
-                    "default_power": "power",
-                    "default_speed": "speed",
-                    "rapid_enabled": "",
-                    "rapid_speed": "",
-                    "timing_enabled": "",
-                    "delay_laser_on": "",
-                    "delay_laser_off": "",
-                    "delay_polygon": "",
-                    "pulse_width_enabled": "",
-                    "pulse_width": "",
-                }
-            for source, target in fields.items():
-                if target is None or target == "":
-                    target = source
-                if not hasattr(self.context.device, source):
-                    continue
-                op.settings[target] = getattr(self.context.device, source)
+            if op.type.startswith("effect "):
+                if hasattr(self.context.device, "get_effect_defaults"):
+                    fields.update(self.context.device.get_effect_defaults(op.type))
+            else:
+                if hasattr(self.context.device, "get_operation_defaults"):
+                    fields.update(self.context.device.get_operation_defaults(op.type))
+            for source, value in fields.items():
+                if hasattr(op, "settings"):
+                    op.settings[source] = value
+                elif hasattr(op, source):
+                    setattr(op, source, value)
+            if op.type in op_parent_nodes:
+                p = self.context.material_operation_power
+                if p is not None:
+                    op.settings["power"] = p
+                s = self.context.material_operation_speed
+                if s is not None:
+                    op.settings["speed"] = s
 
         for op in self.default_op:
             prefill_op(op)
@@ -765,6 +778,11 @@ class TemplatePanel(wx.Panel):
             self.combo_images.Show(self.use_image[opidx])
             self.text_dim_1.Enable(not self.use_image[opidx])
             self.text_dim_2.Enable(not self.use_image[opidx])
+        # print (f"Master vs Secondary: {type(opnode).__name__} vs {type(secondary_node).__name__}")
+        shape_option = secondary_node is not None and type(opnode) is not type(
+            secondary_node
+        )
+        self.check_duplicate_shapes.Show(shape_option)
 
         self.sizer_param_op.Layout()
         if self.callback is not None:
@@ -1224,7 +1242,7 @@ class TemplatePanel(wx.Panel):
             dimension_1 = max(get_float(self.text_dim_1, -1), 5)
             dimension_2 = max(get_float(self.text_dim_2, -1), 5)
             gap_1 = max(get_float(self.text_delta_1, -1), 0)
-            gap_2 = max(get_float(self.text_delta_2, -1), 5)
+            gap_2 = max(get_float(self.text_delta_2, -1), 0)
 
             # print (f"Creating operations for {len(range1)} x {len(range2)}")
             display_labels = self.check_labels.GetValue()
@@ -1254,7 +1272,6 @@ class TemplatePanel(wx.Panel):
 
             text_scale_x = min(1.0, size_y / float(Length("20mm")))
             text_scale_y = min(1.0, size_x / float(Length("20mm")))
-
             # Make one op for text
             if display_labels or display_values:
                 for axis, label in zip(
@@ -1282,7 +1299,10 @@ class TemplatePanel(wx.Panel):
                     return node
 
                 text_x = start_x + expected_width / 2
-                text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
+                # maintext gap label gap shape
+                text_y = start_y - 2 * max(text_scale_x, text_scale_y) * float(
+                    Length("10mm")
+                )
                 unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
                 add_axis_label(
                     f"{param_name_1}{unit_str}",
@@ -1291,7 +1311,9 @@ class TemplatePanel(wx.Panel):
                     2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
                     text_op_x,
                 )
-                text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
+                text_x = start_x - 2 * max(text_scale_x, text_scale_y) * float(
+                    Length("10mm")
+                )
                 text_y = start_y + expected_height / 2
                 unit_str = f" [{param_unit_2}]" if param_unit_2 else ""
                 node = add_axis_label(
@@ -1324,7 +1346,9 @@ class TemplatePanel(wx.Panel):
                 if display_values:
                     # Add a text above for each column
                     text_x = xx + 0.5 * size_x
-                    text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
+                    text_y = yy - 1.25 * max(text_scale_x, text_scale_y) * float(
+                        Length("5mm")
+                    )
                     node = element_branch.add(
                         text=f"{pval1}",
                         matrix=Matrix(
@@ -1354,7 +1378,9 @@ class TemplatePanel(wx.Panel):
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
                     if display_values and idx1 == 0:  # first row, so add a text above
-                        text_x = xx - min(float(Length("5mm")), 1.5 * gap_x)
+                        text_x = xx - 1.25 * max(text_scale_x, text_scale_y) * float(
+                            Length("5mm")
+                        )
                         text_y = yy + 0.5 * size_y
                         node = element_branch.add(
                             text=f"{pval2}",
@@ -1394,6 +1420,8 @@ class TemplatePanel(wx.Panel):
                         usefill = False
                     else:
                         return
+                    self.context.material_operation_power = master_op.power
+                    self.context.material_operation_speed = master_op.speed
                     this_op.label = s_lbl
 
                     def set_param(op, ptype, value, keep_unit, unit, prepper):
@@ -1496,8 +1524,17 @@ class TemplatePanel(wx.Panel):
                     if elemnode is not None:
                         elemnode.label = s_lbl
                         this_op.add_reference(elemnode, 0)
-                    yy = yy + gap_y + size_y
-                xx = xx + gap_x + size_x
+                        if duplicate_shapes:
+                            master_op.add_reference(elemnode, ignore_effect=True)
+
+                    yy += gap_y + size_y
+                xx += gap_x + size_x
+
+        # Do we need to check for duplicate shapes?
+        duplicate_shapes = (
+            self.check_duplicate_shapes.IsShown()
+            and self.check_duplicate_shapes.GetValue()
+        )
 
         # Remember any changes made by the user to the description operations
         self.check_raster_description_parameters()

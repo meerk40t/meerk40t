@@ -435,7 +435,7 @@ class DriverToPath:
                 "default": 200,
                 "type": float,
                 "label": "Lowest Power",
-                "trailer": "ppi",
+                "trailer": "/1000",
                 "tip": "Minimum power used will be mapped to lower level",
                 "conditional": (self, "scale_power"),
                 # Hint for translation _("Operation")

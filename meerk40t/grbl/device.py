@@ -7,7 +7,7 @@ Registers relevant commands and options.
 
 from time import sleep
 
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -236,6 +236,15 @@ class GRBLDevice(Service, Status):
         self.register_choices("bed_dim", choices)
 
         self.register_choices("grbl-effects", get_effect_choices(self))
+        self.register_choices(
+            "grbl-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
@@ -1278,3 +1287,11 @@ class GRBLDevice(Service, Status):
         if not (self.use_red_dot and self.use_red_dot_for_outline):
             return
         yield ("console", "red off -f")
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

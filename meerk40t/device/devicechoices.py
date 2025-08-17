@@ -1,6 +1,10 @@
 from meerk40t.kernel import _
 
+
 def get_effect_choices(context):
+    def get_wobble_options():
+        return list(context.match("wobble", suffix=True))
+
     return [
         {
             "attr": "effect_hatch_default_distance",
@@ -33,6 +37,28 @@ def get_effect_choices(context):
             "section": "Effect Defaults",
         },
         {
+            "attr": "effect_wobble_default_type",
+            "object": context,
+            "default": "circle",
+            "type": str,
+            "style": "combo",
+            "choices": get_wobble_options(),
+            "label": _("Wobble Type"),
+            "tip": _("Default Wobble Type"),
+            # Hint for translation _("Effect Defaults")
+            "section": "Effect Defaults",
+        },
+        {
+            "attr": "effect_wobble_default_speed",
+            "object": context,
+            "default": 50,
+            "type": int,
+            "label": _("Wobble Speed"),
+            "tip": _("Default Wobble Speed"),
+            # Hint for translation _("Effect Defaults")
+            "section": "Effect Defaults",
+        },
+        {
             "attr": "effect_wobble_default_radius",
             "object": context,
             "default": "0.5mm",
@@ -45,7 +71,7 @@ def get_effect_choices(context):
         {
             "attr": "effect_wobble_default_interval",
             "object": context,
-            "default": "0.05mm",
+            "default": "0.1mm",
             "type": str,
             "label": _("Wobble Interval"),
             "tip": _("Default Wobble Interval"),
@@ -53,3 +79,46 @@ def get_effect_choices(context):
             "section": "Effect Defaults",
         },
     ]
+
+
+def get_operation_choices(
+    context, default_cut_speed=5, default_engrave_speed=10, default_raster_speed=200
+):
+    choices = []
+    operations = {
+        "op_cut": (_("Cut"), default_cut_speed),
+        "op_engrave": (_("Engrave"), default_engrave_speed),
+        "op_raster": (_("Raster"), default_raster_speed),
+        "op_image": (_("Image"), default_raster_speed),
+    }
+    idx = 0
+    for optype, (opname, sensible_speed) in operations.items():
+        idx += 10
+        choices.extend(
+            (
+                {
+                    "attr": f"default_power_{optype}",
+                    "object": context,
+                    "default": "1000",
+                    "type": float,
+                    "trailer": "/1000",
+                    "label": _("Power"),
+                    "tip": _("Default power for {op}").format(op=opname),
+                    "section": "Operation Defaults",
+                    "subsection": f"_{idx}_{opname}",
+                },
+                {
+                    "attr": f"default_speed_{optype}",
+                    "object": context,
+                    "default": sensible_speed,
+                    "type": float,
+                    "trailer": "mm/s",
+                    "label": _("Speed"),
+                    "tip": _("Default speed for {op}").format(op=opname),
+                    "section": "Operation Defaults",
+                    "subsection": f"_{idx}_{opname}",
+                },
+            )
+        )
+
+    return choices

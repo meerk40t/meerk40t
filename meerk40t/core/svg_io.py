@@ -610,11 +610,29 @@ class SVGWriter:
             ):
                 continue
             if hasattr(node, "settings"):
+                # Did we end up with default attributes defined in node.py? Remove them...
+                disallowed = ("type", "id", "label", "lock")
+                for key in disallowed:
+                    if key in node.settings:
+                        del node.settings[key]
+
                 if key in node.settings:
                     settings_value = node.settings[key]
+                    if type(value) is bool and type(settings_value) is str:
+                        settings_value = settings_value.lower() == "true"
+                        node.settings[key] = settings_value
                     if settings_value != value:
-                        # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
-                        node.settings[key] = value
+                        direction = "out"
+                        direction = (
+                            "in"
+                            if settings_value is None or settings_value == ""
+                            else "out"
+                        )
+                        # print (f"Needed to fix {key}: node-value: {value} ({type(value).__name__}), settings-value: {settings_value} ({type(settings_value).__name__}) -> {direction}")
+                        if direction == "in":
+                            node.settings[key] = value
+                        elif direction == "out":
+                            setattr(node, key, settings_value)
 
         saved_attributes = []
         if hasattr(node, "settings"):
@@ -1066,7 +1084,7 @@ class SVGProcessor:
         @param e_list:
         @return:
         """
-        if len(element) < 0:
+        if len(element) == 0:
             return
 
         if element.values.get("type") == "elem polyline":
@@ -1428,8 +1446,9 @@ class SVGProcessor:
         """
 
         # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
-        tag = element.values.get(SVG_ATTR_TAG).lower()
+        tag = element.values.get(SVG_ATTR_TAG, None)
         if tag is not None:
+            tag = tag.lower()
             # We remove the name space.
             full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
             if full_ns in tag:
