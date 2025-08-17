@@ -89,6 +89,7 @@ Functions:
 import math
 import os.path
 from copy import copy
+from turtle import speed
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Fillrule, Node
@@ -1318,6 +1319,44 @@ def init_tree(kernel):
                         data.append(n)
                 self.signal("element_property_reload", data)
                 break
+
+    @tree_operation(
+        _("Reset to device default values"),
+        node_type=op_nodes,
+        help=_(
+            "Will reset power / speed and some other properties to device default values"
+        ),
+        grouping="OPS_70_MODIFY",
+    )
+    def reset_op_properties(node, **kwargs):
+        data = list()
+        for n in list(self.ops(selected=True)):
+            data.append(n)
+        if not data:
+            return
+        changed_ops = []
+        with self.undoscope("Reset to device default values"):
+            for op in data:
+                changes = False
+                fields = {}
+                if op.type.startswith("effect "):
+                    if hasattr(self.device, "get_effect_defaults"):
+                        fields.update(self.device.get_effect_defaults(op.type))
+                else:
+                    if hasattr(self.device, "get_operation_defaults"):
+                        fields.update(self.device.get_operation_defaults(op.type))
+                for source, value in fields.items():
+                    if hasattr(op, "settings"):
+                        if op.settings.get(source, None) != value:
+                            op.settings[source] = value
+                            changes = True
+                    elif hasattr(op, source):
+                        if getattr(op, source, None) != value:
+                            setattr(op, source, value)
+                            changes = True
+                if changes:
+                    changed_ops.append(op)
+        self.signal("element_property_reload", changed_ops)
 
     def selected_active_ops():
         result = 0
