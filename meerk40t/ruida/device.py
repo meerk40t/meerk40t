@@ -5,7 +5,7 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -127,7 +127,7 @@ class RuidaDevice(Service):
                 "section": "_10_" + _("Configuration"),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -141,7 +141,7 @@ class RuidaDevice(Service):
                 "section": "_10_" + _("Configuration"),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",
@@ -244,6 +244,15 @@ class RuidaDevice(Service):
         self.register_choices("ruida-global", choices)
 
         self.register_choices("ruida-effects", get_effect_choices(self))
+        self.register_choices(
+            "ruida-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         choices = [
             {
@@ -709,3 +718,11 @@ class RuidaDevice(Service):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_operation_default_settings(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

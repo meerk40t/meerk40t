@@ -8,7 +8,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import Service, signal_listener
 
@@ -370,6 +370,15 @@ class BalorDevice(Service, Status):
         self.register_choices("balor", choices)
 
         self.register_choices("balor-effects", get_effect_choices(self))
+        self.register_choices(
+            "balor-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=150,
+                default_engrave_speed=250,
+                default_raster_speed=500,
+            ),
+        )
 
         choices = [
             {
@@ -436,7 +445,11 @@ class BalorDevice(Service, Status):
                 "trailer": "/1000",
                 # Translation hint: _("Cut/Engrave")
                 "subsection": "_10_Cut/Engrave",
-                "tip": _("What power level do we cut at?"),
+                "tip": _("What power level do we cut at?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
             },
             {
                 "attr": "default_speed",
@@ -446,28 +459,11 @@ class BalorDevice(Service, Status):
                 "trailer": "mm/s",
                 "label": _("Speed"),
                 "subsection": "_10_Cut/Engrave",
-                "tip": _("How fast do we cut?"),
-            },
-            {
-                "attr": "default_power_raster",
-                "object": self,
-                "default": 500.0,
-                "type": float,
-                "label": _("Power"),
-                "trailer": "/1000",
-                # Translation hint: _("Raster")
-                "subsection": "_20_Raster",
-                "tip": _("What power level do we cut at?"),
-            },
-            {
-                "attr": "default_speed_raster",
-                "object": self,
-                "default": 200.0,
-                "type": float,
-                "trailer": "mm/s",
-                "label": _("Speed"),
-                "subsection": "_20_Raster",
-                "tip": _("How fast do we raster?"),
+                "tip": _("How fast do we cut?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
             },
             {
                 "attr": "default_frequency",
@@ -1098,21 +1094,8 @@ class BalorDevice(Service, Status):
             "pulse_width": self.default_pulse_width,
             "rapid_enabled": False,
             "rapid_speed": self.default_rapid_speed,
+            "frequency": self.default_frequency,
         }
-        if op_type in ["op cut", "op engrave"]:
-            settings.update(
-                {
-                    "speed": self.default_speed,
-                    "power": self.default_power,
-                    "frequency": self.default_frequency,
-                }
-            )
-        elif op_type in ["op image", "op raster"]:
-            settings.update(
-                {
-                    "speed": self.default_speed_raster,
-                    "power": self.default_power_raster,
-                    "frequency": self.default_frequency,
-                }
-            )
+        ps_settings = self.get_operation_power_speed_defaults(op_type)
+        settings.update(ps_settings)
         return settings

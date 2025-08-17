@@ -5,7 +5,7 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Length
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
@@ -108,6 +108,15 @@ class NewlyDevice(Service, Status):
         self.register_choices("newly-speedchart", choices)
 
         self.register_choices("newly-effects", get_effect_choices(self))
+        self.register_choices(
+            "newly-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         choices = [
             {
@@ -482,7 +491,11 @@ class NewlyDevice(Service, Status):
                 "type": float,
                 "trailer": "mm/s",
                 "label": _("Cut Speed"),
-                "tip": _("How fast do we cut?"),
+                "tip": _("How fast do we cut?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
                 # Hint for translation _("Cut")
                 "subsection": "_10_Cut",
             },
@@ -493,7 +506,11 @@ class NewlyDevice(Service, Status):
                 "type": float,
                 "label": _("Cut Power"),
                 "trailer": "/1000",
-                "tip": _("What power level do we cut at?"),
+                "tip": _("What power level do we cut at?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
                 # Hint for translation _("Cut")
                 "subsection": "_10_Cut",
             },
@@ -526,7 +543,11 @@ class NewlyDevice(Service, Status):
                 "type": float,
                 "trailer": "mm/s",
                 "label": _("Raster Speed"),
-                "tip": _("How fast do we raster?"),
+                "tip": _("How fast do we raster?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
                 # Hint for translation _("Raster")
                 "subsection": "_30_Raster",
             },
@@ -537,7 +558,11 @@ class NewlyDevice(Service, Status):
                 "type": float,
                 "label": _("Raster Power"),
                 "trailer": "%",
-                "tip": _("At what power level do we raster?"),
+                "tip": _("At what power level do we raster?")
+                + "\n"
+                + _(
+                    "This is global setting that will be overruled by operation settings."
+                ),
                 # Hint for translation _("Raster")
                 "subsection": "_30_Raster",
             },
@@ -957,23 +982,10 @@ class NewlyDevice(Service, Status):
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
 
-    def get_operation_defaults(self, op_type: str) -> dict:
+    def get_operation_default_settings(self, operation_type: str) -> dict:
         """
-        Returns the default operation settings for the device.
+        Returns the default settings for a specific operation type.
         """
-        settings = {}
-        if op_type in ["op cut", "op engrave"]:
-            settings.update(
-                {
-                    "speed": self.default_cut_speed,
-                    "power": self.default_cut_power,
-                }
-            )
-        elif op_type in ["op image", "op raster"]:
-            settings.update(
-                {
-                    "speed": self.default_raster_speed,
-                    "power": self.default_raster_power,
-                }
-            )
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
         return settings

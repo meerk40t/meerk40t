@@ -46,3 +46,14 @@ class Status:
         except AttributeError:
             pass
         return settings
+
+    def get_operation_power_speed_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default power and speed settings for an operation.
+        """
+        settings = {}
+        op_type = operation_type.replace(" ", "_").lower()
+        for prop in ("power", "speed", "engrave_speed"):
+            if hasattr(self, f"default_{prop}_{op_type}"):
+                settings[prop] = getattr(self, f"default_{prop}_{op_type}")
+        return settings

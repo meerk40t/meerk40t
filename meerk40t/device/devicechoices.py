@@ -79,3 +79,46 @@ def get_effect_choices(context):
             "section": "Effect Defaults",
         },
     ]
+
+
+def get_operation_choices(
+    context, default_cut_speed=5, default_engrave_speed=10, default_raster_speed=200
+):
+    choices = []
+    operations = {
+        "op_cut": (_("Cut"), default_cut_speed),
+        "op_engrave": (_("Engrave"), default_engrave_speed),
+        "op_raster": (_("Raster"), default_raster_speed),
+        "op_image": (_("Image"), default_raster_speed),
+    }
+    idx = 0
+    for optype, (opname, sensible_speed) in operations.items():
+        idx += 10
+        choices.append(
+            {
+                "attr": f"default_power_{optype}",
+                "object": context,
+                "default": "1000",
+                "type": float,
+                "trailer": "/1000",
+                "label": _("Power"),
+                "tip": _("Default power for {op}").format(op=opname),
+                "section": "Operation Defaults",
+                "subsection": f"_{idx}_{opname}",
+            }
+        )
+        choices.append(
+            {
+                "attr": f"default_speed_{optype}",
+                "object": context,
+                "default": sensible_speed,
+                "type": float,
+                "trailer": "mm/s",
+                "label": _("Speed"),
+                "tip": _("Default speed for {op}").format(op=opname),
+                "section": "Operation Defaults",
+                "subsection": f"_{idx}_{opname}",
+            }
+        )
+
+    return choices
