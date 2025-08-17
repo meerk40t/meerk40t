@@ -1273,7 +1273,7 @@ class GalvoController:
         self.list_delay_time(10)
         self._delay_poly = delay
         self._list_write(
-            listPolygonDelay, int(abs(delay)), 0x0000 if delay > 0 else 0x8000
+            listPolygonDelay, int(abs(delay)), 0x0000 if delay >= 0 else 0x8000
         )
         self.usb_log(f"Polygon delay was set to {delay}")
 
