@@ -1270,7 +1270,6 @@ class GalvoController:
         """
         if self._delay_poly == delay:
             return
-        self.list_delay_time(10)
         self._delay_poly = delay
         self._list_write(
             listPolygonDelay, int(abs(delay)), 0x0000 if delay >= 0 else 0x8000
