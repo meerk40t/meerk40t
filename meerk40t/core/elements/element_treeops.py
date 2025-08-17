@@ -2279,7 +2279,7 @@ def init_tree(kernel):
         entries = list()
         self.op_data.read_configuration()
         for material in self.op_data.section_set():
-            if material == "previous":
+            if material.startswith("previous"):
                 was_previous = True
                 continue
             opinfo = self.load_persistent_op_info(material)
@@ -2319,7 +2319,7 @@ def init_tree(kernel):
         was_previous = False
         entries = list()
         for material in self.op_data.section_set():
-            if material == "previous":
+            if material.startswith("previous"):
                 was_previous = True
                 continue
             opinfo = self.load_persistent_op_info(material)
