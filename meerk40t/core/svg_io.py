@@ -610,11 +610,28 @@ class SVGWriter:
             ):
                 continue
             if hasattr(node, "settings"):
+                # Did we end up with default atributes define node.py? Remove
+                disallowed = ("type", "id", "label", "lock")
+                for key in disallowed:
+                    if key in node.settings:
+                        del node.settings[key]
+
                 if key in node.settings:
                     settings_value = node.settings[key]
+                    if type(value) is bool and type(settings_value) is str:
+                        settings_value = settings_value.lower() == "true"
+                        node.settings[key] = settings_value
                     if settings_value != value:
-                        # print (f"Needed to fix {key}: node-value: {value}, settings-value: {settings_value}")
-                        node.settings[key] = value
+                        direction = "out"
+                        if settings_value is None or settings_value == "":
+                            direction = "in"
+                        else:
+                            direction = "out"
+                        # print (f"Needed to fix {key}: node-value: {value} ({type(value).__name__}), settings-value: {settings_value} ({type(settings_value).__name__}) -> {direction}")
+                        if direction == "in":
+                            node.settings[key] = value
+                        elif direction == "out":
+                            setattr(node, key, settings_value)
 
         saved_attributes = []
         if hasattr(node, "settings"):
