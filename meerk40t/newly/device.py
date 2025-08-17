@@ -956,3 +956,24 @@ class NewlyDevice(Service, Status):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_operation_defaults(self, op_type: str) -> dict:
+        """
+        Returns the default operation settings for the device.
+        """
+        settings = {}
+        if op_type in ["op cut", "op engrave"]:
+            settings.update(
+                {
+                    "speed": self.default_cut_speed,
+                    "power": self.default_cut_power,
+                }
+            )
+        elif op_type in ["op image", "op raster"]:
+            settings.update(
+                {
+                    "speed": self.default_raster_speed,
+                    "power": self.default_raster_power,
+                }
+            )
+        return settings
