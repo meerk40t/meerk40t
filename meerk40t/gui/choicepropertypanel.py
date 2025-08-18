@@ -316,6 +316,17 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Do we have a parameter to add a trailing label after the control
             trailer = choice.get("trailer")
 
+            # Handle dynamic trailer for power controls
+            if data_type == float and data_style == "power":
+                percent_flag = choice.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+                if percent_mode:
+                    trailer = "%"
+                else:
+                    trailer = "/1000"
+
             # Get additional signals using helper method
             additional_signal = self._get_additional_signals(choice)
 
@@ -1222,6 +1233,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 lambda attr, control, obj, data_type, additional_signal: self._make_generic_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
+            (float, "power"): (
+                self._create_text_control,
+                lambda attr, control, obj, data_type, additional_signal, choice: self._make_power_text_handler(attr, control, obj, data_type, additional_signal, choice),
+                False,
+            ),
             (str, "multiline"): (
                 self._create_text_control,
                 lambda attr, control, obj, data_type, additional_signal: self._make_generic_multi_handler(attr, control, obj, data_type, additional_signal),
@@ -1482,9 +1498,15 @@ class ChoicePropertyPanel(ScrolledPanel):
             )
             # Now bind the real handler after control is created
             if handler_factory is not None:
-                real_handler = handler_factory(
-                    attr, control, obj, data_type, additional_signal
-                )
+                if data_style == "power":
+                    # Power controls need the choice dictionary for percent mode
+                    real_handler = handler_factory(
+                        attr, control, obj, data_type, additional_signal, c
+                    )
+                else:
+                    real_handler = handler_factory(
+                        attr, control, obj, data_type, additional_signal
+                    )
                 # Bind appropriate event based on control type
                 if hasattr(control, "Bind"):
                     if data_style in ("combo", "combosmall"):
@@ -1532,6 +1554,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data._preferred_units in ("mm", "cm", "in", "inch"):
                     data._digits = 4
             return data.preferred_length
+        elif config.get("style") == "power":
+            # Power controls: convert absolute value (0-1000) to display format
+            percent_flag = config.get("percent", False)
+            percent_mode = percent_flag() if callable(percent_flag) else percent_flag
+            if percent_mode:
+                # Convert absolute value to percentage (0-1000 -> 0-100%)
+                return str(float(data) / 10.0)
+            else:
+                # Display absolute value directly
+                return str(data)
         else:
             return str(data)
 
@@ -1810,6 +1842,41 @@ class ChoicePropertyPanel(ScrolledPanel):
                 pass
 
         return handle_angle_text_change
+
+    def _make_power_text_handler(self, param, ctrl, obj, dtype, addsig, choice):
+        """Creates a handler for power text controls that supports both absolute and percentage modes."""
+
+        def handle_power_text_change(event):
+            try:
+                v = ctrl.GetValue()
+                # Get the percent flag to determine conversion mode
+                percent_flag = choice.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+
+                if percent_mode:
+                    # In percentage mode: user enters 0-100%, convert to 0-1000
+                    percent_value = float(v)
+                    if 0 <= percent_value <= 100:
+                        absolute_value = (
+                            percent_value * 10.0
+                        )  # Convert % to absolute (0-1000)
+                        self._update_property_and_signal(
+                            obj, param, absolute_value, addsig
+                        )
+                else:
+                    # In absolute mode: user enters 0-1000 directly
+                    absolute_value = float(v)
+                    if 0 <= absolute_value <= 1000:
+                        self._update_property_and_signal(
+                            obj, param, absolute_value, addsig
+                        )
+            except ValueError:
+                # cannot cast to float, pass
+                pass
+
+        return handle_power_text_change
 
     def _make_chart_start_handler(self, columns, param, ctrl, local_obj):
         """Creates a handler for chart start events."""
@@ -2256,11 +2323,11 @@ class ChoicePropertyPanel(ScrolledPanel):
         if len(self.listeners):
             for attr, listener, obj in self.listeners:
                 self.context.unlisten(attr, listener)
-                del listener
-            self.listeners.clear()
+                # Don't delete listener or clear list - keep them for restoration
 
     def pane_show(self):
         # print ("show called")
-        # if len(self.listeners) == 0:
-        #     print ("..but no one cares")
-        pass
+        # Reestablish all listeners that were stored
+        if len(self.listeners) and self.context:
+            for attr, listener, obj in self.listeners:
+                self.context.listen(attr, listener)

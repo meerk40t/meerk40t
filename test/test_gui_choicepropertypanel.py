@@ -235,7 +235,7 @@ class TestChoicePropertyPanel(unittest.TestCase):
         self.assertFalse(control.enabled)  # 42 is not in range [50, 60]
 
     def test_conditional_enabling_memory_leak_prevention(self):
-        """Test that conditional enabling listeners don't accumulate and cause memory leaks."""
+        """Test that conditional enabling listeners are properly managed during hide/show cycles."""
         panel = self.create_panel()
         control1 = MockControl()
         control2 = MockControl()
@@ -258,8 +258,19 @@ class TestChoicePropertyPanel(unittest.TestCase):
         # Test cleanup - simulate pane hide
         panel.pane_hide()
 
-        # All listeners should be cleaned up
-        self.assertEqual(len(panel.listeners), 0)
+        # Listeners should be preserved for restoration, but unlisten should be called
+        self.assertEqual(
+            len(panel.listeners), final_listener_count
+        )  # Listeners preserved
+        self.assertEqual(
+            panel.context.unlisten.call_count, final_listener_count
+        )  # All unlistened
+
+        # Test restoration - simulate pane show
+        panel.pane_show()
+
+        # Should re-listen to all preserved listeners (original calls + restoration calls)
+        self.assertEqual(panel.context.listen.call_count, final_listener_count * 2)
 
     def test_radio_handler_string_selection(self):
         """Test that radio handler correctly gets string values using GetString() not GetLabel()."""
@@ -747,6 +758,10 @@ class TestChoicePropertyPanelIntegration(unittest.TestCase):
         """Test handling of invalid conditional tuples with less than 2 elements."""
         panel = ChoicePropertyPanel.__new__(ChoicePropertyPanel)
         panel.context = Mock()
+        panel.context.root = Mock()
+        panel.context.root.channel = Mock()
+        mock_channel = Mock()
+        panel.context.root.channel.return_value = mock_channel
         panel.listeners = []
 
         control = MockControl()
@@ -755,28 +770,162 @@ class TestChoicePropertyPanelIntegration(unittest.TestCase):
         choice_empty = {"conditional": []}
         panel._setup_conditional_enabling(choice_empty, control, "test_attr", Mock())
 
-        # Verify context was called with warning for empty tuple
-        panel.context.assert_called_with(
-            "Warning: Invalid conditional tuple with 0 elements, expected at least 2"
-        )
+        # Verify channel was called with warning for empty tuple
+        panel.context.root.channel.assert_called_with("console")
+        mock_channel.assert_called()
+        call_args = mock_channel.call_args[0][0]
+        self.assertIn("Warning: Invalid conditional tuple with 0 elements", call_args)
 
         # Test with single element conditional tuple
-        panel.context.reset_mock()
+        panel.context.root.channel.reset_mock()
+        mock_channel.reset_mock()
         choice_single = {"conditional": [Mock()]}
         panel._setup_conditional_enabling(choice_single, control, "test_attr", Mock())
 
-        # Verify context was called with warning for single element tuple
-        panel.context.assert_called_with(
-            "Warning: Invalid conditional tuple with 1 elements, expected at least 2"
-        )
+        # Verify channel was called with warning for single element tuple
+        panel.context.root.channel.assert_called_with("console")
+        mock_channel.assert_called()
+        call_args = mock_channel.call_args[0][0]
+        self.assertIn("Warning: Invalid conditional tuple with 1 elements", call_args)
 
         # Test with valid 2-element conditional tuple (should not generate warning)
-        panel.context.reset_mock()
+        panel.context.root.channel.reset_mock()
+        mock_channel.reset_mock()
         choice_valid = {"conditional": [Mock(), "test_attr"]}
         panel._setup_conditional_enabling(choice_valid, control, "test_attr", Mock())
 
-        # Should not have called context with warning message
-        self.assertNotIn("Warning:", str(panel.context.call_args_list))
+        # Should not have called channel with warning message
+        panel.context.root.channel.assert_not_called()
+
+    def test_listener_restoration_after_show_hide(self):
+        """Test that listeners are properly restored after hide/show cycle."""
+        panel = ChoicePropertyPanel.__new__(ChoicePropertyPanel)
+        panel.context = Mock()
+        panel.listeners = []
+
+        control = MockControl()
+        test_obj = Mock()
+        test_obj.conditional_attr = True
+
+        # Set up conditional enabling (should add listener)
+        choice = {"conditional": [test_obj, "conditional_attr"]}
+        panel._setup_conditional_enabling(choice, control, "test_attr", test_obj)
+
+        # Verify listener was added
+        self.assertEqual(len(panel.listeners), 1)
+        initial_listener_count = panel.context.listen.call_count
+
+        # Hide panel (should unlisten but keep listeners list)
+        panel.pane_hide()
+
+        # Verify unlisten was called but listeners list is preserved
+        self.assertEqual(panel.context.unlisten.call_count, 1)
+        self.assertEqual(len(panel.listeners), 1)  # Listeners list should be preserved
+
+        # Show panel (should re-listen)
+        panel.pane_show()
+
+        # Verify listen was called again
+        self.assertEqual(panel.context.listen.call_count, initial_listener_count + 1)
+        self.assertEqual(len(panel.listeners), 1)  # Still have the same listener info
+
+    def test_power_control_functionality(self):
+        """Test power control display formatting and conversion logic."""
+        panel = ChoicePropertyPanel.__new__(ChoicePropertyPanel)
+        panel.context = Mock()
+        panel.listeners = []
+
+        # Test display value formatting for power controls
+        # Absolute mode: should display value as-is
+        config_abs = {"style": "power", "percent": False}
+        display_abs = panel._format_text_display_value(500.0, float, config_abs)
+        self.assertEqual(display_abs, "500.0")
+
+        # Percentage mode: should convert 0-1000 to 0-100%
+        config_pct = {"style": "power", "percent": True}
+        display_pct = panel._format_text_display_value(750.0, float, config_pct)
+        self.assertEqual(display_pct, "75.0")  # 750/10 = 75%
+
+        # Test edge cases
+        display_zero = panel._format_text_display_value(0.0, float, config_pct)
+        self.assertEqual(display_zero, "0.0")  # 0%
+
+        display_max = panel._format_text_display_value(1000.0, float, config_pct)
+        self.assertEqual(display_max, "100.0")  # 100%
+
+        # Test regular float controls (should be unaffected)
+        config_regular = {"style": None}
+        display_regular = panel._format_text_display_value(
+            123.45, float, config_regular
+        )
+        self.assertEqual(display_regular, "123.45")
+
+    def test_power_handler_conversion(self):
+        """Test power text handler conversion logic."""
+        panel = ChoicePropertyPanel.__new__(ChoicePropertyPanel)
+        panel.context = Mock()
+
+        class MockControl:
+            def __init__(self):
+                self.value = ""
+
+            def GetValue(self):
+                return self.value
+
+            def SetValue(self, value):
+                self.value = value
+
+        class MockObject:
+            def __init__(self):
+                self.power = 0.0
+
+        mock_obj = MockObject()
+        mock_control = MockControl()
+
+        # Test percentage mode handler
+        choice_pct = {"percent": True}
+        handler_pct = panel._make_power_text_handler(
+            "power", mock_control, mock_obj, float, [], choice_pct
+        )
+
+        # Simulate user entering percentage values
+        mock_control.SetValue("50")  # 50%
+        mock_event = Mock()
+        handler_pct(mock_event)
+        self.assertEqual(mock_obj.power, 500.0)  # Should convert to 500
+
+        mock_control.SetValue("100")  # 100%
+        handler_pct(mock_event)
+        self.assertEqual(mock_obj.power, 1000.0)  # Should convert to 1000
+
+        mock_control.SetValue("0")  # 0%
+        handler_pct(mock_event)
+        self.assertEqual(mock_obj.power, 0.0)  # Should convert to 0
+
+        # Test absolute mode handler
+        choice_abs = {"percent": False}
+        handler_abs = panel._make_power_text_handler(
+            "power", mock_control, mock_obj, float, [], choice_abs
+        )
+
+        # Simulate user entering absolute values
+        mock_control.SetValue("250")
+        handler_abs(mock_event)
+        self.assertEqual(mock_obj.power, 250.0)  # Should stay 250
+
+        mock_control.SetValue("1000")
+        handler_abs(mock_event)
+        self.assertEqual(mock_obj.power, 1000.0)  # Should stay 1000
+
+        # Test validation - values outside range should be ignored
+        original_value = mock_obj.power
+        mock_control.SetValue("1500")  # Above maximum
+        handler_abs(mock_event)
+        self.assertEqual(mock_obj.power, original_value)  # Should not change
+
+        mock_control.SetValue("150")  # Above maximum for percentage mode
+        handler_pct(mock_event)
+        self.assertEqual(mock_obj.power, original_value)  # Should not change
 
 
 if __name__ == "__main__":
