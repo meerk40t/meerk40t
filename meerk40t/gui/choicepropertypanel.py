@@ -1177,250 +1177,121 @@ class ChoicePropertyPanel(ScrolledPanel):
         from meerk40t.svgelements import Color
 
         # Define dispatch table as (data_type, data_style): (factory, handler_factory, needs_special_handling)
+        # fmt:off
         dispatch_table = {
             # Text-based controls
             (str, None): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_generic_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_generic_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (int, None): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_generic_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_generic_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (float, None): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_generic_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_generic_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (str, "multiline"): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_generic_multi_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_generic_multi_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (str, "file"): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal,
-                c,
-                label: self._make_file_text_handler_with_button(
-                    attr, control, obj, data_type, additional_signal, c, label
-                ),
+                lambda attr, control, obj, data_type, additional_signal, c, label: self._make_file_text_handler_with_button(attr, control, obj, data_type, additional_signal, c, label),
                 False,
             ),
             (Length, None): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_length_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_length_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (Angle, None): (
                 self._create_text_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_angle_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_angle_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             # Button-based controls
             (bool, "button"): (
                 self._create_button_control,
-                lambda attr, obj, additional_signal: self._make_button_handler(
-                    attr, obj, additional_signal
-                ),
+                lambda attr, obj, additional_signal: self._make_button_handler(attr, obj, additional_signal),
                 False,
             ),
             (bool, None): (
                 self._create_button_control,
-                lambda attr,
-                control,
-                obj,
-                additional_signal: self._make_checkbox_handler(
-                    attr, control, obj, additional_signal
-                ),
+                lambda attr, control, obj, additional_signal: self._make_checkbox_handler(attr, control, obj, additional_signal),
                 False,
             ),
             (str, "color"): (
                 self._create_button_control,
-                lambda attr,
-                control,
-                obj,
-                additional_signal: self._make_button_color_handler(
-                    attr, control, obj, additional_signal
-                ),
+                lambda attr, control, obj, additional_signal: self._make_button_color_handler(attr, control, obj, additional_signal),
                 False,
             ),
             # Combo-based controls
             (str, "combo"): (
                 self._create_combo_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_combo_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_combo_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (int, "combo"): (
                 self._create_combo_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_combo_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_combo_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (float, "combo"): (
                 self._create_combo_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_combo_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_combo_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (str, "combosmall"): (
                 self._create_combo_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_combosmall_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_combosmall_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (int, "combosmall"): (
                 self._create_combo_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_combosmall_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_combosmall_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (float, "combosmall"): (
                 self._create_combo_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_combosmall_text_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_combosmall_text_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             # Radio-based controls
             (str, "radio"): (
                 self._create_radio_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_radio_select_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_radio_select_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (int, "radio"): (
                 self._create_radio_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_radio_select_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_radio_select_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (int, "option"): (
                 self._create_radio_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal,
-                choice_list: self._make_combosmall_option_handler(
-                    attr, control, obj, data_type, additional_signal, choice_list
-                ),
+                lambda attr, control, obj, data_type, additional_signal, choice_list: self._make_combosmall_option_handler(attr, control, obj, data_type, additional_signal, choice_list),
                 False,
             ),
             (str, "option"): (
                 self._create_radio_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal,
-                choice_list: self._make_combosmall_option_handler(
-                    attr, control, obj, data_type, additional_signal, choice_list
-                ),
+                lambda attr, control, obj, data_type, additional_signal, choice_list: self._make_combosmall_option_handler(attr, control, obj, data_type, additional_signal, choice_list),
                 False,
             ),
             # Slider controls
             (int, "slider"): (
                 self._create_slider_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_slider_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_slider_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             (float, "slider"): (
                 self._create_slider_control,
-                lambda attr,
-                control,
-                obj,
-                data_type,
-                additional_signal: self._make_slider_handler(
-                    attr, control, obj, data_type, additional_signal
-                ),
+                lambda attr, control, obj, data_type, additional_signal: self._make_slider_handler(attr, control, obj, data_type, additional_signal),
                 False,
             ),
             # Binary controls
@@ -1430,6 +1301,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             (list, "chart"): ("chart", None, True),
             (Color, None): ("color_type", None, True),
         }
+        # fmt:on
 
         # Try exact match first
         key = (data_type, data_style)
@@ -1696,7 +1568,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_combo_text_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for combo text controls."""
 
-        def handle_combo_text_change(event=None):
+        def handle_combo_text_change(event):
             v = dtype(ctrl.GetValue())
             self._update_property_and_signal(obj, param, v, addsig)
 
@@ -1705,7 +1577,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_button_handler(self, param, obj, addsig):
         """Creates a handler for button controls."""
 
-        def handle_button_click(event=None):
+        def handle_button_click(event):
             # We just set it to True to kick it off
             self._update_property_and_signal(obj, param, True, addsig)
 
@@ -1714,7 +1586,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_checkbox_handler(self, param, ctrl, obj, addsig):
         """Creates a handler for checkbox controls."""
 
-        def handle_checkbox_change(event=None):
+        def handle_checkbox_change(event):
             v = bool(ctrl.GetValue())
             self._update_property_and_signal(obj, param, v, addsig)
 
@@ -1725,7 +1597,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     ):
         """Creates a handler for checkbox bit controls."""
 
-        def handle_checkbox_bit_change(event=None):
+        def handle_checkbox_bit_change(event):
             v = ctrl.GetValue()
             if enable_ctrl is not None:
                 enable_ctrl.Enable(v)
@@ -1741,7 +1613,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_generic_multi_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for generic multi controls."""
 
-        def handle_multi_text_change():
+        def handle_multi_text_change(event):
             v = ctrl.GetValue()
             try:
                 dtype_v = dtype(v)
@@ -1755,7 +1627,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_button_filename_handler(self, param, ctrl, obj, wildcard, addsig, label):
         """Creates a handler for file button controls."""
 
-        def handle_file_button_click(event=None):
+        def handle_file_button_click(event):
             with wx.FileDialog(
                 self,
                 label,
@@ -1778,7 +1650,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_file_text_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for file text controls."""
 
-        def handle_file_text_change():
+        def handle_file_text_change(event):
             v = ctrl.GetValue()
             try:
                 dtype_v = dtype(v)
@@ -1794,7 +1666,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     ):
         """Creates a handler for file text controls with button integration."""
 
-        def handle_file_text_change():
+        def handle_file_text_change(event):
             v = ctrl.GetValue()
             try:
                 dtype_v = dtype(v)
@@ -1823,7 +1695,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_slider_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for slider controls."""
 
-        def handle_slider_change(event=None):
+        def handle_slider_change(event):
             v = dtype(ctrl.GetValue())
             self._update_property_and_signal(obj, param, v, addsig)
 
@@ -1832,7 +1704,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_radio_select_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for radio selection controls."""
 
-        def handle_radio_selection_change(event=None):
+        def handle_radio_selection_change(event):
             if dtype == int:
                 v = dtype(ctrl.GetSelection())
             else:
@@ -1846,7 +1718,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     ):
         """Creates a handler for small combo option controls."""
 
-        def handle_combo_option_selection(event=None):
+        def handle_combo_option_selection(event):
             cl = choice_list[ctrl.GetSelection()]
             v = dtype(cl)
             self._update_property_and_signal(obj, param, v, addsig)
@@ -1856,7 +1728,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_combosmall_text_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for small combo text controls."""
 
-        def handle_combo_text_entry(event=None):
+        def handle_combo_text_entry(event):
             v = dtype(ctrl.GetValue())
             self._update_property_and_signal(obj, param, v, addsig)
 
@@ -1865,7 +1737,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_button_color_handler(self, param, ctrl, obj, addsig):
         """Creates a handler for color button controls."""
 
-        def handle_color_button_click(event=None):
+        def handle_color_button_click(event):
             color_data = wx.ColourData()
             color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
             dlg = wx.ColourDialog(self, color_data)
@@ -1885,7 +1757,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_angle_text_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for angle text controls."""
 
-        def handle_angle_text_change():
+        def handle_angle_text_change(event):
             try:
                 v = Angle(ctrl.GetValue(), digits=5)
                 data_v = str(v)
@@ -1899,7 +1771,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_chart_start_handler(self, columns, param, ctrl, local_obj):
         """Creates a handler for chart start events."""
 
-        def handle_chart_edit_start(event=None):
+        def handle_chart_edit_start(event):
             for column in columns:
                 if column.get("editable", False):
                     event.Allow()
@@ -1911,7 +1783,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_chart_stop_handler(self, columns, param, ctrl, local_obj):
         """Creates a handler for chart stop events."""
 
-        def handle_chart_edit_stop(event=None):
+        def handle_chart_edit_stop(event):
             row_id = event.GetIndex()  # Get the current row
             col_id = event.GetColumn()  # Get the current column
             new_data = event.GetLabel()  # Get the changed data
@@ -1937,7 +1809,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     ):
         """Creates a handler for chart context menu events."""
 
-        def handle_chart_context_menu(event=None):
+        def handle_chart_context_menu(event):
             x, y = event.GetPosition()
             row_id, flags = ctrl.HitTest((x, y))
             if row_id < 0:
@@ -1995,7 +1867,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_generic_text_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for generic text controls."""
 
-        def handle_generic_text_change():
+        def handle_generic_text_change(event):
             v = ctrl.GetValue()
             try:
                 dtype_v = dtype(v)
@@ -2009,7 +1881,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_length_text_handler(self, param, ctrl, obj, dtype, addsig):
         """Creates a handler for length text controls."""
 
-        def handle_length_text_change():
+        def handle_length_text_change(event):
             try:
                 v = Length(ctrl.GetValue())
                 data_v = v.preferred_length
