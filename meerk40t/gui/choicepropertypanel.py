@@ -150,46 +150,46 @@ class ChoicePropertyPanel(ScrolledPanel):
                 lookup_choice = self.context.lookup("choices", choice)
                 if lookup_choice is None:
                     continue
-                for c in lookup_choice:
-                    if "help" not in c:
-                        c["help"] = choice
+                for lookup_item in lookup_choice:
+                    if "help" not in lookup_item:
+                        lookup_item["help"] = choice
                 new_choices.extend(lookup_choice)
             else:
-                for c in choice:
-                    if "help" not in c:
-                        c["help"] = standardhelp
+                for choice_item in choice:
+                    if "help" not in choice_item:
+                        choice_item["help"] = standardhelp
                 new_choices.extend(choice)
         choices = new_choices
         if injector is not None:
             # We have additional stuff to be added, so be it
-            for c in injector:
-                choices.append(c)
+            for injected_choice in injector:
+                choices.append(injected_choice)
         if len(choices) == 0:
             # No choices to process.
             return
-        for c in choices:
-            needs_dynamic_call = c.get("dynamic")
+        for choice in choices:
+            needs_dynamic_call = choice.get("dynamic")
             if needs_dynamic_call:
                 # Calls dynamic function to update this dictionary before production
-                needs_dynamic_call(c)
+                needs_dynamic_call(choice)
         # Let's see whether we have a section and a page property...
-        for c in choices:
+        for choice in choices:
             try:
-                dummy = c["subsection"]
+                unused_check = choice["subsection"]
             except KeyError:
-                c["subsection"] = ""
+                choice["subsection"] = ""
             try:
-                dummy = c["section"]
+                unused_check = choice["section"]
             except KeyError:
-                c["section"] = ""
+                choice["section"] = ""
             try:
-                dummy = c["page"]
+                unused_check = choice["page"]
             except KeyError:
-                c["page"] = ""
+                choice["page"] = ""
             try:
-                dummy = c["priority"]
+                unused_check = choice["priority"]
             except KeyError:
-                c["priority"] = "ZZZZZZZZ"
+                choice["priority"] = "ZZZZZZZZ"
         # print ("Choices: " , choices)
         prechoices = sorted(
             sorted(
@@ -220,23 +220,23 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 negative.append(item.lower())
                             else:
                                 positive.append(item.lower())
-                        for i, c in enumerate(prechoices):
+                        for i, sorted_choice in enumerate(prechoices):
                             try:
-                                this_page = c["page"].lower()
+                                this_page = sorted_choice["page"].lower()
                             except KeyError:
                                 this_page = ""
                             if len(negative) > 0 and len(positive) > 0:
                                 # Negative takes precedence:
                                 if not this_page in negative and this_page in positive:
-                                    self.choices.append(c)
+                                    self.choices.append(sorted_choice)
                             elif len(negative) > 0:
                                 # only negative....
                                 if not this_page in negative:
-                                    self.choices.append(c)
+                                    self.choices.append(sorted_choice)
                             elif len(positive) > 0:
                                 # only positive....
                                 if this_page in positive:
-                                    self.choices.append(c)
+                                    self.choices.append(sorted_choice)
                     else:
                         dealt_with = True
                         # Section list
@@ -252,9 +252,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                             end_at = len(prechoices)
                         if end_at < start_from:
                             end_at = len(prechoices)
-                        for i, c in enumerate(prechoices):
+                        for i, sorted_choice in enumerate(prechoices):
                             if start_from <= i < end_at:
-                                self.choices.append(c)
+                                self.choices.append(sorted_choice)
         else:
             # Empty constraint
             pass
@@ -263,20 +263,20 @@ class ChoicePropertyPanel(ScrolledPanel):
             self.choices = prechoices
         if len(self.choices) == 0:
             return
-        sizer_very_main = wx.BoxSizer(wx.HORIZONTAL)
+        root_horizontal_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
+        root_horizontal_sizer.Add(sizer_main, 1, wx.EXPAND, 0)
         last_page = ""
         last_section = ""
         last_subsection = ""
-        last_box = None
-        current_main_sizer = sizer_main
-        current_sec_sizer = sizer_main
-        current_sizer = sizer_main
+        current_container = None
+        active_page_sizer = sizer_main
+        active_section_sizer = sizer_main
+        active_subsection_sizer = sizer_main
         # By default, 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
-        for i, c in enumerate(self.choices):
+        for i, choice in enumerate(self.choices):
             wants_listener = True
             current_col_entry += 1
             if self.entries_per_column is not None:
@@ -284,14 +284,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                     current_col_entry = -1
                     prev_main = sizer_main
                     sizer_main = wx.BoxSizer(wx.VERTICAL)
-                    if prev_main == current_main_sizer:
-                        current_main_sizer = sizer_main
-                    if prev_main == current_sec_sizer:
-                        current_sec_sizer = sizer_main
-                    if prev_main == current_sizer:
-                        current_sizer = sizer_main
+                    if prev_main == active_page_sizer:
+                        active_page_sizer = sizer_main
+                    if prev_main == active_section_sizer:
+                        active_section_sizer = sizer_main
+                    if prev_main == active_subsection_sizer:
+                        active_subsection_sizer = sizer_main
 
-                    sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
+                    root_horizontal_sizer.Add(sizer_main, 1, wx.EXPAND, 0)
                     # I think we should reset all sections to make them
                     # reappear in the next columns
                     last_page = ""
@@ -299,63 +299,68 @@ class ChoicePropertyPanel(ScrolledPanel):
                     last_subsection = ""
 
             # Validate and prepare choice using helper method
-            c, attr, obj, is_valid = self._validate_and_prepare_choice(c)
-            if not is_valid:
+            validated_choice, attr, obj, is_valid = self._validate_and_prepare_choice(
+                choice
+            )
+            if not is_valid or validated_choice is None:
                 continue
 
-            this_subsection = c.get("subsection", "")
-            this_section = c.get("section", "")
-            this_page = c.get("page", "")
-            ctrl_width = c.get("width", 0)
+            # Use the validated choice from here on
+            choice = validated_choice
+
+            this_subsection = choice.get("subsection", "")
+            this_section = choice.get("section", "")
+            this_page = choice.get("page", "")
+            ctrl_width = choice.get("width", 0)
             # Do we have a parameter to add a trailing label after the control
-            trailer = c.get("trailer")
+            trailer = choice.get("trailer")
 
             # Get additional signals using helper method
-            additional_signal = self._get_additional_signals(c)
+            additional_signal = self._get_additional_signals(choice)
 
             # Do we have a parameter to affect the space consumption?
-            weight = int(c.get("weight", 1))
+            weight = int(choice.get("weight", 1))
             if weight < 0:
                 weight = 0
 
             # Get data and data type using helper method
-            data, data_type = self._get_choice_data_and_type(c, obj, attr)
+            data, data_type = self._get_choice_data_and_type(choice, obj, attr)
             if data is None:
                 continue
-            data_style = c.get("style", None)
+            data_style = choice.get("style", None)
             data_type = type(data)
-            data_type = c.get("type", data_type)
+            data_type = choice.get("type", data_type)
             choice_list = None
-            label = c.get("label", attr)  # Undefined label is the attr
+            label = choice.get("label", attr)  # Undefined label is the attr
 
             if last_page != this_page:
                 expansion_flag = 0
                 last_section = ""
                 last_subsection = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
-                last_box = StaticBoxSizer(
+                current_container = StaticBoxSizer(
                     self, wx.ID_ANY, _(self.unsorted_label(this_page)), wx.VERTICAL
                 )
-                sizer_main.Add(last_box, 0, wx.EXPAND, 0)
-                current_main_sizer = last_box
-                current_sec_sizer = last_box
-                current_sizer = last_box
+                sizer_main.Add(current_container, 0, wx.EXPAND, 0)
+                active_page_sizer = current_container
+                active_section_sizer = current_container
+                active_subsection_sizer = current_container
 
             if last_section != this_section:
                 expansion_flag = 0
                 last_subsection = ""
                 if this_section != "":
-                    last_box = StaticBoxSizer(
+                    current_container = StaticBoxSizer(
                         self,
                         id=wx.ID_ANY,
                         label=_(self.unsorted_label(this_section)),
                         orientation=wx.VERTICAL,
                     )
-                    current_main_sizer.Add(last_box, 0, wx.EXPAND, 0)
+                    active_page_sizer.Add(current_container, 0, wx.EXPAND, 0)
                 else:
-                    last_box = current_main_sizer
-                current_sizer = last_box
-                current_sec_sizer = last_box
+                    current_container = active_page_sizer
+                active_subsection_sizer = current_container
+                active_section_sizer = current_container
 
             if last_subsection != this_subsection:
                 expansion_flag = 0
@@ -363,41 +368,43 @@ class ChoicePropertyPanel(ScrolledPanel):
                     expansion_flag = 1
                     lbl = _(self.unsorted_label(this_subsection))
                     if lbl != "":
-                        last_box = StaticBoxSizer(
+                        current_container = StaticBoxSizer(
                             self,
                             id=wx.ID_ANY,
                             label=lbl,
                             orientation=wx.HORIZONTAL,
                         )
                     else:
-                        last_box = wx.BoxSizer(wx.HORIZONTAL)
-                    current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
-                    img = c.get("icon", None)
+                        current_container = wx.BoxSizer(wx.HORIZONTAL)
+                    active_section_sizer.Add(current_container, 0, wx.EXPAND, 0)
+                    img = choice.get("icon", None)
                     if img is not None:
                         icon = wxStaticBitmap(self, wx.ID_ANY, bitmap=img)
-                        last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-                        last_box.AddSpacer(5)
+                        current_container.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                        current_container.AddSpacer(5)
                 else:
-                    last_box = current_sec_sizer
-                current_sizer = last_box
+                    current_container = active_section_sizer
+                active_subsection_sizer = current_container
 
             control = None
             control_sizer = None
 
             # Try to create control using the dispatch table system
             dispatch_result = self._create_control_using_dispatch(
-                label, data, data_type, data_style, c, attr, obj, additional_signal
+                label, data, data_type, data_style, choice, attr, obj, additional_signal
             )
 
             if dispatch_result[0] is not None:
                 # Successfully created using dispatch table
                 control, control_sizer, wants_listener = dispatch_result
                 if control_sizer is not None:
-                    current_sizer.Add(
+                    active_subsection_sizer.Add(
                         control_sizer, expansion_flag * weight, wx.EXPAND, 0
                     )
                 elif control is not None:
-                    current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+                    active_subsection_sizer.Add(
+                        control, expansion_flag * weight, wx.EXPAND, 0
+                    )
             elif data_type == list and data_style == "chart":
                 # Chart controls - complex case not yet unified
                 chart = EditableListCtrl(
@@ -407,7 +414,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     context=self.context,
                     list_name=f"list_chart_{attr}",
                 )
-                l_columns = c.get("columns", [])
+                l_columns = choice.get("columns", [])
 
                 def fill_ctrl(ctrl, local_obj, param, columns):
                     data = getattr(local_obj, param)
@@ -462,10 +469,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     self._make_chart_stop_handler(l_columns, attr, chart, obj),
                 )
 
-                allow_deletion = c.get("allow_deletion", False)
-                allow_duplication = c.get("allow_duplication", False)
+                allow_deletion = choice.get("allow_deletion", False)
+                allow_duplication = choice.get("allow_duplication", False)
 
-                default = c.get("default", [])
+                default = choice.get("default", [])
 
                 chart.Bind(
                     wx.EVT_RIGHT_DOWN,
@@ -479,7 +486,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                         default,
                     ),
                 )
-                current_sizer.Add(chart, expansion_flag * weight, wx.EXPAND, 0)
+                active_subsection_sizer.Add(
+                    chart, expansion_flag * weight, wx.EXPAND, 0
+                )
                 control = chart
                 wants_listener = True
             elif data_type == Color:
@@ -499,7 +508,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     ctrl.color = color
 
                 set_color(control, data)
-                self._apply_control_width(control, c.get("width", 0))
+                self._apply_control_width(control, choice.get("width", 0))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(
@@ -508,7 +517,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                         attr, control, obj, additional_signal
                     ),
                 )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+                active_subsection_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
                 wants_listener = True
             else:
                 # Requires a registered data_type
@@ -523,12 +534,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             # Get enabled value
             try:
-                enabled = c["enabled"]
+                enabled = choice["enabled"]
                 control.Enable(enabled)
             except KeyError:
                 # Listen to establish whether this control should be enabled based on another control's value.
                 try:
-                    conditional = c["conditional"]
+                    conditional = choice["conditional"]
                     if len(conditional) == 2:
                         c_obj, c_attr = conditional
                         enabled = bool(getattr(c_obj, c_attr))
@@ -584,7 +595,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
                         if data is None:
                             try:
-                                data = c["default"]
+                                data = choice["default"]
                             except KeyError:
                                 pass
                     if data is None:
@@ -681,17 +692,17 @@ class ChoicePropertyPanel(ScrolledPanel):
             if wants_listener:
                 # Use helper method for setting up update listener
                 self._setup_update_listener(
-                    c, control, attr, obj, data_type, data_style, choice_list
+                    choice, control, attr, obj, data_type, data_style, choice_list
                 )
 
             # Use helper method for setting up control properties
-            self._setup_control_properties(c, control, attr, obj)
+            self._setup_control_properties(choice, control, attr, obj)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection
 
-        self.SetSizer(sizer_very_main)
-        sizer_very_main.Fit(self)
+        self.SetSizer(root_horizontal_sizer)
+        root_horizontal_sizer.Fit(self)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
@@ -1569,8 +1580,8 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for combo text controls."""
 
         def handle_combo_text_change(event):
-            v = dtype(ctrl.GetValue())
-            self._update_property_and_signal(obj, param, v, addsig)
+            user_input = dtype(ctrl.GetValue())
+            self._update_property_and_signal(obj, param, user_input, addsig)
 
         return handle_combo_text_change
 
@@ -1587,8 +1598,8 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for checkbox controls."""
 
         def handle_checkbox_change(event):
-            v = bool(ctrl.GetValue())
-            self._update_property_and_signal(obj, param, v, addsig)
+            is_checked = bool(ctrl.GetValue())
+            self._update_property_and_signal(obj, param, is_checked, addsig)
 
         return handle_checkbox_change
 
@@ -1598,11 +1609,11 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for checkbox bit controls."""
 
         def handle_checkbox_bit_change(event):
-            v = ctrl.GetValue()
+            is_checked = ctrl.GetValue()
             if enable_ctrl is not None:
-                enable_ctrl.Enable(v)
+                enable_ctrl.Enable(is_checked)
             current = getattr(obj, param)
-            if v:
+            if is_checked:
                 current |= 1 << bit
             else:
                 current = ~((~current) | (1 << bit))
@@ -1719,9 +1730,9 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for small combo option controls."""
 
         def handle_combo_option_selection(event):
-            cl = choice_list[ctrl.GetSelection()]
-            v = dtype(cl)
-            self._update_property_and_signal(obj, param, v, addsig)
+            selected_choice = choice_list[ctrl.GetSelection()]
+            converted_value = dtype(selected_choice)
+            self._update_property_and_signal(obj, param, converted_value, addsig)
 
         return handle_combo_option_selection
 
@@ -1968,33 +1979,47 @@ class ChoicePropertyPanel(ScrolledPanel):
                 additional_signal.append(_sig)
         return additional_signal
 
-    def _setup_control_properties(self, c, control, attr, obj):
+    def _setup_control_properties(self, choice, control, attr, obj):
         """Set up control properties like tooltips, help, and conditional enabling."""
         if control is None:
             return
 
+        # Handle binary controls (control is a list of checkboxes)
+        if isinstance(control, list):
+            for individual_control in control:
+                self._setup_single_control_properties(
+                    choice, individual_control, attr, obj
+                )
+        else:
+            self._setup_single_control_properties(choice, control, attr, obj)
+
+    def _setup_single_control_properties(self, choice, control, attr, obj):
+        """Set up properties for a single control (helper for _setup_control_properties)."""
+        if control is None:
+            return
+
         # Set tooltip
-        tip = c.get("tip")
+        tip = choice.get("tip")
         if tip and not self.context.root.disable_tool_tips:
             control.SetToolTip(tip)
 
         # Set help text
-        _help = c.get("help")
+        _help = choice.get("help")
         if _help and hasattr(control, "SetHelpText"):
             control.SetHelpText(_help)
 
         # Handle enabled state and conditional enabling
         try:
-            enabled = c["enabled"]
+            enabled = choice["enabled"]
             control.Enable(enabled)
         except KeyError:
             # Listen to establish whether this control should be enabled based on another control's value.
-            self._setup_conditional_enabling(c, control, attr, obj)
+            self._setup_conditional_enabling(choice, control, attr, obj)
 
-    def _setup_conditional_enabling(self, c, control, attr, obj):
+    def _setup_conditional_enabling(self, choice, control, attr, obj):
         """Set up conditional enabling based on other control values."""
         try:
-            conditional = c["conditional"]
+            conditional = choice["conditional"]
             if len(conditional) == 2:
                 c_obj, c_attr = conditional
                 enabled = bool(getattr(c_obj, c_attr))
