@@ -540,6 +540,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Enable(False)
             else:
                 # If enabled is True or not specified, check conditional logic
+                c_attr = None
+                c_obj = None
+                c_equals = None
+
                 try:
                     conditional = choice["conditional"]
                     if len(conditional) == 2:
@@ -558,32 +562,35 @@ class ChoicePropertyPanel(ScrolledPanel):
                         )
                         c_equals = (c_from, c_to)
                         control.Enable(conditional_enabled)
+
+                    # Set up listener for conditional enabling if we have conditional logic
+                    if c_attr is not None and c_obj is not None:
+
+                        def on_enable_listener(param, ctrl, obj, eqs):
+                            def listen(origin, value, target=None):
+                                try:
+                                    if isinstance(eqs, (list, tuple)):
+                                        enable = bool(
+                                            eqs[0] <= getattr(obj, param) <= eqs[1]
+                                        )
+                                    else:
+                                        enable = bool(getattr(obj, param) == eqs)
+                                    ctrl.Enable(enable)
+                                except (IndexError, RuntimeError):
+                                    pass
+
+                            return listen
+
+                        listener = on_enable_listener(c_attr, control, c_obj, c_equals)
+                        self.listeners.append((c_attr, listener, c_obj))
+                        self.context.listen(c_attr, listener)
+
                 except KeyError:
                     # No conditional logic, use the enabled value (True by default)
-                    control.Enable(enabled)
+                    control.Enable(
+                        enabled
+                    )  # Now we listen to 'ourselves' as well to learn about changes somewhere else...
 
-                    def on_enable_listener(param, ctrl, obj, eqs):
-                        def listen(origin, value, target=None):
-                            try:
-                                if isinstance(eqs, (list, tuple)):
-                                    enable = bool(
-                                        eqs[0] <= getattr(obj, param) <= eqs[1]
-                                    )
-                                else:
-                                    enable = bool(getattr(obj, param) == eqs)
-                                ctrl.Enable(enable)
-                            except (IndexError, RuntimeError):
-                                pass
-
-                        return listen
-
-                    listener = on_enable_listener(c_attr, control, c_obj, c_equals)
-                    self.listeners.append((c_attr, listener, c_obj))
-                    context.listen(c_attr, listener)
-                except KeyError:
-                    pass
-
-            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
                 def listen_to_myself(origin, value, target=None):
                     if self.context.kernel.is_shutdown:
@@ -2021,12 +2028,20 @@ class ChoicePropertyPanel(ScrolledPanel):
             control.Enable(False)
         else:
             # If enabled is True or not specified, check conditional logic
-            self._setup_conditional_enabling(choice, control, attr, obj, enabled)
+            if "conditional" in choice:
+                self._setup_conditional_enabling(choice, control, attr, obj, enabled)
+            else:
+                # No conditional logic, just use the enabled value
+                control.Enable(enabled)
 
     def _setup_conditional_enabling(self, choice, control, attr, obj, enabled=True):
         """Set up conditional enabling based on other control values."""
         try:
             conditional = choice["conditional"]
+            c_attr = None
+            c_obj = None
+            c_equals = None
+
             if len(conditional) == 2:
                 c_obj, c_attr = conditional
                 conditional_enabled = bool(getattr(c_obj, c_attr))
@@ -2041,28 +2056,32 @@ class ChoicePropertyPanel(ScrolledPanel):
                 conditional_enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
                 c_equals = (c_from, c_to)
                 control.Enable(conditional_enabled)
+
+            # Set up listener for conditional enabling if we have conditional logic
+            if c_attr is not None and c_obj is not None:
+
+                def setup_enable_listener(param, ctrl, local_obj, eqs):
+                    def listen(origin, value, target=None):
+                        try:
+                            if isinstance(eqs, (list, tuple)):
+                                enable = bool(
+                                    eqs[0] <= getattr(local_obj, param) <= eqs[1]
+                                )
+                            else:
+                                enable = bool(getattr(local_obj, param) == eqs)
+                            ctrl.Enable(enable)
+                        except (IndexError, RuntimeError, AttributeError):
+                            pass
+
+                    return listen
+
+                listener = setup_enable_listener(c_attr, control, c_obj, c_equals)
+                self.listeners.append((c_attr, listener, c_obj))
+                self.context.listen(c_attr, listener)
+
         except KeyError:
             # No conditional logic, use the enabled value
             control.Enable(enabled)
-
-            def on_enable_listener(param, ctrl, obj, eqs):
-                def listen(origin, value, target=None):
-                    try:
-                        if isinstance(eqs, (list, tuple)):
-                            enable = bool(eqs[0] <= getattr(obj, param) <= eqs[1])
-                        else:
-                            enable = bool(getattr(obj, param) == eqs)
-                        ctrl.Enable(enable)
-                    except (IndexError, RuntimeError):
-                        pass
-
-                return listen
-
-            listener = on_enable_listener(c_attr, control, c_obj, c_equals)
-            self.listeners.append((c_attr, listener, c_obj))
-            self.context.listen(c_attr, listener)
-        except KeyError:
-            pass
 
     def _setup_update_listener(
         self, c, control, attr, obj, data_type, data_style, choice_list
