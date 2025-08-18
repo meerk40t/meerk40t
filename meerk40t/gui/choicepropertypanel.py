@@ -1594,8 +1594,13 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for combo text controls."""
 
         def handle_combo_text_change(event):
-            user_input = dtype(ctrl.GetValue())
-            self._update_property_and_signal(obj, param, user_input, addsig)
+            try:
+                user_input = dtype(ctrl.GetValue())
+                self._update_property_and_signal(obj, param, user_input, addsig)
+            except (ValueError, TypeError):
+                # Invalid input - could log this if needed, but don't crash the UI
+                # For now, silently ignore invalid input to keep UI responsive
+                pass
 
         return handle_combo_text_change
 
@@ -1630,7 +1635,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             if is_checked:
                 current |= 1 << bit
             else:
-                current = ~((~current) | (1 << bit))
+                current &= ~(1 << bit)
             self._update_property_and_signal(obj, param, current, addsig)
 
         return handle_checkbox_bit_change
@@ -1733,7 +1738,12 @@ class ChoicePropertyPanel(ScrolledPanel):
             if dtype == int:
                 v = dtype(ctrl.GetSelection())
             else:
-                v = dtype(ctrl.GetLabel())
+                # For non-int types, get the string value of the selected item
+                selection = ctrl.GetSelection()
+                if selection != wx.NOT_FOUND:
+                    v = dtype(ctrl.GetString(selection))
+                else:
+                    v = dtype("")  # Fallback to empty string if no selection
             self._update_property_and_signal(obj, param, v, addsig)
 
         return handle_radio_selection_change
@@ -1744,9 +1754,13 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for small combo option controls."""
 
         def handle_combo_option_selection(event):
-            selected_choice = choice_list[ctrl.GetSelection()]
-            converted_value = dtype(selected_choice)
-            self._update_property_and_signal(obj, param, converted_value, addsig)
+            try:
+                selected_choice = choice_list[ctrl.GetSelection()]
+                converted_value = dtype(selected_choice)
+                self._update_property_and_signal(obj, param, converted_value, addsig)
+            except (ValueError, TypeError, IndexError):
+                # Invalid selection or conversion - silently ignore to keep UI responsive
+                pass
 
         return handle_combo_option_selection
 
@@ -1754,8 +1768,12 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for small combo text controls."""
 
         def handle_combo_text_entry(event):
-            v = dtype(ctrl.GetValue())
-            self._update_property_and_signal(obj, param, v, addsig)
+            try:
+                v = dtype(ctrl.GetValue())
+                self._update_property_and_signal(obj, param, v, addsig)
+            except (ValueError, TypeError):
+                # Invalid input - silently ignore to keep UI responsive
+                pass
 
         return handle_combo_text_entry
 
@@ -2188,13 +2206,13 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             # Create a listener for the conditional attribute change
             def on_conditional_change(origin, value, target=None):
-                if (
-                    range_max is not None
-                    and equals_value is not None
-                    and value is not None
-                ):
+                if range_max is not None and equals_value is not None:
                     # Range check: value should be between equals_value (min) and range_max
-                    control.Enable(equals_value <= value <= range_max)
+                    try:
+                        control.Enable(equals_value <= value <= range_max)
+                    except (TypeError, ValueError):
+                        # If comparison fails, disable control
+                        control.Enable(False)
                 elif equals_value is not None:
                     # Enable if value equals the specified value
                     control.Enable(value == equals_value)
@@ -2210,13 +2228,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Set initial state based on current value
                 try:
                     current_value = getattr(cond_obj, cond_attr, None)
-                    if (
-                        range_max is not None
-                        and equals_value is not None
-                        and current_value is not None
-                    ):
+                    if range_max is not None and equals_value is not None:
                         # Range check: value should be between equals_value (min) and range_max
-                        control.Enable(equals_value <= current_value <= range_max)
+                        try:
+                            control.Enable(equals_value <= current_value <= range_max)
+                        except (TypeError, ValueError):
+                            # If comparison fails, disable control
+                            control.Enable(False)
                     elif equals_value is not None:
                         control.Enable(current_value == equals_value)
                     else:
