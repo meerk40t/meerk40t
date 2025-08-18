@@ -927,6 +927,63 @@ class TestChoicePropertyPanelIntegration(unittest.TestCase):
         handler_pct(mock_event)
         self.assertEqual(mock_obj.power, original_value)  # Should not change
 
+    def test_power_control_automatic_validation_limits(self):
+        """Test that power controls automatically set appropriate validation limits."""
+        panel = ChoicePropertyPanel.__new__(ChoicePropertyPanel)
+        panel.context = Mock()
+        panel.listeners = []
+
+        # Test percentage mode - should set 0-100 limits
+        config_pct = {"style": "power", "percent": True}
+        text_config_pct = panel._get_text_control_config(float, config_pct)
+
+        self.assertEqual(text_config_pct.get("lower"), 0.0)
+        self.assertEqual(text_config_pct.get("upper"), 100.0)
+        self.assertTrue(text_config_pct.get("limited"))
+        self.assertEqual(text_config_pct.get("check"), "float")
+
+        # Test absolute mode - should set 0-1000 limits
+        config_abs = {"style": "power", "percent": False}
+        text_config_abs = panel._get_text_control_config(float, config_abs)
+
+        self.assertEqual(text_config_abs.get("lower"), 0.0)
+        self.assertEqual(text_config_abs.get("upper"), 1000.0)
+        self.assertTrue(text_config_abs.get("limited"))
+        self.assertEqual(text_config_abs.get("check"), "float")
+
+        # Test callable percent flag - percentage mode
+        def get_percent_mode():
+            return True
+
+        config_callable_pct = {"style": "power", "percent": get_percent_mode}
+        text_config_callable_pct = panel._get_text_control_config(
+            float, config_callable_pct
+        )
+
+        self.assertEqual(text_config_callable_pct.get("lower"), 0.0)
+        self.assertEqual(text_config_callable_pct.get("upper"), 100.0)
+
+        # Test callable percent flag - absolute mode
+        def get_absolute_mode():
+            return False
+
+        config_callable_abs = {"style": "power", "percent": get_absolute_mode}
+        text_config_callable_abs = panel._get_text_control_config(
+            float, config_callable_abs
+        )
+
+        self.assertEqual(text_config_callable_abs.get("lower"), 0.0)
+        self.assertEqual(text_config_callable_abs.get("upper"), 1000.0)
+
+        # Test non-power controls are unaffected
+        config_regular = {"style": None}
+        text_config_regular = panel._get_text_control_config(float, config_regular)
+
+        self.assertIsNone(text_config_regular.get("lower"))
+        self.assertIsNone(text_config_regular.get("upper"))
+        self.assertTrue(text_config_regular.get("limited"))
+        self.assertEqual(text_config_regular.get("check"), "float")
+
 
 if __name__ == "__main__":
     # Run the tests

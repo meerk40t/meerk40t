@@ -863,6 +863,22 @@ class ChoicePropertyPanel(ScrolledPanel):
         if data_type in (int, float):
             text_config["limited"] = True
             text_config["check"] = "int" if data_type == int else "float"
+
+            # Special handling for power controls - set appropriate validation limits
+            if config.get("style") == "power":
+                # Determine if this is percentage or absolute mode
+                percent_flag = config.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+
+                if percent_mode:
+                    # Percentage mode: 0-100%
+                    text_config.update({"lower": 0.0, "upper": 100.0})
+                else:
+                    # Absolute mode: 0-1000
+                    text_config.update({"lower": 0.0, "upper": 1000.0})
+
         elif data_type == Length:
             text_config.update(
                 {
