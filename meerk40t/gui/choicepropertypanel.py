@@ -533,27 +533,34 @@ class ChoicePropertyPanel(ScrolledPanel):
                 continue  # We're binary or some other style without a specific control.
 
             # Get enabled value
-            try:
-                enabled = choice["enabled"]
-                control.Enable(enabled)
-            except KeyError:
-                # Listen to establish whether this control should be enabled based on another control's value.
+            enabled = choice.get("enabled", True)  # Default to True if not specified
+
+            # If explicitly disabled, take precedence
+            if enabled is False:
+                control.Enable(False)
+            else:
+                # If enabled is True or not specified, check conditional logic
                 try:
                     conditional = choice["conditional"]
                     if len(conditional) == 2:
                         c_obj, c_attr = conditional
-                        enabled = bool(getattr(c_obj, c_attr))
+                        conditional_enabled = bool(getattr(c_obj, c_attr))
                         c_equals = True
-                        control.Enable(enabled)
+                        control.Enable(conditional_enabled)
                     elif len(conditional) == 3:
                         c_obj, c_attr, c_equals = conditional
-                        enabled = bool(getattr(c_obj, c_attr) == c_equals)
-                        control.Enable(enabled)
+                        conditional_enabled = bool(getattr(c_obj, c_attr) == c_equals)
+                        control.Enable(conditional_enabled)
                     elif len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
+                        conditional_enabled = bool(
+                            c_from <= getattr(c_obj, c_attr) <= c_to
+                        )
                         c_equals = (c_from, c_to)
-                        control.Enable(enabled)
+                        control.Enable(conditional_enabled)
+                except KeyError:
+                    # No conditional logic, use the enabled value (True by default)
+                    control.Enable(enabled)
 
                     def on_enable_listener(param, ctrl, obj, eqs):
                         def listen(origin, value, target=None):
@@ -1488,9 +1495,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
     def _create_info_control(self, label):
         """Create info/static text controls."""
-        msgs = label.split("\n")
-        for lbl in msgs:
-            control = wxStaticText(self, label=lbl)
+        control = wxStaticText(self, label=label)
         return control
 
     def _create_chart_control(
@@ -2009,31 +2014,36 @@ class ChoicePropertyPanel(ScrolledPanel):
             control.SetHelpText(_help)
 
         # Handle enabled state and conditional enabling
-        try:
-            enabled = choice["enabled"]
-            control.Enable(enabled)
-        except KeyError:
-            # Listen to establish whether this control should be enabled based on another control's value.
-            self._setup_conditional_enabling(choice, control, attr, obj)
+        enabled = choice.get("enabled", True)  # Default to True if not specified
 
-    def _setup_conditional_enabling(self, choice, control, attr, obj):
+        # If explicitly disabled, take precedence
+        if enabled is False:
+            control.Enable(False)
+        else:
+            # If enabled is True or not specified, check conditional logic
+            self._setup_conditional_enabling(choice, control, attr, obj, enabled)
+
+    def _setup_conditional_enabling(self, choice, control, attr, obj, enabled=True):
         """Set up conditional enabling based on other control values."""
         try:
             conditional = choice["conditional"]
             if len(conditional) == 2:
                 c_obj, c_attr = conditional
-                enabled = bool(getattr(c_obj, c_attr))
+                conditional_enabled = bool(getattr(c_obj, c_attr))
                 c_equals = True
-                control.Enable(enabled)
+                control.Enable(conditional_enabled)
             elif len(conditional) == 3:
                 c_obj, c_attr, c_equals = conditional
-                enabled = bool(getattr(c_obj, c_attr) == c_equals)
-                control.Enable(enabled)
+                conditional_enabled = bool(getattr(c_obj, c_attr) == c_equals)
+                control.Enable(conditional_enabled)
             elif len(conditional) == 4:
                 c_obj, c_attr, c_from, c_to = conditional
-                enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
+                conditional_enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
                 c_equals = (c_from, c_to)
-                control.Enable(enabled)
+                control.Enable(conditional_enabled)
+        except KeyError:
+            # No conditional logic, use the enabled value
+            control.Enable(enabled)
 
             def on_enable_listener(param, ctrl, obj, eqs):
                 def listen(origin, value, target=None):
