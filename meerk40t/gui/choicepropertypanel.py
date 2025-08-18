@@ -131,6 +131,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.context.themes.set_window_colors(self)
         self.listeners = list()
         self.entries_per_column = entries_per_column
+
         if choices is None:
             return
         if isinstance(choices, str):
@@ -716,7 +717,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             last_subsection = this_subsection
 
         self.SetSizer(root_horizontal_sizer)
-        root_horizontal_sizer.Fit(self)
+        # root_horizontal_sizer.Fit(self)
+        # Do not call Fit(self) on a ScrolledPanel, as it can negate scrolling and cause layout issues.
         self.Bind(wx.EVT_CLOSE, self.on_close)
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
@@ -2029,59 +2031,10 @@ class ChoicePropertyPanel(ScrolledPanel):
         else:
             # If enabled is True or not specified, check conditional logic
             if "conditional" in choice:
-                self._setup_conditional_enabling(choice, control, attr, obj, enabled)
+                self._setup_conditional_enabling(choice, control, attr, obj)
             else:
                 # No conditional logic, just use the enabled value
                 control.Enable(enabled)
-
-    def _setup_conditional_enabling(self, choice, control, attr, obj, enabled=True):
-        """Set up conditional enabling based on other control values."""
-        try:
-            conditional = choice["conditional"]
-            c_attr = None
-            c_obj = None
-            c_equals = None
-
-            if len(conditional) == 2:
-                c_obj, c_attr = conditional
-                conditional_enabled = bool(getattr(c_obj, c_attr))
-                c_equals = True
-                control.Enable(conditional_enabled)
-            elif len(conditional) == 3:
-                c_obj, c_attr, c_equals = conditional
-                conditional_enabled = bool(getattr(c_obj, c_attr) == c_equals)
-                control.Enable(conditional_enabled)
-            elif len(conditional) == 4:
-                c_obj, c_attr, c_from, c_to = conditional
-                conditional_enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
-                c_equals = (c_from, c_to)
-                control.Enable(conditional_enabled)
-
-            # Set up listener for conditional enabling if we have conditional logic
-            if c_attr is not None and c_obj is not None:
-
-                def setup_enable_listener(param, ctrl, local_obj, eqs):
-                    def listen(origin, value, target=None):
-                        try:
-                            if isinstance(eqs, (list, tuple)):
-                                enable = bool(
-                                    eqs[0] <= getattr(local_obj, param) <= eqs[1]
-                                )
-                            else:
-                                enable = bool(getattr(local_obj, param) == eqs)
-                            ctrl.Enable(enable)
-                        except (IndexError, RuntimeError, AttributeError):
-                            pass
-
-                    return listen
-
-                listener = setup_enable_listener(c_attr, control, c_obj, c_equals)
-                self.listeners.append((c_attr, listener, c_obj))
-                self.context.listen(c_attr, listener)
-
-        except KeyError:
-            # No conditional logic, use the enabled value
-            control.Enable(enabled)
 
     def _setup_update_listener(
         self, c, control, attr, obj, data_type, data_style, choice_list
@@ -2210,6 +2163,67 @@ class ChoicePropertyPanel(ScrolledPanel):
 
     def module_close(self, *args, **kwargs):
         self.pane_hide()
+
+    def _setup_conditional_enabling(self, choice, control, obj_attr, obj):
+        """
+        Set up conditional enabling for a control based on another control's value.
+
+        Args:
+            choice: The choice control that drives the enabling condition
+            control: The control to be enabled/disabled
+            obj_attr: The attribute name to listen for
+            obj: The object that has the attribute
+        """
+        # Only set up conditional logic if "conditional" key exists
+        if "conditional" not in choice:
+            return
+
+        conditional = choice["conditional"]
+        if len(conditional) >= 2:
+            cond_obj, cond_attr = conditional[0], conditional[1]
+
+            # Check for equals condition (third element) or range condition (third and fourth elements)
+            equals_value = conditional[2] if len(conditional) > 2 else None
+            range_max = conditional[3] if len(conditional) > 3 else None
+
+            # Create a listener for the conditional attribute change
+            def on_conditional_change(origin, value, target=None):
+                if (
+                    range_max is not None
+                    and equals_value is not None
+                    and value is not None
+                ):
+                    # Range check: value should be between equals_value (min) and range_max
+                    control.Enable(equals_value <= value <= range_max)
+                elif equals_value is not None:
+                    # Enable if value equals the specified value
+                    control.Enable(value == equals_value)
+                else:
+                    # Enable if value is truthy
+                    control.Enable(bool(value))
+
+            # Register the listener with the context system to prevent memory leaks
+            if self.context:
+                self.context.listen(cond_attr, on_conditional_change)
+                self.listeners.append((cond_attr, on_conditional_change, cond_obj))
+
+                # Set initial state based on current value
+                try:
+                    current_value = getattr(cond_obj, cond_attr, None)
+                    if (
+                        range_max is not None
+                        and equals_value is not None
+                        and current_value is not None
+                    ):
+                        # Range check: value should be between equals_value (min) and range_max
+                        control.Enable(equals_value <= current_value <= range_max)
+                    elif equals_value is not None:
+                        control.Enable(current_value == equals_value)
+                    else:
+                        control.Enable(bool(current_value))
+                except Exception:
+                    # If we can't get the current value, default to enabled
+                    control.Enable(True)
 
     def pane_hide(self):
         # print (f"hide called: {len(self.listeners)}")
