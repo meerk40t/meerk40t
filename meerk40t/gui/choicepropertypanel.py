@@ -2197,51 +2197,59 @@ class ChoicePropertyPanel(ScrolledPanel):
             return
 
         conditional = choice["conditional"]
-        if len(conditional) >= 2:
-            cond_obj, cond_attr = conditional[0], conditional[1]
+        if len(conditional) < 2:
+            # Invalid conditional tuple - must have at least object and attribute
+            if self.context:
+                channel = self.context.root.channel("console")
+                channel(
+                    f"Warning: Invalid conditional tuple with {len(conditional)} elements, expected at least 2\nchoice={choice}"
+                )
+            return
 
-            # Check for equals condition (third element) or range condition (third and fourth elements)
-            equals_value = conditional[2] if len(conditional) > 2 else None
-            range_max = conditional[3] if len(conditional) > 3 else None
+        cond_obj, cond_attr = conditional[0], conditional[1]
 
-            # Create a listener for the conditional attribute change
-            def on_conditional_change(origin, value, target=None):
+        # Check for equals condition (third element) or range condition (third and fourth elements)
+        equals_value = conditional[2] if len(conditional) > 2 else None
+        range_max = conditional[3] if len(conditional) > 3 else None
+
+        # Create a listener for the conditional attribute change
+        def on_conditional_change(origin, value, target=None):
+            if range_max is not None and equals_value is not None:
+                # Range check: value should be between equals_value (min) and range_max
+                try:
+                    control.Enable(equals_value <= value <= range_max)
+                except (TypeError, ValueError):
+                    # If comparison fails, disable control
+                    control.Enable(False)
+            elif equals_value is not None:
+                # Enable if value equals the specified value
+                control.Enable(value == equals_value)
+            else:
+                # Enable if value is truthy
+                control.Enable(bool(value))
+
+        # Register the listener with the context system to prevent memory leaks
+        if self.context:
+            self.context.listen(cond_attr, on_conditional_change)
+            self.listeners.append((cond_attr, on_conditional_change, cond_obj))
+
+            # Set initial state based on current value
+            try:
+                current_value = getattr(cond_obj, cond_attr, None)
                 if range_max is not None and equals_value is not None:
                     # Range check: value should be between equals_value (min) and range_max
                     try:
-                        control.Enable(equals_value <= value <= range_max)
+                        control.Enable(equals_value <= current_value <= range_max)
                     except (TypeError, ValueError):
                         # If comparison fails, disable control
                         control.Enable(False)
                 elif equals_value is not None:
-                    # Enable if value equals the specified value
-                    control.Enable(value == equals_value)
+                    control.Enable(current_value == equals_value)
                 else:
-                    # Enable if value is truthy
-                    control.Enable(bool(value))
-
-            # Register the listener with the context system to prevent memory leaks
-            if self.context:
-                self.context.listen(cond_attr, on_conditional_change)
-                self.listeners.append((cond_attr, on_conditional_change, cond_obj))
-
-                # Set initial state based on current value
-                try:
-                    current_value = getattr(cond_obj, cond_attr, None)
-                    if range_max is not None and equals_value is not None:
-                        # Range check: value should be between equals_value (min) and range_max
-                        try:
-                            control.Enable(equals_value <= current_value <= range_max)
-                        except (TypeError, ValueError):
-                            # If comparison fails, disable control
-                            control.Enable(False)
-                    elif equals_value is not None:
-                        control.Enable(current_value == equals_value)
-                    else:
-                        control.Enable(bool(current_value))
-                except Exception:
-                    # If we can't get the current value, default to enabled
-                    control.Enable(True)
+                    control.Enable(bool(current_value))
+            except Exception:
+                # If we can't get the current value, default to enabled
+                control.Enable(True)
 
     def pane_hide(self):
         # print (f"hide called: {len(self.listeners)}")

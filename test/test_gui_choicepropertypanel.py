@@ -743,6 +743,41 @@ class TestChoicePropertyPanelIntegration(unittest.TestCase):
                 # This is acceptable - some signal functionality may require full GUI setup
                 pass
 
+    def test_conditional_tuple_validation(self):
+        """Test handling of invalid conditional tuples with less than 2 elements."""
+        panel = ChoicePropertyPanel.__new__(ChoicePropertyPanel)
+        panel.context = Mock()
+        panel.listeners = []
+
+        control = MockControl()
+
+        # Test with empty conditional tuple
+        choice_empty = {"conditional": []}
+        panel._setup_conditional_enabling(choice_empty, control, "test_attr", Mock())
+
+        # Verify context was called with warning for empty tuple
+        panel.context.assert_called_with(
+            "Warning: Invalid conditional tuple with 0 elements, expected at least 2"
+        )
+
+        # Test with single element conditional tuple
+        panel.context.reset_mock()
+        choice_single = {"conditional": [Mock()]}
+        panel._setup_conditional_enabling(choice_single, control, "test_attr", Mock())
+
+        # Verify context was called with warning for single element tuple
+        panel.context.assert_called_with(
+            "Warning: Invalid conditional tuple with 1 elements, expected at least 2"
+        )
+
+        # Test with valid 2-element conditional tuple (should not generate warning)
+        panel.context.reset_mock()
+        choice_valid = {"conditional": [Mock(), "test_attr"]}
+        panel._setup_conditional_enabling(choice_valid, control, "test_attr", Mock())
+
+        # Should not have called context with warning message
+        self.assertNotIn("Warning:", str(panel.context.call_args_list))
+
 
 if __name__ == "__main__":
     # Run the tests
