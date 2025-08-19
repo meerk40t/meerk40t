@@ -3534,7 +3534,29 @@ class Geomstr:
         @param distance:
         @return:
         """
+        # Optimization threshold - use batch processing for larger geometries
+        OPTIMIZATION_THRESHOLD = 50
 
+        if self.index > OPTIMIZATION_THRESHOLD:
+            try:
+                # Try optimized batch processing
+                segments = self.segments[: self.index]
+                segment_types = np.array(
+                    [self._segtype(seg) for seg in segments], dtype=np.uint8
+                )
+
+                optimized_points = self.batch_equal_distance_interpolation(
+                    segments, segment_types, distance, expand_lines
+                )
+
+                if optimized_points is not None:
+                    yield from optimized_points
+                    return
+            except Exception:
+                # Fall back to original implementation on any error
+                pass
+
+        # Original implementation as fallback
         at_start = True
         end = None
         for e in self.segments[: self.index]:
@@ -6357,6 +6379,251 @@ class Geomstr:
             return pts
         finally:
             np.seterr(**old_np_seterr)
+
+    #######################
+    # Batch Processing Helpers for equal distance interpolation optimization
+    #######################
+
+    @staticmethod
+    def batch_equal_distance_interpolation(
+        segments, segment_types, distance, expand_lines=False
+    ):
+        """
+        Optimized batch processing for equal distance interpolation.
+
+        This function processes multiple segments with shared distance calculation
+        and optimized memory usage. Only optimizes lines, quads, and cubics.
+        Falls back for arcs and other complex types.
+
+        Args:
+            segments: numpy array of Geomstr segments
+            segment_types: numpy array of segment type values
+            distance: target distance between interpolated points
+            expand_lines: whether to expand lines with full interpolation
+
+        Returns:
+            list of interpolated points, or None if optimization fails
+        """
+        try:
+            # Check if any arcs are present - if so, fall back to avoid complexity
+            if 95 in segment_types:  # TYPE_ARC = 95
+                return None
+
+            all_points = []
+
+            # Pre-allocate reusable arrays for better memory efficiency
+            t_array = np.linspace(0, 1, 1000)  # Reuse across segments
+
+            # Cache type constants (use values directly to avoid circular import)
+            TYPE_LINE_VAL = 41
+            TYPE_QUAD_VAL = 63
+            TYPE_CUBIC_VAL = 79
+            TYPE_END_VAL = 128
+            META_TYPES_SET = {
+                0,
+                159,
+                112,
+                160,
+                191,
+            }  # TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL
+
+            at_start = True
+            end = None
+
+            for i, seg in enumerate(segments):
+                seg_type = segment_types[i]
+
+                # Skip meta types (matching original logic)
+                if seg_type in META_TYPES_SET:
+                    continue
+
+                start = seg[0]
+                if end != start and not at_start:
+                    # Path break - yield None marker
+                    all_points.append(None)
+                    at_start = True
+
+                end = seg[4]
+                if at_start:
+                    if seg_type == TYPE_END_VAL:
+                        # End segments, flag new start but should not be returned.
+                        continue
+                    all_points.append(start)
+                    at_start = False
+
+                if seg_type == TYPE_END_VAL:
+                    at_start = True
+                    continue
+                elif seg_type == TYPE_LINE_VAL:
+                    if expand_lines:
+                        points = Geomstr._batch_line_equal_distance_expanded(
+                            seg, distance, t_array
+                        )
+                        all_points.extend(points)
+                    # For regular lines, don't add intermediate points
+                elif seg_type == TYPE_QUAD_VAL:
+                    points = Geomstr._batch_quad_equal_distance(seg, distance, t_array)
+                    all_points.extend(points)
+                elif seg_type == TYPE_CUBIC_VAL:
+                    points = Geomstr._batch_cubic_equal_distance(seg, distance, t_array)
+                    all_points.extend(points)
+                # Fall back to original for arcs and other types
+
+                # Always add end point
+                all_points.append(end)
+
+            return all_points
+
+        except Exception:
+            # Fallback on any error
+            return None
+
+    @staticmethod
+    def _batch_line_equal_distance_expanded(segment, distance, t_array):
+        """Optimized equal distance interpolation for lines with expansion."""
+        start, _, _, _, end = segment
+
+        # Calculate total length directly for lines
+        total_length = abs(end - start)
+        if total_length <= distance:
+            return []  # Just start and end, which are handled separately
+
+        # Calculate number of intermediate points needed (matching original logic)
+        num_intervals = int(np.ceil(total_length / distance))
+        if num_intervals <= 1:
+            return []
+
+        # Use endpoint=False and [1:] to match original logic
+        dist_values = np.linspace(0, total_length, num_intervals, endpoint=False)[1:]
+        t_values = dist_values / total_length
+        points = start + t_values * (end - start)
+        return points.tolist()
+
+    @staticmethod
+    def _shared_curve_equal_distance(position_func, segment, distance, t_array):
+        """Shared logic for curve equal distance interpolation."""
+        # Calculate positions along curve using pre-allocated t_array
+        pts = position_func(segment, t_array)
+
+        # Vectorized distance calculation
+        distances = np.abs(pts[:-1] - pts[1:])
+        distances = np.cumsum(distances)
+        max_distance = distances[-1]
+
+        if max_distance <= distance:
+            return []  # Start and end handled separately
+
+        # Find equal distance points using vectorized operations
+        num_intervals = int(np.ceil(max_distance / distance))
+        if num_intervals <= 1:
+            return []
+
+        dist_values = np.linspace(0, max_distance, num_intervals + 1)[
+            1:-1
+        ]  # Exclude start/end
+        near_t = np.searchsorted(distances, dist_values, side="right")
+
+        return pts[near_t].tolist()
+
+    @staticmethod
+    def _shared_curve_equal_distance_batch(position_func, segment, distance, t_array):
+        """Shared logic for curve equal distance interpolation."""
+        # Calculate positions along curve using pre-allocated t_array
+        pts = position_func(segment, t_array)
+
+        # Vectorized distance calculation
+        distances = np.abs(pts[:-1] - pts[1:])
+        distances = np.cumsum(distances)
+        max_distance = distances[-1]
+
+        if max_distance <= distance:
+            return []  # Start and end handled separately
+
+        # Find equal distance points using vectorized operations (matching original logic)
+        num_intervals = int(np.ceil(max_distance / distance))
+        if num_intervals <= 1:
+            return []
+
+        # Use endpoint=False and [1:] to match original logic
+        dist_values = np.linspace(0, max_distance, num_intervals, endpoint=False)[1:]
+        near_t = np.searchsorted(distances, dist_values, side="right")
+
+        return pts[near_t].tolist()
+
+    @staticmethod
+    def _quad_position_batch(segment, t_array):
+        """Calculate positions along a quadratic curve."""
+        start, control, _, _, end = (
+            segment[0],
+            segment[1],
+            segment[2],
+            segment[3],
+            segment[4],
+        )
+        # Quadratic Bezier: (1-t)²P₀ + 2t(1-t)P₁ + t²P₂
+        t_comp = 1 - t_array
+        return (
+            t_comp * t_comp * start
+            + 2 * t_array * t_comp * control
+            + t_array * t_array * end
+        )
+
+    @staticmethod
+    def _cubic_position_batch(segment, t_array):
+        """Calculate positions along a cubic curve."""
+        start, control1, control2, end = segment[0], segment[1], segment[3], segment[4]
+        # Cubic Bezier: (1-t)³P₀ + 3t(1-t)²P₁ + 3t²(1-t)P₂ + t³P₃
+        t_comp = 1 - t_array
+        t2 = t_array * t_array
+        t_comp2 = t_comp * t_comp
+        return (
+            t_comp2 * t_comp * start
+            + 3 * t_array * t_comp2 * control1
+            + 3 * t2 * t_comp * control2
+            + t2 * t_array * end
+        )
+
+    @staticmethod
+    def _arc_position_batch(segment, t_array):
+        """Calculate positions along an arc."""
+        start, control, end = segment[0], segment[1], segment[4]
+        # Arc interpolation using start/end points and control parameters
+        # This is a simplified arc calculation - the actual implementation
+        # would depend on the arc representation in the segment format
+        center = (start + end) / 2
+        radius = abs(control - center)
+
+        # Calculate arc angles
+        start_angle = np.angle(start - center)
+        end_angle = np.angle(end - center)
+
+        # Handle angle wrapping
+        if end_angle < start_angle:
+            end_angle += 2 * np.pi
+
+        angles = start_angle + t_array * (end_angle - start_angle)
+        return center + radius * np.exp(1j * angles)
+
+    @staticmethod
+    def _batch_quad_equal_distance(segment, distance, t_array):
+        """Optimized equal distance interpolation for quads."""
+        return Geomstr._shared_curve_equal_distance_batch(
+            Geomstr._quad_position_batch, segment, distance, t_array
+        )
+
+    @staticmethod
+    def _batch_cubic_equal_distance(segment, distance, t_array):
+        """Optimized equal distance interpolation for cubics."""
+        return Geomstr._shared_curve_equal_distance_batch(
+            Geomstr._cubic_position_batch, segment, distance, t_array
+        )
+
+    @staticmethod
+    def _batch_arc_equal_distance(segment, distance, t_array):
+        """Optimized equal distance interpolation for arcs."""
+        return Geomstr._shared_curve_equal_distance_batch(
+            Geomstr._arc_position_batch, segment, distance, t_array
+        )
 
     #######################
     # Batch Processing Helpers for SVG optimization
