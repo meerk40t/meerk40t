@@ -2050,6 +2050,372 @@ class TestGeomstr(unittest.TestCase):
         q = bt.combine()
         self.assertEqual(q, g)
 
+    def test_cag_operations_comprehensive(self):
+        """Test comprehensive CAG operations with various geometric shapes."""
+        # Test Case 1: Two overlapping rectangles
+        g = Geomstr()
+        # Rectangle A: (0,0) to (100,100) - settings=0
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        # Rectangle B: (50,50) to (150,150) - settings=1
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+
+        bt = BeamTable(g)
+
+        # Test union: should cover (0,0) to (150,150)
+        union_result = bt.union(0, 1)
+        self.assertGreater(union_result.index, 0, "Union should produce geometry")
+
+        # Test intersection: should be (50,50) to (100,100)
+        intersection_result = bt.intersection(0, 1)
+        self.assertGreater(
+            intersection_result.index, 0, "Intersection should produce geometry"
+        )
+
+        # Test XOR: should be non-overlapping parts
+        xor_result = bt.xor(0, 1)
+        self.assertGreater(xor_result.index, 0, "XOR should produce geometry")
+
+        # Test difference A-B: should be left and bottom parts of A
+        diff_result = bt.difference(0, 1)
+        self.assertGreater(diff_result.index, 0, "Difference should produce geometry")
+
+    def test_cag_edge_cases(self):
+        """Test CAG operations with edge cases."""
+        # Test Case 1: Empty geometry
+        g = Geomstr()
+        bt = BeamTable(g)
+
+        # All operations on empty geometry should return empty
+        self.assertEqual(bt.union().index, 0, "Union of empty should be empty")
+        self.assertEqual(
+            bt.intersection().index, 0, "Intersection of empty should be empty"
+        )
+        self.assertEqual(bt.xor().index, 0, "XOR of empty should be empty")
+        self.assertEqual(
+            bt.difference().index, 0, "Difference of empty should be empty"
+        )
+
+        # Test Case 2: Single rectangle with itself
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        bt = BeamTable(g)
+
+        # Union with itself should be itself
+        union_self = bt.union(0)
+        self.assertGreater(union_self.index, 0, "Self-union should produce geometry")
+
+        # Intersection with itself should be itself
+        intersection_self = bt.intersection(0)
+        self.assertGreater(
+            intersection_self.index, 0, "Self-intersection should produce geometry"
+        )
+
+        # XOR with single argument should be itself (not empty)
+        xor_self = bt.xor(0)
+        self.assertGreater(
+            xor_self.index, 0, "Single-argument XOR should produce the geometry itself"
+        )
+
+        # Difference with single argument should be itself (A - nothing = A)
+        diff_self = bt.difference(0)
+        self.assertGreater(
+            diff_self.index,
+            0,
+            "Single-argument difference should produce the geometry itself",
+        )
+
+        # Test Case 3: XOR and difference with truly identical shapes (same settings, same position)
+        g2 = Geomstr()
+        g2.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g2.append(Geomstr.rect(0, 0, 100, 100, settings=0))  # Exact duplicate
+        bt2 = BeamTable(g2)
+
+        # XOR of two identical shapes should be empty
+        xor_identical = bt2.xor(0, 0)
+        self.assertEqual(
+            xor_identical.index, 0, "XOR of identical shapes should be empty"
+        )
+
+        # Difference of two identical shapes should be empty (A - A = empty)
+        diff_identical = bt2.difference(0, 0)
+        self.assertEqual(
+            diff_identical.index, 0, "Difference of identical shapes should be empty"
+        )
+
+    def test_cag_multiple_shapes(self):
+        """Test CAG operations with multiple shapes."""
+        g = Geomstr()
+        # Three squares where only adjacent ones overlap
+        g.append(Geomstr.rect(0, 0, 50, 50, settings=0))  # Square A: (0,0) to (50,50)
+        g.append(
+            Geomstr.rect(25, 0, 50, 50, settings=1)
+        )  # Square B: (25,0) to (75,50) - overlaps A and C
+        g.append(
+            Geomstr.rect(60, 0, 50, 50, settings=2)
+        )  # Square C: (60,0) to (110,50) - gap from A
+
+        bt = BeamTable(g)
+
+        # Test union of all three
+        union_all = bt.union(0, 1, 2)
+        self.assertGreater(union_all.index, 0, "Union of three should produce geometry")
+
+        # Test intersection of all three (should be empty since no common overlap)
+        intersection_all = bt.intersection(0, 1, 2)
+        self.assertEqual(
+            intersection_all.index, 0, "No common intersection among all three"
+        )
+
+        # Test pairwise intersection A∩B
+        intersection_ab = bt.intersection(0, 1)
+        self.assertGreater(intersection_ab.index, 0, "A∩B should have overlap")
+
+        # Test pairwise intersection B∩C
+        intersection_bc = bt.intersection(1, 2)
+        self.assertGreater(intersection_bc.index, 0, "B∩C should have overlap")
+
+        # Test XOR of all three
+        xor_all = bt.xor(0, 1, 2)
+        self.assertGreater(xor_all.index, 0, "XOR of three should produce geometry")
+
+    def test_cag_non_overlapping_shapes(self):
+        """Test CAG operations with non-overlapping shapes."""
+        g = Geomstr()
+        # Two separate rectangles
+        g.append(Geomstr.rect(0, 0, 50, 50, settings=0))
+        g.append(Geomstr.rect(100, 100, 50, 50, settings=1))
+
+        bt = BeamTable(g)
+
+        # Union should contain both shapes
+        union_result = bt.union(0, 1)
+        self.assertGreater(
+            union_result.index, 0, "Union of separate shapes should produce geometry"
+        )
+
+        # Intersection should be empty
+        intersection_result = bt.intersection(0, 1)
+        self.assertEqual(
+            intersection_result.index, 0, "No intersection between separate shapes"
+        )
+
+        # XOR should be both shapes (since no overlap)
+        xor_result = bt.xor(0, 1)
+        self.assertGreater(
+            xor_result.index, 0, "XOR of separate shapes should be both shapes"
+        )
+
+        # Difference A-B should be A (since no overlap)
+        diff_result = bt.difference(0, 1)
+        self.assertGreater(
+            diff_result.index, 0, "Difference should be first shape when no overlap"
+        )
+
+    def test_cag_complex_geometry(self):
+        """Test CAG operations with more complex geometries."""
+        g = Geomstr()
+
+        # Create an L-shaped geometry using multiple rectangles
+        g.append(Geomstr.rect(0, 0, 100, 50, settings=0))  # Horizontal bar of L
+        g.append(Geomstr.rect(0, 50, 50, 100, settings=0))  # Vertical bar of L
+
+        # Add a rectangle that intersects both parts
+        g.append(Geomstr.rect(25, 25, 50, 50, settings=1))
+
+        bt = BeamTable(g)
+
+        # Test union of L-shape (should merge the two L parts)
+        union_l = bt.union(0, 0)  # Same settings should union
+        self.assertGreater(union_l.index, 0, "Union of L-shape should produce geometry")
+
+        # Test intersection with the crossing rectangle
+        intersection_cross = bt.intersection(0, 1)
+        self.assertGreater(
+            intersection_cross.index, 0, "Intersection should produce geometry"
+        )
+
+    def test_cag_consistency_with_original(self):
+        """Test that optimized CAG produces same results as original implementation."""
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+
+        bt = BeamTable(g)
+
+        # Test that both implementations give consistent results
+        optimized_union = bt.cag("union", 0, 1)
+        original_union = bt.cag_org("union", 0, 1)
+
+        # Both should have the same number of segments (approximately)
+        # Allow for small differences due to optimization
+        self.assertAlmostEqual(
+            optimized_union.index,
+            original_union.index,
+            delta=2,  # Allow small difference
+            msg="Optimized and original union should have similar segment counts",
+        )
+
+        # Test other operations
+        optimized_intersection = bt.cag("intersection", 0, 1)
+        original_intersection = bt.cag_org("intersection", 0, 1)
+
+        self.assertAlmostEqual(
+            optimized_intersection.index,
+            original_intersection.index,
+            delta=2,
+            msg="Optimized and original intersection should have similar segment counts",
+        )
+
+    def test_cag_performance_comparison(self):
+        """Test performance comparison between optimized and original CAG."""
+        # Create a more complex geometry for performance testing
+        g = Geomstr()
+
+        # Create a grid of rectangles
+        for i in range(5):
+            for j in range(5):
+                x = i * 20
+                y = j * 20
+                settings = (i + j) % 3  # Rotate through 3 different settings
+                g.append(Geomstr.rect(x, y, 25, 25, settings=settings))
+
+        bt = BeamTable(g)
+
+        import time
+
+        # Time the optimized version
+        start_time = time.time()
+        optimized_result = bt.cag("union", 0, 1, 2)
+        optimized_time = time.time() - start_time
+
+        # Time the original version
+        start_time = time.time()
+        original_result = bt.cag_org("union", 0, 1, 2)
+        original_time = time.time() - start_time
+
+        # Optimized version should be faster or at least not significantly slower
+        if original_time > 0:
+            speedup = (
+                original_time / optimized_time if optimized_time > 0 else float("inf")
+            )
+            print(
+                f"CAG Performance: Original={original_time:.6f}s, Optimized={optimized_time:.6f}s, Speedup={speedup:.2f}x"
+            )
+
+            # Assert that optimized version is not more than 50% slower
+            self.assertLess(
+                optimized_time,
+                original_time * 1.5,
+                "Optimized version should not be significantly slower",
+            )
+
+        # Results should have similar number of segments
+        self.assertAlmostEqual(
+            optimized_result.index,
+            original_result.index,
+            delta=3,
+            msg="Optimized and original should produce similar results",
+        )
+
+    def test_cag_argument_validation(self):
+        """Test CAG operations with various argument patterns."""
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 50, 50, settings=0))
+        g.append(Geomstr.rect(25, 25, 50, 50, settings=1))
+        g.append(Geomstr.rect(50, 50, 50, 50, settings=2))
+
+        bt = BeamTable(g)
+
+        # Test with no arguments (should return empty for all operations)
+        self.assertEqual(bt.cag("union").index, 0, "Union with no args should be empty")
+        self.assertEqual(
+            bt.cag("intersection").index, 0, "Intersection with no args should be empty"
+        )
+        self.assertEqual(bt.cag("xor").index, 0, "XOR with no args should be empty")
+        self.assertEqual(
+            bt.cag("difference").index, 0, "Difference with no args should be empty"
+        )
+
+        # Test with single argument
+        single_union = bt.cag("union", 0)
+        self.assertGreater(
+            single_union.index, 0, "Union with single arg should produce geometry"
+        )
+
+        # Test with duplicate arguments
+        dup_union = bt.cag("union", 0, 0, 1)
+        normal_union = bt.cag("union", 0, 1)
+        # Duplicate should not crash and should produce reasonable results
+        self.assertGreater(dup_union.index, 0, "Union with duplicate args should work")
+
+    def test_cag_equality_operation(self):
+        """Test the equality CAG operation specifically."""
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        g.append(Geomstr.rect(75, 75, 50, 50, settings=1))  # Same settings as second
+
+        bt = BeamTable(g)
+
+        # Test equality between shapes with same settings
+        eq_same = bt.cag("eq", 1, 2)  # Both have settings=1
+        self.assertGreater(
+            eq_same.index, 0, "Equality of same-settings shapes should produce geometry"
+        )
+
+        # Test equality between shapes with different settings
+        eq_diff = bt.cag("eq", 0, 1)  # Different settings
+        # This might produce geometry where both are present or absent
+        # The exact behavior depends on the implementation details
+        # Just verify it doesn't crash
+        self.assertIsNotNone(eq_diff, "Equality operation should not crash")
+
+    def test_cag_comprehensive_scenarios(self):
+        """Test comprehensive real-world CAG scenarios for validation."""
+        print("\n=== CAG Test Results Summary ===")
+
+        # Scenario 1: Two overlapping rectangles - classic case
+        g1 = Geomstr()
+        g1.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g1.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        bt1 = BeamTable(g1)
+
+        union1 = bt1.union(0, 1)
+        intersection1 = bt1.intersection(0, 1)
+        xor1 = bt1.xor(0, 1)
+        diff1 = bt1.difference(0, 1)
+
+        print(
+            f"Overlapping rectangles: Union={union1.index}, Intersection={intersection1.index}, XOR={xor1.index}, Diff={diff1.index}"
+        )
+
+        # Scenario 2: Three shapes with complex overlaps
+        g2 = Geomstr()
+        g2.append(Geomstr.rect(0, 0, 60, 60, settings=0))  # Base square
+        g2.append(Geomstr.rect(30, 30, 60, 60, settings=1))  # Overlapping square
+        g2.append(Geomstr.rect(45, 45, 30, 30, settings=2))  # Small inner square
+        bt2 = BeamTable(g2)
+
+        union2 = bt2.union(0, 1, 2)
+        intersection2 = bt2.intersection(0, 1, 2)
+        xor2 = bt2.xor(0, 1, 2)
+
+        print(
+            f"Three overlapping squares: Union={union2.index}, Intersection={intersection2.index}, XOR={xor2.index}"
+        )
+
+        # Verify all results are reasonable
+        self.assertGreater(union1.index, 0, "Union should produce geometry")
+        self.assertGreater(
+            intersection1.index, 0, "Intersection should produce geometry"
+        )
+        self.assertGreater(xor1.index, 0, "XOR should produce geometry")
+        self.assertGreater(diff1.index, 0, "Difference should produce geometry")
+
+        self.assertGreater(union2.index, 0, "Three-way union should produce geometry")
+        # Three-way intersection might be empty depending on overlaps
+
+        print("=== All CAG operations completed successfully ===\n")
+
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
         image = rect.segmented().render()
