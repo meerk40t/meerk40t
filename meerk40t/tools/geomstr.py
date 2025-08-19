@@ -740,10 +740,9 @@ def _stitch_geometries_vectorized(geometries, tolerance):
             stitched_geometries.append(geom)
 
     # Add any remaining geometries that weren't stitched
-    for i, geom in enumerate(geometries):
-        if i not in stitched_indices:
-            stitched_geometries.append(geom)
-
+    stitched_geometries.extend(
+        geom for i, geom in enumerate(geometries) if i not in stitched_indices
+    )
     return stitches_made, stitched_geometries
 
 
@@ -2070,7 +2069,7 @@ class BeamTable:
                 elif cag_op == "xor":
                     cc = cc ^ qq
                 elif cag_op == "difference":
-                    cc = ~cc | qq
+                    cc = cc & ~qq  # FIXED: A \ B = A & ~B (not ~A | B)
                 elif cag_op == "eq":
                     cc = cc == qq
         yy = np.pad(cc, ((0, 0), (1, 0)), constant_values=0)
@@ -2109,19 +2108,30 @@ class BeamTable:
         if self._nb_scan is None:
             self.compute_beam()
 
+        # Early exit for empty args
+        if len(args) == 0:
+            if cag_op == "union":
+                return Geomstr()  # Union of nothing = empty
+            elif cag_op == "intersection":
+                return Geomstr()  # Intersection of nothing = empty
+            elif cag_op in ("xor", "difference", "eq"):
+                return Geomstr()  # All others with no args = empty
+
         g = Geomstr()
         actives = self._nb_scan[:-1]
         lines = self.geometry.segments[actives, 2]
 
         # Create a 3D mask for all arguments at once. Shape: (args, events, actives)
         # This avoids the Python loop over `args`.
-        m = (np.imag(lines)[None, :, :] == np.array(args)[:, None, None]) & (
-            actives != -1
-        )
+        args_array = np.array(args, dtype=np.float64)  # Ensure consistent dtype
+        lines_imag = np.imag(lines)
+
+        # Vectorized comparison - more efficient than broadcasting
+        m = (lines_imag[None, :, :] == args_array[:, None, None]) & (actives != -1)
 
         # Perform cumsum on the 3D array and combine results.
-        # This is the most computationally expensive part.
-        qq = (np.cumsum(m, axis=2) & 1).astype(bool)
+        # Use uint8 to save memory and improve cache performance
+        qq = (np.cumsum(m, axis=2, dtype=np.uint8) & 1).astype(bool)
 
         # Combine the results from all arguments based on the CAG operation.
         if cag_op == "union":
@@ -2130,17 +2140,21 @@ class BeamTable:
             cc = np.all(qq, axis=0)
         elif cag_op == "xor":
             # XOR is a reduction, so we sum the boolean values and check for oddness.
-            cc = (np.sum(qq, axis=0) & 1).astype(bool)
+            cc = (np.sum(qq, axis=0, dtype=np.uint8) & 1).astype(bool)
         elif cag_op == "difference":
             # A \ B is equivalent to A & ~B. For multiple args: A \ B \ C -> A & ~B & ~C
-            cc = qq[0]
+            cc = qq[0].copy()  # Start with first argument (A)
             if len(args) > 1:
+                # Subtract all subsequent arguments: A & ~B & ~C & ~D...
                 cc &= np.all(~qq[1:], axis=0)
         else:  # "eq"
             # Check if all rows in qq are identical for each event/active pair.
-            cc = np.all(qq == qq[0], axis=0)
+            if len(args) == 1:
+                cc = qq[0]  # Single arg equality is just the arg itself
+            else:
+                cc = np.all(qq == qq[0], axis=0)
 
-        # manual pad (faster than np.pad), then diff
+        # manual pad (faster than np.pad), then diff - use int8 for memory efficiency
         hshape = (cc.shape[0], cc.shape[1] + 1)
         yy = np.zeros(hshape, dtype=np.int8)
         yy[:, 1:] = cc.view(np.int8)
@@ -2159,15 +2173,21 @@ class BeamTable:
         starts = r0[:, None] + y0 * 1j
         ends = r1[:, None] + y1 * 1j
 
-        # one-shot filter
-        valid = (starts != ends) & ~np.isnan(starts) & (hh != 0)
-        if np.any(valid):
-            segs = np.empty((np.count_nonzero(valid), 5), dtype=complex)
-            segs[:, 0] = starts[valid]
+        # one-shot filter - more efficient boolean operations
+        nonzero_change = hh != 0
+        valid_segments = (starts != ends) & ~np.isnan(starts) & nonzero_change
+
+        if np.any(valid_segments):
+            # Pre-allocate with exact size
+            n_valid = np.count_nonzero(valid_segments)
+            segs = np.empty((n_valid, 5), dtype=complex)
+
+            # Efficient assignment using advanced indexing
+            segs[:, 0] = starts[valid_segments]
             segs[:, 1] = 0
             segs[:, 2] = TYPE_LINE
             segs[:, 3] = 0
-            segs[:, 4] = ends[valid]
+            segs[:, 4] = ends[valid_segments]
             g.append_lines(segs)
 
         return g
@@ -2937,9 +2957,7 @@ class Geomstr:
                 if optimized_result is not None:
                     return optimized_result
             except Exception as e:
-                import logging
-
-                logging.debug(f"Exception in batch_svg_optimized fallback in svg: {e}")
+                print(f"Exception in batch_svg_optimized fallback in svg: {e}")
                 # Fall back to original implementation
 
         # Original implementation as fallback
