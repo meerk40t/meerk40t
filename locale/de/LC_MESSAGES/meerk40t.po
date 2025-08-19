@@ -23721,3 +23721,87 @@ msgstr ""
 #: meerk40t/grbl/device.py:1049
 msgid "Export succeeded: {filename}"
 msgstr "Export erfolgreich: {filename}"
+
+#: meerk40t/balormk/device.py:446
+msgid "Cut/Engrave"
+msgstr "Schneiden/Gravieren"
+
+#: meerk40t/balormk/device.py:452 meerk40t/balormk/device.py:466
+#: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
+#: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
+msgid "This is global setting that will be overruled by operation settings."
+msgstr ""
+"Dies ist eine globale Einstellung, die von den Einstellungen in den "
+"Arbeitsabläufen überschrieben wird."
+
+#: meerk40t/balormk/device.py:475
+msgid "Miscellaneous"
+msgstr "Verschiedenes"
+
+#: meerk40t/balormk/gui/balorconfig.py:52
+#: meerk40t/grbl/gui/grblconfiguration.py:268
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:449
+#: meerk40t/moshi/gui/moshidrivergui.py:67
+#: meerk40t/newly/gui/newlyconfig.py:73 meerk40t/ruida/gui/ruidaconfig.py:216
+msgid "Operation Defaults"
+msgstr "Arbeitsablauf-Standards"
+
+#: meerk40t/core/elements/element_treeops.py:1324
+#: meerk40t/core/elements/element_treeops.py:1338
+msgid "Reset to device default values"
+msgstr "Auf Geräte-Standardwerte zurücksetzen"
+
+#: meerk40t/core/elements/element_treeops.py:1328
+msgid ""
+"Will reset power / speed and some other properties to device default values"
+msgstr ""
+"Setzt Leistung/Geschwindigkeit und einige andere Eigenschaften auf Geräte-"
+"Standardwerte zurück"
+
+#: meerk40t/core/elements/geometry.py:432
+msgid "Use unidirectional hatch lines"
+msgstr "Unidirektionale Schraffurlinien verwenden"
+
+#: meerk40t/core/elements/geometry.py:437
+msgid "Distance between hatch lines"
+msgstr "Abstand zwischen Schraffurlinien"
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Type"
+msgstr "Standard-Wobble-Typ"
+
+#: meerk40t/device/devicechoices.py:56
+msgid "Wobble Speed"
+msgstr "Wobble-Geschwindigkeit"
+
+#: meerk40t/device/devicechoices.py:57
+msgid "Default Wobble Speed"
+msgstr "Standard-Wobble-Geschwindigkeit"
+
+#: meerk40t/device/devicechoices.py:106
+msgid "Default power for {op}"
+msgstr "Standardleistung für {op}"
+
+#: meerk40t/device/devicechoices.py:117
+msgid "Default speed for {op}"
+msgstr "Standardgeschwindigkeit für {op}"
+
+#: meerk40t/gui/materialtest.py:339
+msgid "Create boundary shape"
+msgstr "Begrenzungsform erstellen"
+
+#: meerk40t/gui/materialtest.py:602
+msgid "Add the shape a second time around the effect"
+msgstr "Form ein zweites Mal um den Effekt hinzufügen"
+
+#: meerk40t/gui/mkdebug.py:183
+msgid "Op Settings"
+msgstr "Op-Eigenschaften"
+
+#: meerk40t/gui/mkdebug.py:191
+msgid "OP Settings test"
+msgstr "Op-Eigenschaften Test"
+
+#: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
+msgid "Operation settings"
+msgstr "Arbeitsablauf-Einstellungen"
