@@ -4651,6 +4651,15 @@ class Geomstr:
         if e is None:
             segments = self.segments
             index = self.index
+
+            # Optimization: Use vectorized bbox calculation for better performance
+            if index > 10:  # Use optimization for larger geometries
+                try:
+                    return self._bbox_optimized(segments[:index])
+                except Exception:
+                    # Fall back to original implementation on any error
+                    pass
+
             bounds = self.bbox(mx=mx, e=segments[0:index])
             min_x, min_y, max_x, max_y = bounds
             min_x = min_x[np.where(~np.isnan(min_x))]
@@ -4667,6 +4676,305 @@ class Geomstr:
             return bboxes
         line = self.segments[e]
         return self._bbox_segment(line)
+
+    def _bbox_optimized(self, segments):
+        """
+        Optimized bbox calculation using vectorized operations for better performance.
+
+        Processes multiple segments with minimal Python loops and maximum NumPy usage.
+
+        Args:
+            segments: numpy array of segments to calculate bbox for
+
+        Returns:
+            tuple: (min_x, min_y, max_x, max_y) bounding box
+        """
+        if len(segments) == 0:
+            return np.nan, np.nan, np.nan, np.nan
+
+        # Get segment types in vectorized manner
+        segment_types = np.real(segments[:, 2]).astype(int)
+
+        # Pre-filter non-meta segments for efficiency
+        META_TYPES_SET = {
+            0,
+            159,
+            112,
+            160,
+            191,
+        }  # TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL
+        valid_mask = ~np.isin(segment_types, list(META_TYPES_SET))
+
+        if not np.any(valid_mask):
+            return np.nan, np.nan, np.nan, np.nan
+
+        valid_segments = segments[valid_mask]
+        valid_types = segment_types[valid_mask]
+
+        # Separate processing for different segment types for vectorization
+        line_mask = valid_types == 41  # TYPE_LINE
+
+        min_x_vals = []
+        min_y_vals = []
+        max_x_vals = []
+        max_y_vals = []
+
+        # Vectorized processing for lines (most common case)
+        if np.any(line_mask):
+            line_segments = valid_segments[line_mask]
+            start_points = line_segments[:, 0]  # Start points
+            end_points = line_segments[:, 4]  # End points
+
+            # Vectorized min/max for lines
+            x_coords = np.array([start_points.real, end_points.real])
+            y_coords = np.array([start_points.imag, end_points.imag])
+
+            min_x_vals.append(np.min(x_coords, axis=0))
+            max_x_vals.append(np.max(x_coords, axis=0))
+            min_y_vals.append(np.min(y_coords, axis=0))
+            max_y_vals.append(np.max(y_coords, axis=0))
+
+        # Optimized curve processing using vectorized calculations
+        quad_mask = valid_types == 63  # TYPE_QUAD
+        cubic_mask = valid_types == 79  # TYPE_CUBIC
+        arc_mask = valid_types == 95  # TYPE_ARC
+
+        # Vectorized quadratic curve bbox calculation
+        if np.any(quad_mask):
+            quad_segments = valid_segments[quad_mask]
+            quad_bboxes = self._bbox_quads_vectorized(quad_segments)
+            if len(quad_bboxes) > 0:
+                min_x_vals.append(quad_bboxes[:, 0])
+                min_y_vals.append(quad_bboxes[:, 1])
+                max_x_vals.append(quad_bboxes[:, 2])
+                max_y_vals.append(quad_bboxes[:, 3])
+
+        # Vectorized cubic curve bbox calculation
+        if np.any(cubic_mask):
+            cubic_segments = valid_segments[cubic_mask]
+            cubic_bboxes = self._bbox_cubics_vectorized(cubic_segments)
+            if len(cubic_bboxes) > 0:
+                min_x_vals.append(cubic_bboxes[:, 0])
+                min_y_vals.append(cubic_bboxes[:, 1])
+                max_x_vals.append(cubic_bboxes[:, 2])
+                max_y_vals.append(cubic_bboxes[:, 3])
+
+        # Process arcs individually (complex geometry, less common)
+        if np.any(arc_mask):
+            arc_segments = valid_segments[arc_mask]
+            for segment in arc_segments:
+                bbox = self._bbox_segment(segment)
+                if not any(np.isnan(bbox)):
+                    min_x_vals.append(bbox[0])
+                    min_y_vals.append(bbox[1])
+                    max_x_vals.append(bbox[2])
+                    max_y_vals.append(bbox[3])
+
+        # Combine all results
+        if not min_x_vals:
+            return np.nan, np.nan, np.nan, np.nan
+
+        all_min_x = np.concatenate([np.atleast_1d(x) for x in min_x_vals])
+        all_min_y = np.concatenate([np.atleast_1d(y) for y in min_y_vals])
+        all_max_x = np.concatenate([np.atleast_1d(x) for x in max_x_vals])
+        all_max_y = np.concatenate([np.atleast_1d(y) for y in max_y_vals])
+
+        # Filter out NaN values and compute final bounds
+        valid_min_x = all_min_x[~np.isnan(all_min_x)]
+        valid_min_y = all_min_y[~np.isnan(all_min_y)]
+        valid_max_x = all_max_x[~np.isnan(all_max_x)]
+        valid_max_y = all_max_y[~np.isnan(all_max_y)]
+
+        if len(valid_min_x) == 0:
+            return np.nan, np.nan, np.nan, np.nan
+
+        return (
+            np.min(valid_min_x),
+            np.min(valid_min_y),
+            np.max(valid_max_x),
+            np.max(valid_max_y),
+        )
+
+    def _bbox_quads_vectorized(self, quad_segments):
+        """
+        Vectorized bbox calculation for quadratic Bezier curves.
+
+        Calculates extrema for both X and Y simultaneously using vectorized operations.
+        Much faster than individual processing for multiple quads.
+
+        Args:
+            quad_segments: numpy array of quadratic curve segments
+
+        Returns:
+            numpy array of shape (n, 4) with [min_x, min_y, max_x, max_y] for each quad
+        """
+        if len(quad_segments) == 0:
+            return np.array([]).reshape(0, 4)
+
+        # Extract control points
+        p0 = quad_segments[:, 0]  # Start points
+        p1 = quad_segments[:, 1]  # Control points
+        p2 = quad_segments[:, 4]  # End points
+
+        # Separate real and imaginary parts for vectorized calculation
+        x0, y0 = p0.real, p0.imag
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+
+        # Calculate extrema points for X coordinates
+        # For quadratic: derivative = 2(1-t)(P1-P0) + 2t(P2-P1) = 0
+        # Solve: t = (P0-P1)/(P0-2*P1+P2)
+        x_denom = x0 - 2 * x1 + x2
+        x_t = np.where(np.abs(x_denom) > 1e-10, (x0 - x1) / x_denom, 0.5)
+        x_t = np.clip(x_t, 0, 1)  # Clamp to valid range
+
+        # Calculate extrema points for Y coordinates
+        y_denom = y0 - 2 * y1 + y2
+        y_t = np.where(np.abs(y_denom) > 1e-10, (y0 - y1) / y_denom, 0.5)
+        y_t = np.clip(y_t, 0, 1)  # Clamp to valid range
+
+        # Evaluate quadratic Bezier at extrema points
+        # B(t) = (1-t)²P0 + 2t(1-t)P1 + t²P2
+        def eval_quad_at_t(p0_coord, p1_coord, p2_coord, t):
+            t_comp = 1 - t
+            return (
+                t_comp * t_comp * p0_coord
+                + 2 * t * t_comp * p1_coord
+                + t * t * p2_coord
+            )
+
+        x_extrema = eval_quad_at_t(x0, x1, x2, x_t)
+        y_extrema = eval_quad_at_t(y0, y1, y2, y_t)
+
+        # Calculate bounding boxes including start/end points and extrema
+        x_candidates = np.column_stack([x0, x2, x_extrema])
+        y_candidates = np.column_stack([y0, y2, y_extrema])
+
+        min_x = np.min(x_candidates, axis=1)
+        max_x = np.max(x_candidates, axis=1)
+        min_y = np.min(y_candidates, axis=1)
+        max_y = np.max(y_candidates, axis=1)
+
+        return np.column_stack([min_x, min_y, max_x, max_y])
+
+    def _bbox_cubics_vectorized(self, cubic_segments):
+        """
+        Vectorized bbox calculation for cubic Bezier curves.
+
+        Calculates extrema for both X and Y simultaneously using vectorized operations.
+        Much faster than individual processing for multiple cubics.
+
+        Args:
+            cubic_segments: numpy array of cubic curve segments
+
+        Returns:
+            numpy array of shape (n, 4) with [min_x, min_y, max_x, max_y] for each cubic
+        """
+        if len(cubic_segments) == 0:
+            return np.array([]).reshape(0, 4)
+
+        # Extract control points
+        p0 = cubic_segments[:, 0]  # Start points
+        p1 = cubic_segments[:, 1]  # Control point 1
+        p2 = cubic_segments[:, 3]  # Control point 2
+        p3 = cubic_segments[:, 4]  # End points
+
+        # Separate real and imaginary parts
+        x0, y0 = p0.real, p0.imag
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+        x3, y3 = p3.real, p3.imag
+
+        def find_cubic_extrema(coord0, coord1, coord2, coord3):
+            """Find extrema for cubic Bezier in one dimension"""
+            # Derivative coefficients: 3(P1-P0), 6(P0-2P1+P2), 3(P1-2P2+P3)
+            a = 3 * (coord3 - 3 * coord2 + 3 * coord1 - coord0)  # t² coefficient
+            b = 6 * (coord0 - 2 * coord1 + coord2)  # t coefficient
+            c = 3 * (coord1 - coord0)  # constant
+
+            extrema_points = []
+
+            # Handle quadratic case (a ≈ 0)
+            linear_mask = np.abs(a) < 1e-10
+            if np.any(linear_mask):
+                # Linear case: bt + c = 0 -> t = -c/b
+                b_linear = b[linear_mask]
+                c_linear = c[linear_mask]
+                t_linear = np.where(np.abs(b_linear) > 1e-10, -c_linear / b_linear, 0.5)
+                t_linear_valid = t_linear[(t_linear > 0) & (t_linear < 1)]
+                if len(t_linear_valid) > 0:
+                    extrema_points.append(t_linear_valid)
+
+            # Quadratic case (a ≠ 0)
+            quad_mask = ~linear_mask
+            if np.any(quad_mask):
+                a_quad = a[quad_mask]
+                b_quad = b[quad_mask]
+                c_quad = c[quad_mask]
+
+                # Discriminant for quadratic formula
+                discriminant = b_quad * b_quad - 4 * a_quad * c_quad
+                valid_disc = discriminant >= 0
+
+                if np.any(valid_disc):
+                    sqrt_disc = np.sqrt(discriminant[valid_disc])
+                    a_valid = a_quad[valid_disc]
+                    b_valid = b_quad[valid_disc]
+
+                    t1 = (-b_valid + sqrt_disc) / (2 * a_valid)
+                    t2 = (-b_valid - sqrt_disc) / (2 * a_valid)
+
+                    # Filter valid t values (0 < t < 1)
+                    t1_valid = t1[(t1 > 0) & (t1 < 1)]
+                    t2_valid = t2[(t2 > 0) & (t2 < 1)]
+
+                    if len(t1_valid) > 0:
+                        extrema_points.append(t1_valid)
+                    if len(t2_valid) > 0:
+                        extrema_points.append(t2_valid)
+
+            return np.concatenate(extrema_points) if extrema_points else np.array([])
+
+        # Find extrema for X and Y coordinates
+        x_extrema_t = find_cubic_extrema(x0, x1, x2, x3)
+        y_extrema_t = find_cubic_extrema(y0, y1, y2, y3)
+
+        # For simplicity, evaluate at a few sample points including extrema
+        # This is a compromise between accuracy and performance
+        sample_t = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
+        all_t = np.unique(np.concatenate([sample_t, x_extrema_t, y_extrema_t]))
+        all_t = all_t[(all_t >= 0) & (all_t <= 1)]
+
+        if len(all_t) == 0:
+            all_t = np.array([0.0, 1.0])
+
+        # Evaluate cubic Bezier at all sample points
+        # B(t) = (1-t)³P0 + 3t(1-t)²P1 + 3t²(1-t)P2 + t³P3
+        def eval_cubic_batch(coord0, coord1, coord2, coord3, t_vals):
+            t_vals = t_vals[:, np.newaxis]  # Shape for broadcasting
+            t_comp = 1 - t_vals
+            t2 = t_vals * t_vals
+            t3 = t2 * t_vals
+            t_comp2 = t_comp * t_comp
+            t_comp3 = t_comp2 * t_comp
+
+            return (
+                t_comp3 * coord0
+                + 3 * t_vals * t_comp2 * coord1
+                + 3 * t2 * t_comp * coord2
+                + t3 * coord3
+            )
+
+        x_samples = eval_cubic_batch(x0, x1, x2, x3, all_t)
+        y_samples = eval_cubic_batch(y0, y1, y2, y3, all_t)
+
+        # Find min/max across all sample points
+        min_x = np.min(x_samples, axis=0)
+        max_x = np.max(x_samples, axis=0)
+        min_y = np.min(y_samples, axis=0)
+        max_y = np.max(y_samples, axis=0)
+
+        return np.column_stack([min_x, min_y, max_x, max_y])
 
     def _bbox_segment(self, line):
         segtype = self._segtype(line)
@@ -6615,8 +6923,7 @@ class Geomstr:
         Optimized batch processing for equal distance interpolation.
 
         This function processes multiple segments with shared distance calculation
-        and optimized memory usage. Only optimizes lines, quads, and cubics.
-        Falls back for arcs and other complex types.
+        and optimized memory usage. Now handles arcs, lines, quads, and cubics.
 
         Args:
             segments: numpy array of Geomstr segments
@@ -6628,9 +6935,7 @@ class Geomstr:
             list of interpolated points, or None if optimization fails
         """
         try:
-            # Check if any arcs are present - if so, fall back to avoid complexity
-            if 95 in segment_types:  # TYPE_ARC = 95
-                return None
+            # No longer fall back for arcs - we now handle them optimally
 
             all_points = []
 
@@ -6690,7 +6995,10 @@ class Geomstr:
                 elif seg_type == TYPE_CUBIC_VAL:
                     points = Geomstr._batch_cubic_equal_distance(seg, distance, t_array)
                     all_points.extend(points)
-                # Fall back to original for arcs and other types
+                elif seg_type == 95:  # TYPE_ARC
+                    points = Geomstr._batch_arc_equal_distance(seg, distance, t_array)
+                    all_points.extend(points)
+                # Now we handle all common geometry types optimally
 
                 # Always add end point
                 all_points.append(end)
