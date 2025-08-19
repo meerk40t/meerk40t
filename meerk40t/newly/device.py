@@ -29,6 +29,10 @@ class NewlyDevice(Service, Status):
                 if attr is not None and default is not None:
                     setattr(self, attr, default)
 
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
+        self.setting(bool, "use_mm_min_for_speed_display", False)
+
         _ = kernel.translation
         choices = [
             {
@@ -483,13 +487,20 @@ class NewlyDevice(Service, Status):
         ]
         self.register_choices("newly-specific", choices)
 
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_mm_min_for_speed_display", False)
+
         choices = [
             {
                 "attr": "default_cut_speed",
                 "object": self,
                 "default": 15.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Cut Speed"),
                 "tip": _("How fast do we cut?")
                 + "\n"
@@ -504,8 +515,9 @@ class NewlyDevice(Service, Status):
                 "object": self,
                 "default": 1000.0,
                 "type": float,
+                "style": "power",
+                "percent": _use_percent_for_power,
                 "label": _("Cut Power"),
-                "trailer": "/1000",
                 "tip": _("What power level do we cut at?")
                 + "\n"
                 + _(
@@ -541,7 +553,8 @@ class NewlyDevice(Service, Status):
                 "object": self,
                 "default": 200.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Raster Speed"),
                 "tip": _("How fast do we raster?")
                 + "\n"
@@ -571,7 +584,8 @@ class NewlyDevice(Service, Status):
                 "object": self,
                 "default": 100.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Moving Speed"),
                 "tip": _("Moving speed while not cutting?"),
                 # Hint for translation _("Moving")
@@ -582,7 +596,8 @@ class NewlyDevice(Service, Status):
                 "object": self,
                 "default": 20.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Corner Speed"),
                 "tip": _("Speed to move from acceleration corner to corner?"),
                 # Hint for translation _("Moving")
@@ -604,7 +619,8 @@ class NewlyDevice(Service, Status):
                 "object": self,
                 "default": 100.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Rect Speed"),
                 "tip": _("Speed to perform frame trace?"),
                 # Hint for translation _("Framing")
@@ -615,7 +631,8 @@ class NewlyDevice(Service, Status):
                 "object": self,
                 "default": 0.0,
                 "type": float,
-                "trailer": "/1000",
+                "style": "power",
+                "percent": _use_percent_for_power,
                 "label": _("Rect Power"),
                 "tip": _("Power usage for draw frame operation?"),
                 # Hint for translation _("Framing")
@@ -641,9 +658,6 @@ class NewlyDevice(Service, Status):
             },
         ]
         self.register_choices("coolant", choices)
-
-        # This device prefers to display power level in percent
-        self.setting(bool, "use_percent_for_power_display", True)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(

@@ -39,6 +39,17 @@ class LihuiyuDevice(Service, Status):
                 default = c.get("default")
                 if attr is not None and default is not None:
                     setattr(self, attr, default)
+
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
+
         choices = [
             {
                 "attr": "bedwidth",
@@ -407,7 +418,8 @@ class LihuiyuDevice(Service, Status):
                 "default": 140,
                 "type": float,
                 "label": _("Max vector speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -421,7 +433,8 @@ class LihuiyuDevice(Service, Status):
                 "default": 750,
                 "type": float,
                 "label": _("Max raster speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -515,7 +528,8 @@ class LihuiyuDevice(Service, Status):
                 "type": float,
                 "label": _("X Travel Speed:"),
                 "tip": _("Minimum travel distance before invoking a rapid jog move."),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed(),
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
                 "subsection": "_10_",
@@ -527,7 +541,8 @@ class LihuiyuDevice(Service, Status):
                 "type": float,
                 "label": _("Y Travel Speed:"),
                 "tip": _("Minimum travel distance before invoking a rapid jog move."),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed(),
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
                 "subsection": "_10_",
@@ -549,9 +564,6 @@ class LihuiyuDevice(Service, Status):
             },
         ]
         self.register_choices("lhy-speed", choices)
-
-        # This device prefers to display power level in ppi
-        self.setting(bool, "use_percent_for_power_display", False)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
