@@ -333,6 +333,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     percent_flag() if callable(percent_flag) else percent_flag
                 )
                 trailer = "%" if percent_mode else "/1000"
+            if data_type == float and data_style == "speed":
+                minute_flag = choice.get("perminute", False)
+                minute_mode = minute_flag() if callable(minute_flag) else minute_flag
+                trailer = "mm/min" if minute_mode else "mm/s"
             if last_page != this_page:
                 expansion_flag = 0
                 last_section = ""
@@ -729,9 +733,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
     def _update_property_and_signal(self, obj, param, new_value, additional_signals):
         """Helper method to update property value and dispatch signals."""
-        current_value = getattr(obj, param)
+        has_settings = hasattr(obj, "settings") and param in obj.settings
+        current_value = obj.settings[param] if has_settings else getattr(obj, param)
         if current_value != new_value:
             setattr(obj, param, new_value)
+            if has_settings:
+                obj.settings[param] = new_value
             self._dispatch_signals(param, new_value, obj, additional_signals)
             return True
         return False
@@ -864,6 +871,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                 else:
                     # Absolute mode: 0-1000
                     text_config.update({"lower": 0.0, "upper": 1000.0})
+            # Special handling for speed controls - set appropriate validation limits
+            if choice.get("style") == "speed":
+                # Determine if this is per minute or per second mode
+                perminute_flag = choice.get("perminute", False)
+                perminute_mode = (
+                    perminute_flag() if callable(perminute_flag) else perminute_flag
+                )
+
+                # Set minimum to 0, but let maximum be flexible for speed values
+                text_config.update({"lower": 0.0})
 
         elif data_type == Length:
             text_config.update(
@@ -1245,6 +1262,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 lambda attr, control, obj, choice: self._make_power_text_handler(control, choice),
                 False,
             ),
+            (float, "speed"): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_speed_text_handler(control, choice),
+                False,
+            ),
             (str, "multiline"): (
                 self._create_text_control,
                 lambda attr, control, obj, choice: self._make_generic_multi_handler(control, choice),
@@ -1550,6 +1572,18 @@ class ChoicePropertyPanel(ScrolledPanel):
             if percent_mode:
                 # Convert absolute value to percentage (0-1000 -> 0-100%)
                 return str(float(data) / 10.0)
+            else:
+                # Display absolute value directly
+                return str(data)
+        elif choice.get("style") == "speed":
+            # Speed controls: convert absolute value to display format
+            per_minute_flag = choice.get("perminute", False)
+            per_minute_mode = (
+                per_minute_flag() if callable(per_minute_flag) else per_minute_flag
+            )
+            if per_minute_mode:
+                # Convert absolute value to per minute (0-1000 -> 0-100%)
+                return str(float(data) * 60.0)
             else:
                 # Display absolute value directly
                 return str(data)
@@ -1909,6 +1943,37 @@ class ChoicePropertyPanel(ScrolledPanel):
                 pass
 
         return handle_power_text_change
+
+    def _make_speed_text_handler(self, ctrl, choice):
+        """Creates a handler for speed text controls that supports both absolute and per-minute modes."""
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_speed_text_change(event):
+            try:
+                v = ctrl.GetValue()
+                # Get the perminute flag to determine conversion mode
+                perminute_flag = choice.get("perminute", False)
+                perminute_mode = (
+                    perminute_flag() if callable(perminute_flag) else perminute_flag
+                )
+
+                absolute_value = float(v)
+                if perminute_mode:
+                    # In per-minute mode: user enters per-minute value, convert to per-second
+                    if absolute_value >= 0:
+                        absolute_value /= 60.0  # Convert per-minute to per-second
+                else:
+                    # In absolute mode: user enters per-second value directly
+                    absolute_value = float(v)
+                if absolute_value >= 0:
+                    self._update_property_and_signal(obj, param, absolute_value, addsig)
+            except ValueError:
+                # cannot cast to float, pass
+                pass
+
+        return handle_speed_text_change
 
     def _make_chart_start_handler(self, columns, param, ctrl, local_obj):
         """Creates a handler for chart start events."""
@@ -2300,29 +2365,29 @@ class ChoicePropertyPanel(ScrolledPanel):
             set_color(data)
         elif dtype in (str, int, float):
             if hasattr(ctrl, "GetValue"):
-                cval = ctrl.GetValue()
-                if dstyle == "power" and choice.get("percent", False):
-                    try:
-                        cval = float(cval) * 10
-                    except (ValueError, TypeError):
-                        pass
-                try:
-                    if dtype(cval) != data:
-                        update_needed = True
-                except ValueError:
-                    update_needed = True
-                if update_needed:
-                    sdata = str(data)
-                    if dstyle == "power" and choice.get("percent", False):
-                        sdata = str(float(data) / 10.0)
-                    ctrl.SetValue(sdata)
+                current_display_value = ctrl.GetValue()
+                # Use the same formatting logic as _format_text_display_value
+                new_display_value = self._format_text_display_value(data, choice)
+                if current_display_value != new_display_value:
+                    ctrl.SetValue(new_display_value)
         elif dtype == Length:
-            if float(data) != float(Length(ctrl.GetValue())):
+            try:
+                current_length = Length(ctrl.GetValue())
+                # Compare Length values using their internal representation
+                if hasattr(data, "length_mm") and hasattr(current_length, "length_mm"):
+                    if data.length_mm != current_length.length_mm:
+                        update_needed = True
+                else:
+                    # Fallback comparison as string
+                    if str(data) != str(current_length):
+                        update_needed = True
+            except (ValueError, TypeError):
                 update_needed = True
+
             if update_needed:
-                if not isinstance(data, str):
-                    data = Length(data).length_mm
-                ctrl.SetValue(str(data))
+                # Use consistent formatting for Length values
+                display_value = self._format_text_display_value(data, choice)
+                ctrl.SetValue(display_value)
         elif dtype == Angle:
             if ctrl.GetValue() != str(data):
                 ctrl.SetValue(str(data))
