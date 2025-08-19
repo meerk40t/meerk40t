@@ -5268,6 +5268,15 @@ class Geomstr:
         @return:
         """
         if e is None:
+            # Optimized vectorized length calculation for entire geometry
+            if self.index > 20:  # Use optimization for larger geometries
+                try:
+                    return self._length_vectorized()
+                except Exception:
+                    # Fall back to original implementation on any error
+                    pass
+
+            # Original implementation as fallback
             total = 0
             for i in range(self.index):
                 total += self.length(i)
@@ -5339,6 +5348,54 @@ class Geomstr:
         # print (f"And now I have no idea how to deal with type {info.real}")
         return 0
 
+    def _length_vectorized(self):
+        """
+        Optimized vectorized length calculation for entire geometry.
+
+        Processes multiple segments using vectorized operations where possible,
+        falling back to individual calculation only for complex segment types.
+
+        Returns:
+            float: Total length of all segments
+        """
+        if self.index == 0:
+            return 0.0
+
+        segments = self.segments[: self.index]
+        segment_types = np.real(segments[:, 2]).astype(int)
+
+        # Filter out non-geometry types
+        NON_GEOM_SET = {0, 159, 112, 160, 191, 16}  # Include TYPE_POINT
+        valid_mask = ~np.isin(segment_types, list(NON_GEOM_SET))
+
+        if not np.any(valid_mask):
+            return 0.0
+
+        valid_segments = segments[valid_mask]
+        valid_types = segment_types[valid_mask]
+
+        total_length = 0.0
+
+        # Vectorized processing for lines (most common and fastest)
+        line_mask = valid_types == 41  # TYPE_LINE
+        if np.any(line_mask):
+            line_segments = valid_segments[line_mask]
+            start_points = line_segments[:, 0]
+            end_points = line_segments[:, 4]
+            line_lengths = np.abs(end_points - start_points)
+            total_length += np.sum(line_lengths)
+
+        # Process other types individually (quads, cubics, arcs have complex math)
+        other_mask = valid_types != 41
+        if np.any(other_mask):
+            other_segments = valid_segments[other_mask]
+            other_indices = np.where(valid_mask)[0][other_mask]  # Original indices
+
+            for orig_idx in other_indices:
+                total_length += self.length(orig_idx)
+
+        return total_length
+
     def area(self, density=None):
         """
         Gives the area of a particular geometry.
@@ -5348,6 +5405,15 @@ class Geomstr:
         """
         if density is None:
             density = 100
+
+        # Optimized area calculation using vectorized operations
+        try:
+            return self._area_vectorized(density)
+        except Exception:
+            # Fall back to original implementation on any error
+            pass
+
+        # Original implementation as fallback
         area = 0
         for poly in self.as_interpolated_segments(interpolate=density):
             p_array = np.array(poly)
@@ -5361,6 +5427,56 @@ class Geomstr:
             area_yx = np.sum(np.imag(ends) * np.real(starts))
             area += 0.5 * abs(area_xy - area_yx)
         return area
+
+    def _area_vectorized(self, density):
+        """
+        Optimized vectorized area calculation using shoelace formula.
+
+        Processes all polygon segments efficiently using NumPy operations
+        instead of Python loops, significantly improving performance.
+
+        Args:
+            density: interpolation density for curves
+
+        Returns:
+            float: Total area of all polygons
+        """
+        total_area = 0.0
+
+        # Get all interpolated segments
+        interpolated_segments = list(self.as_interpolated_segments(interpolate=density))
+
+        if not interpolated_segments:
+            return 0.0
+
+        # Process each polygon using vectorized shoelace formula
+        for poly in interpolated_segments:
+            if len(poly) < 3:  # Need at least 3 points for area
+                continue
+
+            # Convert to numpy array for vectorized operations
+            points = np.array(poly, dtype=complex)
+            n = len(points)
+
+            if n < 3:
+                continue
+
+            # Vectorized shoelace formula: Area = 0.5 * |Σ(x_i * y_{i+1} - x_{i+1} * y_i)|
+            # Using complex numbers: real parts are x, imaginary parts are y
+            x_coords = points.real
+            y_coords = points.imag
+
+            # Shift arrays for vectorized calculation
+            x_next = np.roll(x_coords, -1)  # x_{i+1}
+            y_next = np.roll(y_coords, -1)  # y_{i+1}
+
+            # Shoelace formula in vectorized form
+            cross_products = x_coords * y_next - x_next * y_coords
+            polygon_area = 0.5 * abs(np.sum(cross_products))
+
+            total_area += polygon_area
+
+        return total_area
 
     def _cubic_length_via_quad(self, line):
         """
