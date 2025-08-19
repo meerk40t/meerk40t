@@ -714,9 +714,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             last_subsection = this_subsection
 
         self.SetSizer(root_horizontal_sizer)
-        # root_horizontal_sizer.Fit(self)
         # Do not call Fit(self) on a ScrolledPanel, as it can negate scrolling and cause layout issues.
-        self.Bind(wx.EVT_CLOSE, self.on_close)
+
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
@@ -2086,11 +2085,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 pass
 
         return handle_length_text_change
-
-    def on_close(self, event):
-        # We should not need this, but better safe than sorry
-        event.Skip()
-        self.pane_hide()
 
     def _validate_and_prepare_choice(self, c):
         """Validate and prepare a choice configuration."""
