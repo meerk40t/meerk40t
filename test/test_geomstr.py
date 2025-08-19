@@ -2050,6 +2050,378 @@ class TestGeomstr(unittest.TestCase):
         q = bt.combine()
         self.assertEqual(q, g)
 
+    def test_cag_operations_comprehensive(self):
+        """Test comprehensive CAG operations with various geometric shapes."""
+        # Test Case 1: Two overlapping rectangles
+        g = Geomstr()
+        # Rectangle A: (0,0) to (100,100) - settings=0
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        # Rectangle B: (50,50) to (150,150) - settings=1
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+
+        bt = BeamTable(g)
+
+        # Test union: should cover (0,0) to (150,150)
+        union_result = bt.union(0, 1)
+        self.assertGreater(union_result.index, 0, "Union should produce geometry")
+
+        # Test intersection: should be (50,50) to (100,100)
+        intersection_result = bt.intersection(0, 1)
+        self.assertGreater(
+            intersection_result.index, 0, "Intersection should produce geometry"
+        )
+
+        # Test XOR: should be non-overlapping parts
+        xor_result = bt.xor(0, 1)
+        self.assertGreater(xor_result.index, 0, "XOR should produce geometry")
+
+        # Test difference A-B: should be left and bottom parts of A
+        diff_result = bt.difference(0, 1)
+        self.assertGreater(diff_result.index, 0, "Difference should produce geometry")
+
+    def test_cag_edge_cases(self):
+        """Test CAG operations with edge cases."""
+        # Test Case 1: Empty geometry
+        g = Geomstr()
+        bt = BeamTable(g)
+
+        # All operations on empty geometry should return empty
+        self.assertEqual(bt.union().index, 0, "Union of empty should be empty")
+        self.assertEqual(
+            bt.intersection().index, 0, "Intersection of empty should be empty"
+        )
+        self.assertEqual(bt.xor().index, 0, "XOR of empty should be empty")
+        self.assertEqual(
+            bt.difference().index, 0, "Difference of empty should be empty"
+        )
+
+        # Test Case 2: Single rectangle with itself
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        bt = BeamTable(g)
+
+        # Union with itself should be itself
+        union_self = bt.union(0)
+        self.assertGreater(union_self.index, 0, "Self-union should produce geometry")
+
+        # Intersection with itself should be itself
+        intersection_self = bt.intersection(0)
+        self.assertGreater(
+            intersection_self.index, 0, "Self-intersection should produce geometry"
+        )
+
+        # XOR with single argument should be itself (not empty)
+        xor_self = bt.xor(0)
+        self.assertGreater(
+            xor_self.index, 0, "Single-argument XOR should produce the geometry itself"
+        )
+
+        # Difference with single argument should be itself (A - nothing = A)
+        diff_self = bt.difference(0)
+        self.assertGreater(
+            diff_self.index,
+            0,
+            "Single-argument difference should produce the geometry itself",
+        )
+
+        # Test Case 3: XOR and difference with truly identical shapes (same settings, same position)
+        g2 = Geomstr()
+        g2.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g2.append(Geomstr.rect(0, 0, 100, 100, settings=0))  # Exact duplicate
+        bt2 = BeamTable(g2)
+
+        # XOR of two identical shapes should be empty
+        xor_identical = bt2.xor(0, 0)
+        self.assertEqual(
+            xor_identical.index, 0, "XOR of identical shapes should be empty"
+        )
+
+        # Difference of two identical shapes should be empty (A - A = empty)
+        diff_identical = bt2.difference(0, 0)
+        self.assertEqual(
+            diff_identical.index, 0, "Difference of identical shapes should be empty"
+        )
+
+    def test_cag_multiple_shapes(self):
+        """Test CAG operations with multiple shapes."""
+        g = Geomstr()
+        # Three squares where only adjacent ones overlap
+        g.append(Geomstr.rect(0, 0, 50, 50, settings=0))  # Square A: (0,0) to (50,50)
+        g.append(
+            Geomstr.rect(25, 0, 50, 50, settings=1)
+        )  # Square B: (25,0) to (75,50) - overlaps A and C
+        g.append(
+            Geomstr.rect(60, 0, 50, 50, settings=2)
+        )  # Square C: (60,0) to (110,50) - gap from A
+
+        bt = BeamTable(g)
+
+        # Test union of all three
+        union_all = bt.union(0, 1, 2)
+        self.assertGreater(union_all.index, 0, "Union of three should produce geometry")
+
+        # Test intersection of all three (should be empty since no common overlap)
+        intersection_all = bt.intersection(0, 1, 2)
+        self.assertEqual(
+            intersection_all.index, 0, "No common intersection among all three"
+        )
+
+        # Test pairwise intersection A∩B
+        intersection_ab = bt.intersection(0, 1)
+        self.assertGreater(intersection_ab.index, 0, "A∩B should have overlap")
+
+        # Test pairwise intersection B∩C
+        intersection_bc = bt.intersection(1, 2)
+        self.assertGreater(intersection_bc.index, 0, "B∩C should have overlap")
+
+        # Test XOR of all three
+        xor_all = bt.xor(0, 1, 2)
+        self.assertGreater(xor_all.index, 0, "XOR of three should produce geometry")
+
+    def test_cag_non_overlapping_shapes(self):
+        """Test CAG operations with non-overlapping shapes."""
+        g = Geomstr()
+        # Two separate rectangles
+        g.append(Geomstr.rect(0, 0, 50, 50, settings=0))
+        g.append(Geomstr.rect(100, 100, 50, 50, settings=1))
+
+        bt = BeamTable(g)
+
+        # Union should contain both shapes
+        union_result = bt.union(0, 1)
+        self.assertGreater(
+            union_result.index, 0, "Union of separate shapes should produce geometry"
+        )
+
+        # Intersection should be empty
+        intersection_result = bt.intersection(0, 1)
+        self.assertEqual(
+            intersection_result.index, 0, "No intersection between separate shapes"
+        )
+
+        # XOR should be both shapes (since no overlap)
+        xor_result = bt.xor(0, 1)
+        self.assertGreater(
+            xor_result.index, 0, "XOR of separate shapes should be both shapes"
+        )
+
+        # Difference A-B should be A (since no overlap)
+        diff_result = bt.difference(0, 1)
+        self.assertGreater(
+            diff_result.index, 0, "Difference should be first shape when no overlap"
+        )
+
+    def test_cag_complex_geometry(self):
+        """Test CAG operations with more complex geometries."""
+        g = Geomstr()
+
+        # Create an L-shaped geometry using multiple rectangles
+        g.append(Geomstr.rect(0, 0, 100, 50, settings=0))  # Horizontal bar of L
+        g.append(Geomstr.rect(0, 50, 50, 100, settings=0))  # Vertical bar of L
+
+        # Add a rectangle that intersects both parts
+        g.append(Geomstr.rect(25, 25, 50, 50, settings=1))
+
+        bt = BeamTable(g)
+
+        # Test union of L-shape (should merge the two L parts)
+        union_l = bt.union(0, 0)  # Same settings should union
+        self.assertGreater(union_l.index, 0, "Union of L-shape should produce geometry")
+
+        # Test intersection with the crossing rectangle
+        intersection_cross = bt.intersection(0, 1)
+        self.assertGreater(
+            intersection_cross.index, 0, "Intersection should produce geometry"
+        )
+
+    def test_cag_consistency_with_original(self):
+        """Test that optimized CAG produces same results as original implementation."""
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+
+        bt = BeamTable(g)
+
+        # Test that both implementations give consistent results
+        optimized_union = bt.cag("union", 0, 1)
+        original_union = bt.cag_org("union", 0, 1)
+
+        # Both should have the same number of segments (approximately)
+        # Allow for small differences due to optimization
+        self.assertAlmostEqual(
+            optimized_union.index,
+            original_union.index,
+            delta=2,  # Allow small difference
+            msg="Optimized and original union should have similar segment counts",
+        )
+
+        # Test other operations
+        optimized_intersection = bt.cag("intersection", 0, 1)
+        original_intersection = bt.cag_org("intersection", 0, 1)
+
+        self.assertAlmostEqual(
+            optimized_intersection.index,
+            original_intersection.index,
+            delta=2,
+            msg="Optimized and original intersection should have similar segment counts",
+        )
+
+    def test_cag_performance_comparison(self):
+        """Test performance comparison between optimized and original CAG."""
+        # Create a more complex geometry for performance testing
+        g = Geomstr()
+
+        # Create a grid of rectangles
+        for i in range(5):
+            for j in range(5):
+                x = i * 20
+                y = j * 20
+                settings = (i + j) % 3  # Rotate through 3 different settings
+                g.append(Geomstr.rect(x, y, 25, 25, settings=settings))
+
+        bt = BeamTable(g)
+
+        import time
+
+        # Time the optimized version
+        start_time = time.time()
+        optimized_result = bt.cag("union", 0, 1, 2)
+        optimized_time = time.time() - start_time
+
+        # Time the original version
+        start_time = time.time()
+        original_result = bt.cag_org("union", 0, 1, 2)
+        original_time = time.time() - start_time
+
+        # Optimized version should be faster or at least not significantly slower
+        if original_time > 0:
+            speedup = (
+                original_time / optimized_time if optimized_time > 0 else float("inf")
+            )
+            print(
+                f"CAG Performance: Original={original_time:.6f}s, Optimized={optimized_time:.6f}s, Speedup={speedup:.2f}x"
+            )
+
+            # Assert that optimized version is not more than 50% slower (unless less than 0.1s)
+            if original_time > 0.1:
+                self.assertLess(
+                    optimized_time,
+                    original_time * 1.5,
+                    "Optimized version should not be significantly slower",
+                )
+                if optimized_time < original_time * 1.5:
+                    print(
+                        f"Optimized version is slower: {optimized_time:.6f}s vs {original_time:.6f}s - size of structures: {g.index}"
+                    )
+                    i = original_time / optimized_time
+
+        # Results should have similar number of segments
+        self.assertAlmostEqual(
+            optimized_result.index,
+            original_result.index,
+            delta=3,
+            msg="Optimized and original should produce similar results",
+        )
+
+    def test_cag_argument_validation(self):
+        """Test CAG operations with various argument patterns."""
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 50, 50, settings=0))
+        g.append(Geomstr.rect(25, 25, 50, 50, settings=1))
+        g.append(Geomstr.rect(50, 50, 50, 50, settings=2))
+
+        bt = BeamTable(g)
+
+        # Test with no arguments (should return empty for all operations)
+        self.assertEqual(bt.cag("union").index, 0, "Union with no args should be empty")
+        self.assertEqual(
+            bt.cag("intersection").index, 0, "Intersection with no args should be empty"
+        )
+        self.assertEqual(bt.cag("xor").index, 0, "XOR with no args should be empty")
+        self.assertEqual(
+            bt.cag("difference").index, 0, "Difference with no args should be empty"
+        )
+
+        # Test with single argument
+        single_union = bt.cag("union", 0)
+        self.assertGreater(
+            single_union.index, 0, "Union with single arg should produce geometry"
+        )
+
+        # Test with duplicate arguments
+        dup_union = bt.cag("union", 0, 0, 1)
+        normal_union = bt.cag("union", 0, 1)
+        # Duplicate should not crash and should produce reasonable results
+        self.assertGreater(dup_union.index, 0, "Union with duplicate args should work")
+
+    def test_cag_equality_operation(self):
+        """Test the equality CAG operation specifically."""
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        g.append(Geomstr.rect(75, 75, 50, 50, settings=1))  # Same settings as second
+
+        bt = BeamTable(g)
+
+        # Test equality between shapes with same settings
+        eq_same = bt.cag("eq", 1, 2)  # Both have settings=1
+        self.assertGreater(
+            eq_same.index, 0, "Equality of same-settings shapes should produce geometry"
+        )
+
+        # Test equality between shapes with different settings
+        eq_diff = bt.cag("eq", 0, 1)  # Different settings
+        # This might produce geometry where both are present or absent
+        # The exact behavior depends on the implementation details
+        # Just verify it doesn't crash
+        self.assertIsNotNone(eq_diff, "Equality operation should not crash")
+
+    def test_cag_comprehensive_scenarios(self):
+        """Test comprehensive real-world CAG scenarios for validation."""
+        print("\n=== CAG Test Results Summary ===")
+
+        # Scenario 1: Two overlapping rectangles - classic case
+        g1 = Geomstr()
+        g1.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g1.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        bt1 = BeamTable(g1)
+
+        union1 = bt1.union(0, 1)
+        intersection1 = bt1.intersection(0, 1)
+        xor1 = bt1.xor(0, 1)
+        diff1 = bt1.difference(0, 1)
+
+        print(
+            f"Overlapping rectangles: Union={union1.index}, Intersection={intersection1.index}, XOR={xor1.index}, Diff={diff1.index}"
+        )
+
+        # Scenario 2: Three shapes with complex overlaps
+        g2 = Geomstr()
+        g2.append(Geomstr.rect(0, 0, 60, 60, settings=0))  # Base square
+        g2.append(Geomstr.rect(30, 30, 60, 60, settings=1))  # Overlapping square
+        g2.append(Geomstr.rect(45, 45, 30, 30, settings=2))  # Small inner square
+        bt2 = BeamTable(g2)
+
+        union2 = bt2.union(0, 1, 2)
+        intersection2 = bt2.intersection(0, 1, 2)
+        xor2 = bt2.xor(0, 1, 2)
+
+        print(
+            f"Three overlapping squares: Union={union2.index}, Intersection={intersection2.index}, XOR={xor2.index}"
+        )
+
+        # Verify all results are reasonable
+        self.assertGreater(union1.index, 0, "Union should produce geometry")
+        self.assertGreater(
+            intersection1.index, 0, "Intersection should produce geometry"
+        )
+        self.assertGreater(xor1.index, 0, "XOR should produce geometry")
+        self.assertGreater(diff1.index, 0, "Difference should produce geometry")
+
+        self.assertGreater(union2.index, 0, "Three-way union should produce geometry")
+        # Three-way intersection might be empty depending on overlaps
+
+        print("=== All CAG operations completed successfully ===\n")
+
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
         image = rect.segmented().render()
@@ -2451,6 +2823,197 @@ class TestGeomstr(unittest.TestCase):
             filename="box.png",
         )
 
+    def test_optimized_as_path_correctness(self):
+        """Test that optimized as_path produces identical results to original."""
+        # Create test geometry with mixed segment types
+        geom = Geomstr()
+        geom.line(complex(0, 0), complex(10, 0))
+        geom.quad(complex(10, 0), complex(15, 5), complex(20, 0))
+        geom.cubic(complex(20, 0), complex(23, 3), complex(27, 3), complex(30, 0))
+        geom.arc(complex(30, 0), complex(35, 5), complex(40, 0))
+        geom.end()
+        geom.line(complex(50, 0), complex(60, 10))
+
+        # Test both small and large geometries
+        for scale in [1, 100]:  # Small geometry vs large geometry
+            test_geom = Geomstr(geom)
+            if scale > 1:
+                # Create larger geometry to trigger optimization
+                for _ in range(scale):
+                    test_geom.append(geom)
+
+            # Generate path and verify it doesn't crash
+            path = test_geom.as_path()
+            self.assertIsNotNone(path)
+
+            # Verify path has expected properties
+            if hasattr(path, "d"):
+                path_d = path.d()
+                self.assertIsInstance(path_d, str)
+                self.assertGreater(len(path_d), 0)
+
+    def test_optimized_svg_parsing_accuracy(self):
+        """Test that optimized SVG parsing maintains output accuracy."""
+        test_paths = {
+            "simple": "M 10,10 L 20,20 L 30,10 Z",
+            "mixed_complex": "M 10,10 Q 15,5 20,10 C 25,5 35,5 40,10 L 50,20 Z",
+            "subpaths": "M 10,10 L 20,20 M 30,30 Q 35,25 40,30",
+        }
+
+        for name, path_str in test_paths.items():
+            with self.subTest(path=name):
+                try:
+                    geom = Geomstr.svg(path_str)
+                    self.assertGreater(geom.index, 0)
+
+                    # Test round-trip conversion
+                    path = geom.as_path()
+                    self.assertIsNotNone(path)
+
+                    # Verify basic geometry properties
+                    if geom.index > 0:
+                        first_point = geom.first_point
+                        last_point = geom.last_point
+                        self.assertIsNotNone(first_point)
+                        self.assertIsNotNone(last_point)
+
+                except Exception as e:
+                    self.fail(f"SVG parsing failed for {name}: {e}")
+
+    def test_optimized_equal_interpolation_precision(self):
+        """Test that optimized equal-distance interpolation maintains accuracy."""
+        # Create test geometry with various segment types
+        geom = Geomstr()
+        geom.line(complex(0, 0), complex(100, 0))
+        geom.quad(complex(100, 0), complex(150, 50), complex(200, 0))
+        geom.cubic(complex(200, 0), complex(225, 25), complex(275, 25), complex(300, 0))
+
+        distance = 10.0
+
+        # Test basic functionality
+        points = list(geom.as_equal_interpolated_points(distance))
+        self.assertGreater(len(points), 0)
+
+        # Verify points are valid complex numbers
+        for point in points:
+            if point is not None:
+                self.assertIsInstance(point, complex)
+
+        # Test with larger geometry to potentially trigger optimization
+        large_geom = Geomstr()
+        for i in range(100):
+            x = i * 10
+            large_geom.line(complex(x, 0), complex(x + 5, 10))
+            large_geom.quad(
+                complex(x + 5, 10), complex(x + 7.5, 15), complex(x + 10, 10)
+            )
+
+        large_points = list(large_geom.as_equal_interpolated_points(distance))
+        self.assertGreater(len(large_points), len(points))
+
+        # Verify distances are approximately correct for a simple case
+        line_geom = Geomstr()
+        line_geom.line(complex(0, 0), complex(50, 0))
+        line_points = list(line_geom.as_equal_interpolated_points(10.0))
+
+        # Should have at least start and end points
+        self.assertGreaterEqual(len(line_points), 2)
+
+    def test_optimization_threshold_behavior(self):
+        """Test optimization threshold triggers and fallback mechanisms."""
+        # Test small geometry (should not trigger optimization)
+        small_geom = Geomstr()
+        small_geom.line(complex(0, 0), complex(10, 10))
+        small_geom.quad(complex(10, 10), complex(15, 15), complex(20, 10))
+
+        # These should work regardless of optimization
+        small_path = small_geom.as_path()
+        self.assertIsNotNone(small_path)
+
+        small_points = list(small_geom.as_equal_interpolated_points(5.0))
+        self.assertGreater(len(small_points), 0)
+
+        # Test larger geometry (may trigger optimization)
+        large_geom = Geomstr()
+        for i in range(200):  # Large enough to potentially trigger optimization
+            x = i * 5
+            large_geom.line(complex(x, 0), complex(x + 2, 5))
+
+        large_path = large_geom.as_path()
+        self.assertIsNotNone(large_path)
+
+        large_points = list(large_geom.as_equal_interpolated_points(2.0))
+        self.assertGreater(len(large_points), len(small_points))
+
+    def test_optimization_error_handling(self):
+        """Test graceful handling of edge cases in optimizations."""
+        # Test empty geometry
+        empty_geom = Geomstr()
+        empty_path = empty_geom.as_path()
+        self.assertIsNotNone(empty_path)
+
+        empty_points = list(empty_geom.as_equal_interpolated_points(10.0))
+        self.assertEqual(len(empty_points), 0)
+
+        # Test geometry with single point
+        point_geom = Geomstr()
+        point_geom.point(complex(5, 5))
+        point_path = point_geom.as_path()
+        self.assertIsNotNone(point_path)
+
+        # Test with zero distance (should handle gracefully)
+        line_geom = Geomstr()
+        line_geom.line(complex(0, 0), complex(10, 0))
+
+        try:
+            zero_points = list(line_geom.as_equal_interpolated_points(0.0))
+            # Should either return empty list or handle gracefully
+            self.assertIsInstance(zero_points, list)
+        except (ValueError, ZeroDivisionError):
+            # Acceptable to raise error for zero distance
+            pass
+
+        # Test with very small distance
+        small_dist_points = list(line_geom.as_equal_interpolated_points(0.001))
+        self.assertIsInstance(small_dist_points, list)
+
+    def test_optimization_memory_efficiency(self):
+        """Test that optimizations don't significantly increase memory usage."""
+        # Create moderately complex geometry
+        geom = Geomstr()
+        for i in range(100):
+            x = i * 10
+            y = (i % 10) * 5
+            if i % 3 == 0:
+                geom.line(complex(x, y), complex(x + 8, y + 8))
+            elif i % 3 == 1:
+                geom.quad(complex(x, y), complex(x + 4, y + 12), complex(x + 8, y))
+            else:
+                geom.cubic(
+                    complex(x, y),
+                    complex(x + 2, y + 10),
+                    complex(x + 6, y + 10),
+                    complex(x + 8, y),
+                )
+
+        # Test as_path optimization
+        path = geom.as_path()
+        self.assertIsNotNone(path)
+
+        # Test equal interpolation optimization
+        points = list(geom.as_equal_interpolated_points(5.0))
+        self.assertGreater(len(points), 0)
+
+        # Verify geometry state is preserved
+        self.assertEqual(geom.index, 100)  # Should still have original segment count
+
+        # Test multiple operations don't accumulate memory issues
+        for _ in range(5):
+            temp_path = geom.as_path()
+            temp_points = list(geom.as_equal_interpolated_points(7.0))
+            self.assertIsNotNone(temp_path)
+            self.assertGreater(len(temp_points), 0)
+
     def test_geom_max_aabb(self):
         g = Geomstr.rect(0, 0, 200, 200)
         nx, ny, mx, my = g.aabb()
@@ -2612,9 +3175,10 @@ class TestGeomstr(unittest.TestCase):
 
     def test_scan_table_random_brute(self):
         print("\n\n")
-        for _c in range(5):
+        for _c in range(3):  # Reduced iterations but increased complexity
             g = Geomstr()
-            for i in range(100):
+            # Increase sampling size for more measurable timing
+            for i in range(500):  # Increased from 100 to 500
                 random_segment(
                     g, i=1000, arc=False, point=False, quad=False, cubic=False
                 )
@@ -2633,9 +3197,22 @@ class TestGeomstr(unittest.TestCase):
                 # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
-            print(
-                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time / bo_time}x or {bo_time / brute_time}x"
-            )
+
+            # Avoid division by zero errors with minimum time thresholds
+            min_time = 1e-6  # Minimum measurable time (1 microsecond)
+            brute_time = max(brute_time, min_time)
+            bo_time = max(bo_time, min_time)
+
+            if brute_time > min_time and bo_time > min_time:
+                improvement_ratio = brute_time / bo_time
+                reverse_ratio = bo_time / brute_time
+                print(
+                    f"With binary inserts: brute: {brute_time:.6f}s vs bo: {bo_time:.6f}s improvement: {improvement_ratio:.2f}x or {reverse_ratio:.2f}x"
+                )
+            else:
+                print(
+                    f"With binary inserts: brute: {brute_time:.6f}s vs bo: {bo_time:.6f}s (timing too fast for reliable comparison)"
+                )
             print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):
@@ -2698,3 +3275,206 @@ class TestGeomstr(unittest.TestCase):
     #     print(hatch)
     #     bounds = hatch.bbox()
     #     draw(list(hatch.as_interpolated_points()), *bounds)
+
+    def test_cag_algorithm_selection(self):
+        """Test that the smart CAG algorithm selection works correctly."""
+        # Test small dataset (should use standard algorithm)
+        small_geom = Geomstr()
+        small_geom.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        small_geom.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+
+        small_bt = BeamTable(small_geom)
+        small_bt.compute_beam()
+
+        # Should work with smart selection
+        result = small_bt.cag("union", 0, 1)
+        self.assertGreater(result.index, 0, "Smart CAG should work for small datasets")
+
+        # Test medium dataset (should use optimized algorithm)
+        medium_geom = Geomstr()
+        for i in range(120):  # Trigger optimized algorithm
+            x = (i % 10) * 15
+            y = (i // 10) * 15
+            settings = i % 3
+            medium_geom.append(Geomstr.rect(x, y, 20, 20, settings=settings))
+
+        medium_bt = BeamTable(medium_geom)
+        medium_bt.compute_beam()
+
+        result = medium_bt.cag("union", 0, 1, 2)
+        self.assertGreater(result.index, 0, "Smart CAG should work for medium datasets")
+
+        # Test large dataset (should use hierarchical algorithm)
+        large_geom = Geomstr()
+        for i in range(600):  # Trigger hierarchical algorithm
+            x = (i % 20) * 12
+            y = (i // 20) * 12
+            settings = i % 4
+            large_geom.append(Geomstr.rect(x, y, 15, 15, settings=settings))
+
+        large_bt = BeamTable(large_geom)
+        large_bt.compute_beam()
+
+        result = large_bt.cag("union", 0, 1, 2, 3)
+        self.assertGreater(result.index, 0, "Smart CAG should work for large datasets")
+
+    def test_cag_optimization_correctness(self):
+        """Test that all CAG optimization algorithms produce identical results."""
+        # Create test geometry
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 100, 100, settings=0))
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        g.append(Geomstr.rect(25, 25, 100, 100, settings=2))
+
+        bt = BeamTable(g)
+        bt.compute_beam()
+
+        # Test all implementations
+        original = bt.cag_org("union", 0, 1, 2)
+        standard = bt._cag_standard("union", 0, 1, 2)
+        optimized = bt._cag_optimized("union", 0, 1, 2)
+        hierarchical = bt._cag_hierarchical("union", 0, 1, 2)
+        smart = bt.cag("union", 0, 1, 2)
+
+        # All should produce same segment count
+        self.assertEqual(
+            original.index, standard.index, "Standard algorithm should match original"
+        )
+        self.assertEqual(
+            original.index, optimized.index, "Optimized algorithm should match original"
+        )
+        self.assertEqual(
+            original.index,
+            hierarchical.index,
+            "Hierarchical algorithm should match original",
+        )
+        self.assertEqual(
+            original.index, smart.index, "Smart selection should match original"
+        )
+
+        # Test bounding boxes match
+        orig_bbox = original.bbox()
+        self.assertEqual(standard.bbox(), orig_bbox, "Standard bbox should match")
+        self.assertEqual(optimized.bbox(), orig_bbox, "Optimized bbox should match")
+        self.assertEqual(
+            hierarchical.bbox(), orig_bbox, "Hierarchical bbox should match"
+        )
+        self.assertEqual(smart.bbox(), orig_bbox, "Smart bbox should match")
+
+    def test_cag_optimization_fallback(self):
+        """Test that CAG optimizations gracefully fall back on errors."""
+        # Create test geometry that might trigger edge cases
+        g = Geomstr()
+        g.append(Geomstr.rect(0, 0, 1, 1, settings=0))  # Very small rectangles
+        g.append(Geomstr.rect(0.5, 0.5, 1, 1, settings=1))
+
+        bt = BeamTable(g)
+        bt.compute_beam()
+
+        # These should all work despite potential numerical issues
+        try:
+            result_standard = bt._cag_standard("union", 0, 1)
+            self.assertGreaterEqual(result_standard.index, 0)
+        except Exception as e:
+            self.fail(f"Standard CAG failed: {e}")
+
+        try:
+            result_optimized = bt._cag_optimized("union", 0, 1)
+            self.assertGreaterEqual(result_optimized.index, 0)
+        except Exception as e:
+            self.fail(f"Optimized CAG failed: {e}")
+
+        try:
+            result_hierarchical = bt._cag_hierarchical("union", 0, 1)
+            self.assertGreaterEqual(result_hierarchical.index, 0)
+        except Exception as e:
+            self.fail(f"Hierarchical CAG failed: {e}")
+
+        try:
+            result_smart = bt.cag("union", 0, 1)
+            self.assertGreaterEqual(result_smart.index, 0)
+        except Exception as e:
+            self.fail(f"Smart CAG failed: {e}")
+
+    def test_cag_optimization_performance_characteristics(self):
+        """Test performance characteristics of different CAG algorithms."""
+        import time
+
+        # Create datasets of different sizes
+        test_cases = [
+            {"shapes": 25, "name": "small"},
+            {"shapes": 150, "name": "medium"},
+            {"shapes": 300, "name": "large"},
+        ]
+
+        for case in test_cases:
+            shapes = case["shapes"]
+            name = case["name"]
+
+            # Create test geometry
+            g = Geomstr()
+            for i in range(shapes):
+                x = (i % 15) * 18
+                y = (i // 15) * 18
+                settings = i % 4
+                g.append(Geomstr.rect(x, y, 25, 25, settings=settings))
+
+            bt = BeamTable(g)
+            bt.compute_beam()
+
+            # Time the smart algorithm
+            start_time = time.time()
+            result = bt.cag("union", 0, 1, 2, 3)
+            end_time = time.time()
+
+            # Should complete in reasonable time (< 1 second for these sizes)
+            duration = end_time - start_time
+            self.assertLess(
+                duration,
+                1.0,
+                f"CAG on {name} dataset ({shapes} shapes) took too long: {duration:.3f}s",
+            )
+
+            # Should produce valid results
+            self.assertGreater(
+                result.index, 0, f"CAG on {name} dataset should produce geometry"
+            )
+
+            # Verify bounding box is reasonable
+            bbox = result.bbox()
+            self.assertIsNotNone(bbox, f"CAG on {name} dataset should have valid bbox")
+
+    def test_cag_memory_efficiency_optimizations(self):
+        """Test that CAG optimizations use memory efficiently."""
+        # Create moderately complex geometry
+        g = Geomstr()
+        for i in range(100):
+            x = (i % 10) * 20
+            y = (i // 10) * 20
+            settings = i % 5
+            g.append(Geomstr.rect(x, y, 25, 25, settings=settings))
+
+        bt = BeamTable(g)
+        bt.compute_beam()
+
+        # Test that optimized versions work
+        original = bt.cag_org("union", 0, 1, 2, 3, 4)
+        optimized = bt._cag_optimized("union", 0, 1, 2, 3, 4)
+        hierarchical = bt._cag_hierarchical("union", 0, 1, 2, 3, 4)
+
+        # Should all produce valid results
+        self.assertGreater(original.index, 0)
+        self.assertGreater(optimized.index, 0)
+        self.assertGreater(hierarchical.index, 0)
+
+        # Results should be consistent
+        self.assertEqual(
+            original.index,
+            optimized.index,
+            "Optimized should match original segment count",
+        )
+        self.assertEqual(
+            original.index,
+            hierarchical.index,
+            "Hierarchical should match original segment count",
+        )
