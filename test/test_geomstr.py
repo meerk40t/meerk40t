@@ -2803,9 +2803,10 @@ class TestGeomstr(unittest.TestCase):
 
     def test_scan_table_random_brute(self):
         print("\n\n")
-        for _c in range(5):
+        for _c in range(3):  # Reduced iterations but increased complexity
             g = Geomstr()
-            for i in range(100):
+            # Increase sampling size for more measurable timing
+            for i in range(500):  # Increased from 100 to 500
                 random_segment(
                     g, i=1000, arc=False, point=False, quad=False, cubic=False
                 )
@@ -2824,9 +2825,22 @@ class TestGeomstr(unittest.TestCase):
                 # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
-            print(
-                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time / bo_time}x or {bo_time / brute_time}x"
-            )
+
+            # Avoid division by zero errors with minimum time thresholds
+            min_time = 1e-6  # Minimum measurable time (1 microsecond)
+            brute_time = max(brute_time, min_time)
+            bo_time = max(bo_time, min_time)
+
+            if brute_time > min_time and bo_time > min_time:
+                improvement_ratio = brute_time / bo_time
+                reverse_ratio = bo_time / brute_time
+                print(
+                    f"With binary inserts: brute: {brute_time:.6f}s vs bo: {bo_time:.6f}s improvement: {improvement_ratio:.2f}x or {reverse_ratio:.2f}x"
+                )
+            else:
+                print(
+                    f"With binary inserts: brute: {brute_time:.6f}s vs bo: {bo_time:.6f}s (timing too fast for reliable comparison)"
+                )
             print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):

@@ -210,38 +210,66 @@ def distance_squared(p1_x, p1_y, p2_x, p2_y):
     return dx * dx + dy * dy
 
 
+# Centralized utilities for NumPy and point conversion
+def _convert_points_to_arrays(points):
+    """
+    Convert points (complex or (x,y) pairs) to separate x,y numpy arrays.
+
+    Args:
+        points: List/array of complex points or (x,y) tuples
+
+    Returns:
+        tuple: (x_array, y_array) as numpy arrays
+
+    Raises:
+        ValueError: If points list is empty or contains invalid data
+    """
+    if len(points) == 0:
+        return np.array([]), np.array([])
+
+    if isinstance(points[0], complex):
+        x_array = np.array([p.real for p in points])
+        y_array = np.array([p.imag for p in points])
+    else:
+        x_array = np.array([p[0] for p in points])
+        y_array = np.array([p[1] for p in points])
+
+    return x_array, y_array
+
+
 def batch_distances_squared(points1, points2):
     """
-    Calculate squared distances between two arrays of points efficiently.
+    Calculate squared distances between corresponding points in two arrays efficiently.
+
+    This function performs element-wise distance calculations between points1[i] and points2[i].
+    For pairwise distances between all points in two sets, use batch_point_distances_matrix.
 
     Args:
         points1: Array of complex points or (x,y) pairs
-        points2: Array of complex points or (x,y) pairs
+        points2: Array of complex points or (x,y) pairs (must be same length as points1)
 
     Returns:
-        Array of squared distances
+        Array of squared distances where result[i] = distance²(points1[i], points2[i])
+
+    Raises:
+        ValueError: If input arrays have different lengths
     """
     if len(points1) == 0 or len(points2) == 0:
         return np.array([])
 
-    # Convert complex points to real arrays if needed
-    if isinstance(points1[0], complex):
-        p1_real = np.array([p.real for p in points1])
-        p1_imag = np.array([p.imag for p in points1])
-    else:
-        p1_real = np.array([p[0] for p in points1])
-        p1_imag = np.array([p[1] for p in points1])
+    # Validate input lengths - this was the main issue identified in review
+    if len(points1) != len(points2):
+        raise ValueError(
+            f"Input arrays must have equal length. Got {len(points1)} and {len(points2)}"
+        )
 
-    if isinstance(points2[0], complex):
-        p2_real = np.array([p.real for p in points2])
-        p2_imag = np.array([p.imag for p in points2])
-    else:
-        p2_real = np.array([p[0] for p in points2])
-        p2_imag = np.array([p[1] for p in points2])
+    # Convert using utility function to reduce duplication
+    p1_x, p1_y = _convert_points_to_arrays(points1)
+    p2_x, p2_y = _convert_points_to_arrays(points2)
 
-    # Vectorized distance calculation
-    dx = p1_real - p2_real
-    dy = p1_imag - p2_imag
+    # Vectorized element-wise distance calculation
+    dx = p1_x - p2_x
+    dy = p1_y - p2_y
     return dx * dx + dy * dy
 
 
@@ -330,16 +358,28 @@ def batch_line_intersections_fast(lines1, lines2, tolerance=1e-10):
     """
     Fast batch calculation of line-line intersections using vectorized operations.
 
+    This function performs pairwise intersections between corresponding lines in lines1 and lines2.
+    For all-pairs intersections between two sets of lines, a separate function should be used.
+
     Args:
         lines1: Array of line segments [(x1,y1,x2,y2), ...] or [complex1, complex2] pairs
-        lines2: Array of line segments to intersect with lines1
+        lines2: Array of line segments to intersect with lines1 (must be same length as lines1)
         tolerance: Numerical tolerance for parallel line detection
 
     Returns:
         List of intersection results: [(has_intersection, x, y, t1, t2), ...]
+
+    Raises:
+        ValueError: If lines1 and lines2 have different lengths
     """
     if len(lines1) == 0 or len(lines2) == 0:
         return []
+
+    # Validate input lengths - support broadcasting for 1-to-many operations
+    if len(lines1) != len(lines2) and len(lines1) != 1 and len(lines2) != 1:
+        raise ValueError(
+            f"Input arrays must have equal length or one must have length 1. Got {len(lines1)} and {len(lines2)}"
+        )
 
     # Convert lines to coordinate arrays
     if isinstance(lines1[0][0], complex):
@@ -365,6 +405,21 @@ def batch_line_intersections_fast(lines1, lines2, tolerance=1e-10):
         y3 = np.array([line[1] for line in lines2])
         x4 = np.array([line[2] for line in lines2])
         y4 = np.array([line[3] for line in lines2])
+
+    # Handle broadcasting for different array sizes
+    max_len = max(len(lines1), len(lines2))
+    if len(lines1) == 1 and len(lines2) > 1:
+        # Broadcast lines1 to match lines2
+        x1 = np.full(max_len, x1[0])
+        y1 = np.full(max_len, y1[0])
+        x2 = np.full(max_len, x2[0])
+        y2 = np.full(max_len, y2[0])
+    elif len(lines2) == 1 and len(lines1) > 1:
+        # Broadcast lines2 to match lines1
+        x3 = np.full(max_len, x3[0])
+        y3 = np.full(max_len, y3[0])
+        x4 = np.full(max_len, x4[0])
+        y4 = np.full(max_len, y4[0])
 
     # Vectorized intersection calculation
     denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
@@ -410,19 +465,25 @@ def batch_point_transformations(points, transform_matrix):
 
     Returns:
         Array of transformed points in the same format as input
+
+    Raises:
+        ValueError: If transform_matrix has invalid shape
     """
     if len(points) == 0:
         return points
 
-    # Convert points to coordinate arrays
-    if isinstance(points[0], complex):
-        x_coords = np.array([p.real for p in points])
-        y_coords = np.array([p.imag for p in points])
-        return_complex = True
-    else:
-        x_coords = np.array([p[0] for p in points])
-        y_coords = np.array([p[1] for p in points])
-        return_complex = False
+    # Validate transform matrix shape - main issue from review
+    if not hasattr(transform_matrix, "shape"):
+        transform_matrix = np.array(transform_matrix)
+
+    if transform_matrix.shape not in [(2, 3), (3, 3)]:
+        raise ValueError(
+            f"Transform matrix must be 2x3 or 3x3, got shape {transform_matrix.shape}"
+        )
+
+    # Convert points using utility function
+    x_coords, y_coords = _convert_points_to_arrays(points)
+    return_complex = isinstance(points[0], complex)
 
     # Create homogeneous coordinates
     ones = np.ones(len(points))
@@ -2921,8 +2982,11 @@ class Geomstr:
                 optimized_result = cls.batch_svg_optimized(segments, estimated_capacity)
                 if optimized_result is not None:
                     return optimized_result
-            except Exception:
-                pass  # Fall back to original implementation
+            except Exception as e:
+                import logging
+
+                logging.debug(f"Exception in batch_svg_optimized fallback in svg: {e}")
+                # Fall back to original implementation
 
         # Original implementation as fallback
         obj = cls()
@@ -6853,8 +6917,13 @@ class Geomstr:
                 optimized_path = self.batch_as_path_optimized(self.segments, self.index)
                 if optimized_path is not None:
                     return optimized_path
-            except Exception:
-                pass  # Fall back to original implementation
+            except Exception as e:
+                import logging
+
+                logging.debug(
+                    f"Exception in batch_as_path_optimized fallback in as_path: {e}"
+                )
+                # Fall back to original implementation
 
         # Original implementation as fallback
         _open = True
