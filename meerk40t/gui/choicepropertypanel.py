@@ -26,83 +26,147 @@ _ = wx.GetTranslation
 
 class ChoicePropertyPanel(ScrolledPanel):
     """
-    ChoicePropertyPanel is a generic panel that presents a list of properties to be viewed and edited.
-    In most cases it can be initialized by passing a choices value which will read the registered choice values
-    and display the given properties, automatically generating an appropriate changers for that property.
+    A dynamic, configurable property panel that automatically generates GUI controls based on choice dictionaries.
 
-    In most cases the ChoicePropertyPanel should be used for properties of a dynamic nature. A lot of different
-    relationships can be established and the class should be kept fairly easy to extend. With a set dictionary
-    either registered in the Kernel as a choice or called directly on the ChoicePropertyPanel you can make dynamic
-    controls to set various properties. This avoids needing to create a new static window when a panel is just
-    providing options to change settings.
-    The choices need to be provided either as list of dictionaries or indirectly via
-    a string indicating a stored list registered in the given context under "choices"
-    The dictionary recognizes the following entries:
+    ChoicePropertyPanel provides a flexible system for creating property editing interfaces without requiring
+    static UI definitions. It automatically generates appropriate controls (textboxes, checkboxes, sliders, etc.)
+    based on data types and style configurations provided in choice dictionaries.
 
-        "object": The object to which the property defined in attr belongs to
-        "attr": The name of the attribute
-        "default": The default value if no value has been given before
-        "label": The label will be used for labelling the to be created UI-elements
-        "trailer": this text will be displayed immediately after the element
-        "tip": The tooltip that will be used for this element
-        "dynamic": a function called with the current dictionary choice. This is to update
-            values that may have changed since the choice was first established.
-        "type": This can be one of (no quotation marks, real python data types):
-            bool: will always be represented by a checkbox
-            str: normally be represented by a textbox (may be influenced by style)
-            int: normally be represented by a textbox (may be influenced by style)
-            float: normally be represented by a textbox (may be influenced by style)
-            Length: represented by a textbox
-            Angle: represented by a textbox
-            Color: represented by a color picker
-        "style": If given then the standard representation for a data-type (see above)
-            will be replaced by more tailored UI-elements:
-            "file": (only available for str) a file selection dialog is used,
-                this recognizes a further property "wildcard"
-            "slider:" Creates a slider (for int and float) that will use two additional
-                entries, "min" and "max.
-            "combo": see combosmall (but larger).
-            "option": Creates a combo box but also takes "display" as a parameter
-                that displays these strings rather than the underlying choices.
-            "combosmall": Available for str, int, float will fill the combo
-                with values defined in "choices" (additional parameter)
-            "binary": uses two additional settings "mask" and "bit" to
-                allow the bitwise manipulation of an int data type
-            "multiline": (only available for str) the content allows multiline input
-        "weight": only valid in subsections, default value 1, i.e. equal width
-            allocation, can be changed to force a different sizing behaviour
-    UI-Appearance
-        "page":
-        "section":
-        "subsection":
-        "priority":
-            These entries will create visible separation/joining of elements.
-            The dictionary list will be sorted first by priority, then page,
-            then section, then subsection. While normally every item ends up
-            on a new line, elements within a subsection remain in one horizontal
-            container.
-        Notabene:
-            a) to influence ordering without compromising the intended Page,
-            Section etc. names, the routine will remove a leading "_xxxx_" string
-            b) The Page, Section etc. names will be translated, so please provide
-            them in plain English
+    Key Features:
+        - Automatic control generation based on data types and styles
+        - Support for complex layouts with pages, sections, and subsections
+        - Real-time property synchronization with signal dispatching
+        - Extensive customization through choice dictionary configuration
+        - Support for conditional enabling/disabling of controls
+        - Optimized parameter architecture with minimal redundancy
 
-    There are some special hacks to influence appearance / internal logic
-        "hidden": if set then this expert property will only appear if the
-            developer-mode has been set
-        "enabled": Is the control enabled (default yes, so does not need to be
-            provided)
-        "ignored": As the name implies...
-        "conditional": if given as tuple (cond_obj, cond_prop) then the (boolean)
-            value of the property cond_obj.cond_prop will decide if the element
-            will be enabled or not. (If a third value then the value must equal that value).
-        "signals": This for advanced treatment, normally any change to a property
-            will be announced to the wider mk-universe by sending a signal with the
-            attributes name as signal-indicator (this is used to inform other UI-
-            elements with the same content of such a change). If you want to invoke
-            additional logic (or don't want to write a specific signal-listen routine
-            to forward it to other routines) then you can add a single signal-name
-            or a list of signal-names to be called
+    Choice Dictionary Configuration:
+        Required Keys:
+            "object": The object containing the property to be edited
+            "attr": The attribute name on the object
+            "type": Python data type (bool, str, int, float, Length, Angle, Color, list)
+
+        Common Optional Keys:
+            "default": Default value if attribute doesn't exist
+            "label": Display label for the control (defaults to attr name)
+            "style": Control style override (see Style Options below)
+            "tip": Tooltip text for the control
+            "enabled": Whether control is enabled (default: True)
+            "signals": Additional signals to emit on value change
+            "width": Control width constraint
+
+        Layout Keys:
+            "page": Top-level grouping (creates labeled sections)
+            "section": Mid-level grouping within pages
+            "subsection": Controls grouped horizontally
+            "priority": Sort order within same page/section
+            "weight": Relative width allocation in subsections (default: 1)
+
+        Advanced Keys:
+            "dynamic": Function called to update choice before UI creation
+            "conditional": Tuple (obj, attr[, value]) for conditional enabling
+            "hidden": Show only in developer mode
+            "ignore": Skip this choice entirely
+
+    Data Types and Default Controls:
+        bool: Checkbox (style="button" creates action button)
+        str: TextCtrl (various styles available)
+        int/float: TextCtrl with validation (styles: slider, combo, power, speed)
+        Length: TextCtrl with length validation and preferred units
+        Angle: TextCtrl with angle validation
+        Color: Color picker button
+        list: Chart/table control for editing lists
+
+    Style Options:
+        Text Styles:
+            "file": File selection dialog with browse button
+            "multiline": Multi-line text input
+            "combo": Dropdown with predefined choices
+            "combosmall": Compact dropdown
+            "option": Combo with separate display/value lists
+            "power": Power value with percentage/absolute modes
+            "speed": Speed value with per-minute/per-second modes
+
+        Numeric Styles:
+            "slider": Slider control (requires "min"/"max" keys)
+            "binary": Bit manipulation checkboxes (requires "bits"/"mask" keys)
+
+        Boolean Styles:
+            "button": Action button instead of checkbox
+            "color": Color picker button (for str type)
+
+    Special Configuration Flags:
+        Power Controls:
+            "percent": bool or callable - display as percentage (0-100%) vs absolute (0-1000)
+
+        Speed Controls:
+            "perminute": bool or callable - display per-minute vs per-second values
+
+        File Controls:
+            "wildcard": File dialog filter pattern
+
+        Slider Controls:
+            "min": Minimum value (can be callable)
+            "max": Maximum value (can be callable)
+
+        Binary Controls:
+            "bits": Number of bits to display (default: 8)
+            "mask": Attribute name for bit mask
+
+        Combo Controls:
+            "choices": List of available values
+            "display": List of display strings (for "option" style)
+            "exclusive": Whether combo allows custom values (default: True)
+
+        Length Controls:
+            "nonzero": Require non-zero values
+
+        Validation:
+            "lower": Minimum allowed value
+            "upper": Maximum allowed value
+
+    Layout System:
+        - Choices are sorted by: priority → page → section → subsection
+        - Pages create major visual groups with labels
+        - Sections create sub-groups within pages
+        - Subsections group controls horizontally with shared space
+        - Weight determines relative width allocation within subsections
+        - Leading "_sortkey_" in names is removed for display (allows custom sorting)
+
+    Event System:
+        - Automatic signal dispatching on property changes
+        - Property name used as signal identifier
+        - Additional signals can be specified in "signals" key
+        - Real-time synchronization between multiple panels editing same properties
+        - Conditional enabling based on other property values
+
+    Constraints:
+        The constraint parameter allows selective display:
+        - None: Show all choices
+        - (start, end): Show choices by index range
+        - ["page1", "page2"]: Show only specified pages
+        - ["-page1"]: Show all except specified pages
+
+    Examples:
+        Basic usage:
+            choices = [
+                {"object": obj, "attr": "name", "type": str, "label": "Name"},
+                {"object": obj, "attr": "enabled", "type": bool, "label": "Enabled"}
+            ]
+            panel = ChoicePropertyPanel(parent, choices=choices, context=context)
+
+        Advanced configuration:
+            choice = {
+                "object": laser,
+                "attr": "power",
+                "type": float,
+                "style": "power",
+                "label": "Laser Power",
+                "percent": lambda: laser.power_mode == "percentage",
+                "tip": "Laser power setting",
+                "page": "Laser Settings",
+                "section": "Power Control"
+            }
     """
 
     def __init__(
@@ -745,7 +809,27 @@ class ChoicePropertyPanel(ScrolledPanel):
 
     # UI Helper Methods
     def _create_text_control(self, label, data, choice, handler_factory):
-        """Unified TextCtrl creation for all text-based inputs."""
+        """
+        Unified TextCtrl creation for all text-based inputs.
+
+        This is the primary factory function for creating text-based controls across
+        all data types (str, int, float, Length, Angle). It handles the complex
+        configuration needed for different input types and styles.
+
+        Recent optimizations:
+        - Handler factories now receive control and choice only, extracting parameters internally
+        - Consistent formatting using _format_text_display_value for display values
+        - Proper support for power/speed controls with callable mode flags
+
+        Args:
+            label (str): Display label for the control
+            data: Current value to display in the control
+            choice (dict): Complete choice configuration
+            handler_factory (callable): Factory function that creates the event handler
+
+        Returns:
+            tuple: (control, control_sizer) - the text control and its container sizer
+        """
         # Extract type and style from choice
         data_type = choice.get("type")
         data_style = choice.get("style")
@@ -849,7 +933,33 @@ class ChoicePropertyPanel(ScrolledPanel):
         return control, control_sizer
 
     def _get_text_control_config(self, data_type, choice):
-        """Generate TextCtrl configuration based on data type."""
+        """
+        Generates TextCtrl configuration based on data type and style.
+
+        This function creates the appropriate validation and display configuration
+        for text controls based on the data type and special style requirements.
+        It handles complex configurations for power and speed controls that can
+        operate in different modes (percentage/absolute, per-minute/per-second).
+
+        Enhanced Features:
+        - Dynamic validation limits based on callable flags
+        - Power control support with percentage/absolute mode detection
+        - Speed control support with per-minute/per-second mode detection
+        - Proper validation types for numeric controls
+        - Length/Angle-specific validation and formatting
+
+        Args:
+            data_type (type): The Python type (int, float, str, Length, Angle)
+            choice (dict): Choice configuration with style, validation limits, and flags
+
+        Returns:
+            dict: Configuration dictionary for TextCtrl creation containing:
+                - style: wx text control style flags
+                - limited: bool indicating validation is enabled
+                - check: validation type ("int", "float", "length", "angle")
+                - lower/upper: validation bounds
+                - nonzero: whether zero values are allowed
+        """
         text_config = {"style": wx.TE_PROCESS_ENTER}
 
         # Type-specific configurations
@@ -1228,11 +1338,31 @@ class ChoicePropertyPanel(ScrolledPanel):
 
     def _get_control_factory(self, data_type, data_style):
         """
-        Dispatch table for control creation. Returns a tuple of (factory_function, handler_factory, needs_special_handling).
-        If needs_special_handling is True, the factory handles its own sizer addition.
+        Returns factory functions for creating controls and their event handlers.
 
-        Note: Lambda parameters in the dispatch table define the interface for when the lambdas are invoked
-        by _create_control_using_dispatch, not references to variables in the current scope.
+        This function provides a dispatch table that maps (data_type, data_style) combinations
+        to the appropriate control factory, handler factory, and special handling flag.
+
+        The dispatch table has been optimized to minimize parameter passing:
+        - Control factories receive choice dictionary and extract needed parameters internally
+        - Handler factories receive control and choice, extracting obj/attr parameters internally
+        - Lambda functions in the dispatch table use minimal parameter lists
+
+        Args:
+            data_type (type): Python type (bool, str, int, float, Length, Angle, Color, list)
+            data_style (str): Style override for control type (None, "file", "slider", "combo", etc.)
+
+        Returns:
+            tuple: (factory_function, handler_factory, needs_special_handling)
+                - factory_function: Creates the control widget
+                - handler_factory: Creates event handler for the control
+                - needs_special_handling: bool indicating if factory handles its own sizer addition
+
+        Note:
+            Lambda parameters in the dispatch table define the interface for when the lambdas
+            are invoked by _create_control_using_dispatch, not references to variables in the
+            current scope. All handler factories extract obj=choice["object"] and
+            attr=choice["attr"] internally.
         """
         # Import types for dispatch table
         from meerk40t.core.units import Angle, Length
@@ -1554,7 +1684,33 @@ class ChoicePropertyPanel(ScrolledPanel):
         return None
 
     def _format_text_display_value(self, data, choice):
-        """Format data for display in text controls."""
+        """
+        Formats data values for consistent display in text controls.
+
+        This utility function handles the complex formatting requirements for different
+        data types and control styles, ensuring consistent display across the interface.
+        It is used by both control creation and control update functions.
+
+        Key Features:
+        - Length objects: Uses preferred units and appropriate decimal places
+        - Power controls: Handles percentage/absolute mode conversions with callable flags
+        - Speed controls: Handles per-minute/per-second mode conversions with callable flags
+        - Angle objects: Proper formatting with appropriate precision
+        - Basic types: String conversion with fallback handling
+
+        Mode Support:
+        - Power percentage mode: Converts 0-1000 absolute values to 0-100% display
+        - Power absolute mode: Displays 0-1000 values directly
+        - Speed per-minute mode: Converts per-second to per-minute for display
+        - Speed per-second mode: Displays per-second values directly
+
+        Args:
+            data: The raw data value to format
+            choice (dict): Choice configuration containing type, style, and mode flags
+
+        Returns:
+            str: Formatted string representation suitable for text control display
+        """
         # Get type from choice, fallback to actual data type
         data_type = choice.get("type")
 
@@ -1662,7 +1818,19 @@ class ChoicePropertyPanel(ScrolledPanel):
         return handle_button_click
 
     def _make_checkbox_handler(self, ctrl, choice):
-        """Creates a handler for checkbox controls."""
+        """
+        Creates an event handler for checkbox controls.
+
+        This handler automatically extracts the object and attribute from the choice
+        dictionary and updates the property when the checkbox state changes.
+
+        Args:
+            ctrl (wx.CheckBox): The checkbox control
+            choice (dict): Choice configuration containing 'object', 'attr', and optional 'signals'
+
+        Returns:
+            callable: Event handler function for wx.EVT_CHECKBOX events
+        """
         param = choice["attr"]
         obj = choice["object"]
         addsig = self._get_additional_signals(choice)
@@ -1907,7 +2075,22 @@ class ChoicePropertyPanel(ScrolledPanel):
         return handle_angle_text_change
 
     def _make_power_text_handler(self, ctrl, choice):
-        """Creates a handler for power text controls that supports both absolute and percentage modes."""
+        """
+        Creates a handler for power text controls that supports both absolute and percentage modes.
+
+        Power controls can operate in two modes based on the 'percent' flag in the choice:
+        - Percentage mode: User enters 0-100%, internally converts to 0-1000 absolute
+        - Absolute mode: User enters 0-1000 directly
+
+        The 'percent' flag can be a boolean or callable that returns a boolean.
+
+        Args:
+            ctrl (wx.TextCtrl): The text control
+            choice (dict): Choice configuration containing 'object', 'attr', optional 'percent' flag, and 'signals'
+
+        Returns:
+            callable: Event handler function for text change events
+        """
         param = choice["attr"]
         obj = choice["object"]
         addsig = self._get_additional_signals(choice)
@@ -1945,6 +2128,22 @@ class ChoicePropertyPanel(ScrolledPanel):
         return handle_power_text_change
 
     def _make_speed_text_handler(self, ctrl, choice):
+        """
+        Creates a handler for speed text controls that supports both per-second and per-minute modes.
+
+        Speed controls can operate in two modes based on the 'perminute' flag in the choice:
+        - Per-minute mode: User enters per-minute values, internally converts to per-second
+        - Per-second mode: User enters per-second values directly
+
+        The 'perminute' flag can be a boolean or callable that returns a boolean.
+
+        Args:
+            ctrl (wx.TextCtrl): The text control
+            choice (dict): Choice configuration containing 'object', 'attr', optional 'perminute' flag, and 'signals'
+
+        Returns:
+            callable: Event handler function for text change events
+        """
         """Creates a handler for speed text controls that supports both absolute and per-minute modes."""
         param = choice["attr"]
         obj = choice["object"]
@@ -2320,7 +2519,29 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.context.listen(attr, update_listener)
 
     def _update_control_value(self, ctrl, data, choicelist, choice):
-        """Update a control's value based on its type and style."""
+        """
+        Updates a control's displayed value based on its type, style, and current data.
+
+        This function handles the complex logic of converting internal data values to
+        appropriate display formats for different control types. It supports:
+
+        - Basic controls: checkboxes, text fields, sliders, combos
+        - Special formatting: power controls (percentage/absolute), speed controls (per-minute/per-second)
+        - Data type conversions: proper formatting for int, float, Length, Angle, Color types
+        - Callable flags: supports dynamic percent/perminute flags that can change at runtime
+
+        Recent improvements:
+        - Uses _format_text_display_value for consistent text formatting
+        - Properly handles callable percent and perminute flags
+        - Improved Length object comparisons using length_mm attribute
+        - Better error handling for type mismatches
+
+        Args:
+            ctrl: The UI control to update
+            data: The internal data value to display
+            choicelist: List of valid choices for combo controls
+            choice (dict): Choice configuration containing type, style, and formatting flags
+        """
         dtype = choice.get("type")
         dstyle = choice.get("style")
         update_needed = False
