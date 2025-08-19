@@ -92,6 +92,13 @@ def get_operation_choices(
         "op_image": (_("Image"), default_raster_speed),
     }
     idx = 0
+
+    def use_percent_for_power_display():
+        return getattr(context, "use_percent_for_power_display", False)
+
+    def use_mm_min_for_speed_display():
+        return getattr(context, "use_mm_min_for_speed_display", False)
+
     for optype, (opname, sensible_speed) in operations.items():
         idx += 10
         choices.extend(
@@ -101,7 +108,8 @@ def get_operation_choices(
                     "object": context,
                     "default": "1000",
                     "type": float,
-                    "trailer": "/1000",
+                    "style": "power",
+                    "percent": use_percent_for_power_display,
                     "label": _("Power"),
                     "tip": _("Default power for {op}").format(op=opname),
                     "section": "Operation Defaults",
@@ -112,7 +120,8 @@ def get_operation_choices(
                     "object": context,
                     "default": sensible_speed,
                     "type": float,
-                    "trailer": "mm/s",
+                    "style": "speed",
+                    "perminute": use_mm_min_for_speed_display,
                     "label": _("Speed"),
                     "tip": _("Default speed for {op}").format(op=opname),
                     "section": "Operation Defaults",

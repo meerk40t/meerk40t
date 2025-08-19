@@ -165,7 +165,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             # We have additional stuff to be added, so be it
             for injected_choice in injector:
                 choices.append(injected_choice)
-        if len(choices) == 0:
+        if not choices:
             # No choices to process.
             return
         for choice in choices:
@@ -173,24 +173,12 @@ class ChoicePropertyPanel(ScrolledPanel):
             if needs_dynamic_call:
                 # Calls dynamic function to update this dictionary before production
                 needs_dynamic_call(choice)
-        # Let's see whether we have a section and a page property...
+        # Set default values for required keys
         for choice in choices:
-            try:
-                unused_check = choice["subsection"]
-            except KeyError:
-                choice["subsection"] = ""
-            try:
-                unused_check = choice["section"]
-            except KeyError:
-                choice["section"] = ""
-            try:
-                unused_check = choice["page"]
-            except KeyError:
-                choice["page"] = ""
-            try:
-                unused_check = choice["priority"]
-            except KeyError:
-                choice["priority"] = "ZZZZZZZZ"
+            choice.setdefault("subsection", "")
+            choice.setdefault("section", "")
+            choice.setdefault("page", "")
+            choice.setdefault("priority", "ZZZZZZZZ")
         # print ("Choices: " , choices)
         prechoices = sorted(
             sorted(
@@ -222,17 +210,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                             else:
                                 positive.append(item.lower())
                         for i, sorted_choice in enumerate(prechoices):
-                            try:
-                                this_page = sorted_choice["page"].lower()
-                            except KeyError:
-                                this_page = ""
+                            this_page = sorted_choice.get("page", "").lower()
                             if len(negative) > 0 and len(positive) > 0:
                                 # Negative takes precedence:
-                                if not this_page in negative and this_page in positive:
+                                if this_page not in negative and this_page in positive:
                                     self.choices.append(sorted_choice)
                             elif len(negative) > 0:
                                 # only negative....
-                                if not this_page in negative:
+                                if this_page not in negative:
                                     self.choices.append(sorted_choice)
                             elif len(positive) > 0:
                                 # only positive....
@@ -280,24 +265,26 @@ class ChoicePropertyPanel(ScrolledPanel):
         for i, choice in enumerate(self.choices):
             wants_listener = True
             current_col_entry += 1
-            if self.entries_per_column is not None:
-                if current_col_entry >= self.entries_per_column:
-                    current_col_entry = -1
-                    prev_main = sizer_main
-                    sizer_main = wx.BoxSizer(wx.VERTICAL)
-                    if prev_main == active_page_sizer:
-                        active_page_sizer = sizer_main
-                    if prev_main == active_section_sizer:
-                        active_section_sizer = sizer_main
-                    if prev_main == active_subsection_sizer:
-                        active_subsection_sizer = sizer_main
+            if (
+                self.entries_per_column is not None
+                and current_col_entry >= self.entries_per_column
+            ):
+                current_col_entry = -1
+                prev_main = sizer_main
+                sizer_main = wx.BoxSizer(wx.VERTICAL)
+                if prev_main == active_page_sizer:
+                    active_page_sizer = sizer_main
+                if prev_main == active_section_sizer:
+                    active_section_sizer = sizer_main
+                if prev_main == active_subsection_sizer:
+                    active_subsection_sizer = sizer_main
 
-                    root_horizontal_sizer.Add(sizer_main, 1, wx.EXPAND, 0)
-                    # I think we should reset all sections to make them
-                    # reappear in the next columns
-                    last_page = ""
-                    last_section = ""
-                    last_subsection = ""
+                root_horizontal_sizer.Add(sizer_main, 1, wx.EXPAND, 0)
+                # I think we should reset all sections to make them
+                # reappear in the next columns
+                last_page = ""
+                last_section = ""
+                last_subsection = ""
 
             # Validate and prepare choice using helper method
             validated_choice, attr, obj, is_valid = self._validate_and_prepare_choice(
@@ -308,24 +295,17 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             # Use the validated choice from here on
             choice = validated_choice
+            # Get data and data type using helper method
+            data, data_type = self._get_choice_data_and_type(choice, obj, attr)
+            if data is None:
+                continue
+            data_style = choice.get("style", None)
+            data_type = type(data)
+            data_type = choice.get("type", data_type)
 
             this_subsection = choice.get("subsection", "")
             this_section = choice.get("section", "")
             this_page = choice.get("page", "")
-            ctrl_width = choice.get("width", 0)
-            # Do we have a parameter to add a trailing label after the control
-            trailer = choice.get("trailer")
-
-            # Handle dynamic trailer for power controls
-            if data_type == float and data_style == "power":
-                percent_flag = choice.get("percent", False)
-                percent_mode = (
-                    percent_flag() if callable(percent_flag) else percent_flag
-                )
-                if percent_mode:
-                    trailer = "%"
-                else:
-                    trailer = "/1000"
 
             # Get additional signals using helper method
             additional_signal = self._get_additional_signals(choice)
@@ -335,16 +315,18 @@ class ChoicePropertyPanel(ScrolledPanel):
             if weight < 0:
                 weight = 0
 
-            # Get data and data type using helper method
-            data, data_type = self._get_choice_data_and_type(choice, obj, attr)
-            if data is None:
-                continue
-            data_style = choice.get("style", None)
-            data_type = type(data)
-            data_type = choice.get("type", data_type)
             choice_list = None
             label = choice.get("label", attr)  # Undefined label is the attr
 
+            # Do we have a parameter to add a trailing label after the control
+            trailer = choice.get("trailer")
+            # Handle dynamic trailer for power controls
+            if data_type == float and data_style == "power":
+                percent_flag = choice.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+                trailer = "%" if percent_mode else "/1000"
             if last_page != this_page:
                 expansion_flag = 0
                 last_section = ""
@@ -569,9 +551,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         control.Enable(conditional_enabled)
                     elif len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        conditional_enabled = bool(
-                            c_from <= getattr(c_obj, c_attr) <= c_to
-                        )
+                        conditional_enabled = c_from <= getattr(c_obj, c_attr) <= c_to
                         c_equals = (c_from, c_to)
                         control.Enable(conditional_enabled)
 
@@ -620,10 +600,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         except ValueError:
                             pass
                         if data is None:
-                            try:
-                                data = choice["default"]
-                            except KeyError:
-                                pass
+                            data = choice.get("default")
                     if data is None:
                         # print (f"Invalid data based on {value}, exiting")
                         return
@@ -633,6 +610,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         dummy = hasattr(ctrl, "GetValue")
                     except RuntimeError:
                         return
+                    # self.set_control_value(ctrl, data, dtype, dstyle)
                     if dtype == bool:
                         # Bool type objects get a checkbox.
                         if ctrl.GetValue() != data:
@@ -701,7 +679,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                             except ValueError:
                                 update_needed = True
                             if update_needed:
-                                ctrl.SetValue(str(data))
+                                # Use consistent display formatting for all text controls
+                                display_value = self._format_text_display_value(
+                                    data, choice
+                                )
+                                ctrl.SetValue(display_value)
                     elif dtype == Length:
                         if float(data) != float(Length(ctrl.GetValue())):
                             update_needed = True
@@ -722,7 +704,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
 
             # Use helper method for setting up control properties
-            self._setup_control_properties(choice, control, attr, obj)
+            self._setup_choice_control_properties(choice, control, attr, obj)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection
@@ -752,8 +734,12 @@ class ChoicePropertyPanel(ScrolledPanel):
         return False
 
     # UI Helper Methods
-    def _create_text_control(self, label, data, data_type, config, handler_factory):
+    def _create_text_control(self, label, data, config, handler_factory):
         """Unified TextCtrl creation for all text-based inputs."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
+        data_style = config.get("style")
+
         # Handle special flat style
         if config.get("style") == "flat":
             control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -777,7 +763,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         )
 
         # Set display value
-        display_value = self._format_text_display_value(data, data_type, config)
+        display_value = self._format_text_display_value(data, config)
         control.SetValue(display_value)
 
         # Apply width and validation
@@ -801,10 +787,10 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         return control, control_sizer
 
-    def _create_combo_control(
-        self, label, data, data_type, config, handler_factory=None
-    ):
+    def _create_combo_control(self, label, data, config, handler_factory=None):
         """Unified wxComboBox creation for all combo-based inputs."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
         data_style = config.get("style")
 
         # Determine sizer type based on style
@@ -842,9 +828,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             if label != "":
                 label_text = wxStaticText(self, id=wx.ID_ANY, label=label)
                 control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-            control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        else:
-            control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         # Set up event handler
         if handler_factory:
@@ -934,10 +918,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if least is not None:
                     control.SetValue(least)
 
-    def _create_radio_control(
-        self, label, data, data_type, config, handler_factory=None
-    ):
+    def _create_radio_control(self, label, data, config, handler_factory=None):
         """Unified radio control creation for radio and option styles."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
         data_style = config.get("style")
 
         # Create horizontal sizer for both types
@@ -996,7 +980,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             # Add label if provided
             if label != "":
-                label_text = wxStaticText(self, id=wx.ID_ANY, label=label + " ")
+                label_text = wxStaticText(self, id=wx.ID_ANY, label=f"{label} ")
                 control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
             control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -1022,10 +1006,10 @@ class ChoicePropertyPanel(ScrolledPanel):
             else:
                 control.SetSelection(int(data))
 
-    def _create_button_control(
-        self, label, data, data_type, config, handler_factory=None
-    ):
+    def _create_button_control(self, label, data, config, handler_factory=None):
         """Unified button control creation for button, color, and checkbox styles."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
         data_style = config.get("style")
         wants_listener = True  # Most button types want listeners
 
@@ -1086,10 +1070,11 @@ class ChoicePropertyPanel(ScrolledPanel):
             control.SetForegroundColour(wx.WHITE)
         control.color = color
 
-    def _create_slider_control(
-        self, label, data, data_type, config, handler_factory=None
-    ):
+    def _create_slider_control(self, label, data, config, handler_factory=None):
         """Unified slider control creation for numeric slider inputs."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
+        data_style = config.get("style")
         # Create labeled sizer
         control_sizer = self._create_labeled_sizer(label)
 
@@ -1225,6 +1210,9 @@ class ChoicePropertyPanel(ScrolledPanel):
         """
         Dispatch table for control creation. Returns a tuple of (factory_function, handler_factory, needs_special_handling).
         If needs_special_handling is True, the factory handles its own sizer addition.
+
+        Note: Lambda parameters in the dispatch table define the interface for when the lambdas are invoked
+        by _create_control_using_dispatch, not references to variables in the current scope.
         """
         # Import types for dispatch table
         from meerk40t.core.units import Angle, Length
@@ -1251,7 +1239,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             ),
             (float, "power"): (
                 self._create_text_control,
-                lambda attr, control, obj, data_type, additional_signal, choice: self._make_power_text_handler(attr, control, obj, data_type, additional_signal, choice),
+                lambda attr, control, obj, data_type, additional_signal, choice: self._make_power_text_handler(attr, control, obj, additional_signal, choice),
                 False,
             ),
             (str, "multiline"): (
@@ -1261,7 +1249,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             ),
             (str, "file"): (
                 self._create_text_control,
-                lambda attr, control, obj, data_type, additional_signal, c, label: self._make_file_text_handler_with_button(attr, control, obj, data_type, additional_signal, c, label),
+                lambda attr, control, obj, data_type, additional_signal, config, label: self._make_file_text_handler_with_button(attr, control, obj, data_type, additional_signal, config, label),
                 False,
             ),
             (Length, None): (
@@ -1369,13 +1357,10 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         # Try with None style for basic types
         key = (data_type, None)
-        if key in dispatch_table:
-            return dispatch_table[key]
-
-        return None, None, False
+        return dispatch_table.get(key, (None, None, False))
 
     def _create_control_using_dispatch(
-        self, label, data, data_type, data_style, c, attr, obj, additional_signal
+        self, label, data, data_type, data_style, config, attr, obj, additional_signal
     ):
         """
         Create a control using the dispatch table system.
@@ -1395,7 +1380,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif factory == "chart":
                 return (
                     self._create_chart_control(
-                        label, data, data_type, c, attr, obj, additional_signal
+                        label, data, config, attr, obj, additional_signal
                     ),
                     None,
                     True,
@@ -1403,7 +1388,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif factory == "color_type":
                 return (
                     self._create_color_type_control(
-                        label, data, data_type, c, attr, obj, additional_signal
+                        label, data, config, attr, obj, additional_signal
                     ),
                     None,
                     True,
@@ -1414,7 +1399,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         if factory == self._create_binary_control:
             # Binary controls have a different signature
             controls, control_sizer = factory(
-                label, data, data_type, c, attr, obj, additional_signal
+                label, data, data_type, config, attr, obj, additional_signal
             )
             return controls, control_sizer, False
         elif data_style == "file":
@@ -1422,14 +1407,13 @@ class ChoicePropertyPanel(ScrolledPanel):
             control, control_sizer = factory(
                 label,
                 data,
-                data_type,
-                {**c, "style": data_style},
+                {**config, "style": data_style},
                 lambda: None,  # Dummy handler for now
             )
             # Now bind the real handler after control is created
             if handler_factory is not None:
                 real_handler = handler_factory(
-                    attr, control, obj, data_type, additional_signal, c, label
+                    attr, control, obj, data_type, additional_signal, config, label
                 )
                 if hasattr(control, "Bind"):
                     control.Bind(wx.EVT_TEXT, real_handler)
@@ -1439,8 +1423,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             control, control_sizer = factory(
                 label,
                 data,
-                data_type,
-                c,
+                config,
                 lambda: None,  # Dummy handler for now
             )
             # Now bind the real handler after control is created
@@ -1461,8 +1444,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             control, control_sizer, wants_listener = factory(
                 label,
                 data,
-                data_type,
-                c,
+                config,
                 lambda: None,  # Dummy handler for now
             )
             # Now bind the real handler after control is created
@@ -1476,8 +1458,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             control, control_sizer, wants_listener = factory(
                 label,
                 data,
-                data_type,
-                c,
+                config,
                 lambda: None,  # Dummy handler for now
             )
             # Now bind the real handler after control is created
@@ -1491,8 +1472,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             control, control_sizer, wants_listener = factory(
                 label,
                 data,
-                data_type,
-                c,
+                config,
                 lambda: None,  # Dummy handler for now
             )
             # Now bind the real handler after control is created
@@ -1506,10 +1486,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             control, control_sizer = factory(
                 label,
                 data,
-                data_type,
-                {**c, "style": data_style}
+                {**config, "style": data_style}
                 if factory == self._create_text_control
-                else c,
+                else config,
                 lambda: None,  # Dummy handler for now
             )
             # Now bind the real handler after control is created
@@ -1517,7 +1496,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data_style == "power":
                     # Power controls need the choice dictionary for percent mode
                     real_handler = handler_factory(
-                        attr, control, obj, data_type, additional_signal, c
+                        attr, control, obj, data_type, additional_signal, config
+                    )
+                elif data_style == "file":
+                    # File controls need extra parameters
+                    real_handler = handler_factory(
+                        attr, control, obj, data_type, additional_signal, config, label
                     )
                 else:
                     real_handler = handler_factory(
@@ -1545,24 +1529,31 @@ class ChoicePropertyPanel(ScrolledPanel):
         control = wxStaticText(self, label=label)
         return control
 
-    def _create_chart_control(
-        self, label, data, data_type, c, attr, obj, additional_signal
-    ):
+    def _create_chart_control(self, label, data, config, attr, obj, additional_signal):
         """Create chart/list controls (placeholder - keep existing logic for now)."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
+        data_style = config.get("style")
         # This would contain the existing chart creation logic
         # For now, return None to indicate we should fall back to original logic
         return None
 
     def _create_color_type_control(
-        self, label, data, data_type, c, attr, obj, additional_signal
+        self, label, data, config, attr, obj, additional_signal
     ):
         """Create Color type controls (placeholder - keep existing logic for now)."""
+        # Extract type and style from config
+        data_type = config.get("type", type(data))
+        data_style = config.get("style")
         # This would contain the existing Color type creation logic
         # For now, return None to indicate we should fall back to original logic
         return None
 
-    def _format_text_display_value(self, data, data_type, config):
+    def _format_text_display_value(self, data, config):
         """Format data for display in text controls."""
+        # Get type from config, fallback to actual data type
+        data_type = config.get("type", type(data))
+
         if data_type == Length and hasattr(data, "preferred_length"):
             if not data._preferred_units:
                 data._preferred_units = "mm"
@@ -1607,20 +1598,6 @@ class ChoicePropertyPanel(ScrolledPanel):
             return StaticBoxSizer(self, wx.ID_ANY, label, orientation)
         else:
             return wx.BoxSizer(orientation)
-
-    def _setup_control_properties(self, control, config, data=None):
-        """Helper method to setup common control properties."""
-        ctrl_width = config.get("width", 0)
-        self._apply_control_width(control, ctrl_width)
-
-        if data is not None:
-            control.SetValue(str(data))
-
-        tooltip = config.get("tip")
-        if tooltip:
-            control.SetToolTip(tooltip)
-
-        return control
 
     def _create_control_with_handler(
         self,
@@ -1859,7 +1836,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         return handle_angle_text_change
 
-    def _make_power_text_handler(self, param, ctrl, obj, dtype, addsig, choice):
+    def _make_power_text_handler(self, param, ctrl, obj, addsig, choice):
         """Creates a handler for power text controls that supports both absolute and percentage modes."""
 
         def handle_power_text_change(event):
@@ -2073,9 +2050,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             data = getattr(obj, attr)
         else:
             # if obj lacks attr, default must have been assigned.
-            try:
-                data = c["default"]
-            except KeyError:
+            data = c.get("default")
+            if data is None:
                 # This choice is in error.
                 return None, None
 
@@ -2094,7 +2070,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 additional_signal.append(_sig)
         return additional_signal
 
-    def _setup_control_properties(self, choice, control, attr, obj):
+    def _setup_choice_control_properties(self, choice, control, attr, obj):
         """Set up control properties like tooltips, help, and conditional enabling."""
         if control is None:
             return
@@ -2138,7 +2114,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Enable(enabled)
 
     def _setup_update_listener(
-        self, c, control, attr, obj, data_type, data_style, choice_list
+        self, config, control, attr, obj, data_type, data_style, choice_list
     ):
         """Set up update listener for control synchronization."""
 
@@ -2157,10 +2133,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     except ValueError:
                         pass
                     if data is None:
-                        try:
-                            data = c["default"]
-                        except KeyError:
-                            pass
+                        data = config.get("default")
                 if data is None:
                     return
 
@@ -2171,7 +2144,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return
 
                 # Update control based on data type and style
-                self._update_control_value(ctrl, data, dtype, dstyle, choicelist)
+                self._update_control_value(
+                    ctrl, data, dtype, dstyle, choicelist, config
+                )
 
             return listen_to_myself
 
@@ -2181,7 +2156,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.listeners.append((attr, update_listener, obj))
         self.context.listen(attr, update_listener)
 
-    def _update_control_value(self, ctrl, data, dtype, dstyle, choicelist):
+    def _update_control_value(self, ctrl, data, dtype, dstyle, choicelist, config):
         """Update a control's value based on its type and style."""
         update_needed = False
 
@@ -2225,13 +2200,22 @@ class ChoicePropertyPanel(ScrolledPanel):
             set_color(data)
         elif dtype in (str, int, float):
             if hasattr(ctrl, "GetValue"):
+                cval = ctrl.GetValue()
+                if dstyle == "power" and config.get("percent", False):
+                    try:
+                        cval = float(cval) * 10
+                    except (ValueError, TypeError):
+                        pass
                 try:
-                    if dtype(ctrl.GetValue()) != data:
+                    if dtype(cval) != data:
                         update_needed = True
                 except ValueError:
                     update_needed = True
                 if update_needed:
-                    ctrl.SetValue(str(data))
+                    sdata = str(data)
+                    if dstyle == "power" and config.get("percent", False):
+                        sdata = str(float(data) / 10.0)
+                    ctrl.SetValue(sdata)
         elif dtype == Length:
             if float(data) != float(Length(ctrl.GetValue())):
                 update_needed = True
