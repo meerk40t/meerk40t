@@ -1805,6 +1805,17 @@ class ChoicePropertyPanel(ScrolledPanel):
     def _make_button_color_handler(self, param, ctrl, obj, addsig):
         """Creates a handler for color button controls."""
 
+        def set_color(control, color: Color):
+            control.SetLabel(str(color.hex))
+            control.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+            if Color.distance(color, Color("black")) > Color.distance(
+                color, Color("white")
+            ):
+                control.SetForegroundColour(wx.BLACK)
+            else:
+                control.SetForegroundColour(wx.WHITE)
+            control.color = color
+
         def handle_color_button_click(event):
             color_data = wx.ColourData()
             color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
