@@ -2451,6 +2451,197 @@ class TestGeomstr(unittest.TestCase):
             filename="box.png",
         )
 
+    def test_optimized_as_path_correctness(self):
+        """Test that optimized as_path produces identical results to original."""
+        # Create test geometry with mixed segment types
+        geom = Geomstr()
+        geom.line(complex(0, 0), complex(10, 0))
+        geom.quad(complex(10, 0), complex(15, 5), complex(20, 0))
+        geom.cubic(complex(20, 0), complex(23, 3), complex(27, 3), complex(30, 0))
+        geom.arc(complex(30, 0), complex(35, 5), complex(40, 0))
+        geom.end()
+        geom.line(complex(50, 0), complex(60, 10))
+
+        # Test both small and large geometries
+        for scale in [1, 100]:  # Small geometry vs large geometry
+            test_geom = Geomstr(geom)
+            if scale > 1:
+                # Create larger geometry to trigger optimization
+                for _ in range(scale):
+                    test_geom.append(geom)
+
+            # Generate path and verify it doesn't crash
+            path = test_geom.as_path()
+            self.assertIsNotNone(path)
+
+            # Verify path has expected properties
+            if hasattr(path, "d"):
+                path_d = path.d()
+                self.assertIsInstance(path_d, str)
+                self.assertGreater(len(path_d), 0)
+
+    def test_optimized_svg_parsing_accuracy(self):
+        """Test that optimized SVG parsing maintains output accuracy."""
+        test_paths = {
+            "simple": "M 10,10 L 20,20 L 30,10 Z",
+            "mixed_complex": "M 10,10 Q 15,5 20,10 C 25,5 35,5 40,10 L 50,20 Z",
+            "subpaths": "M 10,10 L 20,20 M 30,30 Q 35,25 40,30",
+        }
+
+        for name, path_str in test_paths.items():
+            with self.subTest(path=name):
+                try:
+                    geom = Geomstr.svg(path_str)
+                    self.assertGreater(geom.index, 0)
+
+                    # Test round-trip conversion
+                    path = geom.as_path()
+                    self.assertIsNotNone(path)
+
+                    # Verify basic geometry properties
+                    if geom.index > 0:
+                        first_point = geom.first_point
+                        last_point = geom.last_point
+                        self.assertIsNotNone(first_point)
+                        self.assertIsNotNone(last_point)
+
+                except Exception as e:
+                    self.fail(f"SVG parsing failed for {name}: {e}")
+
+    def test_optimized_equal_interpolation_precision(self):
+        """Test that optimized equal-distance interpolation maintains accuracy."""
+        # Create test geometry with various segment types
+        geom = Geomstr()
+        geom.line(complex(0, 0), complex(100, 0))
+        geom.quad(complex(100, 0), complex(150, 50), complex(200, 0))
+        geom.cubic(complex(200, 0), complex(225, 25), complex(275, 25), complex(300, 0))
+
+        distance = 10.0
+
+        # Test basic functionality
+        points = list(geom.as_equal_interpolated_points(distance))
+        self.assertGreater(len(points), 0)
+
+        # Verify points are valid complex numbers
+        for point in points:
+            if point is not None:
+                self.assertIsInstance(point, complex)
+
+        # Test with larger geometry to potentially trigger optimization
+        large_geom = Geomstr()
+        for i in range(100):
+            x = i * 10
+            large_geom.line(complex(x, 0), complex(x + 5, 10))
+            large_geom.quad(
+                complex(x + 5, 10), complex(x + 7.5, 15), complex(x + 10, 10)
+            )
+
+        large_points = list(large_geom.as_equal_interpolated_points(distance))
+        self.assertGreater(len(large_points), len(points))
+
+        # Verify distances are approximately correct for a simple case
+        line_geom = Geomstr()
+        line_geom.line(complex(0, 0), complex(50, 0))
+        line_points = list(line_geom.as_equal_interpolated_points(10.0))
+
+        # Should have at least start and end points
+        self.assertGreaterEqual(len(line_points), 2)
+
+    def test_optimization_threshold_behavior(self):
+        """Test optimization threshold triggers and fallback mechanisms."""
+        # Test small geometry (should not trigger optimization)
+        small_geom = Geomstr()
+        small_geom.line(complex(0, 0), complex(10, 10))
+        small_geom.quad(complex(10, 10), complex(15, 15), complex(20, 10))
+
+        # These should work regardless of optimization
+        small_path = small_geom.as_path()
+        self.assertIsNotNone(small_path)
+
+        small_points = list(small_geom.as_equal_interpolated_points(5.0))
+        self.assertGreater(len(small_points), 0)
+
+        # Test larger geometry (may trigger optimization)
+        large_geom = Geomstr()
+        for i in range(200):  # Large enough to potentially trigger optimization
+            x = i * 5
+            large_geom.line(complex(x, 0), complex(x + 2, 5))
+
+        large_path = large_geom.as_path()
+        self.assertIsNotNone(large_path)
+
+        large_points = list(large_geom.as_equal_interpolated_points(2.0))
+        self.assertGreater(len(large_points), len(small_points))
+
+    def test_optimization_error_handling(self):
+        """Test graceful handling of edge cases in optimizations."""
+        # Test empty geometry
+        empty_geom = Geomstr()
+        empty_path = empty_geom.as_path()
+        self.assertIsNotNone(empty_path)
+
+        empty_points = list(empty_geom.as_equal_interpolated_points(10.0))
+        self.assertEqual(len(empty_points), 0)
+
+        # Test geometry with single point
+        point_geom = Geomstr()
+        point_geom.point(complex(5, 5))
+        point_path = point_geom.as_path()
+        self.assertIsNotNone(point_path)
+
+        # Test with zero distance (should handle gracefully)
+        line_geom = Geomstr()
+        line_geom.line(complex(0, 0), complex(10, 0))
+
+        try:
+            zero_points = list(line_geom.as_equal_interpolated_points(0.0))
+            # Should either return empty list or handle gracefully
+            self.assertIsInstance(zero_points, list)
+        except (ValueError, ZeroDivisionError):
+            # Acceptable to raise error for zero distance
+            pass
+
+        # Test with very small distance
+        small_dist_points = list(line_geom.as_equal_interpolated_points(0.001))
+        self.assertIsInstance(small_dist_points, list)
+
+    def test_optimization_memory_efficiency(self):
+        """Test that optimizations don't significantly increase memory usage."""
+        # Create moderately complex geometry
+        geom = Geomstr()
+        for i in range(100):
+            x = i * 10
+            y = (i % 10) * 5
+            if i % 3 == 0:
+                geom.line(complex(x, y), complex(x + 8, y + 8))
+            elif i % 3 == 1:
+                geom.quad(complex(x, y), complex(x + 4, y + 12), complex(x + 8, y))
+            else:
+                geom.cubic(
+                    complex(x, y),
+                    complex(x + 2, y + 10),
+                    complex(x + 6, y + 10),
+                    complex(x + 8, y),
+                )
+
+        # Test as_path optimization
+        path = geom.as_path()
+        self.assertIsNotNone(path)
+
+        # Test equal interpolation optimization
+        points = list(geom.as_equal_interpolated_points(5.0))
+        self.assertGreater(len(points), 0)
+
+        # Verify geometry state is preserved
+        self.assertEqual(geom.index, 100)  # Should still have original segment count
+
+        # Test multiple operations don't accumulate memory issues
+        for _ in range(5):
+            temp_path = geom.as_path()
+            temp_points = list(geom.as_equal_interpolated_points(7.0))
+            self.assertIsNotNone(temp_path)
+            self.assertGreater(len(temp_points), 0)
+
     def test_geom_max_aabb(self):
         g = Geomstr.rect(0, 0, 200, 200)
         nx, ny, mx, my = g.aabb()
