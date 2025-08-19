@@ -784,15 +784,9 @@ def batch_complex_transformations(complex_points, transformation_complex):
         return []
 
     # Convert to numpy arrays for vectorized operations
-    try:
-        import numpy as np
-
-        points_array = np.array(complex_points, dtype=complex)
-        result = points_array * transformation_complex
-        return result.tolist()
-    except ImportError:
-        # Fallback to list comprehension if NumPy not available
-        return [point * transformation_complex for point in complex_points]
+    points_array = np.array(complex_points, dtype=complex)
+    result = points_array * transformation_complex
+    return result.tolist()
 
 
 def batch_complex_shifts(complex_points, shift_amount):
@@ -810,15 +804,9 @@ def batch_complex_shifts(complex_points, shift_amount):
         return []
 
     # Convert to numpy arrays for vectorized operations
-    try:
-        import numpy as np
-
-        points_array = np.array(complex_points, dtype=complex)
-        result = points_array - shift_amount
-        return result.tolist()
-    except ImportError:
-        # Fallback to list comprehension if NumPy not available
-        return [point - shift_amount for point in complex_points]
+    points_array = np.array(complex_points, dtype=complex)
+    result = points_array - shift_amount
+    return result.tolist()
 
 
 def batch_trigonometric_operations(angles, radius=1.0):
@@ -832,20 +820,10 @@ def batch_trigonometric_operations(angles, radius=1.0):
     Returns:
         Tuple of (dx_array, dy_array) where dx = radius * cos(angle), dy = radius * sin(angle)
     """
-    try:
-        import numpy as np
-
-        angles_array = np.array(angles)
-        dx = radius * np.cos(angles_array)
-        dy = radius * np.sin(angles_array)
-        return dx.tolist(), dy.tolist()
-    except ImportError:
-        # Fallback to individual calculations
-        import math
-
-        dx = [radius * math.cos(angle) for angle in angles]
-        dy = [radius * math.sin(angle) for angle in angles]
-        return dx, dy
+    angles_array = np.array(angles)
+    dx = radius * np.cos(angles_array)
+    dy = radius * np.sin(angles_array)
+    return dx.tolist(), dy.tolist()
 
 
 def batch_wobble_points(x0, y0, x1, y1, interval, num_points):
@@ -864,26 +842,14 @@ def batch_wobble_points(x0, y0, x1, y1, interval, num_points):
     if num_points <= 1:
         return [(x0, y0)]
 
-    try:
-        import numpy as np
+    # Generate parameter values from 0 to 1
+    t_values = np.linspace(0, 1, num_points)
 
-        # Generate parameter values from 0 to 1
-        t_values = np.linspace(0, 1, num_points)
+    # Vectorized interpolation
+    x_values = x0 + t_values * (x1 - x0)
+    y_values = y0 + t_values * (y1 - y0)
 
-        # Vectorized interpolation
-        x_values = x0 + t_values * (x1 - x0)
-        y_values = y0 + t_values * (y1 - y0)
-
-        return list(zip(x_values.tolist(), y_values.tolist()))
-    except ImportError:
-        # Fallback to individual calculations
-        points = []
-        for i in range(num_points):
-            t = i / (num_points - 1) if num_points > 1 else 0
-            x = x0 + t * (x1 - x0)
-            y = y0 + t * (y1 - y0)
-            points.append((x, y))
-        return points
+    return list(zip(x_values.tolist(), y_values.tolist()))
 
 
 def batch_x_intercepts(segments, scanline_y, geom):
@@ -1058,22 +1024,10 @@ def batch_angle_calculations(x0_array, y0_array, x1_array, y1_array, angle_offse
     Returns:
         Array of angles in radians
     """
-    try:
-        import numpy as np
-
-        dx = np.array(x1_array) - np.array(x0_array)
-        dy = np.array(y1_array) - np.array(y0_array)
-        angles = np.arctan2(dy, dx) + angle_offset
-        return angles.tolist()
-    except ImportError:
-        # Fallback to individual calculations
-        import math
-
-        angles = []
-        for x0, y0, x1, y1 in zip(x0_array, y0_array, x1_array, y1_array):
-            angle = math.atan2(y1 - y0, x1 - x0) + angle_offset
-            angles.append(angle)
-        return angles
+    dx = np.array(x1_array) - np.array(x0_array)
+    dy = np.array(y1_array) - np.array(y0_array)
+    angles = np.arctan2(dy, dx) + angle_offset
+    return angles.tolist()
 
 
 def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
