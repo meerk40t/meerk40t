@@ -297,7 +297,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             choice = validated_choice
             # Get data and data type using helper method
             data, data_type = self._get_choice_data_and_type(choice, obj, attr)
-            if data is None:
+            if data is None and data_type is None:
                 continue
             data_style = choice.get("style", None)
             data_type = type(data)
@@ -2047,16 +2047,21 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Get data and data type for a choice."""
         # get default value
         if hasattr(obj, attr):
+            # Object has the attribute, use its value (can be None and that's fine)
             data = getattr(obj, attr)
         else:
-            # if obj lacks attr, default must have been assigned.
-            data = c.get("default")
-            if data is None:
-                # This choice is in error.
+            # Object lacks the attribute, check if a default is provided
+            if "default" not in c:
+                # No default provided for missing attribute - this is an error
                 return None, None
+            # Use the provided default (can be None and that's fine)
+            data = c.get("default")
 
         data_type = type(data)
-        data_type = c.get("type", data_type)
+        # Override with specified type if provided
+        specified_type = c.get("type", None)
+        if specified_type is not None:
+            data_type = specified_type
         return data, data_type
 
     def _get_additional_signals(self, c):
