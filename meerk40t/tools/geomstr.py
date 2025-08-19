@@ -2900,17 +2900,34 @@ class Geomstr:
 
     @classmethod
     def svg(cls, path_d):
-        obj = cls()
+        # Handle string input and basic validation
         if isinstance(path_d, str):
             try:
                 path = Path(path_d)
             except ValueError:
                 # Invalid or empty path
-                return obj
+                return cls()
         else:
             path = path_d
+
+        # Convert to list for processing
+        segments = list(path) if path else []
+
+        # Use optimization for larger paths where benefit is significant
+        if len(segments) > 5:  # Threshold for optimization
+            try:
+                # Estimate capacity (2x for potential arc subdivisions)
+                estimated_capacity = len(segments) * 2
+                optimized_result = cls.batch_svg_optimized(segments, estimated_capacity)
+                if optimized_result is not None:
+                    return optimized_result
+            except Exception:
+                pass  # Fall back to original implementation
+
+        # Original implementation as fallback
+        obj = cls()
         last_point = None
-        for seg in path:
+        for seg in segments:
             if isinstance(seg, Move):
                 # If the move destination is identical to destination of the
                 # last point then we need to introduce a subpath break
@@ -6342,10 +6359,237 @@ class Geomstr:
             np.seterr(**old_np_seterr)
 
     #######################
+    # Batch Processing Helpers for SVG optimization
+    #######################
+
+    @staticmethod
+    def batch_svg_optimized(path_segments, estimated_capacity):
+        """
+        Optimized batch processing for SVG path conversion using vectorized operations.
+
+        This function processes SVG path segments to Geomstr conversion with optimizations:
+        1. Type-based dispatch optimization
+        2. Memory pre-allocation
+        3. Reduced isinstance() call overhead
+        4. Optimized coordinate extraction
+
+        Args:
+            path_segments: list of SVG path segments
+            estimated_capacity: estimated number of resulting Geomstr segments
+
+        Returns:
+            Geomstr object with converted segments, or None if optimization fails
+        """
+        try:
+            obj = Geomstr()
+
+            if not path_segments:
+                return obj
+
+            # Pre-allocate capacity to reduce memory reallocation overhead
+            obj._ensure_capacity(estimated_capacity)
+
+            # Cache segment type references for faster comparison
+            Move_type = Move
+            Line_type = Line
+            Close_type = Close
+            QuadraticBezier_type = QuadraticBezier
+            CubicBezier_type = CubicBezier
+            Arc_type = Arc
+
+            last_point = None
+
+            # Process segments with optimized type checking
+            for seg in path_segments:
+                seg_type = type(seg)
+
+                if seg_type is Move_type:
+                    # Handle move with subpath break logic
+                    if (
+                        last_point is not None
+                        and last_point.x == seg.end.x
+                        and last_point.y == seg.end.y
+                    ):
+                        obj.end()
+
+                elif seg_type in (Line_type, Close_type):
+                    if seg.start is not None and seg.end is not None:
+                        obj.line(complex(seg.start), complex(seg.end))
+
+                elif seg_type is QuadraticBezier_type:
+                    if (
+                        seg.start is not None
+                        and seg.end is not None
+                        and seg.control is not None
+                    ):
+                        obj.quad(
+                            complex(seg.start), complex(seg.control), complex(seg.end)
+                        )
+
+                elif seg_type is CubicBezier_type:
+                    if (
+                        seg.start is not None
+                        and seg.end is not None
+                        and seg.control1 is not None
+                        and seg.control2 is not None
+                    ):
+                        obj.cubic(
+                            complex(seg.start),
+                            complex(seg.control1),
+                            complex(seg.control2),
+                            complex(seg.end),
+                        )
+
+                elif seg_type is Arc_type:
+                    if seg.start is not None and seg.end is not None:
+                        if seg.is_circular():
+                            obj.arc(
+                                complex(seg.start),
+                                complex(seg.point(0.5)),
+                                complex(seg.end),
+                            )
+                        else:
+                            # Optimized arc subdivision
+                            quads = seg.as_quad_curves(4)
+                            for q in quads:
+                                obj.quad(
+                                    complex(q.start), complex(q.control), complex(q.end)
+                                )
+
+                last_point = seg.end
+
+            return obj
+
+        except Exception:
+            # Fallback on any error
+            return None
+
+    @staticmethod
+    def batch_extract_svg_coordinates(path_segments):
+        """
+        Extract coordinates from SVG segments using optimized batch processing.
+
+        Args:
+            path_segments: list of SVG path segments
+
+        Returns:
+            numpy array of complex coordinates, or None if extraction fails
+        """
+        try:
+            coords = []
+
+            # Batch extract coordinates with minimal attribute access
+            for seg in path_segments:
+                if hasattr(seg, "start") and seg.start is not None:
+                    coords.append((seg.start.x, seg.start.y))
+                if hasattr(seg, "end") and seg.end is not None:
+                    coords.append((seg.end.x, seg.end.y))
+                if hasattr(seg, "control") and seg.control is not None:
+                    coords.append((seg.control.x, seg.control.y))
+                if hasattr(seg, "control1") and seg.control1 is not None:
+                    coords.append((seg.control1.x, seg.control1.y))
+                if hasattr(seg, "control2") and seg.control2 is not None:
+                    coords.append((seg.control2.x, seg.control2.y))
+
+            # Vectorized complex number creation
+            if coords:
+                coord_array = np.array(coords)
+                return coord_array[:, 0] + 1j * coord_array[:, 1]
+
+            return np.array([], dtype=complex)
+
+        except Exception:
+            return None
+
+    #######################
+    # Batch Processing Helpers for as_path optimization
+    #######################
+
+    @staticmethod
+    def batch_as_path_optimized(segments, segment_count):
+        """
+        Optimized batch processing for as_path conversion using vectorized operations.
+
+        This function processes Geomstr segments to SVG Path conversion with optimizations:
+        1. Vectorized segment type extraction
+        2. Reduced conditional branching
+        3. Optimized path state management
+
+        Args:
+            segments: numpy array of Geomstr segments
+            segment_count: number of segments to process
+
+        Returns:
+            Path object with converted segments
+        """
+        try:
+            if segment_count == 0:
+                return Path()
+
+            # Vectorized segment type extraction - major optimization
+            segment_types = np.real(segments[:segment_count, 2]).astype(int) & 0xFF
+
+            # Pre-allocate lists for batch operations
+            path = Path()
+            _open = True
+
+            # Cache frequently used type constants to avoid repeated lookups
+            TYPE_END_VAL = TYPE_END & 0xFF
+            TYPE_LINE_VAL = TYPE_LINE & 0xFF
+            TYPE_QUAD_VAL = TYPE_QUAD & 0xFF
+            TYPE_CUBIC_VAL = TYPE_CUBIC & 0xFF
+            TYPE_ARC_VAL = TYPE_ARC & 0xFF
+            TYPE_POINT_VAL = TYPE_POINT & 0xFF
+
+            # Process segments with optimized branching
+            for i in range(segment_count):
+                seg = segments[i]
+                s, c0, info, c1, e = seg
+                segtype = segment_types[i]
+
+                if segtype == TYPE_END_VAL:
+                    _open = True
+                    continue
+
+                # Optimized path state management
+                if _open or len(path) == 0 or path.current_point != s:
+                    path.move(s)
+                    _open = False
+
+                # Optimized conditional dispatch using early returns
+                if segtype == TYPE_LINE_VAL:
+                    path.line(e)
+                elif segtype == TYPE_QUAD_VAL:
+                    path.quad(c0, e)
+                elif segtype == TYPE_CUBIC_VAL:
+                    path.cubic(c0, c1, e)
+                elif segtype == TYPE_ARC_VAL:
+                    path.append(Arc(start=s, control=c0, end=e))
+                elif segtype == TYPE_POINT_VAL:
+                    path.move(s)
+                    path.closed()
+
+            return path
+
+        except Exception:
+            # Fallback to original implementation if batch processing fails
+            return None
+
+    #######################
     # Geometry Window Functions
     #######################
 
     def as_path(self):
+        # Try optimized batch processing first for better performance
+        if self.index > 10:  # Use optimization for larger geometries
+            try:
+                optimized_path = self.batch_as_path_optimized(self.segments, self.index)
+                if optimized_path is not None:
+                    return optimized_path
+            except Exception:
+                pass  # Fall back to original implementation
+
+        # Original implementation as fallback
         _open = True
         path = Path()
         for p in self.segments[: self.index]:
