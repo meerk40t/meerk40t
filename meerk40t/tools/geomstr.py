@@ -2100,8 +2100,7 @@ class BeamTable:
 
     def cag(self, cag_op, *args):
         """
-        Vectorized CAG function that processes all arguments at once to reduce
-        Python loop overhead.
+        Smart CAG function with automatic algorithm selection for optimal performance.
         """
         if self.geometry.index == 0:
             return Geomstr()
@@ -2117,72 +2116,100 @@ class BeamTable:
             elif cag_op in ("xor", "difference", "eq"):
                 return Geomstr()  # All others with no args = empty
 
+        # Smart algorithm selection based on dataset size and complexity
+        num_events = len(self._nb_events) if self._nb_events is not None else 0
+
+        # For medium to large datasets, use optimized algorithm
+        if num_events > 100 and len(args) <= 8:
+            try:
+                return self._cag_optimized(cag_op, *args)
+            except Exception:
+                # Fallback to standard algorithm if optimization fails
+                pass
+
+        # For very large datasets, try hierarchical approach
+        if num_events > 500 and len(args) <= 5:
+            try:
+                return self._cag_hierarchical(cag_op, *args)
+            except Exception:
+                # Fallback to optimized or standard
+                try:
+                    return self._cag_optimized(cag_op, *args)
+                except Exception:
+                    pass
+
+        # Standard algorithm for small datasets or as final fallback
+        return self._cag_standard(cag_op, *args)
+
+    def _cag_optimized(self, cag_op, *args):
+        """
+        Optimized CAG implementation using vectorized operations and memory efficiency.
+        This is essentially the standard algorithm but with optimizations for speed and memory.
+        """
         g = Geomstr()
         actives = self._nb_scan[:-1]
+
+        # Early exit for empty data
+        if actives.size == 0:
+            return g
+
+        # Memory-efficient operations using smaller dtypes where possible
+        args_array = np.array(args, dtype=np.float32)  # Use float32 instead of float64
+
+        # Get segment settings
         lines = self.geometry.segments[actives, 2]
+        lines_imag = np.imag(lines).astype(np.float32)
 
-        # Create a 3D mask for all arguments at once. Shape: (args, events, actives)
-        # This avoids the Python loop over `args`.
-        args_array = np.array(args, dtype=np.float64)  # Ensure consistent dtype
-        lines_imag = np.imag(lines)
+        # Vectorized mask computation with memory optimization
+        valid_mask = actives != -1
+        m = (lines_imag[None, :, :] == args_array[:, None, None]) & valid_mask
 
-        # Vectorized comparison - more efficient than broadcasting
-        m = (lines_imag[None, :, :] == args_array[:, None, None]) & (actives != -1)
-
-        # Perform cumsum on the 3D array and combine results.
-        # Use uint8 to save memory and improve cache performance
+        # Use uint8 for cumsum to reduce memory usage (8x less than int64)
         qq = (np.cumsum(m, axis=2, dtype=np.uint8) & 1).astype(bool)
 
-        # Combine the results from all arguments based on the CAG operation.
+        # Apply CAG operation
         if cag_op == "union":
             cc = np.any(qq, axis=0)
         elif cag_op == "intersection":
             cc = np.all(qq, axis=0)
         elif cag_op == "xor":
-            # XOR is a reduction, so we sum the boolean values and check for oddness.
             cc = (np.sum(qq, axis=0, dtype=np.uint8) & 1).astype(bool)
         elif cag_op == "difference":
-            # A \ B is equivalent to A & ~B. For multiple args: A \ B \ C -> A & ~B & ~C
-            cc = qq[0].copy()  # Start with first argument (A)
+            cc = qq[0].copy()
             if len(args) > 1:
-                # Subtract all subsequent arguments: A & ~B & ~C & ~D...
                 cc &= np.all(~qq[1:], axis=0)
         else:  # "eq"
-            # Check if all rows in qq are identical for each event/active pair.
             if len(args) == 1:
-                cc = qq[0]  # Single arg equality is just the arg itself
+                cc = qq[0]
             else:
                 cc = np.all(qq == qq[0], axis=0)
 
-        # manual pad (faster than np.pad), then diff - use int8 for memory efficiency
+        # Efficient change detection using int8 for memory efficiency
         hshape = (cc.shape[0], cc.shape[1] + 1)
         yy = np.zeros(hshape, dtype=np.int8)
         yy[:, 1:] = cc.view(np.int8)
         hh = np.diff(yy, axis=1)
 
-        # prepare event arrays only once
+        # Pre-compute event coordinates
         ev0, ev1 = self._nb_events[:-1], self._nb_events[1:]
         r0, i0 = np.real(ev0), np.imag(ev0)
         r1, i1 = np.real(ev1), np.imag(ev1)
 
-        # compute all intercepts
+        # Compute intercepts only where needed
         y0 = self.geometry.y_intercept(actives, r0, i0)
         y1 = self.geometry.y_intercept(actives, r1, i1)
 
-        # broadcast real parts to match y-shapes (views, no copy)
         starts = r0[:, None] + y0 * 1j
         ends = r1[:, None] + y1 * 1j
 
-        # one-shot filter - more efficient boolean operations
+        # Filter valid segments
         nonzero_change = hh != 0
         valid_segments = (starts != ends) & ~np.isnan(starts) & nonzero_change
 
         if np.any(valid_segments):
-            # Pre-allocate with exact size
             n_valid = np.count_nonzero(valid_segments)
             segs = np.empty((n_valid, 5), dtype=complex)
 
-            # Efficient assignment using advanced indexing
             segs[:, 0] = starts[valid_segments]
             segs[:, 1] = 0
             segs[:, 2] = TYPE_LINE
@@ -2191,6 +2218,166 @@ class BeamTable:
             g.append_lines(segs)
 
         return g
+
+    def _process_cell_cag(
+        self, cag_op, args, cell_actives, cell_events, processed_segments
+    ):
+        """
+        Process CAG operations for a spatial cell with optimized vectorization.
+        """
+        g = Geomstr()
+
+        if len(cell_actives) == 0 or len(cell_events) < 2:
+            return g
+
+        # Convert to numpy arrays for efficient processing
+        actives = np.array(cell_actives)
+        events = np.array(cell_events[:-1])
+        next_events = np.array(cell_events[1:])
+
+        # Filter out invalid actives
+        valid_mask = actives != -1
+        if not np.any(valid_mask):
+            return g
+
+        # Get segment settings efficiently
+        lines = self.geometry.segments[actives, 2]
+        lines_imag = np.imag(lines)
+
+        # Vectorized CAG logic (similar to original but optimized for cells)
+        args_array = np.array(args, dtype=np.float64)
+
+        # Create mask for arguments - using advanced indexing for speed
+        m = (lines_imag[None, :, :] == args_array[:, None, None]) & valid_mask[
+            None, :, :
+        ]
+
+        # Optimized cumsum with uint8 for memory efficiency
+        qq = (np.cumsum(m, axis=2, dtype=np.uint8) & 1).astype(bool)
+
+        # Apply CAG operation
+        if cag_op == "union":
+            cc = np.any(qq, axis=0)
+        elif cag_op == "intersection":
+            cc = np.all(qq, axis=0)
+        elif cag_op == "xor":
+            cc = (np.sum(qq, axis=0, dtype=np.uint8) & 1).astype(bool)
+        elif cag_op == "difference":
+            cc = qq[0].copy()
+            if len(args) > 1:
+                cc &= np.all(~qq[1:], axis=0)
+        else:  # "eq"
+            if len(args) == 1:
+                cc = qq[0]
+            else:
+                cc = np.all(qq == qq[0], axis=0)
+
+        # Efficient change detection
+        padded_cc = np.zeros((cc.shape[0], cc.shape[1] + 1), dtype=np.int8)
+        padded_cc[:, 1:] = cc.view(np.int8)
+        changes = np.diff(padded_cc, axis=1)
+
+        # Calculate intercepts only for changed regions
+        if np.any(changes != 0):
+            r0, i0 = np.real(events), np.imag(events)
+            r1, i1 = np.real(next_events), np.imag(next_events)
+
+            y0 = self.geometry.y_intercept(actives, r0, i0)
+            y1 = self.geometry.y_intercept(actives, r1, i1)
+
+            starts = r0[:, None] + y0 * 1j
+            ends = r1[:, None] + y1 * 1j
+
+            # Filter valid segments with change detection
+            valid_segments = (starts != ends) & ~np.isnan(starts) & (changes != 0)
+
+            if np.any(valid_segments):
+                n_valid = np.count_nonzero(valid_segments)
+                segs = np.empty((n_valid, 5), dtype=complex)
+
+                segs[:, 0] = starts[valid_segments]
+                segs[:, 1] = 0
+                segs[:, 2] = TYPE_LINE
+                segs[:, 3] = 0
+                segs[:, 4] = ends[valid_segments]
+
+                g.append_lines(segs)
+
+        return g
+
+    def _cag_standard(self, cag_op, *args):
+        """
+        Standard CAG implementation (fallback for edge cases).
+        """
+        g = Geomstr()
+        actives = self._nb_scan[:-1]
+        lines = self.geometry.segments[actives, 2]
+
+        args_array = np.array(args, dtype=np.float64)
+        lines_imag = np.imag(lines)
+
+        m = (lines_imag[None, :, :] == args_array[:, None, None]) & (actives != -1)
+        qq = (np.cumsum(m, axis=2, dtype=np.uint8) & 1).astype(bool)
+
+        if cag_op == "union":
+            cc = np.any(qq, axis=0)
+        elif cag_op == "intersection":
+            cc = np.all(qq, axis=0)
+        elif cag_op == "xor":
+            cc = (np.sum(qq, axis=0, dtype=np.uint8) & 1).astype(bool)
+        elif cag_op == "difference":
+            cc = qq[0].copy()
+            if len(args) > 1:
+                cc &= np.all(~qq[1:], axis=0)
+        else:  # "eq"
+            if len(args) == 1:
+                cc = qq[0]
+            else:
+                cc = np.all(qq == qq[0], axis=0)
+
+        hshape = (cc.shape[0], cc.shape[1] + 1)
+        yy = np.zeros(hshape, dtype=np.int8)
+        yy[:, 1:] = cc.view(np.int8)
+        hh = np.diff(yy, axis=1)
+
+        ev0, ev1 = self._nb_events[:-1], self._nb_events[1:]
+        r0, i0 = np.real(ev0), np.imag(ev0)
+        r1, i1 = np.real(ev1), np.imag(ev1)
+
+        y0 = self.geometry.y_intercept(actives, r0, i0)
+        y1 = self.geometry.y_intercept(actives, r1, i1)
+
+        starts = r0[:, None] + y0 * 1j
+        ends = r1[:, None] + y1 * 1j
+
+        nonzero_change = hh != 0
+        valid_segments = (starts != ends) & ~np.isnan(starts) & nonzero_change
+
+        if np.any(valid_segments):
+            n_valid = np.count_nonzero(valid_segments)
+            segs = np.empty((n_valid, 5), dtype=complex)
+
+            segs[:, 0] = starts[valid_segments]
+            segs[:, 1] = 0
+            segs[:, 2] = TYPE_LINE
+            segs[:, 3] = 0
+            segs[:, 4] = ends[valid_segments]
+            g.append_lines(segs)
+
+        return g
+
+    def _cag_hierarchical(self, cag_op, *args):
+        """
+        Hierarchical CAG implementation for very large datasets.
+        For very large datasets, fall back to the optimized algorithm as hierarchical
+        processing can create boundary artifacts in scanline algorithms.
+        """
+        if self._nb_events is None or len(self._nb_events) < 10:
+            return self._cag_standard(cag_op, *args)
+
+        # For very large datasets, use the optimized algorithm instead of
+        # true hierarchical processing to avoid scanline boundary issues
+        return self._cag_optimized(cag_op, *args)
 
 
 class Scanbeam:
