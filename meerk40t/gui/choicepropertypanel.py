@@ -1,6 +1,7 @@
 from copy import copy
 
 import wx
+from numpy import dtype
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
@@ -25,83 +26,147 @@ _ = wx.GetTranslation
 
 class ChoicePropertyPanel(ScrolledPanel):
     """
-    ChoicePropertyPanel is a generic panel that presents a list of properties to be viewed and edited.
-    In most cases it can be initialized by passing a choices value which will read the registered choice values
-    and display the given properties, automatically generating an appropriate changers for that property.
+    A dynamic, configurable property panel that automatically generates GUI controls based on choice dictionaries.
 
-    In most cases the ChoicePropertyPanel should be used for properties of a dynamic nature. A lot of different
-    relationships can be established and the class should be kept fairly easy to extend. With a set dictionary
-    either registered in the Kernel as a choice or called directly on the ChoicePropertyPanel you can make dynamic
-    controls to set various properties. This avoids needing to create a new static window when a panel is just
-    providing options to change settings.
-    The choices need to be provided either as list of dictionaries or indirectly via
-    a string indicating a stored list registered in the given context under "choices"
-    The dictionary recognizes the following entries:
+    ChoicePropertyPanel provides a flexible system for creating property editing interfaces without requiring
+    static UI definitions. It automatically generates appropriate controls (textboxes, checkboxes, sliders, etc.)
+    based on data types and style configurations provided in choice dictionaries.
 
-        "object": The object to which the property defined in attr belongs to
-        "attr": The name of the attribute
-        "default": The default value if no value has been given before
-        "label": The label will be used for labelling the to be created UI-elements
-        "trailer": this text will be displayed immediately after the element
-        "tip": The tooltip that will be used for this element
-        "dynamic": a function called with the current dictionary choice. This is to update
-            values that may have changed since the choice was first established.
-        "type": This can be one of (no quotation marks, real python data types):
-            bool: will always be represented by a checkbox
-            str: normally be represented by a textbox (may be influenced by style)
-            int: normally be represented by a textbox (may be influenced by style)
-            float: normally be represented by a textbox (may be influenced by style)
-            Length: represented by a textbox
-            Angle: represented by a textbox
-            Color: represented by a color picker
-        "style": If given then the standard representation for a data-type (see above)
-            will be replaced by more tailored UI-elements:
-            "file": (only available for str) a file selection dialog is used,
-                this recognizes a further property "wildcard"
-            "slider:" Creates a slider (for int and float) that will use two additional
-                entries, "min" and "max.
-            "combo": see combosmall (but larger).
-            "option": Creates a combo box but also takes "display" as a parameter
-                that displays these strings rather than the underlying choices.
-            "combosmall": Available for str, int, float will fill the combo
-                with values defined in "choices" (additional parameter)
-            "binary": uses two additional settings "mask" and "bit" to
-                allow the bitwise manipulation of an int data type
-            "multiline": (only available for str) the content allows multiline input
-        "weight": only valid in subsections, default value 1, i.e. equal width
-            allocation, can be changed to force a different sizing behaviour
-    UI-Appearance
-        "page":
-        "section":
-        "subsection":
-        "priority":
-            These entries will create visible separation/joining of elements.
-            The dictionary list will be sorted first by priority, then page,
-            then section, then subsection. While normally every item ends up
-            on a new line, elements within a subsection remain in one horizontal
-            container.
-        Notabene:
-            a) to influence ordering without compromising the intended Page,
-            Section etc. names, the routine will remove a leading "_xxxx_" string
-            b) The Page, Section etc. names will be translated, so please provide
-            them in plain English
+    Key Features:
+        - Automatic control generation based on data types and styles
+        - Support for complex layouts with pages, sections, and subsections
+        - Real-time property synchronization with signal dispatching
+        - Extensive customization through choice dictionary configuration
+        - Support for conditional enabling/disabling of controls
+        - Optimized parameter architecture with minimal redundancy
 
-    There are some special hacks to influence appearance / internal logic
-        "hidden": if set then this expert property will only appear if the
-            developer-mode has been set
-        "enabled": Is the control enabled (default yes, so does not need to be
-            provided)
-        "ignored": As the name implies...
-        "conditional": if given as tuple (cond_obj, cond_prop) then the (boolean)
-            value of the property cond_obj.cond_prop will decide if the element
-            will be enabled or not. (If a third value then the value must equal that value).
-        "signals": This for advanced treatment, normally any change to a property
-            will be announced to the wider mk-universe by sending a signal with the
-            attributes name as signal-indicator (this is used to inform other UI-
-            elements with the same content of such a change). If you want to invoke
-            additional logic (or don't want to write a specific signal-listen routine
-            to forward it to other routines) then you can add a single signal-name
-            or a list of signal-names to be called
+    Choice Dictionary Configuration:
+        Required Keys:
+            "object": The object containing the property to be edited
+            "attr": The attribute name on the object
+            "type": Python data type (bool, str, int, float, Length, Angle, Color, list)
+
+        Common Optional Keys:
+            "default": Default value if attribute doesn't exist
+            "label": Display label for the control (defaults to attr name)
+            "style": Control style override (see Style Options below)
+            "tip": Tooltip text for the control
+            "enabled": Whether control is enabled (default: True)
+            "signals": Additional signals to emit on value change
+            "width": Control width constraint
+
+        Layout Keys:
+            "page": Top-level grouping (creates labeled sections)
+            "section": Mid-level grouping within pages
+            "subsection": Controls grouped horizontally
+            "priority": Sort order within same page/section
+            "weight": Relative width allocation in subsections (default: 1)
+
+        Advanced Keys:
+            "dynamic": Function called to update choice before UI creation
+            "conditional": Tuple (obj, attr[, value]) for conditional enabling
+            "hidden": Show only in developer mode
+            "ignore": Skip this choice entirely
+
+    Data Types and Default Controls:
+        bool: Checkbox (style="button" creates action button)
+        str: TextCtrl (various styles available)
+        int/float: TextCtrl with validation (styles: slider, combo, power, speed)
+        Length: TextCtrl with length validation and preferred units
+        Angle: TextCtrl with angle validation
+        Color: Color picker button
+        list: Chart/table control for editing lists
+
+    Style Options:
+        Text Styles:
+            "file": File selection dialog with browse button
+            "multiline": Multi-line text input
+            "combo": Dropdown with predefined choices
+            "combosmall": Compact dropdown
+            "option": Combo with separate display/value lists
+            "power": Power value with percentage/absolute modes
+            "speed": Speed value with per-minute/per-second modes
+
+        Numeric Styles:
+            "slider": Slider control (requires "min"/"max" keys)
+            "binary": Bit manipulation checkboxes (requires "bits"/"mask" keys)
+
+        Boolean Styles:
+            "button": Action button instead of checkbox
+            "color": Color picker button (for str type)
+
+    Special Configuration Flags:
+        Power Controls:
+            "percent": bool or callable - display as percentage (0-100%) vs absolute (0-1000)
+
+        Speed Controls:
+            "perminute": bool or callable - display per-minute vs per-second values
+
+        File Controls:
+            "wildcard": File dialog filter pattern
+
+        Slider Controls:
+            "min": Minimum value (can be callable)
+            "max": Maximum value (can be callable)
+
+        Binary Controls:
+            "bits": Number of bits to display (default: 8)
+            "mask": Attribute name for bit mask
+
+        Combo Controls:
+            "choices": List of available values
+            "display": List of display strings (for "option" style)
+            "exclusive": Whether combo allows custom values (default: True)
+
+        Length Controls:
+            "nonzero": Require non-zero values
+
+        Validation:
+            "lower": Minimum allowed value
+            "upper": Maximum allowed value
+
+    Layout System:
+        - Choices are sorted by: priority → page → section → subsection
+        - Pages create major visual groups with labels
+        - Sections create sub-groups within pages
+        - Subsections group controls horizontally with shared space
+        - Weight determines relative width allocation within subsections
+        - Leading "_sortkey_" in names is removed for display (allows custom sorting)
+
+    Event System:
+        - Automatic signal dispatching on property changes
+        - Property name used as signal identifier
+        - Additional signals can be specified in "signals" key
+        - Real-time synchronization between multiple panels editing same properties
+        - Conditional enabling based on other property values
+
+    Constraints:
+        The constraint parameter allows selective display:
+        - None: Show all choices
+        - (start, end): Show choices by index range
+        - ["page1", "page2"]: Show only specified pages
+        - ["-page1"]: Show all except specified pages
+
+    Examples:
+        Basic usage:
+            choices = [
+                {"object": obj, "attr": "name", "type": str, "label": "Name"},
+                {"object": obj, "attr": "enabled", "type": bool, "label": "Enabled"}
+            ]
+            panel = ChoicePropertyPanel(parent, choices=choices, context=context)
+
+        Advanced configuration:
+            choice = {
+                "object": laser,
+                "attr": "power",
+                "type": float,
+                "style": "power",
+                "label": "Laser Power",
+                "percent": lambda: laser.power_mode == "percentage",
+                "tip": "Laser power setting",
+                "page": "Laser Settings",
+                "section": "Power Control"
+            }
     """
 
     def __init__(
@@ -131,6 +196,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.context.themes.set_window_colors(self)
         self.listeners = list()
         self.entries_per_column = entries_per_column
+
         if choices is None:
             return
         if isinstance(choices, str):
@@ -141,358 +207,6 @@ class ChoicePropertyPanel(ScrolledPanel):
         # any amendments to choices like injector will affect the original
         standardhelp = ""
 
-        def on_combo_text(param, ctrl, obj, dtype, addsig):
-            def select(event=None):
-                v = dtype(ctrl.GetValue())
-                current_value = getattr(obj, param)
-                if current_value != v:
-                    setattr(obj, param, v)
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return select
-
-        def on_button(param, obj, addsig):
-            def check(event=None):
-                # We just set it to True to kick it off
-                setattr(obj, param, True)
-                # We don't signal ourselves...
-                self.context.signal(param, True, obj)
-                for _sig in addsig:
-                    self.context.signal(_sig)
-
-            return check
-
-        def on_checkbox_check(param, ctrl, obj, addsig):
-            def check(event=None):
-                v = ctrl.GetValue()
-                current_value = getattr(obj, param)
-                if current_value != bool(v):
-                    setattr(obj, param, bool(v))
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return check
-
-        def on_checkbox_bitcheck(param, ctrl, obj, bit, addsig, enable_ctrl=None):
-            def check(event=None):
-                v = ctrl.GetValue()
-                if enable_ctrl is not None:
-                    enable_ctrl.Enable(v)
-                current = getattr(obj, param)
-                if v:
-                    current |= 1 << bit
-                else:
-                    current = ~((~current) | (1 << bit))
-                current_value = getattr(obj, param)
-                if current_value != current:
-                    setattr(obj, param, current)
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return check
-
-        def on_generic_multi(param, ctrl, obj, dtype, addsig):
-            def text():
-                v = ctrl.GetValue()
-                try:
-                    dtype_v = dtype(v)
-                    current_value = getattr(obj, param)
-                    if current_value != dtype_v:
-                        setattr(obj, param, dtype_v)
-                        self.context.signal(param, dtype_v, obj)
-                        for _sig in addsig:
-                            self.context.signal(_sig)
-                except ValueError:
-                    # cannot cast to data_type, pass
-                    pass
-
-            return text
-
-        def on_button_filename(param, ctrl, obj, wildcard, addsig):
-            def click(event=None):
-                with wx.FileDialog(
-                    self,
-                    label,
-                    wildcard=wildcard if wildcard else "*",
-                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
-                ) as fileDialog:
-                    if fileDialog.ShowModal() == wx.ID_CANCEL:
-                        return  # the user changed their mind
-                    pathname = str(fileDialog.GetPath())
-                    ctrl.SetValue(pathname)
-                    self.Layout()
-                    current_value = getattr(obj, param)
-                    if current_value != pathname:
-                        try:
-                            setattr(obj, param, pathname)
-                            self.context.signal(param, pathname, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-                        except ValueError:
-                            # cannot cast to data_type, pass
-                            pass
-
-            return click
-
-        def on_file_text(param, ctrl, obj, dtype, addsig):
-            def filetext():
-                v = ctrl.GetValue()
-                try:
-                    dtype_v = dtype(v)
-                    current_value = getattr(obj, param)
-                    if current_value != dtype_v:
-                        setattr(obj, param, dtype_v)
-                        self.context.signal(param, dtype_v, obj)
-                        for _sig in addsig:
-                            self.context.signal(_sig)
-                except ValueError:
-                    # cannot cast to data_type, pass
-                    pass
-
-            return filetext
-
-        def on_slider(param, ctrl, obj, dtype, addsig):
-            def select(event=None):
-                v = dtype(ctrl.GetValue())
-                current_value = getattr(obj, param)
-                if current_value != v:
-                    setattr(obj, param, v)
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return select
-
-        def on_radio_select(param, ctrl, obj, dtype, addsig):
-            def select(event=None):
-                if dtype == int:
-                    v = dtype(ctrl.GetSelection())
-                else:
-                    v = dtype(ctrl.GetLabel())
-                current_value = getattr(obj, param)
-                if current_value != v:
-                    setattr(obj, param, v)
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return select
-
-        def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
-            def select(event=None):
-                cl = choice_list[ctrl.GetSelection()]
-                v = dtype(cl)
-                current_value = getattr(obj, param)
-                if current_value != v:
-                    setattr(obj, param, v)
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return select
-
-        def on_combosmall_text(param, ctrl, obj, dtype, addsig):
-            def select(event=None):
-                v = dtype(ctrl.GetValue())
-                current_value = getattr(obj, param)
-                if current_value != v:
-                    # print (f"Setting it to {v}")
-                    setattr(obj, param, v)
-                    self.context.signal(param, v, obj)
-                    for _sig in addsig:
-                        self.context.signal(_sig)
-
-            return select
-
-        def on_button_color(param, ctrl, obj, addsig):
-            def click(event=None):
-                color_data = wx.ColourData()
-                color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
-                dlg = wx.ColourDialog(self, color_data)
-                if dlg.ShowModal() == wx.ID_OK:
-                    color_data = dlg.GetColourData()
-                    data = Color(swizzlecolor(color_data.GetColour().GetRGB()), 1.0)
-                    set_color(ctrl, data)
-                    try:
-                        data_v = data.hexa
-                        current_value = getattr(obj, param)
-                        if current_value != data_v:
-                            setattr(obj, param, data_v)
-                            self.context.signal(param, data_v, obj)
-                            for _sig in addsig:
-                                self.context.signal(_sig)
-                    except ValueError:
-                        # cannot cast to data_type, pass
-                        pass
-
-            return click
-
-        def on_angle_text(param, ctrl, obj, dtype, addsig):
-            def text():
-                try:
-                    v = Angle(ctrl.GetValue(), digits=5)
-                    data_v = str(v)
-                    current_value = str(getattr(obj, param))
-                    if current_value != data_v:
-                        setattr(obj, param, data_v)
-                        self.context.signal(param, data_v, obj)
-                        for _sig in addsig:
-                            self.context.signal(_sig)
-                except ValueError:
-                    # cannot cast to data_type, pass
-                    pass
-
-            return text
-
-        def on_chart_start(columns, param, ctrl, local_obj):
-            def chart_start(event=None):
-                for column in columns:
-                    if column.get("editable", False):
-                        event.Allow()
-                    else:
-                        event.Veto()
-
-            return chart_start
-
-        def on_chart_stop(columns, param, ctrl, local_obj):
-            def chart_stop(event=None):
-                row_id = event.GetIndex()  # Get the current row
-                col_id = event.GetColumn()  # Get the current column
-                new_data = event.GetLabel()  # Get the changed data
-                ctrl.SetItem(row_id, col_id, new_data)
-                column = columns[col_id]
-                c_attr = column.get("attr")
-                c_type = column.get("type")
-                values = getattr(local_obj, param)
-                if isinstance(values[row_id], dict):
-                    values[row_id][c_attr] = c_type(new_data)
-                    self.context.signal(param, values, row_id, param)
-                elif isinstance(values[row_id], str):
-                    values[row_id] = c_type(new_data)
-                    self.context.signal(param, values, row_id)
-                else:
-                    values[row_id][col_id] = c_type(new_data)
-                    self.context.signal(param, values, row_id)
-
-            return chart_stop
-
-        def on_chart_contextmenu(
-            columns, param, ctrl, local_obj, allow_del, allow_dup, default
-        ):
-            def chart_menu(event=None):
-                # row_id = event.GetIndex()  # Get the current row
-
-                x, y = event.GetPosition()
-                row_id, flags = ctrl.HitTest((x, y))
-                if row_id < 0:
-                    l_allow_del = False
-                    l_allow_dup = False
-                else:
-                    l_allow_del = allow_del
-                    l_allow_dup = allow_dup
-                menu = wx.Menu()
-                if l_allow_del:
-
-                    def on_delete(event):
-                        values = getattr(local_obj, param)
-                        # try:
-                        values.pop(row_id)
-                        self.context.signal(param, values, 0, param)
-                        fill_ctrl(ctrl, local_obj, param, columns)
-                        # except IndexError:
-                        #    pass
-
-                    menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
-                    self.Bind(
-                        wx.EVT_MENU,
-                        on_delete,
-                        id=menuitem.GetId(),
-                    )
-                if l_allow_dup:
-
-                    def on_duplicate(event):
-                        values = getattr(local_obj, param)
-                        if isinstance(values[row_id], dict):
-                            newentry = dict()
-                            for key, content in values[row_id].items():
-                                newentry[key] = content
-                        else:
-                            newentry = copy(values[row_id])
-                        values.append(newentry)
-                        self.context.signal(param, values, 0, param)
-                        # except IndexError:
-                        #    pass
-                        fill_ctrl(ctrl, local_obj, param, columns)
-
-                    menuitem = menu.Append(wx.ID_ANY, _("Duplicate this entry"), "")
-                    self.Bind(
-                        wx.EVT_MENU,
-                        on_duplicate,
-                        id=menuitem.GetId(),
-                    )
-
-                def on_default(event):
-                    values = getattr(local_obj, param)
-                    values.clear()
-                    for e in default:
-                        values.append(e)
-
-                    self.context.signal(param, values, 0, param)
-                    fill_ctrl(ctrl, local_obj, param, columns)
-                    # except IndexError:
-                    #    pass
-
-                menuitem = menu.Append(wx.ID_ANY, _("Restore defaults"), "")
-                self.Bind(
-                    wx.EVT_MENU,
-                    on_default,
-                    id=menuitem.GetId(),
-                )
-
-                if menu.MenuItemCount != 0:
-                    self.PopupMenu(menu)
-                    menu.Destroy()
-
-            return chart_menu
-
-        def on_generic_text(param, ctrl, obj, dtype, addsig):
-            def text():
-                v = ctrl.GetValue()
-                try:
-                    dtype_v = dtype(v)
-                    current_value = getattr(obj, param)
-                    if current_value != dtype_v:
-                        setattr(obj, param, dtype_v)
-                        self.context.signal(param, dtype_v, obj)
-                        for _sig in addsig:
-                            self.context.signal(_sig)
-                except ValueError:
-                    # cannot cast to data_type, pass
-                    pass
-
-            return text
-
-        def on_length_text(param, ctrl, obj, dtype, addsig):
-            def text():
-                try:
-                    v = Length(ctrl.GetValue())
-                    data_v = v.preferred_length
-                    current_value = getattr(obj, param)
-                    if str(current_value) != str(data_v):
-                        setattr(obj, param, data_v)
-                        self.context.signal(param, data_v, obj)
-                        for _sig in addsig:
-                            self.context.signal(_sig)
-                except ValueError:
-                    # cannot cast to data_type, pass
-                    pass
-
-            return text
-
         for choice in choices:
             if isinstance(choice, dict):
                 if "help" not in choice:
@@ -502,46 +216,43 @@ class ChoicePropertyPanel(ScrolledPanel):
                 lookup_choice = self.context.lookup("choices", choice)
                 if lookup_choice is None:
                     continue
-                for c in lookup_choice:
-                    if "help" not in c:
-                        c["help"] = choice
+                for lookup_item in lookup_choice:
+                    if "help" not in lookup_item:
+                        lookup_item["help"] = choice
                 new_choices.extend(lookup_choice)
             else:
-                for c in choice:
-                    if "help" not in c:
-                        c["help"] = standardhelp
+                for choice_item in choice:
+                    if "help" not in choice_item:
+                        choice_item["help"] = standardhelp
                 new_choices.extend(choice)
         choices = new_choices
         if injector is not None:
             # We have additional stuff to be added, so be it
-            for c in injector:
-                choices.append(c)
-        if len(choices) == 0:
+            for injected_choice in injector:
+                choices.append(injected_choice)
+        if not choices:
             # No choices to process.
             return
-        for c in choices:
-            needs_dynamic_call = c.get("dynamic")
+        # Validate and look for dynamic
+        for choice in choices:
+            if not self._validate_choice_for_crucial_information(choice):
+                if self.context:
+                    channel = self.context.kernel.channels["console"]
+                    channel(f"Invalid choice configuration: {choice}")
+                # Delete choice
+                choices.remove(choice)
+                continue
+
+            needs_dynamic_call = choice.get("dynamic")
             if needs_dynamic_call:
                 # Calls dynamic function to update this dictionary before production
-                needs_dynamic_call(c)
-        # Let's see whether we have a section and a page property...
-        for c in choices:
-            try:
-                dummy = c["subsection"]
-            except KeyError:
-                c["subsection"] = ""
-            try:
-                dummy = c["section"]
-            except KeyError:
-                c["section"] = ""
-            try:
-                dummy = c["page"]
-            except KeyError:
-                c["page"] = ""
-            try:
-                dummy = c["priority"]
-            except KeyError:
-                c["priority"] = "ZZZZZZZZ"
+                needs_dynamic_call(choice)
+        # Set default values for required keys
+        for choice in choices:
+            choice.setdefault("subsection", "")
+            choice.setdefault("section", "")
+            choice.setdefault("page", "")
+            choice.setdefault("priority", "ZZZZZZZZ")
         # print ("Choices: " , choices)
         prechoices = sorted(
             sorted(
@@ -572,23 +283,20 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 negative.append(item.lower())
                             else:
                                 positive.append(item.lower())
-                        for i, c in enumerate(prechoices):
-                            try:
-                                this_page = c["page"].lower()
-                            except KeyError:
-                                this_page = ""
-                            if len(negative) > 0 and len(positive) > 0:
+                        for i, sorted_choice in enumerate(prechoices):
+                            this_page = sorted_choice.get("page", "").lower()
+                            if negative and positive:
                                 # Negative takes precedence:
-                                if not this_page in negative and this_page in positive:
-                                    self.choices.append(c)
+                                if this_page not in negative and this_page in positive:
+                                    self.choices.append(sorted_choice)
                             elif len(negative) > 0:
                                 # only negative....
-                                if not this_page in negative:
-                                    self.choices.append(c)
+                                if this_page not in negative:
+                                    self.choices.append(sorted_choice)
                             elif len(positive) > 0:
                                 # only positive....
                                 if this_page in positive:
-                                    self.choices.append(c)
+                                    self.choices.append(sorted_choice)
                     else:
                         dealt_with = True
                         # Section list
@@ -604,147 +312,123 @@ class ChoicePropertyPanel(ScrolledPanel):
                             end_at = len(prechoices)
                         if end_at < start_from:
                             end_at = len(prechoices)
-                        for i, c in enumerate(prechoices):
+                        for i, sorted_choice in enumerate(prechoices):
                             if start_from <= i < end_at:
-                                self.choices.append(c)
-        else:
-            # Empty constraint
-            pass
+                                self.choices.append(sorted_choice)
         if not dealt_with:
             # no valid constraints
             self.choices = prechoices
         if len(self.choices) == 0:
             return
-        sizer_very_main = wx.BoxSizer(wx.HORIZONTAL)
+        root_horizontal_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
+        root_horizontal_sizer.Add(sizer_main, 1, wx.EXPAND, 0)
         last_page = ""
         last_section = ""
         last_subsection = ""
-        last_box = None
-        current_main_sizer = sizer_main
-        current_sec_sizer = sizer_main
-        current_sizer = sizer_main
+        current_container = None
+        active_page_sizer = sizer_main
+        active_section_sizer = sizer_main
+        active_subsection_sizer = sizer_main
         # By default, 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
-        for i, c in enumerate(self.choices):
+        for i, choice in enumerate(self.choices):
             wants_listener = True
             current_col_entry += 1
-            if self.entries_per_column is not None:
-                if current_col_entry >= self.entries_per_column:
-                    current_col_entry = -1
-                    prev_main = sizer_main
-                    sizer_main = wx.BoxSizer(wx.VERTICAL)
-                    if prev_main == current_main_sizer:
-                        current_main_sizer = sizer_main
-                    if prev_main == current_sec_sizer:
-                        current_sec_sizer = sizer_main
-                    if prev_main == current_sizer:
-                        current_sizer = sizer_main
+            if (
+                self.entries_per_column is not None
+                and current_col_entry >= self.entries_per_column
+            ):
+                current_col_entry = -1
+                prev_main = sizer_main
+                sizer_main = wx.BoxSizer(wx.VERTICAL)
+                if prev_main == active_page_sizer:
+                    active_page_sizer = sizer_main
+                if prev_main == active_section_sizer:
+                    active_section_sizer = sizer_main
+                if prev_main == active_subsection_sizer:
+                    active_subsection_sizer = sizer_main
 
-                    sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
-                    # I think we should reset all sections to make them
-                    # reappear in the next columns
-                    last_page = ""
-                    last_section = ""
-                    last_subsection = ""
+                root_horizontal_sizer.Add(sizer_main, 1, wx.EXPAND, 0)
+                # I think we should reset all sections to make them
+                # reappear in the next columns
+                last_page = ""
+                last_section = ""
+                last_subsection = ""
 
-            if isinstance(c, tuple):
-                # If c is tuple
-                dict_c = dict()
-                try:
-                    dict_c["object"] = c[0]
-                    dict_c["attr"] = c[1]
-                    dict_c["default"] = c[2]
-                    dict_c["label"] = c[3]
-                    dict_c["tip"] = c[4]
-                    dict_c["type"] = c[5]
-                except IndexError:
-                    pass
-                c = dict_c
-            try:
-                attr = c["attr"]
-                obj = c["object"]
-            except KeyError:
+            # Validate and prepare choice using helper method
+            validated_choice, attr, obj, is_valid = self._validate_and_prepare_choice(
+                choice
+            )
+            if not is_valid or validated_choice is None:
                 continue
-            this_subsection = c.get("subsection", "")
-            this_section = c.get("section", "")
-            this_page = c.get("page", "")
-            ctrl_width = c.get("width", 0)
-            # Do we have a parameter to add a trailing label after the control
-            trailer = c.get("trailer")
-            # Is there another signal to send?
-            additional_signal = []
-            sig = c.get("signals")
-            if isinstance(sig, str):
-                additional_signal.append(sig)
-            elif isinstance(sig, (tuple, list)):
-                for _sig in sig:
-                    additional_signal.append(_sig)
 
-            # Do we have a parameter to hide the control unless in expert mode
-            hidden = c.get("hidden", False)
-            hidden = (
-                bool(hidden) if hidden != "False" else False
-            )  # bool("False") = True
+            # Use the validated choice from here on
+            choice = validated_choice
+            # Get data and data type using helper method
+            data, data_type = self._get_choice_data_and_type(choice, obj)
+            if data is None and data_type is None:
+                continue
+            data_style = choice.get("style", None)
+            data_type = choice.get("type")
+
+            this_subsection = choice.get("subsection", "")
+            this_section = choice.get("section", "")
+            this_page = choice.get("page", "")
+
+            # Get additional signals using helper method
+            additional_signal = self._get_additional_signals(choice)
+
             # Do we have a parameter to affect the space consumption?
-            weight = int(c.get("weight", 1))
+            weight = int(choice.get("weight", 1))
             if weight < 0:
                 weight = 0
-            developer_mode = self.context.root.setting(bool, "developer_mode", False)
-            if not developer_mode and hidden:
-                continue
-            ignore = c.get("ignore", False)
-            ignore = (
-                bool(ignore) if ignore != "False" else False
-            )  # bool("False") = True
-            if ignore:
-                continue
-            # get default value
-            if hasattr(obj, attr):
-                data = getattr(obj, attr)
-            else:
-                # if obj lacks attr, default must have been assigned.
-                try:
-                    data = c["default"]
-                except KeyError:
-                    # This choice is in error.
-                    continue
-            data_style = c.get("style", None)
-            data_type = type(data)
-            data_type = c.get("type", data_type)
-            choice_list = None
-            label = c.get("label", attr)  # Undefined label is the attr
 
+            choice_list = None
+            label = choice.get("label", attr)  # Undefined label is the attr
+
+            # Do we have a parameter to add a trailing label after the control
+            trailer = choice.get("trailer")
+            # Handle dynamic trailer for power controls
+            if data_type == float and data_style == "power":
+                percent_flag = choice.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+                trailer = "%" if percent_mode else "/1000"
+            if data_type == float and data_style == "speed":
+                minute_flag = choice.get("perminute", False)
+                minute_mode = minute_flag() if callable(minute_flag) else minute_flag
+                trailer = "mm/min" if minute_mode else "mm/s"
             if last_page != this_page:
                 expansion_flag = 0
                 last_section = ""
                 last_subsection = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
-                last_box = StaticBoxSizer(
+                current_container = StaticBoxSizer(
                     self, wx.ID_ANY, _(self.unsorted_label(this_page)), wx.VERTICAL
                 )
-                sizer_main.Add(last_box, 0, wx.EXPAND, 0)
-                current_main_sizer = last_box
-                current_sec_sizer = last_box
-                current_sizer = last_box
+                sizer_main.Add(current_container, 0, wx.EXPAND, 0)
+                active_page_sizer = current_container
+                active_section_sizer = current_container
+                active_subsection_sizer = current_container
 
             if last_section != this_section:
                 expansion_flag = 0
                 last_subsection = ""
                 if this_section != "":
-                    last_box = StaticBoxSizer(
+                    current_container = StaticBoxSizer(
                         self,
                         id=wx.ID_ANY,
                         label=_(self.unsorted_label(this_section)),
                         orientation=wx.VERTICAL,
                     )
-                    current_main_sizer.Add(last_box, 0, wx.EXPAND, 0)
+                    active_page_sizer.Add(current_container, 0, wx.EXPAND, 0)
                 else:
-                    last_box = current_main_sizer
-                current_sizer = last_box
-                current_sec_sizer = last_box
+                    current_container = active_page_sizer
+                active_subsection_sizer = current_container
+                active_section_sizer = current_container
 
             if last_subsection != this_subsection:
                 expansion_flag = 0
@@ -752,426 +436,45 @@ class ChoicePropertyPanel(ScrolledPanel):
                     expansion_flag = 1
                     lbl = _(self.unsorted_label(this_subsection))
                     if lbl != "":
-                        last_box = StaticBoxSizer(
+                        current_container = StaticBoxSizer(
                             self,
                             id=wx.ID_ANY,
                             label=lbl,
                             orientation=wx.HORIZONTAL,
                         )
                     else:
-                        last_box = wx.BoxSizer(wx.HORIZONTAL)
-                    current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
-                    img = c.get("icon", None)
+                        current_container = wx.BoxSizer(wx.HORIZONTAL)
+                    active_section_sizer.Add(current_container, 0, wx.EXPAND, 0)
+                    img = choice.get("icon", None)
                     if img is not None:
                         icon = wxStaticBitmap(self, wx.ID_ANY, bitmap=img)
-                        last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-                        last_box.AddSpacer(5)
+                        current_container.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                        current_container.AddSpacer(5)
                 else:
-                    last_box = current_sec_sizer
-                current_sizer = last_box
+                    current_container = active_section_sizer
+                active_subsection_sizer = current_container
 
             control = None
             control_sizer = None
-            if data_type == str and data_style == "info":
-                # This is just an info box.
-                wants_listener = False
-                msgs = label.split("\n")
-                controls = []
-                for lbl in msgs:
-                    control = wxStaticText(self, label=lbl)
-                    current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == bool and data_style == "button":
-                # This is just a signal to the outside world.
-                wants_listener = False
-                control = wxButton(self, label=label)
 
-                control.Bind(
-                    wx.EVT_BUTTON,
-                    on_button(attr, obj, additional_signal),
-                )
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == bool:
-                # Bool type objects get a checkbox.
-                control = wxCheckBox(self, label=label)
-                control.SetValue(data)
-                control.SetMinSize(dip_size(self, -1, 23))
+            # Try to create control using the dispatch table system
+            dispatch_result = self._create_control_using_dispatch(
+                label, data, choice, obj
+            )
 
-                control.Bind(
-                    wx.EVT_CHECKBOX,
-                    on_checkbox_check(attr, control, obj, additional_signal),
-                )
-
-                current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == str and data_style == "multiline":
-                control_sizer = StaticBoxSizer(self, wx.ID_ANY, label, wx.HORIZONTAL)
-                control = TextCtrl(
-                    self,
-                    wx.ID_ANY,
-                    style=wx.TE_MULTILINE,
-                )
-                ctrl_width = c.get("width", 0)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control.SetValue(str(data))
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-
-                control.SetActionRoutine(
-                    on_generic_multi(attr, control, obj, data_type, additional_signal)
-                )
-
-            elif data_type == str and data_style == "file":
-                control_sizer = StaticBoxSizer(self, wx.ID_ANY, label, wx.HORIZONTAL)
-                control = TextCtrl(
-                    self,
-                    wx.ID_ANY,
-                    style=wx.TE_PROCESS_ENTER,
-                )
-                control_btn = wxButton(self, wx.ID_ANY, "...")
-
-                def set_file(filename: str):
-                    # if not filename:
-                    #     filename = _("No File")
-                    control.SetValue(filename)
-
-                control.SetActionRoutine(
-                    on_file_text(attr, control, obj, data_type, additional_signal)
-                )
-
-                ctrl_width = c.get("width", 0)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control.SetValue(str(data))
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
-                control_sizer.Add(control_btn, 0, wx.EXPAND, 0)
-                control_btn.Bind(
-                    wx.EVT_BUTTON,
-                    on_button_filename(
-                        attr, control, obj, c.get("wildcard", "*"), additional_signal
-                    ),
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type in (int, float) and data_style == "slider":
-                if label != "":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
+            if dispatch_result[0] is not None:
+                # Successfully created using dispatch table
+                control, control_sizer, wants_listener = dispatch_result
+                if control_sizer is not None:
+                    active_subsection_sizer.Add(
+                        control_sizer, expansion_flag * weight, wx.EXPAND, 0
                     )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                minvalue = c.get("min", 0)
-                maxvalue = c.get("max", 0)
-                if data_type == float:
-                    value = float(data)
-                elif data_type == int:
-                    value = int(data)
-                else:
-                    value = int(data)
-                if callable(minvalue):
-                    minvalue = minvalue()
-                if callable(maxvalue):
-                    maxvalue = maxvalue()
-                control = wx.Slider(
-                    self,
-                    wx.ID_ANY,
-                    value=value,
-                    minValue=minvalue,
-                    maxValue=maxvalue,
-                    style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
-                )
-
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
-                control.Bind(
-                    wx.EVT_SLIDER,
-                    on_slider(attr, control, obj, data_type, additional_signal),
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type in (str, int, float) and data_style == "combo":
-                if label != "":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
+                elif control is not None:
+                    active_subsection_sizer.Add(
+                        control, expansion_flag * weight, wx.EXPAND, 0
                     )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wxComboBox(
-                    self,
-                    wx.ID_ANY,
-                    choices=choice_list,
-                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
-                )
-                if data is not None:
-                    if data_type == str:
-                        control.SetValue(str(data))
-                    else:
-                        least = None
-                        for entry in choice_list:
-                            if least is None:
-                                least = entry
-                            else:
-                                if abs(data_type(entry) - data) < abs(
-                                    data_type(least) - data
-                                ):
-                                    least = entry
-                        if least is not None:
-                            control.SetValue(least)
-
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                control.Bind(
-                    wx.EVT_COMBOBOX,
-                    on_combo_text(attr, control, obj, data_type, additional_signal),
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type in (str, int) and data_style == "radio":
-                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wxRadioBox(
-                    self,
-                    wx.ID_ANY,
-                    label,
-                    choices=choice_list,
-                    majorDimension=3,
-                    style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
-                )
-                if data is not None:
-                    if data_type == str:
-                        control.SetSelection(0)
-                        for idx, _c in enumerate(choice_list):
-                            if _c == data:
-                                control.SetSelection(idx)
-                    else:
-                        control.SetSelection(int(data))
-
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                control.Bind(
-                    wx.EVT_RADIOBOX,
-                    on_radio_select(attr, control, obj, data_type, additional_signal),
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type in (int, str) and data_style == "option":
-                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                display_list = list(map(str, c.get("display")))
-                choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                try:
-                    index = choice_list.index(str(data))
-                except ValueError:
-                    # Value was not in list.
-                    index = 0
-                    if data is None:
-                        data = c.get("default")
-                    display_list.insert(0, str(data))
-                    choice_list.insert(0, str(data))
-                cb_style = wx.CB_DROPDOWN | wx.CB_READONLY
-                control = wxComboBox(
-                    self,
-                    wx.ID_ANY,
-                    choices=display_list,
-                    style=cb_style,
-                )
-                control.SetSelection(index)
-
-                # Constrain the width
-                testsize = control.GetBestSize()
-                control.SetMaxSize(dip_size(self, testsize[0] + 30, -1))
-                # print ("Display: %s" % display_list)
-                # print ("Choices: %s" % choice_list)
-                # print ("To set: %s" % str(data))
-
-                if label != "":
-                    # Try to center it vertically to the controls extent
-                    wd, ht = control.GetSize()
-                    label_text = wxStaticText(self, id=wx.ID_ANY, label=label + " ")
-                    # label_text.SetMinSize(dip_size(self, -1, ht))
-                    control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                control.Bind(
-                    wx.EVT_COMBOBOX,
-                    on_combosmall_option(
-                        attr, control, obj, data_type, additional_signal, choice_list
-                    ),
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type in (str, int, float) and data_style == "combosmall":
-                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                exclusive = c.get("exclusive", True)
-                cb_style = (
-                    wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN
-                )
-
-                choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wxComboBox(
-                    self,
-                    wx.ID_ANY,
-                    choices=choice_list,
-                    style=cb_style,
-                )
-                # Constrain the width
-                testsize = control.GetBestSize()
-                control.SetMaxSize(dip_size(self, testsize[0] + 30, -1))
-                # print ("Choices: %s" % choice_list)
-                # print ("To set: %s" % str(data))
-                if data is not None:
-                    if data_type == str:
-                        control.SetValue(str(data))
-                    else:
-                        least = None
-                        for entry in choice_list:
-                            if least is None:
-                                least = entry
-                            else:
-                                if abs(data_type(entry) - data) < abs(
-                                    data_type(least) - data
-                                ):
-                                    least = entry
-                        if least is not None:
-                            control.SetValue(least)
-
-                if label != "":
-                    # Try to center it vertically to the controls extent
-                    wd, ht = control.GetSize()
-                    label_text = wxStaticText(self, id=wx.ID_ANY, label=label + " ")
-                    # label_text.SetMinSize(dip_size(self, -1, ht))
-                    control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                control.Bind(
-                    wx.EVT_COMBOBOX,
-                    on_combosmall_text(
-                        attr, control, obj, data_type, additional_signal
-                    ),
-                )
-                if not exclusive:
-                    control.Bind(
-                        wx.EVT_TEXT,
-                        on_combosmall_text(
-                            attr, control, obj, data_type, additional_signal
-                        ),
-                    )
-
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == int and data_style == "binary":
-                mask = c.get("mask")
-
-                # get default value
-                mask_bits = 0
-                if mask is not None and hasattr(obj, mask):
-                    mask_bits = getattr(obj, mask)
-
-                if label != "":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
-                    )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-                bit_sizer = wx.BoxSizer(wx.VERTICAL)
-                label_text = wxStaticText(
-                    self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
-                )
-                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
-                if mask is not None:
-                    label_text = wxStaticText(
-                        self,
-                        wx.ID_ANY,
-                        _("mask") + " ",
-                        style=wx.ALIGN_CENTRE_HORIZONTAL,
-                    )
-                    bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
-                label_text = wxStaticText(
-                    self, wx.ID_ANY, _("value") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL
-                )
-                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
-                control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
-
-                bits = c.get("bits", 8)
-                for b in range(bits):
-                    # Label
-                    bit_sizer = wx.BoxSizer(wx.VERTICAL)
-                    label_text = wxStaticText(
-                        self, wx.ID_ANY, str(b), style=wx.ALIGN_CENTRE_HORIZONTAL
-                    )
-                    bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
-
-                    # value bit
-                    control = wxCheckBox(self)
-                    control.SetValue(bool((data >> b) & 1))
-                    if mask:
-                        control.Enable(bool((mask_bits >> b) & 1))
-                    control.Bind(
-                        wx.EVT_CHECKBOX,
-                        on_checkbox_bitcheck(attr, control, obj, b, additional_signal),
-                    )
-
-                    # mask bit
-                    if mask:
-                        mask_ctrl = wxCheckBox(self)
-                        mask_ctrl.SetValue(bool((mask_bits >> b) & 1))
-                        mask_ctrl.Bind(
-                            wx.EVT_CHECKBOX,
-                            on_checkbox_bitcheck(
-                                mask,
-                                mask_ctrl,
-                                obj,
-                                b,
-                                additional_signal,
-                                enable_ctrl=control,
-                            ),
-                        )
-                        bit_sizer.Add(mask_ctrl, 0, wx.EXPAND, 0)
-
-                    bit_sizer.Add(control, 0, wx.EXPAND, 0)
-                    control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
-
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == str and data_style == "color":
-                # str data_type with style "color" objects do get a button with the background.
-                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                control = wxButton(self, -1)
-
-                def set_color(ctrl, color: Color):
-                    ctrl.SetLabel(str(color.hex))
-                    ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                    if Color.distance(color, Color("black")) > Color.distance(
-                        color, Color("white")
-                    ):
-                        ctrl.SetForegroundColour(wx.BLACK)
-                    else:
-                        ctrl.SetForegroundColour(wx.WHITE)
-                    ctrl.color = color
-
-                datastr = data
-                data = Color(datastr)
-                set_color(control, data)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 0, wx.EXPAND, 0)
-                color_info = wxStaticText(self, wx.ID_ANY, label)
-                control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
-
-                control.Bind(
-                    wx.EVT_BUTTON,
-                    on_button_color(attr, control, obj, additional_signal),
-                )
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == list and data_style == "chart":
+                # Chart controls - complex case not yet unified
                 chart = EditableListCtrl(
                     self,
                     wx.ID_ANY,
@@ -1179,7 +482,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     context=self.context,
                     list_name=f"list_chart_{attr}",
                 )
-                l_columns = c.get("columns", [])
+                l_columns = choice.get("columns", [])
 
                 def fill_ctrl(ctrl, local_obj, param, columns):
                     data = getattr(local_obj, param)
@@ -1226,45 +529,22 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 chart.Bind(
                     wx.EVT_LIST_BEGIN_LABEL_EDIT,
-                    on_chart_start(l_columns, attr, chart, obj),
+                    self._make_chart_start_handler(l_columns, attr, chart, obj),
                 )
 
                 chart.Bind(
                     wx.EVT_LIST_END_LABEL_EDIT,
-                    on_chart_stop(l_columns, attr, chart, obj),
+                    self._make_chart_stop_handler(l_columns, attr, chart, obj),
                 )
 
-                allow_deletion = c.get("allow_deletion", False)
-                allow_duplication = c.get("allow_duplication", False)
+                allow_deletion = choice.get("allow_deletion", False)
+                allow_duplication = choice.get("allow_duplication", False)
 
-                default = c.get("default", [])
-                # chart.Bind(
-                #     wx.EVT_LIST_ITEM_RIGHT_CLICK,
-                #     on_chart_contextmenu(
-                #         l_columns,
-                #         attr,
-                #         chart,
-                #         obj,
-                #         allow_deletion,
-                #         allow_duplication,
-                #         default,
-                #     ),
-                # )
-                # chart.Bind(
-                #     wx.EVT_LIST_COL_RIGHT_CLICK,
-                #     on_chart_contextmenu(
-                #         l_columns,
-                #         attr,
-                #         chart,
-                #         obj,
-                #         allow_deletion,
-                #         allow_duplication,
-                #         default,
-                #     ),
-                # )
+                default = choice.get("default", [])
+
                 chart.Bind(
                     wx.EVT_RIGHT_DOWN,
-                    on_chart_contextmenu(
+                    self._make_chart_contextmenu_handler(
                         l_columns,
                         attr,
                         chart,
@@ -1274,129 +554,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                         default,
                     ),
                 )
-                current_sizer.Add(chart, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type in (str, int, float):
-                # str, int, and float type objects get a TextCtrl setter.
-                if label != "" and data_style != "flat":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
-                    )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                    if label != "":
-                        label_text = wxStaticText(self, id=wx.ID_ANY, label=label)
-                        control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-                if data_type == int:
-                    check_flag = "int"
-                    limit = True
-                    lower_range = c.get("lower", None)
-                    upper_range = c.get("upper", None)
-                elif data_type == float:
-                    check_flag = "float"
-                    limit = True
-                    lower_range = c.get("lower", None)
-                    upper_range = c.get("upper", None)
-                else:
-                    check_flag = ""
-                    limit = False
-                    lower_range = None
-                    upper_range = None
-
-                control = TextCtrl(
-                    self,
-                    wx.ID_ANY,
-                    style=wx.TE_PROCESS_ENTER,
-                    limited=limit,
-                    check=check_flag,
+                active_subsection_sizer.Add(
+                    chart, expansion_flag * weight, wx.EXPAND, 0
                 )
-                if lower_range is not None:
-                    control.lower_limit = lower_range
-                    control.lower_limit_err = lower_range
-                if upper_range is not None:
-                    control.upper_limit = upper_range
-                    control.upper_limit_err = upper_range
-                ctrl_width = c.get("width", 0)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control.SetValue(str(data))
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
-
-                control.SetActionRoutine(
-                    on_generic_text(attr, control, obj, data_type, additional_signal)
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == Length:
-                # Length type is a TextCtrl with special checks
-                if label != "":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
-                    )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                nonzero = c.get("nonzero", False)
-                if nonzero is None or not isinstance(nonzero, bool):
-                    nonzero = False
-                control = TextCtrl(
-                    self,
-                    wx.ID_ANY,
-                    style=wx.TE_PROCESS_ENTER,
-                    limited=True,
-                    check="length",
-                    nonzero=nonzero,
-                )
-                if isinstance(data, Length):
-                    if not data._preferred_units:
-                        data._preferred_units = "mm"
-                    if not data._digits:
-                        if data._preferred_units in ("mm", "cm", "in", "inch"):
-                            data._digits = 4
-                    display_value = data.preferred_length
-                else:
-                    display_value = str(data)
-                control.SetValue(display_value)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
-
-                control.SetActionRoutine(
-                    on_length_text(attr, control, obj, data_type, additional_signal)
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
-            elif data_type == Angle:
-                # Angle type is a TextCtrl with special checks
-                if label != "":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
-                    )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                control = TextCtrl(
-                    self,
-                    wx.ID_ANY,
-                    style=wx.TE_PROCESS_ENTER,
-                    check="angle",
-                    limited=True,
-                )
-                control.SetValue(str(data))
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
-
-                control.SetActionRoutine(
-                    on_angle_text(attr, control, obj, data_type, additional_signal)
-                )
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+                control = chart
+                wants_listener = True
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
-                if label != "":
-                    control_sizer = StaticBoxSizer(
-                        self, wx.ID_ANY, label, wx.HORIZONTAL
-                    )
-                else:
-                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                control_sizer = self._create_labeled_sizer(label)
                 control = wxButton(self, -1)
 
                 def set_color(ctrl, color: Color):
@@ -1411,17 +576,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                     ctrl.color = color
 
                 set_color(control, data)
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
+                self._apply_control_width(control, choice.get("width", 0))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(
                     wx.EVT_BUTTON,
-                    on_button_color(attr, control, obj, additional_signal),
+                    self._make_button_color_handler(control, choice),
                 )
-                if ctrl_width > 0:
-                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
-                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+                active_subsection_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
+                wants_listener = True
             else:
                 # Requires a registered data_type
                 continue
@@ -1434,50 +599,97 @@ class ChoicePropertyPanel(ScrolledPanel):
                 continue  # We're binary or some other style without a specific control.
 
             # Get enabled value
-            try:
-                enabled = c["enabled"]
-                control.Enable(enabled)
-            except KeyError:
-                # Listen to establish whether this control should be enabled based on another control's value.
+            enabled = choice.get("enabled", True)  # Default to True if not specified
+
+            # If explicitly disabled, take precedence
+            if enabled is False:
+                control.Enable(False)
+            else:
+                # If enabled is True or not specified, check conditional logic
+                c_attr = None
+                c_obj = None
+                c_equals = None
+
                 try:
-                    conditional = c["conditional"]
-                    if len(conditional) == 2:
+                    conditional = choice["conditional"]
+                    if conditional is not None and len(conditional) == 2:
                         c_obj, c_attr = conditional
-                        enabled = bool(getattr(c_obj, c_attr))
+                        try:
+                            conditional_enabled = bool(getattr(c_obj, c_attr))
+                        except AttributeError:
+                            # Attribute doesn't exist, default to disabled
+                            conditional_enabled = False
                         c_equals = True
-                        control.Enable(enabled)
-                    elif len(conditional) == 3:
+                        if isinstance(control, list):
+                            for ctrl in control:
+                                ctrl.Enable(conditional_enabled)
+                        else:
+                            control.Enable(conditional_enabled)
+                    elif conditional is not None and len(conditional) == 3:
                         c_obj, c_attr, c_equals = conditional
-                        enabled = bool(getattr(c_obj, c_attr) == c_equals)
-                        control.Enable(enabled)
-                    elif len(conditional) == 4:
+                        try:
+                            conditional_enabled = getattr(c_obj, c_attr) == c_equals
+                        except AttributeError:
+                            # Attribute doesn't exist, default to disabled
+                            conditional_enabled = False
+                        if isinstance(control, list):
+                            for ctrl in control:
+                                ctrl.Enable(conditional_enabled)
+                        else:
+                            control.Enable(conditional_enabled)
+                    elif conditional is not None and len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
+                        try:
+                            conditional_enabled = (
+                                c_from <= getattr(c_obj, c_attr) <= c_to
+                            )
+                        except (AttributeError, TypeError):
+                            # Attribute doesn't exist or comparison error, default to disabled
+                            conditional_enabled = False
                         c_equals = (c_from, c_to)
-                        control.Enable(enabled)
+                        if isinstance(control, list):
+                            for ctrl in control:
+                                ctrl.Enable(conditional_enabled)
+                        else:
+                            control.Enable(conditional_enabled)
 
-                    def on_enable_listener(param, ctrl, obj, eqs):
-                        def listen(origin, value, target=None):
-                            try:
-                                if isinstance(eqs, (list, tuple)):
-                                    enable = bool(
-                                        eqs[0] <= getattr(obj, param) <= eqs[1]
-                                    )
-                                else:
-                                    enable = bool(getattr(obj, param) == eqs)
-                                ctrl.Enable(enable)
-                            except (IndexError, RuntimeError):
-                                pass
+                    # Set up listener for conditional enabling if we have conditional logic
+                    if c_attr is not None and c_obj is not None:
 
-                        return listen
+                        def on_enable_listener(param, ctrl, obj, eqs):
+                            def listen(origin, value, target=None):
+                                try:
+                                    if isinstance(eqs, (list, tuple)):
+                                        enable = bool(
+                                            eqs[0] <= getattr(obj, param) <= eqs[1]
+                                        )
+                                    else:
+                                        enable = bool(getattr(obj, param) == eqs)
+                                    if isinstance(ctrl, list):
+                                        for c in ctrl:
+                                            c.Enable(enable)
+                                    else:
+                                        ctrl.Enable(enable)
+                                except (IndexError, RuntimeError, AttributeError):
+                                    # Handle missing attributes or other errors gracefully
+                                    pass
 
-                    listener = on_enable_listener(c_attr, control, c_obj, c_equals)
-                    self.listeners.append((c_attr, listener, c_obj))
-                    context.listen(c_attr, listener)
+                            return listen
+
+                        listener = on_enable_listener(c_attr, control, c_obj, c_equals)
+                        self.listeners.append((c_attr, listener, c_obj))
+                        self.context.listen(c_attr, listener)
+
                 except KeyError:
-                    pass
+                    # No conditional logic, use the enabled value (True by default)
+                    if isinstance(control, list):
+                        # Handle binary controls which return a list of controls
+                        for ctrl in control:
+                            ctrl.Enable(enabled)
+                    else:
+                        control.Enable(enabled)
+                    # Now we listen to 'ourselves' as well to learn about changes somewhere else...
 
-            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
                 def listen_to_myself(origin, value, target=None):
                     if self.context.kernel.is_shutdown:
@@ -1495,10 +707,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         except ValueError:
                             pass
                         if data is None:
-                            try:
-                                data = c["default"]
-                            except KeyError:
-                                pass
+                            data = choice.get("default")
                     if data is None:
                         # print (f"Invalid data based on {value}, exiting")
                         return
@@ -1508,6 +717,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         dummy = hasattr(ctrl, "GetValue")
                     except RuntimeError:
                         return
+                    # self.set_control_value(ctrl, data, dtype, dstyle)
                     if dtype == bool:
                         # Bool type objects get a checkbox.
                         if ctrl.GetValue() != data:
@@ -1576,7 +786,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                             except ValueError:
                                 update_needed = True
                             if update_needed:
-                                ctrl.SetValue(str(data))
+                                # Use consistent display formatting for all text controls
+                                display_value = self._format_text_display_value(
+                                    data, choice
+                                )
+                                ctrl.SetValue(display_value)
                     elif dtype == Length:
                         if float(data) != float(Length(ctrl.GetValue())):
                             update_needed = True
@@ -1591,33 +805,1846 @@ class ChoicePropertyPanel(ScrolledPanel):
                 return listen_to_myself
 
             if wants_listener:
-                update_listener = on_update_listener(
-                    attr, control, data_type, data_style, choice_list, obj
-                )
-                self.listeners.append((attr, update_listener, obj))
-                context.listen(attr, update_listener)
-            tip = c.get("tip")
-            if tip and not context.root.disable_tool_tips:
-                # Set the tool tip if 'tip' is available
-                control.SetToolTip(tip)
-            _help = c.get("help")
-            if _help and hasattr(control, "SetHelpText"):
-                control.SetHelpText(_help)
+                # Use helper method for setting up update listener
+                self._setup_update_listener(choice, control, obj, choice_list)
+
+            # Use helper method for setting up control properties
+            self._setup_choice_control_properties(choice, control)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection
 
-        self.SetSizer(sizer_very_main)
-        sizer_very_main.Fit(self)
-        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.SetSizer(root_horizontal_sizer)
+        # Do not call Fit(self) on a ScrolledPanel, as it can negate scrolling and cause layout issues.
+
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
 
-    def on_close(self, event):
-        # We should not need this, but better safe than sorry
-        event.Skip()
-        self.pane_hide()
+    # Event Handler Methods
+    def _dispatch_signals(self, param, value, obj, additional_signals):
+        """Helper method to dispatch property change signals."""
+        self.context.signal(param, value, obj)
+        for _sig in additional_signals:
+            self.context.signal(_sig)
+
+    def _update_property_and_signal(self, obj, param, new_value, additional_signals):
+        """Helper method to update property value and dispatch signals."""
+        has_settings = hasattr(obj, "settings") and param in obj.settings
+        current_value = obj.settings[param] if has_settings else getattr(obj, param)
+        if current_value != new_value:
+            setattr(obj, param, new_value)
+            if has_settings:
+                obj.settings[param] = new_value
+            self._dispatch_signals(param, new_value, obj, additional_signals)
+            return True
+        return False
+
+    # UI Helper Methods
+    def _create_text_control(self, label, data, choice, handler_factory):
+        """
+        Unified TextCtrl creation for all text-based inputs.
+
+        This is the primary factory function for creating text-based controls across
+        all data types (str, int, float, Length, Angle). It handles the complex
+        configuration needed for different input types and styles.
+
+        Recent optimizations:
+        - Handler factories now receive control and choice only, extracting parameters internally
+        - Consistent formatting using _format_text_display_value for display values
+        - Proper support for power/speed controls with callable mode flags
+
+        Args:
+            label (str): Display label for the control
+            data: Current value to display in the control
+            choice (dict): Complete choice configuration
+            handler_factory (callable): Factory function that creates the event handler
+
+        Returns:
+            tuple: (control, control_sizer) - the text control and its container sizer
+        """
+        # Extract type and style from choice
+        data_type = choice.get("type")
+        data_style = choice.get("style")
+
+        # Handle special flat style
+        if choice.get("style") == "flat":
+            control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            if label != "":
+                label_text = wxStaticText(self, id=wx.ID_ANY, label=label)
+                control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        else:
+            control_sizer = self._create_labeled_sizer(label)
+
+        # Determine text control configuration
+        text_config = self._get_text_control_config(data_type, choice)
+
+        # Create the control
+        control = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=text_config.get("style", wx.TE_PROCESS_ENTER),
+            limited=text_config.get("limited", False),
+            check=text_config.get("check", ""),
+            nonzero=text_config.get("nonzero", False),
+        )
+
+        # Set display value
+        display_value = self._format_text_display_value(data, choice)
+        control.SetValue(display_value)
+
+        # Apply width and validation
+        self._apply_control_width(control, choice.get("width", 0))
+        self._setup_text_validation(control, data_type, choice)
+
+        # Add to sizer
+        control_sizer.Add(control, 1, wx.EXPAND, 0)
+
+        # Add button for file inputs
+        if text_config.get("has_button"):
+            button = wxButton(self, wx.ID_ANY, text_config.get("button_text", "..."))
+            control_sizer.Add(button, 0, wx.EXPAND, 0)
+            # Store button reference for handler setup
+            control._file_button = button
+            control._wildcard = text_config.get("wildcard", "*")
+
+        # Set up event handler
+        if handler_factory:
+            control.SetActionRoutine(handler_factory())
+
+        return control, control_sizer
+
+    def _create_combo_control(self, label, data, choice, handler_factory=None):
+        """Unified wxComboBox creation for all combo-based inputs."""
+        # Extract type and style from choice
+        data_type = choice.get("type")
+        data_style = choice.get("style")
+
+        # Determine sizer type based on style
+        if data_style == "combosmall":
+            control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        else:
+            control_sizer = self._create_labeled_sizer(label)
+
+        # Get combo configuration
+        combo_config = self._get_combo_control_config(data_type, choice)
+
+        # Create choices list
+        choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+
+        # Create the control
+        control = wxComboBox(
+            self,
+            wx.ID_ANY,
+            choices=choice_list,
+            style=combo_config["style"],
+        )
+
+        # Set display value
+        self._set_combo_value(control, data, data_type, choice_list)
+
+        # Apply width constraints
+        if data_style == "combosmall":
+            testsize = control.GetBestSize()
+            control.SetMaxSize(dip_size(self, testsize[0] + 30, -1))
+        else:
+            self._apply_control_width(control, choice.get("width", 0))
+
+        # Add to sizer
+        if data_style == "combosmall" and label != "":
+            label_text = wxStaticText(self, id=wx.ID_ANY, label=label)
+            control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        # Set up event handler
+        if handler_factory:
+            control.Bind(wx.EVT_COMBOBOX, handler_factory())
+            # For combosmall non-exclusive, also bind text events
+            if data_style == "combosmall" and not choice.get("exclusive", True):
+                control.Bind(wx.EVT_TEXT, handler_factory())
+
+        return control, control_sizer
+
+    def _get_text_control_config(self, data_type, choice):
+        """
+        Generates TextCtrl configuration based on data type and style.
+
+        This function creates the appropriate validation and display configuration
+        for text controls based on the data type and special style requirements.
+        It handles complex configurations for power and speed controls that can
+        operate in different modes (percentage/absolute, per-minute/per-second).
+
+        Enhanced Features:
+        - Dynamic validation limits based on callable flags
+        - Power control support with percentage/absolute mode detection
+        - Speed control support with per-minute/per-second mode detection
+        - Proper validation types for numeric controls
+        - Length/Angle-specific validation and formatting
+
+        Args:
+            data_type (type): The Python type (int, float, str, Length, Angle)
+            choice (dict): Choice configuration with style, validation limits, and flags
+
+        Returns:
+            dict: Configuration dictionary for TextCtrl creation containing:
+                - style: wx text control style flags
+                - limited: bool indicating validation is enabled
+                - check: validation type ("int", "float", "length", "angle")
+                - lower/upper: validation bounds
+                - nonzero: whether zero values are allowed
+        """
+        text_config = {"style": wx.TE_PROCESS_ENTER}
+
+        # Type-specific configurations
+        if data_type in (int, float):
+            text_config["limited"] = True
+            text_config["check"] = "int" if data_type == int else "float"
+
+            # Special handling for power controls - set appropriate validation limits
+            if choice.get("style") == "power":
+                # Determine if this is percentage or absolute mode
+                percent_flag = choice.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+
+                if percent_mode:
+                    # Percentage mode: 0-100%
+                    text_config.update({"lower": 0.0, "upper": 100.0})
+                else:
+                    # Absolute mode: 0-1000
+                    text_config.update({"lower": 0.0, "upper": 1000.0})
+            # Special handling for speed controls - set appropriate validation limits
+            if choice.get("style") == "speed":
+                # Determine if this is per minute or per second mode
+                perminute_flag = choice.get("perminute", False)
+                perminute_mode = (
+                    perminute_flag() if callable(perminute_flag) else perminute_flag
+                )
+
+                # Set minimum to 0, but let maximum be flexible for speed values
+                text_config.update({"lower": 0.0})
+
+        elif data_type == Length:
+            text_config.update(
+                {
+                    "limited": True,
+                    "check": "length",
+                    "nonzero": choice.get("nonzero", False),
+                }
+            )
+        elif data_type == Angle:
+            text_config.update({"check": "angle", "limited": True})
+        elif choice.get("style") == "multiline":
+            text_config["style"] = wx.TE_MULTILINE
+        elif choice.get("style") == "file":
+            text_config.update(
+                {
+                    "has_button": True,
+                    "button_text": "...",
+                    "wildcard": choice.get("wildcard", "*"),
+                }
+            )
+
+        return text_config
+
+    def _get_combo_control_config(self, data_type, choice):
+        """Generate wxComboBox configuration based on data type and style."""
+        combo_config = {}
+        data_style = choice.get("style")
+
+        if data_style == "combosmall":
+            exclusive = choice.get("exclusive", True)
+            combo_config["style"] = (
+                wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN
+            )
+        else:  # regular combo
+            combo_config["style"] = wx.CB_DROPDOWN | wx.CB_READONLY
+
+        return combo_config
+
+    def _set_combo_value(self, control, data, data_type, choice_list):
+        """Set the value of a combo control based on data type."""
+        if data is not None:
+            if data_type == str:
+                control.SetValue(str(data))
+            else:
+                # Find closest numeric match
+                least = None
+                for entry in choice_list:
+                    if least is None:
+                        least = entry
+                    else:
+                        if abs(data_type(entry) - data) < abs(data_type(least) - data):
+                            least = entry
+                if least is not None:
+                    control.SetValue(least)
+
+    def _create_radio_control(self, label, data, choice, handler_factory=None):
+        """Unified radio control creation for radio and option styles."""
+        # Extract type and style from choice
+        data_type = choice.get("type")
+        data_style = choice.get("style")
+
+        # Create horizontal sizer for both types
+        control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        if data_style == "radio":
+            # Traditional radio box
+            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+            control = wxRadioBox(
+                self,
+                wx.ID_ANY,
+                label,
+                choices=choice_list,
+                majorDimension=3,
+                style=wx.RA_SPECIFY_COLS,
+            )
+
+            # Set selection based on data type
+            self._set_radio_selection(control, data, data_type, choice_list)
+
+            # Apply width and add to sizer
+            self._apply_control_width(control, choice.get("width", 0))
+            control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+            # Set up event handler
+            if handler_factory:
+                control.Bind(wx.EVT_RADIOBOX, handler_factory())
+
+        elif data_style == "option":
+            # Option-style combo with display/choice separation
+            display_list = list(map(str, choice.get("display")))
+            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+
+            # Handle value not in list
+            try:
+                index = choice_list.index(str(data))
+            except ValueError:
+                index = 0
+                if data is None:
+                    data = choice.get("default")
+                display_list.insert(0, str(data))
+                choice_list.insert(0, str(data))
+
+            # Create combo control
+            control = wxComboBox(
+                self,
+                wx.ID_ANY,
+                choices=display_list,
+                style=wx.CB_DROPDOWN | wx.CB_READONLY,
+            )
+            control.SetSelection(index)
+
+            # Constrain width
+            testsize = control.GetBestSize()
+            control.SetMaxSize(dip_size(self, testsize[0] + 30, -1))
+
+            # Add label if provided
+            if label != "":
+                label_text = wxStaticText(self, id=wx.ID_ANY, label=f"{label} ")
+                control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+            control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+            # Store choice list for handler
+            control._choice_list = choice_list
+
+            # Set up event handler
+            if handler_factory:
+                control.Bind(wx.EVT_COMBOBOX, handler_factory())
+
+        return control, control_sizer
+
+    def _set_radio_selection(self, control, data, data_type, choice_list):
+        """Set radio box selection based on data and type."""
+        if data is not None:
+            if data_type == str:
+                control.SetSelection(0)  # Default
+                for idx, choice in enumerate(choice_list):
+                    if choice == data:
+                        control.SetSelection(idx)
+                        break
+            else:
+                control.SetSelection(int(data))
+
+    def _create_button_control(self, label, data, choice, handler_factory=None):
+        """Unified button control creation for button, color, and checkbox styles."""
+        # Extract type and style from choice
+        data_type = choice.get("type")
+        data_style = choice.get("style")
+        wants_listener = True  # Most button types want listeners
+
+        if data_style == "button":
+            # Simple action button
+            wants_listener = False  # Button style doesn't want listener
+            control = wxButton(self, label=label)
+            control_sizer = None  # Button goes directly into main sizer
+
+            # Set up event handler
+            if handler_factory:
+                control.Bind(wx.EVT_BUTTON, handler_factory())
+
+        elif data_style == "color":
+            # Color picker button
+            control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            control = wxButton(self, -1)
+
+            # Set up color display
+            datastr = data
+            data_color = Color(datastr)
+            self._set_color_button(control, data_color)
+
+            # Add color info label
+            control_sizer.Add(control, 0, wx.EXPAND, 0)
+            color_info = wxStaticText(self, wx.ID_ANY, label)
+            control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
+
+            # Set up event handler
+            if handler_factory:
+                control.Bind(wx.EVT_BUTTON, handler_factory())
+
+        else:
+            # Regular checkbox for bool
+            control = wxCheckBox(self, label=label)
+            control.SetValue(data)
+            control.SetMinSize(dip_size(self, -1, 23))
+            control_sizer = None  # Checkbox goes directly into main sizer
+
+            # Set up event handler
+            if handler_factory:
+                control.Bind(wx.EVT_CHECKBOX, handler_factory())
+
+        # Apply width configuration
+        self._apply_control_width(control, choice.get("width", 0))
+
+        return control, control_sizer, wants_listener
+
+    def _set_color_button(self, control, color):
+        """Set color button appearance based on color value."""
+        control.SetLabel(str(color.hex))
+        control.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+        if Color.distance(color, Color("black")) > Color.distance(
+            color, Color("white")
+        ):
+            control.SetForegroundColour(wx.BLACK)
+        else:
+            control.SetForegroundColour(wx.WHITE)
+        control.color = color
+
+    def _create_slider_control(self, label, data, choice, handler_factory=None):
+        """Unified slider control creation for numeric slider inputs."""
+        # Extract type and style from choice
+        data_type = choice.get("type")
+        data_style = choice.get("style")
+        # Create labeled sizer
+        control_sizer = self._create_labeled_sizer(label)
+
+        # Get slider configuration
+        minvalue = choice.get("min", 0)
+        maxvalue = choice.get("max", 0)
+
+        # Convert data to appropriate numeric type
+        if data_type == float:
+            value = float(data)
+        elif data_type == int:
+            value = int(data)
+        else:
+            value = int(data)
+
+        # Handle callable min/max values
+        if callable(minvalue):
+            minvalue = minvalue()
+        if callable(maxvalue):
+            maxvalue = maxvalue()
+
+        # Create slider control
+        control = wx.Slider(
+            self,
+            wx.ID_ANY,
+            value=int(value),
+            minValue=int(minvalue),
+            maxValue=int(maxvalue),
+            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+        )
+
+        # Apply width and add to sizer
+        self._apply_control_width(control, choice.get("width", 0))
+        control_sizer.Add(control, 1, wx.EXPAND, 0)
+
+        if handler_factory:
+            control.Bind(wx.EVT_SLIDER, handler_factory())
+
+        return control, control_sizer
+
+    def _create_binary_control(self, label, data, choice, obj):
+        """Unified binary control creation for binary checkbox patterns."""
+        attr = choice["attr"]
+        data_type = choice.get("type")
+        mask = choice.get("mask")
+        additional_signal = self._get_additional_signals(choice)
+
+        # Get mask bits if specified
+        mask_bits = 0
+        if mask is not None and hasattr(obj, mask):
+            mask_bits = getattr(obj, mask)
+
+        # Create main sizer structure
+        control_sizer = self._create_labeled_sizer(label)
+
+        # Create header labels
+        bit_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Empty header
+        label_text = wxStaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL)
+        bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+
+        # Mask header if mask exists
+        if mask is not None:
+            label_text = wxStaticText(
+                self,
+                wx.ID_ANY,
+                _("mask") + " ",
+                style=wx.ALIGN_CENTRE_HORIZONTAL,
+            )
+            bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+
+        # Value header
+        label_text = wxStaticText(
+            self, wx.ID_ANY, _("value") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL
+        )
+        bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+        control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
+
+        # Create bit columns
+        bits = choice.get("bits", 8)
+        controls = []
+
+        for b in range(bits):
+            # Create bit column
+            bit_sizer = wx.BoxSizer(wx.VERTICAL)
+
+            # Bit number label
+            label_text = wxStaticText(
+                self, wx.ID_ANY, str(b), style=wx.ALIGN_CENTRE_HORIZONTAL
+            )
+            bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+
+            # Value checkbox
+            control = wxCheckBox(self)
+            control.SetValue(bool((data >> b) & 1))
+            if mask:
+                control.Enable(bool((mask_bits >> b) & 1))
+
+            # Set up value handler
+            control.Bind(
+                wx.EVT_CHECKBOX,
+                self._make_checkbox_bitcheck_handler(
+                    attr, control, obj, b, additional_signal
+                ),
+            )
+
+            # Store for return
+            controls.append(control)
+
+            # Mask checkbox if mask exists
+            if mask:
+                mask_ctrl = wxCheckBox(self)
+                mask_ctrl.SetValue(bool((mask_bits >> b) & 1))
+                mask_ctrl.Bind(
+                    wx.EVT_CHECKBOX,
+                    self._make_checkbox_bitcheck_handler(
+                        mask,
+                        mask_ctrl,
+                        obj,
+                        b,
+                        additional_signal,
+                        enable_ctrl=control,
+                    ),
+                )
+                bit_sizer.Add(mask_ctrl, 0, wx.EXPAND, 0)
+
+            bit_sizer.Add(control, 0, wx.EXPAND, 0)
+            control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
+
+        return controls, control_sizer
+
+    def _get_control_factory(self, data_type, data_style):
+        """
+        Returns factory functions for creating controls and their event handlers.
+
+        This function provides a dispatch table that maps (data_type, data_style) combinations
+        to the appropriate control factory, handler factory, and special handling flag.
+
+        The dispatch table has been optimized to minimize parameter passing:
+        - Control factories receive choice dictionary and extract needed parameters internally
+        - Handler factories receive control and choice, extracting obj/attr parameters internally
+        - Lambda functions in the dispatch table use minimal parameter lists
+
+        Args:
+            data_type (type): Python type (bool, str, int, float, Length, Angle, Color, list)
+            data_style (str): Style override for control type (None, "file", "slider", "combo", etc.)
+
+        Returns:
+            tuple: (factory_function, handler_factory, needs_special_handling)
+                - factory_function: Creates the control widget
+                - handler_factory: Creates event handler for the control
+                - needs_special_handling: bool indicating if factory handles its own sizer addition
+
+        Note:
+            Lambda parameters in the dispatch table define the interface for when the lambdas
+            are invoked by _create_control_using_dispatch, not references to variables in the
+            current scope. All handler factories extract obj=choice["object"] and
+            attr=choice["attr"] internally.
+        """
+        # Import types for dispatch table
+        from meerk40t.core.units import Angle, Length
+        from meerk40t.svgelements import Color
+
+        # Define dispatch table as (data_type, data_style): (factory, handler_factory, needs_special_handling)
+        # fmt:off
+        dispatch_table = {
+            # Text-based controls
+            (str, None): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_generic_text_handler(control, choice),
+                False,
+            ),
+            (int, None): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_generic_text_handler(control, choice),
+                False,
+            ),
+            (float, None): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_generic_text_handler(control, choice),
+                False,
+            ),
+            (float, "power"): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_power_text_handler(control, choice),
+                False,
+            ),
+            (float, "speed"): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_speed_text_handler(control, choice),
+                False,
+            ),
+            (str, "multiline"): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_generic_multi_handler(control, choice),
+                False,
+            ),
+            (str, "file"): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_file_text_handler_with_button(control, choice),
+                False,
+            ),
+            (Length, None): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_length_text_handler(control, choice),
+                False,
+            ),
+            (Angle, None): (
+                self._create_text_control,
+                lambda attr, control, obj, choice: self._make_angle_text_handler(control, choice),
+                False,
+            ),
+            # Button-based controls
+            (bool, "button"): (
+                self._create_button_control,
+                lambda attr, obj, choice: self._make_button_handler(choice),
+                False,
+            ),
+            (bool, None): (
+                self._create_button_control,
+                lambda attr, control, obj, choice: self._make_checkbox_handler(control, choice),
+                False,
+            ),
+            (str, "color"): (
+                self._create_button_control,
+                lambda attr, control, obj, choice: self._make_button_color_handler(control, choice),
+                False,
+            ),
+            # Combo-based controls
+            (str, "combo"): (
+                self._create_combo_control,
+                lambda attr, control, obj, choice: self._make_combo_text_handler(control, choice),
+                False,
+            ),
+            (int, "combo"): (
+                self._create_combo_control,
+                lambda attr, control, obj, choice: self._make_combo_text_handler(control, choice),
+                False,
+            ),
+            (float, "combo"): (
+                self._create_combo_control,
+                lambda attr, control, obj, choice: self._make_combo_text_handler(control, choice),
+                False,
+            ),
+            (str, "combosmall"): (
+                self._create_combo_control,
+                lambda attr, control, obj, choice: self._make_combosmall_text_handler(control, choice),
+                False,
+            ),
+            (int, "combosmall"): (
+                self._create_combo_control,
+                lambda attr, control, obj, choice: self._make_combosmall_text_handler(control, choice),
+                False,
+            ),
+            (float, "combosmall"): (
+                self._create_combo_control,
+                lambda attr, control, obj, choice: self._make_combosmall_text_handler(control, choice),
+                False,
+            ),
+            # Radio-based controls
+            (str, "radio"): (
+                self._create_radio_control,
+                lambda attr, control, obj, choice: self._make_radio_select_handler(control, choice),
+                False,
+            ),
+            (int, "radio"): (
+                self._create_radio_control,
+                lambda attr, control, obj, choice: self._make_radio_select_handler(control, choice),
+                False,
+            ),
+            (int, "option"): (
+                self._create_radio_control,
+                lambda attr, control, obj, choice: self._make_combosmall_option_handler(control, choice),
+                False,
+            ),
+            (str, "option"): (
+                self._create_radio_control,
+                lambda attr, control, obj, choice: self._make_combosmall_option_handler(control, choice),
+                False,
+            ),
+            # Slider controls
+            (int, "slider"): (
+                self._create_slider_control,
+                lambda attr, control, obj, choice: self._make_slider_handler(control, choice),
+                False,
+            ),
+            (float, "slider"): (
+                self._create_slider_control,
+                lambda attr, control, obj, choice: self._make_slider_handler(control, choice),
+                False,
+            ),
+            # Binary controls
+            (int, "binary"): (self._create_binary_control, None, False),
+            # Special cases requiring custom handling
+            (str, "info"): ("info", None, True),
+            (list, "chart"): ("chart", None, True),
+            (Color, None): ("color_type", None, True),
+        }
+        # fmt:on
+
+        # Try exact match first
+        key = (data_type, data_style)
+        if key in dispatch_table:
+            return dispatch_table[key]
+
+        # Try with None style for basic types
+        key = (data_type, None)
+        return dispatch_table.get(key, (None, None, False))
+
+    def _create_control_using_dispatch(self, label, data, choice, obj):
+        """
+        Create a control using the dispatch table system.
+        Returns (control, control_sizer, wants_listener) or None if unable to create.
+        """
+        attr = choice["attr"]
+        data_style = choice.get("style")
+        data_type = choice.get("type")
+        additional_signal = self._get_additional_signals(choice)
+        factory, handler_factory, needs_special_handling = self._get_control_factory(
+            data_type, data_style
+        )
+
+        if factory is None:
+            return None, None, None
+
+        # Handle special cases
+        if needs_special_handling:
+            if factory == "info":
+                return self._create_info_control(label), None, False
+            elif factory == "chart":
+                return (
+                    self._create_chart_control(label, data, choice),
+                    None,
+                    True,
+                )
+            elif factory == "color_type":
+                return (
+                    self._create_color_type_control(label, data, choice),
+                    None,
+                    True,
+                )
+            return None, None, None
+
+        # Handle regular controls
+        if factory == self._create_binary_control:
+            # Binary controls have a different signature
+            controls, control_sizer = factory(label, data, choice, obj)
+            return controls, control_sizer, False
+        elif data_style == "file":
+            # File controls need extra parameters - create without handler first
+            control, control_sizer = factory(
+                label,
+                data,
+                {**choice, "style": data_style},
+                lambda: None,  # Dummy handler for now
+            )
+            # Now bind the real handler after control is created
+            if handler_factory is not None:
+                real_handler = handler_factory(attr, control, obj, choice)
+                if hasattr(control, "Bind"):
+                    control.Bind(wx.EVT_TEXT, real_handler)
+            return control, control_sizer, True
+        elif data_style == "option":
+            # Option controls need choice list - create without handler first
+            control, control_sizer = factory(
+                label,
+                data,
+                choice,
+                lambda: None,  # Dummy handler for now
+            )
+            # Now bind the real handler after control is created
+            if handler_factory is not None:
+                real_handler = handler_factory(
+                    attr,
+                    control,
+                    obj,
+                    choice,
+                )
+                if hasattr(control, "Bind"):
+                    control.Bind(wx.EVT_COMBOBOX, real_handler)
+            return control, control_sizer, True
+        elif data_type == bool and data_style == "button":
+            # Button-style bool controls have different handler signature
+            control, control_sizer, wants_listener = factory(
+                label,
+                data,
+                choice,
+                lambda: None,  # Dummy handler for now
+            )
+            # Now bind the real handler after control is created
+            if handler_factory is not None:
+                real_handler = handler_factory(attr, obj, choice)
+                if hasattr(control, "Bind"):
+                    control.Bind(wx.EVT_BUTTON, real_handler)
+            return control, control_sizer, wants_listener
+        elif data_type == bool:
+            # Regular bool controls
+            control, control_sizer, wants_listener = factory(
+                label,
+                data,
+                choice,
+                lambda: None,  # Dummy handler for now
+            )
+            # Now bind the real handler after control is created
+            if handler_factory is not None:
+                real_handler = handler_factory(attr, control, obj, choice)
+                if hasattr(control, "Bind"):
+                    control.Bind(wx.EVT_CHECKBOX, real_handler)
+            return control, control_sizer, wants_listener
+        elif data_type == str and data_style == "color":
+            # Color button controls
+            control, control_sizer, wants_listener = factory(
+                label,
+                data,
+                choice,
+                lambda: None,  # Dummy handler for now
+            )
+            # Now bind the real handler after control is created
+            if handler_factory is not None:
+                real_handler = handler_factory(attr, control, obj, choice)
+                if hasattr(control, "Bind"):
+                    control.Bind(wx.EVT_BUTTON, real_handler)
+            return control, control_sizer, wants_listener
+        else:
+            # Standard text, combo, radio, slider controls
+            control, control_sizer = factory(
+                label,
+                data,
+                {**choice, "style": data_style}
+                if factory == self._create_text_control
+                else choice,
+                lambda: None,  # Dummy handler for now
+            )
+            # Now bind the real handler after control is created
+            if handler_factory is not None:
+                real_handler = handler_factory(attr, control, obj, choice)
+                # Bind appropriate event based on control type
+                if hasattr(control, "Bind"):
+                    if data_style in ("combo", "combosmall"):
+                        control.Bind(wx.EVT_COMBOBOX, real_handler)
+                        if hasattr(control, "GetTextCtrl"):
+                            text_ctrl = control.GetTextCtrl()
+                            if text_ctrl:
+                                text_ctrl.Bind(wx.EVT_TEXT, real_handler)
+                    elif data_style == "radio":
+                        control.Bind(wx.EVT_RADIOBOX, real_handler)
+                    elif data_style == "slider":
+                        control.Bind(wx.EVT_SLIDER, real_handler)
+                    else:
+                        # Default text controls
+                        control.Bind(wx.EVT_TEXT, real_handler)
+            return control, control_sizer, True
+
+    def _create_info_control(self, label):
+        """Create info/static text controls."""
+        control = wxStaticText(self, label=label)
+        return control
+
+    def _create_chart_control(self, label, data, choice):
+        """Create chart/list controls (placeholder - keep existing logic for now)."""
+        # Extract obj from choice since obj = choice["object"]
+        obj = choice["object"]
+        # Extract additional_signal from choice
+        additional_signal = self._get_additional_signals(choice)
+        # This would contain the existing chart creation logic
+        # For now, return None to indicate we should fall back to original logic
+        return None
+
+    def _create_color_type_control(self, label, data, choice):
+        """Create Color type controls (placeholder - keep existing logic for now)."""
+        # Extract obj from choice since obj = choice["object"]
+        obj = choice["object"]
+        # Extract additional_signal from choice
+        additional_signal = self._get_additional_signals(choice)
+        # This would contain the existing Color type creation logic
+        # For now, return None to indicate we should fall back to original logic
+        return None
+
+    def _format_text_display_value(self, data, choice):
+        """
+        Formats data values for consistent display in text controls.
+
+        This utility function handles the complex formatting requirements for different
+        data types and control styles, ensuring consistent display across the interface.
+        It is used by both control creation and control update functions.
+
+        Key Features:
+        - Length objects: Uses preferred units and appropriate decimal places
+        - Power controls: Handles percentage/absolute mode conversions with callable flags
+        - Speed controls: Handles per-minute/per-second mode conversions with callable flags
+        - Angle objects: Proper formatting with appropriate precision
+        - Basic types: String conversion with fallback handling
+
+        Mode Support:
+        - Power percentage mode: Converts 0-1000 absolute values to 0-100% display
+        - Power absolute mode: Displays 0-1000 values directly
+        - Speed per-minute mode: Converts per-second to per-minute for display
+        - Speed per-second mode: Displays per-second values directly
+
+        Args:
+            data: The raw data value to format
+            choice (dict): Choice configuration containing type, style, and mode flags
+
+        Returns:
+            str: Formatted string representation suitable for text control display
+        """
+        # Get type from choice, fallback to actual data type
+        data_type = choice.get("type")
+
+        if data_type == Length and hasattr(data, "preferred_length"):
+            if not data._preferred_units:
+                data._preferred_units = "mm"
+            if not data._digits:
+                if data._preferred_units in ("mm", "cm", "in", "inch"):
+                    data._digits = 4
+            return data.preferred_length
+        elif choice.get("style") == "power":
+            # Power controls: convert absolute value (0-1000) to display format
+            percent_flag = choice.get("percent", False)
+            percent_mode = percent_flag() if callable(percent_flag) else percent_flag
+            if percent_mode:
+                # Convert absolute value to percentage (0-1000 -> 0-100%)
+                return str(float(data) / 10.0)
+            else:
+                # Display absolute value directly
+                return str(data)
+        elif choice.get("style") == "speed":
+            # Speed controls: convert absolute value to display format
+            per_minute_flag = choice.get("perminute", False)
+            per_minute_mode = (
+                per_minute_flag() if callable(per_minute_flag) else per_minute_flag
+            )
+            if per_minute_mode:
+                # Convert absolute value to per minute (0-1000 -> 0-100%)
+                return str(float(data) * 60.0)
+            else:
+                # Display absolute value directly
+                return str(data)
+        else:
+            return str(data)
+
+    def _setup_text_validation(self, control, data_type, choice):
+        """Set up validation limits for text controls."""
+        if data_type in (int, float):
+            lower_range = choice.get("lower", None)
+            upper_range = choice.get("upper", None)
+
+            if lower_range is not None:
+                control.lower_limit = lower_range
+                control.lower_limit_err = lower_range
+            if upper_range is not None:
+                control.upper_limit = upper_range
+                control.upper_limit_err = upper_range
+
+    def _apply_control_width(self, control, width):
+        """Helper method to apply width constraints to a control."""
+        if width > 0:
+            control.SetMaxSize(dip_size(self, width, -1))
+
+    def _create_labeled_sizer(self, label, orientation=wx.HORIZONTAL):
+        """Helper method to create a sizer with optional label."""
+        if label != "":
+            return StaticBoxSizer(self, wx.ID_ANY, label, orientation)
+        else:
+            return wx.BoxSizer(orientation)
+
+    def _create_control_with_handler(
+        self,
+        control_type,
+        parent_sizer,
+        control,
+        handler,
+        event_type,
+        weight=1,
+        expansion_flag=0,
+    ):
+        """Helper method to bind event handlers and add controls to sizers."""
+        if handler:
+            control.Bind(event_type, handler)
+        parent_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+        return control
+
+    def _make_combo_text_handler(self, ctrl, choice):
+        """Creates a handler for combo text controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_combo_text_change(event):
+            try:
+                user_input = dtype(ctrl.GetValue())
+                self._update_property_and_signal(obj, param, user_input, addsig)
+            except (ValueError, TypeError):
+                # Invalid input - could log this if needed, but don't crash the UI
+                # For now, silently ignore invalid input to keep UI responsive
+                pass
+
+        return handle_combo_text_change
+
+    def _make_button_handler(self, choice):
+        """Creates a handler for button controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_button_click(event):
+            # We just set it to True to kick it off
+            self._update_property_and_signal(obj, param, True, addsig)
+
+        return handle_button_click
+
+    def _make_checkbox_handler(self, ctrl, choice):
+        """
+        Creates an event handler for checkbox controls.
+
+        This handler automatically extracts the object and attribute from the choice
+        dictionary and updates the property when the checkbox state changes.
+
+        Args:
+            ctrl (wx.CheckBox): The checkbox control
+            choice (dict): Choice configuration containing 'object', 'attr', and optional 'signals'
+
+        Returns:
+            callable: Event handler function for wx.EVT_CHECKBOX events
+        """
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_checkbox_change(event):
+            is_checked = bool(ctrl.GetValue())
+            self._update_property_and_signal(obj, param, is_checked, addsig)
+
+        return handle_checkbox_change
+
+    def _make_checkbox_bitcheck_handler(
+        self, param, ctrl, obj, bit, addsig, enable_ctrl=None
+    ):
+        """Creates a handler for checkbox bit controls."""
+
+        def handle_checkbox_bit_change(event):
+            is_checked = ctrl.GetValue()
+            if enable_ctrl is not None:
+                enable_ctrl.Enable(is_checked)
+            current = getattr(obj, param)
+            if is_checked:
+                current |= 1 << bit
+            else:
+                current &= ~(1 << bit)
+            self._update_property_and_signal(obj, param, current, addsig)
+
+        return handle_checkbox_bit_change
+
+    def _make_generic_multi_handler(self, ctrl, choice):
+        """Creates a handler for generic multi controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_multi_text_change(event):
+            v = ctrl.GetValue()
+            try:
+                dtype_v = dtype(v)
+                self._update_property_and_signal(obj, param, dtype_v, addsig)
+            except ValueError:
+                # cannot cast to data_type, pass
+                pass
+
+        return handle_multi_text_change
+
+    def _make_button_filename_handler(self, ctrl, wildcard, choice):
+        """Creates a handler for file button controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        label = choice.get("label", "Select File")
+        addsig = self._get_additional_signals(choice)
+
+        def handle_file_button_click(event):
+            with wx.FileDialog(
+                self,
+                label,
+                wildcard=wildcard if wildcard else "*",
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = str(fileDialog.GetPath())
+                ctrl.SetValue(pathname)
+                self.Layout()
+                try:
+                    self._update_property_and_signal(obj, param, pathname, addsig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+        return handle_file_button_click
+
+    def _make_file_text_handler(self, ctrl, choice):
+        """Creates a handler for file text controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_file_text_change(event):
+            v = ctrl.GetValue()
+            try:
+                dtype_v = dtype(v)
+                self._update_property_and_signal(obj, param, dtype_v, addsig)
+            except ValueError:
+                # cannot cast to data_type, pass
+                pass
+
+        return handle_file_text_change
+
+    def _make_file_text_handler_with_button(self, ctrl, choice):
+        """Creates a handler for file text controls with button integration."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+        label = choice.get("label", "Select File")
+
+        def handle_file_text_change(event):
+            v = ctrl.GetValue()
+            try:
+                dtype_v = dtype(v)
+                self._update_property_and_signal(obj, param, dtype_v, addsig)
+            except ValueError:
+                # cannot cast to data_type, pass
+                pass
+
+        # Set up button if it exists
+        if hasattr(ctrl, "_file_button"):
+            wildcard = getattr(ctrl, "_wildcard", "*")
+            ctrl._file_button.Bind(
+                wx.EVT_BUTTON,
+                self._make_button_filename_handler(
+                    ctrl,
+                    wildcard,
+                    choice,
+                ),
+            )
+
+        return handle_file_text_change
+
+    def _make_slider_handler(self, ctrl, choice):
+        """Creates a handler for slider controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", int)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_slider_change(event):
+            v = dtype(ctrl.GetValue())
+            self._update_property_and_signal(obj, param, v, addsig)
+
+        return handle_slider_change
+
+    def _make_radio_select_handler(self, ctrl, choice):
+        """Creates a handler for radio selection controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_radio_selection_change(event):
+            if dtype == int:
+                v = dtype(ctrl.GetSelection())
+            else:
+                # For non-int types, get the string value of the selected item
+                selection = ctrl.GetSelection()
+                if selection != wx.NOT_FOUND:
+                    v = dtype(ctrl.GetString(selection))
+                else:
+                    v = dtype("")  # Fallback to empty string if no selection
+            self._update_property_and_signal(obj, param, v, addsig)
+
+        return handle_radio_selection_change
+
+    def _make_combosmall_option_handler(self, ctrl, choice):
+        """Creates a handler for small combo option controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+        choice_list = choice.get("choices", [])
+
+        def handle_combo_option_selection(event):
+            try:
+                selected_choice = choice_list[ctrl.GetSelection()]
+                converted_value = dtype(selected_choice)
+                self._update_property_and_signal(obj, param, converted_value, addsig)
+            except (ValueError, TypeError, IndexError):
+                # Invalid selection or conversion - silently ignore to keep UI responsive
+                pass
+
+        return handle_combo_option_selection
+
+    def _make_combosmall_text_handler(self, ctrl, choice):
+        """Creates a handler for small combo text controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_combo_text_entry(event):
+            try:
+                v = dtype(ctrl.GetValue())
+                self._update_property_and_signal(obj, param, v, addsig)
+            except (ValueError, TypeError):
+                # Invalid input - silently ignore to keep UI responsive
+                pass
+
+        return handle_combo_text_entry
+
+    def _make_button_color_handler(self, ctrl, choice):
+        """Creates a handler for color button controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def set_color(control, color: Color):
+            control.SetLabel(str(color.hex))
+            control.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+            if Color.distance(color, Color("black")) > Color.distance(
+                color, Color("white")
+            ):
+                control.SetForegroundColour(wx.BLACK)
+            else:
+                control.SetForegroundColour(wx.WHITE)
+            control.color = color
+
+        def handle_color_button_click(event):
+            color_data = wx.ColourData()
+            color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
+            dlg = wx.ColourDialog(self, color_data)
+            if dlg.ShowModal() == wx.ID_OK:
+                color_data = dlg.GetColourData()
+                data = Color(swizzlecolor(color_data.GetColour().GetRGB()), 1.0)
+                set_color(ctrl, data)
+                try:
+                    data_v = data.hexa
+                    self._update_property_and_signal(obj, param, data_v, addsig)
+                except ValueError:
+                    # cannot cast to data_type, pass
+                    pass
+
+        return handle_color_button_click
+
+    def _make_angle_text_handler(self, ctrl, choice):
+        """Creates a handler for angle text controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_angle_text_change(event):
+            try:
+                v = Angle(ctrl.GetValue(), digits=5)
+                data_v = str(v)
+                self._update_property_and_signal(obj, param, data_v, addsig)
+            except ValueError:
+                # cannot cast to data_type, pass
+                pass
+
+        return handle_angle_text_change
+
+    def _make_power_text_handler(self, ctrl, choice):
+        """
+        Creates a handler for power text controls that supports both absolute and percentage modes.
+
+        Power controls can operate in two modes based on the 'percent' flag in the choice:
+        - Percentage mode: User enters 0-100%, internally converts to 0-1000 absolute
+        - Absolute mode: User enters 0-1000 directly
+
+        The 'percent' flag can be a boolean or callable that returns a boolean.
+
+        Args:
+            ctrl (wx.TextCtrl): The text control
+            choice (dict): Choice configuration containing 'object', 'attr', optional 'percent' flag, and 'signals'
+
+        Returns:
+            callable: Event handler function for text change events
+        """
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_power_text_change(event):
+            try:
+                v = ctrl.GetValue()
+                # Get the percent flag to determine conversion mode
+                percent_flag = choice.get("percent", False)
+                percent_mode = (
+                    percent_flag() if callable(percent_flag) else percent_flag
+                )
+
+                if percent_mode:
+                    # In percentage mode: user enters 0-100%, convert to 0-1000
+                    percent_value = float(v)
+                    if 0 <= percent_value <= 100:
+                        absolute_value = (
+                            percent_value * 10.0
+                        )  # Convert % to absolute (0-1000)
+                        self._update_property_and_signal(
+                            obj, param, absolute_value, addsig
+                        )
+                else:
+                    # In absolute mode: user enters 0-1000 directly
+                    absolute_value = float(v)
+                    if 0 <= absolute_value <= 1000:
+                        self._update_property_and_signal(
+                            obj, param, absolute_value, addsig
+                        )
+            except ValueError:
+                # cannot cast to float, pass
+                pass
+
+        return handle_power_text_change
+
+    def _make_speed_text_handler(self, ctrl, choice):
+        """
+        Creates a handler for speed text controls that supports both per-second and per-minute modes.
+
+        Speed controls can operate in two modes based on the 'perminute' flag in the choice:
+        - Per-minute mode: User enters per-minute values, internally converts to per-second
+        - Per-second mode: User enters per-second values directly
+
+        The 'perminute' flag can be a boolean or callable that returns a boolean.
+
+        Args:
+            ctrl (wx.TextCtrl): The text control
+            choice (dict): Choice configuration containing 'object', 'attr', optional 'perminute' flag, and 'signals'
+
+        Returns:
+            callable: Event handler function for text change events
+        """
+        """Creates a handler for speed text controls that supports both absolute and per-minute modes."""
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_speed_text_change(event):
+            try:
+                v = ctrl.GetValue()
+                # Get the perminute flag to determine conversion mode
+                perminute_flag = choice.get("perminute", False)
+                perminute_mode = (
+                    perminute_flag() if callable(perminute_flag) else perminute_flag
+                )
+
+                absolute_value = float(v)
+                if perminute_mode:
+                    # In per-minute mode: user enters per-minute value, convert to per-second
+                    if absolute_value >= 0:
+                        absolute_value /= 60.0  # Convert per-minute to per-second
+                else:
+                    # In absolute mode: user enters per-second value directly
+                    absolute_value = float(v)
+                if absolute_value >= 0:
+                    self._update_property_and_signal(obj, param, absolute_value, addsig)
+            except ValueError:
+                # cannot cast to float, pass
+                pass
+
+        return handle_speed_text_change
+
+    def _make_chart_start_handler(self, columns, param, ctrl, local_obj):
+        """Creates a handler for chart start events."""
+
+        def handle_chart_edit_start(event):
+            for column in columns:
+                if column.get("editable", False):
+                    event.Allow()
+                else:
+                    event.Veto()
+
+        return handle_chart_edit_start
+
+    def _make_chart_stop_handler(self, columns, param, ctrl, local_obj):
+        """Creates a handler for chart stop events."""
+
+        def handle_chart_edit_stop(event):
+            row_id = event.GetIndex()  # Get the current row
+            col_id = event.GetColumn()  # Get the current column
+            new_data = event.GetLabel()  # Get the changed data
+            ctrl.SetItem(row_id, col_id, new_data)
+            column = columns[col_id]
+            c_attr = column.get("attr")
+            c_type = column.get("type")
+            values = getattr(local_obj, param)
+            if isinstance(values[row_id], dict):
+                values[row_id][c_attr] = c_type(new_data)
+                self.context.signal(param, values, row_id, param)
+            elif isinstance(values[row_id], str):
+                values[row_id] = c_type(new_data)
+                self.context.signal(param, values, row_id)
+            else:
+                values[row_id][col_id] = c_type(new_data)
+                self.context.signal(param, values, row_id)
+
+        return handle_chart_edit_stop
+
+    def _make_chart_contextmenu_handler(
+        self, columns, param, ctrl, local_obj, allow_del, allow_dup, default
+    ):
+        """Creates a handler for chart context menu events."""
+
+        def fill_ctrl(ctrl, local_obj, param, columns):
+            data = getattr(local_obj, param)
+            ctrl.ClearAll()
+            for column in columns:
+                wd = column.get("width", 150)
+                if wd < 0:
+                    wd = ctrl.Size[0] - 10
+                ctrl.AppendColumn(
+                    column.get("label", ""),
+                    format=wx.LIST_FORMAT_LEFT,
+                    width=wd,
+                )
+            ctrl.resize_columns()
+            for dataline in data:
+                if isinstance(dataline, dict):
+                    for kk in dataline.keys():
+                        key = kk
+                        break
+                    row_id = ctrl.InsertItem(
+                        ctrl.GetItemCount(),
+                        dataline.get(key, 0),
+                    )
+                    for column_id, column in enumerate(columns):
+                        c_attr = column.get("attr")
+                        ctrl.SetItem(row_id, column_id, str(dataline.get(c_attr, "")))
+                elif isinstance(dataline, str):
+                    row_id = ctrl.InsertItem(
+                        ctrl.GetItemCount(),
+                        dataline,
+                    )
+                elif isinstance(dataline, (list, tuple)):
+                    row_id = ctrl.InsertItem(
+                        ctrl.GetItemCount(),
+                        dataline[0],
+                    )
+                    for column_id, column in enumerate(columns):
+                        # c_attr = column.get("attr")
+                        ctrl.SetItem(row_id, column_id, dataline[column_id])
+
+        def handle_chart_context_menu(event):
+            x, y = event.GetPosition()
+            row_id, flags = ctrl.HitTest((x, y))
+            if row_id < 0:
+                l_allow_del = False
+                l_allow_dup = False
+            else:
+                l_allow_del = allow_del
+                l_allow_dup = allow_dup
+            menu = wx.Menu()
+            if l_allow_del:
+
+                def handle_delete_menu_item(event):
+                    values = getattr(local_obj, param)
+                    values.pop(row_id)
+                    self.context.signal(param, values, 0, param)
+                    fill_ctrl(ctrl, local_obj, param, columns)
+
+                menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
+                self.Bind(wx.EVT_MENU, handle_delete_menu_item, id=menuitem.GetId())
+
+            if l_allow_dup:
+
+                def handle_duplicate_menu_item(event):
+                    values = getattr(local_obj, param)
+                    if isinstance(values[row_id], dict):
+                        newentry = dict()
+                        for key, content in values[row_id].items():
+                            newentry[key] = content
+                    else:
+                        newentry = copy(values[row_id])
+                    values.append(newentry)
+                    self.context.signal(param, values, 0, param)
+                    fill_ctrl(ctrl, local_obj, param, columns)
+
+                menuitem = menu.Append(wx.ID_ANY, _("Duplicate this entry"), "")
+                self.Bind(wx.EVT_MENU, handle_duplicate_menu_item, id=menuitem.GetId())
+
+            def handle_default_menu_item(event):
+                values = getattr(local_obj, param)
+                values.clear()
+                for e in default:
+                    values.append(e)
+                self.context.signal(param, values, 0, param)
+                fill_ctrl(ctrl, local_obj, param, columns)
+
+            menuitem = menu.Append(wx.ID_ANY, _("Restore defaults"), "")
+            self.Bind(wx.EVT_MENU, handle_default_menu_item, id=menuitem.GetId())
+
+            if menu.MenuItemCount != 0:
+                self.PopupMenu(menu)
+                menu.Destroy()
+
+        return handle_chart_context_menu
+
+    def _make_generic_text_handler(self, ctrl, choice):
+        """Creates a handler for generic text controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        dtype = choice.get("type", str)
+        addsig = self._get_additional_signals(choice)
+
+        def handle_generic_text_change(event):
+            v = ctrl.GetValue()
+            try:
+                dtype_v = dtype(v)
+                self._update_property_and_signal(obj, param, dtype_v, addsig)
+            except ValueError:
+                # cannot cast to data_type, pass
+                pass
+
+        return handle_generic_text_change
+
+    def _make_length_text_handler(self, ctrl, choice):
+        """Creates a handler for length text controls."""
+        param = choice["attr"]
+        obj = choice["object"]
+        addsig = self._get_additional_signals(choice)
+
+        def handle_length_text_change(event):
+            try:
+                v = Length(ctrl.GetValue())
+                data_v = v.preferred_length
+                # Special comparison for length objects as strings
+                current_value = getattr(obj, param)
+                if str(current_value) != str(data_v):
+                    setattr(obj, param, data_v)
+                    self.context.signal(param, data_v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
+            except ValueError:
+                # cannot cast to data_type, pass
+                pass
+
+        return handle_length_text_change
+
+    def _validate_and_prepare_choice(self, c):
+        """Validate and prepare a choice configuration."""
+        if isinstance(c, tuple):
+            # If c is tuple, convert to dict
+            dict_c = {}
+            try:
+                dict_c["object"] = c[0]
+                dict_c["attr"] = c[1]
+                dict_c["default"] = c[2]
+                dict_c["label"] = c[3]
+                dict_c["tip"] = c[4]
+                dict_c["type"] = c[5]
+            except IndexError:
+                pass
+            c = dict_c
+
+        try:
+            attr = c["attr"]
+            obj = c["object"]
+        except KeyError:
+            return None, None, None, False
+
+        # Check if hidden and not in developer mode
+        hidden = c.get("hidden", False)
+        hidden = bool(hidden) if hidden != "False" else False
+        developer_mode = self.context.root.setting(bool, "developer_mode", False)
+        if not developer_mode and hidden:
+            return None, None, None, False
+
+        # Check if ignored
+        ignore = c.get("ignore", False)
+        ignore = bool(ignore) if ignore != "False" else False
+        if ignore:
+            return None, None, None, False
+
+        return c, attr, obj, True
+
+    def _validate_choice_for_crucial_information(self, choice):
+        """Validate the choice configuration for crucial information."""
+        if not choice.get("attr"):
+            return False
+        if not choice.get("object"):
+            return False
+        if not choice.get("type"):
+            return False
+        return True
+
+    def _get_choice_data_and_type(self, c, obj):
+        """Get data and data type for a choice."""
+        attr = c["attr"]
+        # get default value
+        if hasattr(obj, attr):
+            # Object has the attribute, use its value (can be None and that's fine)
+            data = getattr(obj, attr)
+        elif hasattr(obj, "settings") and attr in obj.settings:
+            data = obj.settings[attr]
+        elif "default" in c:
+            # Use the provided default (can be None and that's fine)
+            data = c.get("default")
+        else:
+            # No default provided for missing attribute - this is an error
+            return None, None
+        data_type = type(data)
+        # Override with specified type if provided
+        specified_type = c.get("type")
+        if specified_type is not None:
+            data_type = specified_type
+        return data, data_type
+
+    def _get_additional_signals(self, choice):
+        """Extract additional signals from choice configuration."""
+        additional_signal = []
+        sig = choice.get("signals")
+        if isinstance(sig, str):
+            additional_signal.append(sig)
+        elif isinstance(sig, (tuple, list)):
+            for _sig in sig:
+                additional_signal.append(_sig)
+        return additional_signal
+
+    def _setup_choice_control_properties(self, choice, control):
+        """Set up control properties like tooltips, help, and conditional enabling."""
+        if control is None:
+            return
+
+        # Extract obj from choice since obj = choice["object"]
+        obj = choice["object"]
+
+        # Handle binary controls (control is a list of checkboxes)
+        if isinstance(control, list):
+            for individual_control in control:
+                self._setup_single_control_properties(choice, individual_control)
+        else:
+            self._setup_single_control_properties(choice, control)
+
+    def _setup_single_control_properties(self, choice, control):
+        """Set up properties for a single control (helper for _setup_control_properties)."""
+        if control is None:
+            return
+
+        # Extract obj from choice since obj = choice["object"]
+        obj = choice["object"]
+
+        # Set tooltip
+        tip = choice.get("tip")
+        if tip and not self.context.root.disable_tool_tips:
+            control.SetToolTip(tip)
+
+        # Set help text
+        _help = choice.get("help")
+        if _help and hasattr(control, "SetHelpText"):
+            control.SetHelpText(_help)
+
+        # Handle enabled state and conditional enabling
+        enabled = choice.get("enabled", True)  # Default to True if not specified
+
+        # If explicitly disabled, take precedence
+        if enabled is False:
+            control.Enable(False)
+        else:
+            # If enabled is True or not specified, check conditional logic
+            if "conditional" in choice:
+                self._setup_conditional_enabling(choice, control)
+            else:
+                # No conditional logic, just use the enabled value
+                control.Enable(enabled)
+
+    def _setup_update_listener(self, choice, control, obj, choice_list):
+        """Set up update listener for control synchronization."""
+        attr = choice["attr"]
+
+        def on_update_listener(choice, ctrl, choicelist, sourceobj):
+            def listen_to_myself(origin, value, target=None):
+                if self.context.kernel.is_shutdown:
+                    return
+
+                if target is None or target is not sourceobj:
+                    return
+
+                data = None
+                # data_style = choice.get("style")
+                data_type = choice.get("type")
+
+                if value is not None:
+                    try:
+                        data = data_type(value)
+                    except ValueError:
+                        pass
+                    if data is None:
+                        data = choice.get("default")
+                if data is None:
+                    return
+
+                # Check if control still exists
+                try:
+                    dummy = hasattr(ctrl, "GetValue")
+                except RuntimeError:
+                    return
+
+                # Update control based on data type and style
+                self._update_control_value(ctrl, data, choicelist, choice)
+
+            return listen_to_myself
+
+        update_listener = on_update_listener(choice, control, choice_list, obj)
+        self.listeners.append((attr, update_listener, obj))
+        self.context.listen(attr, update_listener)
+
+    def _update_control_value(self, ctrl, data, choicelist, choice):
+        """
+        Updates a control's displayed value based on its type, style, and current data.
+
+        This function handles the complex logic of converting internal data values to
+        appropriate display formats for different control types. It supports:
+
+        - Basic controls: checkboxes, text fields, sliders, combos
+        - Special formatting: power controls (percentage/absolute), speed controls (per-minute/per-second)
+        - Data type conversions: proper formatting for int, float, Length, Angle, Color types
+        - Callable flags: supports dynamic percent/perminute flags that can change at runtime
+
+        Recent improvements:
+        - Uses _format_text_display_value for consistent text formatting
+        - Properly handles callable percent and perminute flags
+        - Improved Length object comparisons using length_mm attribute
+        - Better error handling for type mismatches
+
+        Args:
+            ctrl: The UI control to update
+            data: The internal data value to display
+            choicelist: List of valid choices for combo controls
+            choice (dict): Choice configuration containing type, style, and formatting flags
+        """
+        dtype = choice.get("type")
+        dstyle = choice.get("style")
+        update_needed = False
+
+        if dtype == bool:
+            if ctrl.GetValue() != data:
+                ctrl.SetValue(data)
+        elif dtype == str and dstyle == "file":
+            if ctrl.GetValue() != data:
+                ctrl.SetValue(data)
+        elif dtype in (int, float) and dstyle == "slider":
+            if ctrl.GetValue() != data:
+                ctrl.SetValue(data)
+        elif dtype in (str, int, float) and dstyle in ("combo", "combosmall"):
+            if dtype == str:
+                ctrl.SetValue(str(data))
+            else:
+                least = None
+                for entry in choicelist:
+                    if least is None:
+                        least = entry
+                    else:
+                        if abs(dtype(entry) - data) < abs(dtype(least) - data):
+                            least = entry
+                if least is not None:
+                    ctrl.SetValue(least)
+        elif (dtype == str and dstyle == "color") or dtype == Color:
+
+            def set_color(color: Color):
+                ctrl.SetLabel(str(color.hex))
+                ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                if Color.distance(color, Color("black")) > Color.distance(
+                    color, Color("white")
+                ):
+                    ctrl.SetForegroundColour(wx.BLACK)
+                else:
+                    ctrl.SetForegroundColour(wx.WHITE)
+                ctrl.color = color
+
+            if isinstance(data, str):
+                data = Color(data)
+            set_color(data)
+        elif dtype in (str, int, float):
+            if hasattr(ctrl, "GetValue"):
+                current_display_value = ctrl.GetValue()
+                # Use the same formatting logic as _format_text_display_value
+                new_display_value = self._format_text_display_value(data, choice)
+                if current_display_value != new_display_value:
+                    ctrl.SetValue(new_display_value)
+        elif dtype == Length:
+            try:
+                current_length = Length(ctrl.GetValue())
+                # Compare Length values using their internal representation
+                if hasattr(data, "length_mm") and hasattr(current_length, "length_mm"):
+                    if data.length_mm != current_length.length_mm:
+                        update_needed = True
+                else:
+                    # Fallback comparison as string
+                    if str(data) != str(current_length):
+                        update_needed = True
+            except (ValueError, TypeError):
+                update_needed = True
+
+            if update_needed:
+                # Use consistent formatting for Length values
+                display_value = self._format_text_display_value(data, choice)
+                ctrl.SetValue(display_value)
+        elif dtype == Angle:
+            if ctrl.GetValue() != str(data):
+                ctrl.SetValue(str(data))
 
     @staticmethod
     def unsorted_label(original):
@@ -1641,16 +2668,83 @@ class ChoicePropertyPanel(ScrolledPanel):
     def module_close(self, *args, **kwargs):
         self.pane_hide()
 
+    def _setup_conditional_enabling(self, choice, control):
+        """
+        Set up conditional enabling for a control based on another control's value.
+
+        Args:
+            choice: The choice control that drives the enabling condition
+            control: The control to be enabled/disabled
+        """
+        # Only set up conditional logic if "conditional" key exists
+        if "conditional" not in choice:
+            return
+
+        conditional = choice["conditional"]
+        if conditional is None or len(conditional) < 2:
+            # Invalid conditional tuple - must have at least object and attribute
+            if conditional is not None and self.context:
+                channel = self.context.root.channel("console")
+                channel(
+                    f"Warning: Invalid conditional tuple with {len(conditional)} elements, expected at least 2\nchoice={choice}"
+                )
+            return
+
+        cond_obj, cond_attr = conditional[0], conditional[1]
+
+        # Check for equals condition (third element) or range condition (third and fourth elements)
+        equals_value = conditional[2] if len(conditional) > 2 else None
+        range_max = conditional[3] if len(conditional) > 3 else None
+
+        # Create a listener for the conditional attribute change
+        def on_conditional_change(origin, value, target=None):
+            if range_max is not None and equals_value is not None:
+                # Range check: value should be between equals_value (min) and range_max
+                try:
+                    control.Enable(equals_value <= value <= range_max)
+                except (TypeError, ValueError):
+                    # If comparison fails, disable control
+                    control.Enable(False)
+            elif equals_value is not None:
+                # Enable if value equals the specified value
+                control.Enable(value == equals_value)
+            else:
+                # Enable if value is truthy
+                control.Enable(bool(value))
+
+        # Register the listener with the context system to prevent memory leaks
+        if self.context:
+            self.context.listen(cond_attr, on_conditional_change)
+            self.listeners.append((cond_attr, on_conditional_change, cond_obj))
+
+            # Set initial state based on current value
+            try:
+                current_value = getattr(cond_obj, cond_attr, None)
+                if range_max is not None and equals_value is not None:
+                    # Range check: value should be between equals_value (min) and range_max
+                    try:
+                        control.Enable(equals_value <= current_value <= range_max)
+                    except (TypeError, ValueError):
+                        # If comparison fails, disable control
+                        control.Enable(False)
+                elif equals_value is not None:
+                    control.Enable(current_value == equals_value)
+                else:
+                    control.Enable(bool(current_value))
+            except Exception:
+                # If we can't get the current value, default to enabled
+                control.Enable(True)
+
     def pane_hide(self):
         # print (f"hide called: {len(self.listeners)}")
         if len(self.listeners):
             for attr, listener, obj in self.listeners:
                 self.context.unlisten(attr, listener)
-                del listener
-            self.listeners.clear()
+                # Don't delete listener or clear list - keep them for restoration
 
     def pane_show(self):
         # print ("show called")
-        # if len(self.listeners) == 0:
-        #     print ("..but no one cares")
-        pass
+        # Reestablish all listeners that were stored
+        if len(self.listeners) and self.context:
+            for attr, listener, obj in self.listeners:
+                self.context.listen(attr, listener)

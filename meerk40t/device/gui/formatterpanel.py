@@ -102,7 +102,7 @@ class FormatterPanel(wx.Panel):
                 ),
                 # Hint for translation _("General")
                 "subsection": "_10_General",
-                "signals": ("rebuild_tree", "power_percent"),
+                "signals": ("rebuild_tree", "power_percent", "restart"),
             },
             {
                 "attr": "use_mm_min_for_speed_display",
@@ -117,7 +117,7 @@ class FormatterPanel(wx.Panel):
                 ),
                 # Hint for translation _("General")
                 "subsection": "_10_General",
-                "signals": ("rebuild_tree", "speed_min"),
+                "signals": ("rebuild_tree", "speed_min", "restart"),
             },
         ]
         testsize = dip_size(self, 20, 20)
