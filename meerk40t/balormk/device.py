@@ -62,6 +62,7 @@ class BalorDevice(Service, Status):
         self.register("format/util console", "{enabled}{command}")
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
+        self.setting(bool, "use_mm_min_for_speed_display", False)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -369,6 +370,12 @@ class BalorDevice(Service, Status):
         ]
         self.register_choices("balor", choices)
 
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_mm_min_for_speed_display", False)
+
         self.register_choices("balor-effects", get_effect_choices(self))
         self.register_choices(
             "balor-defaults",
@@ -441,8 +448,9 @@ class BalorDevice(Service, Status):
                 "object": self,
                 "default": 500.0,
                 "type": float,
+                "style": "power",
+                "percent": _use_percent_for_power,
                 "label": _("Power"),
-                "trailer": "/1000",
                 # Translation hint: _("Cut/Engrave")
                 "subsection": "_10_Cut/Engrave",
                 "tip": _("What power level do we cut at?")
@@ -456,7 +464,8 @@ class BalorDevice(Service, Status):
                 "object": self,
                 "default": 100.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Speed"),
                 "subsection": "_10_Cut/Engrave",
                 "tip": _("How fast do we cut?")
@@ -493,9 +502,10 @@ class BalorDevice(Service, Status):
                 "default": 2000.0,
                 "type": float,
                 "label": _("Speed"),
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 # Translation hint: _("Travel")
                 "subsection": "_30_Travel",
-                "trailer": "mm/s",
                 "tip": _("How fast do we travel when not cutting?"),
             },
             {

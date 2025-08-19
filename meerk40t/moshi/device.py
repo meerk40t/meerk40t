@@ -50,6 +50,16 @@ class MoshiDevice(Service, Status):
         self.setting(int, "rejected_count", 0)
         self.setting(int, "rapid_speed", 40)
 
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
+
         _ = self._
         choices = [
             {

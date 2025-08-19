@@ -251,6 +251,9 @@ class GRBLDevice(Service, Status):
         # This device prefers to display speed in mm/min
         self.setting(bool, "use_mm_min_for_speed_display", False)
 
+        def _use_minute_for_speed():
+            return getattr(self, "use_mm_min_for_speed_display", False)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -515,7 +518,8 @@ class GRBLDevice(Service, Status):
                 "default": 140,
                 "type": float,
                 "label": _("Max vector speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -529,7 +533,8 @@ class GRBLDevice(Service, Status):
                 "default": 750,
                 "type": float,
                 "label": _("Max raster speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -543,7 +548,8 @@ class GRBLDevice(Service, Status):
                 "default": 600,
                 "type": float,
                 "label": _("Travel speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the travel speed for your device to move from point to another."
                 ),
