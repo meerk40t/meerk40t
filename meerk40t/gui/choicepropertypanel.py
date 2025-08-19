@@ -581,9 +581,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 control.Bind(
                     wx.EVT_BUTTON,
-                    self._make_button_color_handler(
-                        attr, control, obj, additional_signal
-                    ),
+                    self._make_button_color_handler(control, choice),
                 )
                 active_subsection_sizer.Add(
                     control_sizer, expansion_flag * weight, wx.EXPAND, 0
@@ -614,20 +612,46 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 try:
                     conditional = choice["conditional"]
-                    if len(conditional) == 2:
+                    if conditional is not None and len(conditional) == 2:
                         c_obj, c_attr = conditional
-                        conditional_enabled = bool(getattr(c_obj, c_attr))
+                        try:
+                            conditional_enabled = bool(getattr(c_obj, c_attr))
+                        except AttributeError:
+                            # Attribute doesn't exist, default to disabled
+                            conditional_enabled = False
                         c_equals = True
-                        control.Enable(conditional_enabled)
-                    elif len(conditional) == 3:
+                        if isinstance(control, list):
+                            for ctrl in control:
+                                ctrl.Enable(conditional_enabled)
+                        else:
+                            control.Enable(conditional_enabled)
+                    elif conditional is not None and len(conditional) == 3:
                         c_obj, c_attr, c_equals = conditional
-                        conditional_enabled = getattr(c_obj, c_attr) == c_equals
-                        control.Enable(conditional_enabled)
-                    elif len(conditional) == 4:
+                        try:
+                            conditional_enabled = getattr(c_obj, c_attr) == c_equals
+                        except AttributeError:
+                            # Attribute doesn't exist, default to disabled
+                            conditional_enabled = False
+                        if isinstance(control, list):
+                            for ctrl in control:
+                                ctrl.Enable(conditional_enabled)
+                        else:
+                            control.Enable(conditional_enabled)
+                    elif conditional is not None and len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        conditional_enabled = c_from <= getattr(c_obj, c_attr) <= c_to
+                        try:
+                            conditional_enabled = (
+                                c_from <= getattr(c_obj, c_attr) <= c_to
+                            )
+                        except (AttributeError, TypeError):
+                            # Attribute doesn't exist or comparison error, default to disabled
+                            conditional_enabled = False
                         c_equals = (c_from, c_to)
-                        control.Enable(conditional_enabled)
+                        if isinstance(control, list):
+                            for ctrl in control:
+                                ctrl.Enable(conditional_enabled)
+                        else:
+                            control.Enable(conditional_enabled)
 
                     # Set up listener for conditional enabling if we have conditional logic
                     if c_attr is not None and c_obj is not None:
@@ -641,8 +665,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                                         )
                                     else:
                                         enable = bool(getattr(obj, param) == eqs)
-                                    ctrl.Enable(enable)
-                                except (IndexError, RuntimeError):
+                                    if isinstance(ctrl, list):
+                                        for c in ctrl:
+                                            c.Enable(enable)
+                                    else:
+                                        ctrl.Enable(enable)
+                                except (IndexError, RuntimeError, AttributeError):
+                                    # Handle missing attributes or other errors gracefully
                                     pass
 
                             return listen
@@ -653,9 +682,13 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 except KeyError:
                     # No conditional logic, use the enabled value (True by default)
-                    control.Enable(
-                        enabled
-                    )  # Now we listen to 'ourselves' as well to learn about changes somewhere else...
+                    if isinstance(control, list):
+                        # Handle binary controls which return a list of controls
+                        for ctrl in control:
+                            ctrl.Enable(enabled)
+                    else:
+                        control.Enable(enabled)
+                    # Now we listen to 'ourselves' as well to learn about changes somewhere else...
 
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
                 def listen_to_myself(origin, value, target=None):
@@ -1229,9 +1262,9 @@ class ChoicePropertyPanel(ScrolledPanel):
         control = wx.Slider(
             self,
             wx.ID_ANY,
-            value=value,
-            minValue=minvalue,
-            maxValue=maxvalue,
+            value=int(value),
+            minValue=int(minvalue),
+            maxValue=int(maxvalue),
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
 
@@ -2648,9 +2681,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             return
 
         conditional = choice["conditional"]
-        if len(conditional) < 2:
+        if conditional is None or len(conditional) < 2:
             # Invalid conditional tuple - must have at least object and attribute
-            if self.context:
+            if conditional is not None and self.context:
                 channel = self.context.root.channel("console")
                 channel(
                     f"Warning: Invalid conditional tuple with {len(conditional)} elements, expected at least 2\nchoice={choice}"
