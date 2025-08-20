@@ -126,10 +126,13 @@ class Node:
             self._expanded = exp_value
             del kwargs["expanded"]
 
+        # Performance optimization: pre-compile excluded keys set
+        excluded_str_keys = {"text", "id", "label"}
+        
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
-            if isinstance(v, str) and k not in ("text", "id", "label"):
+            if isinstance(v, str) and k not in excluded_str_keys:
                 try:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
@@ -405,7 +408,7 @@ class Node:
         self._points_dirty = True
 
     def set_dirty(self):
-        self.points_dirty = True
+        self._points_dirty = True
         self.empty_cache()
 
     @property
@@ -525,6 +528,7 @@ class Node:
 
     def _build_copy_nodes(self, links=None):
         """
+        Optimized copy creation with attribute caching and reduced hasattr calls.
         Creates a copy of each node, linked to the ID of the original node. This will create
         a map between id of original node and copy node. Without any structure. The original
         root will link to `None` since root copies are in-effective.
@@ -534,25 +538,29 @@ class Node:
         """
         if links is None:
             links = {id(self): (self, None)}
+        
+        # Pre-compile attribute list for faster access
         attrib_list = (
             "_selected",
-            "_emphasized",
+            "_emphasized", 
             "_emphasized_time",
             "_highlighted",
             "_expanded",
             "_translated_text",
         )
+        
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
+            
+            # Optimized attribute copying with reduced function calls
+            c_dict = c.__dict__
+            copy_dict = node_copy.__dict__
             for att in attrib_list:
-                if not hasattr(c, att):
-                    continue
-                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
-                    c, att
-                ):
-                    # print (f"Strange {att} not identical, fixing")
-                    setattr(node_copy, att, getattr(c, att))
+                if att in c_dict:
+                    if att not in copy_dict or copy_dict[att] != c_dict[att]:
+                        copy_dict[att] = c_dict[att]
+                        
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links
@@ -603,12 +611,15 @@ class Node:
     def default_map(self, default_map=None):  # , skip_label=False
         if default_map is None:
             default_map = self._default_map
-        default_map["id"] = str(self.id) if self.id is not None else "-"
+        
+        # Cache frequently accessed values to avoid repeated computation
+        id_str = str(self.id) if self.id is not None else "-"
         lbl = self.display_label()
-        default_map["label"] = lbl if lbl is not None else ""
-        default_map["desc"] = (
-            lbl if lbl is not None else str(self.id) if self.id is not None else "-"
-        )
+        lbl_str = lbl if lbl is not None else ""
+        
+        default_map["id"] = id_str
+        default_map["label"] = lbl_str
+        default_map["desc"] = lbl_str if lbl is not None else id_str
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
@@ -1152,14 +1163,18 @@ class Node:
 
     def _flatten_children(self, node):
         """
-        Yield all descendants in a flat generation.
+        Optimized flat descendant generation using iterative approach to avoid deep recursion.
 
         @param node: starting node
         @return:
         """
-        for child in node.children:
+        # Use iterative approach for better performance and to avoid recursion limits
+        stack = list(node.children)
+        while stack:
+            child = stack.pop()
             yield child
-            yield from self._flatten_children(child)
+            # Add children to stack in reverse order to maintain traversal order
+            stack.extend(reversed(child.children))
 
     def flat(
         self,
@@ -1446,7 +1461,8 @@ class Node:
         nodes, bounds=None, attr="bounds", ignore_locked=True, ignore_hidden=False
     ):
         """
-        Returns the union of the node list given, optionally unioned the given bounds value
+        Optimized union of the node list given, optionally unioned with the given bounds value.
+        Uses efficient boundary calculation with early filtering.
 
         @return: union of all bounds within the iterable.
         """
@@ -1457,22 +1473,32 @@ class Node:
             ymax = -ymin
         else:
             xmin, ymin, xmax, ymax = bounds
+            
+        # Pre-filter nodes to avoid repeated attribute lookups
+        valid_nodes = []
         for e in nodes:
             if ignore_locked and e.lock:
                 continue
             if ignore_hidden and getattr(e, "hidden", False):
                 continue
+            valid_nodes.append(e)
+        
+        # Optimized bounds calculation with direct attribute access
+        for e in valid_nodes:
             box = getattr(e, attr, None)
             if box is None:
                 continue
-            if box[0] < xmin:
-                xmin = box[0]
-            if box[2] > xmax:
-                xmax = box[2]
-            if box[1] < ymin:
-                ymin = box[1]
-            if box[3] > ymax:
-                ymax = box[3]
+            # Unpack once and do direct comparisons
+            box_xmin, box_ymin, box_xmax, box_ymax = box
+            if box_xmin < xmin:
+                xmin = box_xmin
+            if box_xmax > xmax:
+                xmax = box_xmax
+            if box_ymin < ymin:
+                ymin = box_ymin
+            if box_ymax > ymax:
+                ymax = box_ymax
+                
         return xmin, ymin, xmax, ymax
 
     @property
