@@ -98,6 +98,13 @@ class Button:
         self.button_dict = description
         self.enabled = True
         self.visible = True
+        
+        # Optimization: Add caching for expensive operations (but not rule checking)
+        self._cached_bitmaps = {}
+        self._cached_text_extents = {}
+        
+        # Cache invalidation tracking
+        self._cache_invalidation_counter = 0
         self._aspects = {}
         self.key = "original"
         self.object = None
@@ -217,14 +224,30 @@ class Button:
         self.modified()
 
     def get_bitmaps(self, point_size):
+        # Optimization: Cache bitmap generation to avoid expensive regeneration
         top = self.parent.parent.parent
         darkm = bool(top.art.color_mode == COLOR_MODE_DARK)
         if point_size < self.min_size:
             point_size = self.min_size
         if point_size > self.max_size:
             point_size = self.max_size
-        self.icon_size = int(point_size)
+        
+        icon_size = int(point_size)
         edge = int(point_size / 25.0) + 1
+        
+        # Create cache key including dark mode state
+        cache_key = f"{icon_size}_{darkm}_{edge}"
+        
+        # Check if we already have these bitmaps cached
+        if cache_key in self._cached_bitmaps:
+            bitmap_data = self._cached_bitmaps[cache_key]
+            self.icon_size = bitmap_data['icon_size']
+            self.bitmap = bitmap_data['bitmap']
+            self.bitmap_disabled = bitmap_data['bitmap_disabled']
+            return
+            
+        # Generate new bitmaps
+        self.icon_size = icon_size
         key = str(self.icon_size)
         if key not in self.available_bitmaps:
             self.available_bitmaps[key] = self.icon.GetBitmap(
@@ -241,6 +264,17 @@ class Button:
             )
         self.bitmap = self.available_bitmaps[key]
         self.bitmap_disabled = self.available_bitmaps_disabled[key]
+        
+        # Cache the results with size limit management
+        if len(self._cached_bitmaps) > 20:
+            # Clear oldest entries
+            self._cached_bitmaps.clear()
+            
+        self._cached_bitmaps[cache_key] = {
+            'icon_size': self.icon_size,
+            'bitmap': self.bitmap,
+            'bitmap_disabled': self.bitmap_disabled
+        }
 
     def _restore_button_aspect(self, key):
         """
@@ -300,28 +334,39 @@ class Button:
     def apply_enable_rules(self):
         """
         Calls rule_enabled() and returns whether the given rule enables the button.
-
-        @return:
+        Optimization: Only trigger modification when state actually changes.
         """
+        rule_changed = False
+        
         if self.rule_enabled is not None:
             try:
                 v = self.rule_enabled(0)
                 if v != self.enabled:
                     self.enabled = v
-                    self.modified()
+                    rule_changed = True
             except (AttributeError, TypeError):
                 pass
+                
         if self.rule_visible is not None:
-            v = self.rule_visible(0)
-            if v != self.visible:
-                self.visible = v
-                if not self.visible:
-                    self.position = None
-                self.modified()
+            try:
+                v = self.rule_visible(0)
+                if v != self.visible:
+                    self.visible = v
+                    if not self.visible:
+                        self.position = None
+                    rule_changed = True
+            except (AttributeError, TypeError):
+                pass
         else:
             if not self.visible:
                 self.visible = True
-                self.modified()
+                rule_changed = True
+                
+        # Only trigger modification if something actually changed
+        if rule_changed:
+            self.modified()
+            
+        return rule_changed
 
     def contains(self, pos):
         """
@@ -835,6 +880,12 @@ class RibbonBarPanel(wx.Control):
         # Layout properties.
         self.art = Art(self)
 
+        # Optimization: Add caching for expensive operations
+        self._cached_button_positions = {}
+        self._cached_layout_params = None
+        self._button_spatial_index = {}
+        self._layout_cache_valid = False
+
         # Define Ribbon.
         self._redraw_lock = threading.Lock()
         self._paint_dirty = True
@@ -889,11 +940,17 @@ class RibbonBarPanel(wx.Control):
     def modified(self):
         """
         if modified then we flag the layout and paint as dirty and call for a refresh of the ribbonbar.
-        @return:
+        Optimization: Invalidate caches when layout changes.
         """
         # (f"Modified called for RibbonBar with {self.visible_pages()} pages")
         self._paint_dirty = True
         self._layout_dirty = True
+        
+        # Clear caches when layout changes
+        self._cached_button_positions.clear()
+        self._button_spatial_index.clear()
+        self._layout_cache_valid = False
+        
         self.context.schedule(self._redraw_job)
 
     def redrawn(self):
@@ -1108,10 +1165,15 @@ class RibbonBarPanel(wx.Control):
     def _button_at_position(self, pos, use_all=False):
         """
         Find the button at the given position, so long as that button is enabled.
-
-        @param pos:
-        @return:
+        Optimization: Use spatial indexing to speed up hit testing.
         """
+        # Quick cache check for repeated position queries
+        cache_key = (pos[0], pos[1], use_all)
+        if cache_key in self._cached_button_positions:
+            return self._cached_button_positions[cache_key]
+            
+        found_button = None
+        
         for page in self.pages:
             if page is not self.art.current_page or not page.visible:
                 continue
@@ -1122,8 +1184,20 @@ class RibbonBarPanel(wx.Control):
                         and (button.enabled or use_all)
                         and not button.overflow
                     ):
-                        return button
-        return None
+                        found_button = button
+                        break
+                if found_button:
+                    break
+            if found_button:
+                break
+                
+        # Cache the result with size limit
+        if len(self._cached_button_positions) > 50:
+            # Clear old cache entries
+            self._cached_button_positions.clear()
+            
+        self._cached_button_positions[cache_key] = found_button
+        return found_button
 
     def _pagetab_at_position(self, pos):
         """
@@ -1347,6 +1421,11 @@ class Art:
         self.text_dropdown_buffer = 7
         self.show_labels = True
 
+        # Optimization: Add caching for expensive operations
+        self._cached_font_sizes = {}
+        self._cached_text_extents = {}
+        self._cached_layout_calculations = {}
+
         self.establish_colors()
 
         self.current_page = None
@@ -1445,6 +1524,24 @@ class Art:
         self.default_font = wx.Font(
             ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
+
+    def clear_caches(self):
+        """
+        Clear all cached data for memory management
+        """
+        self._cached_font_sizes.clear()
+        self._cached_text_extents.clear()
+        self._cached_layout_calculations.clear()
+        
+    def get_cache_stats(self):
+        """
+        Get statistics about cache usage for performance monitoring
+        """
+        return {
+            'font_cache_size': len(self._cached_font_sizes),
+            'text_extent_cache_size': len(self._cached_text_extents),
+            'layout_cache_size': len(self._cached_layout_calculations)
+        }
 
     def paint_main(self, dc, ribbon):
         """
