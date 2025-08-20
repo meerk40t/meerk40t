@@ -250,9 +250,12 @@ class Scene(Module, Job):
             interval=1.0 / 60.0,
         )
         self._toast = None
-        # Snap information
+        # Snap information with caching optimization
         self.snap_display_points = None
         self.snap_attraction_points = None
+        self._snap_cache_invalid = True
+        self._last_snap_position = None
+        self._last_snap_length = None
         
         # Performance optimization: Matrix calculation cache
         self._matrix_cache = {}
@@ -1103,7 +1106,7 @@ class Scene(Module, Job):
     def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
         """
         Optimized calculation of points that need to be displayed for the user.
-        Uses efficient spatial filtering and batch operations.
+        Uses efficient spatial filtering, batch operations, and position-based caching.
 
         @param my_x: Target x coordinate
         @param my_y: Target y coordinate  
@@ -1111,21 +1114,40 @@ class Scene(Module, Job):
         @param snap_grid: Whether to include grid points
         @return:
         """
-        # Pre-allocate list for better memory management
-        self.snap_display_points = []
-        if my_x is None:
-            return
-            
         # Early exit if neither snap type is enabled
         if not snap_points and not snap_grid:
+            self.snap_display_points = []
             return
             
-        if self.snap_attraction_points is None and snap_points:
-            self._calculate_attraction_points()
-
+        if my_x is None:
+            self.snap_display_points = []
+            return
+            
         # Calculate length once to avoid repeated matrix operations
         matrix = self.widget_root.scene_widget.matrix
         length = self.context.show_attract_len / get_matrix_scale(matrix)
+        
+        # Check if we can reuse cached results (position hasn't moved much)
+        position_changed = (
+            self._last_snap_position is None or
+            self._last_snap_length is None or
+            abs(my_x - self._last_snap_position[0]) > length * 0.1 or  # 10% movement threshold
+            abs(my_y - self._last_snap_position[1]) > length * 0.1 or
+            abs(length - self._last_snap_length) > length * 0.05  # 5% scale change threshold
+        )
+        
+        if not position_changed and self.snap_display_points is not None:
+            return  # Reuse cached results
+            
+        # Update cache position tracking
+        self._last_snap_position = (my_x, my_y)
+        self._last_snap_length = length
+        
+        # Pre-allocate list for better memory management
+        self.snap_display_points = []
+            
+        if self.snap_attraction_points is None and snap_points:
+            self._calculate_attraction_points()
 
         # Process snap points and grid points - order matters for performance
         if snap_points and self.snap_attraction_points:
@@ -1134,20 +1156,22 @@ class Scene(Module, Job):
         if snap_grid and hasattr(self.pane, 'grid') and self.pane.grid.grid_points:
             self._calculate_grid_points(my_x, my_y, length)
 
-    def calculate_snap(self, my_x, my_y):
+    def calculate_snap(self, my_x, my_y, pixel=None):
         """
         Optimized calculation of the nearest snap point using efficient distance comparison.
         
         @param my_x: Target x coordinate
         @param my_y: Target y coordinate
+        @param pixel: Pre-calculated pixel threshold (optional, computed if None)
         @return: Tuple of (snap_x, snap_y) or (None, None) if no snap found
         """
         if not self.snap_display_points or my_x is None:
             return None, None
             
-        # Pre-calculate threshold to avoid repeated matrix operations
-        matrix = self.widget_root.scene_widget.matrix
-        pixel = self.context.action_attract_len / get_matrix_scale(matrix)
+        # Use pre-calculated pixel value or calculate if not provided
+        if pixel is None:
+            matrix = self.widget_root.scene_widget.matrix
+            pixel = self.context.action_attract_len / get_matrix_scale(matrix)
         pixel_squared = pixel * pixel  # Use squared distance to avoid sqrt
         
         # Find closest point using optimized distance calculation
@@ -1178,6 +1202,9 @@ class Scene(Module, Job):
         return None, None
 
     def get_snap_point(self, sx, sy, modifiers):
+        """
+        Optimized snap point calculation with matrix scale caching.
+        """
         resx = sx
         resy = sy
         sgrid = self.context.snap_grid
@@ -1190,7 +1217,12 @@ class Scene(Module, Job):
                 # Need to recalculate
                 self.reset_snap_attraction()
             self.calculate_display_points(sx, sy, spoints, sgrid)
-            nx, ny = self.calculate_snap(sx, sy)
+            
+            # Calculate pixel threshold once and reuse
+            matrix = self.widget_root.scene_widget.matrix
+            pixel = self.context.action_attract_len / get_matrix_scale(matrix)
+            nx, ny = self.calculate_snap(sx, sy, pixel)
+            
             if nx is not None:
                 resx = nx
                 resy = ny
@@ -1200,4 +1232,8 @@ class Scene(Module, Job):
         return resx, resy
 
     def reset_snap_attraction(self):
+        """Reset snap attraction points and position cache for recalculation."""
         self.snap_attraction_points = None
+        self._snap_cache_invalid = True
+        self._last_snap_position = None
+        self._last_snap_length = None
