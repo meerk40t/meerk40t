@@ -935,26 +935,26 @@ class Elemental(Service):
         return canburn
 
     def have_unburnable_elements(self):
+        """Optimized check with early exit conditions."""
         unassigned = False
         nonburnt = False
+        file_group_types = ("file", "group")  # Pre-computed tuple for faster lookup
+        
         for node in self.elems():
-            if len(node._references) == 0 and node.type not in ("file", "group"):
+            # Check unassigned elements first
+            if not node._references and node.type not in file_group_types:
                 unassigned = True
             else:
-                will_be_burnt = False
-                for refnode in node._references:
-                    op = refnode.parent
-                    if op is not None:
-                        try:
-                            if op.output:
-                                will_be_burnt = True
-                                break
-                        except AttributeError as e:
-                            # print(f"Encountered error {e} for node {node.type}.{node.id}.{node.display_label()}")
-                            pass
+                # Early exit optimization: use any() to stop at first active output
+                will_be_burnt = any(
+                    getattr(refnode.parent, 'output', False) 
+                    for refnode in node._references 
+                    if refnode.parent is not None
+                )
                 if not will_be_burnt:
-                    # print (f"Node {node.type}.{node.id}.{node.display_label()} has {len(node._references)} references but none is active...")
                     nonburnt = True
+                    
+            # Early exit if both conditions are met
             if nonburnt and unassigned:
                 break
 
@@ -1149,19 +1149,22 @@ class Elemental(Service):
         """
 
         def remove_children_from_list(list_to_deal, parent_node):
+            """Optimized child removal with reduced function calls."""
+            parent_time = parent_node._emphasized_time
+            
             for idx, node in enumerate(list_to_deal):
-                if node is None:
+                if node is None or node.parent is not parent_node:
                     continue
-                if node.parent is parent_node:
-                    list_to_deal[idx] = None
-                    if len(node.children) > 0:
-                        remove_children_from_list(list_to_deal, node)
-                    t1 = parent_node._emphasized_time
-                    t2 = node._emphasized_time
-                    if t2 is None:
-                        continue
-                    if t1 is None or t2 < t1:
-                        parent_node._emphasized_time = t2
+                    
+                list_to_deal[idx] = None
+                if node.children:  # More efficient than len() > 0
+                    remove_children_from_list(list_to_deal, node)
+                
+                # Optimized time comparison
+                node_time = node._emphasized_time
+                if node_time is not None and (parent_time is None or node_time < parent_time):
+                    parent_node._emphasized_time = node_time
+                    parent_time = node_time
 
         align_data = list(data)
         needs_repetition = True
@@ -2232,10 +2235,18 @@ class Elemental(Service):
         return False
 
     def count_elems(self, **kwargs):
-        return len(list(self.elems(**kwargs)))
+        """Optimized counting without list conversion."""
+        count = 0
+        for _ in self.elems(**kwargs):
+            count += 1
+        return count
 
     def count_op(self, **kwargs):
-        return len(list(self.ops(**kwargs)))
+        """Optimized counting without list conversion."""
+        count = 0
+        for _ in self.ops(**kwargs):
+            count += 1
+        return count
 
     def get(self, type=None):
         return self._tree.get(type=type)
@@ -2485,8 +2496,15 @@ class Elemental(Service):
             return self._emphasized_bounds
 
     def validate_selected_area(self):
-        boundary_points = []
-        boundary_points_painted = []
+        """Optimized bounds calculation with reduced allocations and direct min/max calculation."""
+        # Initialize bounds directly instead of collecting all points
+        xmin = ymin = float("inf")
+        xmax = ymax = float("-inf")
+        xmin_painted = ymin_painted = float("inf")
+        xmax_painted = ymax_painted = float("-inf")
+        
+        has_bounds = False
+        
         for e in self.elem_branch.flat(
             types=elem_nodes,
             emphasized=True,
@@ -2495,39 +2513,41 @@ class Elemental(Service):
                 continue
             if hasattr(e, "hidden") and e.hidden:
                 continue
+                
+            has_bounds = True
+            
+            # Process regular bounds
             box = e.bounds
-            top_left = [box[0], box[1]]
-            top_right = [box[2], box[1]]
-            bottom_left = [box[0], box[3]]
-            bottom_right = [box[2], box[3]]
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-            box = e.paint_bounds
-            top_left = [box[0], box[1]]
-            top_right = [box[2], box[1]]
-            bottom_left = [box[0], box[3]]
-            bottom_right = [box[2], box[3]]
-            boundary_points_painted.append(top_left)
-            boundary_points_painted.append(top_right)
-            boundary_points_painted.append(bottom_left)
-            boundary_points_painted.append(bottom_right)
+            box_xmin, box_ymin, box_xmax, box_ymax = box
+            if box_xmin < xmin:
+                xmin = box_xmin
+            if box_ymin < ymin:
+                ymin = box_ymin
+            if box_xmax > xmax:
+                xmax = box_xmax
+            if box_ymax > ymax:
+                ymax = box_ymax
+                
+            # Process paint bounds
+            paint_box = e.paint_bounds
+            if paint_box is not None:
+                paint_xmin, paint_ymin, paint_xmax, paint_ymax = paint_box
+                if paint_xmin < xmin_painted:
+                    xmin_painted = paint_xmin
+                if paint_ymin < ymin_painted:
+                    ymin_painted = paint_ymin
+                if paint_xmax > xmax_painted:
+                    xmax_painted = paint_xmax
+                if paint_ymax > ymax_painted:
+                    ymax_painted = paint_ymax
 
-        if len(boundary_points) == 0:
+        if has_bounds:
+            new_bounds = [xmin, ymin, xmax, ymax]
+            new_bounds_painted = [xmin_painted, ymin_painted, xmax_painted, ymax_painted]
+        else:
             new_bounds = None
             new_bounds_painted = None
-        else:
-            xmin = min([e[0] for e in boundary_points])
-            ymin = min([e[1] for e in boundary_points])
-            xmax = max([e[0] for e in boundary_points])
-            ymax = max([e[1] for e in boundary_points])
-            new_bounds = [xmin, ymin, xmax, ymax]
-            xmin = min([e[0] for e in boundary_points_painted])
-            ymin = min([e[1] for e in boundary_points_painted])
-            xmax = max([e[0] for e in boundary_points_painted])
-            ymax = max([e[1] for e in boundary_points_painted])
-            new_bounds_painted = [xmin, ymin, xmax, ymax]
+            
         self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
