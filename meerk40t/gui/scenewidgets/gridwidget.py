@@ -3,6 +3,7 @@ Grid widget is primarily tasked with drawing the grid in the scene. This is the 
 """
 
 from math import atan2, cos, sin, sqrt, tau
+import numpy as np
 from platform import system
 
 import wx
@@ -63,6 +64,16 @@ class GridWidget(Widget):
         self.max_angle = tau
         self.os = system()
 
+        # Optimization: Enhanced caching system
+        self._cached_scaled_conversion = None
+        self._cached_scene_scale = None
+        self._cached_coordinate_conversion = {}
+        self._cache_invalidation_counter = 0
+        
+        # Performance thresholds
+        self.GRID_POINT_THRESHOLD = 2000  # Max grid points before optimization
+        self.MAX_GRID_LINES = 500  # Max grid lines before simplification
+
         # If there is a user margin then display the physical dimensions
         self.draw_offset_lines = False
         # Stuff related to grids and guides
@@ -87,6 +98,31 @@ class GridWidget(Widget):
 
         self.set_colors()
 
+    def clear_caches(self):
+        """
+        Clear all cached data for memory management
+        """
+        self.primary_grid_lines = None
+        self.secondary_grid_lines = None
+        self.background = None
+        self.grid_points = None
+        self._cached_scaled_conversion = None
+        self._cached_scene_scale = None
+        self._cached_coordinate_conversion.clear()
+        self._cache_invalidation_counter = 0
+        
+    def get_cache_stats(self):
+        """
+        Get statistics about cache usage for performance monitoring
+        """
+        return {
+            'coordinate_cache_size': len(self._cached_coordinate_conversion),
+            'has_primary_lines': self.primary_grid_lines is not None,
+            'has_secondary_lines': self.secondary_grid_lines is not None,
+            'has_grid_points': self.grid_points is not None,
+            'invalidation_counter': self._cache_invalidation_counter
+        }
+
     def set_secondary_axis_scales(self):
         sx = 1.0
         sy = 1.0
@@ -101,16 +137,20 @@ class GridWidget(Widget):
 
     @property
     def scene_scale(self):
-        matrix = self.scene.widget_root.scene_widget.matrix
-        try:
-            scene_scale = sqrt(abs(matrix.determinant))
-            if scene_scale < 1e-8:
-                matrix.reset()
-                return 1.0
-            return scene_scale
-        except (OverflowError, ValueError, ZeroDivisionError):
-            matrix.reset()
-        return 1.0
+        # Optimization: Cache scene scale calculation with invalidation counter
+        if self._cached_scene_scale is None or self._cache_invalidation_counter > 10:
+            matrix = self.scene.widget_root.scene_widget.matrix
+            try:
+                scene_scale = sqrt(abs(matrix.determinant))
+                if scene_scale < 1e-8:
+                    matrix.reset()
+                    self._cached_scene_scale = 1.0
+                else:
+                    self._cached_scene_scale = scene_scale
+            except (AttributeError, ValueError, OverflowError, ZeroDivisionError):
+                self._cached_scene_scale = 1.0
+            self._cache_invalidation_counter = 0
+        return self._cached_scene_scale
 
     ###########################
     # PEN SETUP
@@ -149,68 +189,93 @@ class GridWidget(Widget):
     ###########################
 
     def _calc_primary_grid_lines(self):
-        starts = []
-        ends = []
-        # Primary grid
-        # We could be way too high
-        start_x = self.zero_x
+        # Optimization: Use vectorized calculations for better performance
         dx = abs(self.primary_tick_length_x)
         dy = abs(self.primary_tick_length_y)
-        while start_x - dx > self.min_x:
-            start_x -= dx
-        start_y = self.zero_y
-        while start_y - dy > self.min_y:
-            start_y -= dy
-        # But we could be way too low, too
-        while start_x < self.min_x:
-            start_x += dx
-        while start_y < self.min_y:
-            start_y += dy
-
-        x = start_x
-        while x <= self.max_x:
+        
+        # Early exit if tick lengths are too small
+        if dx < 1e-10 or dy < 1e-10:
+            self.primary_grid_lines = [], []
+            return
+            
+        # Calculate optimized start positions
+        start_x = self.zero_x - dx * int((self.zero_x - self.min_x) / dx)
+        start_y = self.zero_y - dy * int((self.zero_y - self.min_y) / dy)
+        
+        # Calculate number of lines to avoid excessive grid density
+        x_count = int((self.max_x - start_x) / dx) + 1
+        y_count = int((self.max_y - start_y) / dy) + 1
+        
+        # Apply performance limits
+        if x_count > self.MAX_GRID_LINES:
+            dx *= int(x_count / self.MAX_GRID_LINES) + 1
+            x_count = self.MAX_GRID_LINES
+        if y_count > self.MAX_GRID_LINES:
+            dy *= int(y_count / self.MAX_GRID_LINES) + 1  
+            y_count = self.MAX_GRID_LINES
+            
+        # Generate grid lines using numpy for performance
+        x_positions = np.linspace(start_x, start_x + (x_count - 1) * dx, x_count)
+        y_positions = np.linspace(start_y, start_y + (y_count - 1) * dy, y_count)
+        
+        # Filter positions within bounds
+        x_positions = x_positions[(x_positions >= self.min_x) & (x_positions <= self.max_x)]
+        y_positions = y_positions[(y_positions >= self.min_y) & (y_positions <= self.max_y)]
+        
+        starts = []
+        ends = []
+        
+        # Vertical lines
+        for x in x_positions:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
-            x += dx
-
-        y = start_y
-        while y <= self.max_y:
+            
+        # Horizontal lines  
+        for y in y_positions:
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
-            y += dy
+            
         self.primary_grid_lines = starts, ends
 
     def _calc_secondary_grid_lines(self):
-        starts2 = []
-        ends2 = []
-        # Primary grid
-        # Secondary grid
-        # We could be way too high
-        start_x = self.zero_x
+        # Optimization: Use vectorized calculations for secondary grid
         dx = abs(self.secondary_tick_length_x)
         dy = abs(self.secondary_tick_length_y)
-        while start_x - dx > self.min_x:
-            start_x -= dx
-        start_y = self.zero_y
-        while start_y - dy > self.min_y:
-            start_y -= dy
-        # But we could be way too low, too
-        while start_x < self.min_x:
-            start_x += dx
-        while start_y < self.min_y:
-            start_y += dy
-
-        x = start_x
-        while x <= self.max_x:
+        
+        # Early exit if tick lengths are too small
+        if dx < 1e-10 or dy < 1e-10:
+            self.secondary_grid_lines = [], []
+            return
+            
+        # Calculate optimized start positions
+        start_x = self.zero_x - dx * int((self.zero_x - self.min_x) / dx)
+        start_y = self.zero_y - dy * int((self.zero_y - self.min_y) / dy)
+        
+        # Calculate number of lines with performance limits
+        x_count = min(int((self.max_x - start_x) / dx) + 1, self.MAX_GRID_LINES)
+        y_count = min(int((self.max_y - start_y) / dy) + 1, self.MAX_GRID_LINES)
+        
+        # Generate grid lines using numpy for performance
+        x_positions = np.linspace(start_x, start_x + (x_count - 1) * dx, x_count)
+        y_positions = np.linspace(start_y, start_y + (y_count - 1) * dy, y_count)
+        
+        # Filter positions within bounds
+        x_positions = x_positions[(x_positions >= self.min_x) & (x_positions <= self.max_x)]
+        y_positions = y_positions[(y_positions >= self.min_y) & (y_positions <= self.max_y)]
+        
+        starts2 = []
+        ends2 = []
+        
+        # Vertical lines
+        for x in x_positions:
             starts2.append((x, self.min_y))
             ends2.append((x, self.max_y))
-            x += dx
-
-        y = start_y
-        while y <= self.max_y:
+            
+        # Horizontal lines
+        for y in y_positions:
             starts2.append((self.min_x, y))
             ends2.append((self.max_x, y))
-            y += dy
+            
         self.secondary_grid_lines = starts2, ends2
 
     def calculate_grid_lines(self):
@@ -229,7 +294,10 @@ class GridWidget(Widget):
 
     @property
     def scaled_conversion(self):
-        return float(Length(f"1{self.scene.context.units_name}")) * self.scene_scale
+        # Optimization: Cache expensive Length calculation
+        if self._cached_scaled_conversion is None:
+            self._cached_scaled_conversion = float(Length(f"1{self.scene.context.units_name}")) * self.scene_scale
+        return self._cached_scaled_conversion
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
@@ -294,25 +362,38 @@ class GridWidget(Widget):
             self.circular_grid_center_y = self.grid_circular_cy
 
     def calculate_gridsize(self, w, h):
-        self.min_x = float("inf")
-        self.max_x = -float("inf")
-        self.min_y = float("inf")
-        self.max_y = -float("inf")
-        for xx in (0, w):
-            for yy in (0, h):
-                x, y = self.scene.convert_window_to_scene([xx, yy])
-                self.min_x = min(self.min_x, x)
-                self.min_y = min(self.min_y, y)
-                self.max_x = max(self.max_x, x)
-                self.max_y = max(self.max_y, y)
+        # Optimization: Cache coordinate conversions and add early exit
+        cache_key = (w, h, id(self.scene.widget_root.scene_widget.matrix))
+        if cache_key in self._cached_coordinate_conversion:
+            self.min_x, self.min_y, self.max_x, self.max_y = self._cached_coordinate_conversion[cache_key]
+            return
+            
+        # Calculate bounds using corner coordinates
+        corners = [(0, 0), (w, 0), (0, h), (w, h)]
+        x_coords = []
+        y_coords = []
+        
+        for xx, yy in corners:
+            x, y = self.scene.convert_window_to_scene([xx, yy])
+            x_coords.append(x)
+            y_coords.append(y)
+        
+        self.min_x = min(x_coords)
+        self.max_x = max(x_coords)
+        self.min_y = min(y_coords)
+        self.max_y = max(y_coords)
 
-        # self.min_x, self.min_y = self.scene.convert_window_to_scene([0, 0])
-        # self.max_x, self.max_y = self.scene.convert_window_to_scene([w, h])
-
+        # Apply workspace constraints
         self.min_x = max(0, self.min_x)
         self.min_y = max(0, self.min_y)
         self.max_x = min(self.scene.context.space.width, self.max_x)
         self.max_y = min(self.scene.context.space.height, self.max_y)
+        
+        # Cache the result with size limit
+        if len(self._cached_coordinate_conversion) > 10:
+            # Clear old cache entries
+            self._cached_coordinate_conversion.clear()
+        self._cached_coordinate_conversion[cache_key] = (self.min_x, self.min_y, self.max_x, self.max_y)
 
     def calculate_tick_length(self):
         tick_length = float(
@@ -450,27 +531,34 @@ class GridWidget(Widget):
             self._calculate_grid_points_circular()
 
     def _calculate_grid_points_primary(self):
-        # That's easy just the rectangular stuff
-        # We could be way too high
-        start_x = self.zero_x
-        while start_x - self.primary_tick_length_x > self.min_x:
-            start_x -= self.primary_tick_length_x
-        start_y = self.zero_y
-        while start_y - self.primary_tick_length_y > self.min_y:
-            start_y -= self.primary_tick_length_y
-        # But we could be way too low, too
-        while start_x < self.min_x:
-            start_x += self.primary_tick_length_x
-        while start_y < self.min_y:
-            start_y += self.primary_tick_length_y
-        x = start_x
-        while x <= self.max_x:
-            y = start_y
-            while y <= self.max_y:
-                # mx, my = self.scene.convert_scene_to_window([x, y])
-                self.grid_points.append([x, y])
-                y += self.primary_tick_length_y
-            x += self.primary_tick_length_x
+        # Optimization: Vectorized grid point calculation
+        dx = abs(self.primary_tick_length_x)
+        dy = abs(self.primary_tick_length_y)
+        
+        if dx < 1e-10 or dy < 1e-10:
+            return
+            
+        # Calculate optimized start positions
+        start_x = self.zero_x - dx * int((self.zero_x - self.min_x) / dx)
+        start_y = self.zero_y - dy * int((self.zero_y - self.min_y) / dy)
+        
+        # Calculate grid bounds with performance limits
+        x_count = min(int((self.max_x - start_x) / dx) + 1, int(sqrt(self.GRID_POINT_THRESHOLD)))
+        y_count = min(int((self.max_y - start_y) / dy) + 1, int(sqrt(self.GRID_POINT_THRESHOLD)))
+        
+        # Generate coordinate arrays
+        x_coords = np.linspace(start_x, start_x + (x_count - 1) * dx, x_count)
+        y_coords = np.linspace(start_y, start_y + (y_count - 1) * dy, y_count)
+        
+        # Filter coordinates within bounds
+        x_coords = x_coords[(x_coords >= self.min_x) & (x_coords <= self.max_x)]
+        y_coords = y_coords[(y_coords >= self.min_y) & (y_coords <= self.max_y)]
+        
+        # Create grid points using meshgrid for efficiency
+        if len(x_coords) > 0 and len(y_coords) > 0:
+            xx, yy = np.meshgrid(x_coords, y_coords)
+            points = np.column_stack([xx.ravel(), yy.ravel()])
+            self.grid_points.extend(points.tolist())
 
     def _calculate_grid_points_secondary(self):
         if (
@@ -550,44 +638,47 @@ class GridWidget(Widget):
         """
         Draw the grid on the scene.
         """
-        # print ("GridWidget %s draw" % self.name)
-
-        # Get proper gridsize
+        # Optimization: Early exit for small windows and disabled grid
         w, h = gc.Size
         if w < 50 or h < 50:
-            # Algorithm is unstable for very low values of w or h.
             return
+            
+        if self.scene.context.draw_mode & DRAW_MODE_GRID != 0:
+            return  # Do not draw grid.
+            
+        # Optimization: Batch calculations and cache invalidation checks
+        needs_recalc = False
+        
         if self.auto_tick:
             self.calculate_tickdistance(w, h)
+            
         self.calculate_center_start()
         self.calculate_gridsize(w, h)
         self.calculate_tick_length()
         self.calculate_radii_angles()
 
-        # When do we need to redraw?!
-        if self.last_ticksize != self.tick_distance:
+        # Check if recalculation is needed (consolidated conditions)
+        if (self.last_ticksize != self.tick_distance or
+            self.last_w != w or self.last_h != h or
+            self.min_x != self.last_min_x or self.min_y != self.last_min_y or
+            self.max_x != self.last_max_x or self.max_y != self.last_max_y):
+            
+            # Update cache tracking variables
             self.last_ticksize = self.tick_distance
-            self.primary_grid_lines = None
-        # With the new zoom-algorithm we also need to redraw if the origin
-        # or the size have changed...
-        # That's a price I am willing to pay...
-        if self.last_w != w or self.last_h != h:
             self.last_w = w
             self.last_h = h
-            self.primary_grid_lines = None
-        if self.min_x != self.last_min_x or self.min_y != self.last_min_y:
             self.last_min_x = self.min_x
             self.last_min_y = self.min_y
-            self.primary_grid_lines = None
-        if self.max_x != self.last_max_x or self.max_y != self.last_max_y:
             self.last_max_x = self.max_x
             self.last_max_y = self.max_y
+            
+            # Invalidate caches
             self.primary_grid_lines = None
+            self.secondary_grid_lines = None
+            needs_recalc = True
 
-        if self.scene.context.draw_mode & DRAW_MODE_GRID != 0:
-            return  # Do not draw grid.
-
-        if self.primary_grid_lines is None or self.secondary_grid_lines is None:
+        # Only recalculate if needed
+        if self.primary_grid_lines is None or self.secondary_grid_lines is None or needs_recalc:
             self.calculate_grid_lines()
             self.calculate_scene_grid_points()
 
@@ -630,34 +721,20 @@ class GridWidget(Widget):
         gc.StrokePath(grid_path)
 
     def _draw_grid_primary(self, gc):
+        # Optimization: Use StrokeLineSegments for much better performance
         starts, ends = self.primary_grid_lines
         gc.SetPen(self.primary_grid_line_pen)
         if starts and ends:
-            grid_path = gc.CreatePath()
-            for i in range(len(starts)):
-                sx = starts[i][0]
-                sy = starts[i][1]
-                grid_path.MoveToPoint(sx, sy)
-                sx = ends[i][0]
-                sy = ends[i][1]
-                grid_path.AddLineToPoint(sx, sy)
-            gc.StrokePath(grid_path)
+            # StrokeLineSegments is much more efficient than individual path creation
+            gc.StrokeLineSegments(starts, ends)
 
     def _draw_grid_secondary(self, gc):
+        # Optimization: Use StrokeLineSegments for much better performance
         starts2, ends2 = self.secondary_grid_lines
         gc.SetPen(self.secondary_grid_line_pen)
         if starts2 and ends2:
-            grid_path = gc.CreatePath()
-            for i in range(len(starts2)):
-                sx = starts2[i][0]
-                sy = starts2[i][1]
-                grid_path.MoveToPoint(sx, sy)
-                sx = ends2[i][0]
-                sy = ends2[i][1]
-                grid_path.AddLineToPoint(sx, sy)
-            gc.StrokePath(grid_path)
-
-            # gc.StrokeLineSegments(starts2, ends2)
+            # StrokeLineSegments is much more efficient than individual path creation
+            gc.StrokeLineSegments(starts2, ends2)
 
     def _draw_grid_circular(self, gc):
         gc.SetPen(self.circular_grid_line_pen)
@@ -777,6 +854,14 @@ class GridWidget(Widget):
         Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         if signal == "grid":
+            # Comprehensive cache invalidation for grid changes
             self.primary_grid_lines = None
+            self.secondary_grid_lines = None
+            self.background = None
+            self.grid_points = None
+            self._cached_scaled_conversion = None
+            self._cached_scene_scale = None
+            self._cached_coordinate_conversion.clear()
+            self._cache_invalidation_counter = 0
         elif signal == "theme":
             self.set_colors()
