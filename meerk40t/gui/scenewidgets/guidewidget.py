@@ -9,6 +9,9 @@ from meerk40t.gui.scene.widget import Widget
 
 _ = wx.GetTranslation
 
+# Performance constants
+GUIDE_CACHE_THRESHOLD = 1000  # Maximum guide lines before optimization kicks in
+
 
 class GuideWidget(Widget):
     """
@@ -44,6 +47,15 @@ class GuideWidget(Widget):
         self.font = wx.Font(
             10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
         )
+        
+        # Performance optimization caches
+        self._cached_scaled_conversion_x = None
+        self._cached_scaled_conversion_y = None
+        self._cached_conversion_invalidation = -1
+        self._cached_text_extents = {}
+        self._cached_primary_center = None
+        self._cached_secondary_center = None
+        self._cached_center_invalidation = -1
 
     def set_colors(self):
         self.color_units = self.scene.colors.color_guide
@@ -168,7 +180,7 @@ class GuideWidget(Widget):
             dlg.Destroy()
             try:
                 value = float(result)
-            except:
+            except Exception:
                 return
             self.scene.pane.grid.tick_distance = value
             self.scene.pane.grid.auto_tick = False
@@ -501,32 +513,76 @@ class GuideWidget(Widget):
 
     def _get_center_primary(self):
         """
-        Calculate center position for primary grid
+        Calculate center position for primary grid with caching
         """
-        p = self.scene.context
-        x, y = p.space.origin_zero()
-        return self.scene.convert_scene_to_window([x, y])
+        # Check cache invalidation based on scene changes
+        m = self.scene.widget_root.scene_widget.matrix
+        current_invalidation = hash((m.a, m.b, m.c, m.d, m.e, m.f))
+        
+        if (self._cached_primary_center is None or 
+            self._cached_center_invalidation != current_invalidation):
+            p = self.scene.context
+            x, y = p.space.origin_zero()
+            self._cached_primary_center = self.scene.convert_scene_to_window([x, y])
+            self._cached_center_invalidation = current_invalidation
+            
+        return self._cached_primary_center
 
     def _get_center_secondary(self):
         """
-        Calculate center position for secondary grid
+        Calculate center position for secondary grid with caching
         """
-        p = self.scene.context
-        x, y = p.space.origin_zero()
-        if self.scene.pane.grid.grid_secondary_cx is not None:
-            x = self.scene.pane.grid.grid_secondary_cx
+        # Check cache invalidation
+        m = self.scene.widget_root.scene_widget.matrix
+        current_invalidation = hash((
+            m.a, m.b, m.c, m.d, m.e, m.f,
+            self.scene.pane.grid.grid_secondary_cx,
+            self.scene.pane.grid.grid_secondary_cy
+        ))
+        
+        if (self._cached_secondary_center is None or 
+            self._cached_center_invalidation != current_invalidation):
+            p = self.scene.context
+            x, y = p.space.origin_zero()
+            if self.scene.pane.grid.grid_secondary_cx is not None:
+                x = self.scene.pane.grid.grid_secondary_cx
 
-        if self.scene.pane.grid.grid_secondary_cy is not None:
-            y = self.scene.pane.grid.grid_secondary_cy
+            if self.scene.pane.grid.grid_secondary_cy is not None:
+                y = self.scene.pane.grid.grid_secondary_cy
 
-        return self.scene.convert_scene_to_window([x, y])
+            self._cached_secondary_center = self.scene.convert_scene_to_window([x, y])
+            
+        return self._cached_secondary_center
 
     def _set_scaled_conversion(self):
-        p = self.scene.context
-        f = float(Length(f"1{p.units_name}"))
+        """
+        Calculate scaled conversion factors with caching
+        """
+        # Create cache key based on factors that affect conversion
         m = self.scene.widget_root.scene_widget.matrix
-        self.scaled_conversion_x = f * m.value_scale_x()
-        self.scaled_conversion_y = f * m.value_scale_y()
+        p = self.scene.context
+        current_invalidation = hash((m.a, m.d, p.units_name))
+        
+        if (self._cached_scaled_conversion_x is None or 
+            self._cached_scaled_conversion_y is None or
+            self._cached_conversion_invalidation != current_invalidation):
+            
+            f = float(Length(f"1{p.units_name}"))
+            self._cached_scaled_conversion_x = f * m.value_scale_x()
+            self._cached_scaled_conversion_y = f * m.value_scale_y()
+            self._cached_conversion_invalidation = current_invalidation
+        
+        self.scaled_conversion_x = self._cached_scaled_conversion_x
+        self.scaled_conversion_y = self._cached_scaled_conversion_y
+
+    def _get_cached_text_extent(self, gc, text):
+        """
+        Get text extent with caching to avoid repeated expensive calls
+        """
+        cache_key = (text, self.font.GetPointSize())
+        if cache_key not in self._cached_text_extents:
+            self._cached_text_extents[cache_key] = gc.GetTextExtent(text)
+        return self._cached_text_extents[cache_key]
 
     def _draw_primary_guides(self, gc):
         w, h = gc.Size
@@ -540,48 +596,70 @@ class GuideWidget(Widget):
         gc.SetPen(self.primary_guides_pen)
         gc.SetFont(self.font, self.primary_guides_color)
 
-        text_width, text_height = gc.GetTextExtent("0")
+        # Cache text extent for "0" which is used for sizing calculations
+        text_width, text_height = self._get_cached_text_extent(gc, "0")
 
         starts = []
         ends = []
+        texts_to_draw = []  # Cache text drawing operations
+        
+        # X-axis guides
         points_x_primary = self.scene.pane.grid.tick_distance * self.scaled_conversion_x
         offset_x_primary = float(sx_primary) % points_x_primary
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
+        
+        # Early exit if too many guide lines
+        total_x_lines = int(w / points_x_primary) if points_x_primary > 0 else 0
+        if total_x_lines > GUIDE_CACHE_THRESHOLD:
+            # Reduce density for performance
+            step_multiplier = max(1, total_x_lines // GUIDE_CACHE_THRESHOLD)
+            points_x_primary *= step_multiplier
+            offset_x_primary = float(sx_primary) % points_x_primary
+            x = offset_x_primary
+        
         while x < w:
-            # print (f"while 1: {x}, {w}")
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
                 if not p.space.right_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                starts.append((x, edge_gap))
-                ends.append((x, length + edge_gap))
-
-                starts.append((x, h - edge_gap))
-                ends.append((x, h - length - edge_gap))
+                    
+                # Batch line segments
+                starts.extend([(x, edge_gap), (x, h - edge_gap)])
+                ends.extend([(x, length + edge_gap), (x, h - length - edge_gap)])
+                
                 # Show half distance as well if there's enough room
                 if text_height < 0.5 * points_x_primary:
                     starts.append((x - 0.5 * points_x_primary, edge_gap))
                     ends.append((x - 0.5 * points_x_primary, 0.25 * length + edge_gap))
 
                 if not self.scene.pane.grid.draw_grid_secondary:
-                    starts.append((x, h - edge_gap))
-                    ends.append((x, h - length - edge_gap))
-                    starts.append((x - 0.5 * points_x_primary, h - edge_gap))
-                    ends.append(
-                        (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
-                    )
+                    starts.extend([(x - 0.5 * points_x_primary, h - edge_gap)])
+                    ends.extend([(x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)])
+                    
+                # Cache text drawing for batch operation
                 if (x - last_text_pos) >= text_height * 1.25:
-                    gc.DrawText(f"{mark_point:g}", x, edge_gap, -math.tau / 4)
+                    texts_to_draw.append((f"{mark_point:g}", x, edge_gap, -math.tau / 4))
                     last_text_pos = x
             x += points_x_primary
 
+        # Y-axis guides  
         points_y_primary = self.scene.pane.grid.tick_distance * self.scaled_conversion_y
         offset_y_primary = float(sy_primary) % points_y_primary
         y = offset_y_primary
         last_text_pos = y - 30  # arbitrary
+        
+        # Early exit if too many guide lines
+        total_y_lines = int(h / points_y_primary) if points_y_primary > 0 else 0
+        if total_y_lines > GUIDE_CACHE_THRESHOLD:
+            # Reduce density for performance
+            step_multiplier = max(1, total_y_lines // GUIDE_CACHE_THRESHOLD)
+            points_y_primary *= step_multiplier
+            offset_y_primary = float(sy_primary) % points_y_primary
+            y = offset_y_primary
+            
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
@@ -589,28 +667,36 @@ class GuideWidget(Widget):
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                starts.append((edge_gap, y))
-                ends.append((length + edge_gap, y))
+                    
+                # Batch line segments
+                starts.extend([(edge_gap, y)])
+                ends.extend([(length + edge_gap, y)])
+                
                 # if there is enough room for a mid-distance stroke...
                 if text_height < 0.5 * points_y_primary:
                     starts.append((edge_gap, y - 0.5 * points_y_primary))
                     ends.append((0.25 * length + edge_gap, y - 0.5 * points_y_primary))
 
                 if not self.scene.pane.grid.draw_grid_secondary:
-                    starts.append((w - edge_gap, y))
-                    ends.append((w - length - edge_gap, y))
-                    starts.append((w - edge_gap, y - 0.5 * points_y_primary))
-                    ends.append(
-                        (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)
-                    )
+                    starts.extend([(w - edge_gap, y), (w - edge_gap, y - 0.5 * points_y_primary)])
+                    ends.extend([(w - length - edge_gap, y), (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)])
 
+                # Cache text drawing for batch operation
                 if (y - last_text_pos) >= text_height * 1.25:
-                    # Adding zero makes -0 into positive 0
-                    gc.DrawText(f"{mark_point + 0:g}", edge_gap, y + 0)
+                    texts_to_draw.append((f"{mark_point + 0:g}", edge_gap, y + 0, 0))
                     last_text_pos = y
             y += points_y_primary
+            
+        # Batch draw all line segments
         if len(starts) > 0:
             gc.StrokeLineSegments(starts, ends)
+            
+        # Batch draw all text
+        for text, x, y, angle in texts_to_draw:
+            if angle != 0:
+                gc.DrawText(text, x, y, angle)
+            else:
+                gc.DrawText(text, x, y)
 
     def _draw_secondary_guides(self, gc):
         w, h = gc.Size
@@ -637,13 +723,28 @@ class GuideWidget(Widget):
 
         gc.SetPen(self.secondary_guides_pen)
         gc.SetFont(self.font, self.secondary_guides_color)
-        t_width, t_height = gc.GetTextExtent("0")
+        
+        # Use cached text extent
+        t_width, t_height = self._get_cached_text_extent(gc, "0")
 
         starts = []
         ends = []
+        texts_to_draw = []  # Cache text drawing operations
+        
+        # X-axis secondary guides
         offset_x = float(sx) % points_x
         x = offset_x
         last_text_pos = x - 30
+        
+        # Early exit if too many guide lines
+        total_x_lines = int(w / points_x) if points_x > 0 else 0
+        if total_x_lines > GUIDE_CACHE_THRESHOLD:
+            # Reduce density for performance
+            step_multiplier = max(1, total_x_lines // GUIDE_CACHE_THRESHOLD)
+            points_x *= step_multiplier
+            offset_x = float(sx) % points_x
+            x = offset_x
+            
         while abs(x) < w:
             if x >= 45:
                 mark_point = (x - sx) / (fx * self.scaled_conversion_x)
@@ -651,30 +752,39 @@ class GuideWidget(Widget):
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                starts.append((x, edge_gap))
-                ends.append((x, length + edge_gap))
-
-                starts.append((x, h - edge_gap))
-                ends.append((x, h - length - edge_gap))
+                    
+                # Batch line segments
+                starts.extend([(x, edge_gap), (x, h - edge_gap)])
+                ends.extend([(x, length + edge_gap), (x, h - length - edge_gap)])
+                
                 # Show half distance as well if there's enough room
                 if t_height < 0.5 * points_x:
                     starts.append((x - 0.5 * points_x, h - edge_gap))
-                    ends.append(
-                        (
-                            x - 0.5 * points_x,
-                            h - 0.25 * length - edge_gap,
-                        )
-                    )
+                    ends.append((x - 0.5 * points_x, h - 0.25 * length - edge_gap))
+                    
+                # Cache text drawing - avoid repeated GetTextExtent calls
                 info = f"{mark_point:g}"
-                (t_w, t_h) = gc.GetTextExtent(info)
-                if (x - last_text_pos) >= t_h * 1.25:
-                    gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
+                if (x - last_text_pos) >= t_height * 1.25:
+                    # Pre-calculate text extent only when needed
+                    t_w, t_h = self._get_cached_text_extent(gc, info)
+                    texts_to_draw.append((info, x, h - edge_gap - t_w, -math.tau / 4))
                     last_text_pos = x
             x += points_x
 
+        # Y-axis secondary guides
         offset_y = float(sy) % points_y
         y = offset_y
         last_text_pos = y - 30
+        
+        # Early exit if too many guide lines
+        total_y_lines = int(h / points_y) if points_y > 0 else 0
+        if total_y_lines > GUIDE_CACHE_THRESHOLD:
+            # Reduce density for performance
+            step_multiplier = max(1, total_y_lines // GUIDE_CACHE_THRESHOLD)
+            points_y *= step_multiplier
+            offset_y = float(sy) % points_y
+            y = offset_y
+            
         while abs(y) < h:
             if y >= 20:
                 mark_point = (y - sy) / (fy * self.scaled_conversion_y)
@@ -682,26 +792,35 @@ class GuideWidget(Widget):
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                starts.append((w - edge_gap, y))
-                ends.append((w - length - edge_gap, y))
+                    
+                # Batch line segments
+                starts.extend([(w - edge_gap, y)])
+                ends.extend([(w - length - edge_gap, y)])
+                
                 # if there is enough room for a mid-distance stroke...
                 if t_height < 0.5 * points_y:
                     starts.append((w - edge_gap, y - 0.5 * points_y))
-                    ends.append(
-                        (
-                            w - 0.25 * length - edge_gap,
-                            y - 0.5 * points_y,
-                        )
-                    )
+                    ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y))
 
+                # Cache text drawing - avoid repeated GetTextExtent calls
                 info = f"{mark_point + 0:g}"  # -0.0 + 0 == 0
-                (t_w, t_h) = gc.GetTextExtent(info)
-                if (y - last_text_pos) >= t_h * 1.25:
-                    gc.DrawText(info, w - edge_gap - t_w, y + 0)
+                if (y - last_text_pos) >= t_height * 1.25:
+                    # Pre-calculate text extent only when needed
+                    t_w, t_h = self._get_cached_text_extent(gc, info)
+                    texts_to_draw.append((info, w - edge_gap - t_w, y + 0, 0))
                     last_text_pos = y
             y += points_y
 
-        gc.StrokeLineSegments(starts, ends)
+        # Batch draw all line segments
+        if len(starts) > 0:
+            gc.StrokeLineSegments(starts, ends)
+            
+        # Batch draw all text
+        for text, x, y, angle in texts_to_draw:
+            if angle != 0:
+                gc.DrawText(text, x, y, angle)
+            else:
+                gc.DrawText(text, x, y)
 
     def _draw_magnet_lines(self, gc):
         w, h = gc.Size
@@ -711,18 +830,29 @@ class GuideWidget(Widget):
         starts_hi = []
         ends_hi = []
 
-        for x in self.scene.pane.magnet_x:
-            sx, sy = self.scene.convert_scene_to_window([x, 0])
-            starts_hi.append((sx, length + edge_gap))
-            ends_hi.append((sx, h - length - edge_gap))
+        # Batch process magnet X coordinates
+        if self.scene.pane.magnet_x:
+            # Convert all X coordinates at once to reduce function call overhead
+            x_coords = [(x, 0) for x in self.scene.pane.magnet_x]
+            converted_coords = [self.scene.convert_scene_to_window(coord) for coord in x_coords]
+            
+            for sx, sy in converted_coords:
+                starts_hi.append((sx, length + edge_gap))
+                ends_hi.append((sx, h - length - edge_gap))
 
-        for y in self.scene.pane.magnet_y:
-            sx, sy = self.scene.convert_scene_to_window([0, y])
-            starts_hi.append((length + edge_gap, sy))
-            ends_hi.append((w - length - edge_gap, sy))
+        # Batch process magnet Y coordinates
+        if self.scene.pane.magnet_y:
+            # Convert all Y coordinates at once to reduce function call overhead
+            y_coords = [(0, y) for y in self.scene.pane.magnet_y]
+            converted_coords = [self.scene.convert_scene_to_window(coord) for coord in y_coords]
+            
+            for sx, sy in converted_coords:
+                starts_hi.append((length + edge_gap, sy))
+                ends_hi.append((w - length - edge_gap, sy))
 
-        gc.SetPen(self.pen_magnets)
+        # Only draw if we have line segments to draw
         if starts_hi and ends_hi:
+            gc.SetPen(self.pen_magnets)
             gc.StrokeLineSegments(starts_hi, ends_hi)
 
     def _draw_units(self, gc):
@@ -760,6 +890,15 @@ class GuideWidget(Widget):
         Process guide signal to delete the current guidelines and force them to be recalculated.
         """
         if signal == "guide":
-            pass
+            # Invalidate all caches when guide changes
+            self._cached_scaled_conversion_x = None
+            self._cached_scaled_conversion_y = None
+            self._cached_conversion_invalidation = -1
+            self._cached_primary_center = None
+            self._cached_secondary_center = None
+            self._cached_center_invalidation = -1
+            self._cached_text_extents.clear()
         elif signal == "theme":
             self.set_colors()
+            # Clear text extent cache as font colors may have changed
+            self._cached_text_extents.clear()
