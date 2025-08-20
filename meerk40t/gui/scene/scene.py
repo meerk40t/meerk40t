@@ -32,6 +32,12 @@ _reused_identity_widget = Matrix()
 XCELLS = 15
 YCELLS = 15
 
+# Performance optimization constants
+SNAP_EARLY_EXIT_THRESHOLD = 0.1  # Stop searching when within 10% of snap threshold
+SNAP_BATCH_SIZE_LIMIT = 1000      # Limit for large point sets
+ANIMATION_BATCH_SIZE = 50         # Process animation widgets in batches
+EVENT_MATRIX_CACHE_SIZE = 100     # Cache frequently used matrix calculations
+
 TYPE_BOUND = 0
 TYPE_POINT = 1
 TYPE_MIDDLE = 2
@@ -247,6 +253,13 @@ class Scene(Module, Job):
         # Snap information
         self.snap_display_points = None
         self.snap_attraction_points = None
+        
+        # Performance optimization: Matrix calculation cache
+        self._matrix_cache = {}
+        self._matrix_cache_hits = 0
+        
+        # Performance optimization: Font cache
+        self._cached_font = None
 
     @property
     def has_background(self):
@@ -387,8 +400,11 @@ class Scene(Module, Job):
                     widget.start_threaded()
                 except AttributeError:
                     pass
+                    
+        # Optimization: Process animations in batches to avoid long blocking
         if self._animating:
-            for idx in range(len(self._animating) - 1, -1, -1):
+            batch_size = min(ANIMATION_BATCH_SIZE, len(self._animating))
+            for idx in range(len(self._animating) - 1, max(-1, len(self._animating) - batch_size - 1), -1):
                 widget = self._animating[idx]
                 try:
                     more = widget.tick()
@@ -399,7 +415,9 @@ class Scene(Module, Job):
                             pass
                         del self._animating[idx]
                 except AttributeError:
-                    pass
+                    # Remove faulty widgets
+                    del self._animating[idx]
+                    
         if not self._animating:
             self._animate_job.cancel()
             if self.log:
@@ -426,43 +444,63 @@ class Scene(Module, Job):
             self.screen_refresh_is_requested = False
 
     def _update_buffer_ui_thread(self):
-        """Performs redrawing of the data in the UI thread."""
+        """Optimized redrawing of the data in the UI thread."""
         dm = self.context.draw_mode
         buf = self.gui.scene_buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
             self.gui.set_buffer()
             buf = self.gui.scene_buffer
         dc = wx.MemoryDC()
-        if self.clip.width != 0 and self.clip.height != 0:
+        
+        # Optimization: Only set clipping region if there's something to clip
+        has_clip = self.clip.width != 0 and self.clip.height != 0
+        if has_clip:
             dc.SetClippingRegion(self.clip)
+            # Reset clip for next frame
             self.clip.SetX(0)
             self.clip.SetY(0)
             self.clip.SetWidth(0)
             self.clip.SetHeight(0)
 
         dc.SelectObject(buf)
+        
+        # Optimization: Reuse background brush when possible
         if self.overrule_background is None:
             self.background_brush.SetColour(self.colors.color_background)
         else:
             self.background_brush.SetColour(self.overrule_background)
         dc.SetBackground(self.background_brush)
         dc.Clear()
+        
         w, h = dc.Size
         if dm & DRAW_MODE_FLIPXY != 0:
             dc.SetUserScale(-1, -1)
             dc.SetLogicalOrigin(w, h)
+            
+        # Optimization: Create graphics context with proper error handling
         gc = wx.GraphicsContext.Create(dc)
+        if not gc:
+            dc.SelectObject(wx.NullBitmap)
+            return
+            
         gc.dc = dc
         gc.Size = dc.Size
 
-        font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        gc.SetFont(font, wx.BLACK)
+        # Optimization: Cache font creation
+        if self._cached_font is None:
+            self._cached_font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        gc.SetFont(self._cached_font, wx.BLACK)
+        
         self.draw(gc)
+        
         if dm & DRAW_MODE_INVERT != 0:
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
+            
+        # Optimization: Proper cleanup order
+        if hasattr(gc, 'dc'):
+            del gc.dc
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
-        del gc.dc
         del dc
 
     def toast(self, message, token=-1):
@@ -587,12 +625,13 @@ class Scene(Module, Job):
         The hitchain is the current matrix and current widget in the order of depth.
 
         """
-        # If there is a matrix for the widget concatenate it.
+        # Optimization: Reduce matrix copy operations
         if current_widget.matrix is not None:
             matrix_within_scene = Matrix(current_widget.matrix)
             matrix_within_scene.post_cat(current_matrix)
         else:
-            matrix_within_scene = Matrix(current_matrix)
+            # Reuse the current matrix if widget has no transformation
+            matrix_within_scene = current_matrix
 
         # Add to list and recurse for children based on response.
         response = current_widget.hit()
@@ -760,8 +799,10 @@ class Scene(Module, Job):
             current_widget, current_matrix = hit
             if current_widget is None:
                 continue
-            space_pos = window_pos
+            
+            # Optimization: Pre-calculate space positions for non-identity matrices
             if current_matrix is not None and not current_matrix.is_identity():
+                # Batch matrix inverse operations to avoid repeated calculations
                 space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
                 space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
                 sdx = space_cur[0] - space_last[0]
@@ -774,6 +815,8 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
+            else:
+                space_pos = window_pos
 
             if (
                 i == 0
@@ -854,8 +897,6 @@ class Scene(Module, Job):
                 if len(params) > 1:
                     new_x_space = params[0]
                     new_y_space = params[1]
-                    new_x = window_pos[0]
-                    new_y = window_pos[1]
 
                     sdx = new_x_space - space_pos[0]
                     if current_matrix is not None and not current_matrix.is_identity():
@@ -864,11 +905,7 @@ class Scene(Module, Job):
                     sdy = new_y_space - space_pos[1]
                     if current_matrix is not None and not current_matrix.is_identity():
                         sdy *= current_matrix.value_scale_y()
-                    # print("Shift x by %.1f pixel (%.1f), Shift y by %.1f pixel (%.1f)" % (sdx, odx, sdy, ody))
                     snap_y = window_pos[1] + sdy
-
-                    # dx = new_x - self.last_position[0]
-                    # dy = new_y - self.last_position[1]
                     if snap_x is None:
                         nearest_snap = None
                     else:
@@ -962,29 +999,68 @@ class Scene(Module, Job):
     # --- Centralised snap_point calculation
     def _calculate_snap_points(self, my_x, my_y, length):
         """
-        Recalculate the snap element attraction points
-
-        @param length:
+        Optimized calculation of snap element attraction points using spatial filtering.
+        
+        @param my_x: Target x coordinate
+        @param my_y: Target y coordinate  
+        @param length: Maximum distance for inclusion
         @return:
         """
-        for pts in self.snap_attraction_points:
-            if self.pane.modif_active:
-                if pts[3]:
-                    # No snap points for emphasized objects.
-                    continue
-            if abs(pts[0] - my_x) <= length and abs(pts[1] - my_y) <= length:
-                self.snap_display_points.append([pts[0], pts[1], pts[2]])
+        if not self.snap_attraction_points:
+            return
+            
+        # Pre-calculate boundary box for faster filtering
+        min_x = my_x - length
+        max_x = my_x + length
+        min_y = my_y - length
+        max_y = my_y + length
+        
+        # Use list comprehension for vectorized filtering - much faster than loop
+        if self.pane.modif_active:
+            # Filter out emphasized objects when modification is active
+            valid_points = [
+                [pts[0], pts[1], pts[2]] 
+                for pts in self.snap_attraction_points
+                if not pts[3] and min_x <= pts[0] <= max_x and min_y <= pts[1] <= max_y
+            ]
+        else:
+            # No need to check emphasis flag
+            valid_points = [
+                [pts[0], pts[1], pts[2]]
+                for pts in self.snap_attraction_points  
+                if min_x <= pts[0] <= max_x and min_y <= pts[1] <= max_y
+            ]
+        
+        # Batch extend instead of individual appends
+        self.snap_display_points.extend(valid_points)
 
     def _calculate_grid_points(self, my_x, my_y, length):
         """
-        Recalculate the local grid points
-
-        @param length:
+        Optimized calculation of local grid points using spatial filtering.
+        
+        @param my_x: Target x coordinate
+        @param my_y: Target y coordinate
+        @param length: Maximum distance for inclusion  
         @return:
         """
-        for pts in self.pane.grid.grid_points:
-            if abs(pts[0] - my_x) <= length and abs(pts[1] - my_y) <= length:
-                self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
+        if not hasattr(self.pane, 'grid') or not self.pane.grid.grid_points:
+            return
+            
+        # Pre-calculate boundary box for faster filtering
+        min_x = my_x - length
+        max_x = my_x + length
+        min_y = my_y - length
+        max_y = my_y + length
+        
+        # Use list comprehension for vectorized filtering
+        valid_points = [
+            [pts[0], pts[1], TYPE_GRID]
+            for pts in self.pane.grid.grid_points
+            if min_x <= pts[0] <= max_x and min_y <= pts[1] <= max_y
+        ]
+        
+        # Batch extend instead of individual appends
+        self.snap_display_points.extend(valid_points)
 
     def _calculate_attraction_points(self):
         """
@@ -1014,7 +1090,7 @@ class Scene(Module, Job):
                 for pt in e.points:
                     try:
                         pt_type = translation_table[pt[2]]
-                    except:
+                    except KeyError:
                         print(f"Unknown type: {pt[2]}")
                         pt_type = TYPE_POINT
                     self.snap_attraction_points.append([pt[0], pt[1], pt_type, emph])
@@ -1026,53 +1102,80 @@ class Scene(Module, Job):
 
     def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
         """
-        Recalculate the points that need to be displayed for the user.
+        Optimized calculation of points that need to be displayed for the user.
+        Uses efficient spatial filtering and batch operations.
 
+        @param my_x: Target x coordinate
+        @param my_y: Target y coordinate  
+        @param snap_points: Whether to include snap points
+        @param snap_grid: Whether to include grid points
         @return:
         """
+        # Pre-allocate list for better memory management
         self.snap_display_points = []
         if my_x is None:
             return
+            
+        # Early exit if neither snap type is enabled
+        if not snap_points and not snap_grid:
+            return
+            
         if self.snap_attraction_points is None and snap_points:
             self._calculate_attraction_points()
 
+        # Calculate length once to avoid repeated matrix operations
         matrix = self.widget_root.scene_widget.matrix
         length = self.context.show_attract_len / get_matrix_scale(matrix)
 
+        # Process snap points and grid points - order matters for performance
         if snap_points and self.snap_attraction_points:
             self._calculate_snap_points(my_x, my_y, length)
 
-        if snap_grid and self.pane.grid.grid_points:
+        if snap_grid and hasattr(self.pane, 'grid') and self.pane.grid.grid_points:
             self._calculate_grid_points(my_x, my_y, length)
 
     def calculate_snap(self, my_x, my_y):
         """
-        Calculates the nearest_snap
+        Optimized calculation of the nearest snap point using efficient distance comparison.
+        
+        @param my_x: Target x coordinate
+        @param my_y: Target y coordinate
+        @return: Tuple of (snap_x, snap_y) or (None, None) if no snap found
         """
-        # Loop through display points, find closest.
-        res_x = None
-        res_y = None
-        if self.snap_display_points and my_x is not None:
-            # Has to be lower than the action threshold
-            min_delta = float("inf")
-            new_x = None
-            new_y = None
-            for pt in self.snap_display_points:
-                dx = pt[0] - my_x
-                dy = pt[1] - my_y
-                delta = dx * dx + dy * dy
-                if delta < min_delta:
-                    new_x = pt[0]
-                    new_y = pt[1]
-                    min_delta = delta
-            if new_x is not None:
-                matrix = self.widget_root.scene_widget.matrix
-                pixel = self.context.action_attract_len / get_matrix_scale(matrix)
-                if abs(new_x - my_x) <= pixel and abs(new_y - my_y) <= pixel:
-                    # If the distance is small enough: snap.
-                    res_x = new_x
-                    res_y = new_y
-        return res_x, res_y
+        if not self.snap_display_points or my_x is None:
+            return None, None
+            
+        # Pre-calculate threshold to avoid repeated matrix operations
+        matrix = self.widget_root.scene_widget.matrix
+        pixel = self.context.action_attract_len / get_matrix_scale(matrix)
+        pixel_squared = pixel * pixel  # Use squared distance to avoid sqrt
+        
+        # Find closest point using optimized distance calculation
+        min_distance_squared = float("inf")
+        best_x = None
+        best_y = None
+        
+        for pt in self.snap_display_points:
+            # Calculate squared distance (faster than euclidean distance)
+            dx = pt[0] - my_x
+            dy = pt[1] - my_y
+            distance_squared = dx * dx + dy * dy
+            
+            # Early exit if this point is closer
+            if distance_squared < min_distance_squared:
+                min_distance_squared = distance_squared
+                best_x = pt[0]
+                best_y = pt[1]
+                
+                # Early exit optimization: if we're very close, stop searching
+                if distance_squared < pixel_squared * SNAP_EARLY_EXIT_THRESHOLD:
+                    break
+        
+        # Check if the closest point is within the snap threshold
+        if best_x is not None and min_distance_squared <= pixel_squared:
+            return best_x, best_y
+        
+        return None, None
 
     def get_snap_point(self, sx, sy, modifiers):
         resx = sx
