@@ -64,6 +64,7 @@ You enclose a couple of regular segments with a start and an end tag:
 Function
 
 """
+
 import math
 import re
 from contextlib import contextmanager
@@ -127,6 +128,10 @@ NON_GEOMETRY_TYPES = (
     TYPE_CALL,
     TYPE_END,
 )
+
+
+def log_message(message):
+    print(message)
 
 
 class Polygon:
@@ -905,7 +910,9 @@ def batch_x_intercepts(segments, scanline_y, geom):
 
             return x_intercepts.tolist()
 
-    except Exception:
+    except Exception as e:
+        # Log or handle the exception as needed
+        log_message(f"Error in batch_x_intercepts: {e}")
         pass
 
     # Fallback to individual calculations
@@ -914,7 +921,7 @@ def batch_x_intercepts(segments, scanline_y, geom):
         try:
             x_int = geom.x_intercept(seg_idx, scanline_y)
             x_intercepts.append(x_int)
-        except:
+        except Exception:
             x_intercepts.append(float("nan"))
 
     return x_intercepts
@@ -992,7 +999,8 @@ def batch_scanline_intersections(segments, scanline_ys, geom):
 
             return result
 
-    except Exception:
+    except Exception as e:
+        log_message(f"Error in batch_scanline_intersections: {e}")
         pass
 
     # Fallback to individual calculations
@@ -1052,7 +1060,7 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
     anystitches = 1
     pass_count = 0
     # for idx, g in enumerate(geometries):
-    #     print (f"{idx}: {g.first_point} -> {g.last_point} ({g.index} segments)")
+    #     log_message (f"{idx}: {g.first_point} -> {g.last_point} ({g.index} segments)")
 
     while anystitches > 0:
         stitched_geometries = []
@@ -1067,8 +1075,9 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
                 geometries = list(stitched_geometries) if anystitches > 0 else []
                 pass_count += 1
                 continue
-            except Exception:
+            except Exception as e:
                 # Fall back to original algorithm if vectorized fails
+                log_message(f"Vectorized stitching failed: {e}")
                 pass
 
         # Original algorithm for small numbers or fallback
@@ -1124,7 +1133,7 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
             else:
                 stitched_geometries.append(candidate)
 
-        # print (f"Stitch pass {pass_count}: {len(stitched_geometries)} geometries, {anystitches} stitches made, org= {len(geometry_list)}, tolerance={tolerance:.2f}")
+        # log_message (f"Stitch pass {pass_count}: {len(stitched_geometries)} geometries, {anystitches} stitches made, org= {len(geometry_list)}, tolerance={tolerance:.2f}")
         if anystitches > 0:
             # Stitches were made, so lets try again
             geometries = list(stitched_geometries)
@@ -1134,8 +1143,9 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
     if len(stitched_geometries) > 5:
         try:
             stitched_geometries = _close_gaps_vectorized(stitched_geometries, tolerance)
-        except Exception:
+        except Exception as e:
             # Fall back to original algorithm
+            log_message(f"Vectorized gap closing failed: {e}")
             for g in stitched_geometries:
                 if 0 < abs(g.last_point - g.first_point) <= tolerance:
                     g.line(g.last_point, g.first_point)
@@ -1630,7 +1640,7 @@ class Pattern:
             start_value_x -= 1
             x_offset = (col + start_value_x) * (cw + 2 * px)
             x = x0 + x_offset
-            # print (f"X-lower bound: sx={start_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
+            # log_message (f"X-lower bound: sx={start_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
 
         end_value_x = 0
         col = cols - 1
@@ -1640,7 +1650,7 @@ class Pattern:
             end_value_x += 1
             x_offset = (col + end_value_x) * (cw + 2 * px)
             x = x0 + x_offset
-            # print (f"X-upper bound: ex={end_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
+            # log_message (f"X-upper bound: ex={end_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
 
         start_value_y = 0
         row = 0
@@ -1650,7 +1660,7 @@ class Pattern:
             start_value_y -= 1
             y_offset = (row + start_value_y) * (ch + 2 * py)
             y = y0 + y_offset
-            # print (f"Y-lower bound: sy={start_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
+            # log_message (f"Y-lower bound: sy={start_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
 
         end_value_y = 0
         row = rows - 1
@@ -1660,10 +1670,10 @@ class Pattern:
             end_value_y += 1
             y_offset = (row + end_value_y) * (ch + 2 * py)
             y = y0 + y_offset
-            # print (f"Y-upper bound: ey={end_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
+            # log_message (f"Y-upper bound: ey={end_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
 
-        # print (f"Cols={cols}, s_x={start_value_x}, e_x={end_value_x}")
-        # print (f"Rows={rows}, s_y={start_value_y}, e_y={end_value_y}")
+        # log_message (f"Cols={cols}, s_x={start_value_x}, e_x={end_value_x}")
+        # log_message (f"Rows={rows}, s_y={start_value_y}, e_y={end_value_y}")
 
         # start_value_x -= 2
         # start_value_y -= 2
@@ -1703,7 +1713,7 @@ class BeamTable:
     def compute_beam(self):
         ok = self.compute_beam_bo()
         if not ok:
-            # print("Failed. Fallback...")
+            # log_message("Failed. Fallback...")
             self.compute_beam_brute()
 
     def compute_beam_bo(self):
@@ -1857,7 +1867,7 @@ class BeamTable:
                     # Reduce the charactergap and you will end up with an attempt to remove a non-existing index.
                     # We cover this, but it will lead then to a degenerate path
                     # Issue # 2595
-                    # print(f"Would have crashed for {index}...\n\nAdds={adds}\nRemoves={removes}\nActives={actives}")
+                    # log_message(f"Would have crashed for {index}...\n\nAdds={adds}\nRemoves={removes}\nActives={actives}")
                     return False
                 # if 0 < rp < len(actives):
                 #     check_intersection(i, actives[rp - 1], actives[rp], pt)
@@ -2123,7 +2133,10 @@ class BeamTable:
         if num_events > 100 and len(args) <= 8:
             try:
                 return self._cag_optimized(cag_op, *args)
-            except Exception:
+            except Exception as e:
+                log_message(
+                    f"Optimized CAG failed: {e}. Falling back to standard algorithm."
+                )
                 # Fallback to standard algorithm if optimization fails
                 pass
 
@@ -2131,11 +2144,15 @@ class BeamTable:
         if num_events > 500 and len(args) <= 5:
             try:
                 return self._cag_hierarchical(cag_op, *args)
-            except Exception:
+            except Exception as e:
                 # Fallback to optimized or standard
+                log_message(f"Hierarchical CAG failed: {e}. Trying optimized CAG.")
                 try:
                     return self._cag_optimized(cag_op, *args)
-                except Exception:
+                except Exception as e:
+                    log_message(
+                        f"Optimized CAG failed: {e}. Falling back to standard algorithm."
+                    )
                     pass
 
         # Standard algorithm for small datasets or as final fallback
@@ -2822,7 +2839,10 @@ def batch_interpolate_segments(segments, interpolate_values, geom_instance):
                 results.append(points[1:])  # Skip first point to avoid duplication
 
             return results
-    except Exception:
+    except Exception as e:
+        log_message(
+            f"Batch interpolation failed: {e}. Falling back to individual processing."
+        )
         pass
 
     # Fallback to individual processing
@@ -2906,7 +2926,10 @@ def batch_equal_distance_interpolation(segments, geom_instance, distance=100):
                     results.append([])
 
             return results
-    except Exception:
+    except Exception as e:
+        log_message(
+            f"Batch equal-distance interpolation failed: {e}. Falling back to individual processing."
+        )
         pass
 
     # Fallback to individual processing
@@ -2982,7 +3005,7 @@ class Geomstr:
         return f"Geomstr({self.index} segments)"
 
     def __repr__(self):
-        return f"Geomstr({repr(self.segments[:self.index])})"
+        return f"Geomstr({repr(self.segments[: self.index])})"
 
     def __eq__(self, other):
         if not isinstance(other, Geomstr):
@@ -3027,7 +3050,7 @@ class Geomstr:
         def cplx_info(num):
             return f"({num.real:.0f}, {num.imag:.0f})"
 
-        print(f"Segments: {self.index}")
+        log_message(f"Segments: {self.index}")
         for idx, seg in enumerate(self.segments[: self.index]):
             start = seg[0]
             c1 = seg[1]
@@ -3054,9 +3077,9 @@ class Geomstr:
                 executing_function = seg_type >> 8
                 seg_info += f", function: {executing_function}"
 
-            print(seg_info)
+            log_message(seg_info)
         svg = self.as_path()
-        print(f"Path-equivalent: {svg.d()}")
+        log_message(f"Path-equivalent: {svg.d()}")
 
     @classmethod
     def turtle(cls, turtle, n=4, d=1.0):
@@ -3144,7 +3167,7 @@ class Geomstr:
                 if optimized_result is not None:
                     return optimized_result
             except Exception as e:
-                print(f"Exception in batch_svg_optimized fallback in svg: {e}")
+                log_message(f"Exception in batch_svg_optimized fallback in svg: {e}")
                 # Fall back to original implementation
 
         # Original implementation as fallback
@@ -3775,7 +3798,8 @@ class Geomstr:
                 if optimized_points is not None:
                     yield from optimized_points
                     return
-            except Exception:
+            except Exception as e:
+                log_message(f"Exception in as_equal_interpolated_points: {e}")
                 # Fall back to original implementation on any error
                 pass
 
@@ -4656,8 +4680,9 @@ class Geomstr:
             if index > 10:  # Use optimization for larger geometries
                 try:
                     return self._bbox_optimized(segments[:index])
-                except Exception:
+                except Exception as e:
                     # Fall back to original implementation on any error
+                    log_message(f"Error in bbox_optimized: {e}")
                     pass
 
             bounds = self.bbox(mx=mx, e=segments[0:index])
@@ -5272,8 +5297,11 @@ class Geomstr:
             if self.index > 20:  # Use optimization for larger geometries
                 try:
                     return self._length_vectorized()
-                except Exception:
+                except Exception as e:
                     # Fall back to original implementation on any error
+                    log_message(
+                        f"Error in vectorized length calculation: {e} flagging as fallback"
+                    )
                     pass
 
             # Original implementation as fallback
@@ -5342,10 +5370,10 @@ class Geomstr:
             pen_downs = positions[q]  # values 0-49
             pen_ups = positions[q + 1]  # values 1-50
             res = np.sum(np.abs(pen_ups - pen_downs))
-            # print (f"Calculated for an arc: {res}")
+            # log_message (f"Calculated for an arc: {res}")
             return res
 
-        # print (f"And now I have no idea how to deal with type {info.real}")
+        # log_message (f"And now I have no idea how to deal with type {info.real}")
         return 0
 
     def _length_vectorized(self):
@@ -5409,8 +5437,11 @@ class Geomstr:
         # Optimized area calculation using vectorized operations
         try:
             return self._area_vectorized(density)
-        except Exception:
+        except Exception as e:
             # Fall back to original implementation on any error
+            log_message(
+                f"Error in vectorized area calculation: {e} flagging as fallback"
+            )
             pass
 
         # Original implementation as fallback
@@ -7121,8 +7152,11 @@ class Geomstr:
 
             return all_points
 
-        except Exception:
+        except Exception as e:
             # Fallback on any error
+            log_message(
+                f"Error in batch equal distance calculation: {e} flagging as fallback"
+            )
             return None
 
     @staticmethod
@@ -7374,8 +7408,9 @@ class Geomstr:
 
             return obj
 
-        except Exception:
+        except Exception as e:
             # Fallback on any error
+            log_message(f"Error in svg calculation: {e} flagging as fallback")
             return None
 
     @staticmethod
@@ -7412,7 +7447,11 @@ class Geomstr:
 
             return np.array([], dtype=complex)
 
-        except Exception:
+        except Exception as e:
+            log_message(
+                f"Error in batch_extract_svg_coordinates: {e} flagging as fallback"
+            )
+            # Fallback to original implementation if extraction fails
             return None
 
     #######################
@@ -7485,8 +7524,10 @@ class Geomstr:
 
             return path
 
-        except Exception:
+        except Exception as e:
             # Fallback to original implementation if batch processing fails
+            log_message(f"Error in batch_as_path_optimized: {e} flagging as fallback")
+            # Original implementation as fallback
             return None
 
     #######################
@@ -7501,9 +7542,7 @@ class Geomstr:
                 if optimized_path is not None:
                     return optimized_path
             except Exception as e:
-                import logging
-
-                logging.debug(
+                log_message(
                     f"Exception in batch_as_path_optimized fallback in as_path: {e}"
                 )
                 # Fall back to original implementation
@@ -7610,7 +7649,7 @@ class Geomstr:
                     np.nan,
                     np.nan,
                 )
-                # print (f"inserted an end at #{idx}")
+                # log_message (f"inserted an end at #{idx}")
                 self.insert(idx, end_segment)
             idx += 1
         # And at last: we don't need an TYPE_END as very last segment
