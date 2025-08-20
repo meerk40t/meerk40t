@@ -98,6 +98,15 @@ from meerk40t.svgelements import (
 from meerk40t.tools.pmatrix import PMatrix
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+# Vectorization threshold constants - empirically determined for optimal performance
+# These control when to switch from standard to vectorized implementations
+THRESHOLD_STITCHEABLE_NODES = 25     # stitcheable_nodes: n > 25 (optimal)
+THRESHOLD_STITCH_GEOMETRIES = 40     # stitch_geometries: n > 40 (optimal)
+THRESHOLD_CLOSE_GAPS = 15            # close_gaps: n > 15 (optimal)
+THRESHOLD_BBOX = 45                  # bbox: index > 45 (optimal)
+THRESHOLD_LENGTH = 50                # length: index > 50 (optimal)
+# Note: area function is always vectorized (no threshold needed)
+
 # Note lower nibble is which indexes are positions (except info index)
 TYPE_NOP = 0x00 | 0b0000
 TYPE_POINT = 0x10 | 0b1001
@@ -546,7 +555,8 @@ def stitcheable_nodes(data, tolerance) -> list:
         tolerance = 1e-6
 
     # Use vectorized approach for better performance with many geometries
-    if len(geoms) > 20:  # Vectorized approach for larger sets
+    # The threshold was empirically chosen for when vectorization is beneficial
+    if len(geoms) > THRESHOLD_STITCHEABLE_NODES:  # Vectorized approach for larger sets
         node_indices = np.array([g[0] for g in geoms])
 
         # Extract all endpoints as complex numbers
@@ -1067,7 +1077,8 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
         anystitches = 0
 
         # Use vectorized approach for large numbers of geometries
-        if len(geometries) > 10:
+        # Threshold was empirically determined for optimal performance
+        if len(geometries) > THRESHOLD_STITCH_GEOMETRIES:
             try:
                 anystitches, stitched_geometries = _stitch_geometries_vectorized(
                     geometries, tolerance
@@ -1140,7 +1151,8 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
             pass_count += 1
 
     # Use vectorized gap closing for multiple geometries
-    if len(stitched_geometries) > 5:
+    # Threshold was empirically chosen for when vectorization is beneficial
+    if len(stitched_geometries) > THRESHOLD_CLOSE_GAPS:
         try:
             stitched_geometries = _close_gaps_vectorized(stitched_geometries, tolerance)
         except Exception as e:
@@ -4677,7 +4689,8 @@ class Geomstr:
             index = self.index
 
             # Optimization: Use vectorized bbox calculation for better performance
-            if index > 10:  # Use optimization for larger geometries
+            # Threshold was empirically determined for optimal performance
+            if index > THRESHOLD_BBOX:  # Use optimization for larger geometries
                 try:
                     return self._bbox_optimized(segments[:index])
                 except Exception as e:
@@ -5294,7 +5307,8 @@ class Geomstr:
         """
         if e is None:
             # Optimized vectorized length calculation for entire geometry
-            if self.index > 20:  # Use optimization for larger geometries
+            # Threshold was empirically determined for optimal performance
+            if self.index > THRESHOLD_LENGTH:  # Use optimization for larger geometries
                 try:
                     return self._length_vectorized()
                 except Exception as e:
@@ -5352,8 +5366,9 @@ class Geomstr:
         if segtype == TYPE_CUBIC:
             try:
                 return self._cubic_length_via_quad(line)
-            except:
-                # Absolute fallback
+            except Exception:
+                # Absolute fallback - most probably caused by Scipy not being
+                # installed, so we use a geometric approximation.
                 pass
             positions = self._cubic_position(line, np.linspace(0, 1))
             q = np.arange(0, len(positions) - 1)
@@ -5435,6 +5450,7 @@ class Geomstr:
             density = 100
 
         # Optimized area calculation using vectorized operations
+        # No threshold needed, as we handle small geometries directly
         try:
             return self._area_vectorized(density)
         except Exception as e:
