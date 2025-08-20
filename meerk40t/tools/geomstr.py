@@ -4938,8 +4938,9 @@ class Geomstr:
                 # Linear case: bt + c = 0 -> t = -c/b
                 b_linear = b[linear_mask]
                 c_linear = c[linear_mask]
-                t_linear = np.where(np.abs(b_linear) > 1e-10, -c_linear / b_linear, 0.5)
-                t_linear_valid = t_linear[(t_linear > 0) & (t_linear < 1)]
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    t_linear = np.where(np.abs(b_linear) > 1e-10, -c_linear / b_linear, 0.5)
+                t_linear_valid = t_linear[(t_linear > 0) & (t_linear < 1) & np.isfinite(t_linear)]
                 if len(t_linear_valid) > 0:
                     extrema_points.append(t_linear_valid)
 
@@ -4959,8 +4960,27 @@ class Geomstr:
                     a_valid = a_quad[valid_disc]
                     b_valid = b_quad[valid_disc]
 
-                    t1 = (-b_valid + sqrt_disc) / (2 * a_valid)
-                    t2 = (-b_valid - sqrt_disc) / (2 * a_valid)
+                    # Additional protection against divide by zero for 2*a_valid
+                    denominator = 2 * a_valid
+                    nonzero_mask = np.abs(denominator) > 1e-12
+                    
+                    if np.any(nonzero_mask):
+                        # Only process non-zero denominators to avoid warnings
+                        denom_safe = denominator[nonzero_mask]
+                        b_safe = b_valid[nonzero_mask]
+                        sqrt_safe = sqrt_disc[nonzero_mask]
+                        
+                        # Use numpy error handling to suppress warnings during division
+                        with np.errstate(divide='ignore', invalid='ignore'):
+                            t1_candidates = (-b_safe + sqrt_safe) / denom_safe
+                            t2_candidates = (-b_safe - sqrt_safe) / denom_safe
+                        
+                        # Filter for finite values
+                        t1 = t1_candidates[np.isfinite(t1_candidates)]
+                        t2 = t2_candidates[np.isfinite(t2_candidates)]
+                    else:
+                        t1 = np.array([])
+                        t2 = np.array([])
 
                     # Filter valid t values (0 < t < 1)
                     t1_valid = t1[(t1 > 0) & (t1 < 1)]
