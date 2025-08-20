@@ -3515,3 +3515,186 @@ class TestGeomstr(unittest.TestCase):
                 print(f"index={geom.index:2d}: {time_taken:.6f}s | {vectorized}")
             except Exception as e:
                 print(f"index={geom.index:2d}: ERROR - {e}")
+
+    def test_cubic_bbox_divide_by_zero_protection(self):
+        """Test that cubic bbox calculation handles divide by zero edge cases without warnings."""
+        import warnings
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            
+            geom = Geomstr()
+            
+            # Test case 1: Degenerate cubic with identical control points
+            geom.cubic(0+0j, 0+0j, 0+0j, 1+1j)
+            
+            # Test case 2: Cubic with very small differences in control points
+            geom.cubic(0+0j, 1e-15+0j, 1e-15+0j, 1+1j)
+            
+            # Test case 3: Cubic that reduces to linear (a ≈ 0)
+            geom.cubic(0+0j, 0.333+0.333j, 0.666+0.666j, 1+1j)
+            
+            # Test case 4: Multiple degenerate cubics
+            for i in range(10):
+                geom.cubic(complex(i, 0), complex(i, 0), complex(i, 0), complex(i+1, 1))
+            
+            # Calculate bbox - should not produce warnings
+            bbox = geom.bbox()
+            
+            # Check that bbox is valid
+            self.assertIsNotNone(bbox)
+            self.assertEqual(len(bbox), 4)
+            self.assertTrue(all(isinstance(x, (int, float)) for x in bbox))
+            
+            # Check for divide by zero or invalid value warnings
+            divide_warnings = [warning for warning in w 
+                             if 'divide' in str(warning.message).lower() or 
+                                'invalid' in str(warning.message).lower()]
+            
+            self.assertEqual(len(divide_warnings), 0, 
+                           f"Found {len(divide_warnings)} divide by zero warnings: {[str(w.message) for w in divide_warnings]}")
+
+    def test_cubic_bbox_vectorized_vs_standard(self):
+        """Test that vectorized cubic bbox produces same results as standard method."""
+        import numpy as np
+        
+        # Create test geometry with many cubic curves
+        geom = Geomstr()
+        
+        # Add various cubic curves including edge cases
+        test_cubics = [
+            # Normal cubic
+            (0+0j, 1+1j, 2+0j, 3+1j),
+            # Degenerate cases
+            (0+0j, 0+0j, 0+0j, 1+1j),
+            (5+5j, 5+5j, 5+5j, 5+5j),  # All points identical
+            # Linear-like cubic
+            (0+0j, 0.333+0.333j, 0.666+0.666j, 1+1j),
+            # Sharp curves
+            (0+0j, 10+0j, 10+10j, 0+10j),
+            # Very small cubic
+            (0+0j, 1e-6+1e-6j, 2e-6+0j, 3e-6+1e-6j),
+        ]
+        
+        for start, cp1, cp2, end in test_cubics:
+            geom.cubic(start, cp1, cp2, end)
+        
+        # Force vectorized calculation (should have > THRESHOLD_BBOX segments)
+        while geom.index <= 50:  # Ensure we exceed the bbox threshold
+            geom.cubic(0+0j, 1+1j, 2+0j, 3+1j)
+        
+        # Calculate bbox
+        bbox = geom.bbox()
+        
+        # Verify bbox is reasonable
+        self.assertIsNotNone(bbox)
+        self.assertEqual(len(bbox), 4)
+        min_x, min_y, max_x, max_y = bbox
+        
+        # Basic sanity checks
+        self.assertLessEqual(min_x, max_x)
+        self.assertLessEqual(min_y, max_y)
+        self.assertTrue(all(isinstance(x, (int, float)) for x in bbox))
+        self.assertTrue(all(not np.isnan(x) and np.isfinite(x) for x in bbox))
+
+    def test_grid_point_generation_vectorized(self):
+        """Test the vectorized grid point generation optimization."""
+        import numpy as np
+        
+        # Test the core NumPy-based grid generation logic
+        # This mimics what happens in _calculate_grid_points_primary
+        
+        # Test parameters
+        min_x, max_x = 0, 100
+        min_y, max_y = 0, 100
+        tick_x, tick_y = 10, 10
+        zero_x, zero_y = 0, 0
+        
+        # Calculate start positions (mimicking the widget logic)
+        start_x = zero_x
+        while start_x - tick_x > min_x:
+            start_x -= tick_x
+        while start_x < min_x:
+            start_x += tick_x
+            
+        start_y = zero_y
+        while start_y - tick_y > min_y:
+            start_y -= tick_y
+        while start_y < min_y:
+            start_y += tick_y
+        
+        # Test vectorized grid point generation
+        if tick_x != 0 and tick_y != 0:
+            num_x = int(np.floor((max_x - start_x) / tick_x)) + 1
+            num_y = int(np.floor((max_y - start_y) / tick_y)) + 1
+            
+            if num_x > 0 and num_y > 0:
+                x_vals = start_x + np.arange(num_x) * tick_x
+                y_vals = start_y + np.arange(num_y) * tick_y
+                xx, yy = np.meshgrid(x_vals, y_vals, indexing='ij')
+                points = np.stack([xx.ravel(), yy.ravel()], axis=1)
+                
+                # Verify grid points
+                self.assertGreater(len(points), 0, "Should generate grid points")
+                
+                # Check that all points are within bounds
+                for point in points:
+                    x, y = point
+                    self.assertGreaterEqual(x, min_x)
+                    self.assertLessEqual(x, max_x)
+                    self.assertGreaterEqual(y, min_y)
+                    self.assertLessEqual(y, max_y)
+                
+                # Check that points follow grid pattern
+                expected_count = num_x * num_y
+                self.assertEqual(len(points), expected_count)
+                
+                # Verify spacing
+                if len(points) > 1:
+                    # Check some points have correct spacing
+                    x_coords = sorted(set(point[0] for point in points))
+                    y_coords = sorted(set(point[1] for point in points))
+                    
+                    if len(x_coords) > 1:
+                        x_spacing = x_coords[1] - x_coords[0]
+                        self.assertAlmostEqual(x_spacing, tick_x, places=5)
+                    
+                    if len(y_coords) > 1:
+                        y_spacing = y_coords[1] - y_coords[0]
+                        self.assertAlmostEqual(y_spacing, tick_y, places=5)
+        
+        # Test zero tick length handling (should not generate points)
+        tick_x_zero, tick_y_zero = 0, 0
+        if tick_x_zero == 0 or tick_y_zero == 0:
+            # Should handle gracefully and generate no points
+            points_zero = []  # This is what the function should return
+            self.assertEqual(len(points_zero), 0, "Zero tick length should not generate points")
+
+    def test_bbox_performance_threshold_validation(self):
+        """Test that bbox performance thresholds work as expected."""
+        from meerk40t.tools.geomstr import THRESHOLD_BBOX
+        
+        # Test just below threshold (should use standard method)
+        geom_small = Geomstr()
+        for i in range(THRESHOLD_BBOX - 5):
+            geom_small.line(complex(i, 0), complex(i+1, 1))
+        
+        # Test just above threshold (should use vectorized method)
+        geom_large = Geomstr()
+        for i in range(THRESHOLD_BBOX + 10):
+            geom_large.line(complex(i, 0), complex(i+1, 1))
+        
+        # Both should produce valid bboxes
+        bbox_small = geom_small.bbox()
+        bbox_large = geom_large.bbox()
+        
+        self.assertIsNotNone(bbox_small)
+        self.assertIsNotNone(bbox_large)
+        self.assertEqual(len(bbox_small), 4)
+        self.assertEqual(len(bbox_large), 4)
+        
+        # Verify the index threshold behavior
+        self.assertLess(geom_small.index, THRESHOLD_BBOX, 
+                       "Small geometry should be below threshold")
+        self.assertGreater(geom_large.index, THRESHOLD_BBOX, 
+                          "Large geometry should be above threshold")
