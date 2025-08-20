@@ -14,12 +14,11 @@ LockWidget: Widget to lock and unlock the given object.
 """
 
 import math
-import time
 
 import numpy as np
 import wx
 
-from meerk40t.core.elements.element_types import elem_nodes, elem_group_nodes
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
@@ -45,10 +44,8 @@ from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 # from time import perf_counter
 
-NEARLY_ZERO = 1.0e-6
 
-# Performance constants
-SELECTION_WIDGET_CACHE_THRESHOLD = 100  # Maximum elements before optimization kicks in
+NEARLY_ZERO = 1.0e-6
 
 
 def process_event(
@@ -246,7 +243,9 @@ class BorderWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
-
+        if not self.visible:
+            return
+        
         def get_length_text_and_extent(gc, value, units, secondary_units, rel_length):
             s_txt = str(
                 Length(
@@ -532,7 +531,7 @@ class RotationWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if not self.visible or self.master.tool_running:  # We don't need that overhead
             return
         self.update()  # make sure coords are valid
 
@@ -759,6 +758,8 @@ class RotationWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "rotation"
         response = process_event(
             widget=self,
@@ -856,7 +857,7 @@ class CornerWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if not self.visible or self.master.tool_running:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -1000,6 +1001,8 @@ class CornerWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "corner"
         response = process_event(
             widget=self,
@@ -1079,7 +1082,7 @@ class SideWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if not self.visible or self.master.tool_running:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -1236,6 +1239,8 @@ class SideWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "side"
         s_coord = "Y" if self.index in (0, 2) else "X"
         s_help = f"Size element in {s_coord}-direction (with Ctrl+shift from center)"
@@ -1291,7 +1296,7 @@ class SkewWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if not self.visible or self.master.tool_running:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -1386,6 +1391,8 @@ class SkewWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "skew"
         s_help = f"Skew element in {'X' if self.is_x else 'Y'}-direction"
         response = process_event(
@@ -1573,7 +1580,7 @@ class MoveWidget(Widget):
             elements.classify(copy_nodes)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if not self.visible or self.master.tool_running:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -1890,6 +1897,8 @@ class MoveWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "move"
         response = process_event(
             widget=self,
@@ -1941,6 +1950,8 @@ class MoveRotationOriginWidget(Widget):
 
     def process_draw(self, gc):
         # This one gets painted always.
+        if not self.visible:
+            return
 
         self.update()  # make sure coords are valid
         gc.SetPen(self.master.handle_pen)
@@ -2007,6 +2018,8 @@ class MoveRotationOriginWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "rotcenter"
         if event_type == "doubleclick":
             self.master.rotation_cx = None
@@ -2065,7 +2078,7 @@ class ReferenceWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:
+        if not self.visible or self.master.tool_running:
             # We don't need that overhead
             return
         if not (self.show_if_not_active or self.is_reference_object):
@@ -2154,6 +2167,8 @@ class ReferenceWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "reference"
         response = process_event(
             widget=self,
@@ -2201,7 +2216,7 @@ class LockWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:
+        if not self.visible or self.master.tool_running:
             # We don't need that overhead
             return
         self.update()  # make sure coords are valid
@@ -2277,6 +2292,8 @@ class LockWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         s_me = "lock"
         response = process_event(
             widget=self,
@@ -2488,28 +2505,21 @@ class SelectionWidget(Widget):
         self.reset_variables()
         self.modifiers = []
         
-        # Performance optimization caches with signal-based invalidation
-        self._cached_bounds = None
-        self._cached_bounds_invalidation = -1
-        self._cached_bounds_timestamp = 0
-        self._cached_element_properties = None
-        self._cached_element_properties_invalidation = -1
-        self._cached_element_properties_timestamp = 0
-        self._cached_widgets_config = None
-        self._cached_widgets_config_invalidation = -1
+        # Simple invalidation tracking
+        self._last_bounds = None
         self._cached_font = None
         self._cached_font_size = None
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
-        context.listen("element_property_update", self.element_property_update)
-        context.listen("modified_by_tool", self.modified_by_tool)
+        context.listen("element_property_update", self.invalidate_widgets)
+        context.listen("modified_by_tool", self.invalidate_widgets)
         # Option to draw selection Handle outside of box to allow for better visibility
 
     def final(self, context):
         context.unlisten("ext-modified", self.external_modification)
-        context.unlisten("element_property_update", self.element_property_update)
-        context.unlisten("modified_by_tool", self.modified_by_tool)
+        context.unlisten("element_property_update", self.invalidate_widgets)
+        context.unlisten("modified_by_tool", self.invalidate_widgets)
 
     @property
     def key_shift_pressed(self):
@@ -2769,6 +2779,8 @@ class SelectionWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if not self.visible:
+            return RESPONSE_CHAIN
         if self.scene.pane.suppress_selection:
             return RESPONSE_CHAIN
         self.modifiers = modifiers
@@ -2880,211 +2892,20 @@ class SelectionWidget(Widget):
         self.rotation_cx = None
         self.rotation_cy = None
         
-        # Invalidate all caches when elements are modified externally
-        self.invalidate_caches()
-
-    def element_property_update(self, origin, *args):
+    def invalidate_widgets(self, origin=None, *args):
         """
-        Called when element properties are updated (position, size, rotation, etc.)
-        This is the main signal for element transformations during move/resize operations
+        Forces widget rebuild on next draw by clearing bounds cache.
         """
-        self.invalidate_caches()
-
-    def modified_by_tool(self, origin, *args):
-        """
-        Called when elements are modified by tools
-        This ensures widget updates properly after tool operations
-        """
-        self.invalidate_caches()
-        self._cached_widgets_config = None
-        self._cached_widgets_config_invalidation = -1
-
-    def _get_cached_bounds(self, elements):
-        """
-        Get selection bounds with caching to avoid repeated expensive calls
-        Includes element matrices and positions in cache key for proper invalidation
-        Uses signal-based invalidation for immediate updates during move/resize
-        """
-        # Create cache key based on selected elements and their transformations
-        selected_elements = list(elements.flat(types=elem_nodes, emphasized=True))
-        
-        # Include element matrices and relevant properties that affect bounds
-        cache_data = []
-        for e in selected_elements:
-            # Get transformation matrix components
-            matrix = getattr(e, 'matrix', None)
-            if matrix:
-                matrix_key = (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f)
-            else:
-                matrix_key = (1, 0, 0, 1, 0, 0)  # Identity matrix
-            
-            # Include element-specific bounds data if available
-            element_bounds = getattr(e, 'bbox', lambda: None)()
-            bounds_key = tuple(element_bounds) if element_bounds else (0, 0, 0, 0)
-            
-            cache_data.append((id(e), matrix_key, bounds_key))
-        
-        current_invalidation = hash(tuple(cache_data))
-        
-        if (self._cached_bounds is None or 
-            self._cached_bounds_invalidation != current_invalidation):
-            bounds = elements.selected_area()
-            # Ensure bounds is a tuple for proper hashing in other methods
-            self._cached_bounds = tuple(bounds) if bounds else None
-            self._cached_bounds_invalidation = current_invalidation
-            self._cached_bounds_timestamp = time.time()
-        
-        return self._cached_bounds
-
-    def _get_cached_element_properties(self, elements):
-        """
-        Cache expensive element property iteration
-        Includes transformation matrices for proper invalidation on move/resize
-        """
-        # Create cache key based on selected elements and their properties
-        selected_elements = list(elements.flat(types=elem_nodes, emphasized=True))
-        
-        cache_data = []
-        for e in selected_elements:
-            # Include transformation matrix for move/resize detection
-            matrix = getattr(e, 'matrix', None)
-            if matrix:
-                matrix_key = (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f)
-            else:
-                matrix_key = (1, 0, 0, 1, 0, 0)  # Identity matrix
-            
-            # Include element properties that affect widget behavior
-            element_key = (
-                id(e), 
-                e.lock, 
-                e.can_scale, 
-                e.can_skew, 
-                e.can_rotate, 
-                hasattr(e, 'can_move') and e.can_move(),
-                matrix_key
-            )
-            cache_data.append(element_key)
-        
-        current_invalidation = hash(tuple(cache_data))
-        
-        if (self._cached_element_properties is None or 
-            self._cached_element_properties_invalidation != current_invalidation):
-            
-            # Analyze element properties efficiently
-            is_ref = False
-            single_element = len(selected_elements) <= 1
-            is_locked = True
-            no_scale = True
-            no_skew = True 
-            no_move = True
-            no_rotate = True
-            
-            # Early exit for large selections to improve performance
-            if len(selected_elements) > SELECTION_WIDGET_CACHE_THRESHOLD:
-                # For large selections, use simplified logic
-                is_locked = False
-                no_scale = False
-                no_skew = False
-                no_move = False
-                no_rotate = False
-            else:
-                for e in selected_elements:
-                    if e is self.scene.pane.reference_object:
-                        is_ref = True
-                    is_locked = is_locked and e.lock
-                    no_scale = no_scale and not e.can_scale
-                    no_skew = no_skew and not e.can_skew
-                    no_move = no_move and not (hasattr(e, 'can_move') and e.can_move())
-                    no_rotate = no_rotate and not e.can_rotate
-            
-            if not single_element:
-                is_ref = False
-                
-            self._cached_element_properties = {
-                'is_ref': is_ref,
-                'single_element': single_element,
-                'is_locked': is_locked,
-                'no_scale': no_scale,
-                'no_skew': no_skew,
-                'no_move': no_move,
-                'no_rotate': no_rotate,
-                'element_count': len(selected_elements)
-            }
-            self._cached_element_properties_invalidation = current_invalidation
-            self._cached_element_properties_timestamp = time.time()
-        
-        return self._cached_element_properties
-
-    def _get_cached_widget_config(self, matrix, bounds):
-        """
-        Cache widget configuration calculations
-        """
-        # Create cache key based on matrix and bounds - convert bounds to tuple
-        bounds_tuple = tuple(bounds) if bounds else ()
-        cache_key = (matrix.a, matrix.d, matrix.determinant, bounds_tuple)
-        current_invalidation = hash(cache_key)
-        
-        if (self._cached_widgets_config is None or 
-            self._cached_widgets_config_invalidation != current_invalidation):
-            
-            try:
-                factor = math.sqrt(abs(matrix.determinant))
-                line_width = 2.0 / factor
-                font_size = 12.0 / factor * self.font_size_factor
-            except ZeroDivisionError:
-                matrix.reset()
-                line_width = 2.0
-                font_size = 12.0
-                
-            if font_size < 1.0:
-                font_size = 1.0
-                
-            msize = 5 * line_width
-            rotsize = 3 * msize
-            
-            # Check space constraints for skew widgets
-            show_skew_x = self.use_handle_skew
-            show_skew_y = self.use_handle_skew
-            
-            if bounds:
-                if (bounds[3] - bounds[1]) < (0.5 + 1 + 0.5 + 1) * msize:
-                    show_skew_y = False
-                if (bounds[2] - bounds[0]) < (0.5 + 1 + 0.5 + 1) * msize:
-                    show_skew_x = False
-            
-            self._cached_widgets_config = {
-                'line_width': line_width,
-                'font_size': font_size,
-                'msize': msize,
-                'rotsize': rotsize,
-                'show_skew_x': show_skew_x,
-                'show_skew_y': show_skew_y
-            }
-            self._cached_widgets_config_invalidation = current_invalidation
-        
-        return self._cached_widgets_config
-
-    def invalidate_caches(self):
-        """
-        Explicitly invalidate all caches when we know elements have changed.
-        Call this method after move, resize, rotate, or other transformation operations.
-        """
-        self._cached_bounds = None
-        self._cached_bounds_invalidation = -1
-        self._cached_element_properties = None
-        self._cached_element_properties_invalidation = -1
-        self._cached_widgets_config = None
-        self._cached_widgets_config_invalidation = -1
+        self._last_bounds = None
 
     def process_draw(self, gc):
         """
-        Optimized draw routine for drawing the selection box.
-        Uses signal-based cache invalidation for immediate updates during move/resize operations.
+        Draw routine for drawing the selection box.
         """
         self.gc = gc
         
         # Early exits for performance
-        if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
+        if not self.visible or (self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0):
             return
         if self.scene.pane.suppress_selection:
             return
@@ -3092,35 +2913,63 @@ class SelectionWidget(Widget):
         context = self.scene.context
         elements = context.elements
         
-        # Use cached bounds calculation
-        bounds = self._get_cached_bounds(elements)
+        # Check if we have any selected elements first
+        bounds = elements.selected_area()
         if bounds is None:
             self.clear()
             return
             
-        matrix = self.scene.widget_root.scene_widget.matrix
+        # Only rebuild if we have selection changes or significant bounds changes
+        need_rebuild = (
+            len(self) == 0 or  # No widgets yet
+            hasattr(self, '_last_bounds') and self._last_bounds != bounds or  # Bounds changed
+            not hasattr(self, '_last_bounds')  # First time
+        )
         
-        # Use cached widget configuration
-        widget_config = self._get_cached_widget_config(matrix, bounds)
-        
-        # Use cached element properties
-        element_props = self._get_cached_element_properties(elements)
-        
-        # Only clear and rebuild widgets if configuration changed
-        if (self._cached_widgets_config_invalidation != 
-            getattr(self, '_last_widgets_invalidation', -1)):
-            
+        if need_rebuild:
             self.clear()  # Clear children only when needed
+            self._last_bounds = bounds
+        if need_rebuild:
+            self.clear()  # Clear children only when needed
+            self._last_bounds = bounds
             
-            # Extract cached values
-            self.line_width = widget_config['line_width']
-            self.font_size = widget_config['font_size']
-            msize = widget_config['msize']
-            rotsize = widget_config['rotsize']
-            show_skew_x = widget_config['show_skew_x']
-            show_skew_y = widget_config['show_skew_y']
-            
-            # Set up pens and fonts (cached when possible)
+            # Set handle usage preferences (cached from context)
+            try:
+                self.use_handle_rotate = context.enable_sel_rotate
+                self.use_handle_skew = context.enable_sel_skew
+                self.use_handle_size = context.enable_sel_size
+                self.use_handle_move = context.enable_sel_move
+            except AttributeError:
+                # Stuff has not yet been defined...
+                self.use_handle_rotate = True
+                self.use_handle_skew = True
+                self.use_handle_size = True
+                self.use_handle_move = True
+
+            # Calculate drawing parameters
+            matrix = self.scene.widget_root.scene_widget.matrix
+            try:
+                factor = math.sqrt(abs(matrix.determinant))
+                self.line_width = 2.0 / factor
+                self.font_size = 12.0 / factor * self.font_size_factor
+            except ZeroDivisionError:
+                matrix.reset()
+                return
+                
+            # Set up pens and colors
+            self.selection_pen.SetColour(self.scene.colors.color_manipulation)
+            self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
+            try:
+                self.selection_pen.SetWidth(self.line_width)
+                self.handle_pen.SetWidth(0.75 * self.line_width)
+            except TypeError:
+                self.selection_pen.SetWidth(int(self.line_width))
+                self.handle_pen.SetWidth(int(0.75 * self.line_width))
+                
+            if self.font_size < 1.0:
+                self.font_size = 1.0  # Mac does not allow values lower than 1.
+                
+            # Use cached font when possible
             if self._cached_font is None or self._cached_font_size != self.font_size:
                 try:
                     self._cached_font = wx.Font(
@@ -3139,17 +2988,6 @@ class SelectionWidget(Widget):
                 self._cached_font_size = self.font_size
                 
             gc.SetFont(self._cached_font, self.scene.colors.color_manipulation)
-            
-            # Set up pens
-            self.selection_pen.SetColour(self.scene.colors.color_manipulation)
-            self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
-            try:
-                self.selection_pen.SetWidth(self.line_width)
-                self.handle_pen.SetWidth(0.75 * self.line_width)
-            except TypeError:
-                self.selection_pen.SetWidth(int(self.line_width))
-                self.handle_pen.SetWidth(int(0.75 * self.line_width))
-                
             gc.SetPen(self.selection_pen)
             
             # Set bounds
@@ -3159,44 +2997,59 @@ class SelectionWidget(Widget):
             self.bottom = bounds[3]
             self.check_rot_center()
             
-            if self.keep_rotation:
+            if self.keep_rotation:  # Reset it to center....
                 cx = (self.left + self.right) / 2
                 cy = (self.top + self.bottom) / 2
                 self.rotation_cx = cx
                 self.rotation_cy = cy
 
-            # Extract element properties
-            is_locked = element_props['is_locked']
-            no_scale = element_props['no_scale']
-            no_skew = element_props['no_skew']
-            no_move = element_props['no_move']
-            no_rotate = element_props['no_rotate']
-            single_element = element_props['single_element']
-            is_ref = element_props['is_ref']
+            # Analyze selected elements for capabilities and properties
+            self.is_ref = False
+            self.single_element = True
+            is_locked = True
+            no_scale = True
+            no_skew = True
+            no_move = True
+            no_rotate = True
             
-            # Set handle usage based on context and element capabilities
-            try:
-                self.use_handle_rotate = context.enable_sel_rotate and not no_rotate
-                self.use_handle_skew = context.enable_sel_skew and not no_skew
-                self.use_handle_size = context.enable_sel_size and not no_scale
-                self.use_handle_move = context.enable_sel_move and not no_move
-            except AttributeError:
-                self.use_handle_rotate = not no_rotate
-                self.use_handle_skew = not no_skew
-                self.use_handle_size = not no_scale
-                self.use_handle_move = not no_move
+            for idx, e in enumerate(elements.flat(types=elem_nodes, emphasized=True)):
+                if e is self.scene.pane.reference_object:
+                    self.is_ref = True
+                # Check element capabilities
+                is_locked = is_locked and e.lock
+                no_scale = no_scale and not e.can_scale
+                no_skew = no_skew and not e.can_skew
+                no_move = no_move and not e.can_move()
+                no_rotate = no_rotate and not e.can_rotate
+                if idx > 0:
+                    self.single_element = False
 
-            # Add widgets efficiently (only when needed)
+            if not self.single_element:
+                self.is_ref = False
+
+            # Calculate widget sizes and determine what to show
+            msize = 5 * self.line_width
+            rotsize = 3 * msize
+            show_skew_x = self.use_handle_skew
+            show_skew_y = self.use_handle_skew
+            
+            # Check if there's enough room for skew handles
+            if (self.bottom - self.top) < (0.5 + 1 + 0.5 + 1) * msize:
+                show_skew_y = False
+            if (self.right - self.left) < (0.5 + 1 + 0.5 + 1) * msize:
+                show_skew_x = False
+
+            # Add all subwidgets in inverse order
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
             
-            if single_element and self.use_handle_size:
+            if self.single_element and self.use_handle_size:
                 self.add_widget(
                     -1,
                     ReferenceWidget(
                         master=self,
                         scene=self.scene,
                         size=msize,
-                        is_reference_object=is_ref,
+                        is_reference_object=self.is_ref,
                         show_if_not_active=False,
                     ),
                 )
@@ -3270,6 +3123,8 @@ class SelectionWidget(Widget):
                         size=1.5 * msize,
                     ),
                 )
-                
-            # Track the last invalidation to avoid unnecessary rebuilds
-            self._last_widgets_invalidation = self._cached_widgets_config_invalidation
+        else:
+            # Just update the graphics context and pen for existing widgets
+            if hasattr(self, 'font_size') and hasattr(self, '_cached_font'):
+                gc.SetFont(self._cached_font, self.scene.colors.color_manipulation)
+                gc.SetPen(self.selection_pen)
