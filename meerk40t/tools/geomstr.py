@@ -101,10 +101,10 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 # Vectorization threshold constants - empirically determined for optimal performance
 # These control when to switch from standard to vectorized implementations
 THRESHOLD_STITCHEABLE_NODES = 25     # stitcheable_nodes: n > 25 (optimal)
-THRESHOLD_STITCH_GEOMETRIES = 40     # stitch_geometries: n > 40 (optimal)
+THRESHOLD_STITCH_GEOMETRIES = 50     # stitch_geometries: n > 50 (optimal)
 THRESHOLD_CLOSE_GAPS = 15            # close_gaps: n > 15 (optimal)
 THRESHOLD_BBOX = 45                  # bbox: index > 45 (optimal)
-THRESHOLD_LENGTH = 50                # length: index > 50 (optimal)
+THRESHOLD_LENGTH = 55                # length: index > 55 (optimal)
 # Note: area function is always vectorized (no threshold needed)
 
 # Note lower nibble is which indexes are positions (except info index)
