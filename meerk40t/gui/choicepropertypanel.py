@@ -2578,6 +2578,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         dtype = choice.get("type")
         dstyle = choice.get("style")
         update_needed = False
+        choicelist = choice.get("choices", [])
 
         if dtype == bool:
             if ctrl.GetValue() != data:
@@ -2600,7 +2601,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if abs(dtype(entry) - data) < abs(dtype(least) - data):
                             least = entry
                 if least is not None:
-                    ctrl.SetValue(least)
+                    ctrl.SetValue(str(least))
         elif (dtype == str and dstyle == "color") or dtype == Color:
 
             def set_color(color: Color):
