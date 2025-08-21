@@ -153,8 +153,8 @@ class GridWidget(Widget):
         """Invalidate all cached data to force recalculation"""
         self._grid_cache = {
             "cache_key": None,
-            "primary_lines": None,
-            "secondary_lines": None,
+            "primary_lines": [],
+            "secondary_lines": [],
             "circular_lines": [],
             "offset_lines": [],
         }
