@@ -77,17 +77,16 @@ class GuideWidget(Widget):
             self.scene.pane.grid.draw_grid_primary,
             self.scene.pane.grid.draw_grid_secondary,
             # Matrix transformation components
-            mat.value_scale_x(),
-            mat.value_scale_y(),
-            mat.value_trans_x(),
-            mat.value_trans_y(),
-            mat.rotation,  # Include rotation for coordinate transformation
+            mat.a,
+            mat.b,
+            mat.c,
+            mat.d,
+            mat.e,
+            mat.f,
             # Scene space settings
             p.space.right_positive,
             p.space.bottom_positive,
-            # Magnet data
-            len(self.scene.pane.magnet_x),
-            len(self.scene.pane.magnet_y),
+            p.space.origin_zero(),
             # Secondary grid scale factors
             getattr(self.scene.pane.grid, "grid_secondary_scale_x", None),
             getattr(self.scene.pane.grid, "grid_secondary_scale_y", None),
@@ -114,7 +113,7 @@ class GuideWidget(Widget):
         return self._formatted_text_cache[cache_key]
 
     def _calculate_viewport_bounds(self, w, h):
-        """Calculate visible bounds more efficiently"""
+        """Calculate visible bounds more efficiently, accounting for coordinate system orientation"""
         cache_key = (w, h)
         if cache_key in self._viewport_cache:
             return self._viewport_cache[cache_key]
@@ -127,16 +126,33 @@ class GuideWidget(Widget):
             self.scene.convert_window_to_scene([w, h]),
         ]
 
+        # Get actual min/max regardless of coordinate system orientation
         min_x = min(bound[0] for bound in bounds)
         max_x = max(bound[0] for bound in bounds)
         min_y = min(bound[1] for bound in bounds)
         max_y = max(bound[1] for bound in bounds)
 
-        # Clamp to device bounds
-        min_x = max(0, min_x)
-        min_y = max(0, min_y)
-        max_x = min(self.scene.context.space.width, max_x)
-        max_y = min(self.scene.context.space.height, max_y)
+        # Clamp to device bounds - but be aware that in inverted coordinate systems,
+        # the "logical" bounds might be different from the numerical bounds
+        space = self.scene.context.space
+
+        # For coordinate systems, we need to respect the actual coordinate space bounds
+        if hasattr(space, "width") and hasattr(space, "height"):
+            device_min_x = 0 if space.right_positive else -space.width
+            device_max_x = space.width if space.right_positive else 0
+            device_min_y = 0 if space.bottom_positive else -space.height
+            device_max_y = space.height if space.bottom_positive else 0
+
+            min_x = max(device_min_x, min_x)
+            min_y = max(device_min_y, min_y)
+            max_x = min(device_max_x, max_x)
+            max_y = min(device_max_y, max_y)
+        else:
+            # Fallback to simple clamping if space properties not available
+            min_x = max(0, min_x)
+            min_y = max(0, min_y)
+            max_x = min(getattr(space, "width", float("inf")), max_x)
+            max_y = min(getattr(space, "height", float("inf")), max_y)
 
         result = (min_x, min_y, max_x, max_y)
         self._viewport_cache[cache_key] = result
@@ -550,7 +566,7 @@ class GuideWidget(Widget):
             # Get the Y coordinate from space_pos [1]
             value = float(Length(f"{mark_point_y:.1f}{self.units}"))
             self.scene.pane.toggle_y_magnet(value)
-            self.scene.pane.save_magnets()
+        self.invalidate_cache()
         self.scene.request_refresh()
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
@@ -688,7 +704,11 @@ class GuideWidget(Widget):
             # Calculate visible range to avoid unnecessary iterations
             start_x = max(0, offset_x_primary)
             end_x = w
-            step_count = int((end_x - start_x) / points_x_primary) + 2
+            x_range = end_x - start_x
+            step_count = int(x_range / points_x_primary)
+            if (x_range % points_x_primary) > 0:
+                step_count += 1
+            step_count = max(step_count, 1)
 
             x = start_x
             last_text_pos = x - 30
@@ -731,15 +751,19 @@ class GuideWidget(Widget):
         if points_y_primary > 0:
             offset_y_primary = float(sy_primary) % points_y_primary
 
-            # Calculate visible range
+            # Calculate visible range with optimized step count
             start_y = max(0, offset_y_primary)
             end_y = h
-            step_count = int((end_y - start_y) / points_y_primary) + 2
+            y_range = end_y - start_y
+            step_count_y = int(y_range / points_y_primary)
+            if y_range % points_y_primary != 0:
+                step_count_y += 1
+            step_count_y = max(step_count_y, 1)
 
             y = start_y
             last_text_pos = y - 30
 
-            for i in range(step_count):
+            for i in range(step_count_y):
                 if y >= h:
                     break
 
@@ -861,7 +885,7 @@ class GuideWidget(Widget):
         x = offset_x
         last_text_pos = x - 30
 
-        while abs(x) < w:
+        while 0 <= x < w:
             if x >= 45:
                 mark_point = (x - sx) / (fx * self.scaled_conversion_x)
                 if not p.space.right_positive:
@@ -890,7 +914,7 @@ class GuideWidget(Widget):
         y = offset_y
         last_text_pos = y - 30
 
-        while abs(y) < h:
+        while 0 <= y < h:
             if y >= 20:
                 mark_point = (y - sy) / (fy * self.scaled_conversion_y)
                 if not p.space.bottom_positive:
@@ -948,20 +972,21 @@ class GuideWidget(Widget):
         edge_gap = self.edge_gap
         starts_hi = []
         ends_hi = []
+        epsilon = 1e-6  # Small epsilon for floating point precision
 
         # Process X magnets (vertical lines) with viewport culling
         for x in self.scene.pane.magnet_x:
             sx, sy = self.scene.convert_scene_to_window([x, 0])
-            # Only add if line is visible in viewport
-            if 0 <= sx <= w:
+            # Only add if line is visible in viewport with epsilon tolerance
+            if -epsilon <= sx <= w + epsilon:
                 starts_hi.append((sx, length + edge_gap))
                 ends_hi.append((sx, h - length - edge_gap))
 
         # Process Y magnets (horizontal lines) with viewport culling
         for y in self.scene.pane.magnet_y:
             sx, sy = self.scene.convert_scene_to_window([0, y])
-            # Only add if line is visible in viewport
-            if 0 <= sy <= h:
+            # Only add if line is visible in viewport with epsilon tolerance
+            if -epsilon <= sy <= h + epsilon:
                 starts_hi.append((length + edge_gap, sy))
                 ends_hi.append((w - length - edge_gap, sy))
 
@@ -973,7 +998,7 @@ class GuideWidget(Widget):
             "cache_key": None,
             "primary_starts": [],
             "primary_ends": [],
-            "primary_text": [],
+            "primary_text_data": [],
             "secondary_starts": [],
             "secondary_ends": [],
             "secondary_text": [],
@@ -982,6 +1007,7 @@ class GuideWidget(Widget):
         }
         self._text_extent_cache.clear()
         self._formatted_text_cache.clear()
+        self._viewport_cache.clear()  # Clear viewport cache as well
 
     def set_grid_changed(self):
         """Mark grid as changed and invalidate cache"""
