@@ -113,13 +113,6 @@ class GuideWidget(Widget):
                 self._formatted_text_cache[cache_key] = f"{value:{format_spec}}"
         return self._formatted_text_cache[cache_key]
 
-    def _invalidate_caches(self):
-        """Invalidate all caches when needed"""
-        self._grid_cache["cache_key"] = None
-        # Keep text caches as they're content-based
-        # self._text_extent_cache.clear()
-        # self._formatted_text_cache.clear()
-
     def _calculate_viewport_bounds(self, w, h):
         """Calculate visible bounds more efficiently"""
         cache_key = (w, h)
@@ -758,22 +751,14 @@ class GuideWidget(Widget):
                         mark_point = 0.0
 
                     # Primary horizontal lines
-                    starts.extend(
-                        [
-                            (edge_gap, y),
-                            (w - edge_gap, y)
-                            if not self.scene.pane.grid.draw_grid_secondary
-                            else (edge_gap, y),
-                        ]
-                    )
-                    ends.extend(
-                        [
-                            (length + edge_gap, y),
-                            (w - length - edge_gap, y)
-                            if not self.scene.pane.grid.draw_grid_secondary
-                            else (length + edge_gap, y),
-                        ]
-                    )
+                    if not self.scene.pane.grid.draw_grid_secondary:
+                        starts.extend([(edge_gap, y), (w - edge_gap, y)])
+                        ends.extend(
+                            [(length + edge_gap, y), (w - length - edge_gap, y)]
+                        )
+                    else:
+                        starts.append((edge_gap, y))
+                        ends.append((length + edge_gap, y))
 
                     # Half-distance marks
                     if text_height < 0.5 * points_y_primary:
@@ -1001,6 +986,8 @@ class GuideWidget(Widget):
     def set_grid_changed(self):
         """Mark grid as changed and invalidate cache"""
         self.invalidate_cache()
+        # Also send signal to notify other components
+        self.scene._signal_widget(self.scene.widget_root, "grid")
 
     def set_matrix_changed(self):
         """Mark matrix as changed and invalidate cache"""
@@ -1076,6 +1063,12 @@ class GuideWidget(Widget):
         Process guide signal to delete the current guidelines and force them to be recalculated.
         """
         if signal == "guide":
-            pass
+            # Legacy guide signal - invalidate cache
+            self.invalidate_cache()
+        elif signal == "grid":
+            # Grid settings changed - invalidate cache to force recalculation
+            self.invalidate_cache()
         elif signal == "theme":
             self.set_colors()
+            # Theme change might affect text rendering - invalidate text caches
+            self._text_extent_cache.clear()
