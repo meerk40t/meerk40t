@@ -690,120 +690,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                         control.Enable(enabled)
                     # Now we listen to 'ourselves' as well to learn about changes somewhere else...
 
-            def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
-                def listen_to_myself(origin, value, target=None):
-                    if self.context.kernel.is_shutdown:
-                        return
-
-                    if target is None or target is not sourceobj:
-                        # print (f"Signal for {param}={value}, but no target given or different to source")
-                        return
-                    update_needed = False
-                    # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
-                    data = None
-                    if value is not None:
-                        try:
-                            data = dtype(value)
-                        except ValueError:
-                            pass
-                        if data is None:
-                            data = choice.get("default")
-                    if data is None:
-                        # print (f"Invalid data based on {value}, exiting")
-                        return
-                    # Let's just access the ctrl to see whether it has been already
-                    # destroyed (as we are in the midst of a shutdown)
-                    try:
-                        dummy = hasattr(ctrl, "GetValue")
-                    except RuntimeError:
-                        return
-                    # self.set_control_value(ctrl, data, dtype, dstyle)
-                    if dtype == bool:
-                        # Bool type objects get a checkbox.
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
-                    elif dtype == str and dstyle == "file":
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
-                    elif dtype in (int, float) and dstyle == "slider":
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
-                    elif dtype in (str, int, float) and dstyle == "combo":
-                        if dtype == str:
-                            ctrl.SetValue(str(data))
-                        else:
-                            least = None
-                            for entry in choicelist:
-                                if least is None:
-                                    least = entry
-                                else:
-                                    if abs(dtype(entry) - data) < abs(
-                                        dtype(least) - data
-                                    ):
-                                        least = entry
-                            if least is not None:
-                                ctrl.SetValue(least)
-                    elif dtype in (str, int, float) and dstyle == "combosmall":
-                        if dtype == str:
-                            ctrl.SetValue(str(data))
-                        else:
-                            least = None
-                            for entry in choicelist:
-                                if least is None:
-                                    least = entry
-                                else:
-                                    if abs(dtype(entry) - data) < abs(
-                                        dtype(least) - data
-                                    ):
-                                        least = entry
-                            if least is not None:
-                                ctrl.SetValue(least)
-                    elif dtype == int and dstyle == "binary":
-                        pass  # not supported...
-                    elif (dtype == str and dstyle == "color") or dtype == Color:
-                        # Color dtype objects are a button with the background set to the color
-                        def set_color(color: Color):
-                            ctrl.SetLabel(str(color.hex))
-                            ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                            if Color.distance(color, Color("black")) > Color.distance(
-                                color, Color("white")
-                            ):
-                                ctrl.SetForegroundColour(wx.BLACK)
-                            else:
-                                ctrl.SetForegroundColour(wx.WHITE)
-                            ctrl.color = color
-
-                        if isinstance(data, str):
-                            # print ("Needed to change type")
-                            data = Color(data)
-                        # print (f"Will set color to {data}")
-                        set_color(data)
-                    elif dtype in (str, int, float):
-                        if hasattr(ctrl, "GetValue"):
-                            try:
-                                if dtype(ctrl.GetValue()) != data:
-                                    update_needed = True
-                            except ValueError:
-                                update_needed = True
-                            if update_needed:
-                                # Use consistent display formatting for all text controls
-                                display_value = self._format_text_display_value(
-                                    data, choice
-                                )
-                                ctrl.SetValue(display_value)
-                    elif dtype == Length:
-                        if float(data) != float(Length(ctrl.GetValue())):
-                            update_needed = True
-                        if update_needed:
-                            if not isinstance(data, str):
-                                data = Length(data).length_mm
-                            ctrl.SetValue(str(data))
-                    elif dtype == Angle:
-                        if ctrl.GetValue() != str(data):
-                            ctrl.SetValue(str(data))
-
-                return listen_to_myself
-
             if wants_listener:
                 # Use helper method for setting up update listener
                 self._setup_update_listener(choice, control, obj, choice_list)
@@ -832,7 +718,15 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Helper method to update property value and dispatch signals."""
         has_settings = hasattr(obj, "settings") and param in obj.settings
         current_value = obj.settings[param] if has_settings else getattr(obj, param)
-        if current_value != new_value:
+
+        # Special handling for Angle comparison to avoid TypeError
+        try:
+            values_different = current_value != new_value
+        except (TypeError, ValueError):
+            # Fallback to string comparison for problematic types like Angle
+            values_different = str(current_value) != str(new_value)
+
+        if values_different:
             setattr(obj, param, new_value)
             if has_settings:
                 obj.settings[param] = new_value
@@ -1754,6 +1648,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data._preferred_units in ("mm", "cm", "in", "inch"):
                     data._digits = 4
             return data.preferred_length
+        elif data_type == Angle and hasattr(data, "angle"):
+            # Format Angle objects with proper precision
+            return str(data)
         elif choice.get("style") == "power":
             # Power controls: convert absolute value (0-1000) to display format
             percent_flag = choice.get("percent", False)
@@ -2099,10 +1996,16 @@ class ChoicePropertyPanel(ScrolledPanel):
         def handle_angle_text_change(event):
             try:
                 v = Angle(ctrl.GetValue(), digits=5)
-                data_v = str(v)
-                self._update_property_and_signal(obj, param, data_v, addsig)
+                data_v = v  # Store the Angle object, not string
+                # Special comparison for angle objects using string representation to avoid TypeError
+                current_value = getattr(obj, param)
+                if str(current_value) != str(data_v):
+                    setattr(obj, param, data_v)
+                    self.context.signal(param, data_v, obj)
+                    for _sig in addsig:
+                        self.context.signal(_sig)
             except ValueError:
-                # cannot cast to data_type, pass
+                # cannot cast to Angle, pass
                 pass
 
         return handle_angle_text_change
@@ -2514,7 +2417,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Set up update listener for control synchronization."""
         attr = choice["attr"]
 
-        def on_update_listener(choice, ctrl, choicelist, sourceobj):
+        def on_update_listener(choice, ctrl, sourceobj):
             def listen_to_myself(origin, value, target=None):
                 if self.context.kernel.is_shutdown:
                     return
@@ -2543,15 +2446,15 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return
 
                 # Update control based on data type and style
-                self._update_control_value(ctrl, data, choicelist, choice)
+                self._update_control_value(ctrl, data, choice)
 
             return listen_to_myself
 
-        update_listener = on_update_listener(choice, control, choice_list, obj)
+        update_listener = on_update_listener(choice, control, obj)
         self.listeners.append((attr, update_listener, obj))
         self.context.listen(attr, update_listener)
 
-    def _update_control_value(self, ctrl, data, choicelist, choice):
+    def _update_control_value(self, ctrl, data, choice):
         """
         Updates a control's displayed value based on its type, style, and current data.
 
@@ -2577,8 +2480,8 @@ class ChoicePropertyPanel(ScrolledPanel):
         """
         dtype = choice.get("type")
         dstyle = choice.get("style")
-        update_needed = False
         choicelist = choice.get("choices", [])
+        update_needed = False
 
         if dtype == bool:
             if ctrl.GetValue() != data:
@@ -2644,7 +2547,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                 display_value = self._format_text_display_value(data, choice)
                 ctrl.SetValue(display_value)
         elif dtype == Angle:
-            if ctrl.GetValue() != str(data):
+            try:
+                current_angle_str = ctrl.GetValue()
+                # Compare string representations to avoid comparison issues
+                if current_angle_str != str(data):
+                    ctrl.SetValue(str(data))
+            except (ValueError, TypeError):
+                # Fallback to simple string update
                 ctrl.SetValue(str(data))
 
     @staticmethod
