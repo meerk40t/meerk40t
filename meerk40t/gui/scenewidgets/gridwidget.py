@@ -91,10 +91,12 @@ class GridWidget(Widget):
             "cache_key": None,
             "primary_lines": [],
             "secondary_lines": [],
-            "circular_lines": [],
-            "offset_lines": [],
+            # Note: circular and offset lines are drawn procedurally and don't benefit from caching
         }
         self._viewport_cache = {}
+        self._viewport_cache_max_size = (
+            50  # Limit cache size to prevent unbounded growth
+        )
         self._last_matrix_state = None
 
         self.set_colors()
@@ -127,7 +129,7 @@ class GridWidget(Widget):
         )
 
     def _calculate_viewport_bounds(self, w, h):
-        """Calculate visible bounds efficiently with caching"""
+        """Calculate visible bounds efficiently with caching and size limiting"""
         cache_key = (w, h)
         if cache_key in self._viewport_cache:
             return self._viewport_cache[cache_key]
@@ -146,6 +148,13 @@ class GridWidget(Widget):
         max_y = max(bound[1] for bound in bounds)
 
         result = (min_x, min_y, max_x, max_y)
+
+        # Implement simple LRU eviction to prevent unbounded cache growth
+        if len(self._viewport_cache) >= self._viewport_cache_max_size:
+            # Remove oldest entry (first item) to make room for new one
+            oldest_key = next(iter(self._viewport_cache))
+            del self._viewport_cache[oldest_key]
+
         self._viewport_cache[cache_key] = result
         return result
 
@@ -155,8 +164,7 @@ class GridWidget(Widget):
             "cache_key": None,
             "primary_lines": [],
             "secondary_lines": [],
-            "circular_lines": [],
-            "offset_lines": [],
+            # Note: circular and offset lines are drawn procedurally and don't benefit from caching
         }
         self._viewport_cache.clear()
         # Clear legacy instance variables to ensure consistency
