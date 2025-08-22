@@ -234,3 +234,5 @@ class BusyInfo:
             self.frame.Show()
             self.frame.Refresh()
             self.frame.Update()
+            if self.sysinfo == "Linux":
+                self.frame.Raise()  
