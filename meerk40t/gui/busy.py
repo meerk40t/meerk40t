@@ -2,7 +2,7 @@
 This module creates a very basic BusyInfo implementation.
 Based on the wxpython wxlib.busy routines.
 """
-import platform
+# import platform
 import threading
 import wx
 
@@ -95,7 +95,7 @@ class BusyInfo:
     """
 
     def __init__(self, parent=None, **kwds):
-        self.sysinfo = platform.system()
+        # self.sysinfo = platform.system()
         self.lock = threading.RLock()
         self.busy_object = None
         self.msg = None
@@ -141,9 +141,7 @@ class BusyInfo:
     def start(self, **kwds):
         self.end()
         with self.lock:
-            style_options = wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW
-            if self.sysinfo in ("Windows", "Darwin"):
-                style_options |= wx.STAY_ON_TOP
+            style_options = wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
             self.frame = wx.Frame(
                 self.parent,
                 id=wx.ID_ANY,
@@ -234,5 +232,7 @@ class BusyInfo:
             self.frame.Show()
             self.frame.Refresh()
             self.frame.Update()
-            if self.sysinfo == "Linux":
-                self.frame.Raise()  
+            try:
+                wx.YieldIfNeeded()
+            except AttributeError:
+                wx.SafeYield()
