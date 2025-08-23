@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: ristraus@hotmail.com\n"
 "POT-Creation-Date: 21-07-25 12:00UTC\n"
-"PO-Revision-Date: 04-08-25 12:00UTC\n"
+"PO-Revision-Date: 23-08-25 12:00UTC\n"
 "Last-Translator: Richard Strauss <ristraus@hotmail.com>\n"
 "Language: pt-br\n"
 "Language-Team: Portuguese\n"
@@ -487,7 +487,7 @@ msgstr "Limites do elemento: {bounds}"
 msgid "convex hull of the current selected elements"
 msgstr "Casca convexa dos elementos selecionados"
 
-#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542 meerk40t/core/elements/trace.py:632
+#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542 
 msgid "No elements bounds to trace."
 msgstr "Nenhum limite de elemento para traçar."
 
@@ -11367,7 +11367,7 @@ msgstr "Redefinir Cores para Padrão"
 msgid "Reset Colors to brighter defaults"
 msgstr "Redefinir Cores para padrões mais claros"
 
-#: meerk40t/gui/preferences.py:749 meerk40t/lihuiyu/device.py:147
+#: meerk40t/balormk/device.py:92 meerk40t/balormk/device.py:93 meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95 meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97 meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:120 meerk40t/balormk/device.py:136 meerk40t/balormk/device.py:148 meerk40t/balormk/device.py:162 meerk40t/balormk/device.py:274 meerk40t/balormk/device.py:287 meerk40t/balormk/device.py:299 meerk40t/balormk/device.py:311 meerk40t/balormk/device.py:532 meerk40t/balormk/device.py:548 meerk40t/balormk/device.py:562 meerk40t/balormk/device.py:576 meerk40t/balormk/device.py:590 meerk40t/balormk/device.py:603 meerk40t/balormk/device.py:615 meerk40t/core/elements/elements.py:438 meerk40t/core/elements/trace.py:427 meerk40t/device/gui/formatterpanel.py:103 meerk40t/device/gui/formatterpanel.py:118 meerk40t/gui/laserpanel.py:120 meerk40t/gui/plugin.py:112 meerk40t/gui/plugin.py:125 meerk40t/gui/plugin.py:136 meerk40t/gui/plugin.py:149 meerk40t/gui/plugin.py:167 meerk40t/gui/plugin.py:180 meerk40t/gui/plugin.py:191 meerk40t/gui/preferences.py:750 meerk40t/gui/wxmmain.py:1334 meerk40t/gui/wxmmain.py:1347 meerk40t/gui/wxmmain.py:1362 meerk40t/gui/wxmmain.py:1379 meerk40t/gui/wxmmain.py:1396 meerk40t/gui/wxmmain.py:1409 meerk40t/lihuiyu/device.py:156 meerk40t/moshi/device.py:62 meerk40t/moshi/device.py:73 meerk40t/moshi/device.py:86 meerk40t/moshi/device.py:99 meerk40t/newly/device.py:120 meerk40t/newly/device.py:131 meerk40t/newly/device.py:145 meerk40t/newly/device.py:159 meerk40t/newly/device.py:268 meerk40t/newly/device.py:281 meerk40t/ruida/device.py:51
 msgid "General"
 msgstr "Geral"
 
@@ -16568,8 +16568,10 @@ msgid "W, H"
 msgstr "L, A"
 
 #: meerk40t/gui/statusbarwidgets/statusbar.py:48
-msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
-msgstr "Clique Esquerdo: Mover para o próximo painel\nClique Direito: Mover para o painel anterior"
+msgid "Left Click: Move to next panel\n"
+"Right Click: Move to previous panel"
+msgstr "Clique Esquerdo: Mover para o próximo painel\n"
+"Clique Direito: Mover para o painel anterior"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:46
 msgid "Clear stroke-color (right click clear fill color)"
@@ -20527,14 +20529,17 @@ msgstr "Eixo-Z"
 msgid "Correct Orientation"
 msgstr "Orientação correta"
 
+#: meerk40t/gui/navigationpanels.py:2872
 msgid "Jog, Move and Transform"
 msgstr "Andar, Mover e Trasnformar"
 
+#: meerk40t/gui/alignment.py:1640
 msgid "Element Alignment"
 msgstr "Alinhamento do Elemento"
 
 msgid "Share-Attributes"
 msgstr "Atributos de Compartilhamento"
+
 #: meerk40t/gui/materialmanager.py:2761
 msgid "Remove effect:"
 msgstr "Remover efeito:"
@@ -20562,3 +20567,8 @@ msgstr "Simplificar efeitos"
 #: meerk40t/gui/plugin.py:128
 msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
 msgstr "Limita a complexidade dos efeitos aplicados aos elementos durante o design.\nNB1: todos os valores serão respeitados durante a gravação.\nNB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
+
+#: meerk40t/grbl/device.py:1049
+msgid "Export succeeded: {filename}"
+msgstr "Exportação bem-sucedida: {filename}"
+

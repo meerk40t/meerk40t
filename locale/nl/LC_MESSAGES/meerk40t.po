@@ -20540,3 +20540,8 @@ msgstr "Effecten vereenvoudigen"
 #: meerk40t/gui/plugin.py:128
 msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
 msgstr "Beperkt de complexiteit van effecten die tijdens het ontwerpen op elementen worden toegepast.\nNB1: alle waarden worden gehonoreerd tijdens het graveren.\nNB2: als de CAPS-LOCK-toets actief is, worden alle effecten zonder vereenvoudiging weergegeven."
+
+#: meerk40t/grbl/device.py:1049
+msgid "Export succeeded: {filename}"
+msgstr "Exporteren gelukt: {filename}"
+
