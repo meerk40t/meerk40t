@@ -232,7 +232,4 @@ class BusyInfo:
             self.frame.Show()
             self.frame.Refresh()
             self.frame.Update()
-            try:
-                wx.YieldIfNeeded()
-            except AttributeError:
-                wx.SafeYield()
+            wx.YieldIfNeeded()
