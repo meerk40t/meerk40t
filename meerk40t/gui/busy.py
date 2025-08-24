@@ -98,11 +98,11 @@ class BusyInfo:
         # self.sysinfo = platform.system()
         self.lock = threading.RLock()
         self.busy_object = None
-        self.msg = None
-        self.bgcolor = None
-        self.fgcolor = None
+        self.msg : str = ""
+        self.bgcolor : wx.Colour = wx.Colour(255, 255, 255)
+        self.fgcolor : wx.Colour = wx.Colour(0, 0, 0)
         self.parent = parent
-        self.shown = False
+        self.shown : bool = False
         self.fontsize = DEFAULT_SIZE
         # if "parent" in kwds:
         #     self.parent = kwds["parent"]
@@ -118,19 +118,16 @@ class BusyInfo:
         self.update_keywords(kwds)
 
     def update_keywords(self, kwds):
-        keep = 0
-        if "keep" in kwds:
-            keep = int(kwds["keep"])
+        keep = int(kwds.get("keep", 0))
         if "image" in kwds:
             self.image = kwds["image"]
-        else:
-            if keep == 0:
-                self.image = None
+        elif keep == 0:
+            self.image = None
         if "msg" in kwds:
             old_lines = self.msg.split("\n") if self.msg else []
             new_lines = old_lines[:keep]
             new_lines.append(kwds["msg"])
-            self.msg = "\n".join(new_lines)            
+            self.msg = "\n".join(new_lines)
         if "bgcolor" in kwds:
             self.bgcolor = kwds["bgcolor"]
         if "fgcolor" in kwds:
@@ -139,6 +136,8 @@ class BusyInfo:
             self.fontsize = kwds["fontsize"]
 
     def start(self, **kwds):
+        if wx.IsMainThread() is False:
+            return
         self.end()
         with self.lock:
             style_options = wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
@@ -164,6 +163,8 @@ class BusyInfo:
             self.shown = True
 
     def end(self):
+        if wx.IsMainThread() is False:
+            return
         with self.lock:
             self.hide()
             if self.parent is not None:
@@ -175,11 +176,15 @@ class BusyInfo:
             self.shown = False
 
     def change(self, **kwds):
+        if wx.IsMainThread() is False:
+            return
         self.update_keywords(kwds)
         if self.shown:
             self.show()
 
     def hide(self):
+        if wx.IsMainThread() is False:
+            return
         if self.frame:
             self.frame.Hide()
 
@@ -187,6 +192,8 @@ class BusyInfo:
         self.parent = newparent
 
     def show(self):
+        if wx.IsMainThread() is False:
+            return
         with self.lock:
             if self.frame is None or self.panel is None or self.text is None:
                 # The busy was ended before this thread could acquire the lock.
@@ -223,7 +230,7 @@ class BusyInfo:
             wd = sizetext.width + 5 + bm_w
             ht = max(sizetext.height, bm_h)
 
-            self.frame.SetClientSize((wd + 60, ht + 40))
+            self.frame.SetClientSize(wx.Size(wd + 60, ht + 40))
             self.panel.SetSize(self.frame.GetClientSize())
             self.panel.Layout()
             # self.text.Center()
