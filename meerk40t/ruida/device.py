@@ -38,6 +38,15 @@ class RuidaDevice(Service, Status):
                     setattr(self, attr, default)
 
         # self.setting(str, "label", path)
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
 
         _ = self._
         choices = [
@@ -228,7 +237,8 @@ class RuidaDevice(Service, Status):
                 "default": 20.0,
                 "type": float,
                 "label": _("Laser Power"),
-                "trailer": "%",
+                "style": "power",
+                "percent": _use_percent_for_power,
                 "tip": _("What power level do we cut at?"),
             },
             {
@@ -236,7 +246,8 @@ class RuidaDevice(Service, Status):
                 "object": self,
                 "default": 40.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Cut Speed"),
                 "tip": _("How fast do we cut?"),
             },

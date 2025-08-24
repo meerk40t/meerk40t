@@ -89,7 +89,6 @@ Functions:
 import math
 import os.path
 from copy import copy
-from turtle import speed
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Fillrule, Node
