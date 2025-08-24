@@ -5,6 +5,9 @@ import re
 import subprocess
 import threading
 import time
+import ast
+import operator
+
 from datetime import datetime
 from threading import Thread
 from typing import Any, Callable, Generator, List, Optional, Tuple, Union
@@ -150,7 +153,6 @@ class Kernel(Settings):
 
         # Scheduler
         self.jobs = {}
-        self.active_job = "main"
         self.scheduler_thread = None
 
         # Signal Listener
@@ -1873,7 +1875,6 @@ class Kernel(Settings):
                 continue  # Job was removed during execution.
 
             # Checking if jobs should run.
-            self.active_job = job.job_name
             if job.run_main:
                 if not mains:
                     # Do not attempt to run mains.
@@ -1901,7 +1902,6 @@ class Kernel(Settings):
                     sys.excepthook(*sys.exc_info())
                 job._last_run = time.time()
                 job._next_run += job._last_run + job.interval
-        self.active_job = "main"
 
     def run(self, *args) -> None:
         """
@@ -3755,8 +3755,53 @@ class Kernel(Settings):
             if remainder is None:
                 channel(_("Please provide a command to loop."))
                 return
+
+            # Supported operators
+            SAFE_OPERATORS = {
+                ast.Add: operator.add,
+                ast.Sub: operator.sub,
+                ast.Mult: operator.mul,
+                ast.Div: operator.truediv,
+                ast.FloorDiv: operator.floordiv,
+                ast.Mod: operator.mod,
+                ast.Pow: operator.pow,
+                ast.USub: operator.neg,
+                ast.UAdd: operator.pos,
+            }
+
+            def safe_eval(expr, loop):
+                """
+                Safely evaluate arithmetic expressions with 'loop' as a variable.
+                """
+
+                def _eval(node):
+                    if isinstance(node, ast.Num):  # <number>
+                        return node.n
+                    elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
+                        return SAFE_OPERATORS[type(node.op)](
+                            _eval(node.left), _eval(node.right)
+                        )
+                    elif isinstance(node, ast.UnaryOp):  # - <operand>
+                        return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
+                    elif isinstance(node, ast.Name):
+                        if node.id == "loop":
+                            return loop
+                        raise ValueError(f"Unknown variable: {node.id}")
+                    else:
+                        raise ValueError("Unsupported expression")
+
+                return _eval(ast.parse(expr, mode="eval").body)
+
             for loop_index in range(range_from, range_to + 1):
-                cmd = remainder.replace("{loop}", str(loop_index))
+
+                def repl(match):
+                    expr = match.group(1)
+                    try:
+                        return str(safe_eval(expr, loop_index))
+                    except Exception:
+                        return match.group(0)
+
+                cmd = re.sub(r"\{([^}]+)\}", repl, remainder)
                 channel(f"#{loop_index}: {cmd}")
                 data_out = self._console_parse(cmd, channel=self._console_channel)
 
