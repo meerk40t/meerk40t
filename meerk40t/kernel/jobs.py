@@ -31,9 +31,12 @@ class Job:
         self.interval = interval
         self.times = times
 
+        self._created = time.time()
         self._last_run = None
         self._next_run = time.time() + self.interval
         self._remaining = self.times
+        self.message = ""
+        self.info = ""
 
     def __call__(self, *args, **kwargs):
         self.process(*args, **kwargs)
