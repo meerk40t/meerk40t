@@ -178,10 +178,7 @@ class BusyInfo():
 
     @property
     def shown(self):
-        if wx.IsMainThread():
-            return self.busy_main.shown
-        else:
-            return True
+        return self.busy_main.shown if wx.IsMainThread() else True
         
     def start(self, **kwds):
         if wx.IsMainThread():

@@ -34,6 +34,43 @@ KERNEL_VERSION = "0.0.10"
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
 
+# Supported operators
+SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+def safe_eval(expr, term, term_value):
+    """
+    Safely evaluate arithmetic expressions with <term> as a variable.
+    Supports ast.Constant and ast.Num for compatibility.
+    """
+    def _eval(node):
+        if isinstance(node, ast.Constant):  # Python 3.8+
+            return node.value
+        elif isinstance(node, ast.Num):  # Python <3.8
+            return node.n
+        elif isinstance(node, ast.BinOp):
+            return SAFE_OPERATORS[type(node.op)](
+                _eval(node.left), _eval(node.right)
+            )
+        elif isinstance(node, ast.UnaryOp):
+            return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
+        elif isinstance(node, ast.Name):
+            if node.id == term:
+                return term_value
+            raise ValueError(f"Unknown variable: {node.id}")
+        else:
+            raise ValueError("Unsupported expression")
+    return _eval(ast.parse(expr, mode="eval").body)
+
 
 class BusyInfo:
     def __init__(self, **kwds):
@@ -2963,7 +3000,7 @@ class Kernel(Settings):
                     else:
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
                 except Exception as e:
-                    channel("Encountered exception {e} during play")
+                    channel(_("Encountered exception {error}").format(error=e))
                     pass
 
             def _play_darwin():
@@ -2972,7 +3009,7 @@ class Kernel(Settings):
                 try:
                     subprocess.run(cmd, shell=False)
                 except OSError as e:
-                    channel(f"Could not run {cmd[0]}: {e}")
+                    channel(_("Encountered exception {error}").format(error=f"{e} (cmd={cmd[0]})"))
 
             def _play_linux():
                 try:
@@ -3696,7 +3733,11 @@ class Kernel(Settings):
                 This function is intended to be used as a job handler for asynchronous command execution.
                 """
                 t0 = time.perf_counter()
-                data_out = self._console_parse(remainder, channel=self._console_channel)
+                try:
+                    data_out = self._console_parse(remainder, channel=self._console_channel)
+                except Exception as e:
+                    self._console_channel(_("Encountered exception {error}").format(error=e))
+
                 t1 = time.perf_counter()
                 self._console_channel(
                     _("Finished command {cmd} after {duration:.2f}sec").format(
@@ -3729,12 +3770,17 @@ class Kernel(Settings):
                 )
             )
 
+        @self.console_option(
+            "variable", "v", type=str, default="loop", help=_("Variable name to replace (default 'loop')")
+        )
         @self.console_argument("range_from", type=int, help=_("First value to take"))
         @self.console_argument("range_to", type=int, help=_("Last value to take"))
         @self.console_command("loop", help=_("loop a given command"))
         def loop_command(
-            channel, _, range_from=None, range_to=None, remainder=None, **kwargs
+            channel, _, range_from=None, range_to=None, remainder=None, variable=None, **kwargs
         ):
+            if variable is None:
+                variable = "loop"
             if range_from is None or range_to is None:
                 channel(_("Please provide the range to loop in"))
                 return
@@ -3756,55 +3802,21 @@ class Kernel(Settings):
                 channel(_("Please provide a command to loop."))
                 return
 
-            # Supported operators
-            SAFE_OPERATORS = {
-                ast.Add: operator.add,
-                ast.Sub: operator.sub,
-                ast.Mult: operator.mul,
-                ast.Div: operator.truediv,
-                ast.FloorDiv: operator.floordiv,
-                ast.Mod: operator.mod,
-                ast.Pow: operator.pow,
-                ast.USub: operator.neg,
-                ast.UAdd: operator.pos,
-            }
-
-            def safe_eval(expr, loop):
-                """
-                Safely evaluate arithmetic expressions with 'loop' as a variable.
-                Supports ast.Constant and ast.Num for compatibility.
-                """
-                def _eval(node):
-                    if isinstance(node, ast.Constant):  # Python 3.8+
-                        return node.value
-                    elif isinstance(node, ast.Num):  # Python <3.8
-                        return node.n
-                    elif isinstance(node, ast.BinOp):
-                        return SAFE_OPERATORS[type(node.op)](
-                            _eval(node.left), _eval(node.right)
-                        )
-                    elif isinstance(node, ast.UnaryOp):
-                        return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
-                    elif isinstance(node, ast.Name):
-                        if node.id == "loop":
-                            return loop
-                        raise ValueError(f"Unknown variable: {node.id}")
-                    else:
-                        raise ValueError("Unsupported expression")
-                return _eval(ast.parse(expr, mode="eval").body)
-
             for loop_index in range(range_from, range_to + 1):
 
                 def repl(match):
                     expr = match.group(1)
                     try:
-                        return str(safe_eval(expr, loop_index))
+                        return str(safe_eval(expr, variable, loop_index))
                     except Exception:
                         return match.group(0)
 
                 cmd = re.sub(r"\{([^}]+)\}", repl, remainder)
                 channel(f"#{loop_index}: {cmd}")
-                data_out = self._console_parse(cmd, channel=self._console_channel)
+                try:
+                    data_out = self._console_parse(cmd, channel=self._console_channel)
+                except Exception as e:
+                    channel(_("Encountered exception {error}").format(error=e))
 
         # ==========
         # LIFECYCLE
