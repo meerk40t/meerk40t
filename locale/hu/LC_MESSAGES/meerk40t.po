@@ -456,7 +456,12 @@ msgstr "Elem határok: {bounds}"
 msgid "convex hull of the current selected elements"
 msgstr "a jelenleg kijelölt elemek konvex burka"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/trace.py:542 meerk40t/core/elements/trace.py:632
+=======
+#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542
+#: meerk40t/core/elements/trace.py:632
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "No elements bounds to trace."
 msgstr "Nincsenek elemek határai a nyomon követéshez."
 
@@ -684,6 +689,7 @@ msgstr "lencseméret beállítása"
 msgid "Initializes a galvo clone board from specified file."
 msgstr "Galvo klón panel inicializálása megadott fájlból."
 
+<<<<<<< HEAD
 #: meerk40t/newly/mock_connection.py:33 meerk40t/ruida/mock_connection.py:41
 msgid "Attempting connection to Mock."
 msgstr "Csatlakozási kísérlet a Mockhoz."
@@ -697,6 +703,25 @@ msgid "Attempting disconnection from Mock."
 msgstr "Szétkapcsolási kísérlet a Mocktól."
 
 #: meerk40t/newly/mock_connection.py:44 meerk40t/ruida/mock_connection.py:52
+=======
+#: meerk40t/balormk/mock_connection.py:35 meerk40t/newly/mock_connection.py:33
+#: meerk40t/ruida/mock_connection.py:41
+msgid "Attempting connection to Mock."
+msgstr "Csatlakozási kísérlet a Mockhoz."
+
+#: meerk40t/balormk/mock_connection.py:37 meerk40t/newly/mock_connection.py:35
+#: meerk40t/ruida/mock_connection.py:43
+msgid "Mock Connected."
+msgstr "Mock csatlakoztatva."
+
+#: meerk40t/balormk/mock_connection.py:44 meerk40t/newly/mock_connection.py:42
+#: meerk40t/ruida/mock_connection.py:50
+msgid "Attempting disconnection from Mock."
+msgstr "Szétkapcsolási kísérlet a Mocktól."
+
+#: meerk40t/balormk/mock_connection.py:46 meerk40t/newly/mock_connection.py:44
+#: meerk40t/ruida/mock_connection.py:52
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Mock Disconnection Successful.\n"
 msgstr "Mock szétkapcsolás sikeres.\n"
 
@@ -792,6 +817,19 @@ msgstr "Konfiguráció beállítása"
 msgid "Config Set: Success"
 msgstr "Konfiguráció beállítása: Sikeres"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/balormk/usb_connection.py:126 meerk40t/ch341/libusb.py:146
+#: meerk40t/newly/usb_connection.py:116
+msgid ""
+"Config Set: Fail\n"
+"(Hint: may recover if you change where the USB is plugged in.)"
+msgstr ""
+"Konfiguráció beállítása: Sikertelen\n"
+"(Tipp: helyreállhat, ha megváltoztatja, hova csatlakoztatta az USB-t.)"
+
+#: meerk40t/balormk/usb_connection.py:133 meerk40t/ch341/libusb.py:159
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/newly/usb_connection.py:123
 msgid "Attempting to claim interface."
 msgstr "Interfész igénylése."
@@ -856,7 +894,11 @@ msgstr "USB kapcsolat nem létezett."
 msgid "Attempting connection to USB."
 msgstr "USB csatlakozási kísérlet."
 
+<<<<<<< HEAD
 #: meerk40t/newly/usb_connection.py:219
+=======
+#: meerk40t/balormk/usb_connection.py:229 meerk40t/newly/usb_connection.py:219
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Device failed during detach and claim"
 msgstr "Az eszköz meghiúsult leválasztás és igénylés közben"
 
@@ -1254,10 +1296,50 @@ msgstr "Pillanatkép exportálása"
 msgid "Reconnect Camera"
 msgstr "Kamera újracsatlakoztatása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/camera/gui/camerapanel.py:163
+msgid ""
+"Detect Distortions/Calibration\n"
+"You need to print a 9x6 checkerboard pattern from OpenCV\n"
+"It should be flat and visible in the camera."
+msgstr ""
+"Torzítások/kalibrálás észlelése\n"
+"Ki kell nyomtatnia egy 9x6-os sakktábla mintát az OpenCV-ből\n"
+"Annak síknak és láthatónak kell lennie a kamerában."
+
+#: meerk40t/camera/gui/camerapanel.py:169
+msgid ""
+"Set the camera frames per second. A value of 0 means a frame every 5 "
+"seconds."
+msgstr ""
+"Állítsa be a kamera képkocka/másodperc értékét. A 0 érték 5 másodpercenként "
+"egy képkockát jelent."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/camera/gui/camerapanel.py:172
 msgid "Corrects Fisheye lensing, must be trained with checkerboard image."
 msgstr "Halszem torzítás korrekciója, sakktábla képpel kell kalibrálni."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/camera/gui/camerapanel.py:177
+msgid ""
+"The four marker locations (in scene when unchecked) are transformed into "
+"corners of a regular square shape."
+msgstr ""
+"A négy jelölőpont (a jelenetben kikapcsolt állapotban) egy szabályos négyzet"
+" alakjának sarkaivá alakulnak át."
+
+#: meerk40t/camera/gui/camerapanel.py:467
+msgid ""
+"Camera backend failure...\n"
+"Cannot attempt camera connection."
+msgstr ""
+"Kamera háttérrendszer hiba...\n"
+"Nem próbálkozhat a kamera csatlakoztatásával."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/camera/gui/camerapanel.py:473
 msgid "Fetching URI:{uri} Frame..."
 msgstr "URI:{uri} képkocka lekérése..."
@@ -1378,7 +1460,11 @@ msgstr "URI hozzáadása"
 msgid "Displays a list of registered camera URIs"
 msgstr "Regisztrált kamera URI-k listájának megjelenítése"
 
+<<<<<<< HEAD
 #: meerk40t/gui/wordlisteditor.py:507
+=======
+#: meerk40t/camera/gui/camerapanel.py:1190 meerk40t/gui/wordlisteditor.py:507
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Index"
 msgstr "Index"
 
@@ -1443,6 +1529,17 @@ msgstr "Az eszköz index {index} meghaladja a talált eszközöket."
 msgid "K40 device detected:"
 msgstr "K40 eszköz észlelve:"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/ch341/libusb.py:153
+msgid ""
+"Config Set: Fail\n"
+"Set Configuration is not implemented on this platform. Pass."
+msgstr ""
+"Konfiguráció beállítása: Sikertelen\n"
+"A konfiguráció beállítása ezen a platformon nem implementált. Kihagyva."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/ch341/libusb.py:518
 msgid "Connection to USB failed: {e}.\n"
 msgstr "Kapcsolódás az USB-hez sikertelen: {e}.\n"
@@ -1576,6 +1673,21 @@ msgstr ""
 msgid "Cluster raster objects"
 msgstr "Rasztált objektumok csoportosítása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/core/planner.py:61
+msgid ""
+"Separate non-overlapping raster objects.\n"
+"Active: this will raster close (i.e. overlapping) objects as one,\n"
+"but will separately process objects lying apart from each other.\n"
+"Inactive: all objects will be lasered as one single unit."
+msgstr ""
+"Nem átfedő raszteres objektumok szétválasztása.\n"
+"Aktív: a közeli (azaz átfedő) objektumokat egyként raszterizálja,\n"
+"de a távolabb elhelyezkedő objektumokat külön-külön dolgozza fel.\n"
+"Inaktív: minden objektum egyetlen egységként lesz lézerelve."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/core/planner.py:71
 msgid "Margin:"
 msgstr "Margó:"
@@ -1622,6 +1734,31 @@ msgstr "Tűrés annak eldöntésére, hogy két útvonalszegmens összeilleszthe
 msgid "Burn Inner First"
 msgstr "Először a belső égetés"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/core/planner.py:224
+msgid ""
+"Ensure that inside burns are done before an outside cut in order to ensure "
+"that burns inside a cut-out piece are done before the cut piece shifts or "
+"drops out of the material."
+msgstr ""
+"Biztosítsa, hogy a belső égetések a külső vágás előtt megtörténjenek, annak "
+"érdekében, hogy a kivágott darabon belüli égetések elkészüljenek, mielőtt a "
+"kivágott darab elmozdulna vagy kiesne az anyagból."
+
+#: meerk40t/core/planner.py:232
+msgid ""
+"If you find that using this option significantly increases the optimisation time, alternatives are: \n"
+"* Deselecting Cut Inner First if you are not cutting fully through your material \n"
+"* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
+"* If you are using multiple passes, check Merge Passes"
+msgstr ""
+"Ha úgy találja, hogy ennek az opciónak a használata jelentősen növeli az optimalizálási időt, az alternatívák a következők:\n"
+"* A „Vágás belülről először” opció kikapcsolása, ha nem vágja át teljesen az anyagot\n"
+"* A belső útvonalak külön korábbi műveletekbe helyezése, és az „Összevonási műveletek” vagy a „Vágás belülről először” opciók mellőzése\n"
+"* Ha több menetet használ, ellenőrizze az „Összevonási menetek” opciót"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/core/planner.py:244
 msgid "Tolerance to decide if a shape is truly inside another one."
 msgstr ""
@@ -1632,6 +1769,35 @@ msgstr ""
 msgid "Group Inner Burns"
 msgstr "Belső égetések csoportosítása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/core/planner.py:263
+msgid ""
+"Try to complete a set of inner burns and the associated outer cut before moving onto other elements.\n"
+"This option only does something if Burn Inner First is also selected. If your design has multiple separate pieces on it, this should mostly cause each piece to be burned in entirety before moving on to burn another piece. This can reduce the risk of e.g. a shift ruining an entire piece of material by trying to ensure that one piece is finished before starting on another."
+msgstr ""
+"Próbálja meg befejezni a belső égetéseket és a kapcsolódó külső vágást, mielőtt más elemekre térne át.\n"
+"Ez az opció csak akkor működik, ha a „Belső égetés először” is ki van választva. Ha a terv több különálló darabot tartalmaz, ez nagyrészt azt eredményezi, hogy minden darabot teljesen elégetnek, mielőtt egy másik darab égetésére térne át. Ez csökkentheti annak kockázatát, hogy például egy elmozdulás tönkreteszi az egész anyagdarabot azáltal, hogy megpróbálja biztosítani, hogy az egyik darab befejeződjön, mielőtt elkezdené a másikat."
+
+#: meerk40t/core/planner.py:267
+msgid ""
+"This optimization works best with Merge Operations also checked though this "
+"is not a requirement. "
+msgstr ""
+"Ez az optimalizálás akkor működik a legjobban, ha az „Összevonási műveletek”"
+" is be vannak jelölve, bár ez nem kötelező. "
+
+#: meerk40t/core/planner.py:273
+msgid ""
+"Because this optimisation is done once rasters have been turned into images,"
+" inner elements may span multiple design pieces, in which case they may be "
+"optimised together."
+msgstr ""
+"Mivel ez az optimalizálás akkor történik, amikor a raszterek képekké "
+"alakulnak, a belső elemek több tervrészen is átívelhetnek, ebben az esetben "
+"együtt optimalizálhatók."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/core/planner.py:283
 msgid "Closed Distance"
 msgstr "Zárt távolság"
@@ -1664,6 +1830,25 @@ msgstr "Inaktív: a vonalas kitöltések egymás után lesznek égetve."
 msgid "Reduce polyline details"
 msgstr "Polivonali részletek csökkentése"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/core/planner.py:331
+msgid ""
+"Active: reduce the details of polyline elements,\n"
+"so that less information needs to be sent to the laser."
+msgstr ""
+"Aktív: csökkenti a polivonal elemek részleteit,\n"
+"így kevesebb információt kell küldeni a lézernek."
+
+#: meerk40t/core/planner.py:336 meerk40t/core/planner.py:353
+msgid ""
+"This can reduce the processing and laser time but can as well\n"
+"compromise the quality at higher levels, so use with care and preview in simulation."
+msgstr ""
+"Ez csökkentheti a feldolgozási és lézeridőt, de\n"
+"magasabb szinteken ronthatja a minőséget is, ezért óvatosan használja, és nézze meg a szimulációban."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/core/planner.py:346 meerk40t/gui/plugin.py:259
 msgid "Level"
 msgstr "Szint"
@@ -2060,7 +2245,11 @@ msgstr "Fájlcsomópont átalakítása normál csoporttá"
 msgid "Content of {filenode}"
 msgstr "{filenode} tartalma"
 
+<<<<<<< HEAD
 #: meerk40t/gui/wxmmain.py:2704
+=======
+#: meerk40t/core/elements/element_treeops.py:387 meerk40t/gui/wxmmain.py:2704
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Ungroup elements"
 msgstr "Elemek csoportjának feloldása"
 
@@ -2557,7 +2746,11 @@ msgstr ""
 msgid "Delete {ecount} elements, as selected in scene"
 msgstr "{ecount} elem törlése, a jelenetben kiválasztottak szerint"
 
+<<<<<<< HEAD
 #: meerk40t/gui/wxmmain.py:947
+=======
+#: meerk40t/core/elements/element_treeops.py:1846 meerk40t/gui/wxmmain.py:947
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Delete the selected elements"
 msgstr "A kiválasztott elemek törlése"
 
@@ -2672,7 +2865,11 @@ msgstr "Osztályozás frissítése"
 msgid "Classification for unassigned"
 msgstr "Osztályozás nem hozzárendeltekhez"
 
+<<<<<<< HEAD
 #: meerk40t/gui/wxmtree.py:214
+=======
+#: meerk40t/core/elements/element_treeops.py:2106 meerk40t/gui/wxmtree.py:214
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Classify unassigned elements and create operations if necessary"
 msgstr ""
 
@@ -2689,7 +2886,11 @@ msgstr "Csak a meglévő műveleteket használja"
 msgid "Reclassify all elements and use only existing operations"
 msgstr "Az összes elem újraosztályozása és csak meglévő műveletek használata"
 
+<<<<<<< HEAD
 #: meerk40t/gui/wxmtree.py:217
+=======
+#: meerk40t/core/elements/element_treeops.py:2155 meerk40t/gui/wxmtree.py:217
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Classify unassigned elements and use only existing operations"
 msgstr ""
 
@@ -2940,6 +3141,17 @@ msgstr "sín zárolása"
 msgid "SVG Viewport is Bed"
 msgstr "SVG nézetmező a munkaterület"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/core/svg_io.py:107
+msgid ""
+"SVG files can be saved without real physical units.\n"
+"This setting uses the SVG viewport dimensions to scale the rest of the elements in the file."
+msgstr ""
+"Az SVG fájlok valós fizikai egységek nélkül menthetők.\n"
+"Ez a beállítás az SVG nézetmező méreteit használja a fájl többi elemének skálázásához."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/core/svg_io.py:116
 msgid "Load hidden objects to regmarks"
 msgstr "Rejtett objektumok betöltése regmarkokba"
@@ -3559,7 +3771,12 @@ msgstr "elemek egyesítése"
 msgid "Invalid tolerance distance provided"
 msgstr "Érvénytelen tűrési távolság lett megadva"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/grid.py:429
+=======
+#: meerk40t/core/elements/branches.py:1831 meerk40t/core/elements/grid.py:184
+#: meerk40t/core/elements/grid.py:299 meerk40t/core/elements/grid.py:429
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "No item selected."
 msgstr "Nincs kiválasztott elem."
 
@@ -4649,7 +4866,11 @@ msgstr "Y pozíció a kör középpontjához."
 msgid "Radius for circle."
 msgstr "Sugár a körhöz."
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:93
+=======
+#: meerk40t/core/elements/geometry.py:227 meerk40t/core/elements/shapes.py:93
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "circle <x> <y> <r>"
 msgstr "kör <x> <y> <r>"
 
@@ -4657,6 +4878,7 @@ msgstr "kör <x> <y> <r>"
 msgid "Invalid length value for circle."
 msgstr "Érvénytelen hossza érték a körhöz."
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:261
 msgid "x position for top left corner of rectangle."
 msgstr "X pozíció a téglalap bal felső sarkához."
@@ -4678,6 +4900,29 @@ msgid "rounded rx corner value."
 msgstr "Lekerekített rx sarokérték."
 
 #: meerk40t/core/elements/shapes.py:271
+=======
+#: meerk40t/core/elements/geometry.py:251 meerk40t/core/elements/shapes.py:261
+msgid "x position for top left corner of rectangle."
+msgstr "X pozíció a téglalap bal felső sarkához."
+
+#: meerk40t/core/elements/geometry.py:256 meerk40t/core/elements/shapes.py:266
+msgid "y position for top left corner of rectangle."
+msgstr "Y pozíció a téglalap bal felső sarkához."
+
+#: meerk40t/core/elements/geometry.py:258 meerk40t/core/elements/shapes.py:268
+msgid "width of the rectangle."
+msgstr "A téglalap szélessége."
+
+#: meerk40t/core/elements/geometry.py:259 meerk40t/core/elements/shapes.py:269
+msgid "height of the rectangle."
+msgstr "A téglalap magassága."
+
+#: meerk40t/core/elements/geometry.py:260 meerk40t/core/elements/shapes.py:270
+msgid "rounded rx corner value."
+msgstr "Lekerekített rx sarokérték."
+
+#: meerk40t/core/elements/geometry.py:261 meerk40t/core/elements/shapes.py:271
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "rounded ry corner value."
 msgstr "Lekerekített ry sarokérték."
 
@@ -4981,7 +5226,13 @@ msgstr "natív útvonal eltolás (saját felelősségre)"
 msgid "create an offset path for any of the given elements, old algorithm"
 msgstr "eltolt útvonal létrehozása a megadott elemekhez, régi algoritmussal"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/penbox.py:248 meerk40t/core/elements/penbox.py:281
+=======
+#: meerk40t/core/elements/penbox.py:124 meerk40t/core/elements/penbox.py:189
+#: meerk40t/core/elements/penbox.py:190 meerk40t/core/elements/penbox.py:248
+#: meerk40t/core/elements/penbox.py:281
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Penbox key"
 msgstr "Tollbox kulcs"
 
@@ -4993,7 +5244,11 @@ msgstr "Tollbox alapművelet"
 msgid "penbox does not exist"
 msgstr "a tollbox nem létezik"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/penbox.py:165
+=======
+#: meerk40t/core/elements/penbox.py:146 meerk40t/core/elements/penbox.py:165
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Penbox count"
 msgstr "Tollbox száma"
 
@@ -5035,6 +5290,29 @@ msgstr ""
 
 "elhelyezési sarok (0=bal felső, 1=jobb felső, 2=jobb alsó, 3=bal alsó, "
 "4=közép)"
+<<<<<<< HEAD
+=======
+
+#: meerk40t/core/elements/placements.py:69
+#: meerk40t/core/elements/placements.py:168
+msgid ""
+"How many placements on the X-Axis?\n"
+"(0 = as many as fit on the bed)"
+msgstr ""
+"Hány elhelyezés az X-tengelyen?\n"
+"(0 = annyi, amennyi elfér az asztalon)"
+
+#: meerk40t/core/elements/placements.py:75
+#: meerk40t/core/elements/placements.py:170
+msgid ""
+"How many placements on the Y-Axis?\n"
+"(0 = as many as fit on the bed)"
+msgstr ""
+"Hány elhelyezés az Y-tengelyen?\n"
+"(0 = annyi, amennyi elfér az asztalon)"
+
+#: meerk40t/core/elements/placements.py:77
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/core/elements/placements.py:169
 msgid "Gap in x-direction"
 msgstr "X irányú hézag"
@@ -5100,6 +5378,7 @@ msgstr "Túl sok memória szükséges."
 msgid "interim image resolution"
 msgstr "köztes képfelbontás"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/render.py:278 meerk40t/extra/potrace.py:144
 msgid "how to resolve ambiguities in path decomposition"
 msgstr "hogyan oldjuk fel az útvonal felosztásának kétértelműségeit"
@@ -5129,6 +5408,45 @@ msgid "invert bitmap"
 msgstr "bitkép invertálása"
 
 #: meerk40t/core/elements/render.py:322 meerk40t/extra/potrace.py:188
+=======
+#: meerk40t/core/elements/render.py:103 meerk40t/core/elements/render.py:278
+#: meerk40t/extra/potrace.py:144
+msgid "how to resolve ambiguities in path decomposition"
+msgstr "hogyan oldjuk fel az útvonal felosztásának kétértelműségeit"
+
+#: meerk40t/core/elements/render.py:110 meerk40t/core/elements/render.py:285
+#: meerk40t/extra/potrace.py:151
+msgid "suppress speckles of up to this size (default 2)"
+msgstr "legfeljebb ekkora foltok elnyomása (alapértelmezett 2)"
+
+#: meerk40t/core/elements/render.py:113 meerk40t/core/elements/render.py:288
+#: meerk40t/extra/potrace.py:154
+msgid "corner threshold parameter"
+msgstr "sarokküszöb paraméter"
+
+#: meerk40t/core/elements/render.py:120 meerk40t/core/elements/render.py:295
+#: meerk40t/extra/potrace.py:161
+msgid "turn off curve optimization"
+msgstr "görbeoptimalizálás kikapcsolása"
+
+#: meerk40t/core/elements/render.py:126 meerk40t/core/elements/render.py:301
+#: meerk40t/extra/potrace.py:167
+msgid "curve optimization tolerance"
+msgstr "görbeoptimalizálási tűrés"
+
+#: meerk40t/core/elements/render.py:133 meerk40t/core/elements/render.py:308
+#: meerk40t/extra/potrace.py:174
+msgid "set foreground color (default Black)"
+msgstr "előtétszín beállítása (alapértelmezett Fekete)"
+
+#: meerk40t/core/elements/render.py:140 meerk40t/core/elements/render.py:315
+#: meerk40t/extra/potrace.py:181
+msgid "invert bitmap"
+msgstr "bitkép invertálása"
+
+#: meerk40t/core/elements/render.py:147 meerk40t/core/elements/render.py:322
+#: meerk40t/extra/potrace.py:188
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "blacklevel?!"
 msgstr "feketeszint?!"
 
@@ -5136,10 +5454,18 @@ msgstr "feketeszint?!"
 msgid "Convert given elements to a path"
 msgstr "Adott elemek útvonallá konvertálása"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/render.py:409
 msgid "No vectorization engine could be found."
 msgstr "Nem található vektorizáló motor."
 
+=======
+#: meerk40t/core/elements/render.py:183 meerk40t/core/elements/render.py:409
+msgid "No vectorization engine could be found."
+msgstr "Nem található vektorizáló motor."
+
+#: meerk40t/core/elements/render.py:222 meerk40t/core/elements/render.py:399
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/imageproperty.py:1758
 msgid "Generating..."
 msgstr "Generálás..."
@@ -5185,7 +5511,11 @@ msgstr "Nem található ilyen azonosítóval rendelkező csomópont"
 msgid "This node can not act as a keyhole: {nodetype}"
 msgstr "Ez a csomópont nem működhet kulcslyukként: {nodetype}"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/render.py:793
+=======
+#: meerk40t/core/elements/render.py:763 meerk40t/core/elements/render.py:793
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "No images selected/provided"
 msgstr "Nincs kiválasztott/megadott kép"
 
@@ -5205,11 +5535,19 @@ msgstr "Középpont Y-koordinátája"
 msgid "Radius of the circle"
 msgstr "A kör sugara"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:178
 msgid "Primary radius of ellipse"
 msgstr "Az ellipszis fő sugara"
 
 #: meerk40t/core/elements/shapes.py:182
+=======
+#: meerk40t/core/elements/shapes.py:129 meerk40t/core/elements/shapes.py:178
+msgid "Primary radius of ellipse"
+msgstr "Az ellipszis fő sugara"
+
+#: meerk40t/core/elements/shapes.py:133 meerk40t/core/elements/shapes.py:182
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Secondary radius of ellipse (default equal to primary radius=circle)"
 msgstr ""
 
@@ -5263,7 +5601,20 @@ msgstr "vonal hozzáadása a színtérhez"
 msgid "remove effects from element"
 msgstr "effektek eltávolítása az elemből"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:2800
+=======
+#: meerk40t/core/elements/shapes.py:389 meerk40t/core/elements/shapes.py:455
+#: meerk40t/core/elements/shapes.py:623 meerk40t/core/elements/shapes.py:652
+#: meerk40t/core/elements/shapes.py:746 meerk40t/core/elements/shapes.py:795
+#: meerk40t/core/elements/shapes.py:1188 meerk40t/core/elements/shapes.py:1493
+#: meerk40t/core/elements/shapes.py:1528 meerk40t/core/elements/shapes.py:2110
+#: meerk40t/core/elements/shapes.py:2115 meerk40t/core/elements/shapes.py:2202
+#: meerk40t/core/elements/shapes.py:2307 meerk40t/core/elements/shapes.py:2391
+#: meerk40t/core/elements/shapes.py:2448 meerk40t/core/elements/shapes.py:2491
+#: meerk40t/core/elements/shapes.py:2539 meerk40t/core/elements/shapes.py:2622
+#: meerk40t/core/elements/shapes.py:2769 meerk40t/core/elements/shapes.py:2800
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "No selected elements."
 msgstr "Nincs kiválasztott elem."
 
@@ -5304,7 +5655,17 @@ msgstr ""
 msgid "Only 'start', 'middle', and 'end' are valid anchors."
 msgstr "Csak a 'start', 'middle' és 'end' érvényes rögzítési pontok."
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1952 meerk40t/core/elements/shapes.py:1966
+=======
+#: meerk40t/core/elements/shapes.py:627 meerk40t/core/elements/shapes.py:656
+#: meerk40t/core/elements/shapes.py:952 meerk40t/core/elements/shapes.py:1126
+#: meerk40t/core/elements/shapes.py:1500 meerk40t/core/elements/shapes.py:1535
+#: meerk40t/core/elements/shapes.py:1610 meerk40t/core/elements/shapes.py:1695
+#: meerk40t/core/elements/shapes.py:1768 meerk40t/core/elements/shapes.py:1840
+#: meerk40t/core/elements/shapes.py:1854 meerk40t/core/elements/shapes.py:1952
+#: meerk40t/core/elements/shapes.py:1966
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Can't modify a locked element: {name}"
 msgstr "Zárolt elem nem módosítható: {name}"
 
@@ -5328,11 +5689,19 @@ msgstr "tulajdonság értékének lekérdezése"
 msgid "You need to provide the property to get."
 msgstr "Meg kell adnia a lekérdezendő tulajdonságot."
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1047
 msgid "property to set"
 msgstr "beállítandó tulajdonság"
 
 #: meerk40t/core/elements/shapes.py:1048
+=======
+#: meerk40t/core/elements/shapes.py:774 meerk40t/core/elements/shapes.py:1047
+msgid "property to set"
+msgstr "beállítandó tulajdonság"
+
+#: meerk40t/core/elements/shapes.py:775 meerk40t/core/elements/shapes.py:1048
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "new property value"
 msgstr "új tulajdonság érték"
 
@@ -5340,6 +5709,7 @@ msgstr "új tulajdonság érték"
 msgid "set property to new value"
 msgstr "tulajdonság beállítása új értékre"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1071
 msgid "You need to provide the property to set."
 msgstr "Meg kell adnia a beállítandó tulajdonságot."
@@ -5349,6 +5719,17 @@ msgid "Invalid color value: {value}"
 msgstr "Érvénytelen színérték: {value}"
 
 #: meerk40t/core/elements/shapes.py:854
+=======
+#: meerk40t/core/elements/shapes.py:798 meerk40t/core/elements/shapes.py:1071
+msgid "You need to provide the property to set."
+msgstr "Meg kell adnia a beállítandó tulajdonságot."
+
+#: meerk40t/core/elements/shapes.py:834 meerk40t/core/elements/shapes.py:1102
+msgid "Invalid color value: {value}"
+msgstr "Érvénytelen színérték: {value}"
+
+#: meerk40t/core/elements/shapes.py:838 meerk40t/core/elements/shapes.py:854
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Invalid length: {value}"
 msgstr "Érvénytelen hossz: {value}"
 
@@ -5356,7 +5737,11 @@ msgstr "Érvénytelen hossz: {value}"
 msgid "Can't set '{val}' for {field}."
 msgstr "Nem állítható be '{val}' a {field} mezőhöz."
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1120
+=======
+#: meerk40t/core/elements/shapes.py:881 meerk40t/core/elements/shapes.py:1120
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Update property"
 msgstr "Tulajdonság frissítése"
 
@@ -5364,7 +5749,11 @@ msgstr "Tulajdonság frissítése"
 msgid "Element can not be moved: {name}"
 msgstr "Az elem nem mozgatható: {name}"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:944
+=======
+#: meerk40t/core/elements/shapes.py:915 meerk40t/core/elements/shapes.py:944
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Element has no matrix to modify: {name}"
 msgstr "Az elemnek nincs módosítható mátrixa: {name}"
 
@@ -5376,19 +5765,33 @@ msgstr "Nem állítható be {field} nullára"
 msgid "Element can not be scaled: {name}"
 msgstr "Az elem nem skálázható: {name}"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1151
+=======
+#: meerk40t/core/elements/shapes.py:977 meerk40t/core/elements/shapes.py:1151
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Can't set '{val}' for {field} (invalid type, old={oldval})."
 msgstr ""
 
 "Nem állítható be '{val}' a {field} mezőhöz (érvénytelen típus, "
 "régi={oldval})."
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1157
+=======
+
+#: meerk40t/core/elements/shapes.py:983 meerk40t/core/elements/shapes.py:1157
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Can't set '{val}' for {field} (invalid value, old={oldval})."
 msgstr ""
 
 "Nem állítható be '{val}' a {field} mezőhöz (érvénytelen érték, "
 "régi={oldval})."
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:1163
+=======
+
+#: meerk40t/core/elements/shapes.py:989 meerk40t/core/elements/shapes.py:1163
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
 msgstr ""
 
@@ -5430,7 +5833,12 @@ msgstr "sokszög/vonal (Hossz Hossz)*"
 msgid "Must be a list of spaced delimited length pairs."
 msgstr "Szóközzel elválasztott hosszúságpárok listájának kell lennie."
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/trace.py:636 meerk40t/core/elements/trace.py:641
+=======
+#: meerk40t/core/elements/shapes.py:1338 meerk40t/core/elements/trace.py:636
+#: meerk40t/core/elements/trace.py:641
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Shape is degenerate."
 msgstr "Az alakzat degenerált."
 
@@ -5599,11 +6007,19 @@ msgstr "Elforgatási értékek:"
 msgid "{index}: rotate({angle}turn) - {name}"
 msgstr "{index}: forgatás({angle}fordulat) - {name}"
 
+<<<<<<< HEAD
 #: meerk40t/core/elements/shapes.py:2592
 msgid "scale_x value"
 msgstr "scale_x érték"
 
 #: meerk40t/core/elements/shapes.py:2595
+=======
+#: meerk40t/core/elements/shapes.py:2156 meerk40t/core/elements/shapes.py:2592
+msgid "scale_x value"
+msgstr "scale_x érték"
+
+#: meerk40t/core/elements/shapes.py:2157 meerk40t/core/elements/shapes.py:2595
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "scale_y value"
 msgstr "scale_y érték"
 
@@ -6334,10 +6750,32 @@ msgstr "Módosítsa a kiválasztott művelet paraméterét"
 msgid "Show power as %"
 msgstr "Teljesítmény megjelenítése %-ban"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/device/gui/formatterpanel.py:102
+msgid ""
+"Active: Full power will be shown as 100%\n"
+"Inactive: Full power will be shown as 1000 ppi"
+msgstr ""
+"Aktív: Teljes teljesítmény 100%-ban jelenik meg\n"
+"Inaktív: Teljes teljesítmény 1000 ppi-ben jelenik meg"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/device/gui/formatterpanel.py:111
 msgid "Show speed in mm/min"
 msgstr "Sebesség megjelenítése mm/perc-ben"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/device/gui/formatterpanel.py:116
+msgid ""
+"Active: Speed will be shown in mm/min\n"
+"Inactive: Speed will be shown in mm/s"
+msgstr ""
+"Aktív: A sebesség mm/perc-ben jelenik meg\n"
+"Inaktív: A sebesség mm/másodperc-ben jelenik meg"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/device/gui/formatterpanel.py:159
 msgid "Do yo want to use a bespoke formatter?"
 msgstr "Szeretnél egyedi formázót használni?"
@@ -6358,6 +6796,20 @@ msgstr "Figyelmeztetési szint a minimum {unit} értékhez"
 msgid "Warn level for maximum {unit}"
 msgstr "Figyelmeztetési szint a maximum {unit} értékhez"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/device/gui/warningpanel.py:176
+msgid ""
+"Meerk40t can warn you if it believes the values for\n"
+"power and speed are too ambitious for your machine.\n"
+"It will display a warning indicator: '❌'\n"
+"in the label of the associated operation-node"
+msgstr ""
+"A Meerk40t figyelmeztethet, ha úgy véli, hogy a teljesítmény és sebesség értékek túl ambiciózusak a gépedhez.\n"
+"Figyelmeztető jelzőt fog megjeleníteni: '❌'\n"
+"a társított műveleti csomópont címkéjében"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/dxf/plugin.py:27
 msgid "DXF Center and Fit"
 msgstr "DXF középre és illesztés"
@@ -6893,10 +7345,36 @@ msgstr "Milyen gyakran keressen a MeerK40t új verziókat"
 msgid "A new {type} release is available ({system}):"
 msgstr "Új {type} kiadás érhető el ({system}):"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/extra/updater.py:64
+msgid ""
+"Version: {name} v{version} ({label})\n"
+"Url: {url}\n"
+"Info: {info}"
+msgstr ""
+"Verzió: {name} v{version} ({label})\n"
+"Url: {url}\n"
+"Info: {info}"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/extra/updater.py:65
 msgid "You seem to have the latest {system} version."
 msgstr "Úgy tűnik, hogy a legújabb {system} verzióval rendelkezel."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/extra/updater.py:70
+msgid ""
+"Latest version on github: {name} v{version} ({label})\n"
+"Url: {url}\n"
+"Info: {info}"
+msgstr ""
+"Legújabb verzió a githubon: {name} v{version} ({label})\n"
+"Url: {url}\n"
+"Info: {info}"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/extra/updater.py:71
 msgid "Could not find any release information on github"
 msgstr "Nem található kiadási információ a githubon"
@@ -7105,6 +7583,17 @@ msgstr "Aktív a kontúrozás alatt"
 msgid "Max vector speed"
 msgstr "Max. vektorsebesség"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/grbl/device.py:492 meerk40t/lihuiyu/device.py:403
+msgid ""
+"What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
+"You can finetune this in the Warning Sections of this configuration dialog."
+msgstr ""
+"Mi a lézer legmegbízhatóbb sebessége vektoros műveletek, pl. gravírozás vagy vágás során?\n"
+"Ezt a konfigurációs párbeszédpanel Figyelmeztetések szakaszában finomhangolhatja."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/grbl/device.py:493 meerk40t/grbl/device.py:507
 msgid "Maximum speeds"
 msgstr "Maximális sebességek"
@@ -7113,6 +7602,17 @@ msgstr "Maximális sebességek"
 msgid "Max raster speed"
 msgstr "Max. raszter sebesség"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/grbl/device.py:506 meerk40t/lihuiyu/device.py:417
+msgid ""
+"What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+"You can finetune this in the Warning Sections of this configuration dialog."
+msgstr ""
+"Mi a lézer legmegbízhatóbb sebessége raszter- vagy képfeldolgozási műveletek során?\n"
+"Ezt a konfigurációs párbeszédpanel Figyelmeztetések szakaszában finomhangolhatja."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/grbl/device.py:515
 msgid "Travel speed"
 msgstr "Mozgási sebesség"
@@ -7397,6 +7897,17 @@ msgstr "Ortur dióda-lézer"
 msgid "Longer Ray5 (GRBL)"
 msgstr "Longer Ray5 (GRBL)"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/grbl/plugin.py:180
+msgid ""
+"Longer-branded 5w/10w/20w grbl diode laser.\n"
+"Make sure you verify your bed size! This machine has several upgrade kits."
+msgstr ""
+"Longer márkájú 5w/10w/20w GRBL dióda lézer.\n"
+"Ellenőrizze az asztal méretét! Ez a gép több bővítő készlettel is rendelkezik."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/grbl/plugin.py:182 meerk40t/gui/devicepanel.py:76
 msgid "Longer Diode-Laser"
 msgstr "Longer dióda-lézer"
@@ -7470,7 +7981,13 @@ msgstr "Hardver tulajdonságok"
 msgid "Retrieve and change Laser properties"
 msgstr "Lézer tulajdonságainak lekérése és módosítása"
 
+<<<<<<< HEAD
 #: meerk40t/newly/gui/newlyconfig.py:43
+=======
+#: meerk40t/grbl/gui/grblconfiguration.py:257 meerk40t/gui/devicepanel.py:234
+#: meerk40t/gui/laserpanel.py:157 meerk40t/gui/spoolerpanel.py:233
+#: meerk40t/gui/spoolerpanel.py:269 meerk40t/newly/gui/newlyconfig.py:43
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Device"
 msgstr "Eszköz"
 
@@ -7602,7 +8119,11 @@ msgstr "Frissítés"
 msgid "Write"
 msgstr "Írás"
 
+<<<<<<< HEAD
 #: meerk40t/gui/preferences.py:156
+=======
+#: meerk40t/grbl/gui/grblhardwareconfig.py:37 meerk40t/gui/preferences.py:156
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Export"
 msgstr "Exportálás"
 
@@ -7717,6 +8238,17 @@ msgstr "* Az SVG Munkacsoportot.\n"
 msgid "* Hackers and tinkerers."
 msgstr "* Hackerek és barkácsolók."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/about.py:178 meerk40t/gui/wxmmain.py:298
+msgid ""
+"Your system is using a very high userscale value: {scale}% ! Unfortunately there is a bug in wxPython (the framework we are using) that will cause unwanted upscaling of images in this configuration. You will recognize this by looking at very pixely icons.\n"
+"As there is only so much we can do about it, we recommend lowering your userscale value to something below 150%."
+msgstr ""
+"A rendszere nagyon magas felhasználói skálázási értéket használ: {scale}%! Sajnos van egy hiba a wxPython-ban (a keretrendszer, amit használunk), ami nem kívánt képfelbontás-növekedést okoz ebben a konfigurációban. Ezt a nagyon pixeles ikonokról fogja felismerni.\n"
+"Mivel csak ennyit tehetünk, javasoljuk, hogy csökkentse a felhasználói skálázási értékét 150% alá."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/about.py:1576 meerk40t/gui/about.py:1680
 msgid "Copy to Clipboard"
 msgstr "Másolás vágólapra"
@@ -8150,6 +8682,10 @@ msgstr "Nem található puffer.\n"
 msgid "Buffer"
 msgstr "Puffer"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/bufferview.py:61 meerk40t/lihuiyu/gui/lhycontrollergui.py:742
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/moshi/gui/moshicontrollergui.py:481
 msgid "BufferView"
 msgstr "Puffer nézet"
@@ -8294,6 +8830,17 @@ msgstr "Nem lehet eltávolítani az aktuálisan aktív eszközt."
 msgid "Error"
 msgstr "Hiba"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/devicepanel.py:593
+msgid ""
+"Do you really want to remove this device?\n"
+"This can not be undone!"
+msgstr ""
+"Biztosan eltávolítja ezt az eszközt?\n"
+"Ez nem vonható vissza!"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/devicepanel.py:683
 msgid "Opens Devices Window"
 msgstr "Eszközök ablak megnyitása"
@@ -8623,6 +9170,19 @@ msgstr "Betűtípus kiválasztása"
 msgid "Pick a font to use for vector text"
 msgstr "Válasszon betűtípust a vektoros szöveghez"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/hersheymanager.py:991
+msgid ""
+"MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts "
+msgstr ""
+"A MeerK40t True-Type-Fonts, Hershey-Fonts vagy Autocad-86 alakzatbetűtípusokat használhat, amelyeket tisztán vektorokkal való renderelésre terveztek.\n"
+"Skálázhatók, égethetők, mint bármely más vektoros alakzat, és ezért nagyon sokoldalúak.\n"
+"További információ: https://en.wikipedia.org/wiki/Hershey_fonts "
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/hersheymanager.py:997 meerk40t/gui/materialmanager.py:406
 msgid "Information"
 msgstr "Információ"
@@ -8689,6 +9249,22 @@ msgstr "Betűtípusok importálva: {count}"
 msgid "Importing fonts..."
 msgstr "Betűtípusok importálása..."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/hersheymanager.py:1270 meerk40t/gui/hersheymanager.py:1378
+msgid ""
+"Font-Import completed.\n"
+"Imported: {ok}\n"
+"Failed: {fail}\n"
+"Total: {total}"
+msgstr ""
+"Betűtípus-importálás befejeződött.\n"
+"Importálva: {ok}\n"
+"Sikertelen: {fail}\n"
+"Összesen: {total}"
+
+#: meerk40t/gui/hersheymanager.py:1271 meerk40t/gui/hersheymanager.py:1379
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/preferences.py:355
 msgid "Import completed"
 msgstr "Importálás befejeződött"
@@ -8701,6 +9277,28 @@ msgstr "Biztosan törölni szeretné ezt a betűtípust: {font}"
 msgid "Confirm"
 msgstr "Megerősítés"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/hersheymanager.py:1312
+msgid ""
+"You will be led now to a source in the web, where you can download free fonts.\n"
+"Please respect individual property rights!\n"
+"Destination: {url}\n"
+msgstr ""
+"Most egy webes forráshoz lesz irányítva, ahol ingyenes betűtípusokat tölthet le.\n"
+"Kérjük, tartsa tiszteletben az egyéni tulajdonjogokat!\n"
+"Cél: {url}\n"
+
+#: meerk40t/gui/hersheymanager.py:1315
+msgid ""
+"Unpack the downloaded archive after the download and select the extracted "
+"files with help of the 'Import'-Button."
+msgstr ""
+"A letöltés után csomagolja ki a letöltött archívumot, és az 'Importálás' "
+"gomb segítségével válassza ki a kibontott fájlokat."
+
+#: meerk40t/gui/hersheymanager.py:1404 meerk40t/gui/hersheymanager.py:1433
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:1009
 msgid "Font-Manager"
 msgstr "Betűtípus-kezelő"
@@ -8962,6 +9560,17 @@ msgstr "Élesítés követelmény tiltása"
 msgid "Disable Arm"
 msgstr "Élesítés tiltása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/laserpanel.py:700 meerk40t/gui/wxmeerk40t.py:251
+msgid ""
+"We intentionally ignored a request to start a job via the keyboard.\n"
+"You need to make your intent clear by a deliberate mouse-click"
+msgstr ""
+"Szándékosan figyelmen kívül hagytuk a billentyűzettel indított feladatkérést.\n"
+"A szándékát egy szándékos egérkattintással kell jeleznie"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/laserpanel.py:705 meerk40t/gui/wxmmain.py:1756
 msgid "Preparing Laserjob..."
 msgstr "Lézerfeladat előkészítése..."
@@ -9038,6 +9647,18 @@ msgstr "B"
 msgid "C"
 msgstr "C"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/lasertoolpanel.py:116
+msgid ""
+"Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\n"
+"MK will find the center for you and place the laser above it or will recreate the circle for further processing."
+msgstr ""
+"Utasítás: helyezze a lézert az ágyon lévő kör kerületének három pontjára, majd erősítse meg a pozíciót az alábbi gombokra kattintva.\n"
+"Az MK megtalálja Önnek a középpontot, és oda helyezi a lézert, vagy újra létrehozza a kört további feldolgozáshoz."
+
+#: meerk40t/gui/lasertoolpanel.py:123 meerk40t/gui/lasertoolpanel.py:197
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/lasertoolpanel.py:295
 msgid "Make reference"
 msgstr "Referencia létrehozása"
@@ -9066,6 +9687,17 @@ msgstr "Sarok 1"
 msgid "Corner 2"
 msgstr "Sarok 2"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/lasertoolpanel.py:190
+msgid ""
+"Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\n"
+"MK will create a rectangle for you for further processing."
+msgstr ""
+"Utasítás: helyezze a lézert a befoglaló téglalap egyik sarkára, majd erősítse meg a pozíciót az alábbi gombokra kattintva. Ezután válassza ki az ellenkező sarkot.\n"
+"Az MK létrehoz Önnek egy téglalapot további feldolgozáshoz."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/lasertoolpanel.py:205
 msgid "Create frame"
 msgstr "Keret létrehozása"
@@ -9094,6 +9726,17 @@ msgstr "Méret"
 msgid "Extension of the square to create"
 msgstr "Létrehozandó négyzet kiterjesztése"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/lasertoolpanel.py:288
+msgid ""
+"Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\n"
+"MK will create a square for you for further processing."
+msgstr ""
+"Utasítás: helyezze a lézert az ágyon lévő négyzet egyik oldalának két pontjára, majd erősítse meg a pozíciót az alábbi gombokra kattintva. Ezután válassza ki az egyik pontot a sarok másik oldalán.\n"
+"Az MK létrehoz Önnek egy négyzetet további feldolgozáshoz."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/lasertoolpanel.py:298
 msgid "Mark Corner"
 msgstr "Sarok megjelölése"
@@ -9319,6 +9962,25 @@ msgstr "Kattintson a fájlok kiválasztásához"
 msgid "This will group entries with the same material description together"
 msgstr "Ez az azonos anyagjellemzővel rendelkező bejegyzéseket csoportosítja"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/materialmanager.py:153
+msgid ""
+"If active, power and speed values will be adjusted,\n"
+"to accommodate different lens-sizes"
+msgstr ""
+"Ha aktív, a teljesítmény- és sebességértékek módosulnak,\n"
+"hogy illeszkedjenek a különböző lencseméretekhez"
+
+#: meerk40t/gui/materialmanager.py:158
+msgid ""
+"If active, power and speed values will be adjusted,\n"
+"to accommodate different laser power"
+msgstr ""
+"Ha aktív, a teljesítmény- és sebességértékek módosulnak,\n"
+"hogy illeszkedjenek a különböző lézerteljesítményekhez"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/materialmanager.py:170
 msgid "Choose a library-file"
 msgstr "Válasszon egy könyvtárfájlt"
@@ -9371,6 +10033,17 @@ msgstr "Cím"
 msgid "Set"
 msgstr "Beállítás"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/materialmanager.py:437
+msgid ""
+"Change the name / lasertype of the current entry\n"
+"Right-Click: assign lasertype to all visible entries"
+msgstr ""
+"Aktuális bejegyzés nevének / lézertípusának módosítása\n"
+"Jobb kattintás: lézertípus hozzárendelése az összes látható bejegyzéshez"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/materialmanager.py:500
 msgid "W"
 msgstr "W"
@@ -9483,14 +10156,49 @@ msgstr "Nincs anyag"
 msgid "No thickness"
 msgstr "Nincs vastagság"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/materialmanager.py:905
+msgid ""
+"Thank you for your willingness to share your material setting with the MeerK40t community.\n"
+"Please provide a name to honor your authorship."
+msgstr ""
+"Köszönjük, hogy hajlandó megosztani anyagbeállításait a MeerK40t közösséggel.\n"
+"Kérjük, adja meg nevét a szerzői jog elismerésére."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/materialmanager.py:906
 msgid "Share material setting"
 msgstr "Anyagbeállítás megosztása"
 
+<<<<<<< HEAD
 #: meerk40t/gui/wxmeerk40t.py:1342
 msgid "Thanks"
 msgstr "Köszönöm"
 
+=======
+#: meerk40t/gui/materialmanager.py:1024
+msgid ""
+"We got your file. Thank you for helping\n"
+"\n"
+msgstr ""
+"Megkaptuk a fájlt. Köszönjük a segítséget\n"
+"\n"
+
+#: meerk40t/gui/materialmanager.py:1025 meerk40t/gui/materialmanager.py:1035
+#: meerk40t/gui/wxmeerk40t.py:1325 meerk40t/gui/wxmeerk40t.py:1342
+msgid "Thanks"
+msgstr "Köszönöm"
+
+#: meerk40t/gui/materialmanager.py:1034
+msgid ""
+"We're sorry, that didn't work.\n"
+"\n"
+msgstr ""
+"Sajnáljuk, ez nem működött.\n"
+"\n"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/materialmanager.py:1088
 msgid "Do you really want to delete this entry? This can't be undone."
 msgstr "Biztosan törölni szeretné ezt a bejegyzést? Ez nem vonható vissza."
@@ -9513,7 +10221,11 @@ msgstr ""
 msgid "Clear Operation-List"
 msgstr "Műveletlista törlése"
 
+<<<<<<< HEAD
 #: meerk40t/gui/materialmanager.py:1841
+=======
+#: meerk40t/gui/materialmanager.py:1775 meerk40t/gui/materialmanager.py:1841
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "New material"
 msgstr "Új anyag"
 
@@ -9573,6 +10285,10 @@ msgstr "Könyvtár"
 msgid "How to use"
 msgstr "Használat"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/materialmanager.py:2895 meerk40t/gui/materialmanager.py:2917
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/defaultoperations.py:316
 msgid "Material Library"
 msgstr "Anyagkönyvtár"
@@ -9972,7 +10688,11 @@ msgstr "Elem transzformációs panel megjelenítése"
 msgid "Edit default jog distance"
 msgstr "Alapértelmezett léptetési távolság szerkesztése"
 
+<<<<<<< HEAD
 #: meerk40t/gui/navigationpanels.py:533
+=======
+#: meerk40t/gui/navigationpanels.py:465 meerk40t/gui/navigationpanels.py:533
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Move the laser to the defined Z-Home-Position"
 msgstr "A lézer mozgatása a definiált Z-Alap pozícióba"
 
@@ -10048,7 +10768,11 @@ msgstr "A kijelölés konvex burkának nyomon követése"
 msgid "Perform a simple trace of the selection (Right=Circle around)"
 msgstr "A kijelölés egyszerű nyomon követése (Jobb=Kör körül)"
 
+<<<<<<< HEAD
 #: meerk40t/gui/navigationpanels.py:1726
+=======
+#: meerk40t/gui/navigationpanels.py:944 meerk40t/gui/navigationpanels.py:1726
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Cannot move outside bed dimensions"
 msgstr "Nem mozgatható az ágy méretein kívül"
 
@@ -10092,7 +10816,11 @@ msgstr "A lézer sín feloldása"
 msgid "Lock the laser rail"
 msgstr "A lézer sín zárolása"
 
+<<<<<<< HEAD
 #: meerk40t/gui/navigationpanels.py:1378
+=======
+#: meerk40t/gui/navigationpanels.py:1200 meerk40t/gui/navigationpanels.py:1378
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Limit laser movement to bed size"
 msgstr "Lézermozgás korlátozása az ágy méretére"
 
@@ -10108,7 +10836,19 @@ msgstr "Lézer küldése alap pozícióba"
 msgid "(Middle Button: jump to first jobstart)"
 msgstr "(Középső gomb: ugrás az első feladatindításhoz)"
 
+<<<<<<< HEAD
 #: meerk40t/gui/navigationpanels.py:1695
+=======
+#: meerk40t/gui/navigationpanels.py:1565 meerk40t/gui/navigationpanels.py:1694
+msgid ""
+"Left click to go to saved position\n"
+"Right click to save coordinates"
+msgstr ""
+"Bal kattintás a mentett pozícióra ugráshoz\n"
+"Jobb kattintás a koordináták mentéséhez"
+
+#: meerk40t/gui/navigationpanels.py:1566 meerk40t/gui/navigationpanels.py:1695
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Current: "
 msgstr "Aktuális: "
 
@@ -10222,6 +10962,75 @@ msgstr ""
 
 "Elforgatás az óramutató járásával megegyező irányba 5° / 90°-kal bal / jobb "
 "kattintással"
+<<<<<<< HEAD
+=======
+
+#: meerk40t/gui/navigationpanels.py:2291
+msgid ""
+"Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 "
+"means 200% of the original scale. You may enter either this factor directly "
+"or state the scale as a %-value, so 0.5 or 50% will both cut the scale in "
+"half."
+msgstr ""
+"X-lépték - az elemet ezzel a tényezővel méretezi az X-irányban, pl. 2.0 "
+"200%-át jelenti az eredeti léptéknek. Ezt a tényezőt közvetlenül is "
+"megadhatja, vagy a léptéket %-értékként is megadhatja, így 0.5 vagy 50% is "
+"félre vágja a léptéket."
+
+#: meerk40t/gui/navigationpanels.py:2298
+msgid ""
+"Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 "
+"means 200% of the original scale. You may enter either this factor directly "
+"or state the scale as a %-value, so 0.5 or 50% will both cut the scale in "
+"half."
+msgstr ""
+"Y-lépték - az elemet ezzel a tényezővel méretezi az Y-irányban, pl. 2.0 "
+"200%-át jelenti az eredeti léptéknek. Ezt a tényezőt közvetlenül is "
+"megadhatja, vagy a léptéket %-értékként is megadhatja, így 0.5 vagy 50% is "
+"félre vágja a léptéket."
+
+#: meerk40t/gui/navigationpanels.py:2307
+msgid ""
+"Skew X - to skew the element in X-direction by alpha° you need either \n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+"- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+"In any case this value will then be represented as tan(alpha)"
+msgstr ""
+"X-ferdeség - az elem X-irányú elferdítéséhez alfa° mértékben a következőre van szüksége:\n"
+"- tan(alpha) megadására, pl. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 és így tovább...\n"
+"- vagy az szög megadására 15deg, 0.25turn formában (mint minden más szög)\n"
+"Mindenesetre ez az érték tan(alpha) formájában lesz reprezentálva"
+
+#: meerk40t/gui/navigationpanels.py:2316
+msgid ""
+"Skew Y - to skew the element in Y-direction by alpha° you need either \n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+"- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+"In any case this value will then be represented as tan(alpha)"
+msgstr ""
+"Y-ferdeség - az elem Y-irányú elferdítéséhez alfa° mértékben a következőre van szüksége:\n"
+"- tan(alpha) megadására, pl. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 és így tovább...\n"
+"- vagy az szög megadására 15deg, 0.25turn formában (mint minden más szög)\n"
+"Mindenesetre ez az érték tan(alpha) formájában lesz reprezentálva"
+
+#: meerk40t/gui/navigationpanels.py:2323 meerk40t/gui/navigationpanels.py:2520
+msgid ""
+"Translate X - moves the element by this amount of mils in the X-direction; "
+"you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+msgstr ""
+"X eltolás - ennyi milliliterrel mozgatja az elemet az X-irányban; valódi "
+"távolságokat is használhat a tényező módosításakor, pl. 2in, 3cm, 50mm"
+
+#: meerk40t/gui/navigationpanels.py:2330 meerk40t/gui/navigationpanels.py:2525
+msgid ""
+"Translate Y - moves the element by this amount of mils in the Y-direction; "
+"you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+msgstr ""
+"Y eltolás - ennyi milliliterrel mozgatja az elemet az Y-irányban; valódi "
+"távolságokat is használhat a tényező módosításakor, pl. 2in, 3cm, 50mm"
+
+#: meerk40t/gui/navigationpanels.py:2361
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:27
 msgid "Skew"
 msgstr "Ferdeség"
@@ -10230,7 +11039,11 @@ msgstr "Ferdeség"
 msgid "Translate"
 msgstr "Eltolás"
 
+<<<<<<< HEAD
 #: meerk40t/gui/navigationpanels.py:2526
+=======
+#: meerk40t/gui/navigationpanels.py:2521 meerk40t/gui/navigationpanels.py:2526
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Current internal value: "
 msgstr "Aktuális belső érték: "
 
@@ -10521,18 +11334,34 @@ msgstr "Egyedileg."
 msgid "Keep ratio"
 msgstr "Arány megtartása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/position.py:224 meerk40t/gui/propertypanels/attributes.py:1012
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:364
 msgid "New height (enter to apply)"
 msgstr "Új magasság (alkalmazáshoz enter)"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/position.py:225 meerk40t/gui/propertypanels/attributes.py:1013
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:365
 msgid "New width (enter to apply)"
 msgstr "Új szélesség (alkalmazáshoz enter)"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/position.py:227 meerk40t/gui/propertypanels/attributes.py:1015
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:367
 msgid "New X-coordinate of left top corner (enter to apply)"
 msgstr "Bal felső sarok új X-koordinátája (alkalmazáshoz enter)"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/position.py:230 meerk40t/gui/propertypanels/attributes.py:1018
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:370
 msgid "New Y-coordinate of left top corner (enter to apply)"
 msgstr "Bal felső sarok új Y-koordinátája (alkalmazáshoz enter)"
@@ -10545,6 +11374,18 @@ msgstr "Változások alkalmazása az összes kiemelt elemre a jelenetben"
 msgid "If checked then the aspect ratio (width / height) will be maintained"
 msgstr "Ha bejelölve, akkor a képarány (szélesség / magasság) megmarad"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/position.py:247
+#: meerk40t/gui/statusbarwidgets/shapepropwidget.py:379
+msgid ""
+"Set the point of reference for the element,\n"
+"which edge/corner should be put on the given location"
+msgstr ""
+"Az elem referenciapontjának beállítása,\n"
+"melyik él/sarok kerüljön a megadott helyre"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/preferences.py:39
 msgid "Units"
 msgstr "Mértékegységek"
@@ -10573,6 +11414,19 @@ msgstr "Az aktuális beállítások exportálása más helyre"
 msgid "Import a previously saved setting file"
 msgstr "Korábban mentett beállításfájl importálása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/preferences.py:187
+msgid ""
+"The modified configuration has been saved.\n"
+"Please note further changes to your configuration will not be saved until the end of the program.\n"
+"So please exit MeerK40t as soon as possible."
+msgstr ""
+"A módosított konfiguráció mentve lett.\n"
+"Kérjük, vegye figyelembe, hogy a további konfigurációs változtatások nem lesznek mentve a program befejezéséig.\n"
+"Ezért kérjük, mielőbb lépjen ki a MeerK40t-ből."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/preferences.py:248
 msgid "Clear..."
 msgstr "Törlés..."
@@ -10775,6 +11629,19 @@ msgstr "Megnyitás"
 msgid "Cleaning up..."
 msgstr "Tisztítás..."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/simpleui.py:186 meerk40t/gui/wxmmain.py:718
+#: meerk40t/gui/wxmmain.py:5605
+msgid ""
+"Some files were unrecognized:\n"
+"{rejected_files}"
+msgstr ""
+"Néhány fájl ismeretlen volt:\n"
+"{rejected_files}"
+
+#: meerk40t/gui/simpleui.py:190 meerk40t/gui/wxmmain.py:720
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:5609
 msgid "Error encountered"
 msgstr "Hiba történt"
@@ -11270,6 +12137,17 @@ msgstr "Világos"
 msgid "Image missing!"
 msgstr "Hiányzó kép!"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/tips.py:75
+msgid ""
+"Couldn't find the cached image for this tip!\n"
+"No permissions to download from the internet."
+msgstr ""
+"Nem található az ehhez a tipphez gyorsítótárazott kép!\n"
+"Nincs engedély az internetről történő letöltésre."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/tips.py:90
 msgid "Previous tip"
 msgstr "Előző tipp"
@@ -11290,18 +12168,116 @@ msgstr "Ugrás a következő tippre"
 msgid "Show tips at startup"
 msgstr "Tippek megjelenítése indításkor"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/tips.py:115
+msgid ""
+"Show tips at program start.\n"
+"Even if disabled, 'Tips & Tricks' are always available in the Help-menu."
+msgstr ""
+"Tippek megjelenítése a program indításakor.\n"
+"Letiltás esetén is mindig elérhetők a 'Tippek és trükkök' a Súgó menüben."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/tips.py:120
 msgid "Try it out"
 msgstr "Kipróbálás"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/tips.py:125
+msgid ""
+"Launch an example, please be aware that this might change your design,\n"
+"as new elements could be created to show the functionality"
+msgstr ""
+"Példa indítása, kérjük, vegye figyelembe, hogy ez megváltoztathatja a tervét,\n"
+"mivel új elemek jöhetnek létre a funkcionalitás bemutatására"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/tips.py:128
 msgid "Automatically Update"
 msgstr "Automatikus frissítés"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/tips.py:136
+msgid ""
+"Look for new tips on MeerK40ts website.\n"
+"The list of tips is constantly expanded.\n"
+msgstr ""
+"Új tippek keresése a MeerK40t weboldalán.\n"
+"A tippek listája folyamatosan bővül.\n"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/tips.py:203
 msgid "Tip {idx}/{maxidx}"
 msgstr "Tipp {idx}/{maxidx}"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/tips.py:354
+msgid ""
+"Do you want to get extended information about a feature in MeerK40t?\n"
+"Just place your mouse over a window or an UI-element and press F11."
+msgstr ""
+"Szeretne bővebb információt kapni a MeerK40t egy funkciójáról?\n"
+"Csak helyezze az egeret egy ablakra vagy egy felhasználói felületi elemre, és nyomja meg az F11-et."
+
+#: meerk40t/gui/tips.py:366
+msgid ""
+"MeerK40t supports more than 'just' a K40 laser.\n"
+"You can add more devices in the Device-Manager.\n"
+"And you can even add multiple instances for the same physical device, where you can have different configuration settings (eg regular and rotary)."
+msgstr ""
+"A MeerK40t több lézereszközt támogat, mint „csak” egy K40-es lézert.\n"
+"Eszközkezelőben további eszközöket adhat hozzá.\n"
+"Sőt, ugyanahhoz a fizikai eszközhöz több példányt is hozzáadhat, ahol különböző konfigurációs beállításokat (pl. normál és forgó) használhat."
+
+#: meerk40t/gui/tips.py:376
+msgid ""
+"There are a couple of YouTube-videos that deal with some specific functionalities and explain their usage:\n"
+"https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
+msgstr ""
+"Van néhány YouTube-videó, amelyek bizonyos funkciókkal foglalkoznak és elmagyarázzák azok használatát:\n"
+"https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
+
+#: meerk40t/gui/tips.py:386
+msgid ""
+"More instructional videos? Sure, here is another channel:\n"
+"\n"
+"https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
+msgstr ""
+"Több oktatóvideó? Persze, itt van még egy csatorna:\n"
+"\n"
+"https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
+
+#: meerk40t/gui/tips.py:395
+msgid ""
+"MeerK40t can create a so called outline around an element.\n"
+"Just select the element, right click on top of it to get the context menu and choose from the 'Outline elements' menu..."
+msgstr ""
+"A MeerK40t képes körvonalat létrehozni egy elem körül.\n"
+"Egyszerűen válassza ki az elemet, kattintson rá jobb gombbal a helyi menü előhívásához, és válasszon az 'Elemek körvonalazása' menüből..."
+
+#: meerk40t/gui/tips.py:404
+msgid ""
+"MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\n"
+"Just open the console window and type 'help'"
+msgstr ""
+"A MeerK40t kiterjedt parancskészlettel rendelkezik, amely számos szkriptelhető műveletet tesz lehetővé.\n"
+"Csak nyissa meg a konzol ablakot és írja be a 'help' parancsot"
+
+#: meerk40t/gui/tips.py:415
+msgid ""
+"Do you want to see more Tips & Tricks?\n"
+"Just click on the 'Update'-button to load additional hints from MeerK40ts website.\n"
+"The list of tips is constantly expanded, so please update it every now and then to learn about new or hidden features."
+msgstr ""
+"Szeretne további tippeket és trükköket látni?\n"
+"Csak kattintson a 'Frissítés' gombra, hogy további tippeket töltsön be a MeerK40t weboldaláról.\n"
+"A tippek listája folyamatosan bővül, ezért időről időre frissítse, hogy értesüljön az új vagy rejtett funkciókról."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/tips.py:585
 msgid "Tips"
 msgstr "Tippek"
@@ -11649,6 +12625,17 @@ msgstr "Mértékegységek fordítása"
 msgid "You need to provide a value to translate"
 msgstr "Meg kell adnia egy értéket a fordításhoz"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmeerk40t.py:1114
+msgid ""
+"This uses the 'play' command that comes with the sox package,\n"
+"so you might need to install it with 'sudo apt install sox' first."
+msgstr ""
+"Ez a 'play' parancsot használja, amely a sox csomaggal érkezik,\n"
+"így először telepítenie kell a 'sudo apt install sox' paranccsal."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmeerk40t.py:1128
 msgid "Single Instance"
 msgstr "Egyetlen példány"
@@ -11661,10 +12648,49 @@ msgstr "Csak egyetlen MeerK40t példány engedélyezése."
 msgid "Soundfile"
 msgstr "Hangfájl"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmeerk40t.py:1142
+msgid ""
+"Define the soundfile MeerK40t will play when the 'beep' command is issued"
+msgstr ""
+"Definiálja a hangfájlt, amelyet a MeerK40t lejátszik, amikor a 'beep' "
+"parancs kiadásra kerül"
+
+#: meerk40t/gui/wxmeerk40t.py:1324
+msgid ""
+"We got your message. Thank you for helping\n"
+"\n"
+msgstr ""
+"Megkaptuk üzenetét. Köszönjük a segítséget\n"
+"\n"
+
+#: meerk40t/gui/wxmeerk40t.py:1338
+msgid ""
+"We're sorry, that didn't work. Raise an issue on the github please.\n"
+"\n"
+" The log file will be in your working directory.\n"
+msgstr ""
+"Sajnáljuk, ez nem működött. Kérjük, hozzon létre egy hibajelentést a GitHub-on.\n"
+"\n"
+" A naplófájl a munkakönyvtárában található.\n"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmeerk40t.py:1385
 msgid "Quit"
 msgstr "Kilépés"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmeerk40t.py:1487
+msgid ""
+"Only the crash details below are sent. No data from your MeerK40t project is sent. No personal information is sent either.\n"
+"Send the following data to the MeerK40t team?"
+msgstr ""
+"Csak az alábbi összeomlási részletek kerülnek elküldésre. A MeerK40t projektjéből semmilyen adat nem kerül elküldésre. Személyes adatok sem kerülnek elküldésre.\n"
+"Elküldi a következő adatokat a MeerK40t csapatának?"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmeerk40t.py:1488
 msgid "Crash Detected! Send Log?"
 msgstr "Összeomlás észlelve! Napló küldése?"
@@ -11673,6 +12699,17 @@ msgstr "Összeomlás észlelve! Napló küldése?"
 msgid "Autosave workspace"
 msgstr "Munkaterület automatikus mentése"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:192
+msgid ""
+"If active then the current workspace will be saved every x minutes\n"
+"Filename: {file}"
+msgstr ""
+"Ha aktív, az aktuális munkaterület x percenként mentésre kerül\n"
+"Fájlnév: {file}"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:204
 msgid "Every 30 seconds"
 msgstr "Minden 30 másodpercben"
@@ -11847,10 +12884,32 @@ msgstr ""
 msgid "Mini icon in tree"
 msgstr "Mini ikon a fában"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:1203
+msgid ""
+"Active: Display a miniature representation of the element in the tree\n"
+"Inactive: Use a standard icon for the element type instead"
+msgstr ""
+"Aktív: Az elem miniatűr megjelenítése a fában\n"
+"Inaktív: Helyette szabványos ikon használata az elemtípushoz"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:1213
 msgid "Color entries in tree"
 msgstr "Színes bejegyzések a fában"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:1217
+msgid ""
+"Active: The tree entry will be displayed in the objects color\n"
+"Inactive: Standard Colors are used"
+msgstr ""
+"Aktív: A fa bejegyzés az objektum színében jelenik meg\n"
+"Inaktív: Standard színek kerülnek felhasználásra"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:1248
 msgid "Default zoom margin:"
 msgstr "Alapértelmezett nagyítási margó:"
@@ -11949,6 +13008,17 @@ msgstr "Rácspont illesztési küszöb"
 msgid "Clear magnets on File/New"
 msgstr "Mágnesek törlése Fájl/Új esetén"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:1480
+msgid ""
+"File/New can remove all defined magnetlines (active)\n"
+"or leave them in place (inactive)"
+msgstr ""
+"Fájl/Új menüpont törölheti az összes definiált mágnesvonalat (aktív)\n"
+"vagy a helyén hagyhatja őket (inaktív)"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:1495
 msgid "Use in-scene tool-menu"
 msgstr "Jeleneten belüli eszköztár használata"
@@ -11957,10 +13027,36 @@ msgstr "Jeleneten belüli eszköztár használata"
 msgid "Button repeat-interval"
 msgstr "Gomb ismétlési intervallum"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:1514
+msgid ""
+"If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+"the movement action will be repeated. This value establishes\n"
+"the interval between individual executions.\n"
+"A value of 0 will disable this feature."
+msgstr ""
+"Ha lenyomva tartja az egérgombot a Jog/Húzó paneleken,\n"
+"a mozgás ismétlődni fog. Ez az érték határozza meg\n"
+"az egyes végrehajtások közötti intervallumot.\n"
+"A 0 érték letiltja ezt a funkciót."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:1525
 msgid "Accelerate repeats"
 msgstr "Ismétlések gyorsítása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:1529
+msgid ""
+"If you hold the button for some time, then after some repetitions\n"
+"the action will increase in speed if you activate this option."
+msgstr ""
+"Ha egy ideig lenyomva tartja a gombot, akkor bizonyos ismétlések után\n"
+"a művelet felgyorsul, ha bekapcsolja ezt az opciót."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:1540
 msgid "Create a single element only"
 msgstr "Csak egyetlen elem létrehozása"
@@ -12166,10 +13262,40 @@ msgstr "Téglalap elem hozzáadása"
 msgid "Polygon"
 msgstr "Sokszög"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:2196
+msgid ""
+"Add a polygon element\n"
+"Left click: point/line\n"
+"Double click: complete\n"
+"Right click: cancel"
+msgstr ""
+"Sokszög elem hozzáadása\n"
+"Bal kattintás: pont/vonal\n"
+"Dupla kattintás: befejezés\n"
+"Jobb kattintás: megszakítás"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:2208
 msgid "Polyline"
 msgstr "Polivonal"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:2212
+msgid ""
+"Add a polyline element\n"
+"Left click: point/line\n"
+"Double click: complete\n"
+"Right click: cancel"
+msgstr ""
+"Polivonal elem hozzáadása\n"
+"Bal kattintás: pont/vonal\n"
+"Dupla kattintás: befejezés\n"
+"Jobb kattintás: megszakítás"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:2224
 msgid "Point"
 msgstr "Pont"
@@ -12182,6 +13308,23 @@ msgstr "Pont hozzáadása a jelenethez"
 msgid "Vector"
 msgstr "Vektor"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:2242
+msgid ""
+"Add a shape\n"
+"Left click: point/line\n"
+"Click and hold: curve\n"
+"Double click: complete\n"
+"Right click: end"
+msgstr ""
+"Alakzat hozzáadása\n"
+"Bal kattintás: pont/vonal\n"
+"Kattintás és tartás: görbe\n"
+"Dupla kattintás: befejezés\n"
+"Jobb kattintás: vége"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:2254
 msgid "Draw"
 msgstr "Rajzolás"
@@ -12238,6 +13381,21 @@ msgstr "Ismétlés"
 msgid "Measure"
 msgstr "Mérés"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:2449
+msgid ""
+"Measure distance / perimeter / area\n"
+"Left click: point/line\n"
+"Double click: complete\n"
+"Right click: cancel"
+msgstr ""
+"Távolság / kerület / terület mérése\n"
+"Bal kattintás: pont/vonal\n"
+"Dupla kattintás: befejezés\n"
+"Jobb kattintás: megszakítás"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:2464
 msgid "Flip Vertical"
 msgstr "Függőleges tükrözés"
@@ -12406,6 +13564,17 @@ msgstr "A megadott parancs nem csinál semmit."
 msgid "Non-Useful Matrix."
 msgstr "Haszontalan mátrix."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:3031
+msgid ""
+"Material must be jigged at 0,0.\n"
+"How wide is your material (give units: in, mm, cm, px, etc)?"
+msgstr ""
+"Az anyagot 0,0 ponton kell rögzíteni.\n"
+"Milyen széles az anyag (adja meg mértékegységben: in, mm, cm, px, stb)?"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:3032
 msgid "Double Side Flip"
 msgstr "Kétoldalas megfordítás"
@@ -12832,7 +14001,11 @@ msgstr "Változók megjelenítése"
 msgid "Replace variables in textboxes by their 'real' content"
 msgstr "Változók lecserélése a szövegmezőkben a 'valódi' tartalmukkal"
 
+<<<<<<< HEAD
 #: meerk40t/gui/propertypanels/blobproperty.py:31
+=======
+#: meerk40t/gui/wxmmain.py:4544 meerk40t/gui/propertypanels/blobproperty.py:31
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "View"
 msgstr "Nézet"
 
@@ -12964,6 +14137,19 @@ msgstr "Az eszköz aktívan adatokat küld. Valóban kilép?"
 msgid "Currently Sending Data..."
 msgstr "Jelenleg adatok küldése..."
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:4918
+msgid ""
+"Save changes to project before closing?\n"
+"\n"
+"Your changes will be lost if you do not save them."
+msgstr ""
+"Mentse a projekt módosításait bezárás előtt?\n"
+"\n"
+"A módosítások elvesznek, ha nem menti őket."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:4920
 msgid "Save Project..."
 msgstr "Projekt mentése..."
@@ -13060,6 +14246,17 @@ msgstr "Vízszintes:"
 msgid "Vertical:"
 msgstr "Függőleges:"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:5575
+msgid ""
+"This file contains an active autostart sequence!\n"
+"Do you wish to execute it?"
+msgstr ""
+"Ez a fájl aktív automatikus indítási sorozatot tartalmaz!\n"
+"Szeretné végrehajtani?"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:5576
 msgid "Execute"
 msgstr "Végrehajtás"
@@ -13072,6 +14269,25 @@ msgstr "Indítási sorozat található"
 msgid "No help text"
 msgstr "Nincs súgó szöveg"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmmain.py:5849
+msgid ""
+"Apparently MeerK40t did crash during the last session, we apologize for this"
+" invconvenience."
+msgstr ""
+"Úgy tűnik, a MeerK40t az utolsó munkamenet során összeomlott, elnézést "
+"kérünk a kellemetlenségért."
+
+#: meerk40t/gui/wxmmain.py:5855
+msgid ""
+"There is an autosave file ({filename}),\n"
+"that was last saved at {filedate}."
+msgstr ""
+"Van egy automatikus mentés fájl ({filename}),\n"
+"amelyet utoljára ekkor mentettünk: {filedate}."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmmain.py:5858
 msgid "Do you want to load this file?"
 msgstr "Szeretné betölteni ezt a fájlt?"
@@ -13108,6 +14324,17 @@ msgstr "Ikonos sáv objektummódosító eszközökkel"
 msgid "Show the Ribbon Labels"
 msgstr "Szalagcímkék megjelenítése"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmribbon.py:136
+msgid ""
+"Active: Show the labels for ribbonbar.\n"
+"Inactive: Hide the ribbon labels."
+msgstr ""
+"Aktív: Szalagcímkék megjelenítése.\n"
+"Inaktív: Szalagcímkék elrejtése."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmribbon.py:453 meerk40t/gui/wxmribbon.py:1452
 msgid "This could be your tooltip"
 msgstr "Ez lehet az Ön eszköztippje"
@@ -13509,6 +14736,56 @@ msgid "You have elements in disabled operations, that won't be burned"
 msgstr ""
 
 "Vannak letiltott műveletekben lévő elemek, amelyek nem lesznek beégetve"
+<<<<<<< HEAD
+=======
+
+#: meerk40t/gui/wxmtree.py:2105
+msgid ""
+"This is binary data imported or generated\n"
+"that will be sent directly to the laser.\n"
+"Double-click to view."
+msgstr ""
+"Ez importált vagy generált bináris adat,\n"
+"amelyet közvetlenül a lézernek küldünk.\n"
+"Kattintson duplán a megtekintéshez."
+
+#: meerk40t/gui/wxmtree.py:2111
+msgid ""
+"This will engrave/cut the elements contained,\n"
+"following the vector-paths of the data.\n"
+"(Usually done last)"
+msgstr ""
+"Ez gravírozza/vágja a benne lévő elemeket,\n"
+"az adatok vektoros útvonalait követve.\n"
+"(Általában utoljára történik)"
+
+#: meerk40t/gui/wxmtree.py:2116
+msgid ""
+"This will engrave the elements contained,\n"
+"following the vector-paths of the data."
+msgstr ""
+"Ez gravírozza a benne lévő elemeket,\n"
+"az adatok vektoros útvonalait követve."
+
+#: meerk40t/gui/wxmtree.py:2121
+msgid ""
+"This engraves already created images pixel by pixel,\n"
+"applying the settings to the individual pictures"
+msgstr ""
+"Ez a már elkészített képeket pixelről pixelre gravírozza,\n"
+"a beállításokat az egyes képekre alkalmazva"
+
+#: meerk40t/gui/wxmtree.py:2127
+msgid ""
+"This will render all contained elements\n"
+"into an intermediary image which then will be\n"
+"engraved pixel by pixel."
+msgstr ""
+"Ez az összes benne lévő elemet\n"
+"egy köztes képpé rendereli, amelyet aztán\n"
+"pixelről pixelre gravíroz."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmtree.py:2131
 msgid "This will engrave a single point for a given period of time"
 msgstr "Ez egyetlen pontot gravíroz egy adott ideig"
@@ -13536,10 +14813,42 @@ msgstr ""
 msgid "This will pause the engrave process for a given period"
 msgstr "Ez szünetelteti a gravírozási folyamatot egy adott időre"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmtree.py:2160
+msgid ""
+"The elements under this section will not be engraved,\n"
+"they can serve as a template or registration marks."
+msgstr ""
+"Az ebben a szakaszban lévő elemek nem kerülnek gravírozásra,\n"
+"sablonként vagy regisztrációs jelölésként szolgálhatnak."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmtree.py:2206
 msgid "This is a placeholder for the 'place current' operation"
 msgstr "Ez egy helyőrző a 'helyezze az aktuálisat' művelethez"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/wxmtree.py:2211
+msgid ""
+"This will define an origin from where all the elements in this scene\n"
+"will be plotted. You can have multiple such job start points"
+msgstr ""
+"Ez egy kiindulópontot határoz meg, ahonnan a jelenet összes eleme\n"
+"kirajzolásra kerül. Több ilyen feladat kezdőpont is lehet."
+
+#: meerk40t/gui/wxmtree.py:2217
+msgid ""
+"This is a special node that will consume any other closed path\n"
+"you drag onto it and will fill the shape with a line pattern.\n"
+"To activate / deactivate this effect please use the context menu."
+msgstr ""
+"Ez egy speciális csomópont, amely bármely más zárt útvonalat\n"
+"felfal, amelyet rávonszol, és a formát vonalmintával tölti ki.\n"
+"Ennek a hatásnak az aktiválásához / deaktiválásához használja a helyi menüt."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/wxmtree.py:2258
 msgid "HIDDEN: "
 msgstr "REJTETT: "
@@ -14065,6 +15374,17 @@ msgstr "{entry} alkalmazása"
 msgid "Apply Script"
 msgstr "Szkript alkalmazása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/imageproperty.py:1208
+msgid ""
+"Apply image modification script\n"
+"Right click: append to existing script"
+msgstr ""
+"Képmódosító szkript alkalmazása\n"
+"Jobb kattintás: hozzáfűzés a meglévő szkripthez"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/imageproperty.py:1211
 msgid "Remove all image operations"
 msgstr "Összes képkezelési művelet eltávolítása"
@@ -14109,6 +15429,31 @@ msgstr "Vektorizálás"
 msgid "Turnpolicy"
 msgstr "Fordulási politika"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/imageproperty.py:1507
+msgid ""
+"This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n"
+"\n"
+"BLACK: prefers to connect black (foreground) components.\n"
+"WHITE: prefers to connect white (background) components.\n"
+"LEFT: always take a left turn.\n"
+"RIGHT: always take a right turn.\n"
+"MINORITY: prefers to connect the color (black or white) that occurs least frequently in a local neighborhood of the current position.\n"
+"MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
+"RANDOM: choose randomly."
+msgstr ""
+"Ez a paraméter határozza meg, hogyan oldja meg az átfedéseket a bitképek útvonalakra bontása során.\n"
+"\n"
+"BLACK: a fekete (előtér) komponensek összekapcsolását preferálja.\n"
+"WHITE: a fehér (háttér) komponensek összekapcsolását preferálja.\n"
+"LEFT: mindig balra fordul.\n"
+"RIGHT: mindig jobbra fordul.\n"
+"MINORITY: azt a színt (fekete vagy fehér) preferálja, amely a legkevésbé gyakori az aktuális pozíció környékén.\n"
+"MAJORITY: azt a színt (fekete vagy fehér) preferálja, amely a leggyakrabban fordul elő az aktuális pozíció környékén.\n"
+"RANDOM: véletlenszerű választás."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/imageproperty.py:1515
 msgid "Despeckle"
 msgstr "Foltok eltávolítása"
@@ -14121,6 +15466,33 @@ msgstr "Elnyomja az akár ilyen méretű (alapértelmezett 2 px) foltokat"
 msgid "Corners"
 msgstr "Sarkok"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/imageproperty.py:1536
+msgid ""
+"This parameter is a threshold for the detection of corners. It controls the "
+"smoothness of the traced curve."
+msgstr ""
+"Ez a paraméter a sarkok felismerésének küszöbértéke. A nyomon követett görbe"
+" simaságát szabályozza."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1551
+msgid ""
+"Try to 'simplify' the final curve by reducing the number of Bezier curve "
+"segments."
+msgstr ""
+"Próbálja 'egyszerűsíteni' a végső görbét a Bezier görbeszegmensek számának "
+"csökkentésével."
+
+#: meerk40t/gui/propertypanels/imageproperty.py:1568
+msgid ""
+"This defines the amount of error allowed in this simplification.\n"
+"Larger values tend to decrease the number of segments, at the expense of less accuracy."
+msgstr ""
+"Ez határozza meg a megengedett hiba mértékét ebben az egyszerűsítésben.\n"
+"A nagyobb értékek általában csökkentik a szegmensek számát, a pontosság rovására."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/imageproperty.py:1575
 msgid "Black-Level"
 msgstr "Feketeszint"
@@ -14381,6 +15753,19 @@ msgstr ""
 
 "1000 mindig be van kapcsolva, 500 fél teljesítmény (minden második lépésnél "
 "tüzel)."
+<<<<<<< HEAD
+=======
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:577
+msgid ""
+"Values of 100 or have pulses > 1/10\" and are generally used only for dotted"
+" or perforated lines."
+msgstr ""
+"Az 100-as vagy annál nagyobb értékek impulzusai > 1/10\" és általában csak "
+"pontozott vagy perforált vonalakhoz használatosak."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:638
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/operationpropertymain.py:640
 msgid "Power (ppi):"
 msgstr "Teljesítmény (ppi):"
@@ -14389,6 +15774,21 @@ msgstr "Teljesítmény (ppi):"
 msgid "Kerf compensation:"
 msgstr "Vágási szélesség kompenzáció:"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/operationpropertymain.py:697
+msgid ""
+"Enter half the width of your laserbeam (kerf)\n"
+"if you want to have a shape with an exact size.\n"
+"Use the negative value if you are using the cutout\n"
+"as a placeholder for another part (eg inlays)."
+msgstr ""
+"Adja meg a lézersugár felének szélességét (vágási szélesség),\n"
+"ha pontos méretű alakzatot szeretne.\n"
+"Használjon negatív értéket, ha a kivágást\n"
+"más alkatrész helyőrzőjeként használja (pl. intarziák)."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/operationpropertymain.py:704
 msgid "Coolant:"
 msgstr "Hűtőközeg:"
@@ -14648,6 +16048,25 @@ msgstr "Hézag X-irányban"
 msgid "Repetitions in Y-direction"
 msgstr "Ismétlések Y-irányban"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/placementproperty.py:172
+msgid ""
+"How many repetitions in X-direction?\n"
+"0 = As many as possible"
+msgstr ""
+"Hány ismétlés X-irányban?\n"
+"0 = Amennyi lehetséges"
+
+#: meerk40t/gui/propertypanels/placementproperty.py:175
+msgid ""
+"How many repetitions in Y-direction?\n"
+"0 = As many as possible"
+msgstr ""
+"Hány ismétlés Y-irányban?\n"
+"0 = Amennyi lehetséges"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/placementproperty.py:177
 msgid "Gap between placements in X-direction"
 msgstr "Hézag az elhelyezések között X-irányban"
@@ -14668,10 +16087,36 @@ msgstr "Első ismétlés, amit használni kell"
 msgid "Repetitions to use (0=all)"
 msgstr "Használandó ismétlések (0=összes)"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/placementproperty.py:243
+#: meerk40t/gui/propertypanels/placementproperty.py:254
+msgid ""
+"Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"
+"Useful for honeycomb- or other irregular patterns that need to overlap"
+msgstr ""
+"Minden második {area} eltolható a hézag százalékában a {direction}-irányban\n"
+"Hasznos méhsejt- vagy más szabálytalan mintákhoz, amelyeknek átfedésre van szükségük"
+
+#: meerk40t/gui/propertypanels/placementproperty.py:243
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/placementproperty.py:249
 msgid "column"
 msgstr "oszlop"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/propertypanels/placementproperty.py:249
+#: meerk40t/gui/propertypanels/placementproperty.py:260
+msgid ""
+"Rotate elements every other {area}\n"
+"Useful for triangular patterns."
+msgstr ""
+"Elemek forgatása minden második {area} esetén\n"
+"Hasznos háromszög alakú mintákhoz."
+
+#: meerk40t/gui/propertypanels/placementproperty.py:254
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/propertypanels/placementproperty.py:260
 msgid "row"
 msgstr "sor"
@@ -15347,6 +16792,17 @@ msgstr "X, Y"
 msgid "W, H"
 msgstr "Sz, M"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/statusbarwidgets/statusbar.py:48
+msgid ""
+"Left Click: Move to next panel\n"
+"Right Click: Move to previous panel"
+msgstr ""
+"Bal kattintás: Ugrás a következő panelre\n"
+"Jobb kattintás: Ugrás az előző panelre"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:46
 msgid "Clear stroke-color (right click clear fill color)"
 msgstr "Vonalszín törlése (jobb kattintással törölje a kitöltőszínt)"
@@ -15576,6 +17032,17 @@ msgstr "Polivonal létrehozása"
 msgid "Create rectangle"
 msgstr "Téglalap létrehozása"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/gui/toolwidgets/tooltabedit.py:533
+msgid ""
+"Drag existing tabs around or add one by clicking on the shape,\n"
+"Shift-Click/Delete removes current, Shift+Delete removes all"
+msgstr ""
+"Húzza a meglévő füleket, vagy adjon hozzá egyet az alakzatra kattintva,\n"
+"Shift-Kattintás/Törlés eltávolítja az aktuálisat, Shift+Delete eltávolítja az összeset"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/gui/utilitywidgets/debugwidgets.py:15
 msgid "Show the icon scene widget"
 msgstr "Ikon jelenet widget megjelenítése"
@@ -16771,6 +18238,17 @@ msgstr "Impulzuscsoportosítás"
 msgid "Strict"
 msgstr "Szigorú"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/lihuiyu/device.py:376
+msgid ""
+"Forces the device to enter and exit programmed speed mode from the same direction.\n"
+"This may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+msgstr ""
+"Arra kényszeríti az eszközt, hogy ugyanabból az irányból lépjen be és ki a programozott sebességmódba.\n"
+"Ez megakadályozhatja, hogy az M2-V4 és korábbi eszközök problémákba ütközzenek. Általában nincs rá szükség."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/lihuiyu/device.py:384
 msgid "Twitch Vectors"
 msgstr "Rángatózó vektorok"
@@ -17171,7 +18649,12 @@ msgstr "Csővezeték indítása a vezérlőhöz"
 msgid "Lihuiyu Channel Started."
 msgstr "Lihuiyu csatorna elindítva."
 
+<<<<<<< HEAD
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:604 meerk40t/moshi/device.py:337
+=======
+#: meerk40t/lihuiyu/device.py:995 meerk40t/lihuiyu/gui/lhycontrollergui.py:604
+#: meerk40t/moshi/device.py:337
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Hold Controller"
 msgstr "Vezérlő tartása"
 
@@ -17331,6 +18814,17 @@ msgstr "Vezérlő indítása"
 msgid "Show USB Log"
 msgstr "USB napló megjelenítése"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/lihuiyu/gui/lhycontrollergui.py:72
+msgid ""
+"Reset\n"
+"statistics"
+msgstr ""
+"Statisztikák\n"
+"visszaállítása"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:77
 msgid "Clear Status-Log"
 msgstr "Állapotnapló törlése"
@@ -17523,6 +19017,23 @@ msgstr "Több lézer korlátozása"
 msgid "CH341 Version"
 msgstr "CH341 verzió"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:57
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:74
+#: meerk40t/moshi/gui/moshicontrollergui.py:139
+#: meerk40t/moshi/gui/moshicontrollergui.py:147
+#: meerk40t/moshi/gui/moshicontrollergui.py:155
+#: meerk40t/moshi/gui/moshicontrollergui.py:163
+msgid ""
+"Optional: Distinguish between different lasers using the match criteria below.\n"
+"-1 match anything. 0+ match exactly that value."
+msgstr ""
+"Opcionális: Különböző lézerek megkülönböztetése az alábbi illesztési kritériumok alapján.\n"
+"-1 bármihez illeszkedik. 0+ pontosan az adott értékhez illeszkedik."
+
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:79
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:83
 msgid "Serial Number"
 msgstr "Sorozatszám"
@@ -17599,6 +19110,33 @@ msgstr "Pont hossza"
 msgid "Enable Dot Length"
 msgstr "Pont hosszának engedélyezése"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:101
+msgid ""
+"When this is set, the PPI effectively becomes the ratio of dashes to gaps. "
+"For example:"
+msgstr ""
+"Ha ez be van állítva, a PPI ténylegesen a vonások és a hézagok arányává "
+"válik. Például:"
+
+#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:106
+msgid ""
+"If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" "
+"dashes and 1/2\" gaps."
+msgstr ""
+"Ha a pont hosszát 500-ra (1/2\") állítja, akkor az 500 PPI 1/2\" vonásokat "
+"és 1/2\" hézagokat eredményez."
+
+#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:110
+msgid ""
+"If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" "
+"dashes and 3/4\" gaps."
+msgstr ""
+"Ha a pont hosszát 250-re (1/4\") állítja, akkor a 250 PPI 1/4\" vonásokat és"
+" 3/4\" hézagokat eredményez."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:69
 msgid "TCP-Controller"
 msgstr "TCP-vezérlő"
@@ -18439,6 +19977,19 @@ msgstr "Csúszka"
 msgid "Cut-Operation"
 msgstr "Vágási művelet"
 
+<<<<<<< HEAD
+=======
+#: meerk40t/tools/kerftest.py:177
+msgid ""
+"If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\n"
+"This routine will create a couple of test shapes for you to establish this value.\n"
+"After you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
+msgstr ""
+"Ha *pontos* méretű kivágott alakzatokat szeretne készíteni az égetés után, akkor figyelembe kell vennie a lézersugár szélességének felét (más néven Kerf kompenzáció).\n"
+"Ez a rutin néhány tesztalakzatot hoz létre, hogy meghatározza ezt az értéket.\n"
+"Miután kivágta ezeket az alakzatokat, próbálja meg összeilleszteni az azonos címkével ellátott alakzatokat. Válassza ki azt a párt, amelyik tökéletesen illeszkedik, és használja a címkét kerf-kompenzációs értéknek."
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 #: meerk40t/tools/kerftest.py:193
 msgid "Minimum value for Kerf"
 msgstr "Minimális érték a Kerf-hez"
@@ -18573,291 +20124,230 @@ msgstr "Zsanér"
 msgid "Fill area with a living hinge pattern"
 msgstr "Terület kitöltése élő zsanérmintával"
 
-#:
 msgid "Invalid dimensions provided"
 msgstr "Érvénytelen méretek lettek megadva"
 
-#:
 msgid "Create a barcode"
 msgstr "Vonalkód létrehozása"
 
-#:
 msgid "Text to use:"
 msgstr "Használandó szöveg:"
 
-#:
 msgid "The barcode/qrcode will be based on this content."
 msgstr "A vonalkód/QR-kód ezen a tartalmon alapul."
 
-#:
 msgid "Code:"
 msgstr "Kód:"
 
-#:
 msgid "Coordinates:"
 msgstr "Koordináták:"
 
-#:
 msgid "Where will the barcode will be located (top left corner)."
 msgstr "Hol található a vonalkód (bal felső sarok)."
 
-#:
 msgid "QR-Code"
 msgstr "QR-kód"
 
-#:
 msgid "Barcode"
 msgstr "Vonalkód"
 
-#:
 msgid "QR-Code:"
 msgstr "QR-kód:"
 
-#:
 msgid "Width/Height:"
 msgstr "Szélesség/Magasság:"
 
-#:
 msgid "How wide/high will the resulting qr-code be?"
 msgstr "Milyen széles/magas lesz a kapott QR-kód?"
 
-#:
 msgid "Resolution:"
 msgstr "Felbontás:"
 
-#:
 msgid "How big will the qr-code become (1..40, default 1)?"
 msgstr "Mekkora lesz a QR-kód (1..40, alapértelmezett 1)?"
 
-#:
 msgid "Border:"
 msgstr "Szegély:"
 
-#:
 msgid "How wide is the border around the qr-code (default 4)?"
 msgstr "Milyen széles a QR-kód körüli szegély (alapértelmezett 4)?"
 
-#:
 msgid "Boxsize:"
 msgstr "Dobozméret:"
 
-#:
 msgid "How big is the boxsize of the pixels (default 10)?"
 msgstr "Mekkora a pixelek dobozmérete (alapértelmezett 10)?"
 
-#:
 msgid "Error:"
 msgstr "Hiba:"
 
-#:
 msgid "Establish the error correction used for the QR Code"
 msgstr "Határozza meg a QR-kódhoz használt hibajavítást"
 
-#:
 msgid "WiFi"
 msgstr "WiFi"
 
-#:
 msgid "SSID:"
 msgstr "SSID:"
 
-#:
 msgid "Key:"
 msgstr "Kulcs:"
 
-#:
 msgid "WPA/WPA2/WPA3"
 msgstr "WPA/WPA2/WPA3"
 
-#:
 msgid "WEP"
 msgstr "WEP"
 
-#:
 msgid "What kind of encryption does the network use?"
 msgstr "Milyen titkosítást használ a hálózat?"
 
-#:
 msgid "Encryption:"
 msgstr "Titkosítás:"
 
-#:
 msgid "Hidden"
 msgstr "Rejtett"
 
-#:
 msgid "Is the network hidden?"
 msgstr "Rejtett a hálózat?"
 
-#:
 msgid "Generate Pattern"
 msgstr "Minta generálása"
 
-#:
 msgid "VCard"
 msgstr "VCard"
 
-#:
 msgid "Provide your name as lastname,firstname"
 msgstr "Adja meg nevét vezetéknév,keresztnév formában"
 
-#:
 msgid "Name:"
 msgstr "Név:"
 
+<<<<<<< HEAD
 #:
+=======
+msgid ""
+"Provide your address as:\n"
+"PO box, room number, house number, city, prefecture, zip code and country"
+msgstr ""
+"Adja meg címét a következő formában:\n"
+"Postafiók, szobaszám, házszám, város, megye, irányítószám és ország"
+
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "Address:"
 msgstr "Cím:"
 
-#:
 msgid "Provide your phone-number"
 msgstr "Adja meg telefonszámát"
 
-#:
 msgid "Phone:"
 msgstr "Telefon:"
 
-#:
 msgid "Provide your email-Address"
 msgstr "Adja meg e-mail címét"
 
-#:
 msgid "email:"
 msgstr "E-mail:"
 
-#:
 msgid "Provide a valid URL"
 msgstr "Adjon meg érvényes URL-t"
 
-#:
 msgid "URL:"
 msgstr "URL:"
 
-#:
 msgid "Barcode:"
 msgstr "Vonalkód:"
 
-#:
 msgid "Type:"
 msgstr "Típus:"
 
-#:
 msgid "What kind of barcode do you want to create?"
 msgstr "Milyen típusú vonalkódot szeretne létrehozni?"
 
-#:
 msgid "How wide will the resulting barcode be?"
 msgstr "Milyen széles lesz a kapott vonalkód?"
 
-#:
 msgid "How high will the resulting barcode be?"
 msgstr "Milyen magas lesz a kapott vonalkód?"
 
-#:
 msgid "No text:"
 msgstr "Nincs szöveg:"
 
-#:
 msgid "Suppress the text under the barcode?"
 msgstr "Elnyomja a vonalkód alatti szöveget?"
 
-#:
 msgid "Create a barcode/qrcode"
 msgstr "Vonalkód/QR-kód létrehozása"
 
-#:
 msgid "Close without creating anything"
 msgstr "Bezárás létrehozás nélkül"
 
-#:
 msgid "Text to use for QR-Code:"
 msgstr "QR-kódhoz használandó szöveg:"
 
-#:
 msgid "Text to use for Barcode:"
 msgstr "Vonalkódhoz használandó szöveg:"
 
-#:
 msgid "suppress text display"
 msgstr "szöveg megjelenítésének elnyomása"
 
-#:
 msgid "X-Position of barcode"
 msgstr "Vonalkód X-pozíciója"
 
-#:
 msgid "Y-Position of barcode"
 msgstr "Vonalkód Y-pozíciója"
 
-#:
 msgid "Width of barcode, may be 'auto' to keep native width"
 msgstr "Vonalkód szélessége, lehet 'auto' az eredeti szélesség megtartásához"
 
-#:
 msgid "Height of barcode, may be 'auto' to keep native height"
 msgstr "Vonalkód magassága, lehet 'auto' az eredeti magasság megtartásához"
 
-#:
 msgid "Barcode type"
 msgstr "Vonalkód típusa"
 
-#:
 msgid "The code to process"
 msgstr "A feldolgozandó kód"
 
-#:
 msgid "Creates a barcode."
 msgstr "Vonalkódot hoz létre."
 
-#:
 msgid "Please provide all parameters: {params}"
 msgstr "Kérjük, adja meg az összes paramétert: {params}"
 
-#:
 msgid "Supported formats: {all}"
 msgstr "Támogatott formátumok: {all}"
 
-#:
 msgid "Invalid format, supported: {all}"
 msgstr "Érvénytelen formátum, támogatott: {all}"
 
-#:
 msgid "error correction, one of L (7%), M (15%), Q (25%), H (30%)"
 msgstr "hibajavítás, L (7%), M (15%), Q (25%), H (30%) egyike"
 
-#:
 msgid "Boxsize (default 10)"
 msgstr "Dobozméret (alapértelmezett 10)"
 
-#:
 msgid "Border around qr-code (default 4)"
 msgstr "Szegély a QR-kód körül (alapértelmezett 4)"
 
-#:
 msgid "size (1..40)"
 msgstr "méret (1..40)"
 
-#:
 msgid "X-position of qr-code"
 msgstr "QR-kód X-pozíciója"
 
-#:
 msgid "Y-position of qr-code"
 msgstr "QR-kód Y-pozíciója"
 
-#:
 msgid "Width/length of qr-code"
 msgstr "QR-kód szélessége/hossza"
 
-#:
 msgid "Text to create qr-code from"
 msgstr "Szöveg, amelyből QR-kódot kell létrehozni"
 
-#:
 msgid "Creates a qr code."
 msgstr "QR-kódot hoz létre."
 
-#:
 msgid "Create an ean-barcode or a qr-code"
 msgstr "EAN-vonalkód vagy QR-kód létrehozása"
 
@@ -18870,22 +20360,38 @@ msgid "    Alias                  Command(s)"
 msgstr "    Alias                  Parancs(ok)"
 
 #: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
-msgid "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
-msgstr "{index}: {name} - {typename}\n   vonalvastagság = {stroke_width}\n   méretezett-vastagság = {scaled_stroke_width}"
+msgid ""
+"{index}: {name} - {typename}\n"
+"   stroke-width = {stroke_width}\n"
+"   scaled-width = {scaled_stroke_width}"
+msgstr ""
+"{index}: {name} - {typename}\n"
+"   vonalvastagság = {stroke_width}\n"
+"   méretezett-vastagság = {scaled_stroke_width}"
 
 #: meerk40t/gui/wxmmain.py:1316
-msgid "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
-msgstr "Aktív: Egy kattintással kijelöli a kurzor alatti legkisebb elemet (ctrl+kattintással a legnagyobbat) / Inaktív: Egy kattintással kijelöli a legnagyobb elemet (ctrl+kattintással a legkisebbet)."
+msgid ""
+"Active: Single click selects the smallest element under cursor (ctrl+click "
+"selects the largest) / Inactive: Single click selects the largest element  "
+"(ctrl+click the smallest)."
+msgstr ""
+"Aktív: Egy kattintással kijelöli a kurzor alatti legkisebb elemet "
+"(ctrl+kattintással a legnagyobbat) / Inaktív: Egy kattintással kijelöli a "
+"legnagyobb elemet (ctrl+kattintással a legkisebbet)."
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1779
 msgid "  this will choose the nearest to be drawn segment,"
 msgstr "  ez kiválasztja a legközelebbi rajzolandó szegmenst,"
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1781
 msgid "  lasering these segments with vertical lines."
 msgstr "  ezeket a szegmenseket függőleges vonalakkal lézeresíti."
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1783
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1792
 msgid "  Usually much faster on an image with a lot of white pixels."
 msgstr "  Általában sokkal gyorsabb egy olyan képen, ahol sok a fehér pixel."
 
@@ -18910,8 +20416,92 @@ msgid "Command(s)"
 msgstr "Parancs(ok)"
 
 #: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
+<<<<<<< HEAD
 msgid "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
 msgstr "{index}: {name} - {typename}\n   vonalvastagság = {stroke_width}\n   skálázott vastagság = {scaled_stroke_width}"
+=======
+msgid ""
+"{index}: {name} - {typename}\n"
+"   stroke-width = {stroke_width}\n"
+"   scaled-width = {scaled_stroke_width}"
+msgstr ""
+
+#: meerk40t/gui/mkdebug.py:90
+msgid "Device-View"
+msgstr "Eszköznézet"
+
+#: meerk40t/gui/mkdebug.py:98
+msgid "Display information about device view"
+msgstr "Információk megjelenítése az eszköznézetről"
+
+#: meerk40t/gui/mkdebug.py:395
+msgid "Coordinates to Device"
+msgstr "Koordináták az eszközhöz"
+
+#: meerk40t/gui/mkdebug.py:400 meerk40t/gui/mkdebug.py:415
+msgid "Vector-mode: only transition"
+msgstr "Vektormód: csak átmenet"
+
+#: meerk40t/gui/mkdebug.py:410
+msgid "Device to Coordinates"
+msgstr "Eszközből koordinátákba"
+
+#: meerk40t/gui/mkdebug.py:435 meerk40t/gui/mkdebug.py:452
+msgid "Invalid length value"
+msgstr "Érvénytelen hosszérték"
+
+#: meerk40t/gui/wxmmain.py:1316
+msgid ""
+"Active: Single click selects the smallest element under cursor (ctrl+click "
+"selects the largest) / Inactive: Single click selects the largest element  "
+"(ctrl+click the smallest)."
+msgstr ""
+"Aktív: Egy kattintás a kurzor alatti legkisebb elemet választja ki "
+"(ctrl+kattintás a legnagyobbat) / Inaktív: Egy kattintás a legnagyobb elemet"
+" választja ki (ctrl+kattintás a legkisebbet)."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1779
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr " ez a legközelebbi rajzolandó szegmenst választja ki."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1781
+msgid "  lasering these segments with vertical lines."
+msgstr " ezeket a szegmenseket függőleges vonalakkal lézerezzük."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1783
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1792
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr " Általában sokkal gyorsabb olyan képen, ahol sok a fehér pixel."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1788
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr " többségében fekete pixelekkel, majd az oszlopok rajzolása."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1790
+msgid "  where we have a majority."
+msgstr " ahol többség van."
+
+#: meerk40t/core/bindalias.py:455
+msgid "Alias"
+msgstr "Álnév"
+
+#: meerk40t/core/bindalias.py:455
+msgid "Command(s)"
+msgstr "Parancs(ok)"
+
+#: meerk40t/core/elements/shapes.py:1459 meerk40t/core/elements/shapes.py:1481
+msgid ""
+"{index}: {name} - {typename}\n"
+"   stroke-width = {stroke_width}\n"
+"   scaled-width = {scaled_stroke_width}"
+msgstr ""
+"{index}: {name} - {typename}\n"
+"   vonalvastagság = {stroke_width}\n"
+"   skálázott vastagság = {scaled_stroke_width}"
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 
 #: meerk40t/gui/mkdebug.py:90
 msgid "Device-View"
@@ -18938,18 +20528,28 @@ msgid "Invalid length value"
 msgstr "Érvénytelen hossz érték"
 
 #: meerk40t/gui/wxmmain.py:1316
-msgid "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
-msgstr "Aktív: Egy kattintás a kurzor alatti legkisebb elemet választja ki (ctrl+kattintás a legnagyobbat) / Inaktív: Egy kattintás a legnagyobb elemet választja ki (ctrl+kattintás a legkisebbet)."
+msgid ""
+"Active: Single click selects the smallest element under cursor (ctrl+click "
+"selects the largest) / Inactive: Single click selects the largest element  "
+"(ctrl+click the smallest)."
+msgstr ""
+"Aktív: Egy kattintás a kurzor alatti legkisebb elemet választja ki "
+"(ctrl+kattintás a legnagyobbat) / Inaktív: Egy kattintás a legnagyobb elemet"
+" választja ki (ctrl+kattintás a legkisebbet)."
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1770 meerk40t/gui/propertypanels/operationpropertymain.py:1779
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1770
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1779
 msgid "  this will choose the nearest to be drawn segment,"
 msgstr "  ez a legközelebbi rajzolandó szegmenst választja ki,"
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1772 meerk40t/gui/propertypanels/operationpropertymain.py:1781
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1772
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1781
 msgid "  lasering these segments with vertical lines."
 msgstr "  ezeknek a szegmenseknek a lézerezése függőleges vonalakkal."
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1774 meerk40t/gui/propertypanels/operationpropertymain.py:1783 meerk40t/gui/propertypanels/operationpropertymain.py:1792
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1774
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1783
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1792
 msgid "  Usually much faster on an image with a lot of white pixels."
 msgstr "  Általában sokkal gyorsabb olyan képen, ahol sok a fehér pixel."
 
@@ -18969,23 +20569,29 @@ msgstr "    {index}.{subindex}: összekapcsolva {name}:{hash:X}"
 msgid "Correction File"
 msgstr "Korrekciós fájl"
 
-#: meerk40t/balormk/device.py:289 meerk40t/balormk/device.py:301 meerk40t/balormk/device.py:313
+#: meerk40t/balormk/device.py:289 meerk40t/balormk/device.py:301
+#: meerk40t/balormk/device.py:313
 msgid "Device Selection"
 msgstr "Eszköz kiválasztása"
 
-#: meerk40t/balormk/device.py:326 meerk40t/balormk/device.py:339 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77
+#: meerk40t/balormk/device.py:326 meerk40t/balormk/device.py:339
+#: meerk40t/balormk/gui/balorconfig.py:65
+#: meerk40t/balormk/gui/balorconfig.py:77
 msgid "Pin-Index"
 msgstr "Tű index"
 
-#: meerk40t/balormk/device.py:390 meerk40t/balormk/device.py:400 meerk40t/balormk/device.py:412
+#: meerk40t/balormk/device.py:390 meerk40t/balormk/device.py:400
+#: meerk40t/balormk/device.py:412
 msgid "Redlight-Offset"
 msgstr "Vörös fény eltolás"
 
-#: meerk40t/balormk/device.py:534 meerk40t/balormk/device.py:550 meerk40t/balormk/device.py:564 meerk40t/balormk/device.py:578
+#: meerk40t/balormk/device.py:534 meerk40t/balormk/device.py:550
+#: meerk40t/balormk/device.py:564 meerk40t/balormk/device.py:578
 msgid "Delays"
 msgstr "Késleltetések"
 
-#: meerk40t/balormk/device.py:592 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:617
+#: meerk40t/balormk/device.py:592 meerk40t/balormk/device.py:605
+#: meerk40t/balormk/device.py:617
 msgid "Jump-Settings"
 msgstr "Ugrás beállítások"
 
@@ -19001,11 +20607,13 @@ msgstr "Impulzusszélesség-moduláció"
 msgid "Standby-Parameter"
 msgstr "Készenléti paraméter"
 
-#: meerk40t/balormk/device.py:695 meerk40t/balormk/device.py:705 meerk40t/balormk/device.py:715 meerk40t/balormk/device.py:725
+#: meerk40t/balormk/device.py:695 meerk40t/balormk/device.py:705
+#: meerk40t/balormk/device.py:715 meerk40t/balormk/device.py:725
 msgid "Modes"
 msgstr "Módok"
 
-#: meerk40t/balormk/device.py:787 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:807 meerk40t/balormk/device.py:817
+#: meerk40t/balormk/device.py:787 meerk40t/balormk/device.py:797
+#: meerk40t/balormk/device.py:807 meerk40t/balormk/device.py:817
 msgid "Fly Resolution"
 msgstr "Repülési felbontás"
 
@@ -19013,7 +20621,8 @@ msgstr "Repülési felbontás"
 msgid "Redlight"
 msgstr "Vörös fény"
 
-#: meerk40t/balormk/gui/balorconfig.py:49 meerk40t/newly/device.py:508 meerk40t/newly/device.py:519
+#: meerk40t/balormk/gui/balorconfig.py:49 meerk40t/newly/device.py:508
+#: meerk40t/newly/device.py:519
 msgid "Timings"
 msgstr "Időzítések"
 
@@ -19025,11 +20634,26 @@ msgstr "Extrák"
 msgid "Correction"
 msgstr "Korrekció"
 
-#: meerk40t/balormk/gui/balorconfig.py:237 meerk40t/cylinder/gui/cylindersettings.py:33 meerk40t/grbl/gui/grblconfiguration.py:283 meerk40t/grbl/gui/grblhardwareconfig.py:265 meerk40t/gui/devicepanel.py:698 meerk40t/lihuiyu/gui/lhyaccelgui.py:373 meerk40t/lihuiyu/gui/lhydrivergui.py:466 meerk40t/moshi/gui/moshidrivergui.py:84 meerk40t/newly/gui/newlyconfig.py:117 meerk40t/rotary/gui/rotarysettings.py:236 meerk40t/ruida/gui/ruidaconfig.py:236
+#: meerk40t/balormk/gui/balorconfig.py:237
+#: meerk40t/cylinder/gui/cylindersettings.py:33
+#: meerk40t/grbl/gui/grblconfiguration.py:283
+#: meerk40t/grbl/gui/grblhardwareconfig.py:265 meerk40t/gui/devicepanel.py:698
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:373
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:466
+#: meerk40t/moshi/gui/moshidrivergui.py:84
+#: meerk40t/newly/gui/newlyconfig.py:117
+#: meerk40t/rotary/gui/rotarysettings.py:236
+#: meerk40t/ruida/gui/ruidaconfig.py:236
 msgid "Device-Settings"
 msgstr "Eszköz beállítások"
 
-#: meerk40t/balormk/gui/balorcontroller.py:187 meerk40t/grbl/gui/grblcontroller.py:481 meerk40t/gui/bufferview.py:73 meerk40t/gui/usbconnect.py:94 meerk40t/lihuiyu/gui/lhycontrollergui.py:782 meerk40t/lihuiyu/gui/tcpcontroller.py:222 meerk40t/moshi/gui/moshicontrollergui.py:534 meerk40t/newly/gui/newlycontroller.py:189 meerk40t/ruida/gui/ruidacontroller.py:183
+#: meerk40t/balormk/gui/balorcontroller.py:187
+#: meerk40t/grbl/gui/grblcontroller.py:481 meerk40t/gui/bufferview.py:73
+#: meerk40t/gui/usbconnect.py:94 meerk40t/lihuiyu/gui/lhycontrollergui.py:782
+#: meerk40t/lihuiyu/gui/tcpcontroller.py:222
+#: meerk40t/moshi/gui/moshicontrollergui.py:534
+#: meerk40t/newly/gui/newlycontroller.py:189
+#: meerk40t/ruida/gui/ruidacontroller.py:183
 msgid "Device-Control"
 msgstr "Eszköz vezérlés"
 
@@ -19037,7 +20661,10 @@ msgstr "Eszköz vezérlés"
 msgid "Sources"
 msgstr "Források"
 
-#: meerk40t/core/planner.py:63 meerk40t/core/planner.py:78 meerk40t/core/planner.py:110 meerk40t/core/planner.py:136 meerk40t/core/planner.py:166 meerk40t/core/planner.py:192 meerk40t/core/planner.py:301
+#: meerk40t/core/planner.py:63 meerk40t/core/planner.py:78
+#: meerk40t/core/planner.py:110 meerk40t/core/planner.py:136
+#: meerk40t/core/planner.py:166 meerk40t/core/planner.py:192
+#: meerk40t/core/planner.py:301
 msgid "Reducing Movements"
 msgstr "Mozgások csökkentése"
 
@@ -19049,23 +20676,35 @@ msgstr "Raszterek felosztása"
 msgid "Stitching"
 msgstr "Összevarrás"
 
-#: meerk40t/core/planner.py:246 meerk40t/core/planner.py:257 meerk40t/core/planner.py:287
+#: meerk40t/core/planner.py:246 meerk40t/core/planner.py:257
+#: meerk40t/core/planner.py:287
 msgid "Burn sequence"
 msgstr "Égetési sorrend"
 
-#: meerk40t/core/svg_io.py:109 meerk40t/core/svg_io.py:126 meerk40t/dxf/plugin.py:32 meerk40t/dxf/plugin.py:45
+#: meerk40t/core/svg_io.py:109 meerk40t/core/svg_io.py:126
+#: meerk40t/dxf/plugin.py:32 meerk40t/dxf/plugin.py:45
 msgid "Input"
 msgstr "Bemenet"
 
-#: meerk40t/core/elements/elements.py:188 meerk40t/core/elements/elements.py:369 meerk40t/core/elements/elements.py:536
+#: meerk40t/core/elements/elements.py:188
+#: meerk40t/core/elements/elements.py:369
+#: meerk40t/core/elements/elements.py:536
 msgid "Auto-Generation"
 msgstr "Automatikus generálás"
 
-#: meerk40t/core/elements/elements.py:201 meerk40t/core/elements/elements.py:275 meerk40t/core/elements/elements.py:300 meerk40t/core/elements/elements.py:319 meerk40t/core/elements/elements.py:336 meerk40t/core/elements/elements.py:352
+#: meerk40t/core/elements/elements.py:201
+#: meerk40t/core/elements/elements.py:275
+#: meerk40t/core/elements/elements.py:300
+#: meerk40t/core/elements/elements.py:319
+#: meerk40t/core/elements/elements.py:336
+#: meerk40t/core/elements/elements.py:352
 msgid "Assignment-Logic"
 msgstr "Hozzárendelési logika"
 
-#: meerk40t/core/elements/elements.py:260 meerk40t/core/elements/elements.py:394 meerk40t/core/elements/elements.py:411 meerk40t/core/elements/elements.py:424
+#: meerk40t/core/elements/elements.py:260
+#: meerk40t/core/elements/elements.py:394
+#: meerk40t/core/elements/elements.py:411
+#: meerk40t/core/elements/elements.py:424
 msgid "GUI-Behaviour"
 msgstr "GUI viselkedés"
 
@@ -19073,7 +20712,8 @@ msgstr "GUI viselkedés"
 msgid "Display"
 msgstr "Megjelenítés"
 
-#: meerk40t/core/elements/elements.py:475 meerk40t/moshi/device.py:226 meerk40t/moshi/device.py:244
+#: meerk40t/core/elements/elements.py:475 meerk40t/moshi/device.py:226
+#: meerk40t/moshi/device.py:244
 msgid "Behaviour"
 msgstr "Viselkedés"
 
@@ -19085,7 +20725,9 @@ msgstr "Betöltés"
 msgid "Default Operations"
 msgstr "Alapértelmezett műveletek"
 
-#: meerk40t/device/devicechoices.py:12 meerk40t/device/devicechoices.py:22 meerk40t/device/devicechoices.py:32 meerk40t/device/devicechoices.py:42 meerk40t/device/devicechoices.py:52
+#: meerk40t/device/devicechoices.py:12 meerk40t/device/devicechoices.py:22
+#: meerk40t/device/devicechoices.py:32 meerk40t/device/devicechoices.py:42
+#: meerk40t/device/devicechoices.py:52
 msgid "Effect Defaults"
 msgstr "Effektus alapértelmezések"
 
@@ -19101,11 +20743,20 @@ msgstr "SVG funkciók"
 msgid "Check for updates on startup"
 msgstr "Frissítések keresése indításkor"
 
-#: meerk40t/grbl/device.py:66 meerk40t/grbl/device.py:77 meerk40t/grbl/device.py:88 meerk40t/lihuiyu/device.py:53 meerk40t/lihuiyu/device.py:65 meerk40t/lihuiyu/device.py:76 meerk40t/moshi/device.py:75 meerk40t/moshi/device.py:88 meerk40t/moshi/device.py:101 meerk40t/newly/device.py:133 meerk40t/newly/device.py:147 meerk40t/newly/device.py:161 meerk40t/ruida/device.py:64 meerk40t/ruida/device.py:76 meerk40t/ruida/device.py:87
+#: meerk40t/grbl/device.py:66 meerk40t/grbl/device.py:77
+#: meerk40t/grbl/device.py:88 meerk40t/lihuiyu/device.py:53
+#: meerk40t/lihuiyu/device.py:65 meerk40t/lihuiyu/device.py:76
+#: meerk40t/moshi/device.py:75 meerk40t/moshi/device.py:88
+#: meerk40t/moshi/device.py:101 meerk40t/newly/device.py:133
+#: meerk40t/newly/device.py:147 meerk40t/newly/device.py:161
+#: meerk40t/ruida/device.py:64 meerk40t/ruida/device.py:76
+#: meerk40t/ruida/device.py:87
 msgid "Dimensions"
 msgstr "Méretek"
 
-#: meerk40t/grbl/device.py:151 meerk40t/grbl/device.py:163 meerk40t/moshi/device.py:170 meerk40t/moshi/device.py:182 meerk40t/moshi/device.py:196
+#: meerk40t/grbl/device.py:151 meerk40t/grbl/device.py:163
+#: meerk40t/moshi/device.py:170 meerk40t/moshi/device.py:182
+#: meerk40t/moshi/device.py:196
 msgid "Flip Axis"
 msgstr "Tengely megfordítása"
 
@@ -19113,15 +20764,19 @@ msgstr "Tengely megfordítása"
 msgid "Z-Axis support"
 msgstr "Z-tengely támogatás"
 
-#: meerk40t/grbl/device.py:311 meerk40t/grbl/device.py:324 meerk40t/ruida/device.py:292 meerk40t/ruida/device.py:305
+#: meerk40t/grbl/device.py:311 meerk40t/grbl/device.py:324
+#: meerk40t/ruida/device.py:292 meerk40t/ruida/device.py:305
 msgid "Serial Interface"
 msgstr "Soros interfész"
 
-#: meerk40t/grbl/device.py:470 meerk40t/grbl/device.py:487 meerk40t/grbl/device.py:500
+#: meerk40t/grbl/device.py:470 meerk40t/grbl/device.py:487
+#: meerk40t/grbl/device.py:500
 msgid "Red Dot"
 msgstr "Vörös pont"
 
-#: meerk40t/grbl/device.py:595 meerk40t/grbl/device.py:607 meerk40t/grbl/device.py:619 meerk40t/grbl/device.py:629 meerk40t/grbl/device.py:682 meerk40t/grbl/device.py:695
+#: meerk40t/grbl/device.py:595 meerk40t/grbl/device.py:607
+#: meerk40t/grbl/device.py:619 meerk40t/grbl/device.py:629
+#: meerk40t/grbl/device.py:682 meerk40t/grbl/device.py:695
 msgid "Validation"
 msgstr "Érvényesítés"
 
@@ -19133,7 +20788,8 @@ msgstr "Elem igazítás"
 msgid "Device Manager"
 msgstr "Eszközkezelő"
 
-#: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2445 meerk40t/gui/spoolerpanel.py:1240
+#: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2445
+#: meerk40t/gui/spoolerpanel.py:1240
 msgid "Burning"
 msgstr "Égetés"
 
@@ -19141,7 +20797,8 @@ msgstr "Égetés"
 msgid "Image Splitting"
 msgstr "Kép felosztása"
 
-#: meerk40t/gui/lasertoolpanel.py:801 meerk40t/gui/materialtest.py:1987 meerk40t/tools/kerftest.py:900 meerk40t/tools/livinghinges.py:1146
+#: meerk40t/gui/lasertoolpanel.py:801 meerk40t/gui/materialtest.py:1987
+#: meerk40t/tools/kerftest.py:900 meerk40t/tools/livinghinges.py:1146
 msgid "Laser-Tools"
 msgstr "Lézer eszközök"
 
@@ -19149,7 +20806,8 @@ msgstr "Lézer eszközök"
 msgid "Jog, Move and Transform"
 msgstr "Mozgatás, elmozdítás és transzformáció"
 
-#: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226 meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
+#: meerk40t/gui/plugin.py:212 meerk40t/gui/plugin.py:226
+#: meerk40t/gui/plugin.py:239 meerk40t/gui/plugin.py:253
 msgid "Tooltips"
 msgstr "Súgók"
 
@@ -19165,15 +20823,21 @@ msgstr "EgyszerűUI"
 msgid "USB-Connection"
 msgstr "USB kapcsolat"
 
-#: meerk40t/gui/wxmmain.py:1008 meerk40t/gui/wxmmain.py:1016 meerk40t/gui/wxmmain.py:1024 meerk40t/gui/wxmmain.py:1038 meerk40t/gui/wxmmain.py:1047
+#: meerk40t/gui/wxmmain.py:1008 meerk40t/gui/wxmmain.py:1016
+#: meerk40t/gui/wxmmain.py:1024 meerk40t/gui/wxmmain.py:1038
+#: meerk40t/gui/wxmmain.py:1047
 msgid "Settings"
 msgstr "Beállítások"
 
-#: meerk40t/gui/wxmmain.py:1181 meerk40t/gui/wxmmain.py:1199 meerk40t/gui/wxmmain.py:1214 meerk40t/gui/wxmmain.py:1229 meerk40t/gui/wxmribbon.py:138
+#: meerk40t/gui/wxmmain.py:1181 meerk40t/gui/wxmmain.py:1199
+#: meerk40t/gui/wxmmain.py:1214 meerk40t/gui/wxmmain.py:1229
+#: meerk40t/gui/wxmribbon.py:138
 msgid "Appearance"
 msgstr "Megjelenés"
 
-#: meerk40t/gui/wxmmain.py:1264 meerk40t/gui/wxmmain.py:1279 meerk40t/gui/wxmmain.py:1292 meerk40t/gui/wxmmain.py:1306 meerk40t/gui/wxmmain.py:1317
+#: meerk40t/gui/wxmmain.py:1264 meerk40t/gui/wxmmain.py:1279
+#: meerk40t/gui/wxmmain.py:1292 meerk40t/gui/wxmmain.py:1306
+#: meerk40t/gui/wxmmain.py:1317
 msgid "Zoom"
 msgstr "Nagyítás"
 
@@ -19189,15 +20853,26 @@ msgstr "Mágnesvonalak"
 msgid "Button-Behaviour"
 msgstr "Gomb viselkedés"
 
-#: meerk40t/gui/wxmmain.py:4333 meerk40t/gui/wxmmain.py:4341 meerk40t/gui/wxmmain.py:4352
+#: meerk40t/gui/wxmmain.py:4333 meerk40t/gui/wxmmain.py:4341
+#: meerk40t/gui/wxmmain.py:4352
 msgid "GUI Appearance"
 msgstr "GUI megjelenés"
 
-#: meerk40t/gui/wxmmain.py:4364 meerk40t/gui/wxmmain.py:4375 meerk40t/gui/wxmmain.py:4386 meerk40t/gui/wxmmain.py:4397 meerk40t/gui/wxmmain.py:4408 meerk40t/gui/wxmmain.py:4420 meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4442 meerk40t/gui/wxmmain.py:4453 meerk40t/gui/wxmmain.py:4464 meerk40t/gui/wxmmain.py:4475 meerk40t/gui/wxmmain.py:4486 meerk40t/gui/wxmmain.py:4498
+#: meerk40t/gui/wxmmain.py:4364 meerk40t/gui/wxmmain.py:4375
+#: meerk40t/gui/wxmmain.py:4386 meerk40t/gui/wxmmain.py:4397
+#: meerk40t/gui/wxmmain.py:4408 meerk40t/gui/wxmmain.py:4420
+#: meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4442
+#: meerk40t/gui/wxmmain.py:4453 meerk40t/gui/wxmmain.py:4464
+#: meerk40t/gui/wxmmain.py:4475 meerk40t/gui/wxmmain.py:4486
+#: meerk40t/gui/wxmmain.py:4498
 msgid "Scene Appearance"
 msgstr "Jelenet megjelenés"
 
-#: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518 meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538 meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578 meerk40t/gui/wxmmain.py:4589
+#: meerk40t/gui/wxmmain.py:4509 meerk40t/gui/wxmmain.py:4518
+#: meerk40t/gui/wxmmain.py:4528 meerk40t/gui/wxmmain.py:4538
+#: meerk40t/gui/wxmmain.py:4548 meerk40t/gui/wxmmain.py:4561
+#: meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4578
+#: meerk40t/gui/wxmmain.py:4589
 msgid "Render-Options"
 msgstr "Renderelési opciók"
 
@@ -19209,7 +20884,8 @@ msgstr "Projekt"
 msgid "Operation/Element Properties"
 msgstr "Művelet/elem tulajdonságok"
 
-#: meerk40t/image/imagetools.py:498 meerk40t/image/imagetools.py:514 meerk40t/image/imagetools.py:527 meerk40t/image/imagetools.py:543
+#: meerk40t/image/imagetools.py:498 meerk40t/image/imagetools.py:514
+#: meerk40t/image/imagetools.py:527 meerk40t/image/imagetools.py:543
 msgid "Images"
 msgstr "Képek"
 
@@ -19229,7 +20905,8 @@ msgstr "Tengely DPI"
 msgid "Current"
 msgstr "Áram"
 
-#: meerk40t/newly/device.py:552 meerk40t/newly/device.py:563 meerk40t/newly/device.py:574
+#: meerk40t/newly/device.py:552 meerk40t/newly/device.py:563
+#: meerk40t/newly/device.py:574
 msgid "Moving"
 msgstr "Mozgásban"
 
@@ -19241,7 +20918,9 @@ msgstr "Keretezés"
 msgid "User Scale"
 msgstr "Felhasználói skála"
 
-#: meerk40t/tools/driver_to_path.py:298 meerk40t/tools/driver_to_path.py:308 meerk40t/tools/driver_to_path.py:318 meerk40t/tools/driver_to_path.py:329 meerk40t/tools/driver_to_path.py:342
+#: meerk40t/tools/driver_to_path.py:298 meerk40t/tools/driver_to_path.py:308
+#: meerk40t/tools/driver_to_path.py:318 meerk40t/tools/driver_to_path.py:329
+#: meerk40t/tools/driver_to_path.py:342
 msgid "Path"
 msgstr "Útvonal"
 
@@ -19278,6 +20957,7 @@ msgid "Simplify Effects"
 msgstr "Effektek egyszerűsítése"
 
 #: meerk40t/gui/plugin.py:128
+<<<<<<< HEAD
 msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
 msgstr "Korlátozza a tervezés során az elemekre alkalmazott effektek összetettségét.\nNB1: minden érték érvényesül gravírozáskor.\nNB2: ha a CAPS LOCK aktív, minden effekt egyszerűsítés nélkül jelenik meg."
 
@@ -20780,3 +22460,99 @@ msgstr ""
 #: meerk40t/grbl/device.py:1049
 msgid "Export succeeded: {filename}"
 msgstr ""
+=======
+msgid ""
+"Limits the complexity of effects applied to elements during design.\n"
+"NB1: all values will be honored during burning.\n"
+"NB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr ""
+"Korlátozza a tervezés során az elemekre alkalmazott effektek összetettségét.\n"
+"NB1: minden érték érvényesül gravírozáskor.\n"
+"NB2: ha a CAPS LOCK aktív, minden effekt egyszerűsítés nélkül jelenik meg."
+
+#: meerk40t/balormk/device.py:446
+msgid "Cut/Engrave"
+msgstr "Vágás/Gravírozás"
+
+#: meerk40t/balormk/device.py:452 meerk40t/balormk/device.py:466
+#: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
+#: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
+msgid "This is global setting that will be overruled by operation settings."
+msgstr "Ez egy globális beállítás, amelyet a műveleti beállítások felülírnak."
+
+#: meerk40t/balormk/device.py:475
+msgid "Miscellaneous"
+msgstr "Egyéb"
+
+#: meerk40t/balormk/gui/balorconfig.py:52
+#: meerk40t/grbl/gui/grblconfiguration.py:268
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:449
+#: meerk40t/moshi/gui/moshidrivergui.py:67
+#: meerk40t/newly/gui/newlyconfig.py:73 meerk40t/ruida/gui/ruidaconfig.py:216
+msgid "Operation Defaults"
+msgstr "Művelet alapértelmezések"
+
+#: meerk40t/core/elements/element_treeops.py:1324
+#: meerk40t/core/elements/element_treeops.py:1338
+msgid "Reset to device default values"
+msgstr "Visszaállítás az eszköz alapértelmezett értékeire"
+
+#: meerk40t/core/elements/element_treeops.py:1328
+msgid ""
+"Will reset power / speed and some other properties to device default values"
+msgstr ""
+"A teljesítményt/sebességet és néhány más tulajdonságot visszaállít az eszköz"
+" alapértelmezett értékeire"
+
+#: meerk40t/core/elements/geometry.py:432
+msgid "Use unidirectional hatch lines"
+msgstr "Unidirekcionális kitöltővonalak használata"
+
+#: meerk40t/core/elements/geometry.py:437
+msgid "Distance between hatch lines"
+msgstr "Kitöltővonalak közötti távolság"
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Type"
+msgstr "Alapértelmezett Wobble típus"
+
+#: meerk40t/device/devicechoices.py:56
+msgid "Wobble Speed"
+msgstr "Wobble sebesség"
+
+#: meerk40t/device/devicechoices.py:57
+msgid "Default Wobble Speed"
+msgstr "Alapértelmezett Wobble sebesség"
+
+#: meerk40t/device/devicechoices.py:106
+msgid "Default power for {op}"
+msgstr "Alapértelmezett teljesítmény ehhez: {op}"
+
+#: meerk40t/device/devicechoices.py:117
+msgid "Default speed for {op}"
+msgstr "Alapértelmezett sebesség ehhez: {op}"
+
+#: meerk40t/grbl/device.py:1058
+msgid "Export succeeded: {filename}"
+msgstr "Exportálás sikeres: {filename}"
+
+#: meerk40t/gui/materialtest.py:339
+msgid "Create boundary shape"
+msgstr "Határforma létrehozása"
+
+#: meerk40t/gui/materialtest.py:602
+msgid "Add the shape a second time around the effect"
+msgstr "Az alakzat másodszori hozzáadása a hatás körül"
+
+#: meerk40t/gui/mkdebug.py:183
+msgid "Op Settings"
+msgstr "Műveleti beállítások"
+
+#: meerk40t/gui/mkdebug.py:191
+msgid "OP Settings test"
+msgstr "Műveleti beállítások tesztje"
+
+#: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
+msgid "Operation settings"
+msgstr "Műveleti beállítások"
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf

@@ -22719,6 +22719,7 @@ msgstr "有新的{type}版本可用（{system}）："
 msgid "Export succeeded: {filename}"
 msgstr "导出成功：{filename}"
 
+<<<<<<< HEAD
 #: meerk40t/balormk/device.py:232 meerk40t/grbl/device.py:124 meerk40t/lihuiyu/device.py:117 meerk40t/moshi/device.py:141 meerk40t/newly/device.py:173 meerk40t/ruida/device.py:125
 msgid "Margin for the X-axis. This will be a kind of unused space at the left side."
 msgstr ""
@@ -24227,3 +24228,84 @@ msgstr ""
 msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
 msgstr ""
 
+=======
+#: meerk40t/balormk/device.py:446
+msgid "Cut/Engrave"
+msgstr "切割/雕刻"
+
+#: meerk40t/balormk/device.py:452 meerk40t/balormk/device.py:466
+#: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
+#: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
+msgid "This is global setting that will be overruled by operation settings."
+msgstr "这是全局设置，将被操作设置覆盖。"
+
+#: meerk40t/balormk/device.py:475
+msgid "Miscellaneous"
+msgstr "其他"
+
+#: meerk40t/balormk/gui/balorconfig.py:52
+#: meerk40t/grbl/gui/grblconfiguration.py:268
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:449
+#: meerk40t/moshi/gui/moshidrivergui.py:67
+#: meerk40t/newly/gui/newlyconfig.py:73 meerk40t/ruida/gui/ruidaconfig.py:216
+msgid "Operation Defaults"
+msgstr "操作默认值"
+
+#: meerk40t/core/elements/element_treeops.py:1324
+#: meerk40t/core/elements/element_treeops.py:1338
+msgid "Reset to device default values"
+msgstr "重置为设备默认值"
+
+#: meerk40t/core/elements/element_treeops.py:1328
+msgid ""
+"Will reset power / speed and some other properties to device default values"
+msgstr "将功率/速度和其他属性重置为设备默认值"
+
+#: meerk40t/core/elements/geometry.py:432
+msgid "Use unidirectional hatch lines"
+msgstr "使用单向填充线"
+
+#: meerk40t/core/elements/geometry.py:437
+msgid "Distance between hatch lines"
+msgstr "填充线之间的距离"
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Type"
+msgstr "默认抖动类型"
+
+#: meerk40t/device/devicechoices.py:56
+msgid "Wobble Speed"
+msgstr "抖动速度"
+
+#: meerk40t/device/devicechoices.py:57
+msgid "Default Wobble Speed"
+msgstr "默认抖动速度"
+
+#: meerk40t/device/devicechoices.py:106
+msgid "Default power for {op}"
+msgstr "{op} 的默认功率"
+
+#: meerk40t/device/devicechoices.py:117
+msgid "Default speed for {op}"
+msgstr "{op} 的默认速度"
+
+#: meerk40t/gui/materialtest.py:339
+msgid "Create boundary shape"
+msgstr "创建边界形状"
+
+#: meerk40t/gui/materialtest.py:602
+msgid "Add the shape a second time around the effect"
+msgstr "在效果周围再次添加该形状"
+
+#: meerk40t/gui/mkdebug.py:183
+msgid "Op Settings"
+msgstr "操作设置"
+
+#: meerk40t/gui/mkdebug.py:191
+msgid "OP Settings test"
+msgstr "操作设置测试"
+
+#: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
+msgid "Operation settings"
+msgstr "操作设置"
+>>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
