@@ -150,6 +150,7 @@ class Kernel(Settings):
 
         # Scheduler
         self.jobs = {}
+        self.active_job = "main"
         self.scheduler_thread = None
 
         # Signal Listener
@@ -1872,6 +1873,7 @@ class Kernel(Settings):
                 continue  # Job was removed during execution.
 
             # Checking if jobs should run.
+            self.active_job = job.job_name
             if job.run_main:
                 if not mains:
                     # Do not attempt to run mains.
@@ -1899,6 +1901,7 @@ class Kernel(Settings):
                     sys.excepthook(*sys.exc_info())
                 job._last_run = time.time()
                 job._next_run += job._last_run + job.interval
+        self.active_job = "main"
 
     def run(self, *args) -> None:
         """
@@ -2099,7 +2102,9 @@ class Kernel(Settings):
                     try:
                         listener(origin, *message)
                     except RuntimeError as e:
-                        print(f"Listener {listener} no longer available. Error in {signal}: {e}")
+                        print(
+                            f"Listener {listener} no longer available. Error in {signal}: {e}"
+                        )
                     if signal_channel and signal not in to_be_ignored:
                         signal_channel(
                             f"Signal: {origin} {signal}: "
@@ -3674,6 +3679,86 @@ class Kernel(Settings):
             except (TypeError, RuntimeError) as e:
                 channel(f"Error while sending {signalname}, {signalargs}: {e}")
             return
+
+        # ==========
+        # Threaded execution
+        # ==========
+        @self.console_command(
+            "threaded",
+            help=_(
+                "Execute the following command as a separate task in the background"
+            ),
+        )
+        def threaded_command(channel, _, remainder=None, **kwargs):
+            def handler():
+                """
+                Runs the specified command in a background thread and reports completion time.
+                This function is intended to be used as a job handler for asynchronous command execution.
+                """
+                t0 = time.perf_counter()
+                data_out = self._console_parse(remainder, channel=self._console_channel)
+                t1 = time.perf_counter()
+                self._console_channel(
+                    _("Finished command {cmd} after {duration:.2f}sec").format(
+                        cmd=remainder, duration=t1 - t0
+                    )
+                )
+
+            if remainder is None:
+                # List all scheduled jobs that fit our format
+                i = 0
+                for job_name, job in self.jobs.items():
+                    if job_name is None or not job_name.startswith("threaded-"):
+                        continue
+                    i += 1
+                    parts = list()
+                    parts.append(f"{i}:")
+                    parts.append(job.info)
+                    parts.append(f"{time.time() - job._created}sec")
+                    parts.append(job.message)
+                    channel(" ".join(parts))
+                channel(_("----------"))
+                return
+            job_identifier = f"threaded-{time.perf_counter():.4f}"
+            job = Job(handler, times=1, run_main=False, job_name=job_identifier)
+            job.info = remainder
+            self.schedule(job)
+            channel(
+                _("Command '{cmd}' is now running in the background.").format(
+                    cmd=remainder
+                )
+            )
+
+        @self.console_argument("range_from", type=int, help=_("First value to take"))
+        @self.console_argument("range_to", type=int, help=_("Last value to take"))
+        @self.console_command("loop", help=_("loop a given command"))
+        def loop_command(
+            channel, _, range_from=None, range_to=None, remainder=None, **kwargs
+        ):
+            if range_from is None or range_to is None:
+                channel(_("Please provide the range to loop in"))
+                return
+            try:
+                range_from = int(range_from)
+                range_to = int(range_to)
+                if range_to < range_from:
+                    raise ValueError(
+                        _("upper bound needs to be greater than lower bound")
+                    )
+            except ValueError as e:
+                channel(
+                    _("Invalid values for from={lbound} to {ubound}: {error}").format(
+                        lbound=range_from, ubound=range_to, error=e
+                    )
+                )
+                return
+            if remainder is None:
+                channel(_("Please provide a command to loop."))
+                return
+            for loop_index in range(range_from, range_to + 1):
+                cmd = remainder.replace("{loop}", str(loop_index))
+                channel(f"#{loop_index}: {cmd}")
+                data_out = self._console_parse(cmd, channel=self._console_channel)
 
         # ==========
         # LIFECYCLE
