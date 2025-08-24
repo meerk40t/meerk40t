@@ -8,79 +8,9 @@ import wx
 
 DEFAULT_SIZE = 14
 
-class SimpleBusyInfo:
-    """
-    Create a simplified BusyInfo class that uses the main window title as canvas. 
-    Just used for Linux as the wxWidgets implementation sucks big time regarding
-    the controlled update of a window. So the full-featured implementation below
-    does not only produce nothing visible but seems to have severe side effects
-    that may caus segmenation faults.
-
-    :param string `msg`:     a string to be displayed in the BusyInfo window.
-    """
-    def __init__(self, **kwds):
-        self.kernel = kwds.get("kernel", None)
-        self.shown = False
-        self._old_title = ""
-        self._msg = ""
-
-    def start(self, **kwds):
-        if self.shown:
-            self.end()
-        self.update_keywords(kwds)
-        self.shown = True
-        self._old_title = ""
-        try:
-            win:wx.Window = self.kernel.root.gui
-            win.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
-            self._old_title = win.GetTitle()
-        except (TypeError, AttributeError) as e:
-            return
-
-    def end(self):
-        self.shown = False
-        self._msg = ""
-        try:
-            win = self.kernel.root.gui
-            win.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-        except (TypeError, AttributeError):
-            return
-        if self._old_title:
-            win.SetTitle(self._old_title)
-
-    def change(self, **kwds):
-        self.update_keywords(kwds)
-        if self.msg:
-            try:
-                win = self.kernel.root.gui
-                win.SetTitle(self.msg)
-            except (TypeError, AttributeError):
-                return
-
-    def update_keywords(self, kwds):
-        keep = 0
-        if "keep" in kwds:
-            keep = int(kwds["keep"])
-        if "msg" in kwds:
-            old_lines = self._msg.split("\n") if self._msg else []
-            new_lines = old_lines[:keep]
-            new_lines.append(kwds["msg"])
-            self._msg = "\n".join(new_lines)            
-
-    @property
-    def msg(self):
-        return self._msg.replace("\n", " - ")
-
-    def hide(self):
-        self.shown = False
-        return
-
-    def show(self):
-        self.shown = True
-        return
 
 
-class BusyInfo:
+class BusyInfo_main:
     """
     Create a custom BusyInfo class.
 
@@ -240,3 +170,61 @@ class BusyInfo:
             self.frame.Refresh()
             self.frame.Update()
             wx.YieldIfNeeded()
+
+class BusyInfo():
+    def __init__(self, parent=None, kernel=None, **kwds):
+        self.busy_main = BusyInfo_main(parent, **kwds)
+        self.kernel = kernel
+
+    @property
+    def shown(self):
+        if wx.IsMainThread():
+            return self.busy_main.shown
+        else:
+            return True
+        
+    def start(self, **kwds):
+        if wx.IsMainThread():
+            self.busy_main.start(**kwds)
+        else:
+            self.update_message(msg="")
+    
+    def show(self):
+        if wx.IsMainThread():
+            self.busy_main.show()
+
+    def end(self):
+        if wx.IsMainThread():
+            self.busy_main.end()
+        else:
+            self.update_message(msg="")
+
+    def change(self, **kwds):
+        if wx.IsMainThread():
+            self.busy_main.change(**kwds)
+        else:
+            self.update_message(**kwds)
+
+    def hide(self):
+        if wx.IsMainThread():
+            self.busy_main.hide()
+
+    def update_message(self, **kwds):
+        if self.kernel is not None:
+            message = kwds.get("msg", "")
+            # We need to update the message for the active job, 
+            # unfortunately the context is not easily established
+            # job_name = self.kernel.active_job
+            # if job_name.startswith("threaded") and job_name in self.kernel.jobs:
+            #     self.kernel.jobs[job_name].message = message
+
+    def debug_busy(self, info:str):
+        import inspect
+        tname = threading.current_thread().name
+        state = "" if self.kernel is None else self.kernel.active_job
+        print(f"Debug busy: {info}, state: {state}, thread: {tname}")
+        for idx, s in enumerate(inspect.stack()):
+            print (f"  Caller {idx}: {s}")
+        # caller = inspect.stack()[1]
+        # for prop in caller.__dict__:
+        #     print(f"  {prop}: {caller.__dict__[prop]}")
